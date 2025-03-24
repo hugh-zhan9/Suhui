@@ -114,7 +114,7 @@ const ListImpl: React.FC<{ id: string }> = ({ id }) => {
 const SeparatorComponent = () => {
   return (
     <View
-      className="bg-opaque-separator ml-16"
+      className="bg-system-fill ml-16"
       style={{ height: StyleSheet.hairlineWidth }}
       collapsable={false}
     />

@@ -19,7 +19,7 @@ import {
 } from "./constants"
 import { GroupedInsetListCardItemStyle } from "./GroupedInsetListCardItemStyle"
 
-type GroupedInsetListCardProps = {
+interface GroupedInsetListCardProps {
   showSeparator?: boolean
   SeparatorComponent?: FC
 }
@@ -66,7 +66,7 @@ export const GroupedInsetListCard: FC<
                     <SeparatorComponent />
                   ) : (
                     <View
-                      className={cn("bg-opaque-separator", isNavigationLink ? "ml-16" : "ml-4")}
+                      className={cn("bg-system-fill", isNavigationLink ? "ml-16" : "ml-4")}
                       style={{ height: StyleSheet.hairlineWidth }}
                     />
                   ))}

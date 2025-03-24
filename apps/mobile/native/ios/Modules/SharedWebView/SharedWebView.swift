@@ -6,13 +6,10 @@ import WebKit
 
 class WebViewView: ExpoView {
     private var cancellable: AnyCancellable?
-    private let rctView = RCTView(frame: .zero)
 
     required init(appContext: AppContext? = nil) {
         super.init(appContext: appContext)
-        addSubview(rctView)
-
-        rctView.addSubview(SharedWebViewModule.sharedWebView!)
+        addSubview(SharedWebViewModule.sharedWebView!)
 
         clipsToBounds = true
         cancellable = WebViewManager.state.$contentHeight
@@ -21,7 +18,7 @@ class WebViewView: ExpoView {
                 self?.layoutSubviews()
             }
     }
-
+   
     deinit {
         cancellable?.cancel()
     }
@@ -40,7 +37,6 @@ class WebViewView: ExpoView {
         webView.scrollView.frame = rect
 
         frame = rect
-        rctView.frame = rect
         onContentHeightChange(["height": Float(rect.height)])
 
     }

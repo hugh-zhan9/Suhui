@@ -34,7 +34,6 @@ export function Settings() {
     <>
       <SafeNavigationScrollView
         ref={scrollViewRef}
-        scrollEventThrottle={16}
         style={{ paddingTop: insets.top }}
         className="bg-system-grouped-background flex-1"
         contentViewClassName="-mt-24"

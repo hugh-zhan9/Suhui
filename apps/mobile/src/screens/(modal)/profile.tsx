@@ -11,11 +11,20 @@ import {
   TouchableOpacity,
   View,
 } from "react-native"
-import Animated, { useAnimatedScrollHandler, useSharedValue } from "react-native-reanimated"
+import Animated, {
+  interpolate,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+} from "react-native-reanimated"
 import { useSafeAreaFrame, useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { ReAnimatedScrollView } from "@/src/components/common/AnimatedComponents"
 import { BlurEffect } from "@/src/components/common/BlurEffect"
+import {
+  InternalNavigationHeader,
+  UINavigationHeaderActionButton,
+} from "@/src/components/layouts/header/NavigationHeader"
 import { getDefaultHeaderHeight } from "@/src/components/layouts/utils"
 import { FallbackIcon } from "@/src/components/ui/icon/fallback-icon"
 import type { FeedIconRequiredFeed } from "@/src/components/ui/icon/feed-icon"
@@ -84,6 +93,21 @@ function ProfileScreenImpl(props: { userId: string }) {
 
   return (
     <View className="bg-system-grouped-background flex-1">
+      <Animated.View
+        pointerEvents="box-none"
+        className="border-system-fill border-hairline absolute inset-x-0 top-0 z-[99]"
+        style={{ opacity: headerOpacity }}
+      >
+        <BlurEffect />
+        <InternalNavigationHeader
+          title={`${user?.name}'s Profile`}
+          headerRight={
+            <UINavigationHeaderActionButton onPress={openShareUrl}>
+              <Share3CuteReIcon color={textLabelColor} />
+            </UINavigationHeaderActionButton>
+          }
+        />
+      </Animated.View>
       <ReAnimatedScrollView
         nestedScrollEnabled
         onScroll={scrollHandler}
@@ -95,29 +119,15 @@ function ProfileScreenImpl(props: { userId: string }) {
         {!isLoading && subscriptions && <SubscriptionList subscriptions={subscriptions.data} />}
       </ReAnimatedScrollView>
 
-      <View
-        style={{ height: headerHeight }}
-        className="absolute top-0 w-full flex-row items-center justify-between px-4"
+      <Animated.View
+        style={useAnimatedStyle(() => ({
+          opacity: interpolate(headerOpacity.value, [0, 1], [1, 0]),
+        }))}
+        className="absolute top-5 w-full flex-row items-center justify-between px-4"
       >
         <View />
         <TouchableOpacity onPress={openShareUrl}>
           <Share3CuteReIcon color="#fff" />
-        </TouchableOpacity>
-      </View>
-      {/* Header */}
-      <Animated.View
-        pointerEvents="none"
-        className="border-b-hairline border-opaque-separator absolute inset-x-0 top-0 flex-row items-center px-4"
-        style={{ opacity: headerOpacity, height: headerHeight }}
-      >
-        <BlurEffect />
-
-        <Text className="text-label flex-1 text-center text-lg font-medium">
-          {user?.name}'s Profile
-        </Text>
-
-        <TouchableOpacity onPress={openShareUrl}>
-          <Share3CuteReIcon color={textLabelColor} />
         </TouchableOpacity>
       </Animated.View>
     </View>
