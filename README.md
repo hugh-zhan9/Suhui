@@ -5,6 +5,11 @@
 
   <h3>Folo</h3>
   <p>
+    <img src="https://github.com/user-attachments/assets/cbe924f2-d8b0-48b0-814e-7c06ccb1911c" height="60" />
+    &nbsp;&nbsp;&nbsp;
+    <img src="https://github.com/user-attachments/assets/6997a236-3df3-49d5-98a4-514f6d1a02c4" height="60" />
+    <br />
+    <br />
     <a href="https://github.com/RSSNext/Folo/graphs/contributors"><img src="https://img.shields.io/github/stars/RSSNext/Follow?color=ffcb47&labelColor=black&style=flat-square&logo=github&label=Stars" /></a>
     <a href="https://github.com/RSSNext/Folo/graphs/contributors"><img src="https://img.shields.io/github/contributors/RSSNext/Folo?style=flat-square&logo=github&label=Contributors&labelColor=black" /></a>
     <a href="https://status.follow.is/" target="_blank"><img src="https://status.follow.is/api/badge/18/uptime?color=%2344CC10&labelColor=black&style=flat-square"/></a>
@@ -38,7 +43,7 @@ Feel free to try it using the following methods:
 
 | Operating System | Source                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | :--------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Any              | <a href="https://app.follow.is" target="_blank"><img src="https://github.com/user-attachments/assets/8fefcf14-aa6d-4b6b-b855-00344f1e3726" alt="Browser" height="55"/></a>                                                                                                                                                                                                                                                            |
+| Any              | <a href="https://app.follow.is" target="_blank"><img src="https://github.com/user-attachments/assets/51ef7800-b683-4493-83e8-eb4752366997" alt="Browser" height="55"/></a>                                                                                                                                                                                                                                                            |
 | iOS              | <a href="https://apps.apple.com/us/app/folo-follow-everything/id6739802604" target="_blank"><img src="https://github.com/user-attachments/assets/a94d8698-2a11-4f43-9b0a-b756b17b61f7" alt="App Store" height="55"/></a>                                                                                                                                                                                                              |
 | macOS            | <a href="https://apps.apple.com/us/app/folo-follow-everything/id6739802604" target="_blank"><img src="https://github.com/user-attachments/assets/0d47f902-7fa3-494e-ad28-9ab11af5e6d4" alt="Microsoft Store" height="55"/></a> <a href="https://github.com/RSSNext/Folo/releases/latest" target="_blank"><img src="https://github.com/user-attachments/assets/cf61e197-d756-4606-a8ad-fb591f79fdfc" alt="App Store" height="55"/></a> |
 | Windows          | <a href="https://apps.microsoft.com/detail/9nvfzpv0v0ht?mode=direct" target="_blank"><img src="https://github.com/user-attachments/assets/b3112bab-9dd0-4893-9488-890dcb368f70" alt="Microsoft Store" height="55"/></a> <a href="https://github.com/RSSNext/Folo/releases/latest" target="_blank"><img src="https://github.com/user-attachments/assets/cf61e197-d756-4606-a8ad-fb591f79fdfc" alt="App Store" height="55"/></a>        |
