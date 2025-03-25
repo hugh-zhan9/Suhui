@@ -154,20 +154,27 @@ public class ImageCarouselViewController: UIPageViewController,
     }
 
     private func saveImageToPhotos() {
-        if let vc = viewControllers?.first as? ImageCarouselViewControllerProtocol {
+        if let vc = viewControllers?.first as? ImageCarouselViewControllerProtocol,
+            !vc.isLoadError()
+        {
+
             vc.saveImageToPhotos()
+
         }
 
     }
     private func copyImageToClipboard() {
-        if let vc = viewControllers?.first as? ImageCarouselViewControllerProtocol {
+        if let vc = viewControllers?.first as? ImageCarouselViewControllerProtocol,
+            !vc.isLoadError()
+        {
             vc.copyImageToClipboard()
         }
     }
     private func shareImage() {
-        if let vc = viewControllers?.first as? ImageCarouselViewControllerProtocol {
+        if let vc = viewControllers?.first as? ImageCarouselViewControllerProtocol,
+            !vc.isLoadError()
+        {
             vc.shareImage()
-
         }
     }
 

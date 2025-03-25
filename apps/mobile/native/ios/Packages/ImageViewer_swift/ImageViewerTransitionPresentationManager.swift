@@ -75,6 +75,7 @@ extension ImageViewerTransitionPresentationAnimator: UIViewControllerAnimatedTra
         dummyImageView.contentMode = imageContentMode
         dummyImageView.alpha = 1.0
         dummyImageView.image = image
+        dummyImageView.isUserInteractionEnabled = false
         return dummyImageView
     }
 
@@ -98,7 +99,7 @@ extension ImageViewerTransitionPresentationAnimator: UIViewControllerAnimatedTra
         transitionVC.targetView?.tintColor = sourceView.tintColor
 
         var dummyImageView: UIImageView?
-        if let image = sourceView.image {
+        if sourceView.image != nil {
             dummyImageView = createDummyImageView(
                 frame: sourceView.frameRelativeToWindow(),
                 image: sourceView.image)
