@@ -326,7 +326,13 @@ class SubscriptionActions {
     })
     tx.optimistic(() => {
       if (listId) {
-        feedUnreadActions.updateByFeedId(listId, 0)
+        const listFeedIds = getListById(listId)?.feedIds
+        if (listFeedIds) {
+          for (const feedId of listFeedIds) {
+            feedUnreadActions.updateByFeedId(feedId, 0)
+            entryActions.patchManyByFeedId(feedId, { read: true }, filter)
+          }
+        }
       } else if (inboxId) {
         feedUnreadActions.updateByFeedId(inboxId, 0)
         entryActions.patchManyByFeedId(inboxId, { read: true }, filter)
