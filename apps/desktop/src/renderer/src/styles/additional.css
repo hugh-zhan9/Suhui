@@ -93,7 +93,7 @@
   visibility: hidden;
 }
 
-[title="recaptcha challenge expires in two minutes"] {
+iframe[src*="www.recaptcha.net"] {
   pointer-events: auto !important;
   -webkit-app-region: no-drag !important;
 }
