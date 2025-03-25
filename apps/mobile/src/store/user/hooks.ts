@@ -4,6 +4,7 @@ import { useEffect } from "react"
 import { apiClient } from "@/src/lib/api-fetch"
 import { kv } from "@/src/lib/kv"
 import { useNavigation } from "@/src/lib/navigation/hooks"
+import { op } from "@/src/lib/op"
 import { OnboardingScreen } from "@/src/screens/onboarding"
 
 import { isNewUserQueryKey, isOnboardingFinishedStorageKey } from "./constants"
@@ -12,10 +13,30 @@ import { userSyncService, useUserStore } from "./store"
 export const whoamiQueryKey = ["user", "whoami"]
 
 export const usePrefetchSessionUser = () => {
-  useQuery({
+  const query = useQuery({
     queryKey: whoamiQueryKey,
     queryFn: () => userSyncService.whoami(),
   })
+
+  useEffect(() => {
+    if (query.data) {
+      const user = query.data
+      op.identify({
+        profileId: user.id,
+        email: user.email!,
+        avatar: user.image ?? undefined,
+        lastName: user.name!,
+        properties: {
+          handle: user.handle,
+          name: user.name,
+        },
+      })
+      op.track("user_login", {
+        userId: query.data.id,
+      })
+    }
+  }, [query.data])
+  return query
 }
 
 export const useWhoami = () => {

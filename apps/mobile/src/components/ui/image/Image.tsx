@@ -6,9 +6,9 @@ import { forwardRef, useCallback, useMemo, useState } from "react"
 
 import { proxyEnv } from "@/src/lib/proxy-env"
 
-const buildSafeHeaders = createBuildSafeHeaders(proxyEnv.VITE_WEB_URL, [
+const buildSafeHeaders = createBuildSafeHeaders(proxyEnv.WEB_URL, [
   IMAGE_PROXY_URL,
-  proxyEnv.VITE_API_URL,
+  proxyEnv.API_URL,
 ])
 
 export type ImageProps = Omit<ExpoImageProps, "source"> & {

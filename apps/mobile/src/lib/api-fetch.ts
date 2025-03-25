@@ -11,7 +11,7 @@ const { hc } = require("hono/dist/cjs/client/client") as typeof import("hono/cli
 export const apiFetch = ofetch.create({
   retry: false,
 
-  baseURL: proxyEnv.VITE_API_URL,
+  baseURL: proxyEnv.API_URL,
   onRequest: async (ctx) => {
     const { options, request } = ctx
     if (__DEV__) {
@@ -47,7 +47,7 @@ export const apiFetch = ofetch.create({
   },
 })
 
-export const apiClient = hc<AppType>(proxyEnv.VITE_API_URL, {
+export const apiClient = hc<AppType>(proxyEnv.API_URL, {
   fetch: async (input: any, options = {}) =>
     apiFetch(input.toString(), options).catch((err) => {
       throw err
