@@ -48,6 +48,14 @@ export enum TrackerMapper {
   FeedClaimed = 2012,
   DailyRewardClaimed = 2013,
   TipSent = 2014,
+
+  // https://docs.google.com/spreadsheets/d/1XlUxTxiXWIQDHFYa2eoPBeuosR1t2h8VFIjXEOqmjhY/edit?gid=0#gid=0
+  Register = 3000,
+  OnBoarding = 3001,
+  Subscribe = 3002,
+  EntryRead = 3003,
+  EntryAction = 3004,
+  ViewAction = 3005,
 }
 
 const CodeToTrackerName = Object.fromEntries(
@@ -141,6 +149,30 @@ export class TrackerPoints {
 
   tipSent(props: { amount: string; entryId: string }) {
     this.track(TrackerMapper.TipSent, props)
+  }
+
+  register(props: { type: "email" | "social" }) {
+    this.track(TrackerMapper.Register, props)
+  }
+
+  onBoarding(props: { step: number; done: boolean }) {
+    this.track(TrackerMapper.OnBoarding, props)
+  }
+
+  subscribe(props: { feedId?: string; listId?: string; view?: number }) {
+    this.track(TrackerMapper.Subscribe, props)
+  }
+
+  entryRead(props: { entryId: string }) {
+    this.track(TrackerMapper.EntryRead, props)
+  }
+
+  entryAction(props: { entryId: string; action: string }) {
+    this.track(TrackerMapper.EntryAction, props)
+  }
+
+  viewAction(props: { view: string; action: string }) {
+    this.track(TrackerMapper.ViewAction, props)
   }
 
   private track(code: TrackerMapper, properties?: Record<string, unknown>) {

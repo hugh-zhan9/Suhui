@@ -3,8 +3,6 @@ interface ApiConfig {
   defaultHeaders?: Record<string, string | Promise<string | null>>
   maxRetries?: number
   initialRetryDelay?: number
-
-  headers?: Record<string, string | Promise<string | null>>
 }
 
 interface FetchOptions extends RequestInit {
@@ -22,7 +20,6 @@ export class Api {
     this.headers = {
       "Content-Type": "application/json",
       ...config.defaultHeaders,
-      ...config.headers,
     }
     this.maxRetries = config.maxRetries ?? 3
     this.initialRetryDelay = config.initialRetryDelay ?? 500

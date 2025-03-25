@@ -1,3 +1,4 @@
+import { identifyUserOpenPanel, tracker } from "@follow/tracker"
 import { useQuery } from "@tanstack/react-query"
 import { useEffect } from "react"
 
@@ -21,19 +22,8 @@ export const usePrefetchSessionUser = () => {
   useEffect(() => {
     if (query.data) {
       const user = query.data
-      op.identify({
-        profileId: user.id,
-        email: user.email!,
-        avatar: user.image ?? undefined,
-        lastName: user.name!,
-        properties: {
-          handle: user.handle,
-          name: user.name,
-        },
-      })
-      op.track("user_login", {
-        userId: query.data.id,
-      })
+      identifyUserOpenPanel(user, op.identify.bind(op))
+      tracker.identify(user.id)
     }
   }, [query.data])
   return query

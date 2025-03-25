@@ -782,6 +782,9 @@ importers:
       '@follow/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@follow/tracker':
+        specifier: workspace:*
+        version: link:../../packages/tracker
       '@follow/utils':
         specifier: workspace:*
         version: link:../../packages/utils
@@ -1107,6 +1110,9 @@ importers:
       '@fastify/request-context':
         specifier: 6.1.0
         version: 6.1.0
+      '@follow/tracker':
+        specifier: workspace:*
+        version: link:../../packages/tracker
       '@fontsource/sn-pro':
         specifier: 5.2.5
         version: 5.2.5

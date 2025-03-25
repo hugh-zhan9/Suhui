@@ -68,6 +68,7 @@ export type OpenPanelOptions = {
   waitForProfile?: boolean
   filter?: (payload: TrackHandlerPayload) => boolean
   disabled?: boolean
+  headers?: Record<string, string>
 }
 
 export class OpenPanel {
@@ -79,6 +80,7 @@ export class OpenPanel {
   constructor(public options: OpenPanelOptions) {
     const defaultHeaders: Record<string, string> = {
       "openpanel-client-id": options.clientId,
+      ...options.headers,
     }
 
     if (options.clientSecret) {

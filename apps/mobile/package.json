@@ -26,6 +26,7 @@
     "@follow/hooks": "workspace:*",
     "@follow/models": "workspace:*",
     "@follow/shared": "workspace:*",
+    "@follow/tracker": "workspace:*",
     "@follow/utils": "workspace:*",
     "@gorhom/portal": "1.0.14",
     "@hookform/resolvers": "4.1.3",

@@ -55,7 +55,6 @@ const CmdNPanel = () => {
       title: t("feed_form.add_feed"),
       content: () => (
         <FeedForm
-          asWidget
           url={url}
           defaultValues={{
             view: defaultView.toString(),

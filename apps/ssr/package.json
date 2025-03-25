@@ -11,6 +11,7 @@
   "dependencies": {
     "@fastify/middie": "9.0.3",
     "@fastify/request-context": "6.1.0",
+    "@follow/tracker": "workspace:*",
     "@fontsource/sn-pro": "5.2.5",
     "@openpanel/web": "1.0.1",
     "@resvg/resvg-js": "2.6.2",
