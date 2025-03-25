@@ -1,28 +1,44 @@
 import type { FeedViewType } from "@follow/constants"
-import { cn } from "@follow/utils"
-import { useGlobalSearchParams } from "expo-router"
 import { Fragment, useCallback, useEffect, useMemo } from "react"
 import {
   ActivityIndicator,
   FlatList,
   Image,
   Share,
-  StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native"
-import Animated, { useAnimatedScrollHandler, useSharedValue } from "react-native-reanimated"
+import Animated, {
+  interpolate,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+} from "react-native-reanimated"
 import { useSafeAreaFrame, useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { ReAnimatedScrollView } from "@/src/components/common/AnimatedComponents"
 import { BlurEffect } from "@/src/components/common/BlurEffect"
+import {
+  InternalNavigationHeader,
+  UINavigationHeaderActionButton,
+} from "@/src/components/layouts/header/NavigationHeader"
 import { getDefaultHeaderHeight } from "@/src/components/layouts/utils"
+import {
+  GROUPED_ICON_TEXT_GAP,
+  GROUPED_LIST_ITEM_PADDING,
+  GROUPED_LIST_MARGIN,
+} from "@/src/components/ui/grouped/constants"
+import {
+  GroupedInsetListCard,
+  GroupedInsetListSectionHeader,
+} from "@/src/components/ui/grouped/GroupedList"
 import { FallbackIcon } from "@/src/components/ui/icon/fallback-icon"
 import type { FeedIconRequiredFeed } from "@/src/components/ui/icon/feed-icon"
 import { FeedIcon } from "@/src/components/ui/icon/feed-icon"
 import { Share3CuteReIcon } from "@/src/icons/share_3_cute_re"
 import type { apiClient } from "@/src/lib/api-fetch"
+import type { NavigationControllerView } from "@/src/lib/navigation/types"
 import { toast } from "@/src/lib/toast"
 import { useShareSubscription } from "@/src/modules/settings/hooks/useShareSubscription"
 import { UserHeaderBanner } from "@/src/modules/settings/UserHeaderBanner"
@@ -34,12 +50,10 @@ import { useColor } from "@/src/theme/colors"
 
 type Subscription = Awaited<ReturnType<typeof apiClient.subscriptions.$get>>["data"][number]
 
-export default function ProfileScreen() {
+export const ProfileScreen: NavigationControllerView<{
+  userId: string
+}> = ({ userId }) => {
   const whoami = useWhoami()
-  const globalSearchParams = useGlobalSearchParams<{
-    userId: string
-  }>()
-  const { userId } = globalSearchParams
 
   if (!whoami) {
     return null
@@ -77,7 +91,7 @@ function ProfileScreenImpl(props: { userId: string }) {
     if (!user?.id) return
     Share.share({
       url: `https://app.follow.is/share/users/${user.id}`,
-      title: `Follow | ${user.name}'s Profile`,
+      title: `Folo | ${user.name}'s Profile`,
     })
   }, [user?.id, user?.name])
 
@@ -86,6 +100,21 @@ function ProfileScreenImpl(props: { userId: string }) {
 
   return (
     <View className="bg-system-grouped-background flex-1">
+      <Animated.View
+        pointerEvents="box-none"
+        className="border-system-fill border-hairline absolute inset-x-0 top-0 z-[99]"
+        style={{ opacity: headerOpacity }}
+      >
+        <BlurEffect />
+        <InternalNavigationHeader
+          title={`${user?.name}'s Profile`}
+          headerRight={
+            <UINavigationHeaderActionButton onPress={openShareUrl}>
+              <Share3CuteReIcon color={textLabelColor} />
+            </UINavigationHeaderActionButton>
+          }
+        />
+      </Animated.View>
       <ReAnimatedScrollView
         nestedScrollEnabled
         onScroll={scrollHandler}
@@ -97,29 +126,15 @@ function ProfileScreenImpl(props: { userId: string }) {
         {!isLoading && subscriptions && <SubscriptionList subscriptions={subscriptions.data} />}
       </ReAnimatedScrollView>
 
-      <View
-        style={{ height: headerHeight }}
-        className="absolute top-0 w-full flex-row items-center justify-between px-4"
+      <Animated.View
+        style={useAnimatedStyle(() => ({
+          opacity: interpolate(headerOpacity.value, [0, 1], [1, 0]),
+        }))}
+        className="absolute top-5 w-full flex-row items-center justify-between px-4"
       >
         <View />
         <TouchableOpacity onPress={openShareUrl}>
           <Share3CuteReIcon color="#fff" />
-        </TouchableOpacity>
-      </View>
-      {/* Header */}
-      <Animated.View
-        pointerEvents="none"
-        className="border-b-hairline border-opaque-separator absolute inset-x-0 top-0 flex-row items-center px-4"
-        style={{ opacity: headerOpacity, height: headerHeight }}
-      >
-        <BlurEffect />
-
-        <Text className="text-label flex-1 text-center text-lg font-medium">
-          {user?.name}'s Profile
-        </Text>
-
-        <TouchableOpacity onPress={openShareUrl}>
-          <Share3CuteReIcon color={textLabelColor} />
         </TouchableOpacity>
       </Animated.View>
     </View>
@@ -188,52 +203,52 @@ const SubscriptionList = ({ subscriptions }: { subscriptions: Subscription[] }) 
         <Fragment>
           <SectionHeader title="Lists" />
 
-          <FlatList
-            scrollEnabled={false}
-            data={lists}
-            renderItem={renderListItems}
-            ItemSeparatorComponent={ItemSeparator}
-          />
+          <GroupedInsetListCard>
+            <FlatList
+              scrollEnabled={false}
+              data={lists}
+              renderItem={renderListItems}
+              ItemSeparatorComponent={ItemSeparator}
+            />
+          </GroupedInsetListCard>
         </Fragment>
       )}
       {hasFeeds && (
         <View className="mt-4">
           <SectionHeader title="Feeds" />
-          {Object.entries(groupedFeeds).map(([category, feeds], index) => (
+          {Object.entries(groupedFeeds).map(([category, feeds]) => (
             <Fragment key={category}>
-              <Text
-                className={cn(
-                  "text-secondary-label mb-2 ml-3 text-sm font-medium",
-                  index !== 0 ? "mt-6" : "",
-                )}
-              >
-                {category}
-              </Text>
-              <FlatList
-                scrollEnabled={false}
-                data={feeds}
-                renderItem={renderFeedItems}
-                ItemSeparatorComponent={ItemSeparator}
-              />
+              <GroupedInsetListSectionHeader label={category} marginSize="small" />
+              <GroupedInsetListCard>
+                <FlatList
+                  scrollEnabled={false}
+                  data={feeds}
+                  renderItem={renderFeedItems}
+                  ItemSeparatorComponent={ItemSeparator}
+                />
+              </GroupedInsetListCard>
             </Fragment>
           ))}
 
-          <Text className="text-secondary-label mb-2 ml-3 mt-6 text-sm font-medium">
-            Uncategorized Feeds
-          </Text>
-          <FlatList
-            scrollEnabled={false}
-            data={feeds}
-            renderItem={renderFeedItems}
-            ItemSeparatorComponent={ItemSeparator}
-          />
+          <GroupedInsetListSectionHeader label="Uncategorized Feeds" marginSize="small" />
+          <GroupedInsetListCard>
+            <FlatList
+              scrollEnabled={false}
+              data={feeds}
+              renderItem={renderFeedItems}
+              ItemSeparatorComponent={ItemSeparator}
+            />
+          </GroupedInsetListCard>
         </View>
       )}
     </View>
   )
 }
 const renderListItems = ({ item }: { item: PickedListModel }) => (
-  <View className="bg-secondary-system-grouped-background h-12 flex-row items-center px-3">
+  <View
+    className="bg-secondary-system-grouped-background h-12 flex-row items-center"
+    style={{ paddingHorizontal: GROUPED_LIST_ITEM_PADDING }}
+  >
     <View className="overflow-hidden rounded">
       {!!item.image && (
         <Image source={{ uri: item.image, width: 24, height: 24 }} resizeMode="cover" />
@@ -241,12 +256,17 @@ const renderListItems = ({ item }: { item: PickedListModel }) => (
       {!item.image && <FallbackIcon title={item.title} size={24} />}
     </View>
 
-    <Text className="text-text ml-2">{item.title}</Text>
+    <Text className="text-text" style={{ marginLeft: GROUPED_ICON_TEXT_GAP }}>
+      {item.title}
+    </Text>
   </View>
 )
 
 const renderFeedItems = ({ item }: { item: PickedFeedModel }) => (
-  <View className="bg-secondary-system-grouped-background h-12 flex-row items-center px-3">
+  <View
+    className="bg-secondary-system-grouped-background h-12 flex-row items-center"
+    style={{ paddingHorizontal: GROUPED_LIST_ITEM_PADDING }}
+  >
     <View className="overflow-hidden rounded">
       <FeedIcon
         feed={
@@ -262,20 +282,19 @@ const renderFeedItems = ({ item }: { item: PickedFeedModel }) => (
         size={24}
       />
     </View>
-    <Text className="text-text ml-2">{item.title}</Text>
+    <Text className="text-text" style={{ marginLeft: GROUPED_ICON_TEXT_GAP }}>
+      {item.title}
+    </Text>
   </View>
 )
 
 const SectionHeader = ({ title }: { title: string }) => (
-  <View className="my-5 flex-row items-center justify-center gap-4">
-    <View
-      className="bg-secondary-label w-12 rounded-full"
-      style={{ height: StyleSheet.hairlineWidth }}
-    />
-    <Text className="text-secondary-label text-sm font-medium">{title}</Text>
-    <View
-      className="bg-secondary-label w-12 rounded-full"
-      style={{ height: StyleSheet.hairlineWidth }}
-    />
+  <View className="mb-2 mt-5" style={{ marginHorizontal: GROUPED_LIST_MARGIN }}>
+    <Text
+      className="text-label text-xl font-medium"
+      style={{ marginLeft: GROUPED_LIST_ITEM_PADDING }}
+    >
+      {title}
+    </Text>
   </View>
 )

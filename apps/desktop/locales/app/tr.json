@@ -1,7 +1,7 @@
 {
   "achievement.all_done": "Tüm tamamlandı!",
   "achievement.first_claim_feed": "Besleme Sahibi",
-  "achievement.first_claim_feed_description": "Follow'da beslemenizi sahibi olun.",
+  "achievement.first_claim_feed_description": "Folo'da beslemenizi sahibi olun.",
   "ai_daily.title": "Öne Çıkan Haberler - {{title}}",
   "ai_daily.tooltip.content": "Burada, zaman çizelgenizden (<From /> - <To />) AI tarafından seçilen ve sizin için önemli olabilecek haberler bulunmaktadır.",
   "ai_daily.tooltip.update_schedule": "Her gün saat 08:00 ve 20:00'de güncellenir.",
@@ -28,6 +28,8 @@
   "discover.target.label": "Arama hedefi",
   "discover.target.lists": "Listeler",
   "entry_actions.copy_link": "Bağlantıyı kopyala",
+  "entry_actions.exported_notify": "Makale PDF olarak dışa aktarıldı.",
+  "entry_actions.export_as_pdf": "PDF olarak dışa aktar",
   "entry_actions.failed_to_save_to_eagle": "Eagle'a kaydetme başarısız oldu.",
   "entry_actions.failed_to_save_to_instapaper": "Instapaper'a kaydetme başarısız oldu.",
   "entry_actions.failed_to_save_to_readwise": "Readwise'a kaydetme başarısız oldu.",

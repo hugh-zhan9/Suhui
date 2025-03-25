@@ -1,4 +1,5 @@
 require 'json'
+new_arch_enabled = ENV['RCT_NEW_ARCH_ENABLED'] == '1'
 
 package = JSON.parse(File.read(File.join(__dir__, '..', 'package.json')))
 
@@ -11,8 +12,8 @@ Pod::Spec.new do |s|
   s.author         = package['author']
   s.homepage       = package['homepage']
   s.platforms      = {
-    :ios => '15.1',
-    :tvos => '15.1'
+    :ios => '17.0',
+    :tvos => '17.0'
   }
   s.swift_version  = '5.4'
   s.source         = { git: 'https://github.com/RSSNext/follow' }
@@ -25,6 +26,7 @@ Pod::Spec.new do |s|
   # Swift/Objective-C compatibility
   s.pod_target_xcconfig = {
     'DEFINES_MODULE' => 'YES',
+    'OTHER_SWIFT_FLAGS' => "$(inherited) #{new_arch_enabled ? '-DRCT_NEW_ARCH_ENABLED' : ''}",
   }
 
   s.source_files = "**/*.{h,m,mm,swift,hpp,cpp,js}"
