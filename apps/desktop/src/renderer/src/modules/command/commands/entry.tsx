@@ -176,6 +176,25 @@ export const useRegisterEntryCommands = () => {
       },
     },
     {
+      id: COMMAND_ID.entry.exportAsPDF,
+      label: t("entry_actions.export_as_pdf"),
+      icon: <i className="i-mgc-pdf-cute-re" />,
+      run: ({ entryId }) => {
+        const entry = useEntryStore.getState().flatMapEntries[entryId]
+
+        if (!entry) {
+          toast.error("Failed to export as pdf: entry is not available", { duration: 3000 })
+          return
+        }
+
+        window.print()
+
+        toast(t("entry_actions.exported_notify"), {
+          duration: 1000,
+        })
+      },
+    },
+    {
       id: COMMAND_ID.entry.copyTitle,
       label: t("entry_actions.copy_title"),
       icon: <i className="i-mgc-copy-cute-re" />,

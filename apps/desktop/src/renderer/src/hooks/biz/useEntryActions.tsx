@@ -147,6 +147,10 @@ export const useEntryActions = ({ entryId, view }: { entryId: string; view?: Fee
         shortcut: shortcuts.entry.copyLink.key,
       },
       {
+        id: COMMAND_ID.entry.exportAsPDF,
+        onClick: runCmdFn(COMMAND_ID.entry.exportAsPDF, [{ entryId }]),
+      },
+      {
         id: COMMAND_ID.entry.openInBrowser,
         onClick: runCmdFn(COMMAND_ID.entry.openInBrowser, [{ entryId }]),
       },
