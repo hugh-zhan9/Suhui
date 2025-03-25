@@ -45,6 +45,9 @@ patchedDependencies:
   re-resizable@6.11.2:
     hash: adb774d32dfdf0ef779d30a8e9e35ba7f3d07706cfe61907db2a53775ea09f23
     path: patches/re-resizable@6.11.2.patch
+  react-native-screens:
+    hash: 4904c53aa4ed573c7e31df357d1b73feeefa4f92b6d41d4157a611401b34345d
+    path: patches/react-native-screens.patch
   react-native-sheet-transitions:
     hash: 8a10ea43dd4d194a581d3d765a1eb3e864441b968d5d5729382a9986f710ef32
     path: patches/react-native-sheet-transitions.patch
@@ -994,7 +997,7 @@ importers:
         version: 5.3.0(react-native@0.77.1(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1)
       react-native-screens:
         specifier: 4.9.2
-        version: 4.9.2(react-native@0.77.1(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1)
+        version: 4.9.2(patch_hash=4904c53aa4ed573c7e31df357d1b73feeefa4f92b6d41d4157a611401b34345d)(react-native@0.77.1(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1)
       react-native-sheet-transitions:
         specifier: 0.1.2
         version: 0.1.2(patch_hash=8a10ea43dd4d194a581d3d765a1eb3e864441b968d5d5729382a9986f710ef32)(react-native-gesture-handler@2.24.0(react-native@0.77.1(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1))(react-native-reanimated@3.17.1(@babel/core@7.26.10)(react-native@0.77.1(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1))(react-native@0.77.1(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1)
@@ -31162,7 +31165,7 @@ snapshots:
       react: 18.3.1
       react-native: 0.77.1(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5)
 
-  react-native-screens@4.9.2(react-native@0.77.1(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1):
+  react-native-screens@4.9.2(patch_hash=4904c53aa4ed573c7e31df357d1b73feeefa4f92b6d41d4157a611401b34345d)(react-native@0.77.1(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1):
     dependencies:
       react: 18.3.1
       react-freeze: 1.0.4(react@18.3.1)
