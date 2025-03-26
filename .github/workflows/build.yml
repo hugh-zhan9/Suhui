@@ -214,7 +214,7 @@ jobs:
           api-token: "${{ secrets.SIGNPATH_API_TOKEN }}"
           organization-id: "8c651516-fdaf-40a1-9fea-001dffde850e"
           project-slug: "Folo"
-          signing-policy-slug: "release-signing"
+          signing-policy-slug: "${{ (github.ref_type == 'tag' || github.event.inputs.tag_version == 'true') && 'release-signing' || 'test-signing' }}"
           artifact-configuration-slug: "github"
           github-artifact-id: "${{ steps.upload-unsigned-windows-x64-exe.outputs.artifact-id }}"
           output-artifact-directory: "apps/desktop/out/make/"
