@@ -33,6 +33,10 @@ export const useWhoami = () => {
   return useUserStore((state) => state.whoami)
 }
 
+export const useRole = () => {
+  return useUserStore((state) => state.role)
+}
+
 export const useUser = (userId?: string) => {
   return useUserStore((state) => (userId ? state.users[userId] : undefined))
 }

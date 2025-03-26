@@ -1,3 +1,4 @@
+import { UserRole } from "@follow/constants"
 import type { AuthSession } from "@follow/shared"
 import { getAnalytics } from "@react-native-firebase/analytics"
 
@@ -20,13 +21,13 @@ export type MeModel = UserModel & {
 type UserStore = {
   users: Record<string, UserModel>
   whoami: MeModel | null
-  role: "user" | "trial"
+  role: UserRole
 }
 
 export const useUserStore = createZustandStore<UserStore>("user")(() => ({
   users: {},
   whoami: null,
-  role: "trial",
+  role: UserRole.Trial,
 }))
 
 const get = useUserStore.getState
@@ -41,7 +42,7 @@ class UserSyncService {
       const user = honoMorph.toUser(res.user, true)
       immerSet((state) => {
         state.whoami = user
-        state.role = res.role
+        state.role = res.role as UserRole
       })
       userActions.upsertMany([user])
 
@@ -152,6 +153,17 @@ class UserSyncService {
       userActions.upsertMany([{ ...whoami, email }])
     })
     await tx.run()
+  }
+
+  async applyInvitationCode(code: string) {
+    const res = await apiClient.invitations.use.$post({ json: { code } })
+    if (res.code === 0) {
+      immerSet((state) => {
+        state.role = UserRole.User
+      })
+    }
+
+    return res
   }
 }
 

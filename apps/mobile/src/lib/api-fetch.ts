@@ -42,7 +42,12 @@ export const apiFetch = ofetch.create({
     if (response.status === 401) {
       userActions.removeCurrentUser()
     } else {
-      console.error(error)
+      try {
+        const json = JSON.parse(response._data)
+        console.error(`Request ${request as string} failed with status ${response.status}`, json)
+      } catch {
+        console.error(`Request ${request as string} failed with status ${response.status}`, error)
+      }
     }
   },
 })
