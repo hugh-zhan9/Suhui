@@ -1,9 +1,11 @@
+import type { AuthSession } from "@follow/shared"
 import { getAnalytics } from "@react-native-firebase/analytics"
 
 import type { UserSchema } from "@/src/database/schemas/types"
 import { apiClient } from "@/src/lib/api-fetch"
 import { changeEmail, sendVerificationEmail, twoFactor, updateUser } from "@/src/lib/auth"
 import { toast } from "@/src/lib/toast"
+import { honoMorph } from "@/src/morph/hono"
 import { UserService } from "@/src/services/user"
 
 import { createImmerSetter, createTransaction, createZustandStore } from "../internal/helper"
@@ -18,11 +20,13 @@ export type MeModel = UserModel & {
 type UserStore = {
   users: Record<string, UserModel>
   whoami: MeModel | null
+  role: "user" | "trial"
 }
 
 export const useUserStore = createZustandStore<UserStore>("user")(() => ({
   users: {},
   whoami: null,
+  role: "trial",
 }))
 
 const get = useUserStore.getState
@@ -30,14 +34,16 @@ const immerSet = createImmerSetter(useUserStore)
 
 class UserSyncService {
   async whoami() {
-    const res = (await (apiClient["better-auth"] as any)["get-session"].$get()) as {
-      user: UserModel
-    } | null // TODO
+    const res = (await (apiClient["better-auth"] as any)[
+      "get-session"
+    ].$get()) as AuthSession | null
     if (res) {
+      const user = honoMorph.toUser(res.user, true)
       immerSet((state) => {
-        state.whoami = res.user
+        state.whoami = user
+        state.role = res.role
       })
-      userActions.upsertMany([res.user])
+      userActions.upsertMany([user])
 
       try {
         await Promise.all([
