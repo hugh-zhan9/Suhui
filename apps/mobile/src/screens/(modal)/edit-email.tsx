@@ -44,6 +44,8 @@ export const EditEmailScreen: NavigationControllerView = () => {
     },
   })
 
+  const [isSendingVerificationEmail, setIsSendingVerificationEmail] = useState(false)
+
   return (
     <SafeNavigationScrollView className="bg-system-grouped-background">
       <NavigationBlurEffectHeader
@@ -83,7 +85,16 @@ export const EditEmailScreen: NavigationControllerView = () => {
 
         {!isValidate && (
           <GroupedInsetListCard className="mt-6">
-            <GroupedPlainButtonCell label="Send Verification Email" />
+            <GroupedPlainButtonCell
+              disabled={isSendingVerificationEmail}
+              label={
+                isSendingVerificationEmail ? "Verification Email Sent" : "Send Verification Email"
+              }
+              onPress={() => {
+                setIsSendingVerificationEmail(true)
+                userSyncService.sendVerificationEmail()
+              }}
+            />
           </GroupedInsetListCard>
         )}
       </View>
