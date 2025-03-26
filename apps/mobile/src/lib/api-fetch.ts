@@ -2,8 +2,10 @@
 import type { AppType } from "@follow/shared"
 import { FetchError, ofetch } from "ofetch"
 
+import { InvitationScreen } from "../screens/(modal)/invitation"
 import { userActions } from "../store/user/store"
 import { getCookie } from "./auth"
+import { Navigation } from "./navigation/Navigation"
 import { proxyEnv } from "./proxy-env"
 
 const { hc } = require("hono/dist/cjs/client/client") as typeof import("hono/client")
@@ -45,6 +47,10 @@ export const apiFetch = ofetch.create({
       try {
         const json = JSON.parse(response._data)
         console.error(`Request ${request as string} failed with status ${response.status}`, json)
+
+        if (json.code.toString().startsWith("11")) {
+          Navigation.rootNavigation.presentControllerView(InvitationScreen)
+        }
       } catch {
         console.error(`Request ${request as string} failed with status ${response.status}`, error)
       }
