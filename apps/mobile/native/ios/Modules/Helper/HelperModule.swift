@@ -58,18 +58,22 @@ public class HelperModule: Module {
       }
     }
 
-    Function("shareImageByHandle") { (reactTag: Int) in
+    Function("shareImageByHandle") { (reactTag: Int, url: String?) in
       DispatchQueue.main.async { [weak self] in
         guard let bridge = self?.appContext?.reactBridge else { return }
         if let sourceView = bridge.uiManager.view(forReactTag: NSNumber(value: reactTag)) {
-          
+
           let imageView = self?.findUIImageView(view: sourceView)
           guard let imageView = imageView else {
             return
           }
           guard let image = imageView.image else { return }
           let activityViewController = UIActivityViewController(
-            activityItems: [image.asActivityItemSource()], applicationActivities: nil)
+            activityItems: [
+              image.asActivityItemSource(
+                url: try? URL(string: url ?? "")
+              )
+            ], applicationActivities: nil)
           activityViewController.popoverPresentationController?.sourceView = sourceView
           activityViewController.popoverPresentationController?.sourceRect = sourceView.bounds
           activityViewController.popoverPresentationController?.permittedArrowDirections = .any

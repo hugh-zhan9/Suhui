@@ -1,5 +1,6 @@
-import UIKit
+import CoreGraphics
 import LinkPresentation
+import UIKit
 
 extension UIImage {
   private final class UIImageActivityItemSource: NSObject, UIActivityItemSource {
@@ -7,11 +8,16 @@ extension UIImage {
     var title: String?
     var url: URL?
 
-    func activityViewControllerPlaceholderItem(_ activityViewController: UIActivityViewController) -> Any {
+    func activityViewControllerPlaceholderItem(_ activityViewController: UIActivityViewController)
+      -> Any
+    {
       UIImage()
     }
 
-    func activityViewController(_ activityViewController: UIActivityViewController, itemForActivityType activityType: UIActivity.ActivityType?) -> Any? {
+    func activityViewController(
+      _ activityViewController: UIActivityViewController,
+      itemForActivityType activityType: UIActivity.ActivityType?
+    ) -> Any? {
       image
     }
 
@@ -45,7 +51,10 @@ extension UIImage {
   ) -> UIActivityItemSource {
     let itemSource = UIImageActivityItemSource()
     itemSource.image = self
-    itemSource.title = title
+    let pixelWidth = Int(self.size.width * self.scale)
+    let pixelHeight = Int(self.size.height * self.scale)
+
+    itemSource.title = title ?? "\(pixelHeight)x\(pixelWidth)"
     itemSource.url = url
     return itemSource
   }

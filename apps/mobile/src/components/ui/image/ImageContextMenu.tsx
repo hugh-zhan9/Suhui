@@ -25,7 +25,7 @@ type ImageContextMenuProps = PropsWithChildren<{
 
 interface IOSNativeImageActions {
   saveImageByHandle: (handle: number) => void
-  shareImageByHandle: (handle: number) => void
+  shareImageByHandle: (handle: number, url: string) => void
   getBase64FromImageViewByHandle: (handle: number) => Promise<{ base64: string }>
   copyImageByHandle: (handle: number) => void
 }
@@ -166,7 +166,7 @@ export const ImageContextMenu = ({ imageUrl, entryId, children }: ImageContextMe
               if (!handle) {
                 return
               }
-              getIOSNativeImageActions().shareImageByHandle(handle)
+              getIOSNativeImageActions().shareImageByHandle(handle, imageUrl)
             } else {
               const croppedImage = await getImageData()
               const { filePath, cleanup } = await createTempFile(croppedImage.base64)
