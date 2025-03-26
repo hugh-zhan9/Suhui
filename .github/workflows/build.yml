@@ -265,10 +265,10 @@ jobs:
         uses: actions/attest-build-provenance@v2
         with:
           subject-path: |
-            apps/desktop/out/make/**/*.dmg
-            apps/desktop/out/make/**/*.zip
-            apps/desktop/out/make/**/*.exe
-            apps/desktop/out/make/**/*.AppImage
+            apps/desktop/out/make/**/Folo-*.dmg
+            apps/desktop/out/make/**/Folo-*.zip
+            apps/desktop/out/make/**/Folo-*.exe
+            apps/desktop/out/make/**/Folo-*.AppImage
             apps/desktop/out/make/**/*.yml
             apps/desktop/dist/manifest.yml
             apps/desktop/dist/*.tar.gz
@@ -294,10 +294,10 @@ jobs:
           prerelease: true
           tag_name: v${{ steps.version.outputs.APP_VERSION }}
           files: |
-            apps/desktop/out/make/**/*.dmg
-            apps/desktop/out/make/**/*.zip
-            apps/desktop/out/make/**/*.exe
-            apps/desktop/out/make/**/*.AppImage
+            apps/desktop/out/make/**/Folo-*.dmg
+            apps/desktop/out/make/**/Folo-*.zip
+            apps/desktop/out/make/**/Folo-*.exe
+            apps/desktop/out/make/**/Folo-*.AppImage
             apps/desktop/out/make/**/*.yml
             apps/desktop/dist/manifest.yml
             apps/desktop/dist/*.tar.gz
