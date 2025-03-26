@@ -41,15 +41,20 @@ import {
 } from "../control"
 import { createDefineSettingItem } from "../helper/builder"
 import { createSettingBuilder } from "../helper/setting-builder"
+import {
+  useWrapEnhancedSettingItem,
+  WrapEnhancedSettingTab,
+} from "../hooks/useWrapEnhancedSettingItem"
 import { SettingItemGroup } from "../section"
 import { ContentFontSelector, UIFontSelector } from "../sections/fonts"
 
 const SettingBuilder = createSettingBuilder(useUISettingValue)
-const defineItem = createDefineSettingItem(useUISettingValue, setUISetting)
+const _defineItem = createDefineSettingItem(useUISettingValue, setUISetting)
 
 export const SettingAppearance = () => {
   const { t } = useTranslation("settings")
   const isMobile = useMobile()
+  const defineItem = useWrapEnhancedSettingItem(_defineItem, WrapEnhancedSettingTab.Appearance)
   return (
     <div className="mt-4">
       <SettingBuilder
@@ -95,7 +100,6 @@ export const SettingAppearance = () => {
           {
             type: "title",
             value: t("appearance.fonts"),
-            disabled: isMobile,
           },
           !isMobile && UIFontSelector,
           !isMobile && TextSize,
