@@ -3,8 +3,10 @@ import { useMemo, useState } from "react"
 import { View } from "react-native"
 
 import { HeaderSubmitButton } from "@/src/components/layouts/header/HeaderElements"
-import { SafeModalScrollView } from "@/src/components/layouts/views/SafeModalScrollView"
-import { NavigationBlurEffectHeader } from "@/src/components/layouts/views/SafeNavigationScrollView"
+import {
+  NavigationBlurEffectHeader,
+  SafeNavigationScrollView,
+} from "@/src/components/layouts/views/SafeNavigationScrollView"
 import { PlainTextField } from "@/src/components/ui/form/TextField"
 import {
   GroupedInsetListCard,
@@ -43,7 +45,7 @@ export const EditEmailScreen: NavigationControllerView = () => {
   })
 
   return (
-    <SafeModalScrollView className="bg-system-grouped-background">
+    <SafeNavigationScrollView className="bg-system-grouped-background">
       <NavigationBlurEffectHeader
         title="Edit Email"
         headerRight={
@@ -85,6 +87,6 @@ export const EditEmailScreen: NavigationControllerView = () => {
           </GroupedInsetListCard>
         )}
       </View>
-    </SafeModalScrollView>
+    </SafeNavigationScrollView>
   )
 }
