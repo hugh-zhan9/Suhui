@@ -1,3 +1,5 @@
+import type { FirebaseAnalyticsTypes } from "@react-native-firebase/analytics"
+
 import { Api } from "./api"
 
 export type TrackHandlerPayload =
@@ -69,6 +71,7 @@ export type OpenPanelOptions = {
   filter?: (payload: TrackHandlerPayload) => boolean
   disabled?: boolean
   headers?: Record<string, string>
+  firebaseAnalytics?: FirebaseAnalyticsTypes.Module
 }
 
 export class OpenPanel {
@@ -76,6 +79,7 @@ export class OpenPanel {
   profileId?: string
   global?: Record<string, unknown>
   queue: TrackHandlerPayload[] = []
+  firebaseAnalytics?: FirebaseAnalyticsTypes.Module
 
   constructor(public options: OpenPanelOptions) {
     const defaultHeaders: Record<string, string> = {
@@ -94,6 +98,8 @@ export class OpenPanel {
       baseUrl: options.apiUrl || "https://api.openpanel.dev",
       defaultHeaders,
     })
+
+    this.firebaseAnalytics = options.firebaseAnalytics
   }
 
   ready() {
@@ -130,7 +136,7 @@ export class OpenPanel {
   }
 
   async track(name: string, properties?: TrackProperties) {
-    return this.send({
+    this.send({
       type: "track",
       payload: {
         name,
@@ -141,6 +147,30 @@ export class OpenPanel {
         },
       },
     })
+
+    delete properties?.__code
+    switch (name) {
+      case "identify": {
+        break
+      }
+      case "on_boarding": {
+        if (properties?.step === 0) {
+          this.firebaseAnalytics?.logTutorialBegin()
+        } else if (properties?.done) {
+          this.firebaseAnalytics?.logTutorialComplete()
+        }
+        break
+      }
+      case "register": {
+        this.firebaseAnalytics?.logSignUp({
+          method: properties?.type as string,
+        })
+        break
+      }
+      default: {
+        this.firebaseAnalytics?.logEvent(name, properties)
+      }
+    }
   }
 
   async identify(payload: IdentifyPayload) {
@@ -150,7 +180,7 @@ export class OpenPanel {
     }
 
     if (Object.keys(payload).length > 1) {
-      return this.send({
+      this.send({
         type: "identify",
         payload: {
           ...payload,
@@ -161,6 +191,13 @@ export class OpenPanel {
         },
       })
     }
+
+    this.firebaseAnalytics?.setUserId(payload.profileId)
+    this.firebaseAnalytics?.setUserProperties({
+      email: payload.email ?? null,
+      name: payload.lastName ?? null,
+      avatar: payload.avatar ?? null,
+    })
   }
 
   async alias(payload: AliasPayload) {
