@@ -161,10 +161,37 @@ export class OpenPanel {
         }
         break
       }
+      case "navigate_entry": {
+        this.firebaseAnalytics?.logSelectContent({
+          content_type: "entry",
+          item_id: `${properties?.feedId}/${properties?.entryId}`,
+        })
+        break
+      }
+      case "user_login": {
+        this.firebaseAnalytics?.logLogin({
+          method: properties?.type as string,
+        })
+        break
+      }
       case "register": {
         this.firebaseAnalytics?.logSignUp({
           method: properties?.type as string,
         })
+        break
+      }
+      case "subscribe": {
+        let group_id
+        if (properties?.listId) {
+          group_id = `list/${properties.listId}/${properties.view}`
+        } else if (properties?.feedId) {
+          group_id = `feed/${properties.feedId}/${properties.view}`
+        }
+        if (group_id) {
+          this.firebaseAnalytics?.logJoinGroup({
+            group_id,
+          })
+        }
         break
       }
       default: {

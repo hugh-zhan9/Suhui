@@ -79,8 +79,9 @@ export class TrackerPoints {
     this.track(TrackerMapper.AppInit, props)
   }
 
-  userLogin(userId: string) {
-    this.track(TrackerMapper.UserLogin, { userId })
+  // this is a special point for firebase analytics, do not change its parameters
+  userLogin(props: { type: "email" | "social" }) {
+    this.track(TrackerMapper.UserLogin, props)
   }
 
   /**
@@ -90,9 +91,11 @@ export class TrackerPoints {
     this.track(TrackerMapper.UiRenderInit, { time: spentTime })
   }
 
+  // this is a special point for firebase analytics, do not change its parameters
   navigateEntry(props: { feedId?: string; entryId?: string; timelineId?: string }) {
     this.track(TrackerMapper.NavigateEntry, props)
   }
+
   boostSent(props: { amount: string; feedId: string }) {
     this.track(TrackerMapper.BoostSent, props)
   }
@@ -151,14 +154,17 @@ export class TrackerPoints {
     this.track(TrackerMapper.TipSent, props)
   }
 
+  // this is a special point for firebase analytics, do not change its parameters
   register(props: { type: "email" | "social" }) {
     this.track(TrackerMapper.Register, props)
   }
 
+  // this is a special point for firebase analytics, do not change its parameters
   onBoarding(props: { step: number; done: boolean }) {
     this.track(TrackerMapper.OnBoarding, props)
   }
 
+  // this is a special point for firebase analytics, do not change its parameters
   subscribe(props: { feedId?: string; listId?: string; view?: number }) {
     this.track(TrackerMapper.Subscribe, props)
   }
