@@ -1,5 +1,6 @@
 import type { FirebaseAnalyticsTypes } from "@react-native-firebase/analytics"
 
+import type { Optional } from "../points"
 import { Api } from "./api"
 
 export type TrackHandlerPayload =
@@ -71,11 +72,10 @@ export type OpenPanelOptions = {
   filter?: (payload: TrackHandlerPayload) => boolean
   disabled?: boolean
   headers?: Record<string, string>
-  firebaseAnalytics?: FirebaseAnalyticsTypes.Module
 }
 
 export class OpenPanel {
-  api: Api
+  api: Optional<Api, "setHeaders">
   profileId?: string
   global?: Record<string, unknown>
   queue: TrackHandlerPayload[] = []
@@ -98,8 +98,6 @@ export class OpenPanel {
       baseUrl: options.apiUrl || "https://api.openpanel.dev",
       defaultHeaders,
     })
-
-    this.firebaseAnalytics = options.firebaseAnalytics
   }
 
   ready() {
@@ -125,7 +123,7 @@ export class OpenPanel {
   }
 
   setHeaders(headers: Record<string, string>) {
-    this.api.setHeaders(headers)
+    this.api.setHeaders?.(headers)
   }
 
   setGlobalProperties(properties: Record<string, unknown>) {
@@ -136,7 +134,7 @@ export class OpenPanel {
   }
 
   async track(name: string, properties?: TrackProperties) {
-    this.send({
+    return this.send({
       type: "track",
       payload: {
         name,
@@ -147,57 +145,6 @@ export class OpenPanel {
         },
       },
     })
-
-    delete properties?.__code
-    switch (name) {
-      case "identify": {
-        break
-      }
-      case "on_boarding": {
-        if (properties?.step === 0) {
-          this.firebaseAnalytics?.logTutorialBegin()
-        } else if (properties?.done) {
-          this.firebaseAnalytics?.logTutorialComplete()
-        }
-        break
-      }
-      case "navigate_entry": {
-        this.firebaseAnalytics?.logSelectContent({
-          content_type: "entry",
-          item_id: `${properties?.feedId}/${properties?.entryId}`,
-        })
-        break
-      }
-      case "user_login": {
-        this.firebaseAnalytics?.logLogin({
-          method: properties?.type as string,
-        })
-        break
-      }
-      case "register": {
-        this.firebaseAnalytics?.logSignUp({
-          method: properties?.type as string,
-        })
-        break
-      }
-      case "subscribe": {
-        let group_id
-        if (properties?.listId) {
-          group_id = `list/${properties.listId}/${properties.view}`
-        } else if (properties?.feedId) {
-          group_id = `feed/${properties.feedId}/${properties.view}`
-        }
-        if (group_id) {
-          this.firebaseAnalytics?.logJoinGroup({
-            group_id,
-          })
-        }
-        break
-      }
-      default: {
-        this.firebaseAnalytics?.logEvent(name, properties)
-      }
-    }
   }
 
   async identify(payload: IdentifyPayload) {
@@ -207,7 +154,7 @@ export class OpenPanel {
     }
 
     if (Object.keys(payload).length > 1) {
-      this.send({
+      return this.send({
         type: "identify",
         payload: {
           ...payload,
@@ -218,13 +165,6 @@ export class OpenPanel {
         },
       })
     }
-
-    this.firebaseAnalytics?.setUserId(payload.profileId)
-    this.firebaseAnalytics?.setUserProperties({
-      email: payload.email ?? null,
-      name: payload.lastName ?? null,
-      avatar: payload.avatar ?? null,
-    })
   }
 
   async alias(payload: AliasPayload) {
