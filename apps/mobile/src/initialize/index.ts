@@ -15,7 +15,7 @@ export const initializeApp = async () => {
 
   const now = Date.now()
   initializeDb()
-  initAnalytics()
+  await initAnalytics()
 
   await apm("migrateDatabase", migrateDatabase)
   initializeDayjs()

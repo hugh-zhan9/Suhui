@@ -1,10 +1,11 @@
 import { identifyUserOpenPanel, setOpenPanelTracker } from "@follow/tracker"
 import { nativeApplicationVersion, nativeBuildVersion } from "expo-application"
 
+import { getUserAgent } from "../lib/native/user-agent"
 import { op } from "../lib/op"
 import { whoami } from "../store/user/getters"
 
-export const initAnalytics = () => {
+export const initAnalytics = async () => {
   setOpenPanelTracker(op.track.bind(op))
   const user = whoami()
   if (user) {
@@ -15,5 +16,9 @@ export const initAnalytics = () => {
     build: "rn",
     version: nativeApplicationVersion,
     buildId: nativeBuildVersion,
+  })
+
+  op.setHeaders({
+    "User-Agent": await getUserAgent(),
   })
 }
