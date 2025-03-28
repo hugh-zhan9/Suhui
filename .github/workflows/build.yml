@@ -209,6 +209,7 @@ jobs:
           retention-days: 90
 
       - uses: signpath/github-action-submit-signing-request@v1.1
+        continue-on-error: true
         if: runner.os == 'windows' && (github.ref_type == 'tag' || github.event.inputs.tag_version == 'true')
         with:
           api-token: "${{ secrets.SIGNPATH_API_TOKEN }}"
