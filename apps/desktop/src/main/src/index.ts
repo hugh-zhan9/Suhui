@@ -39,6 +39,10 @@ const buildSafeHeaders = createBuildSafeHeaders(env.VITE_WEB_URL, [
   env.VITE_OPENPANEL_API_URL || "",
   IMAGE_PROXY_URL,
   env.VITE_API_URL,
+  "https://firebase.googleapis.com",
+  "https://firebaseinstallations.googleapis.com",
+  "https://www.googletagmanager.com",
+  "https://www.google-analytics.com",
 ])
 
 function bootstrap() {
