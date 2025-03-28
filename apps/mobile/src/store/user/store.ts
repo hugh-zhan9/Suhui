@@ -100,7 +100,6 @@ class UserSyncService {
 
     const method = enabled ? twoFactor.enable : twoFactor.disable
 
-    // @ts-expect-error
     const res = await method({ password })
 
     if (!res.error) {

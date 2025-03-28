@@ -44,6 +44,7 @@ export const EntryReadHistory = ({ entryId }: { entryId: string }) => {
                   image: user.image,
                   isMe: 0,
                   email: null,
+                  emailVerified: null,
                 },
               ])
 
