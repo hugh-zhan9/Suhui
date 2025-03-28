@@ -38,13 +38,13 @@ export async function translate({
   extraFields,
   part,
 }: {
-  entry: FlatEntryModel
+  entry?: FlatEntryModel | null
   view?: number
   language?: SupportedLanguages
   extraFields?: string[]
   part?: string
 }) {
-  if (!language) {
+  if (!language || !entry) {
     return null
   }
   let fields = language && view !== undefined ? views[view!]!.translation.split(",") : []
@@ -64,17 +64,17 @@ export async function translate({
     }
   })
 
-  if (fields.length > 0) {
-    const res = await apiClient.ai.translation.$get({
-      query: {
-        id: entry.entries.id,
-        language,
-        fields: fields?.join(",") || "title",
-        part,
-      },
-    })
-    return res.data
-  } else {
+  if (fields.length === 0) {
     return null
   }
+
+  const res = await apiClient.ai.translation.$get({
+    query: {
+      id: entry.entries.id,
+      language,
+      fields: fields?.join(",") || "title",
+      part,
+    },
+  })
+  return res.data
 }

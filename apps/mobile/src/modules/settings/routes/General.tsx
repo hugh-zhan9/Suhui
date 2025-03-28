@@ -19,6 +19,8 @@ import type { NavigationControllerView } from "@/src/lib/navigation/types"
 
 export const GeneralScreen: NavigationControllerView = () => {
   const locales = useLocales()
+  const translation = useGeneralSettingKey("translation")
+  const summary = useGeneralSettingKey("summary")
   const actionLanguage = useGeneralSettingKey("actionLanguage")
   const autoGroup = useGeneralSettingKey("autoGroup")
   const showUnreadOnLaunch = useGeneralSettingKey("unreadOnly")
@@ -40,9 +42,31 @@ export const GeneralScreen: NavigationControllerView = () => {
 
           <Text className="text-label">{(locales[0]?.languageTag, "English")}</Text>
         </GroupedInsetListBaseCell>
+      </GroupedInsetListCard>
 
+      {/* Content Behavior */}
+      <GroupedInsetListSectionHeader label="Action" />
+      <GroupedInsetListCard>
+        <GroupedInsetListCell label="AI Summary">
+          <Switch
+            size="sm"
+            value={summary}
+            onValueChange={(value) => {
+              setGeneralSetting("summary", value)
+            }}
+          />
+        </GroupedInsetListCell>
+        <GroupedInsetListCell label="AI Translation">
+          <Switch
+            size="sm"
+            value={translation}
+            onValueChange={(value) => {
+              setGeneralSetting("translation", value)
+            }}
+          />
+        </GroupedInsetListCell>
         <GroupedInsetListBaseCell>
-          <Text className="text-label">Action Language</Text>
+          <Text className="text-label">Language</Text>
 
           <View className="w-[150px]">
             <Select

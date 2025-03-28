@@ -5,9 +5,7 @@ import { cn } from "@follow/utils/utils"
 import type { FC } from "react"
 import { memo } from "react"
 
-import { useActionLanguage } from "~/atoms/settings/general"
-import { useAuthQuery } from "~/hooks/common"
-import { Queries } from "~/queries"
+import { useEntryTranslation } from "~/store/ai/hook"
 import type { FlatEntryModel } from "~/store/entry"
 import { useEntry } from "~/store/entry/hooks"
 
@@ -21,22 +19,7 @@ interface EntryItemProps {
   view?: number
 }
 function EntryItemImpl({ entry, view }: { entry: FlatEntryModel; view?: number }) {
-  const actionLanguage = useActionLanguage()
-  const translation = useAuthQuery(
-    Queries.ai.translation({
-      entry,
-      view,
-      language: actionLanguage,
-    }),
-    {
-      enabled: !!entry.settings?.translation,
-      refetchOnMount: false,
-      refetchOnWindowFocus: false,
-      meta: {
-        persist: true,
-      },
-    },
-  )
+  const translation = useEntryTranslation({ entry })
 
   const Item: EntryListItemFC = getItemComponentByView(view as FeedViewType)
 

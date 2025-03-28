@@ -4,6 +4,8 @@ export const defaultGeneralSettings: GeneralSettings = {
   // App
   appLaunchOnStartup: false,
   language: "en",
+  translation: false,
+  summary: false,
   actionLanguage: "default",
 
   // mobile app

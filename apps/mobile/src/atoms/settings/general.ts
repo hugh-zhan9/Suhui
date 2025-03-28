@@ -6,6 +6,10 @@ const createDefaultSettings = (): GeneralSettings => ({
   // App
 
   language: "en",
+
+  // Action
+  summary: false,
+  translation: false,
   actionLanguage: "zh-CN",
 
   // Data control

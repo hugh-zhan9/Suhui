@@ -3,8 +3,8 @@ import { FeedViewType, UserRole } from "@follow/constants"
 import { IN_ELECTRON } from "@follow/shared/constants"
 import { useCallback, useMemo } from "react"
 
-import { useShowAISummary } from "~/atoms/ai-summary"
-import { useShowAITranslation } from "~/atoms/ai-translation"
+import { useShowAISummaryAuto, useShowAISummaryOnce } from "~/atoms/ai-summary"
+import { useShowAITranslationAuto, useShowAITranslationOnce } from "~/atoms/ai-translation"
 import {
   getReadabilityStatus,
   ReadabilityStatus,
@@ -85,8 +85,10 @@ export const useEntryActions = ({ entryId, view }: { entryId: string; view?: Fee
   const isInbox = !!inbox
 
   const isShowSourceContent = useShowSourceContent()
-  const isShowAISummary = useShowAISummary()
-  const isShowAITranslation = useShowAITranslation()
+  const isShowAISummaryAuto = useShowAISummaryAuto(entry)
+  const isShowAISummaryOnce = useShowAISummaryOnce()
+  const isShowAITranslationAuto = useShowAITranslationAuto(entry)
+  const isShowAITranslationOnce = useShowAITranslationOnce()
 
   const runCmdFn = useRunCommandFn()
   const hasEntry = !!entry
@@ -164,22 +166,22 @@ export const useEntryActions = ({ entryId, view }: { entryId: string; view?: Fee
         id: COMMAND_ID.entry.toggleAISummary,
         onClick: runCmdFn(COMMAND_ID.entry.toggleAISummary, []),
         hide:
-          !!entry?.settings?.summary ||
+          isShowAISummaryAuto ||
           ([FeedViewType.SocialMedia, FeedViewType.Videos] as (number | undefined)[]).includes(
             entry?.view,
           ),
-        active: isShowAISummary,
+        active: isShowAISummaryOnce,
         disabled: userRole === UserRole.Trial,
       },
       {
         id: COMMAND_ID.entry.toggleAITranslation,
         onClick: runCmdFn(COMMAND_ID.entry.toggleAITranslation, []),
         hide:
-          !!entry?.settings?.translation ||
+          isShowAITranslationAuto ||
           ([FeedViewType.SocialMedia, FeedViewType.Videos] as (number | undefined)[]).includes(
             entry?.view,
           ),
-        active: isShowAITranslation,
+        active: isShowAITranslationOnce,
         disabled: userRole === UserRole.Trial,
       },
       {
@@ -204,8 +206,6 @@ export const useEntryActions = ({ entryId, view }: { entryId: string; view?: Fee
     entry?.collections,
     entry?.entries.url,
     entry?.read,
-    entry?.settings?.summary,
-    entry?.settings?.translation,
     entry?.view,
     entryId,
     feed?.id,
@@ -213,8 +213,10 @@ export const useEntryActions = ({ entryId, view }: { entryId: string; view?: Fee
     hasEntry,
     inList,
     isInbox,
-    isShowAISummary,
-    isShowAITranslation,
+    isShowAISummaryAuto,
+    isShowAISummaryOnce,
+    isShowAITranslationAuto,
+    isShowAITranslationOnce,
     isShowSourceContent,
     runCmdFn,
     userRole,

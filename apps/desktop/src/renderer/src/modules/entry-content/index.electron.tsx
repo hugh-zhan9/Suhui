@@ -9,23 +9,20 @@ import { ErrorBoundary } from "@sentry/react"
 import * as React from "react"
 import { useEffect, useMemo, useRef } from "react"
 
-import { useShowAITranslation } from "~/atoms/ai-translation"
 import { useEntryIsInReadability } from "~/atoms/readability"
-import { useActionLanguage } from "~/atoms/settings/general"
 import { useUISettingKey } from "~/atoms/settings/ui"
 import { ShadowDOM } from "~/components/common/ShadowDOM"
 import { useInPeekModal } from "~/components/ui/modal/inspire/PeekModal"
 import { useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
 import { useAuthQuery } from "~/hooks/common"
-import { checkLanguage } from "~/lib/translate"
 import { WrappedElementProvider } from "~/providers/wrapped-element-provider"
 import { Queries } from "~/queries"
+import { useEntryTranslation } from "~/store/ai/hook"
 import { useEntry } from "~/store/entry"
 import { useFeedById } from "~/store/feed"
 import { useInboxById } from "~/store/inbox"
 
 import { EntryContentHTMLRenderer } from "../renderer/html"
-import { getTranslationCache, setTranslationCache } from "./atoms"
 import { EntryTimelineSidebar } from "./components/EntryTimelineSidebar"
 import { EntryTitle } from "./components/EntryTitle"
 import { SourceContentPanel } from "./components/SourceContentView"
@@ -116,43 +113,14 @@ export const EntryContent: Component<EntryContentProps> = ({
     [entry?.entries.media, data?.entries.media],
   )
   const customCSS = useUISettingKey("customCSS")
-  const showAITranslation = useShowAITranslation()
-  const actionLanguage = useActionLanguage()
+
+  const contentTranslated = useEntryTranslation({ entry, extraFields: ["content"] })
 
   if (!entry) return null
 
-  const content = entry?.entries.content ?? data?.entries.content
-
-  const translate = async (html: HTMLElement | null) => {
-    if (!html || !entry) return
-
-    const fullText = html.textContent ?? ""
-    if (!fullText) return
-
-    const translation = showAITranslation ? actionLanguage : undefined
-
-    if (translation) {
-      const isLanguageMatch = checkLanguage({
-        content: fullText,
-        language: translation,
-      })
-      if (isLanguageMatch) {
-        return
-      }
-    }
-
-    const { immersiveTranslate } = await import("~/lib/immersive-translate")
-    immersiveTranslate({
-      html,
-      entry,
-      targetLanguage: translation,
-      cache: {
-        get: (key: string) => getTranslationCache()[key],
-        set: (key: string, value: string) =>
-          setTranslationCache({ ...getTranslationCache(), [key]: value }),
-      },
-    })
-  }
+  const entryContent = entry?.entries.content ?? data?.entries.content
+  const translatedContent = contentTranslated.data?.content
+  const content = translatedContent || entryContent
 
   const isInbox = !!inbox
 
@@ -203,7 +171,6 @@ export const EntryContent: Component<EntryContentProps> = ({
                           view={view}
                           feedId={feed?.id}
                           entryId={entryId}
-                          handleTranslate={translate}
                           mediaInfo={mediaInfo}
                           noMedia={noMedia}
                           accessory={contentAccessories}
@@ -231,7 +198,7 @@ export const EntryContent: Component<EntryContentProps> = ({
                 <div className="center mt-16 min-w-0">
                   {isPending ? (
                     <EntryContentLoading
-                      icon={!isInbox ? (feed as FeedModel)?.siteUrl! : undefined}
+                      icon={!isInbox ? (feed as FeedModel)?.siteUrl : undefined}
                     />
                   ) : error ? (
                     <div className="center flex min-w-0 flex-col gap-2">

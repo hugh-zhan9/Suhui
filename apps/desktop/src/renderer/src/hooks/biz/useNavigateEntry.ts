@@ -5,8 +5,8 @@ import type { FeedViewType } from "@follow/constants"
 import { tracker } from "@follow/tracker"
 import { useCallback } from "react"
 
-import { disableShowAISummary } from "~/atoms/ai-summary"
-import { disableShowAITranslation } from "~/atoms/ai-translation"
+import { disableShowAISummaryOnce } from "~/atoms/ai-summary"
+import { disableShowAITranslationOnce } from "~/atoms/ai-translation"
 import { resetShowSourceContent } from "~/atoms/source-content"
 import {
   ROUTE_ENTRY_PENDING,
@@ -79,8 +79,8 @@ export const navigateEntry = (options: NavigateEntryOptions) => {
   }
 
   resetShowSourceContent()
-  disableShowAISummary()
-  disableShowAITranslation()
+  disableShowAISummaryOnce()
+  disableShowAITranslationOnce()
 
   tracker.navigateEntry({
     feedId: finalFeedId,

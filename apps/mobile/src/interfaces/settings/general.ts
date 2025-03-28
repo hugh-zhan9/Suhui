@@ -1,5 +1,8 @@
 export interface GeneralSettings {
   language: string
+
+  summary: boolean
+  translation: boolean
   actionLanguage: string
 
   sendAnonymousData: boolean
