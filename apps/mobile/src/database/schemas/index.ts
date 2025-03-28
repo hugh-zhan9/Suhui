@@ -67,6 +67,7 @@ export const usersTable = sqliteTable("users", {
   name: text("name"),
   image: text("image"),
   isMe: integer("is_me").notNull(),
+  emailVerified: integer("email_verified", { mode: "boolean" }),
 })
 
 export const entriesTable = sqliteTable("entries", {

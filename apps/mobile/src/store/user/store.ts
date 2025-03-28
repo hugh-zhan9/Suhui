@@ -40,7 +40,7 @@ class UserSyncService {
     if (res) {
       const user = honoMorph.toUser(res.user, true)
       immerSet((state) => {
-        state.whoami = user
+        state.whoami = { ...user, emailVerified: res.user.emailVerified }
         state.role = res.role as UserRole
       })
       userActions.upsertMany([user])
@@ -99,6 +99,8 @@ class UserSyncService {
     if (!me) throw new Error("user not login")
 
     const method = enabled ? twoFactor.enable : twoFactor.disable
+
+    // @ts-expect-error
     const res = await method({ password })
 
     if (!res.error) {
@@ -160,7 +162,7 @@ class UserActions {
       for (const user of users) {
         state.users[user.id] = user
         if (user.isMe) {
-          state.whoami = user
+          state.whoami = { ...user, emailVerified: user.emailVerified ?? false }
         }
       }
     })

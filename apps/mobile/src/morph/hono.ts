@@ -210,6 +210,7 @@ class Morph {
       handle: data.handle,
       image: data.image,
       isMe: isMe ? 1 : 0,
+      emailVerified: data.emailVerified,
     }
   }
 }
