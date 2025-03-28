@@ -245,7 +245,7 @@ jobs:
         with:
           name: windows-x64-appx
           path: |
-            apps/desktop/out/make/**/*x64.appx
+            apps/desktop/out/make/**/*.appx
           retention-days: 90
 
       - name: Upload file (linux-x64-appimage)
