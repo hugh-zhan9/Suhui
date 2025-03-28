@@ -57,7 +57,9 @@ export const checkForAppUpdates = async () => {
         return
       }
     }
-    return autoUpdater.checkForUpdates()
+    if (appUpdaterConfig.enableCoreUpdate) {
+      return autoUpdater.checkForUpdates()
+    }
   } catch (e) {
     logger.error("Error checking for updates", e)
   } finally {
@@ -124,7 +126,7 @@ export const registerUpdater = async () => {
       }
     }
 
-    if (appUpdaterConfig.app.autoDownloadUpdate) {
+    if (appUpdaterConfig.app.autoDownloadUpdate && appUpdaterConfig.enableCoreUpdate) {
       downloadAppUpdate().catch((err) => {
         logger.error(err)
       })

@@ -319,7 +319,7 @@ const BackTopIndicator: Component = memo(({ className }) => {
 export function AISummary({ entryId }: { entryId: string }) {
   const { t } = useTranslation()
   const entry = useEntry(entryId)
-  const showAISummary = useShowAISummary() || !!entry?.settings?.summary
+  const showAISummary = useShowAISummary(entry)
   const actionLanguage = useActionLanguage()
   const summary = useAuthQuery(
     Queries.ai.summary({

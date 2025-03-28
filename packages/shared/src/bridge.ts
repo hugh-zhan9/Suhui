@@ -2,7 +2,7 @@ import type { BrowserWindow } from "electron"
 import { useEffect, useLayoutEffect, useRef } from "react"
 import type { toast } from "sonner"
 
-import type { GeneralSettings, UISettings } from "./interface/settings"
+import type { GeneralSettings, UISettings } from "./settings/interface"
 
 const PREFIX = "__follow"
 

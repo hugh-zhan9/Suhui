@@ -1,9 +1,11 @@
-import { getAnalytics } from "@react-native-firebase/analytics"
+import { UserRole } from "@follow/constants"
+import type { AuthSession } from "@follow/shared"
 
 import type { UserSchema } from "@/src/database/schemas/types"
 import { apiClient } from "@/src/lib/api-fetch"
 import { changeEmail, sendVerificationEmail, twoFactor, updateUser } from "@/src/lib/auth"
 import { toast } from "@/src/lib/toast"
+import { honoMorph } from "@/src/morph/hono"
 import { UserService } from "@/src/services/user"
 
 import { createImmerSetter, createTransaction, createZustandStore } from "../internal/helper"
@@ -18,11 +20,13 @@ export type MeModel = UserModel & {
 type UserStore = {
   users: Record<string, UserModel>
   whoami: MeModel | null
+  role: UserRole
 }
 
 export const useUserStore = createZustandStore<UserStore>("user")(() => ({
   users: {},
   whoami: null,
+  role: UserRole.Trial,
 }))
 
 const get = useUserStore.getState
@@ -30,27 +34,17 @@ const immerSet = createImmerSetter(useUserStore)
 
 class UserSyncService {
   async whoami() {
-    const res = (await (apiClient["better-auth"] as any)["get-session"].$get()) as {
-      user: UserModel
-    } | null // TODO
+    const res = (await (apiClient["better-auth"] as any)[
+      "get-session"
+    ].$get()) as AuthSession | null
     if (res) {
+      const user = honoMorph.toUser(res.user, true)
       immerSet((state) => {
-        state.whoami = res.user
+        state.whoami = { ...user, emailVerified: res.user.emailVerified }
+        state.role = res.role as UserRole
       })
-      userActions.upsertMany([res.user])
+      userActions.upsertMany([user])
 
-      try {
-        await Promise.all([
-          getAnalytics().setUserId(res.user.id),
-          getAnalytics().setUserProperties({
-            userId: res.user.id,
-            email: res.user.email,
-            name: res.user.name,
-          }),
-        ])
-      } catch (err: any) {
-        console.warn(`[Error] setUserId: ${err}`)
-      }
       return res.user
     } else {
       return null
@@ -105,6 +99,7 @@ class UserSyncService {
     if (!me) throw new Error("user not login")
 
     const method = enabled ? twoFactor.enable : twoFactor.disable
+
     const res = await method({ password })
 
     if (!res.error) {
@@ -147,6 +142,17 @@ class UserSyncService {
     })
     await tx.run()
   }
+
+  async applyInvitationCode(code: string) {
+    const res = await apiClient.invitations.use.$post({ json: { code } })
+    if (res.code === 0) {
+      immerSet((state) => {
+        state.role = UserRole.User
+      })
+    }
+
+    return res
+  }
 }
 
 class UserActions {
@@ -155,7 +161,7 @@ class UserActions {
       for (const user of users) {
         state.users[user.id] = user
         if (user.isMe) {
-          state.whoami = user
+          state.whoami = { ...user, emailVerified: user.emailVerified ?? false }
         }
       }
     })

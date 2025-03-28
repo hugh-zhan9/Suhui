@@ -1,6 +1,7 @@
 import { initializeDayjs } from "@follow/components/dayjs"
 import { registerGlobalContext } from "@follow/shared/bridge"
 import { IN_ELECTRON } from "@follow/shared/constants"
+import { tracker } from "@follow/tracker"
 import { repository } from "@pkg"
 import { enableMapSet } from "immer"
 
@@ -102,7 +103,6 @@ export const initializeApp = async () => {
   const { dataPersist: enabledDataPersist } = getGeneralSettings()
 
   initSentry()
-  initAnalytics()
   await apm("i18n", initI18n)
 
   let dataHydratedTime: undefined | number
@@ -112,17 +112,19 @@ export const initializeApp = async () => {
     CleanerService.cleanOutdatedData()
   }
 
+  await apm("initAnalytics", initAnalytics)
+
   const loadingTime = Date.now() - now
   appLog(`Initialize ${APP_NAME} done,`, `${loadingTime}ms`)
 
-  window.analytics?.capture("app_init", {
+  tracker.appInit({
     electron: IN_ELECTRON,
     loading_time: loadingTime,
     using_indexed_db: enabledDataPersist,
     data_hydrated_time: dataHydratedTime,
     version: APP_VERSION,
+    rn: false,
   })
-
   // Options for react-google-recaptcha
   window.recaptchaOptions = {
     useRecaptchaNet: true,

@@ -6,15 +6,14 @@ import { HTML } from "~/components/ui/markdown/HTML"
 export const EntryTranslation: Component<{
   source?: string | null
   target?: string
-  showTranslation?: boolean
   isHTML?: boolean
-}> = ({ source, target, showTranslation = true, className, isHTML }) => {
+}> = ({ source, target, className, isHTML }) => {
   const nextTarget = useMemo(() => {
-    if (!target || !showTranslation || source === target) {
+    if (!target || source === target) {
       return ""
     }
     return target
-  }, [source, target, showTranslation])
+  }, [source, target])
 
   if (!source) {
     return null

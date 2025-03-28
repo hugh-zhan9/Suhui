@@ -1,3 +1,4 @@
+import { tracker } from "@follow/tracker"
 import { useQuery } from "@tanstack/react-query"
 import { useEffect } from "react"
 
@@ -12,14 +13,26 @@ import { userSyncService, useUserStore } from "./store"
 export const whoamiQueryKey = ["user", "whoami"]
 
 export const usePrefetchSessionUser = () => {
-  useQuery({
+  const query = useQuery({
     queryKey: whoamiQueryKey,
     queryFn: () => userSyncService.whoami(),
   })
+
+  useEffect(() => {
+    if (query.data) {
+      const user = query.data
+      tracker.identify(user)
+    }
+  }, [query.data])
+  return query
 }
 
 export const useWhoami = () => {
   return useUserStore((state) => state.whoami)
+}
+
+export const useRole = () => {
+  return useUserStore((state) => state.role)
 }
 
 export const useUser = (userId?: string) => {

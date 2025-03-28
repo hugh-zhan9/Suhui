@@ -12,4 +12,5 @@ protocol ImageCarouselViewControllerProtocol {
   func copyImageToClipboard()
   func shareImage()
 
+  func isLoadError() -> Bool
 }

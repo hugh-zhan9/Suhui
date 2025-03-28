@@ -1,8 +1,17 @@
 import { cn } from "@follow/utils"
 import type { FC, PropsWithChildren, ReactNode } from "react"
-import { createElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
+import {
+  createElement,
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
 import type { LayoutChangeEvent } from "react-native"
-import { StyleSheet, TouchableOpacity, View } from "react-native"
+import { Alert, StyleSheet, TouchableOpacity, View } from "react-native"
 import type { AnimatedProps } from "react-native-reanimated"
 import Animated, {
   useAnimatedReaction,
@@ -35,6 +44,7 @@ interface NavigationHeaderButtonProps {
   canGoBack: boolean
   canDismiss: boolean
   modal?: boolean
+  promptBeforeLeave?: boolean
 }
 export interface NavigationHeaderRawProps {
   headerLeft?: FC<NavigationHeaderButtonProps>
@@ -127,6 +137,7 @@ export interface InternalNavigationHeaderProps
         canGoBack: boolean
       }>
     | ReactNode
+  promptBeforeLeave?: boolean
   headerRight?:
     | FC<{
         canGoBack: boolean
@@ -154,6 +165,8 @@ export const InternalNavigationHeader = ({
   hideableBottom,
   hideableBottomHeight,
   headerTitleAbsolute,
+
+  promptBeforeLeave,
   ...rest
 }: InternalNavigationHeaderProps) => {
   const insets = useSafeAreaInsets()
@@ -222,11 +235,27 @@ export const InternalNavigationHeader = ({
   const RightButton = headerRight ?? (Noop as FC<NavigationHeaderButtonProps>)
 
   const animatedRef = useAnimatedRef<Animated.View>()
-  useEffect(() => {
+  useLayoutEffect(() => {
     animatedRef.current?.measure((x, y, width, height) => {
       setHeaderHeight?.(height)
     })
   }, [animatedRef, setHeaderHeight])
+
+  const leftRef = useRef<View>(null)
+  const [leftWidth, setLeftWidth] = useState(0)
+  useLayoutEffect(() => {
+    leftRef.current?.measure((x, y, width) => {
+      setLeftWidth(width)
+    })
+  }, [leftRef])
+
+  const rightRef = useRef<View>(null)
+  const [rightWidth, setRightWidth] = useState(0)
+  useLayoutEffect(() => {
+    rightRef.current?.measure((x, y, width) => {
+      setRightWidth(width)
+    })
+  }, [rightRef])
 
   return (
     <Animated.View
@@ -258,9 +287,18 @@ export const InternalNavigationHeader = ({
         pointerEvents={"box-none"}
       >
         {/* Left */}
-        <View className="flex-1 flex-row items-center justify-start" pointerEvents={"box-none"}>
+        <View
+          ref={leftRef}
+          className="flex min-w-6 shrink-0 flex-row items-center justify-start"
+          pointerEvents={"box-none"}
+        >
           {typeof HeaderLeft === "function" ? (
-            <HeaderLeft canGoBack={canBack} canDismiss={canDismiss} modal={sheetModal} />
+            <HeaderLeft
+              canGoBack={canBack}
+              canDismiss={canDismiss}
+              modal={sheetModal}
+              promptBeforeLeave={promptBeforeLeave}
+            />
           ) : (
             HeaderLeft
           )}
@@ -268,18 +306,21 @@ export const InternalNavigationHeader = ({
         {/* Center */}
 
         <Animated.View
-          className="flex min-w-0 shrink items-center justify-center"
+          className="flex min-w-0 flex-1 shrink flex-row items-center justify-center truncate"
           pointerEvents={"box-none"}
           style={{
             marginHorizontal: titleMarginHorizontal,
           }}
         >
+          <View className="shrink" style={{ flexBasis: rightWidth }} />
           {headerTitleAbsolute ? <View /> : headerTitle}
+          <View className="shrink" style={{ flexBasis: leftWidth }} />
         </Animated.View>
 
         {/* Right */}
         <View
-          className="flex flex-1 shrink-0 flex-row items-center justify-end"
+          ref={rightRef}
+          className="flex min-w-6 shrink-0 flex-row items-center justify-end"
           pointerEvents={"box-none"}
         >
           {typeof RightButton === "function" ? (
@@ -305,17 +346,40 @@ export const InternalNavigationHeader = ({
   )
 }
 
-export const DefaultHeaderBackButton = ({ canGoBack, canDismiss }: NavigationHeaderButtonProps) => {
+export const DefaultHeaderBackButton = ({
+  canGoBack,
+  canDismiss,
+  promptBeforeLeave,
+}: NavigationHeaderButtonProps) => {
   const label = useColor("label")
   const navigation = useNavigation()
   if (!canGoBack && !canDismiss) return null
   return (
     <UINavigationHeaderActionButton
       onPress={() => {
-        if (canGoBack) {
-          navigation.back()
-        } else if (canDismiss) {
-          navigation.dismiss()
+        const leave = () => {
+          if (canGoBack) {
+            navigation.back()
+          } else if (canDismiss) {
+            navigation.dismiss()
+          }
+        }
+
+        if (promptBeforeLeave) {
+          Alert.alert("Are you sure you want to exit?", "You have unsaved changes.", [
+            {
+              text: "Cancel",
+              style: "cancel",
+            },
+            {
+              text: "Exit",
+              onPress: () => {
+                leave()
+              },
+            },
+          ])
+        } else {
+          leave()
         }
       }}
     >

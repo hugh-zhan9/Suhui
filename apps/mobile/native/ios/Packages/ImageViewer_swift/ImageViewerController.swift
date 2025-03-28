@@ -37,6 +37,8 @@ class ImageViewerController: UIViewController,
 
     private var sourceView: UIImageView? = nil
 
+    private var _error: Error? = nil
+
     init(
         index: Int,
         imageItem: ImageItem,
@@ -111,13 +113,23 @@ class ImageViewerController: UIViewController,
             if imageView.image == nil {
                 imageView.image = UIImage(systemName: "photo")?.withTintColor(
                     .gray, renderingMode: .alwaysOriginal)
+                imageView.frame = .init(origin: .zero, size: .init(width: 100, height: 100))
+                self.layout()
             }
             self.layout()
-            imageLoader.loadImage(url, placeholder: placeholder, imageView: imageView) { (image) in
-                DispatchQueue.main.async { [weak self] in
-                    self?.layout()
-                    self?.activityIndicator.stopAnimating()
-                }
+            imageLoader.loadImage(url, placeholder: placeholder, imageView: imageView) {
+                [weak self] (image) in
+                self?.layout()
+                self?.activityIndicator.stopAnimating()
+            } onError: { [weak self] error in
+                self?.imageView.image = UIImage(systemName: "exclamationmark.triangle.fill")?
+                    .withTintColor(.red, renderingMode: .alwaysOriginal)
+                self?.imageView.frame = .init(origin: .zero, size: .init(width: 30, height: 30))
+                self?.layout()
+                SPIndicator.present(
+                    title: "Image Load Error", message: error.localizedDescription, preset: .error)
+                self?.activityIndicator.stopAnimating()
+                self?._error = error
             }
         default:
             break
@@ -334,6 +346,11 @@ extension ImageViewerController: UIScrollViewDelegate {
 }
 
 extension ImageViewerController: ImageCarouselViewControllerProtocol {
+
+    public func isLoadError() -> Bool {
+        guard let error = _error else { return false }
+        return true
+    }
 
     public func saveImageToPhotos() {
         guard let image = imageView.image else { return }

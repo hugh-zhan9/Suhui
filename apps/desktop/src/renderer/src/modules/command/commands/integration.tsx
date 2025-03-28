@@ -7,6 +7,7 @@ import {
   SimpleIconsReadwise,
 } from "@follow/components/ui/platform-icon/icons.js"
 import { IN_ELECTRON } from "@follow/shared/constants"
+import { tracker } from "@follow/tracker"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import type { FetchError } from "ofetch"
 import { ofetch } from "ofetch"
@@ -123,7 +124,7 @@ const useRegisterReadwiseCommands = () => {
               return
             }
             try {
-              window.analytics?.capture("integration", {
+              tracker.integration({
                 type: "readwise",
                 event: "save",
               })
@@ -163,7 +164,7 @@ const useRegisterReadwiseCommands = () => {
           },
         }),
     {
-      deps: [isReadwiseAvailable],
+      deps: [isReadwiseAvailable, readwiseToken],
     },
   )
 }
@@ -194,7 +195,7 @@ const useRegisterInstapaperCommands = () => {
             }
 
             try {
-              window.analytics?.capture("integration", {
+              tracker.integration({
                 type: "instapaper",
                 event: "save",
               })
@@ -233,7 +234,7 @@ const useRegisterInstapaperCommands = () => {
           },
         }),
     {
-      deps: [isInstapaperAvailable],
+      deps: [isInstapaperAvailable, instapaperUsername, instapaperPassword],
     },
   )
 }
@@ -300,7 +301,7 @@ const useRegisterObsidianCommands = () => {
               return
             }
             const markdownContent = await getEntryContentAsMarkdown(entry)
-            window.analytics?.capture("integration", {
+            tracker.integration({
               type: "obsidian",
               event: "save",
             })
@@ -315,7 +316,7 @@ const useRegisterObsidianCommands = () => {
           },
         }),
     {
-      deps: [isObsidianAvailable],
+      deps: [isObsidianAvailable, obsidianVaultPath],
     },
   )
 }
@@ -380,7 +381,7 @@ const useRegisterOutlineCommands = () => {
           },
         }),
     {
-      deps: [outlineAvailable],
+      deps: [outlineAvailable, outlineToken, outlineEndpoint, outlineCollection],
     },
   )
 }
@@ -407,7 +408,7 @@ const useRegisterReadeckCommands = () => {
               return
             }
             try {
-              window.analytics?.capture("integration", {
+              tracker.integration({
                 type: "readeck",
                 event: "save",
               })
@@ -448,7 +449,7 @@ const useRegisterReadeckCommands = () => {
           },
         }),
     {
-      deps: [readeckAvailable],
+      deps: [readeckAvailable, readeckToken, readeckEndpoint],
     },
   )
 }

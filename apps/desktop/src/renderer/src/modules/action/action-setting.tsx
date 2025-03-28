@@ -2,6 +2,7 @@ import { Button } from "@follow/components/ui/button/index.js"
 import { LoadingWithIcon } from "@follow/components/ui/loading/index.jsx"
 import { useMutation } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
+import { unstable_usePrompt } from "react-router"
 import { toast } from "sonner"
 
 import { toastFetchError } from "~/lib/error-parser"
@@ -33,6 +34,11 @@ function ActionSettingOperations() {
 
   const actionLength = useActions((actions) => actions.length)
   const isDirty = useIsActionDataDirty()
+  unstable_usePrompt({
+    message: t("actions.navigate.prompt"),
+    when: ({ currentLocation, nextLocation }) =>
+      isDirty && currentLocation.pathname !== nextLocation.pathname,
+  })
 
   const mutation = useMutation({
     mutationFn: () => actionActions.updateRemoteActions(),
@@ -51,7 +57,7 @@ function ActionSettingOperations() {
   return (
     <div className="flex justify-end gap-x-2">
       <Button
-        variant="outline"
+        variant={actionLength > 0 ? "outline" : "primary"}
         onClick={() => {
           actionActions.insertNewEmptyAction(t("actions.actionName", { number: actionLength + 1 }))
         }}
@@ -59,15 +65,17 @@ function ActionSettingOperations() {
         <i className="i-mgc-add-cute-re mr-1" />
         <span>{t("actions.newRule")}</span>
       </Button>
-      <Button
-        variant="primary"
-        disabled={!isDirty}
-        isLoading={mutation.isPending}
-        onClick={() => mutation.mutate()}
-      >
-        <i className="i-mgc-check-circle-cute-re mr-1" />
-        {t("actions.save")}
-      </Button>
+      {actionLength > 0 && (
+        <Button
+          variant="primary"
+          disabled={!isDirty}
+          isLoading={mutation.isPending}
+          onClick={() => mutation.mutate()}
+        >
+          <i className="i-mgc-check-circle-cute-re mr-1" />
+          {t("actions.save")}
+        </Button>
+      )}
     </div>
   )
 }

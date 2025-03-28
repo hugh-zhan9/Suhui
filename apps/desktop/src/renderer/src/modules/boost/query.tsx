@@ -1,3 +1,4 @@
+import { tracker } from "@follow/tracker"
 import { useMutation } from "@tanstack/react-query"
 import { toast } from "sonner"
 
@@ -44,13 +45,15 @@ export const useBoostFeedMutation = () => {
     onError(err) {
       toastFetchError(err)
     },
-    onSuccess(_, variables) {
+    onSuccess(response, variables) {
       query.getStatus({ feedId: variables.feedId }).invalidate()
       query.getBoosters({ feedId: variables.feedId }).invalidate()
       updateFeedBoostStatus(variables.feedId, true)
-      window.analytics?.capture("boost_sent", {
+
+      tracker.boostSent({
         amount: variables.amount,
         feedId: variables.feedId,
+        transactionId: response.data.transactionHash,
       })
       toast(t("boost.boost_success"))
     },

@@ -3,13 +3,14 @@ import { useMemo, useState } from "react"
 import { View } from "react-native"
 
 import { HeaderSubmitButton } from "@/src/components/layouts/header/HeaderElements"
-import { SafeModalScrollView } from "@/src/components/layouts/views/SafeModalScrollView"
-import { NavigationBlurEffectHeader } from "@/src/components/layouts/views/SafeNavigationScrollView"
+import {
+  NavigationBlurEffectHeader,
+  SafeNavigationScrollView,
+} from "@/src/components/layouts/views/SafeNavigationScrollView"
 import { PlainTextField } from "@/src/components/ui/form/TextField"
 import {
   GroupedInsetListCard,
   GroupedInsetListCell,
-  GroupedInsetListSectionHeader,
   GroupedOutlineDescription,
   GroupedPlainButtonCell,
 } from "@/src/components/ui/grouped/GroupedList"
@@ -42,8 +43,10 @@ export const EditEmailScreen: NavigationControllerView = () => {
     },
   })
 
+  const [isSendingVerificationEmail, setIsSendingVerificationEmail] = useState(false)
+
   return (
-    <SafeModalScrollView className="bg-system-grouped-background">
+    <SafeNavigationScrollView className="bg-system-grouped-background">
       <NavigationBlurEffectHeader
         title="Edit Email"
         headerRight={
@@ -57,8 +60,7 @@ export const EditEmailScreen: NavigationControllerView = () => {
         }
       />
 
-      <View className="mt-8 w-full">
-        <GroupedInsetListSectionHeader label="Email" />
+      <View className="mt-4 w-full">
         <GroupedInsetListCard>
           <GroupedInsetListCell label="Email" rightClassName="flex-1" leftClassName="flex-none">
             <PlainTextField
@@ -81,10 +83,19 @@ export const EditEmailScreen: NavigationControllerView = () => {
 
         {!isValidate && (
           <GroupedInsetListCard className="mt-6">
-            <GroupedPlainButtonCell label="Send Verification Email" />
+            <GroupedPlainButtonCell
+              disabled={isSendingVerificationEmail}
+              label={
+                isSendingVerificationEmail ? "Verification Email Sent" : "Send Verification Email"
+              }
+              onPress={() => {
+                setIsSendingVerificationEmail(true)
+                userSyncService.sendVerificationEmail()
+              }}
+            />
           </GroupedInsetListCard>
         )}
       </View>
-    </SafeModalScrollView>
+    </SafeNavigationScrollView>
   )
 }

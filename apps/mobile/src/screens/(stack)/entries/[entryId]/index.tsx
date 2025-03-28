@@ -6,6 +6,7 @@ import { Pressable, Text, View } from "react-native"
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
+import { useGeneralSettingKey } from "@/src/atoms/settings/general"
 import { BottomTabBarHeightContext } from "@/src/components/layouts/tabbar/contexts/BottomTabBarHeightContext"
 import { SafeNavigationScrollView } from "@/src/components/layouts/views/SafeNavigationScrollView"
 import { EntryContentWebView } from "@/src/components/native/webview/EntryContentWebView"
@@ -15,9 +16,9 @@ import { EntryContentContext, useEntryContentContext } from "@/src/modules/entry
 import { EntryAISummary } from "@/src/modules/entry-content/EntryAISummary"
 import { useEntry, usePrefetchEntryContent } from "@/src/store/entry/hooks"
 import { entrySyncServices } from "@/src/store/entry/store"
-import type { EntryModel } from "@/src/store/entry/types"
+import type { EntryWithTranslation } from "@/src/store/entry/types"
 import { useFeed } from "@/src/store/feed/hooks"
-import { summarySyncService } from "@/src/store/summary/store"
+import { useEntryTranslation } from "@/src/store/translation/hooks"
 import { useAutoMarkAsRead } from "@/src/store/unread/hooks"
 
 import { EntrySocialTitle, EntryTitle } from "../../../../modules/entry-content/EntryTitle"
@@ -26,17 +27,26 @@ export const EntryDetailScreen: NavigationControllerView<{
   entryId: string
   view: FeedViewType
 }> = ({ entryId, view: viewType }) => {
-  usePrefetchEntryContent(entryId as string)
-  useAutoMarkAsRead(entryId as string)
-  const entry = useEntry(entryId as string)
+  usePrefetchEntryContent(entryId)
+  useAutoMarkAsRead(entryId)
+  const entry = useEntry(entryId)
+  const translation = useEntryTranslation(entryId)
+  const entryWithTranslation = useMemo(() => {
+    if (!entry) return entry
+    return {
+      ...entry,
+      translation,
+    } as EntryWithTranslation
+  }, [entry, translation])
 
   const insets = useSafeAreaInsets()
   const ctxValue = useMemo(
     () => ({
       showAISummaryAtom: atom(entry?.settings?.summary || false),
+      showAITranslationAtom: atom(!!entry?.settings?.translation || false),
       showReadabilityAtom: atom(entry?.settings?.readability || false),
     }),
-    [entry?.settings?.readability, entry?.settings?.summary],
+    [entry?.settings?.readability, entry?.settings?.summary, entry?.settings?.translation],
   )
 
   useEffect(() => {
@@ -44,12 +54,6 @@ export const EntryDetailScreen: NavigationControllerView<{
       entrySyncServices.fetchEntryReadabilityContent(entryId)
     }
   }, [entry?.settings?.readability, entryId])
-
-  useEffect(() => {
-    if (entry?.settings?.summary) {
-      summarySyncService.generateSummary(entryId)
-    }
-  }, [entry?.settings?.summary, entryId])
 
   return (
     <EntryContentContext.Provider value={ctxValue}>
@@ -81,9 +85,9 @@ export const EntryDetailScreen: NavigationControllerView<{
               )}
             </Pressable>
             <EntryAISummary entryId={entryId as string} />
-            {entry && (
+            {entryWithTranslation && (
               <View className="mt-3">
-                <EntryContentWebViewWithContext entry={entry} />
+                <EntryContentWebViewWithContext entry={entryWithTranslation} />
               </View>
             )}
             {viewType === FeedViewType.SocialMedia && (
@@ -98,10 +102,18 @@ export const EntryDetailScreen: NavigationControllerView<{
   )
 }
 
-const EntryContentWebViewWithContext = ({ entry }: { entry: EntryModel }) => {
-  const { showReadabilityAtom } = useEntryContentContext()
+const EntryContentWebViewWithContext = ({ entry }: { entry: EntryWithTranslation }) => {
+  const { showReadabilityAtom, showAITranslationAtom } = useEntryContentContext()
   const showReadability = useAtomValue(showReadabilityAtom)
-  return <EntryContentWebView entry={entry} showReadability={showReadability} />
+  const translationSetting = useGeneralSettingKey("translation")
+  const showTranslation = useAtomValue(showAITranslationAtom)
+  return (
+    <EntryContentWebView
+      entry={entry}
+      showReadability={showReadability}
+      showTranslation={translationSetting || showTranslation}
+    />
+  )
 }
 
 const EntryInfo = ({ entryId }: { entryId: string }) => {

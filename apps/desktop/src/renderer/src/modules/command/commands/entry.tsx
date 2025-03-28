@@ -5,8 +5,8 @@ import { useMutation } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
-import { toggleShowAISummary } from "~/atoms/ai-summary"
-import { toggleShowAITranslation } from "~/atoms/ai-translation"
+import { toggleShowAISummaryOnce } from "~/atoms/ai-summary"
+import { toggleShowAITranslationOnce } from "~/atoms/ai-translation"
 import {
   getShowSourceContent,
   toggleShowSourceContent,
@@ -317,7 +317,7 @@ export const useRegisterEntryCommands = () => {
             presentActivationModal()
             return
           }
-          toggleShowAISummary()
+          toggleShowAISummaryOnce()
         },
       },
       {
@@ -329,7 +329,7 @@ export const useRegisterEntryCommands = () => {
             presentActivationModal()
             return
           }
-          toggleShowAITranslation()
+          toggleShowAITranslationOnce()
         },
       },
     ],

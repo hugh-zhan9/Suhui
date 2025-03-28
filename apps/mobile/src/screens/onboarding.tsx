@@ -1,4 +1,5 @@
-import { useCallback, useState } from "react"
+import { tracker } from "@follow/tracker"
+import { useCallback, useEffect, useState } from "react"
 import { SafeAreaView, Text, TouchableOpacity, View } from "react-native"
 import { SheetScreen } from "react-native-sheet-transitions"
 
@@ -20,14 +21,19 @@ export const OnboardingScreen: NavigationControllerView = () => {
   const handleNext = useCallback(() => {
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1)
+      tracker.onBoarding({ step: currentStep, done: false })
     } else {
       // Complete onboarding
+      tracker.onBoarding({ step: currentStep, done: true })
       kv.set(isOnboardingFinishedStorageKey, "true")
       queryClient.invalidateQueries({ queryKey: isNewUserQueryKey }).then(() => {
         navigation.back()
       })
     }
   }, [currentStep, navigation])
+  useEffect(() => {
+    tracker.onBoarding({ step: 0, done: false })
+  }, [])
 
   return (
     <SheetScreen onClose={() => navigation.dismiss()}>

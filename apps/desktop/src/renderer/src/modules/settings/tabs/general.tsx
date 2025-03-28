@@ -1,5 +1,6 @@
 import { useMobile } from "@follow/components/hooks/useMobile.js"
 import { ResponsiveSelect } from "@follow/components/ui/select/responsive.js"
+import { UserRole } from "@follow/constants"
 import { useTypeScriptHappyCallback } from "@follow/hooks"
 import { LANGUAGE_MAP } from "@follow/shared"
 import { IN_ELECTRON } from "@follow/shared/constants"
@@ -20,6 +21,7 @@ import {
   useGeneralSettingSelector,
   useGeneralSettingValue,
 } from "~/atoms/settings/general"
+import { useUserRole } from "~/atoms/user"
 import { useProxyValue, useSetProxy } from "~/hooks/biz/useProxySetting"
 import { useMinimizeToTrayValue, useSetMinimizeToTray } from "~/hooks/biz/useTraySetting"
 import { fallbackLanguage } from "~/i18n"
@@ -28,9 +30,13 @@ import { setTranslationCache } from "~/modules/entry-content/atoms"
 
 import { SettingDescription, SettingInput, SettingSwitch } from "../control"
 import { createSetting } from "../helper/builder"
+import {
+  useWrapEnhancedSettingItem,
+  WrapEnhancedSettingTab,
+} from "../hooks/useWrapEnhancedSettingItem"
 import { SettingItemGroup } from "../section"
 
-const { defineSettingItem, SettingBuilder } = createSetting(
+const { defineSettingItem: _defineSettingItem, SettingBuilder } = createSetting(
   useGeneralSettingValue,
   setGeneralSetting,
 )
@@ -48,11 +54,21 @@ export const SettingGeneral = () => {
     setGeneralSetting("appLaunchOnStartup", checked)
   }, [])
 
+  const defineSettingItem = useWrapEnhancedSettingItem(
+    _defineSettingItem,
+    WrapEnhancedSettingTab.General,
+  )
+
   const isMobile = useMobile()
+  const role = useUserRole()
+  const isTrialUser = role === UserRole.Trial
+
+  const reRenderKey = useGeneralSettingKey("enhancedSettings")
 
   return (
     <div className="mt-4">
       <SettingBuilder
+        key={reRenderKey.toString()}
         settings={[
           {
             type: "title",
@@ -69,6 +85,20 @@ export const SettingGeneral = () => {
           IN_ELECTRON && MinimizeToTraySetting,
           isMobile && StartupScreenSelector,
           LanguageSelector,
+
+          {
+            type: "title",
+            value: t("general.action.title"),
+            disabled: isTrialUser,
+          },
+          defineSettingItem("summary", {
+            label: t("general.action.summary"),
+            disabled: isTrialUser,
+          }),
+          defineSettingItem("translation", {
+            label: t("general.action.translation"),
+            disabled: isTrialUser,
+          }),
           ActionLanguageSelector,
 
           {
@@ -119,12 +149,18 @@ export const SettingGeneral = () => {
             description: t("general.mark_as_read.render.description"),
           }),
 
-          { type: "title", value: "TTS", disabled: !IN_ELECTRON },
+          { type: "title", value: "TTS" },
 
           IN_ELECTRON && VoiceSelector,
 
-          { type: "title", value: t("general.network"), disabled: !IN_ELECTRON },
+          { type: "title", value: t("general.network") },
           IN_ELECTRON && NettingSetting,
+
+          { type: "title", value: t("general.advanced") },
+          defineSettingItem("enhancedSettings", {
+            label: t("general.enhanced.label"),
+            description: t("general.enhanced.description"),
+          }),
         ]}
       />
     </div>
@@ -247,15 +283,14 @@ export const LanguageSelector = ({
 const ActionLanguageSelector = () => {
   const { t } = useTranslation("settings")
   const actionLanguage = useGeneralSettingKey("actionLanguage")
+  const role = useUserRole()
+  if (role === UserRole.Trial) {
+    return null
+  }
 
   return (
     <div className="mb-3 mt-4 flex items-center justify-between">
-      <div>
-        <span className="shrink-0 text-sm font-medium">{t("general.action_language.label")}</span>
-        <SettingDescription className="w-auto">
-          {t("general.action_language.description")}
-        </SettingDescription>
-      </div>
+      <span className="shrink-0 text-sm font-medium">{t("general.action_language.label")}</span>
       <ResponsiveSelect
         size="sm"
         triggerClassName="w-48"
