@@ -147,10 +147,11 @@ export function EntryNormalItem({ entryId, extraData }: { entryId: string; extra
           {view !== FeedViewType.Notifications && !!entry.description && (
             <EntryTranslation
               numberOfLines={2}
-              className="text-secondary-label text-sm"
+              className="text-secondary-label my-0 text-sm"
               source={entry.description}
               target={translation?.description}
               showTranslation={!!entry.settings?.translation}
+              inline
             />
           )}
         </View>

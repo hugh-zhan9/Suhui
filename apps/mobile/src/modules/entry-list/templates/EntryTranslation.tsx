@@ -52,7 +52,7 @@ export const EntryTranslation = ({
           <Text {...props} className={className}>
             {nextTarget}
           </Text>
-          <Text {...props} className={cn(className, "my-4")}>
+          <Text {...props} className={cn("my-2", className)}>
             ⇋
           </Text>
         </>
