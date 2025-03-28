@@ -39,7 +39,7 @@ export const EntryTranslation = ({
   if (inline) {
     return (
       <Text {...props} className={className}>
-        {`${nextTarget ? `${nextTarget} ` : ""}${nextSource}`}
+        {`${nextTarget ? `${nextTarget} | ` : ""}${nextSource}`}
       </Text>
     )
   }

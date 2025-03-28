@@ -21,11 +21,14 @@ import { EntryContentContext, useEntryContentContext } from "@/src/modules/entry
 import { EntryContentHeaderRightActions } from "@/src/modules/entry-content/EntryContentHeaderRightActions"
 import { useEntry } from "@/src/store/entry/hooks"
 import { useFeed } from "@/src/store/feed/hooks"
+import { useEntryTranslation } from "@/src/store/translation/hooks"
 
+import { EntryTranslation } from "../entry-list/templates/EntryTranslation"
 import { useHeaderHeight } from "../screen/hooks/useHeaderHeight"
 import { EntryReadHistory } from "./EntryReadHistory"
 
 export const EntryTitle = ({ title, entryId }: { title: string; entryId: string }) => {
+  const translation = useEntryTranslation(entryId)
   const reanimatedScrollY = useContext(ScreenItemContext).reAnimatedScrollY
   const [titleHeight, setTitleHeight] = useState(0)
 
@@ -94,7 +97,12 @@ export const EntryTitle = ({ title, entryId }: { title: string; entryId: string 
           setTitleHeight(titleHeight)
         }}
       >
-        <Text className="text-label px-4 text-4xl font-bold leading-snug">{title.trim()}</Text>
+        <EntryTranslation
+          className="text-label px-4 text-4xl font-bold leading-snug"
+          source={title}
+          target={translation?.title}
+          inline
+        />
       </View>
     </>
   )
