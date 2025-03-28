@@ -103,16 +103,20 @@ export function hookEnhancedSettings<
 
   const useNextSettingKeys = (keys: string[]) => {
     const enableEnhancedSettings = useGeneralSettingKeyInternal("enhancedSettings")
-    const rawSettingValues = useSettingKeys(keys)
+    const rawSettingValues: string[] = useSettingKeys(keys)
+
     return useMemo(() => {
       if (enableEnhancedSettings) {
         return rawSettingValues
       }
 
-      const result = { ...rawSettingValues }
-      for (const key of keys) {
+      const result: string[] = []
+
+      for (const [i, key] of keys.entries()) {
         if (enhancedSettingKeys.has(key) && defaultSettings[key] !== undefined) {
-          result[key] = defaultSettings[key]
+          result.push(defaultSettings[key])
+        } else if (rawSettingValues[i] !== undefined) {
+          result.push(rawSettingValues[i])
         }
       }
 
