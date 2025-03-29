@@ -62,7 +62,6 @@ class SettingSyncQueue {
     this.teardown()
 
     this.load()
-    this.flush()
 
     const d1 = EventBus.subscribe("SETTING_CHANGE_EVENT", (data) => {
       const tab = bizSettingKeyToTabMapping[data.key]
@@ -250,6 +249,8 @@ class SettingSyncQueue {
         }
 
         const setter = localSettingSetterMap[tab]
+
+        nextPayload.updated = remoteUpdatedDate
 
         setter(nextPayload)
       }
