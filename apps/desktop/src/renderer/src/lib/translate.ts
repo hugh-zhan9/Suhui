@@ -20,15 +20,22 @@ export const checkLanguage = ({
     .toText()
     .replaceAll(/https?:\/\/\S+|www\.\S+/g, " ")
   const { code } = LANGUAGE_MAP[language]
-  if (!code) return false
-  const sourceLanguage = franc(pureContent, {
-    only: [code],
-  })
-  if (sourceLanguage === code) {
-    return true
-  } else {
+  if (!code) {
     return false
   }
+
+  let sourceLanguage = franc(pureContent, {
+    only: [code],
+  })
+
+  if (sourceLanguage === "und") {
+    // undetermined, let's try again by duplicating the content
+    sourceLanguage = franc(pureContent + pureContent, {
+      only: [code],
+    })
+  }
+
+  return sourceLanguage === code
 }
 
 export async function translate({
