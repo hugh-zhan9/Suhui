@@ -8,6 +8,10 @@ import type { FlatEntryModel } from "~/store/entry"
 
 import { apiClient } from "./api-fetch"
 
+function duplicateIfLengthLessThan(text: string, length: number) {
+  return text.length < length ? text.repeat(Math.ceil(length / text.length)) : text
+}
+
 export const checkLanguage = ({
   content,
   language,
@@ -24,16 +28,9 @@ export const checkLanguage = ({
     return false
   }
 
-  let sourceLanguage = franc(pureContent, {
+  const sourceLanguage = franc(duplicateIfLengthLessThan(pureContent, 20), {
     only: [code],
   })
-
-  if (sourceLanguage === "und") {
-    // undetermined, let's try again by duplicating the content
-    sourceLanguage = franc(pureContent + pureContent, {
-      only: [code],
-    })
-  }
 
   return sourceLanguage === code
 }
