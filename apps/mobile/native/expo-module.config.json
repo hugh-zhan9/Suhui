@@ -11,7 +11,9 @@
       "TabBarModule",
       "TabScreenModule",
       "TabBarPortalModule",
-      "ProfileViewModule"
+      "ProfileViewModule",
+      "EnhancePagerViewModule",
+      "EnhancePageViewModule"
     ]
   },
   "android": {
