@@ -35,7 +35,7 @@ export const RootStackNavigation = ({ children, headerConfig }: RootStackNavigat
       <AttachNavigationScrollViewProvider>
         <ScreenNameContext.Provider value={useMemo(() => atom(""), [])}>
           <ChainNavigationContext.Provider
-            value={Navigation.rootNavigation.__internal_getCtxValue()}
+            value={Navigation.rootNavigation.__dangerous_getCtxValue()}
           >
             <NavigationInstanceContext.Provider value={Navigation.rootNavigation}>
               <ScreenStack style={StyleSheet.absoluteFill}>
@@ -76,7 +76,7 @@ const StateHandler = () => {
     return navigation.on("screenChange", (payload) => {
       if (!payload.route) return
       const Component = payload.route.Component as NavigationControllerView
-      const state = jotaiStore.get(navigationInstance.__internal_getCtxValue().routesAtom)
+      const state = jotaiStore.get(navigationInstance.__dangerous_getCtxValue().routesAtom)
       if (payload.type === "appear" && state.at(-1)?.id === payload.route.id) {
         previousName.current = jotaiStore.get(nameAtom)
         jotaiStore.set(nameAtom, Component.title || Component.displayName || Component.name)
