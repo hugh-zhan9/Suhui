@@ -45,12 +45,16 @@ import { ResetPassword } from "./ResetPassword"
 type Account = {
   id: string
   provider: string
-  profile: {
-    id?: string
-    email?: string
-    name?: string
-    image?: string
-  } | null
+  profile:
+    | {
+        id: string
+        name?: string
+        email?: string | null
+        image?: string
+        emailVerified: boolean
+      }
+    | null
+    | undefined
 }
 
 const accountInfoKey = ["account-info"]

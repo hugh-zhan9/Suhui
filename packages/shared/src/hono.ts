@@ -89,21 +89,23 @@ declare const authPlugins: ({
                     id: string;
                     provider: string;
                     profile: {
-                        id?: string;
-                        email?: string;
+                        id: string;
                         name?: string;
+                        email?: string | null;
                         image?: string;
-                    } | null;
+                        emailVerified: boolean;
+                    } | undefined;
                 }[] | null;
             } : {
                 id: string;
                 provider: string;
                 profile: {
-                    id?: string;
-                    email?: string;
+                    id: string;
                     name?: string;
+                    email?: string | null;
                     image?: string;
-                } | null;
+                    emailVerified: boolean;
+                } | undefined;
             }[] | null>;
             options: {
                 method: "GET";
@@ -10463,21 +10465,23 @@ declare const auth: {
                     id: string;
                     provider: string;
                     profile: {
-                        id?: string;
-                        email?: string;
+                        id: string;
                         name?: string;
+                        email?: string | null;
                         image?: string;
-                    } | null;
+                        emailVerified: boolean;
+                    } | undefined;
                 }[] | null;
             } : {
                 id: string;
                 provider: string;
                 profile: {
-                    id?: string;
-                    email?: string;
+                    id: string;
                     name?: string;
+                    email?: string | null;
                     image?: string;
-                } | null;
+                    emailVerified: boolean;
+                } | undefined;
             }[] | null>;
             options: {
                 method: "GET";
@@ -14488,21 +14492,23 @@ declare const auth: {
                             id: string;
                             provider: string;
                             profile: {
-                                id?: string;
-                                email?: string;
+                                id: string;
                                 name?: string;
+                                email?: string | null;
                                 image?: string;
-                            } | null;
+                                emailVerified: boolean;
+                            } | undefined;
                         }[] | null;
                     } : {
                         id: string;
                         provider: string;
                         profile: {
-                            id?: string;
-                            email?: string;
+                            id: string;
                             name?: string;
+                            email?: string | null;
                             image?: string;
-                        } | null;
+                            emailVerified: boolean;
+                        } | undefined;
                     }[] | null>;
                     options: {
                         method: "GET";
