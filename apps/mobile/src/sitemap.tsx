@@ -20,7 +20,7 @@ export function registerSitemap() {
   )
   ;[OnboardingScreen].forEach((Component) => {
     NavigationSitemapRegistry.registerByComponent(Component, void 0, {
-      stackPresentation: "transparentModal",
+      stackPresentation: "fullScreenModal",
     })
   })
 }

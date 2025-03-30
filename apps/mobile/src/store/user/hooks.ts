@@ -62,7 +62,7 @@ export function useOnboarding() {
   const navigation = useNavigation()
   useEffect(() => {
     if (isNewUser) {
-      navigation.presentControllerView(OnboardingScreen, undefined, "transparentModal")
+      navigation.presentControllerView(OnboardingScreen, undefined, "fullScreenModal")
     }
   }, [isNewUser, navigation])
 }

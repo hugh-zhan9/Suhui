@@ -1,5 +1,6 @@
 import type { PropsWithChildren } from "react"
 import { ActivityIndicator, Pressable, Text, TouchableOpacity, View } from "react-native"
+import { ScrollView } from "react-native-gesture-handler"
 import { useColor } from "react-native-uikit-colors"
 
 import { UserAvatar } from "@/src/components/ui/avatar/UserAvatar"
@@ -17,13 +18,14 @@ import { accentColor } from "@/src/theme/colors"
 import { EditProfileScreen } from "../settings/routes/EditProfile"
 import { importOpml, setAvatar } from "../settings/utils"
 import { useReadingBehavior } from "./hooks/use-reading-behavior"
+import { OnboardingSectionScreenContainer } from "./shared"
 
 export const StepPreferences = () => {
   const { behavior } = useReadingBehavior()
 
   const navigation = useNavigation()
   return (
-    <View className="mt-[10vh] flex-1 p-4">
+    <OnboardingSectionScreenContainer>
       <View className="mb-10 flex items-center gap-4">
         <ListCheck2CuteReIcon height={80} width={80} color={accentColor} />
         <Text className="text-text mt-2 text-center text-xl font-bold">
@@ -35,7 +37,7 @@ export const StepPreferences = () => {
         </Text>
       </View>
 
-      <View className="mb-6 gap-4">
+      <ScrollView className="mb-6 w-full flex-1" contentContainerClassName="gap-4">
         <PreferenceCard
           title="Edit Profile"
           icon={
@@ -97,8 +99,8 @@ export const StepPreferences = () => {
             </Text>
           </View>
         </PreferenceCard>
-      </View>
-    </View>
+      </ScrollView>
+    </OnboardingSectionScreenContainer>
   )
 }
 

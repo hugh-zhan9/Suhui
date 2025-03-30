@@ -1,7 +1,7 @@
 import { tracker } from "@follow/tracker"
 import { useCallback, useEffect, useState } from "react"
 import { SafeAreaView, Text, TouchableOpacity, View } from "react-native"
-import { SheetScreen } from "react-native-sheet-transitions"
+import Animated, { FadeInRight, FadeOutLeft } from "react-native-reanimated"
 
 import { kv } from "../lib/kv"
 import { useNavigation } from "../lib/navigation/hooks"
@@ -36,43 +36,47 @@ export const OnboardingScreen: NavigationControllerView = () => {
   }, [])
 
   return (
-    <SheetScreen onClose={() => navigation.dismiss()}>
-      <View className="bg-system-grouped-background flex-1 px-6">
-        <SafeAreaView className="flex-1">
-          <ProgressIndicator
-            currentStep={currentStep}
-            totalSteps={totalSteps}
-            setCurrentStep={setCurrentStep}
-          />
+    <View className="bg-system-grouped-background flex-1 px-6">
+      <SafeAreaView className="flex-1">
+        <ProgressIndicator
+          currentStep={currentStep}
+          totalSteps={totalSteps}
+          setCurrentStep={setCurrentStep}
+        />
 
+        <Animated.View
+          className={"flex-1"}
+          key={`step-${currentStep}`}
+          exiting={FadeOutLeft}
+          entering={FadeInRight}
+        >
           {/* Content */}
           {currentStep === 1 && <StepWelcome />}
           {currentStep === 2 && <StepPreferences />}
           {currentStep === 3 && <StepInterests />}
           {currentStep === 4 && <StepFinished />}
+        </Animated.View>
 
-          {/* Navigation buttons */}
-          <View className="mb-6 px-6">
-            <TouchableOpacity
-              onPress={handleNext}
-              className="bg-accent w-full items-center rounded-xl py-4"
-            >
-              <Text className="text-lg font-bold text-white">
-                {currentStep < totalSteps - 1
-                  ? "Next"
-                  : currentStep === totalSteps - 1
-                    ? "Finish Setup"
-                    : "Let's Go!"}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </SafeAreaView>
-      </View>
-    </SheetScreen>
+        {/* Navigation buttons */}
+        <View className="mb-6 px-6">
+          <TouchableOpacity
+            onPress={handleNext}
+            className="bg-accent w-full items-center rounded-xl py-4"
+          >
+            <Text className="text-lg font-bold text-white">
+              {currentStep < totalSteps - 1
+                ? "Next"
+                : currentStep === totalSteps - 1
+                  ? "Finish Setup"
+                  : "Let's Go!"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    </View>
   )
 }
 
-OnboardingScreen.transparent = true
 function ProgressIndicator({
   currentStep,
   totalSteps,
