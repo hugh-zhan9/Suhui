@@ -9,8 +9,10 @@ import { FeedIcon } from "@/src/components/ui/icon/feed-icon"
 import { gentleSpringPreset } from "@/src/constants/spring"
 import { useEntry } from "@/src/store/entry/hooks"
 import { useFeed } from "@/src/store/feed/hooks"
+import { useEntryTranslation, usePrefetchEntryTranslation } from "@/src/store/translation/hooks"
 
 import { useEntryListContextView } from "../entry-list/EntryListContext"
+import { EntryTranslation } from "../entry-list/templates/EntryTranslation"
 
 export const EntryGridFooter = ({
   entryId,
@@ -20,6 +22,8 @@ export const EntryGridFooter = ({
   descriptionClassName?: string
 }) => {
   const entry = useEntry(entryId)
+  usePrefetchEntryTranslation(entryId)
+  const translation = useEntryTranslation(entryId)
   const feed = useFeed(entry?.feedId || "")
   const view = useEntryListContextView()
 
@@ -51,17 +55,19 @@ export const EntryGridFooter = ({
           className="bg-red mt-2 inline-block rounded-full"
           style={unreadIndicatorStyle}
         />
-        {entry.description && (
-          <Text
+        {entry.title && (
+          <EntryTranslation
             numberOfLines={2}
             className={cn(
               "text-label shrink text-base font-medium",
               view === FeedViewType.Videos && "min-h-12",
               descriptionClassName,
             )}
-          >
-            {entry.description}
-          </Text>
+            source={entry.title}
+            target={translation?.title}
+            showTranslation={!!entry.settings?.translation}
+            inline
+          />
         )}
       </View>
       <View className="mt-1 flex-row items-center gap-1">
