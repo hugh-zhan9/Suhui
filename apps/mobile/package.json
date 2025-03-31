@@ -9,6 +9,7 @@
     "db:generate": "drizzle-kit generate",
     "dev": "npm run start",
     "eas-build-post-install": "rm -rf $TMPDIR/metro-cache",
+    "eas-build-pre-install": "pod repo update",
     "ios": "expo run:ios",
     "ios:device": "expo run:ios --device",
     "start": "expo start --dev-client",
