@@ -66,6 +66,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Clear Xcode cache
+        if: needs.check-runner.outputs.runner-label == 'self-hosted'
+        run: |
+          rm -rf ~/Library/Developer/Xcode/DerivedData
+
       - name: 🔨 Build iOS IPA
         run: |
           cd apps/mobile
