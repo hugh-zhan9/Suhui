@@ -19,5 +19,6 @@ export const usePrefetchSummary = (entryId: string, options?: { enabled?: boolea
       return summarySyncService.generateSummary(entryId)
     },
     enabled: options?.enabled,
+    staleTime: 1000 * 60 * 60 * 24,
   })
 }

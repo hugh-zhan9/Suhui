@@ -1,16 +1,14 @@
 import { cn } from "@follow/utils"
 import type { FC } from "react"
 import * as React from "react"
-import { Pressable, Text, View } from "react-native"
+import type { LayoutChangeEvent } from "react-native"
+import { Pressable, StyleSheet, Text, TextInput, View } from "react-native"
 import Animated, {
-  CurvedTransition,
-  FadeIn,
-  FadeOut,
-  LinearTransition,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
   withSequence,
+  withSpring,
   withTiming,
 } from "react-native-reanimated"
 import { useColor } from "react-native-uikit-colors"
@@ -27,6 +25,7 @@ export const AISummary: FC<{
   const labelColor = useColor("label")
 
   const opacity = useSharedValue(0.3)
+  const height = useSharedValue(0)
 
   React.useEffect(() => {
     if (pending) {
@@ -37,52 +36,95 @@ export const AISummary: FC<{
     }
   }, [opacity, pending])
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
+  const animatedContentStyle = useAnimatedStyle(() => ({
+    height: height.value,
+    opacity: height.value === 0 ? 0 : withTiming(1, { duration: 200 }),
+    overflow: "hidden",
   }))
 
+  const [contentHeight, setContentHeight] = React.useState(0)
+
+  const measureContent = (event: LayoutChangeEvent) => {
+    setContentHeight(event.nativeEvent.layout.height + 10)
+    height.value = withSpring(event.nativeEvent.layout.height + 10, {
+      damping: 20,
+      stiffness: 90,
+      mass: 1,
+      overshootClamping: true,
+      restDisplacementThreshold: 0.01,
+      restSpeedThreshold: 0.01,
+    })
+  }
+
+  if (pending) return null
   return (
     <Animated.View
-      layout={CurvedTransition}
-      className={cn("border-system-fill mx-2 rounded-lg border p-4", className)}
+      className={cn(
+        "bg-tertiary-system-background border-non-opaque-separator mx-4 my-2 rounded-xl p-4",
+        className,
+      )}
+      style={styles.card}
     >
-      <View className="flex-row items-center gap-2">
-        <Magic2CuteReIcon height={16} width={16} color={labelColor} />
-        <Text className="text-label font-medium">AI Summary</Text>
+      <View className="mb-2 flex-row items-center gap-2">
+        <Magic2CuteReIcon height={18} width={18} color={labelColor} />
+        <Text className="text-label text-[16px] font-semibold">AI Summary</Text>
       </View>
-      <Animated.View layout={LinearTransition}>
-        {error ? (
-          <Animated.View entering={FadeIn} exiting={FadeOut} className="mt-3">
-            <View className="flex-row items-center gap-2">
-              <Text className="text-red flex-1 text-[15px]">{error}</Text>
+      <Animated.View style={animatedContentStyle}>
+        <View style={{ height: contentHeight }}>
+          {error ? (
+            <View className="mt-3">
+              <View className="flex-row items-center gap-2">
+                <Text className="text-red flex-1 text-[15px] leading-[20px]">{error}</Text>
+              </View>
+              {onRetry && (
+                <Pressable
+                  onPress={onRetry}
+                  className="bg-quaternary-system-fill mt-3 self-start rounded-full px-4 py-2"
+                >
+                  <Text className="text-label text-[14px] font-medium">Retry</Text>
+                </Pressable>
+              )}
             </View>
-            {onRetry && (
-              <Pressable onPress={onRetry} className="mt-2">
-                <Text className="text-label text-[15px]">Retry</Text>
-              </Pressable>
-            )}
-          </Animated.View>
-        ) : pending ? (
-          <Animated.View entering={FadeIn} exiting={FadeOut} className="mt-3">
-            <Animated.View
-              className="bg-quaternary-system-fill h-4 w-4/5 rounded"
-              style={animatedStyle}
+          ) : (
+            <TextInput
+              readOnly
+              multiline
+              className="text-label text-[15px] leading-[22px]"
+              value={summary.trim()}
             />
-            <Animated.View
-              className="bg-quaternary-system-fill mt-2 h-4 w-3/5 rounded"
-              style={animatedStyle}
-            />
-          </Animated.View>
-        ) : (
-          <Animated.Text
-            entering={FadeIn}
-            exiting={FadeOut}
-            className="text-label mt-3 text-[14px] leading-normal"
-          >
-            {summary.trim()}
-          </Animated.Text>
-        )}
+          )}
+        </View>
       </Animated.View>
+
+      <View className="absolute opacity-0" pointerEvents="none">
+        <View onLayout={measureContent}>
+          {error ? (
+            <View className="mt-3">
+              <View className="flex-row items-center gap-2">
+                <Text className="text-red flex-1 text-[15px] leading-[20px]">{error}</Text>
+              </View>
+              {onRetry && (
+                <View className="bg-quaternary-system-fill mt-3 self-start rounded-full px-4 py-2">
+                  <Text className="text-label text-[14px] font-medium">Retry</Text>
+                </View>
+              )}
+            </View>
+          ) : (
+            <Text className="text-label mt-2 text-[15px] leading-[22px]">{summary.trim()}</Text>
+          )}
+        </View>
+      </View>
     </Animated.View>
   )
 }
+
+const styles = StyleSheet.create({
+  card: {
+    borderWidth: 0.5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+})
