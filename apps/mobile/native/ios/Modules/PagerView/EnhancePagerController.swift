@@ -14,6 +14,12 @@ enum PagerDirection: String {
     case none
 }
 
+enum PagerState: String {
+    case idle
+    case dragging
+    case scrolling
+}
+
 private class PagerViewController: UIViewController {
     private var pageIndex = 0
     private var pageView: UIView?
@@ -49,11 +55,16 @@ class EnhancePagerController: UIPageViewController, UIScrollViewDelegate {
     var onScrollStart: ((Int) -> Void)?
     var onPageWillAppear: ((Int) -> Void)?
 
-    convenience init(pageViews: [UIView], initialPageIndex: Int = 0,
-                     transitionStyle: UIPageViewController.TransitionStyle = .scroll,
-                     options: [UIPageViewController.OptionsKey: Any]? = nil
+    var isTransitioning: Bool = false
+    var isDragging: Bool = false
+
+    convenience init(
+        pageViews: [UIView], initialPageIndex: Int = 0,
+        transitionStyle: UIPageViewController.TransitionStyle = .scroll,
+        options: [UIPageViewController.OptionsKey: Any]? = nil
     ) {
-        self.init(transitionStyle: transitionStyle, navigationOrientation: .horizontal, options: options)
+        self.init(
+            transitionStyle: transitionStyle, navigationOrientation: .horizontal, options: options)
         pageControllers = pageViews.enumerated().map { index, view in
             PagerViewController(index: index, view: view)
         }
@@ -87,6 +98,7 @@ class EnhancePagerController: UIPageViewController, UIScrollViewDelegate {
     func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
         startOffset = scrollView.contentOffset.x
         debugPrint(scrollView.contentOffset.x)
+        isDragging = true
         onScrollStart?(currentPageIndex)
     }
 
@@ -106,8 +118,13 @@ class EnhancePagerController: UIPageViewController, UIScrollViewDelegate {
         onScroll?(percent, direction)
     }
 
-    public func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
-        onScrollEnd?(currentPageIndex)
+    public func scrollViewDidEndDragging(
+        _ scrollView: UIScrollView, willDecelerate decelerate: Bool
+    ) {
+        if !decelerate {
+            isDragging = false
+            onScrollEnd?(currentPageIndex)
+        }
     }
 }
 
@@ -129,7 +146,8 @@ extension EnhancePagerController: UIPageViewControllerDataSource, UIPageViewCont
     }
 
     func pageViewController(
-        _ pageViewController: UIPageViewController, viewControllerAfter viewController: UIViewController
+        _ pageViewController: UIPageViewController,
+        viewControllerAfter viewController: UIViewController
     ) -> UIViewController? {
         if let pagerController = pageViewController.viewControllers?.first as? PagerViewController {
             let index = pagerController.getPageIndex()
@@ -149,11 +167,21 @@ extension EnhancePagerController: UIPageViewControllerDataSource, UIPageViewCont
         transitionCompleted completed: Bool
     ) {
         if completed {
+            isTransitioning = false
             if let currentVC = pageViewController.viewControllers?.first as? PagerViewController,
-               let newIndex = pageControllers.firstIndex(of: currentVC) {
+                let newIndex = pageControllers.firstIndex(of: currentVC)
+            {
                 currentPageIndex = newIndex
             }
         }
+    }
+
+    func pageViewController(
+        _ pageViewController: UIPageViewController,
+        willTransitionTo pendingViewControllers: [UIViewController]
+    ) {
+        debugPrint("willTransitionTo")
+        isTransitioning = true
     }
 }
 
@@ -184,8 +212,8 @@ extension EnhancePagerController {
                 setViewControllers([newVC], direction: .forward, animated: true)
                 currentPageIndex = newIndex
             } else {
-//        let emptyVC = UIViewController()
-//        self.setViewControllers([emptyVC], direction: .forward, animated: false)
+                //        let emptyVC = UIViewController()
+                //        self.setViewControllers([emptyVC], direction: .forward, animated: false)
                 currentPageIndex = 0
             }
         } else if currentPageIndex > index {
@@ -201,11 +229,25 @@ extension EnhancePagerController {
 // MARK: PagerController utils
 
 extension EnhancePagerController {
-    public func setÇurrentPage(index: Int) {
+    public func setCurrentPage(index: Int) {
         if pageControllers.indices.contains(index) {
             let vc = pageControllers[index]
             setViewControllers([vc], direction: .forward, animated: true)
             currentPageIndex = index
+        }
+    }
+
+    public func getCurrentPageIndex() -> Int {
+        return currentPageIndex
+    }
+
+    public func getState() -> PagerState {
+        if isDragging {
+            return .dragging
+        } else if isTransitioning {
+            return .scrolling
+        } else {
+            return .idle
         }
     }
 }

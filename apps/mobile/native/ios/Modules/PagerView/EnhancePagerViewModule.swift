@@ -30,7 +30,18 @@ public class EnhancePagerViewModule: Module {
             }
 
             AsyncFunction("setPage") { (view: EnhancePagerView, index: Int) in
-                view.pageController?.setÇurrentPage(index: index)
+                view.pageController?.setCurrentPage(index: index)
+            }
+
+            AsyncFunction("getCurrentPage") { view in
+                view.pageController?.getCurrentPageIndex()
+            }
+
+            AsyncFunction("getState") { view -> String? in
+                if let pageController = view.pageController {
+                    return pageController.getState().rawValue
+                }
+                return nil
             }
 
             Events("onPageChange")
@@ -83,7 +94,7 @@ private class EnhancePagerView: ExpoView {
     // Props
     var page: Int = 0 {
         willSet {
-            pageController?.setÇurrentPage(index: newValue)
+            pageController?.setCurrentPage(index: newValue)
         }
     }
 
