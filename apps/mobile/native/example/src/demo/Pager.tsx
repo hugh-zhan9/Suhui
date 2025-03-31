@@ -1,20 +1,59 @@
+/* eslint-disable no-console */
 import { requireNativeView } from "expo"
-import { Text, View } from "react-native"
+import { useRef } from "react"
+import type { NativeSyntheticEvent, ViewProps } from "react-native"
+import { Button, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
-const EnhancePagerView = requireNativeView("EnhancePagerView")
+const EnhancePagerView = requireNativeView<ViewProps & PagerProps>("EnhancePagerView")
 const EnhancePageView = requireNativeView("EnhancePageView")
+
+interface PagerProps {
+  onPageChange?: (e: NativeSyntheticEvent<{ index: number }>) => void
+  onScroll?: (e: NativeSyntheticEvent<{ percent: number; direction: "left" | "right" }>) => void
+  onScrollBegin?: () => void
+  onScrollEnd?: () => void
+  onPageWillAppear?: (e: NativeSyntheticEvent<{ index: number }>) => void
+  page?: number
+  pageGap?: number
+  transitionStyle?: "scroll" | "pageCurl"
+}
+interface PagerRef {
+  setPage: (index: number) => void
+}
 export const Pager = () => {
   const insets = useSafeAreaInsets()
+  const pagerRef = useRef<PagerRef>(null)
+
   return (
     <View style={{ flex: 1, backgroundColor: "white", paddingTop: insets.top }}>
       <EnhancePagerView
+        // @ts-expect-error
+        ref={pagerRef}
+        // pageGap={100}
+        // transitionStyle="pageCurl"
+        onPageChange={(e) => {
+          console.log(e.nativeEvent, "onPageChange")
+        }}
+        onScroll={(e) => {
+          console.log(e.nativeEvent, "onScroll")
+        }}
+        onScrollBegin={() => {
+          console.log("onScrollBegin")
+        }}
+        onScrollEnd={() => {
+          console.log("onScrollEnd")
+        }}
+        onPageWillAppear={(e) => {
+          console.log(e.nativeEvent, "onPageWillAppear")
+        }}
+        page={0}
         style={{
           flex: 1,
         }}
       >
-        <EnhancePageView style={{ flex: 1, backgroundColor: "white" }}>
-          <View>
+        <EnhancePageView style={{ ...StyleSheet.absoluteFillObject, backgroundColor: "white" }}>
+          <ScrollView style={{ flex: 1 }}>
             <Text>
               aaa Dignissimos repellendus voluptate. Beatae optio odit quod impedit sunt explicabo
               laudantium. Assumenda aspernatur pariatur. Perspiciatis dolorum impedit impedit
@@ -28,7 +67,7 @@ export const Pager = () => {
               veniam reiciendis. Adipisci impedit magni accusantium reprehenderit tempore hic sequi.
               Rem saepe eos ut nobis consequuntur dolore autem labore.
             </Text>
-          </View>
+          </ScrollView>
         </EnhancePageView>
         <EnhancePageView style={{ flex: 1, backgroundColor: "white" }}>
           <View>
@@ -60,6 +99,16 @@ export const Pager = () => {
           </View>
         </EnhancePageView>
       </EnhancePagerView>
+      <View
+        style={{
+          position: "absolute",
+          bottom: 30,
+          left: 0,
+          right: 0,
+        }}
+      >
+        <Button title="Set to End page" onPress={() => pagerRef.current?.setPage(2)} />
+      </View>
     </View>
   )
 }

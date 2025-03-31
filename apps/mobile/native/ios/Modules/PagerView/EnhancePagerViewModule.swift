@@ -8,53 +8,128 @@
 import ExpoModulesCore
 
 public class EnhancePagerViewModule: Module {
-  public func definition() -> ModuleDefinition {
-    Name("EnhancePagerView")
+    public func definition() -> ModuleDefinition {
+        Name("EnhancePagerView")
 
-    View(EnhancePagerView.self) {
+        View(EnhancePagerView.self) {
+            OnViewDidUpdateProps { view in
+                view.initizlize()
+            }
 
+            Prop("page") { (view: EnhancePagerView, index: Int) in
+                view.page = index
+            }
+
+            Prop("pageGap") { (view: EnhancePagerView, gap: Int) in
+                view.pageGap = gap
+            }
+
+            Prop("transitionStyle") { (view: EnhancePagerView, style: TransitionStyle?) in
+                guard let style = style else { return }
+                view.transitionStyle = style
+            }
+
+            AsyncFunction("setPage") { (view: EnhancePagerView, index: Int) in
+                view.pageController?.setÇurrentPage(index: index)
+            }
+
+            Events("onPageChange")
+            Events("onScroll")
+            Events("onScrollBegin")
+            Events("onScrollEnd")
+            Events("onPageWillAppear")
+        }
     }
-  }
 }
 
-class EnhancePagerProps {
-  @Field var initialPage: Int = 0
-  @Field var pageGap: CGFloat = 0
+enum TransitionStyle: String, Enumerable {
+    case scroll
+    case pageCurl
+    func toUIPageViewControllerTransitionStyle() -> UIPageViewController.TransitionStyle {
+        switch self {
+        case .scroll:
+            return .scroll
+        case .pageCurl:
+            return .pageCurl
+        }
+    }
 }
 
 private class EnhancePagerView: ExpoView {
-  private var pageController: EnhancePagerController
-  required init(appContext: AppContext? = nil) {
-    pageController = EnhancePagerController(pageViews: [], initialPageIndex: 0)
+    fileprivate var pageController: EnhancePagerController?
 
-    super.init(appContext: appContext)
+    private let onScroll = EventDispatcher()
+    private let onScrollBegin = EventDispatcher()
+    private let onScrollEnd = EventDispatcher()
+    private let onPageChange = EventDispatcher()
+    private let onPageWillAppear = EventDispatcher()
 
-    addSubview(pageController.view)
-    pageController.view.snp.makeConstraints { make in
-      make.edges.equalToSuperview()
-    }
-  }
+    private var pageViews: [UIView] = []
 
-  override func insertSubview(_ view: UIView, at index: Int) {
-    pageController.insertPageView(view: view, animated: false)
-  }
-
-  func willRemoveSubview(_ subview: UIView, at index: Int) {
-    pageController.removePageView(at: index)
-  }
-
-  #if RCT_NEW_ARCH_ENABLED
-    override func mountChildComponentView(_ childComponentView: UIView, index: Int) {
-      if childComponentView is EnhancePageView {
-        self.insertSubview(childComponentView, at: index)
-      }
+    required init(appContext: AppContext? = nil) {
+        super.init(appContext: appContext)
     }
 
-    override func unmountChildComponentView(_ childComponentView: UIView, index: Int) {
-      if childComponentView is EnhancePageView {
-        self.willRemoveSubview(childComponentView, at: index)
-      }
+    override func insertSubview(_ view: UIView, at index: Int) {
+        pageViews.insert(view, at: index)
+        pageController?.insertPageView(view: view)
     }
-  #endif
 
+    func willRemoveSubview(_ subview: UIView, at index: Int) {
+        pageViews.remove(at: index)
+        pageController?.removePageView(at: index)
+    }
+
+    // Props
+    var page: Int = 0 {
+        willSet {
+            pageController?.setÇurrentPage(index: newValue)
+        }
+    }
+
+    var pageGap = 20
+    var transitionStyle: TransitionStyle = .scroll
+
+    func initizlize() {
+        pageController = EnhancePagerController(pageViews: pageViews, initialPageIndex: page,
+                                                transitionStyle: transitionStyle.toUIPageViewControllerTransitionStyle(),
+                                                options: [
+                                                    .interPageSpacing: pageGap,
+                                                ])
+        guard let pageController = pageController else { return }
+        addSubview(pageController.view)
+        pageController.view.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
+
+        pageController.onPageIndexChange = { [weak self] index in
+            self?.onPageChange(["index": index])
+        }
+        pageController.onScrollStart = { [weak self] index in
+            self?.onScrollBegin(["index": index])
+        }
+        pageController.onScroll = { [weak self] percent, direction in
+            self?.onScroll(["percent": percent, "direction": direction.rawValue])
+        }
+        pageController.onScrollEnd = { [weak self] index in
+            self?.onScrollEnd(["index": index])
+        }
+        pageController.onPageWillAppear = { [weak self] index in
+            self?.onPageWillAppear(["index": index])
+        }
+    }
+
+    #if RCT_NEW_ARCH_ENABLED
+        override func mountChildComponentView(_ childComponentView: UIView, index: Int) {
+            if childComponentView is EnhancePageView {
+                insertSubview(childComponentView, at: index)
+            }
+        }
+
+        override func unmountChildComponentView(_ childComponentView: UIView, index: Int) {
+            if childComponentView is EnhancePageView {
+                willRemoveSubview(childComponentView, at: index)
+            }
+        }
+    #endif
 }
