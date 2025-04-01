@@ -2,7 +2,7 @@ import { cn } from "@follow/utils"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import dayjs from "dayjs"
 import { setStringAsync } from "expo-clipboard"
-import { Clipboard, Pressable, Text, View } from "react-native"
+import { Pressable, Text, View } from "react-native"
 
 import { useServerConfigs } from "@/src/atoms/server-configs"
 import { UINavigationHeaderActionButton } from "@/src/components/layouts/header/NavigationHeader"
@@ -53,7 +53,7 @@ export const InvitationsScreen: NavigationControllerView = () => {
   const { data: invitations, isLoading } = useInvitationsQuery()
   const limitation = useInvitationsLimitationQuery()
   const handleCopyCode = (code: string) => {
-    Clipboard.setString(code)
+    setStringAsync(code)
     toast.success("Copied to clipboard")
   }
   return (

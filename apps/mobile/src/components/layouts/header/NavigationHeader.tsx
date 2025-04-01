@@ -30,6 +30,7 @@ import { MingcuteLeftLineIcon } from "@/src/icons/mingcute_left_line"
 import {
   useCanBack,
   useCanDismiss,
+  useIsTopRouteInGroup,
   useNavigation,
   useScreenIsInSheetModal,
 } from "@/src/lib/navigation/hooks"
@@ -304,7 +305,6 @@ export const InternalNavigationHeader = ({
           )}
         </View>
         {/* Center */}
-
         <Animated.View
           className="flex min-w-0 flex-1 shrink flex-row items-center justify-center truncate"
           pointerEvents={"box-none"}
@@ -353,6 +353,11 @@ export const DefaultHeaderBackButton = ({
 }: NavigationHeaderButtonProps) => {
   const label = useColor("label")
   const navigation = useNavigation()
+
+  const isTopRouteInGroup = useIsTopRouteInGroup()
+
+  const showCloseIcon = canDismiss && isTopRouteInGroup
+
   if (!canGoBack && !canDismiss) return null
   return (
     <UINavigationHeaderActionButton
@@ -383,7 +388,7 @@ export const DefaultHeaderBackButton = ({
         }
       }}
     >
-      {canGoBack ? (
+      {!showCloseIcon ? (
         <MingcuteLeftLineIcon height={20} width={20} color={label} />
       ) : (
         <CloseCuteReIcon height={20} width={20} color={label} />
