@@ -1,5 +1,6 @@
 import { FeedViewType } from "@follow/constants"
 import { jotaiStore } from "@follow/utils"
+import { EventBus } from "@follow/utils/src/event-bus"
 import { atom, useAtom, useAtomValue, useSetAtom } from "jotai"
 import { createContext, useCallback, useContext, useMemo } from "react"
 
@@ -12,7 +13,6 @@ import { useInbox } from "@/src/store/inbox/hooks"
 import { useList } from "@/src/store/list/hooks"
 import { getSubscriptionByCategory } from "@/src/store/subscription/getter"
 import { useSubscription } from "@/src/store/subscription/hooks"
-
 // drawer open state
 
 const drawerOpenAtom = atom<boolean>(false)
@@ -215,8 +215,21 @@ export const useSelectedFeedTitle = () => {
   }
 }
 
-export const selectTimeline = (state: SelectedTimeline) => {
+declare module "@follow/utils/src/event-bus" {
+  export interface CustomEvent {
+    SELECT_TIMELINE: {
+      view: SelectedTimeline
+      manual: boolean
+    }
+  }
+}
+
+export const selectTimeline = (state: SelectedTimeline, manual = true) => {
   jotaiStore.set(selectedTimelineAtom, state)
+  EventBus.dispatch("SELECT_TIMELINE", {
+    view: state,
+    manual,
+  })
 }
 
 export const selectFeed = (state: SelectedFeed) => {

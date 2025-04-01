@@ -1581,6 +1581,9 @@ importers:
       path-to-regexp:
         specifier: 8.2.0
         version: 8.2.0
+      react-native:
+        specifier: '>=0.74.0'
+        version: 0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5)
       tailwind-merge:
         specifier: 3.0.2
         version: 3.0.2
