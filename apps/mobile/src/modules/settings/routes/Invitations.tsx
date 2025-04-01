@@ -1,6 +1,7 @@
 import { cn } from "@follow/utils"
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import dayjs from "dayjs"
+import { setStringAsync } from "expo-clipboard"
 import { Clipboard, Pressable, Text, View } from "react-native"
 
 import { useServerConfigs } from "@/src/atoms/server-configs"
@@ -13,6 +14,7 @@ import { UserAvatar } from "@/src/components/ui/avatar/UserAvatar"
 import { ContextMenu } from "@/src/components/ui/context-menu"
 import {
   GroupedInformationCell,
+  GroupedInsetActivityIndicatorCell,
   GroupedInsetListBaseCell,
   GroupedInsetListCard,
   GroupedInsetListSectionHeader,
@@ -21,16 +23,20 @@ import { MonoText } from "@/src/components/ui/typography/MonoText"
 import { LoveCuteFiIcon } from "@/src/icons/love_cute_fi"
 import { PowerIcon } from "@/src/icons/power"
 import { apiClient } from "@/src/lib/api-fetch"
+import type { DialogComponent } from "@/src/lib/dialog"
+import { Dialog } from "@/src/lib/dialog"
+import { toastFetchError } from "@/src/lib/error-parser"
 import type { NavigationControllerView } from "@/src/lib/navigation/types"
+import { queryClient } from "@/src/lib/query-client"
 import { toast } from "@/src/lib/toast"
 import { accentColor } from "@/src/theme/colors"
 
+const invitationQueryKey = ["invitations"]
 const useInvitationsQuery = () => {
-  const { data } = useQuery({
-    queryKey: ["invitations"],
+  return useQuery({
+    queryKey: invitationQueryKey,
     queryFn: () => apiClient.invitations.$get(),
   })
-  return data?.data
 }
 const useInvitationsLimitationQuery = () => {
   const { data } = useQuery({
@@ -39,25 +45,12 @@ const useInvitationsLimitationQuery = () => {
   })
   return data?.data
 }
-// export const invitations = {
-//   list: () =>
-//     defineQuery(["invitations"], async () => {
-//       const res = await apiClient.invitations.$get()
-//       return res.data
-//     }),
-
-//   limitation: () =>
-//     defineQuery(["invitations", "limitation"], async () => {
-//       const res = await apiClient.invitations.limitation.$get()
-//       return res.data
-//     }),
-// }
 
 const numberFormatter = new Intl.NumberFormat("en-US")
 export const InvitationsScreen: NavigationControllerView = () => {
   const serverConfigs = useServerConfigs()
 
-  const invitations = useInvitationsQuery()
+  const { data: invitations, isLoading } = useInvitationsQuery()
   const limitation = useInvitationsLimitationQuery()
   const handleCopyCode = (code: string) => {
     Clipboard.setString(code)
@@ -92,15 +85,19 @@ export const InvitationsScreen: NavigationControllerView = () => {
 
       <GroupedInsetListSectionHeader label="Invitations" />
       <GroupedInsetListCard>
-        {invitations?.map((invitation) => (
+        {isLoading && <GroupedInsetActivityIndicatorCell />}
+        {invitations?.data?.map((invitation) => (
           <ContextMenu.Root key={invitation.code}>
             <ContextMenu.Trigger>
               <GroupedInsetListBaseCell className="bg-secondary-system-grouped-background flex-1">
                 <View className="mr-2 shrink flex-row items-center gap-4">
                   <UserAvatar size={26} image={invitation.users?.image} preview={false} />
                   <View className="min-w-0 shrink">
-                    <Text className="text-label" numberOfLines={1}>
-                      {invitation.users?.name}
+                    <Text
+                      className={cn("text-label", !invitation.users && "text-secondary-label")}
+                      numberOfLines={1}
+                    >
+                      {invitation.users?.name || (!invitation.users ? "Not used" : "")}
                     </Text>
                     <Text className="text-secondary-label text-sm">
                       Created at {dayjs(invitation.createdAt).format("YYYY/MM/DD")}
@@ -131,10 +128,15 @@ export const InvitationsScreen: NavigationControllerView = () => {
 
 const GenerateButton = () => {
   const limitation = useInvitationsLimitationQuery()
-  const invitations = useInvitationsQuery()
-  const disabled = !limitation || (invitations && invitations?.length >= limitation)
+  const { data: invitations } = useInvitationsQuery()
+  const disabled = !limitation || (invitations && invitations?.data?.length >= limitation)
   return (
-    <UINavigationHeaderActionButton disabled={disabled}>
+    <UINavigationHeaderActionButton
+      disabled={disabled}
+      onPress={() => {
+        Dialog.show(ConfirmGenerateDialog)
+      }}
+    >
       <Text
         className={cn(
           "text-base font-semibold",
@@ -146,3 +148,62 @@ const GenerateButton = () => {
     </UINavigationHeaderActionButton>
   )
 }
+
+const ConfirmGenerateDialog: DialogComponent = () => {
+  const serverConfigs = useServerConfigs()
+  const { dismiss } = Dialog.useDialogContext()!
+
+  const newInvitation = useMutation({
+    mutationKey: ["newInvitation"],
+    mutationFn: (values: Parameters<typeof apiClient.invitations.new.$post>[0]["json"]) =>
+      apiClient.invitations.new.$post({ json: values }),
+    onError(err) {
+      toastFetchError(err)
+    },
+    onSuccess(data) {
+      dismiss()
+
+      toast.success("Generate successfully, code is copied to clipboard")
+
+      type Invitation = {
+        code: string
+        createdAt: string | null
+      }
+      const old = queryClient.getQueryData<Invitation[]>(invitationQueryKey)
+
+      queryClient.setQueryData<Invitation[]>(invitationQueryKey, () => {
+        return [
+          {
+            code: data.data,
+            createdAt: dayjs().toISOString(),
+          },
+          ...(old ?? []),
+        ]
+      })
+      setStringAsync(data.data)
+    },
+  })
+
+  return (
+    <View>
+      <Text>
+        You can spend {serverConfigs?.INVITATION_PRICE}{" "}
+        <View style={{ transform: [{ translateY: 2 }] }}>
+          <PowerIcon color={accentColor} height={16} width={16} />
+        </View>{" "}
+        Power to generate an invitation code for your friends.
+      </Text>
+
+      <Dialog.DialogConfirm
+        onPress={() => {
+          newInvitation.mutateAsync({})
+        }}
+      />
+    </View>
+  )
+}
+
+ConfirmGenerateDialog.id = "ConfirmGenerateDialog"
+ConfirmGenerateDialog.confirmText = "Generate"
+ConfirmGenerateDialog.title = "Generate Invitation Code"
+ConfirmGenerateDialog.headerIcon = <PowerIcon color={accentColor} height={24} width={24} />
