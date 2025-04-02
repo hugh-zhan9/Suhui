@@ -10,7 +10,7 @@ import {
   useRef,
   useState,
 } from "react"
-import type { LayoutChangeEvent } from "react-native"
+import type { LayoutChangeEvent, StyleProp, ViewStyle } from "react-native"
 import { Alert, StyleSheet, TouchableOpacity, View } from "react-native"
 import type { AnimatedProps } from "react-native-reanimated"
 import Animated, {
@@ -402,11 +402,13 @@ export const UINavigationHeaderActionButton = ({
   onPress,
   disabled,
   className,
+  style,
 }: {
   children: ReactNode
   onPress?: () => void
   disabled?: boolean
   className?: string
+  style?: StyleProp<ViewStyle>
 }) => {
   return (
     <TouchableOpacity
@@ -414,6 +416,7 @@ export const UINavigationHeaderActionButton = ({
       className={cn("p-2", className)}
       onPress={onPress}
       disabled={disabled}
+      style={style}
     >
       {children}
     </TouchableOpacity>

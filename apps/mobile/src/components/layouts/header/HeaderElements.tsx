@@ -1,6 +1,7 @@
 import { cn, withOpacity } from "@follow/utils"
 import { useCallback } from "react"
 import { Text, TouchableOpacity, View } from "react-native"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { CheckLineIcon } from "@/src/icons/check_line"
 import { CloseCuteReIcon } from "@/src/icons/close_cute_re"
@@ -98,9 +99,15 @@ export const HeaderSubmitTextButton = ({
 }
 
 export const HeaderCloseOnly = () => {
+  const insets = useSafeAreaInsets()
   return (
     <StackScreenHeaderPortal>
-      <UINavigationHeaderActionButton className="absolute left-4 top-4">
+      <UINavigationHeaderActionButton
+        className="absolute left-4"
+        style={{
+          top: insets.top + 16,
+        }}
+      >
         <HeaderCloseButton />
       </UINavigationHeaderActionButton>
     </StackScreenHeaderPortal>

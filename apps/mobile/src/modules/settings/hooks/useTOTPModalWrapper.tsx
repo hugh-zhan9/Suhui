@@ -8,13 +8,14 @@ import { useWhoami } from "@/src/store/user/hooks"
 
 export const useTOTPModalWrapper = <T extends { TOTPCode?: string }>(
   callback: (input: T) => Promise<any>,
-  options?: { force?: boolean },
+  options?: { force?: boolean; dismiss?: () => any },
 ) => {
   const user = useWhoami()
   const navigation = useNavigation()
   return useCallback(
     async (input: T) => {
       const presentTOTPModal = () => {
+        options?.dismiss?.()
         if (!user?.twoFactorEnabled) {
           toast.error("You need to enable two-factor authentication to perform this action.")
 
@@ -53,6 +54,6 @@ export const useTOTPModalWrapper = <T extends { TOTPCode?: string }>(
         }
       }
     },
-    [callback, navigation, options?.force, user?.twoFactorEnabled],
+    [callback, navigation, options, user?.twoFactorEnabled],
   )
 }

@@ -31,6 +31,8 @@ import { queryClient } from "@/src/lib/query-client"
 import { toast } from "@/src/lib/toast"
 import { accentColor } from "@/src/theme/colors"
 
+import { useTOTPModalWrapper } from "../hooks/useTOTPModalWrapper"
+
 const invitationQueryKey = ["invitations"]
 const useInvitationsQuery = () => {
   return useQuery({
@@ -184,6 +186,10 @@ const ConfirmGenerateDialog: DialogComponent = () => {
     },
   })
 
+  const confirm = useTOTPModalWrapper(() => newInvitation.mutateAsync({}), {
+    dismiss,
+  })
+
   return (
     <View>
       <Text>
@@ -196,7 +202,7 @@ const ConfirmGenerateDialog: DialogComponent = () => {
 
       <Dialog.DialogConfirm
         onPress={() => {
-          newInvitation.mutateAsync({})
+          confirm({})
         }}
       />
     </View>
