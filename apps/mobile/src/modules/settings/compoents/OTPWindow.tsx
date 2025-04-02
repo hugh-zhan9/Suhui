@@ -1,12 +1,21 @@
 import { useMutation } from "@tanstack/react-query"
 import { useEffect, useRef, useState } from "react"
-import { Keyboard, Modal, StyleSheet, Text, useWindowDimensions, View } from "react-native"
+import {
+  Animated,
+  Keyboard,
+  StyleSheet,
+  Text,
+  useAnimatedValue,
+  useWindowDimensions,
+  View,
+} from "react-native"
 import type { OtpInputRef } from "react-native-otp-entry"
 import { OtpInput } from "react-native-otp-entry"
-import Animated, { FadeIn, FadeOut, useSharedValue, withSpring } from "react-native-reanimated"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useColor } from "react-native-uikit-colors"
+import { useEventCallback } from "usehooks-ts"
 
+import { FullWindowOverlay } from "@/src/components/common/FullWindowOverlay"
 import { isAuthCodeValid } from "@/src/lib/auth"
 import { toast } from "@/src/lib/toast"
 import { accentColor } from "@/src/theme/colors"
@@ -14,9 +23,10 @@ import { accentColor } from "@/src/theme/colors"
 type OTPWindowProps<T> = {
   onSuccess: (data: T) => void
   verifyFn: (code: string) => Promise<T>
+  onDismiss: () => void
 }
 
-export const OTPWindow = <T,>({ onSuccess, verifyFn }: OTPWindowProps<T>) => {
+export const OTPWindow = <T,>({ onSuccess, verifyFn, onDismiss }: OTPWindowProps<T>) => {
   const otpInputRef = useRef<OtpInputRef>(null)
   const label = useColor("label")
   const tertiaryLabel = useColor("tertiaryLabel")
@@ -31,30 +41,58 @@ export const OTPWindow = <T,>({ onSuccess, verifyFn }: OTPWindowProps<T>) => {
       onSuccess(data)
     },
     onSettled() {
-      setOpen(false)
+      setComponentRender(false)
     },
     mutationFn: ({ code }: { code: string }) => verifyFn(code),
   })
 
-  const windowScaleValue = useSharedValue(0.9)
-  const windowOpacityValue = useSharedValue(0)
+  const windowScale = useAnimatedValue(1.1)
+  const windowOpacity = useAnimatedValue(0)
 
-  const [open, setOpen] = useState(false)
+  const [uiShow, setUiShow] = useState(false)
+  const [componentRender, setComponentRender] = useState(true)
 
   useEffect(() => {
-    setOpen(true)
+    setUiShow(true)
   }, [])
 
+  const stableDismiss = useEventCallback(() => {
+    onDismiss()
+  })
   useEffect(() => {
-    const preset = { stiffness: 100, damping: 10 }
-    if (open) {
-      windowScaleValue.value = withSpring(1, preset)
-      windowOpacityValue.value = withSpring(1, preset)
+    let timer: any
+
+    if (uiShow) {
+      Animated.parallel([
+        Animated.spring(windowScale, {
+          toValue: 1,
+          damping: 80,
+          stiffness: 500,
+          mass: 1,
+          velocity: 10,
+          useNativeDriver: true,
+        }),
+        Animated.timing(windowOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+      ]).start()
     } else {
-      windowOpacityValue.value = withSpring(0, preset)
-      windowScaleValue.value = withSpring(0.9, preset)
+      Animated.timing(windowOpacity, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true,
+      }).start()
+
+      timer = setTimeout(() => {
+        setComponentRender(false)
+        stableDismiss()
+      }, 500)
     }
-  }, [open, windowOpacityValue, windowScaleValue])
+
+    return () => clearTimeout(timer)
+  }, [stableDismiss, uiShow, windowOpacity, windowScale])
 
   const { height } = useWindowDimensions()
 
@@ -75,9 +113,18 @@ export const OTPWindow = <T,>({ onSuccess, verifyFn }: OTPWindowProps<T>) => {
     return () => sub.forEach((listener) => listener.remove())
   }, [height, insets.top])
 
+  if (!componentRender) return null
+
   return (
-    <Modal transparent animationType="fade" visible={open} onRequestClose={() => setOpen(false)}>
-      <Animated.View exiting={FadeOut} entering={FadeIn} style={StyleSheet.absoluteFillObject}>
+    <FullWindowOverlay>
+      <Animated.View
+        style={[
+          StyleSheet.absoluteFillObject,
+          {
+            opacity: windowOpacity,
+          },
+        ]}
+      >
         <View className={"flex-1 bg-black/50"} />
       </Animated.View>
       <View className={"flex-1"}>
@@ -89,8 +136,8 @@ export const OTPWindow = <T,>({ onSuccess, verifyFn }: OTPWindowProps<T>) => {
             style={[
               styles.window,
               {
-                transform: [{ scale: windowScaleValue }],
-                opacity: windowOpacityValue,
+                transform: [{ scale: windowScale }],
+                opacity: windowOpacity,
               },
             ]}
           >
@@ -148,7 +195,7 @@ export const OTPWindow = <T,>({ onSuccess, verifyFn }: OTPWindowProps<T>) => {
                 <Text
                   className="text-accent px-5 py-2 text-base font-medium"
                   onPress={() => {
-                    setOpen(false)
+                    setUiShow(false)
                   }}
                   suppressHighlighting
                 >
@@ -159,7 +206,7 @@ export const OTPWindow = <T,>({ onSuccess, verifyFn }: OTPWindowProps<T>) => {
           </Animated.View>
         </View>
       </View>
-    </Modal>
+    </FullWindowOverlay>
   )
 }
 

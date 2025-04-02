@@ -38,6 +38,9 @@ export const useTOTPModalWrapper = <T extends { TOTPCode?: string }>(
 
                 root.destroy()
               }}
+              onDismiss={() => {
+                root.destroy()
+              }}
               onSuccess={async () => {
                 root.destroy()
               }}
