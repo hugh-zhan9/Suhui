@@ -3,6 +3,12 @@
   "cancel": "Annuler",
   "close": "Fermer",
   "confirm": "Confirmer",
+  "feed_view_type.articles": "Articles",
+  "feed_view_type.audios": "Audios",
+  "feed_view_type.notifications": "Notifications",
+  "feed_view_type.pictures": "Images",
+  "feed_view_type.social_media": "Réseaux sociaux",
+  "feed_view_type.videos": "Vidéos",
   "ok": "OK",
   "quantifier.piece": "",
   "space": " ",
@@ -25,5 +31,7 @@
   "words.result": "résultat",
   "words.result_one": "résultat",
   "words.result_other": "résultats",
+  "words.search": "Rechercher",
+  "words.starred": "Favoris",
   "words.which.all": "Tous"
 }
