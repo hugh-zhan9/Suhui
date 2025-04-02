@@ -2,9 +2,9 @@ import type { z } from "zod"
 
 import type { languageSchema } from "./hono"
 
-export type SupportedLanguage = z.infer<typeof languageSchema>
-export const LANGUAGE_MAP: Record<
-  SupportedLanguage,
+export type SupportedActionLanguage = z.infer<typeof languageSchema>
+export const ACTION_LANGUAGE_MAP: Record<
+  SupportedActionLanguage,
   {
     label: string
     value: string
@@ -106,3 +106,4 @@ export const LANGUAGE_MAP: Record<
       code: "tur",
     },
   }
+export const ACTION_LANGUAGE_KEYS = Object.keys(ACTION_LANGUAGE_MAP) as SupportedActionLanguage[]

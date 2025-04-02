@@ -1,10 +1,10 @@
-import type { SupportedLanguage } from "@follow/shared"
-import { LANGUAGE_MAP } from "@follow/shared"
+import { ACTION_LANGUAGE_KEYS } from "@follow/shared"
 import i18next from "i18next"
 import { useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { Text, View } from "react-native"
 
+import type { MobileSupportedLanguages } from "@/src/@types/constants"
 import { currentSupportedLanguages } from "@/src/@types/constants"
 import { setGeneralSetting, useGeneralSettingKey } from "@/src/atoms/settings/general"
 import {
@@ -25,17 +25,18 @@ import type { NavigationControllerView } from "@/src/lib/navigation/types"
 function LanguageSelect({ settingKey }: { settingKey: "language" | "actionLanguage" }) {
   const { t } = useTranslation("lang")
   const languageMapWithTranslation = useMemo(() => {
-    const data = (Object.keys(LANGUAGE_MAP) as SupportedLanguage[]).map((key) => ({
-      subLabel: t(`langs.${key}`, { lng: key }),
+    const languageKeys =
+      settingKey === "language"
+        ? (currentSupportedLanguages as MobileSupportedLanguages[])
+        : ACTION_LANGUAGE_KEYS.sort(
+            (a, b) => currentSupportedLanguages.indexOf(a) - currentSupportedLanguages.indexOf(b),
+          )
+
+    return languageKeys.map((key) => ({
+      subLabel: settingKey === "language" ? t(`langs.${key}`, { lng: key }) : undefined,
       label: t(`langs.${key}`),
       value: key,
     }))
-
-    return settingKey === "language"
-      ? data.filter((item) => {
-          return currentSupportedLanguages.includes(item.value)
-        })
-      : data
   }, [settingKey, t])
   const language = useGeneralSettingKey(settingKey)
 
