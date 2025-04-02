@@ -1,3 +1,4 @@
+import type { SupportedLanguage } from "@follow/shared"
 import { LANGUAGE_MAP } from "@follow/shared"
 import i18next from "i18next"
 import { useMemo } from "react"
@@ -24,8 +25,9 @@ import type { NavigationControllerView } from "@/src/lib/navigation/types"
 function LanguageSelect({ settingKey }: { settingKey: "language" | "actionLanguage" }) {
   const { t } = useTranslation("lang")
   const languageMapWithTranslation = useMemo(() => {
-    const data = Object.entries(LANGUAGE_MAP).map(([key, { label }]) => ({
-      label: `${t(`langs.${key}` as any)} (${label})`,
+    const data = (Object.keys(LANGUAGE_MAP) as SupportedLanguage[]).map((key) => ({
+      subLabel: t(`langs.${key}`, { lng: key }),
+      label: t(`langs.${key}`),
       value: key,
     }))
 

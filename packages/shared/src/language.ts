@@ -2,8 +2,9 @@ import type { z } from "zod"
 
 import type { languageSchema } from "./hono"
 
+export type SupportedLanguage = z.infer<typeof languageSchema>
 export const LANGUAGE_MAP: Record<
-  z.infer<typeof languageSchema>,
+  SupportedLanguage,
   {
     label: string
     value: string
