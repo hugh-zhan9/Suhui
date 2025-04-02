@@ -1,5 +1,4 @@
 import { useMutation } from "@tanstack/react-query"
-import type { FC } from "react"
 import { useEffect, useRef, useState } from "react"
 import { Keyboard, Modal, StyleSheet, Text, useWindowDimensions, View } from "react-native"
 import type { OtpInputRef } from "react-native-otp-entry"
@@ -8,13 +7,16 @@ import Animated, { FadeIn, FadeOut, useSharedValue, withSpring } from "react-nat
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useColor } from "react-native-uikit-colors"
 
-import { isAuthCodeValid, twoFactor } from "@/src/lib/auth"
+import { isAuthCodeValid } from "@/src/lib/auth"
 import { toast } from "@/src/lib/toast"
 import { accentColor } from "@/src/theme/colors"
 
-export const OTPWindow: FC<{
-  onSuccess: (token: string) => void
-}> = ({ onSuccess }) => {
+type OTPWindowProps<T> = {
+  onSuccess: (data: T) => void
+  verifyFn: (code: string) => Promise<T>
+}
+
+export const OTPWindow = <T,>({ onSuccess, verifyFn }: OTPWindowProps<T>) => {
   const otpInputRef = useRef<OtpInputRef>(null)
   const label = useColor("label")
   const tertiaryLabel = useColor("tertiaryLabel")
@@ -26,21 +28,12 @@ export const OTPWindow: FC<{
       toast.error(`Failed to verify: ${error.message}`)
     },
     onSuccess(data) {
-      onSuccess(data.token)
+      onSuccess(data)
     },
     onSettled() {
       setOpen(false)
     },
-    mutationFn: async ({ code }: { code: string }) => {
-      const { data, error } = await twoFactor.verifyTotp({ code })
-      if (!data || error) {
-        const errorMessage = error?.message ?? "Invalid TOTP code"
-        toast.error(errorMessage)
-        throw new Error(errorMessage)
-      }
-
-      return data
-    },
+    mutationFn: ({ code }: { code: string }) => verifyFn(code),
   })
 
   const windowScaleValue = useSharedValue(0.9)
@@ -53,12 +46,13 @@ export const OTPWindow: FC<{
   }, [])
 
   useEffect(() => {
+    const preset = { stiffness: 100, damping: 10 }
     if (open) {
-      windowScaleValue.value = withSpring(1, { stiffness: 100, damping: 10 })
-      windowOpacityValue.value = withSpring(1, { stiffness: 100, damping: 10 })
+      windowScaleValue.value = withSpring(1, preset)
+      windowOpacityValue.value = withSpring(1, preset)
     } else {
-      windowOpacityValue.value = withSpring(0, { stiffness: 100, damping: 10 })
-      windowScaleValue.value = withSpring(0.9, { stiffness: 100, damping: 10 })
+      windowOpacityValue.value = withSpring(0, preset)
+      windowScaleValue.value = withSpring(0.9, preset)
     }
   }, [open, windowOpacityValue, windowScaleValue])
 

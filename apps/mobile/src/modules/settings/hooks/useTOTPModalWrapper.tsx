@@ -1,10 +1,13 @@
 import { useCallback } from "react"
+import Siblings from "react-native-root-siblings"
 
 import { getFetchErrorInfo } from "@/src/lib/error-parser"
 import { useNavigation } from "@/src/lib/navigation/hooks"
 import { toast } from "@/src/lib/toast"
 import { TwoFactorAuthScreen } from "@/src/screens/(modal)/2fa"
 import { useWhoami } from "@/src/store/user/hooks"
+
+import { OTPWindow } from "../compoents/OTPWindow"
 
 export const useTOTPModalWrapper = <T extends { TOTPCode?: string }>(
   callback: (input: T) => Promise<any>,
@@ -24,20 +27,23 @@ export const useTOTPModalWrapper = <T extends { TOTPCode?: string }>(
           return
         }
 
-        // present({
-        //   title: t("profile.totp_code.title"),
-        //   content: ({ dismiss }) => {
-        //     return createElement(TOTPForm, {
-        //       async onSubmitMutationFn(values) {
-        //         await callback({
-        //           ...input,
-        //           TOTPCode: values.code,
-        //         })
-        //         dismiss()
-        //       },
-        //     })
-        //   },
-        // })
+        const root = new Siblings(
+          (
+            <OTPWindow
+              verifyFn={async (TOTPCode) => {
+                await callback({
+                  ...input,
+                  TOTPCode,
+                })
+
+                root.destroy()
+              }}
+              onSuccess={async () => {
+                root.destroy()
+              }}
+            />
+          ),
+        )
       }
 
       if (options?.force) {
