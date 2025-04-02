@@ -1,3 +1,4 @@
+import { t } from "i18next"
 import { FetchError } from "ofetch"
 
 import { toast } from "./toast"
