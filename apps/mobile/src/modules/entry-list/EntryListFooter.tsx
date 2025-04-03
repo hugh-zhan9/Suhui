@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next"
-import { Pressable, Text } from "react-native"
+import { Text, TouchableOpacity } from "react-native"
 
 import { CheckCircleCuteReIcon } from "@/src/icons/check_circle_cute_re"
 import { unreadSyncService } from "@/src/store/unread/store"
@@ -14,7 +14,7 @@ export const EntryListFooter = () => {
   return (
     <>
       <ItemSeparator />
-      <Pressable
+      <TouchableOpacity
         className="flex-row items-center gap-1.5 py-6 pl-6"
         onPress={() => {
           if (typeof selectedView === "number") {
@@ -28,7 +28,7 @@ export const EntryListFooter = () => {
             which: t("operation.mark_all_as_read_which_above"),
           })}
         </Text>
-      </Pressable>
+      </TouchableOpacity>
     </>
   )
 }
@@ -38,7 +38,7 @@ export const GridEntryListFooter = () => {
   const selectedView = useSelectedView()
 
   return (
-    <Pressable
+    <TouchableOpacity
       className="flex-row items-center justify-center gap-1.5 py-6"
       onPress={() => {
         if (typeof selectedView === "number") {
@@ -52,6 +52,6 @@ export const GridEntryListFooter = () => {
           which: t("operation.mark_all_as_read_which_above"),
         })}
       </Text>
-    </Pressable>
+    </TouchableOpacity>
   )
 }
