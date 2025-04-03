@@ -217,7 +217,7 @@ const ConfirmGenerateDialog: DialogComponent = () => {
     },
   })
 
-  const confirm = useTOTPModalWrapper(() => newInvitation.mutateAsync({}), {
+  const confirm = useTOTPModalWrapper(newInvitation.mutateAsync, {
     dismiss,
   })
 
