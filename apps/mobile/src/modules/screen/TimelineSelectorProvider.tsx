@@ -18,7 +18,7 @@ import {
 import { TimelineViewSelector } from "@/src/modules/screen/TimelineViewSelector"
 import { getFeed } from "@/src/store/feed/getter"
 
-import { useEntryListContext, useSelectedFeedTitle } from "./atoms"
+import { useEntryListContext, useFetchEntriesControls, useSelectedFeedTitle } from "./atoms"
 
 export function TimelineSelectorProvider({
   children,
@@ -34,10 +34,13 @@ export function TimelineSelectorProvider({
   const isTimeline = screenType === "timeline"
   const isSubscriptions = screenType === "subscriptions"
 
+  const { isFetching } = useFetchEntriesControls()
+
   return (
     <>
       <NavigationBlurEffectHeader
         title={viewTitle}
+        isLoading={(isFeed || isTimeline) && isFetching}
         headerLeft={useMemo(
           () =>
             isTimeline || isSubscriptions

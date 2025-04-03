@@ -37,6 +37,7 @@ import {
 import { ScreenItemContext } from "@/src/lib/navigation/ScreenItemContext"
 
 import { ThemedBlurView } from "../../common/ThemedBlurView"
+import { PlatformActivityIndicator } from "../../ui/loading/PlatformActivityIndicator"
 import { getDefaultHeaderHeight } from "../utils"
 import { SetNavigationHeaderHeightContext } from "../views/NavigationHeaderContext"
 import { FakeNativeHeaderTitle } from "./FakeNativeHeaderTitle"
@@ -150,6 +151,7 @@ export interface InternalNavigationHeaderProps
   hideableBottomHeight?: number
   headerTitleAbsolute?: boolean
   headerTitle?: FC<React.ComponentProps<typeof FakeNativeHeaderTitle>> | ReactNode
+  isLoading?: boolean
 }
 
 const blurThreshold = 0
@@ -168,6 +170,7 @@ export const InternalNavigationHeader = ({
   headerTitleAbsolute,
 
   promptBeforeLeave,
+  isLoading,
   ...rest
 }: InternalNavigationHeaderProps) => {
   const insets = useSafeAreaInsets()
@@ -313,6 +316,11 @@ export const InternalNavigationHeader = ({
           }}
         >
           <View className="shrink" style={{ flexBasis: rightWidth }} />
+          {isLoading && (
+            <View className="mr-2">
+              <PlatformActivityIndicator size="small" />
+            </View>
+          )}
           {headerTitleAbsolute ? <View /> : headerTitle}
           <View className="shrink" style={{ flexBasis: leftWidth }} />
         </Animated.View>

@@ -140,6 +140,7 @@ export const NavigationBlurEffectHeader = ({
             headerTitleAbsolute={headerTitleAbsolute}
             headerTitle={props.headerTitle}
             promptBeforeLeave={props.promptBeforeLeave}
+            isLoading={props.isLoading}
           />
         </SetNavigationHeaderHeightContext.Provider>
       ),
@@ -157,6 +158,7 @@ export const NavigationBlurEffectHeader = ({
     store,
     props.headerTitle,
     props.promptBeforeLeave,
+    props.isLoading,
   ])
 
   return null
