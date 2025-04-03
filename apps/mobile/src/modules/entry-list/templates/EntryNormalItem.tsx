@@ -100,7 +100,10 @@ export function EntryNormalItem({ entryId, extraData }: { entryId: string; extra
       <ItemPressable
         touchHighlight={false}
         itemStyle={ItemPressableStyle.Plain}
-        className="flex flex-row items-center p-4 pl-6"
+        className={cn(
+          view === FeedViewType.Notifications ? "p-2" : "p-4",
+          "flex flex-row items-center pl-6",
+        )}
         onPress={handlePress}
       >
         <ReAnimated.View
@@ -110,7 +113,7 @@ export function EntryNormalItem({ entryId, extraData }: { entryId: string; extra
 
         <View className="flex-1 space-y-2">
           <View className="mb-1 flex-1 flex-row items-center gap-1.5 pr-2">
-            <FeedIcon fallback feed={feed} size={16} />
+            <FeedIcon fallback feed={feed} size={view === FeedViewType.Notifications ? 14 : 16} />
             <Text numberOfLines={1} className="text-secondary-label shrink text-sm font-medium">
               {feed?.title || from || "Unknown feed"}
             </Text>
@@ -131,7 +134,10 @@ export function EntryNormalItem({ entryId, extraData }: { entryId: string; extra
           {!!entry.title && (
             <EntryTranslation
               numberOfLines={2}
-              className="text-label text-lg font-semibold"
+              className={cn(
+                view === FeedViewType.Notifications ? "text-base" : "text-lg",
+                "text-label font-semibold",
+              )}
               source={entry.title}
               target={translation?.title}
               showTranslation={!!entry.settings?.translation}
