@@ -1,6 +1,7 @@
 import type { ImageErrorEventData, ImageProps as ExpoImageProps } from "expo-image"
 import { Image as ExpoImage } from "expo-image"
 import { forwardRef, useCallback, useMemo, useState } from "react"
+import { useColor } from "react-native-uikit-colors"
 
 import { getAllSources } from "./utils"
 
@@ -36,6 +37,13 @@ export const Image = forwardRef<ExpoImage, ImageProps>(
       [isError, rest],
     )
 
+    const [isLoading, setIsLoading] = useState(true)
+    const onLoad = useCallback(() => {
+      setIsLoading(false)
+    }, [])
+
+    const backgroundColor = useColor("systemFill")
+
     if (!source?.uri) {
       return null
     }
@@ -44,6 +52,7 @@ export const Image = forwardRef<ExpoImage, ImageProps>(
       <ExpoImage
         source={isError ? safeSource : proxiesSafeSource}
         onError={onError}
+        onLoad={onLoad}
         placeholder={{
           blurhash,
           ...(typeof rest.placeholder === "object" && { ...rest.placeholder }),
@@ -51,6 +60,7 @@ export const Image = forwardRef<ExpoImage, ImageProps>(
         style={{
           aspectRatio,
           ...(typeof rest.style === "object" && { ...rest.style }),
+          ...(isLoading && { backgroundColor }),
         }}
         recyclingKey={source?.uri}
         {...rest}
