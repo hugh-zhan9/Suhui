@@ -6,7 +6,7 @@
   "operation.edit": "Редактировать",
   "operation.mark_all_as_read": "Отметить все как прочитанное",
   "operation.mark_all_as_read_confirm": "Подтвердить отметку всего как прочитанное?",
-  "operation.mark_all_as_read_which": "Отметить <which /> как прочитанное?",
+  "operation.mark_all_as_read_which": "Отметить {{which}} как прочитанное",
   "operation.mark_as_read": "Отметить как прочитанное",
   "operation.rename_category": "Переименовать категорию",
   "operation.share": "Поделиться",

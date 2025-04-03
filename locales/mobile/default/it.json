@@ -5,7 +5,7 @@
   "operation.edit": "Modifica",
   "operation.mark_all_as_read": "Segna tutto come letto",
   "operation.mark_all_as_read_confirm": "Confermi di segnare tutto come letto?",
-  "operation.mark_all_as_read_which": "Segna <which /> come letto?",
+  "operation.mark_all_as_read_which": "Segna {{which}} come letto",
   "operation.mark_as_read": "Segna come letto",
   "operation.rename_category": "Rinomina categoria",
   "operation.share": "Condividi",

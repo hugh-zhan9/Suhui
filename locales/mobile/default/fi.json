@@ -5,7 +5,7 @@
   "operation.edit": "Muokkaa",
   "operation.mark_all_as_read": "Merkitse kaikki luetuiksi",
   "operation.mark_all_as_read_confirm": "Vahvista kaikki merkinnät luetuiksi?",
-  "operation.mark_all_as_read_which": "Merkitäänkö <which /> luetuksi?",
+  "operation.mark_all_as_read_which": "Merkitäänkö {{which}} luetuksi",
   "operation.mark_as_read": "Merkitse luetuksi",
   "operation.rename_category": "Nimeä kategoria uudelleen",
   "operation.share": "Jaa",

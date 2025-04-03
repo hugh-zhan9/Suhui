@@ -5,7 +5,7 @@
   "operation.edit": "Düzenle",
   "operation.mark_all_as_read": "Tümünü okundu olarak işaretle",
   "operation.mark_all_as_read_confirm": "Tümünü okundu olarak işaretlemeyi onaylıyor musunuz?",
-  "operation.mark_all_as_read_which": "<which /> okundu olarak işaretlensin mi?",
+  "operation.mark_all_as_read_which": "{{which}} okundu olarak işaretlensin mi",
   "operation.mark_as_read": "Okundu olarak işaretle",
   "operation.rename_category": "Kategoriyi yeniden adlandır",
   "operation.share": "Paylaş",

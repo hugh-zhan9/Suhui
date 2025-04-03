@@ -5,7 +5,7 @@
   "operation.edit": "Editar",
   "operation.mark_all_as_read": "Marcar todo como leído",
   "operation.mark_all_as_read_confirm": "¿Confirmar marcar todo como leído?",
-  "operation.mark_all_as_read_which": "¿Marcar <which /> como leído?",
+  "operation.mark_all_as_read_which": "¿Marcar {{which}} como leído",
   "operation.mark_as_read": "Marcar como leído",
   "operation.rename_category": "Renombrar categoría",
   "operation.share": "Compartir",

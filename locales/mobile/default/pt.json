@@ -5,7 +5,7 @@
   "operation.edit": "編集",
   "operation.mark_all_as_read": "すべてを既読にする",
   "operation.mark_all_as_read_confirm": "すべてを既読にしますか？",
-  "operation.mark_all_as_read_which": "<which />を既読にしますか？",
+  "operation.mark_all_as_read_which": "{{which}}を既読にしますか",
   "operation.mark_as_read": "既読にする",
   "operation.rename_category": "カテゴリーの名前を変更",
   "operation.share": "共有",

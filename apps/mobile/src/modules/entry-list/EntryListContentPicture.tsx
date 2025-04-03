@@ -8,6 +8,7 @@ import { PlatformActivityIndicator } from "@/src/components/ui/loading/PlatformA
 import { useFetchEntriesControls } from "@/src/modules/screen/atoms"
 
 import { TimelineSelectorMasonryList } from "../screen/TimelineSelectorList"
+import { GridEntryListFooter } from "./EntryListFooter"
 import { useOnViewableItemsChanged } from "./hooks"
 // import type { MasonryItem } from "./templates/EntryGridItem"
 import { EntryPictureItem } from "./templates/EntryPictureItem"
@@ -44,7 +45,9 @@ export const EntryListContentPicture = forwardRef<
           <View className="h-20 items-center justify-center">
             <PlatformActivityIndicator />
           </View>
-        ) : null
+        ) : (
+          <GridEntryListFooter />
+        )
       }
       {...rest}
       onRefresh={refetch}

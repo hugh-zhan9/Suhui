@@ -6,7 +6,7 @@
   "operation.edit": "編輯",
   "operation.mark_all_as_read": "全部標記為已讀",
   "operation.mark_all_as_read_confirm": "確定將所有標記為已讀？",
-  "operation.mark_all_as_read_which": "確定將 <which /> 標記為已讀？",
+  "operation.mark_all_as_read_which": "確定將 {{which}} 標記為已讀",
   "operation.mark_as_read": "標記為已讀",
   "operation.rename_category": "重新命名分類",
   "operation.share": "分享",

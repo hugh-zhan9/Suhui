@@ -5,7 +5,7 @@
   "operation.edit": "تحرير",
   "operation.mark_all_as_read": "تحديد الكل كمقروء",
   "operation.mark_all_as_read_confirm": "تأكيد تحديد الكل كمقروء؟",
-  "operation.mark_all_as_read_which": "هل تريد تحديد <which /> كمقروء؟",
+  "operation.mark_all_as_read_which": "هل تريد تحديد {{which}} كمقروء؟",
   "operation.mark_as_read": "تحديد كمقروء",
   "operation.rename_category": "إعادة تسمية الفئة",
   "operation.share": "مشاركة",

@@ -6,7 +6,7 @@
   "operation.edit": "편집",
   "operation.mark_all_as_read": "모두 읽음으로 표시",
   "operation.mark_all_as_read_confirm": "모두 읽음으로 표시하시겠습니까?",
-  "operation.mark_all_as_read_which": "<which />을 (를) 모두 읽음으로 표시하시겠습니까?",
+  "operation.mark_all_as_read_which": "{{which}}을 (를) 모두 읽음으로 표시하시겠습니까",
   "operation.mark_as_read": "읽음으로 표시",
   "operation.rename_category": "카테고리 이름 변경",
   "operation.share": "공유",
