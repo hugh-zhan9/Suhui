@@ -1,5 +1,6 @@
 import { cn, withOpacity } from "@follow/utils"
 import { useCallback } from "react"
+import { useTranslation } from "react-i18next"
 import { Text, TouchableOpacity, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
@@ -73,10 +74,12 @@ export const HeaderSubmitTextButton = ({
   isValid,
   onPress,
   isLoading,
-  label = "Submit",
+  label,
 }: ModalHeaderSubmitButtonProps & {
   label?: string
 }) => {
+  const { t } = useTranslation("common")
+
   const labelColor = useColor("label")
   return (
     <UINavigationHeaderActionButton onPress={onPress} disabled={!isValid || isLoading}>
@@ -92,7 +95,7 @@ export const HeaderSubmitTextButton = ({
           isLoading && "opacity-0",
         )}
       >
-        {label}
+        {label ?? t("words.submit")}
       </Text>
     </UINavigationHeaderActionButton>
   )
