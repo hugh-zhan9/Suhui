@@ -2,7 +2,7 @@ import { FeedViewType } from "@follow/constants"
 import { tracker } from "@follow/tracker"
 import { cn, formatEstimatedMins, formatTimeToSeconds } from "@follow/utils"
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native"
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native"
 import ReAnimated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated"
 
 import { useUISettingKey } from "@/src/atoms/settings/ui"
@@ -11,6 +11,7 @@ import { preloadWebViewEntry } from "@/src/components/native/webview/EntryConten
 import { RelativeDateTime } from "@/src/components/ui/datetime/RelativeDateTime"
 import { FeedIcon } from "@/src/components/ui/icon/feed-icon"
 import { Image } from "@/src/components/ui/image/Image"
+import { PlatformActivityIndicator } from "@/src/components/ui/loading/PlatformActivityIndicator"
 import { ItemPressableStyle } from "@/src/components/ui/pressable/enum"
 import { ItemPressable } from "@/src/components/ui/pressable/ItemPressable"
 import { gentleSpringPreset } from "@/src/constants/spring"
@@ -190,7 +191,7 @@ export function EntryNormalItem({ entryId, extraData }: { entryId: string; extra
                   {isPlaying ? (
                     <PauseCuteFiIcon color="white" width={24} height={24} />
                   ) : isLoading ? (
-                    <ActivityIndicator />
+                    <PlatformActivityIndicator />
                   ) : (
                     <PlayCuteFiIcon color="white" width={24} height={24} />
                   )}
