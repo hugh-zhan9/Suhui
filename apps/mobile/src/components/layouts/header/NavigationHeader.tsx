@@ -61,6 +61,7 @@ export interface NavigationHeaderRawProps {
   hideableBottomHeight?: number
 }
 
+const HideableThreshold = 20
 const useHideableBottom = (
   enable: boolean,
   originalDefaultHeaderHeight: number,
@@ -94,9 +95,9 @@ const useHideableBottom = (
 
       if (value <= 100) {
         largeHeaderHeight.value = withTiming(largeDefaultHeaderHeight)
-      } else if (value > lastScrollY.current) {
+      } else if (value > lastScrollY.current + HideableThreshold) {
         largeHeaderHeight.value = withTiming(originalDefaultHeaderHeight)
-      } else {
+      } else if (value < lastScrollY.current - HideableThreshold) {
         largeHeaderHeight.value = withTiming(largeDefaultHeaderHeight)
       }
       lastScrollY.current = value
