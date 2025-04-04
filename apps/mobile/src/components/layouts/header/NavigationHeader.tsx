@@ -35,6 +35,7 @@ import {
   useScreenIsInSheetModal,
 } from "@/src/lib/navigation/hooks"
 import { ScreenItemContext } from "@/src/lib/navigation/ScreenItemContext"
+import { useHorizontalScrolling } from "@/src/modules/screen/atoms"
 
 import { ThemedBlurView } from "../../common/ThemedBlurView"
 import { PlatformActivityIndicator } from "../../ui/loading/PlatformActivityIndicator"
@@ -103,6 +104,13 @@ const useHideableBottom = (
       lastScrollY.current = value
     },
   )
+
+  const horizontalScrolling = useHorizontalScrolling()
+  useEffect(() => {
+    if (horizontalScrolling) {
+      largeHeaderHeight.value = withTiming(largeDefaultHeaderHeightRef.current)
+    }
+  }, [horizontalScrolling, largeHeaderHeight])
 
   const layoutHeightOnceRef = useRef(false)
   const onLayout = useCallback(

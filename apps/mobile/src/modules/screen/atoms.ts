@@ -251,3 +251,7 @@ export const setHorizontalScrolling = (value: boolean) =>
   jotaiStore.set(horizontalScrollingAtom, value)
 
 export const getHorizontalScrolling = () => jotaiStore.get(horizontalScrollingAtom)
+
+export const useHorizontalScrolling = () => {
+  return useAtomValue(horizontalScrollingAtom)
+}
