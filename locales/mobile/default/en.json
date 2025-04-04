@@ -9,6 +9,7 @@
   "operation.mark_all_as_read_which": "Mark {{which}} as read",
   "operation.mark_all_as_read_which_above": "above",
   "operation.mark_as_read": "Mark as Read",
+  "operation.mark_as_unread": "Mark as Unread",
   "operation.open_link": "Open Link",
   "operation.rename_category": "Rename Category",
   "operation.share": "Share",

@@ -61,13 +61,17 @@ export const EntryItemContextMenu = ({ id, children }: PropsWithChildren<{ id: s
         <ContextMenu.Item
           key="MarkAsRead"
           onSelect={() => {
-            unreadSyncService.markEntryAsRead(id)
+            entry.read
+              ? unreadSyncService.markEntryAsUnread(id)
+              : unreadSyncService.markEntryAsRead(id)
           }}
         >
-          <ContextMenu.ItemTitle>{t("operation.mark_as_read")}</ContextMenu.ItemTitle>
+          <ContextMenu.ItemTitle>
+            {entry.read ? t("operation.mark_as_unread") : t("operation.mark_as_read")}
+          </ContextMenu.ItemTitle>
           <ContextMenu.ItemIcon
             ios={{
-              name: "checkmark",
+              name: entry.read ? "circle.fill" : "circle",
             }}
           />
         </ContextMenu.Item>
