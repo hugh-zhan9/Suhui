@@ -9,7 +9,6 @@ import {
   preloadWebViewEntry,
 } from "@/src/components/native/webview/EntryContentWebView"
 import { ContextMenu } from "@/src/components/ui/context-menu"
-import { openLink } from "@/src/lib/native"
 import { useNavigation } from "@/src/lib/navigation/hooks"
 import { toast } from "@/src/lib/toast"
 import { getHorizontalScrolling, useSelectedView } from "@/src/modules/screen/atoms"
@@ -101,23 +100,6 @@ export const EntryItemContextMenu = ({ id, children }: PropsWithChildren<{ id: s
             <ContextMenu.ItemTitle>
               {isEntryStarred ? t("operation.unstar") : t("operation.star")}
             </ContextMenu.ItemTitle>
-          </ContextMenu.Item>
-        )}
-
-        {entry.url && (
-          <ContextMenu.Item
-            key="OpenLink"
-            onSelect={() => {
-              if (!entry.url) return
-              openLink(entry.url)
-            }}
-          >
-            <ContextMenu.ItemIcon
-              ios={{
-                name: "link",
-              }}
-            />
-            <ContextMenu.ItemTitle>{t("operation.open_link")}</ContextMenu.ItemTitle>
           </ContextMenu.Item>
         )}
 
