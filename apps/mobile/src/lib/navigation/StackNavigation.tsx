@@ -4,7 +4,13 @@ import type { FC, PropsWithChildren } from "react"
 import { memo, useContext, useEffect, useMemo, useRef, useState } from "react"
 import type { ScrollView } from "react-native"
 import { StyleSheet } from "react-native"
-import { SafeAreaProvider } from "react-native-safe-area-context"
+import {
+  SafeAreaFrameContext,
+  SafeAreaInsetsContext,
+  SafeAreaProvider,
+  useSafeAreaFrame,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context"
 import type { ScreenStackHeaderConfigProps } from "react-native-screens"
 import { ScreenStack } from "react-native-screens"
 
@@ -177,6 +183,8 @@ const ModalScreenStackItems: FC<{
   }
   const isStackModal = rootModalRoute.type !== "formSheet"
 
+  const isFullScreen = rootModalRoute.type !== "modal" && rootModalRoute.type !== "formSheet"
+
   if (isStackModal) {
     return (
       <ModalScreenItemOptionsContext.Provider value={modalScreenOptionsCtxValue}>
@@ -187,7 +195,7 @@ const ModalScreenStackItems: FC<{
           screenOptions={rootModalRoute.screenOptions}
           {...modalScreenOptions}
         >
-          <SafeAreaProvider>
+          <ModalSafeAreaInsetsContext hasTopInset={isFullScreen}>
             <ScreenStack style={StyleSheet.absoluteFill}>
               <WrappedScreenItem
                 screenId={rootModalRoute.id}
@@ -216,7 +224,7 @@ const ModalScreenStackItems: FC<{
                 )
               })}
             </ScreenStack>
-          </SafeAreaProvider>
+          </ModalSafeAreaInsetsContext>
         </WrappedScreenItem>
       </ModalScreenItemOptionsContext.Provider>
     )
@@ -247,4 +255,28 @@ const ResolveView: FC<{
     return element
   }
   throw new Error("No component or element provided")
+}
+
+const ModalSafeAreaInsetsContext: FC<{
+  children: React.ReactNode
+  hasTopInset?: boolean
+}> = ({ children, hasTopInset = true }) => {
+  const rootInsets = useSafeAreaInsets()
+  const rootFrame = useSafeAreaFrame()
+
+  return (
+    <SafeAreaFrameContext.Provider value={rootFrame}>
+      <SafeAreaInsetsContext.Provider
+        value={useMemo(
+          () => ({
+            ...rootInsets,
+            top: hasTopInset ? rootInsets.top : 0,
+          }),
+          [hasTopInset, rootInsets],
+        )}
+      >
+        {children}
+      </SafeAreaInsetsContext.Provider>
+    </SafeAreaFrameContext.Provider>
+  )
 }
