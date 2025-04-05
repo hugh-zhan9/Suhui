@@ -168,7 +168,7 @@ jobs:
           BUILD_VERSION: ${{ github.event.inputs.build_version }}
         run: |
           cd apps/desktop
-          pnpm build:electron-forge:mas ${{ env.PROD == 'false' && '--mode=staging' || '' }}
+          pnpm build:electron-forge:mas
 
       - name: Build - Renderer
         if: runner.os == 'Linux'
