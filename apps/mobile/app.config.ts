@@ -4,11 +4,18 @@ import type { ConfigContext, ExpoConfig } from "expo/config"
 
 import PKG from "./package.json"
 
-// const isDev = process.env.NODE_ENV === "development"
 const isCI = process.env.CI === "true"
 // const roundedIconPath = resolve(__dirname, "../../resources/icon.png")
-const iconPath = resolve(__dirname, "./assets/icon.png")
+const iconPathMap = {
+  production: resolve(__dirname, "./assets/icon.png"),
+  development: resolve(__dirname, "./assets/icon-dev.png"),
+  "ios-simulator": resolve(__dirname, "./assets/icon-dev.png"),
+  preview: resolve(__dirname, "./assets/icon-staging.png"),
+} as Record<string, string>
+const iconPath = iconPathMap[process.env.PROFILE || "production"] || iconPathMap.production
+
 const adaptiveIconPath = resolve(__dirname, "./assets/adaptive-icon.png")
+
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
 
@@ -42,6 +49,31 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       ITSAppUsesNonExemptEncryption: false,
       UIBackgroundModes: ["audio"],
       LSApplicationQueriesSchemes: ["bilibili", "youtube"],
+      CFBundleAllowMixedLocalizations: true,
+      // apps/mobile/src/@types/constants.ts currentSupportedLanguages
+      CFBundleLocalizations: [
+        "en",
+        "de",
+        "ja",
+        "zh-CN",
+        "zh-TW",
+        "zh-HK",
+        "pt",
+        "fr",
+        "ar-DZ",
+        "ar-SA",
+        "ar-MA",
+        "ar-IQ",
+        "ar-KW",
+        "ar-TN",
+        "fi",
+        "it",
+        "ru",
+        "es",
+        "ko",
+        "tr",
+      ],
+      CFBundleDevelopmentRegion: "en",
     },
     googleServicesFile: "./build/GoogleService-Info.plist",
   },
@@ -73,6 +105,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         backgroundColor: "#ffffff",
         dark: {
           backgroundColor: "#000000",
+        },
+        android: {
+          image: iconPath,
+          imageWidth: 200,
         },
       },
     ],

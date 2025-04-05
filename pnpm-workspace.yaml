@@ -3,10 +3,10 @@ packages:
   - packages/*
   - apps/desktop/*
   - apps/desktop/src/*
-  - apps/mobile/native
+  - "!apps/mobile/native/example"
   - apps/mobile/web-app
   - "!**/example"
-  - "!**/example/*"
+  - "!**/example/**"
 onlyBuiltDependencies:
   - "@firebase/util"
   - "@sentry/cli"

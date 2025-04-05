@@ -2,7 +2,8 @@ import { isUndefined } from "es-toolkit/compat"
 import type { PrimitiveAtom } from "jotai"
 import { atom, useAtomValue, useSetAtom } from "jotai"
 import type { FC, ReactNode } from "react"
-import { memo, useContext, useMemo } from "react"
+import { memo, useCallback, useContext, useMemo } from "react"
+import type { NativeSyntheticEvent } from "react-native"
 import { StyleSheet, View } from "react-native"
 import { useSharedValue } from "react-native-reanimated"
 import type { ScreenStackHeaderConfigProps, StackPresentationTypes } from "react-native-screens"
@@ -88,7 +89,7 @@ export const WrappedScreenItem: FC<
         setIsAppeared(false)
         setIsDisappeared(true)
       },
-    })
+    }) as any
 
     const screenOptionsCtxValue = useMemo<PrimitiveAtom<ScreenOptionsContextType>>(
       () => atom({}),
@@ -108,6 +109,21 @@ export const WrappedScreenItem: FC<
       }),
       [screenOptionsFromCtx, screenOptionsProp],
     )
+
+    const handleDismiss = useCallback(
+      (
+        e: NativeSyntheticEvent<{
+          dismissCount: number
+        }>,
+      ) => {
+        if (e.nativeEvent.dismissCount > 0) {
+          for (let i = 0; i < e.nativeEvent.dismissCount; i++) {
+            navigation.__internal_dismiss(screenId)
+          }
+        }
+      },
+      [navigation, screenId],
+    )
     return (
       <ScreenItemContext.Provider value={ctxValue}>
         <ScreenOptionsContext.Provider value={screenOptionsCtxValue}>
@@ -124,11 +140,10 @@ export const WrappedScreenItem: FC<
               StyleSheet.absoluteFill,
               { backgroundColor: screenOptionsProp?.transparent ? undefined : backgroundColor },
             ]}
-            onDismissed={() => {
-              navigation.__internal_dismiss(screenId)
-            }}
             {...rest}
             {...mergedScreenOptions}
+            onDismissed={handleDismiss}
+            onNativeDismissCancelled={handleDismiss}
           >
             <Header />
             {children}

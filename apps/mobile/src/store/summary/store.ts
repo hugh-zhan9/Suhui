@@ -94,12 +94,15 @@ class SummaryActions {
 export const summaryActions = new SummaryActions()
 
 class SummarySyncService {
+  private pendingPromises: Record<string, Promise<string>> = {}
+
   async generateSummary(entryId: string) {
     const entry = getEntry(entryId)
     if (!entry) return
 
     const state = get()
-    if (state.generatingStatus[entryId] === SummaryGeneratingStatus.Pending) return
+    if (state.generatingStatus[entryId] === SummaryGeneratingStatus.Pending)
+      return this.pendingPromises[entryId]
 
     immerSet((state) => {
       state.generatingStatus[entryId] = SummaryGeneratingStatus.Pending
@@ -108,7 +111,7 @@ class SummarySyncService {
     const { actionLanguage } = getGeneralSettings()
 
     // Use Our AI to generate summary
-    const summary = await apiClient.ai.summary
+    const pendingPromise = apiClient.ai.summary
       .$get({
         query: {
           id: entryId,
@@ -119,7 +122,7 @@ class SummarySyncService {
         immerSet((state) => {
           if (!summary.data) {
             state.generatingStatus[entryId] = SummaryGeneratingStatus.Error
-            return
+            return ""
           }
 
           state.data[entryId] = {
@@ -130,14 +133,21 @@ class SummarySyncService {
           state.generatingStatus[entryId] = SummaryGeneratingStatus.Success
         })
 
-        return summary.data
+        return summary.data || ""
       })
       .catch((error) => {
         immerSet((state) => {
           state.generatingStatus[entryId] = SummaryGeneratingStatus.Error
         })
+
         throw error
       })
+      .finally(() => {
+        delete this.pendingPromises[entryId]
+      })
+
+    this.pendingPromises[entryId] = pendingPromise
+    const summary = await pendingPromise
 
     if (summary) {
       summaryActions.upsertMany([

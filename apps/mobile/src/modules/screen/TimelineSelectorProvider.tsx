@@ -1,5 +1,6 @@
 import { env } from "@follow/shared/src/env"
 import { useMemo } from "react"
+import { useTranslation } from "react-i18next"
 import { Share, View } from "react-native"
 import { useColor } from "react-native-uikit-colors"
 
@@ -17,7 +18,7 @@ import {
 import { TimelineViewSelector } from "@/src/modules/screen/TimelineViewSelector"
 import { getFeed } from "@/src/store/feed/getter"
 
-import { useEntryListContext, useSelectedFeedTitle } from "./atoms"
+import { useEntryListContext, useFetchEntriesControls, useSelectedFeedTitle } from "./atoms"
 
 export function TimelineSelectorProvider({
   children,
@@ -33,10 +34,13 @@ export function TimelineSelectorProvider({
   const isTimeline = screenType === "timeline"
   const isSubscriptions = screenType === "subscriptions"
 
+  const { isFetching } = useFetchEntriesControls()
+
   return (
     <>
       <NavigationBlurEffectHeader
         title={viewTitle}
+        isLoading={(isFeed || isTimeline) && isFetching}
         headerLeft={useMemo(
           () =>
             isTimeline || isSubscriptions
@@ -76,12 +80,13 @@ export function TimelineSelectorProvider({
 }
 
 function FeedShareAction({ feedId }: { feedId?: string }) {
+  const { t } = useTranslation()
   const label = useColor("label")
 
   if (!feedId) return null
   return (
     <UIBarButton
-      label="Share"
+      label={t("operation.share")}
       normalIcon={<Share3CuteReIcon height={24} width={24} color={label} />}
       onPress={() => {
         const feed = getFeed(feedId)

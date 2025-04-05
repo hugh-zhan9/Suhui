@@ -1,23 +1,16 @@
-import { withOpacity } from "@follow/utils/src/color"
 import { useMutation } from "@tanstack/react-query"
 import type { FC } from "react"
-import { useCallback, useState } from "react"
-import {
-  ActivityIndicator,
-  Text,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View,
-} from "react-native"
+import { useState } from "react"
+import { useTranslation } from "react-i18next"
+import { Text, TouchableOpacity, TouchableWithoutFeedback, View } from "react-native"
 import { KeyboardController } from "react-native-keyboard-controller"
 
-import { RotateableLoading } from "@/src/components/common/RotateableLoading"
+import { HeaderSubmitTextButton } from "@/src/components/layouts/header/HeaderElements"
 import {
   NavigationBlurEffectHeader,
   SafeNavigationScrollView,
 } from "@/src/components/layouts/views/SafeNavigationScrollView"
 import { UserAvatar } from "@/src/components/ui/avatar/UserAvatar"
-import { UIBarButton } from "@/src/components/ui/button/UIBarButton"
 import { PlainTextField } from "@/src/components/ui/form/TextField"
 import {
   GroupedInsetListCard,
@@ -25,8 +18,8 @@ import {
   GroupedInsetListNavigationLink,
   GroupedOutlineDescription,
 } from "@/src/components/ui/grouped/GroupedList"
+import { PlatformActivityIndicator } from "@/src/components/ui/loading/PlatformActivityIndicator"
 import { CheckCircleCuteReIcon } from "@/src/icons/check_circle_cute_re"
-import { CheckLineIcon } from "@/src/icons/check_line"
 import { CloseCircleFillIcon } from "@/src/icons/close_circle_fill"
 import { useNavigation } from "@/src/lib/navigation/hooks"
 import { toast } from "@/src/lib/toast"
@@ -35,24 +28,25 @@ import { useWhoami } from "@/src/store/user/hooks"
 import type { MeModel } from "@/src/store/user/store"
 import { userSyncService } from "@/src/store/user/store"
 import type { UserProfileEditable } from "@/src/store/user/types"
-import { accentColor, useColor } from "@/src/theme/colors"
+import { accentColor } from "@/src/theme/colors"
 
 import { setAvatar } from "../utils"
 
 export const EditProfileScreen = () => {
   const whoami = useWhoami()
+  const { t } = useTranslation("settings")
 
   if (!whoami) {
     return (
       <View className="flex-1 items-center justify-center">
-        <ActivityIndicator />
+        <PlatformActivityIndicator />
       </View>
     )
   }
 
   return (
     <SafeNavigationScrollView className="bg-system-grouped-background">
-      <NavigationBlurEffectHeader title="Edit Profile" />
+      <NavigationBlurEffectHeader title={t("profile.edit_profile")} />
       <AvatarSection whoami={whoami} />
       <ProfileForm whoami={whoami} />
     </SafeNavigationScrollView>
@@ -62,6 +56,7 @@ export const EditProfileScreen = () => {
 const AvatarSection: FC<{
   whoami: MeModel
 }> = ({ whoami }) => {
+  const { t } = useTranslation("settings")
   return (
     <View className="mt-6 items-center justify-center">
       <UserAvatar
@@ -72,7 +67,7 @@ const AvatarSection: FC<{
       />
 
       <TouchableOpacity className="mt-2" hitSlop={10} onPress={setAvatar}>
-        <Text className="text-accent text-lg">Set Avatar</Text>
+        <Text className="text-accent text-lg">{t("profile.set_avatar")}</Text>
       </TouchableOpacity>
     </View>
   )
@@ -81,6 +76,8 @@ const AvatarSection: FC<{
 const ProfileForm: FC<{
   whoami: MeModel
 }> = ({ whoami }) => {
+  const { t } = useTranslation("settings")
+
   const [dirtyFields, setDirtyFields] = useState<Partial<UserProfileEditable>>({})
 
   const { mutateAsync: updateProfile, isPending } = useMutation({
@@ -95,31 +92,21 @@ const ProfileForm: FC<{
     },
   })
 
-  const label = useColor("label")
-  const headerRight = useCallback(
-    () => (
-      <UIBarButton
-        label="Save"
-        disabled={isPending || Object.keys(dirtyFields).length === 0}
-        normalIcon={
-          isPending ? (
-            <RotateableLoading size={20} color={withOpacity(label, 0.5)} />
-          ) : (
-            <CheckLineIcon height={20} width={20} />
-          )
-        }
-        onPress={() => {
-          updateProfile()
-        }}
-      />
-    ),
-    [dirtyFields, isPending, label, updateProfile],
-  )
-
   const navigation = useNavigation()
   return (
     <View className="mt-4">
-      <NavigationBlurEffectHeader headerRight={headerRight} title="Edit Profile" />
+      <NavigationBlurEffectHeader
+        headerRight={
+          <HeaderSubmitTextButton
+            label={t("words.save", { ns: "common" })}
+            isValid={isPending || Object.keys(dirtyFields).length === 0}
+            onPress={() => {
+              updateProfile()
+            }}
+          />
+        }
+        title={t("profile.edit_profile")}
+      />
 
       <TouchableWithoutFeedback
         onPress={() => {
@@ -129,7 +116,7 @@ const ProfileForm: FC<{
         <View className="w-full">
           <GroupedInsetListCard>
             <GroupedInsetListCell
-              label="Display Name"
+              label={t("profile.name.label")}
               leftClassName="flex-none"
               rightClassName="flex-1"
             >
@@ -146,11 +133,15 @@ const ProfileForm: FC<{
               </View>
             </GroupedInsetListCell>
           </GroupedInsetListCard>
-          <GroupedOutlineDescription description="This is the name that will be displayed to other users." />
+          <GroupedOutlineDescription description={t("profile.name.description")} />
 
           {/* User name */}
           <GroupedInsetListCard className="mt-4">
-            <GroupedInsetListCell label="Handle" leftClassName="flex-none" rightClassName="flex-1">
+            <GroupedInsetListCell
+              label={t("profile.handle.label")}
+              leftClassName="flex-none"
+              rightClassName="flex-1"
+            >
               <View className="flex-1">
                 <PlainTextField
                   className="text-secondary-label w-full flex-1 text-right"
@@ -164,12 +155,12 @@ const ProfileForm: FC<{
               </View>
             </GroupedInsetListCell>
           </GroupedInsetListCard>
-          <GroupedOutlineDescription description="Your handle is used to identify you on Folo." />
+          <GroupedOutlineDescription description={t("profile.handle.description")} />
 
           {/* Email */}
           <GroupedInsetListCard className="mt-4">
             <GroupedInsetListNavigationLink
-              label="Email"
+              label={t("profile.email.label")}
               onPress={() => {
                 navigation.presentControllerView(EditEmailScreen)
               }}

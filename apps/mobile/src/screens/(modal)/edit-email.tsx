@@ -1,8 +1,9 @@
 import { useMutation } from "@tanstack/react-query"
 import { useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { View } from "react-native"
 
-import { HeaderSubmitButton } from "@/src/components/layouts/header/HeaderElements"
+import { HeaderSubmitTextButton } from "@/src/components/layouts/header/HeaderElements"
 import {
   NavigationBlurEffectHeader,
   SafeNavigationScrollView,
@@ -21,6 +22,8 @@ import { useWhoami } from "@/src/store/user/hooks"
 import { userSyncService } from "@/src/store/user/store"
 
 export const EditEmailScreen: NavigationControllerView = () => {
+  const { t } = useTranslation("settings")
+
   const whoami = useWhoami()
 
   const [email, setEmail] = useState(whoami?.email ?? "")
@@ -48,9 +51,9 @@ export const EditEmailScreen: NavigationControllerView = () => {
   return (
     <SafeNavigationScrollView className="bg-system-grouped-background">
       <NavigationBlurEffectHeader
-        title="Edit Email"
+        title={t("profile.edit_email")}
         headerRight={
-          <HeaderSubmitButton
+          <HeaderSubmitTextButton
             isLoading={isPending}
             isValid={!!(email && newEmailIsValid && isDirty)}
             onPress={() => {
@@ -62,7 +65,11 @@ export const EditEmailScreen: NavigationControllerView = () => {
 
       <View className="mt-4 w-full">
         <GroupedInsetListCard>
-          <GroupedInsetListCell label="Email" rightClassName="flex-1" leftClassName="flex-none">
+          <GroupedInsetListCell
+            label={t("profile.email.label")}
+            rightClassName="flex-1"
+            leftClassName="flex-none"
+          >
             <PlainTextField
               autoCapitalize="none"
               value={email}
@@ -76,7 +83,9 @@ export const EditEmailScreen: NavigationControllerView = () => {
           </GroupedInsetListCell>
         </GroupedInsetListCard>
         <GroupedOutlineDescription
-          description={`Your email is ${isValidate ? "verified" : "not verified"}. \n\nIf you want to change your email, you should verify your new email.`}
+          description={`${t("profile.email.verify_status", {
+            status: isValidate ? t("profile.email.verified") : t("profile.email.unverified"),
+          })}\n\n${t("profile.email.change_note")}`}
         />
 
         {/* Buttons */}

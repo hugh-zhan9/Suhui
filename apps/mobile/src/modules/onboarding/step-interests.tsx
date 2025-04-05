@@ -11,6 +11,7 @@ import { accentColor } from "@/src/theme/colors"
 
 import type { PresetFeedConfig } from "./preset"
 import { presetFeeds } from "./preset"
+import { OnboardingSectionScreenContainer } from "./shared"
 
 export const StepInterests = () => {
   const [displayFeeds, setDisplayFeeds] = useState<PresetFeedConfig[]>(presetFeeds.slice(0, 7))
@@ -20,7 +21,7 @@ export const StepInterests = () => {
     setDisplayFeeds(shuffled)
   }, [])
   return (
-    <View className="mt-[10vh] flex-1 items-center">
+    <OnboardingSectionScreenContainer>
       <View className="mb-10 flex items-center gap-4">
         <Search3CuteReIcon height={80} width={80} color={accentColor} />
         <Text className="text-text mt-2 text-2xl font-bold">Discover Interests</Text>
@@ -47,7 +48,7 @@ export const StepInterests = () => {
           ))}
         </View>
       </View>
-    </View>
+    </OnboardingSectionScreenContainer>
   )
 }
 

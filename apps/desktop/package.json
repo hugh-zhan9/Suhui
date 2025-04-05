@@ -1,7 +1,7 @@
 {
   "name": "Folo",
   "type": "module",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "private": true,
   "description": "Follow everything in one place",
   "author": "Folo Team",
@@ -13,9 +13,11 @@
   "main": "./dist/main/index.js",
   "scripts": {
     "analyze:web": "cross-env analyzer=1 vite build",
-    "build": "electron-vite build && electron-forge make",
-    "build:macos": "electron-vite build && electron-forge make --arch=x64 --platform=darwin && electron-forge make --arch=arm64 --platform=darwin && tsx scripts/merge-yml.ts",
-    "build:mas": "electron-vite build && electron-forge make --arch=universal --platform=mas",
+    "build:electron": "electron-vite build && electron-forge make",
+    "build:electron-forge": "electron-forge make",
+    "build:electron-forge:macos": "electron-forge make --arch=x64 --platform=darwin && electron-forge make --arch=arm64 --platform=darwin && tsx scripts/merge-yml.ts",
+    "build:electron-forge:mas": "electron-forge make --arch=universal --platform=mas",
+    "build:electron-vite": "electron-vite build",
     "build:render": "vite build -c vite.config.electron-render.ts",
     "build:web": "rm -rf out/web && cross-env WEB_BUILD=1 vite build",
     "bump": "vv",
@@ -26,7 +28,6 @@
     "dev:electron": "electron-vite dev",
     "dev:server": "pnpm run --filter=ssr dev",
     "dev:web": "cross-env WEB_BUILD=1 vite",
-    "generator:i18n-template": "tsx scripts/generate-i18n-locale.ts",
     "publish": "electron-vite build && electron-forge publish",
     "start": "electron-vite preview",
     "update:main-hash": "tsx plugins/vite/generate-main-hash.ts"
@@ -53,7 +54,7 @@
     "@follow/shared": "workspace:*",
     "@follow/utils": "workspace:*",
     "@pengx17/electron-forge-maker-appimage": "1.2.1",
-    "@sentry/vite-plugin": "3.2.2",
+    "@sentry/vite-plugin": "3.2.4",
     "@types/html-minifier-terser": "7.0.2",
     "@types/js-yaml": "4.0.9",
     "@types/react-google-recaptcha": "2.1.9",
@@ -64,7 +65,7 @@
     "cssnano": "7.0.6",
     "dotenv": "16.4.7",
     "drizzle-orm": "0.41.0",
-    "electron": "34.3.4",
+    "electron": "34.4.1",
     "electron-devtools-installer": "4.0.0",
     "electron-packager-languages": "0.6.0",
     "electron-vite": "3.1.0",
@@ -82,7 +83,7 @@
     "utf-8-validate": "6.0.5"
   },
   "productName": "Folo",
-  "mainHash": "2c7aa5b45904e0ed7b096a18828311b13397f3c7f62d83f6e6ae2d586a70d5b4",
+  "mainHash": "039327ef2c09e66d8f5c4e021f33d78d4497794b222114fee795ed70c2045000",
   "bump": {
     "before": [
       "git pull --rebase",

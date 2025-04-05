@@ -11,9 +11,9 @@ on:
       tag_version:
         type: boolean
         description: "Tag Version"
-      mas:
+      store:
         type: boolean
-        description: "Build for Mac App Store"
+        description: "Build for Mac App Store and Microsoft Store"
       build_version:
         type: string
         description: "Build Version, only available when mas is true"
@@ -34,14 +34,16 @@ env:
 jobs:
   release:
     runs-on: ${{ matrix.os }}
+    env:
+      PROD: ${{ github.event.inputs.tag_version == 'true' || github.ref_type == 'tag' || github.event.inputs.store == 'true' }}
+      RELEASE: ${{ github.event.inputs.tag_version == 'true' || github.ref_type == 'tag' }}
 
     strategy:
       fail-fast: false
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
         exclude:
-          - os: ${{ github.event.inputs.mas == 'true' && 'ubuntu-latest' }}
-          - os: ${{ github.event.inputs.mas == 'true' && 'windows-latest' }}
+          - os: ${{ github.event.inputs.store == 'true' && 'ubuntu-latest' }}
 
     permissions:
       id-token: write
@@ -51,13 +53,13 @@ jobs:
     steps:
       - name: Check out Git repository Fully
         uses: actions/checkout@v4
-        if: github.event.inputs.tag_version == 'true' || github.ref_type == 'tag'
+        if: env.PROD == 'true'
         with:
           fetch-depth: 0
           lfs: true
       - name: Check out Git repository
         uses: actions/checkout@v4
-        if: github.event.inputs.tag_version != 'true' && github.ref_type != 'tag'
+        if: env.PROD == 'false'
         with:
           fetch-depth: 1
           lfs: true
@@ -125,14 +127,22 @@ jobs:
         run: |
           cd apps/desktop
           pnpm update:main-hash
-      - name: Build
+      - name: Build - Vite
+        run: |
+          cd apps/desktop
+          pnpm build:electron-vite ${{ env.PROD == 'false' && '--mode staging' || '' }}
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      - name: Build - Windows and Linux
         if: runner.os != 'macOS'
-        run: pnpm build:electron
+        run: |
+          cd apps/desktop
+          pnpm build:electron-forge ${{ env.PROD == 'false' && '--mode=staging' || '' }}
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
-      - name: Build (macOS)
-        if: runner.os == 'macOS' && github.event.inputs.mas != 'true'
+      - name: Build - macOS
+        if: runner.os == 'macOS' && github.event.inputs.store != 'true'
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
@@ -143,20 +153,28 @@ jobs:
         with:
           max_attempts: 3
           timeout_minutes: 10
-          command: pnpm build:macos
+          command: |
+            cd apps/desktop
+            npx electron-forge make --arch=x64 --platform=darwin ${{ env.PROD == 'false' && '--mode=staging' || '' }}
+            npx electron-forge make --arch=arm64 --platform=darwin ${{ env.PROD == 'false' && '--mode=staging' || '' }}
+            npx tsx scripts/merge-yml.ts
 
-      - name: Build (Mac App Store)
-        if: runner.os == 'macOS' && github.event.inputs.mas == 'true'
+      - name: Build - Mac App Store
+        if: runner.os == 'macOS' && github.event.inputs.store == 'true'
         env:
           OSX_SIGN_KEYCHAIN_PATH: ${{ runner.temp }}/app-signing.keychain-db
           OSX_SIGN_IDENTITY: ${{ secrets.OSX_SIGN_IDENTITY_MAS }}
           OSX_SIGN_PROVISIONING_PROFILE_PATH: ${{ runner.temp }}/build_pp.provisionprofile
           BUILD_VERSION: ${{ github.event.inputs.build_version }}
-        run: pnpm build:mas
+        run: |
+          cd apps/desktop
+          pnpm build:electron-forge:mas
 
-      - name: Build Renderer
+      - name: Build - Renderer
         if: runner.os == 'Linux'
-        run: pnpm build:render
+        run: |
+          cd apps/desktop
+          pnpm build:render
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
@@ -209,7 +227,8 @@ jobs:
           retention-days: 90
 
       - uses: signpath/github-action-submit-signing-request@v1.1
-        if: runner.os == 'windows' && (github.ref_type == 'tag' || github.event.inputs.tag_version == 'true')
+        continue-on-error: true
+        if: runner.os == 'windows' && env.RELEASE == 'true'
         with:
           api-token: "${{ secrets.SIGNPATH_API_TOKEN }}"
           organization-id: "8c651516-fdaf-40a1-9fea-001dffde850e"
@@ -220,12 +239,12 @@ jobs:
           output-artifact-directory: "apps/desktop/out/make/"
 
       - name: Update latest.yml
-        if: runner.os == 'windows' && (github.ref_type == 'tag' || github.event.inputs.tag_version == 'true')
+        if: runner.os == 'windows' && env.RELEASE == 'true'
         run: npx tsx apps/desktop/scripts/update-windows-yml.ts
 
       - name: Upload file (windows-x64-exe signed)
         uses: actions/upload-artifact@v4
-        if: runner.os == 'windows' && (github.ref_type == 'tag' || github.event.inputs.tag_version == 'true')
+        if: runner.os == 'windows' && env.RELEASE == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -244,7 +263,7 @@ jobs:
         with:
           name: windows-x64-appx
           path: |
-            apps/desktop/out/make/**/*x64.appx
+            apps/desktop/out/make/**/*.appx
           retention-days: 90
 
       - name: Upload file (linux-x64-appimage)
@@ -260,7 +279,7 @@ jobs:
           retention-days: 90
 
       - name: Generate artifact attestation
-        if: github.ref_type == 'tag' || github.event.inputs.tag_version == 'true'
+        if: env.RELEASE == 'true'
         continue-on-error: true
         uses: actions/attest-build-provenance@v2
         with:
@@ -274,19 +293,20 @@ jobs:
             apps/desktop/dist/*.tar.gz
 
       - run: npx changelogithub
-        if: github.ref_type == 'tag' || github.event.inputs.tag_version == 'true'
+        if: env.RELEASE == 'true'
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Version
+        if: env.RELEASE == 'true'
         id: version
         uses: ./.github/actions/setup-version
         with:
           type: "desktop"
 
       - name: Create Release Draft
-        if: github.ref_type == 'tag' || github.event.inputs.tag_version == 'true'
+        if: env.RELEASE == 'true'
         uses: softprops/action-gh-release@v2
         with:
           name: v${{ steps.version.outputs.APP_VERSION }}

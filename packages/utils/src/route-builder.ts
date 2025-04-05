@@ -1,5 +1,4 @@
 import { get, omit } from "es-toolkit/compat"
-import { Fragment } from "react/jsx-runtime"
 import type { RouteObject } from "react-router"
 
 type NestedStructure = { [key: string]: NestedStructure }
@@ -85,7 +84,7 @@ export function buildGlobRoutes(glob: Record<string, () => Promise<any>>): Route
 
       if (isGroupedRoute) {
         const accessPath = `${segmentPathKey}/layout.tsx`
-        const globGetter = get(glob, accessPath) || (() => Fragment)
+        const globGetter = get(glob, accessPath) || undefined
         if (pathGetterSet.has(accessPath)) {
           // throw new Error(`duplicate path: ` + accessPath)
 

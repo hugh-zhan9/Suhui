@@ -10,7 +10,7 @@ import {
   useRef,
   useState,
 } from "react"
-import type { LayoutChangeEvent } from "react-native"
+import type { LayoutChangeEvent, StyleProp, ViewStyle } from "react-native"
 import { Alert, StyleSheet, TouchableOpacity, View } from "react-native"
 import type { AnimatedProps } from "react-native-reanimated"
 import Animated, {
@@ -30,12 +30,15 @@ import { MingcuteLeftLineIcon } from "@/src/icons/mingcute_left_line"
 import {
   useCanBack,
   useCanDismiss,
+  useIsTopRouteInGroup,
   useNavigation,
   useScreenIsInSheetModal,
 } from "@/src/lib/navigation/hooks"
 import { ScreenItemContext } from "@/src/lib/navigation/ScreenItemContext"
+import { useHorizontalScrolling } from "@/src/modules/screen/atoms"
 
 import { ThemedBlurView } from "../../common/ThemedBlurView"
+import { PlatformActivityIndicator } from "../../ui/loading/PlatformActivityIndicator"
 import { getDefaultHeaderHeight } from "../utils"
 import { SetNavigationHeaderHeightContext } from "../views/NavigationHeaderContext"
 import { FakeNativeHeaderTitle } from "./FakeNativeHeaderTitle"
@@ -59,6 +62,7 @@ export interface NavigationHeaderRawProps {
   hideableBottomHeight?: number
 }
 
+const HideableThreshold = 20
 const useHideableBottom = (
   enable: boolean,
   originalDefaultHeaderHeight: number,
@@ -92,14 +96,21 @@ const useHideableBottom = (
 
       if (value <= 100) {
         largeHeaderHeight.value = withTiming(largeDefaultHeaderHeight)
-      } else if (value > lastScrollY.current) {
+      } else if (value > lastScrollY.current + HideableThreshold) {
         largeHeaderHeight.value = withTiming(originalDefaultHeaderHeight)
-      } else {
+      } else if (value < lastScrollY.current - HideableThreshold) {
         largeHeaderHeight.value = withTiming(largeDefaultHeaderHeight)
       }
       lastScrollY.current = value
     },
   )
+
+  const horizontalScrolling = useHorizontalScrolling()
+  useEffect(() => {
+    if (horizontalScrolling) {
+      largeHeaderHeight.value = withTiming(largeDefaultHeaderHeightRef.current)
+    }
+  }, [horizontalScrolling, largeHeaderHeight])
 
   const layoutHeightOnceRef = useRef(false)
   const onLayout = useCallback(
@@ -149,6 +160,7 @@ export interface InternalNavigationHeaderProps
   hideableBottomHeight?: number
   headerTitleAbsolute?: boolean
   headerTitle?: FC<React.ComponentProps<typeof FakeNativeHeaderTitle>> | ReactNode
+  isLoading?: boolean
 }
 
 const blurThreshold = 0
@@ -167,6 +179,7 @@ export const InternalNavigationHeader = ({
   headerTitleAbsolute,
 
   promptBeforeLeave,
+  isLoading,
   ...rest
 }: InternalNavigationHeaderProps) => {
   const insets = useSafeAreaInsets()
@@ -304,7 +317,6 @@ export const InternalNavigationHeader = ({
           )}
         </View>
         {/* Center */}
-
         <Animated.View
           className="flex min-w-0 flex-1 shrink flex-row items-center justify-center truncate"
           pointerEvents={"box-none"}
@@ -313,6 +325,11 @@ export const InternalNavigationHeader = ({
           }}
         >
           <View className="shrink" style={{ flexBasis: rightWidth }} />
+          {isLoading && (
+            <View className="mr-2">
+              <PlatformActivityIndicator size="small" />
+            </View>
+          )}
           {headerTitleAbsolute ? <View /> : headerTitle}
           <View className="shrink" style={{ flexBasis: leftWidth }} />
         </Animated.View>
@@ -353,6 +370,11 @@ export const DefaultHeaderBackButton = ({
 }: NavigationHeaderButtonProps) => {
   const label = useColor("label")
   const navigation = useNavigation()
+
+  const isTopRouteInGroup = useIsTopRouteInGroup()
+
+  const showCloseIcon = canDismiss && isTopRouteInGroup
+
   if (!canGoBack && !canDismiss) return null
   return (
     <UINavigationHeaderActionButton
@@ -383,7 +405,7 @@ export const DefaultHeaderBackButton = ({
         }
       }}
     >
-      {canGoBack ? (
+      {!showCloseIcon ? (
         <MingcuteLeftLineIcon height={20} width={20} color={label} />
       ) : (
         <CloseCuteReIcon height={20} width={20} color={label} />
@@ -397,11 +419,13 @@ export const UINavigationHeaderActionButton = ({
   onPress,
   disabled,
   className,
+  style,
 }: {
   children: ReactNode
   onPress?: () => void
   disabled?: boolean
   className?: string
+  style?: StyleProp<ViewStyle>
 }) => {
   return (
     <TouchableOpacity
@@ -409,6 +433,7 @@ export const UINavigationHeaderActionButton = ({
       className={cn("p-2", className)}
       onPress={onPress}
       disabled={disabled}
+      style={style}
     >
       {children}
     </TouchableOpacity>

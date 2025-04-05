@@ -1,6 +1,7 @@
 import { PortalProvider } from "@gorhom/portal"
 import type { PropsWithChildren } from "react"
 import { useCallback } from "react"
+import { useTranslation } from "react-i18next"
 import { Share, Text, View } from "react-native"
 
 import {
@@ -8,7 +9,6 @@ import {
   preloadWebViewEntry,
 } from "@/src/components/native/webview/EntryContentWebView"
 import { ContextMenu } from "@/src/components/ui/context-menu"
-import { openLink } from "@/src/lib/native"
 import { useNavigation } from "@/src/lib/navigation/hooks"
 import { toast } from "@/src/lib/toast"
 import { getHorizontalScrolling, useSelectedView } from "@/src/modules/screen/atoms"
@@ -19,6 +19,7 @@ import { useEntry } from "@/src/store/entry/hooks"
 import { unreadSyncService } from "@/src/store/unread/store"
 
 export const EntryItemContextMenu = ({ id, children }: PropsWithChildren<{ id: string }>) => {
+  const { t } = useTranslation()
   const entry = useEntry(id)
   const feedId = entry?.feedId
   const view = useSelectedView()
@@ -59,13 +60,17 @@ export const EntryItemContextMenu = ({ id, children }: PropsWithChildren<{ id: s
         <ContextMenu.Item
           key="MarkAsRead"
           onSelect={() => {
-            unreadSyncService.markEntryAsRead(id)
+            entry.read
+              ? unreadSyncService.markEntryAsUnread(id)
+              : unreadSyncService.markEntryAsRead(id)
           }}
         >
-          <ContextMenu.ItemTitle>Mark as Read</ContextMenu.ItemTitle>
+          <ContextMenu.ItemTitle>
+            {entry.read ? t("operation.mark_as_unread") : t("operation.mark_as_read")}
+          </ContextMenu.ItemTitle>
           <ContextMenu.ItemIcon
             ios={{
-              name: "checkmark",
+              name: entry.read ? "circle.fill" : "circle",
             }}
           />
         </ContextMenu.Item>
@@ -92,24 +97,9 @@ export const EntryItemContextMenu = ({ id, children }: PropsWithChildren<{ id: s
                 name: isEntryStarred ? "star.slash" : "star",
               }}
             />
-            <ContextMenu.ItemTitle>{isEntryStarred ? "Unstar" : "Star"}</ContextMenu.ItemTitle>
-          </ContextMenu.Item>
-        )}
-
-        {entry.url && (
-          <ContextMenu.Item
-            key="OpenLink"
-            onSelect={() => {
-              if (!entry.url) return
-              openLink(entry.url)
-            }}
-          >
-            <ContextMenu.ItemIcon
-              ios={{
-                name: "link",
-              }}
-            />
-            <ContextMenu.ItemTitle>Open Link</ContextMenu.ItemTitle>
+            <ContextMenu.ItemTitle>
+              {isEntryStarred ? t("operation.unstar") : t("operation.star")}
+            </ContextMenu.ItemTitle>
           </ContextMenu.Item>
         )}
 
@@ -130,7 +120,7 @@ export const EntryItemContextMenu = ({ id, children }: PropsWithChildren<{ id: s
                 name: "square.and.arrow.up",
               }}
             />
-            <ContextMenu.ItemTitle>Share</ContextMenu.ItemTitle>
+            <ContextMenu.ItemTitle>{t("operation.share")}</ContextMenu.ItemTitle>
           </ContextMenu.Item>
         )}
       </ContextMenu.Content>

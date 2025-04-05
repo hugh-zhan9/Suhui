@@ -2,7 +2,7 @@ import { FeedViewType } from "@follow/constants"
 import { tracker } from "@follow/tracker"
 import { cn, formatEstimatedMins, formatTimeToSeconds } from "@follow/utils"
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native"
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native"
 import ReAnimated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated"
 
 import { useUISettingKey } from "@/src/atoms/settings/ui"
@@ -11,6 +11,7 @@ import { preloadWebViewEntry } from "@/src/components/native/webview/EntryConten
 import { RelativeDateTime } from "@/src/components/ui/datetime/RelativeDateTime"
 import { FeedIcon } from "@/src/components/ui/icon/feed-icon"
 import { Image } from "@/src/components/ui/image/Image"
+import { PlatformActivityIndicator } from "@/src/components/ui/loading/PlatformActivityIndicator"
 import { ItemPressableStyle } from "@/src/components/ui/pressable/enum"
 import { ItemPressable } from "@/src/components/ui/pressable/ItemPressable"
 import { gentleSpringPreset } from "@/src/constants/spring"
@@ -88,13 +89,7 @@ export function EntryNormalItem({ entryId, extraData }: { entryId: string; extra
   const isLoading = audioState === "loading"
 
   const estimatedMins = useMemo(() => {
-    let durationInSeconds = audio?.duration_in_seconds
-    // durationInSeconds's format like 00:00:00 or 4000
-    if (durationInSeconds && Number.isNaN(+durationInSeconds)) {
-      // @ts-expect-error durationInSeconds is string
-      durationInSeconds = formatTimeToSeconds(durationInSeconds)
-    }
-
+    const durationInSeconds = formatTimeToSeconds(audio?.duration_in_seconds)
     return durationInSeconds && Math.floor(durationInSeconds / 60)
   }, [audio?.duration_in_seconds])
 
@@ -105,7 +100,10 @@ export function EntryNormalItem({ entryId, extraData }: { entryId: string; extra
       <ItemPressable
         touchHighlight={false}
         itemStyle={ItemPressableStyle.Plain}
-        className="flex flex-row items-center p-4 pl-6"
+        className={cn(
+          view === FeedViewType.Notifications ? "p-2" : "p-4",
+          "flex flex-row items-center pl-6",
+        )}
         onPress={handlePress}
       >
         <ReAnimated.View
@@ -115,7 +113,7 @@ export function EntryNormalItem({ entryId, extraData }: { entryId: string; extra
 
         <View className="flex-1 space-y-2">
           <View className="mb-1 flex-1 flex-row items-center gap-1.5 pr-2">
-            <FeedIcon fallback feed={feed} size={16} />
+            <FeedIcon fallback feed={feed} size={view === FeedViewType.Notifications ? 14 : 16} />
             <Text numberOfLines={1} className="text-secondary-label shrink text-sm font-medium">
               {feed?.title || from || "Unknown feed"}
             </Text>
@@ -131,13 +129,15 @@ export function EntryNormalItem({ entryId, extraData }: { entryId: string; extra
             <RelativeDateTime
               date={entry.publishedAt}
               className="text-secondary-label text-xs font-medium"
-              postfixText="ago"
             />
           </View>
           {!!entry.title && (
             <EntryTranslation
               numberOfLines={2}
-              className="text-label text-lg font-semibold"
+              className={cn(
+                view === FeedViewType.Notifications ? "text-base" : "text-lg",
+                "text-label font-semibold",
+              )}
               source={entry.title}
               target={translation?.title}
               showTranslation={!!entry.settings?.translation}
@@ -147,10 +147,11 @@ export function EntryNormalItem({ entryId, extraData }: { entryId: string; extra
           {view !== FeedViewType.Notifications && !!entry.description && (
             <EntryTranslation
               numberOfLines={2}
-              className="text-secondary-label text-sm"
+              className="text-secondary-label my-0 text-sm"
               source={entry.description}
               target={translation?.description}
               showTranslation={!!entry.settings?.translation}
+              inline
             />
           )}
         </View>
@@ -190,7 +191,7 @@ export function EntryNormalItem({ entryId, extraData }: { entryId: string; extra
                   {isPlaying ? (
                     <PauseCuteFiIcon color="white" width={24} height={24} />
                   ) : isLoading ? (
-                    <ActivityIndicator />
+                    <PlatformActivityIndicator />
                   ) : (
                     <PlayCuteFiIcon color="white" width={24} height={24} />
                   )}

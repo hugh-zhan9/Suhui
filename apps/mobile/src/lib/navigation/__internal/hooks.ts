@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useRef } from "react"
+import type { NativeSyntheticEvent } from "react-native"
 
 import { useNavigation } from "../hooks"
 
+type LifecycleEvent = NativeSyntheticEvent<{
+  dismissCount: number
+}>
 export const useCombinedLifecycleEvents = (
   screenId: string,
   {
@@ -10,10 +14,10 @@ export const useCombinedLifecycleEvents = (
     onWillAppear,
     onWillDisappear,
   }: {
-    onAppear?: () => void
-    onDisappear?: () => void
-    onWillAppear?: () => void
-    onWillDisappear?: () => void
+    onAppear?: (e: LifecycleEvent) => void
+    onDisappear?: (e: LifecycleEvent) => void
+    onWillAppear?: (e: LifecycleEvent) => void
+    onWillDisappear?: (e: LifecycleEvent) => void
   } = {},
 ) => {
   const navigation = useNavigation()
@@ -34,21 +38,21 @@ export const useCombinedLifecycleEvents = (
   }, [onAppear, onDisappear, onWillAppear, onWillDisappear])
   return useMemo(() => {
     return {
-      onAppear: () => {
+      onAppear: (e: LifecycleEvent) => {
         navigation.emit("didAppear", { screenId })
-        stableRef.current.onAppear?.()
+        stableRef.current.onAppear?.(e)
       },
-      onDisappear: () => {
+      onDisappear: (e: LifecycleEvent) => {
         navigation.emit("didDisappear", { screenId })
-        stableRef.current.onDisappear?.()
+        stableRef.current.onDisappear?.(e)
       },
-      onWillAppear: () => {
+      onWillAppear: (e: LifecycleEvent) => {
         navigation.emit("willAppear", { screenId })
-        stableRef.current.onWillAppear?.()
+        stableRef.current.onWillAppear?.(e)
       },
-      onWillDisappear: () => {
+      onWillDisappear: (e: LifecycleEvent) => {
         navigation.emit("willDisappear", { screenId })
-        stableRef.current.onWillDisappear?.()
+        stableRef.current.onWillDisappear?.(e)
       },
     }
   }, [navigation, screenId])

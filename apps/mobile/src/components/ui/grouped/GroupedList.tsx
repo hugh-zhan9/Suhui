@@ -10,6 +10,7 @@ import { CheckFilledIcon } from "@/src/icons/check_filled"
 import { MingcuteRightLine } from "@/src/icons/mingcute_right_line"
 import { accentColor, useColor } from "@/src/theme/colors"
 
+import { PlatformActivityIndicator } from "../loading/PlatformActivityIndicator"
 import {
   GROUPED_ICON_TEXT_GAP,
   GROUPED_LIST_ITEM_PADDING,
@@ -305,7 +306,8 @@ export const GroupedInformationCell: FC<{
   description?: string
   icon?: React.ReactNode
   iconBackgroundColor?: string
-}> = ({ title, description, icon, iconBackgroundColor }) => {
+  children?: React.ReactNode
+}> = ({ title, description, icon, iconBackgroundColor, children }) => {
   return (
     <GroupedInsetListBaseCell className="flex-1 flex-col items-center justify-center rounded-[16px] p-6">
       {!!icon && (
@@ -322,6 +324,7 @@ export const GroupedInformationCell: FC<{
           {description}
         </Text>
       )}
+      {children}
     </GroupedInsetListBaseCell>
   )
 }
@@ -335,6 +338,14 @@ export const GroupedPlainButtonCell: FC<
   return (
     <GroupedInsetListBaseCell as={OverlayInterectionPressable} {...(props as any)}>
       <Text className={cn("text-accent text-center", textClassName)}>{label}</Text>
+    </GroupedInsetListBaseCell>
+  )
+}
+
+export const GroupedInsetActivityIndicatorCell: FC = () => {
+  return (
+    <GroupedInsetListBaseCell className="flex-1 items-center justify-center py-4">
+      <PlatformActivityIndicator />
     </GroupedInsetListBaseCell>
   )
 }

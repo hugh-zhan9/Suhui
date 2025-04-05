@@ -18,11 +18,10 @@ export class Navigation {
     this.presentControllerView = this.presentControllerView.bind(this)
     this.dismiss = this.dismiss.bind(this)
     this.back = this.back.bind(this)
-    this.popTo = this.popTo.bind(this)
     this.popToRoot = this.popToRoot.bind(this)
   }
 
-  __internal_getCtxValue() {
+  __dangerous_getCtxValue() {
     return this.ctxValue
   }
 
@@ -154,15 +153,6 @@ export class Navigation {
   canGoBack() {
     const routes = jotaiStore.get(this.ctxValue.routesAtom)
     return routes.length > 0
-  }
-
-  popTo(routeId: string) {
-    const routes = jotaiStore.get(this.ctxValue.routesAtom)
-    const index = routes.findIndex((r) => r.id === routeId)
-    if (index === -1) {
-      return
-    }
-    jotaiStore.set(this.ctxValue.routesAtom, routes.slice(0, index + 1))
   }
 
   popToRoot() {

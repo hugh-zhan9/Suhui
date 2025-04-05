@@ -1,12 +1,16 @@
 import { parseHtml } from "@follow/components/ui/markdown/parse-html.js"
 import { views } from "@follow/constants"
 import type { SupportedLanguages } from "@follow/models/types"
-import { LANGUAGE_MAP } from "@follow/shared"
+import { ACTION_LANGUAGE_MAP } from "@follow/shared"
 import { franc } from "franc-min"
 
 import type { FlatEntryModel } from "~/store/entry"
 
 import { apiClient } from "./api-fetch"
+
+function duplicateIfLengthLessThan(text: string, length: number) {
+  return text.length < length ? text.repeat(Math.ceil(length / text.length)) : text
+}
 
 export const checkLanguage = ({
   content,
@@ -19,16 +23,16 @@ export const checkLanguage = ({
   const pureContent = parseHtml(content)
     .toText()
     .replaceAll(/https?:\/\/\S+|www\.\S+/g, " ")
-  const { code } = LANGUAGE_MAP[language]
-  if (!code) return false
-  const sourceLanguage = franc(pureContent, {
-    only: [code],
-  })
-  if (sourceLanguage === code) {
-    return true
-  } else {
+  const { code } = ACTION_LANGUAGE_MAP[language]
+  if (!code) {
     return false
   }
+
+  const sourceLanguage = franc(duplicateIfLengthLessThan(pureContent, 20), {
+    only: [code],
+  })
+
+  return sourceLanguage === code
 }
 
 export async function translate({

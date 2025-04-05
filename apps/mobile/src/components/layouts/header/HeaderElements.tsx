@@ -1,6 +1,8 @@
-import { withOpacity } from "@follow/utils"
+import { cn, withOpacity } from "@follow/utils"
 import { useCallback } from "react"
-import { TouchableOpacity } from "react-native"
+import { useTranslation } from "react-i18next"
+import { Text, TouchableOpacity, View } from "react-native"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { CheckLineIcon } from "@/src/icons/check_line"
 import { CloseCuteReIcon } from "@/src/icons/close_cute_re"
@@ -14,7 +16,7 @@ import {
 import { StackScreenHeaderPortal } from "@/src/lib/navigation/StackScreenHeaderPortal"
 import { useColor } from "@/src/theme/colors"
 
-import { RotateableLoading } from "../../common/RotateableLoading"
+import { PlatformActivityIndicator } from "../../ui/loading/PlatformActivityIndicator"
 import { UINavigationHeaderActionButton } from "./NavigationHeader"
 
 const HeaderCloseButton = () => {
@@ -24,6 +26,7 @@ const HeaderCloseButton = () => {
   const canDismiss = useCanDismiss()
   const isInModal = useScreenIsInSheetModal()
   const isSingleRouteInGroup = useIsSingleRouteInGroup()
+
   const handlePress = useCallback(() => {
     if (canDismiss) {
       navigation.dismiss()
@@ -59,7 +62,7 @@ export const HeaderSubmitButton = ({
   return (
     <UINavigationHeaderActionButton onPress={onPress} disabled={!isValid || isLoading}>
       {isLoading ? (
-        <RotateableLoading size={20} color={withOpacity(label, 0.5)} />
+        <PlatformActivityIndicator size="small" color={withOpacity(label, 0.5)} />
       ) : (
         <CheckLineIcon height={20} width={20} color={isValid ? label : withOpacity(label, 0.5)} />
       )}
@@ -67,10 +70,47 @@ export const HeaderSubmitButton = ({
   )
 }
 
+export const HeaderSubmitTextButton = ({
+  isValid,
+  onPress,
+  isLoading,
+  label,
+}: ModalHeaderSubmitButtonProps & {
+  label?: string
+}) => {
+  const { t } = useTranslation("common")
+
+  const labelColor = useColor("label")
+  return (
+    <UINavigationHeaderActionButton onPress={onPress} disabled={!isValid || isLoading}>
+      {isLoading && (
+        <View className="absolute inset-y-0 right-2 items-center justify-center">
+          <PlatformActivityIndicator size="small" color={withOpacity(labelColor, 0.5)} />
+        </View>
+      )}
+      <Text
+        className={cn(
+          "text-accent text-base font-semibold",
+          !isValid && "text-secondary-label",
+          isLoading && "opacity-0",
+        )}
+      >
+        {label ?? t("words.submit")}
+      </Text>
+    </UINavigationHeaderActionButton>
+  )
+}
+
 export const HeaderCloseOnly = () => {
+  const insets = useSafeAreaInsets()
   return (
     <StackScreenHeaderPortal>
-      <UINavigationHeaderActionButton className="absolute left-4 top-4">
+      <UINavigationHeaderActionButton
+        className="absolute left-4"
+        style={{
+          top: insets.top + 16,
+        }}
+      >
         <HeaderCloseButton />
       </UINavigationHeaderActionButton>
     </StackScreenHeaderPortal>

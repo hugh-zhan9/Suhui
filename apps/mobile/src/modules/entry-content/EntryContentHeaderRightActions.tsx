@@ -1,5 +1,6 @@
 import { useAtom } from "jotai"
 import { useCallback, useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { Clipboard, Share, TouchableOpacity, View } from "react-native"
 import type { SharedValue } from "react-native-reanimated"
 import Animated, { interpolate, useAnimatedStyle } from "react-native-reanimated"
@@ -39,6 +40,7 @@ type ActionItem = {
   active?: boolean
   iconColor?: string
   isCheckbox?: boolean
+  inMenu?: boolean
 }
 
 export function EntryContentHeaderRightActions(props: HeaderRightActionsProps) {
@@ -56,6 +58,7 @@ const HeaderRightActionsImpl = ({
   titleOpacityShareValue,
   isHeaderTitleVisible,
 }: HeaderRightActionsProps) => {
+  const { t } = useTranslation()
   const labelColor = useColor("label")
   const isStarred = useIsEntryStarred(entryId)
   const [extraActionContainerWidth, setExtraActionContainerWidth] = useState(0)
@@ -150,7 +153,7 @@ const HeaderRightActionsImpl = ({
   const actionItems = [
     subscription && {
       key: "Star",
-      title: isStarred ? "Unstar" : "Star",
+      title: isStarred ? t("operation.unstar") : t("operation.star"),
       icon: isStarred ? <StarCuteFiIcon /> : <StarCuteReIcon />,
       iconIOS: {
         name: isStarred ? "star.fill" : "star",
@@ -168,6 +171,7 @@ const HeaderRightActionsImpl = ({
       onPress: toggleReadability,
       active: showReadability,
       isCheckbox: true,
+      inMenu: true,
     },
     !showAISummarySetting && {
       key: "GenerateSummary",
@@ -177,6 +181,7 @@ const HeaderRightActionsImpl = ({
       onPress: toggleAISummary,
       active: showAISummary,
       isCheckbox: true,
+      inMenu: true,
     },
     !showAITranslationSetting && {
       key: "ShowTranslation",
@@ -186,13 +191,28 @@ const HeaderRightActionsImpl = ({
       onPress: toggleAITranslation,
       active: showTranslation,
       isCheckbox: true,
+      inMenu: true,
     },
     {
       key: "Share",
-      title: "Share",
+      title: t("operation.share"),
       icon: <Share3CuteReIcon />,
       iconIOS: { name: "square.and.arrow.up" },
       onPress: handleShare,
+    },
+    {
+      key: "CopyLink",
+      title: t("operation.copy_link"),
+      iconIOS: { name: "link" },
+      onPress: handleCopyLink,
+      inMenu: true,
+    },
+    {
+      key: "OpenInBrowser",
+      title: "Open in Browser",
+      iconIOS: { name: "safari" },
+      onPress: handleOpenInBrowser,
+      inMenu: true,
     },
   ].filter(Boolean) as ActionItem[]
 
@@ -209,20 +229,22 @@ const HeaderRightActionsImpl = ({
         }))}
         className="absolute right-[32px] z-10 flex-row gap-2"
       >
-        {actionItems.map(
-          (item) =>
-            item && (
-              <ActionBarItem
-                key={item.key}
-                onPress={item.onPress}
-                label={item.title}
-                active={item.active}
-                iconColor={item.iconColor}
-              >
-                {item.icon}
-              </ActionBarItem>
-            ),
-        )}
+        {actionItems
+          .filter((item) => !item.inMenu)
+          .map(
+            (item) =>
+              item && (
+                <ActionBarItem
+                  key={item.key}
+                  onPress={item.onPress}
+                  label={item.title}
+                  active={item.active}
+                  iconColor={item.iconColor}
+                >
+                  {item.icon}
+                </ActionBarItem>
+              ),
+          )}
       </Animated.View>
 
       <DropdownMenu.Root>
@@ -256,14 +278,27 @@ const HeaderRightActionsImpl = ({
               )}
             </DropdownMenu.Group>
           )}
-          <DropdownMenu.Item key="CopyLink" onSelect={handleCopyLink}>
-            <DropdownMenu.ItemTitle>Copy Link</DropdownMenu.ItemTitle>
-            <DropdownMenu.ItemIcon ios={{ name: "link" }} />
-          </DropdownMenu.Item>
-          <DropdownMenu.Item key="OpenInBrowser" onSelect={handleOpenInBrowser}>
-            <DropdownMenu.ItemTitle>Open in Browser</DropdownMenu.ItemTitle>
-            <DropdownMenu.ItemIcon ios={{ name: "safari" }} />
-          </DropdownMenu.Item>
+          {actionItems
+            .filter((item) => item?.inMenu)
+            .map(
+              (item) =>
+                item &&
+                (item.isCheckbox ? (
+                  <DropdownMenu.CheckboxItem
+                    key={item.key}
+                    value={item.active!}
+                    onSelect={item.onPress}
+                  >
+                    <DropdownMenu.ItemTitle>{item.title}</DropdownMenu.ItemTitle>
+                    <DropdownMenu.ItemIcon ios={item.iconIOS} />
+                  </DropdownMenu.CheckboxItem>
+                ) : (
+                  <DropdownMenu.Item key={item.key} onSelect={item.onPress}>
+                    <DropdownMenu.ItemTitle>{item.title}</DropdownMenu.ItemTitle>
+                    <DropdownMenu.ItemIcon ios={item.iconIOS} />
+                  </DropdownMenu.Item>
+                )),
+            )}
         </DropdownMenu.Content>
       </DropdownMenu.Root>
     </View>

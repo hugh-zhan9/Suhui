@@ -2,7 +2,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import * as FileSystem from "expo-file-system"
 import type { FC } from "react"
 import { useMemo } from "react"
-import { ActivityIndicator, Alert, Text, View } from "react-native"
+import { useTranslation } from "react-i18next"
+import { Alert, Text, View } from "react-native"
 
 import {
   NavigationBlurEffectHeader,
@@ -14,9 +15,9 @@ import {
   GroupedInsetListNavigationLink,
   GroupedInsetListNavigationLinkIcon,
   GroupedInsetListSectionHeader,
-  GroupedOutlineDescription,
   GroupedPlainButtonCell,
 } from "@/src/components/ui/grouped/GroupedList"
+import { PlatformActivityIndicator } from "@/src/components/ui/loading/PlatformActivityIndicator"
 import { getDbPath } from "@/src/database"
 import { AppleCuteFiIcon } from "@/src/icons/apple_cute_fi"
 import { GithubCuteFiIcon } from "@/src/icons/github_cute_fi"
@@ -45,12 +46,16 @@ import { ResetPassword } from "./ResetPassword"
 type Account = {
   id: string
   provider: string
-  profile: {
-    id?: string
-    email?: string
-    name?: string
-    image?: string
-  } | null
+  profile:
+    | {
+        id: string
+        name?: string
+        email?: string | null
+        image?: string
+        emailVerified: boolean
+      }
+    | null
+    | undefined
 }
 
 const accountInfoKey = ["account-info"]
@@ -63,9 +68,10 @@ const useAccount = () => {
   })
 }
 export const AccountScreen = () => {
+  const { t } = useTranslation("settings")
   return (
     <SafeNavigationScrollView className="bg-system-grouped-background">
-      <NavigationBlurEffectHeader title="Account" />
+      <NavigationBlurEffectHeader title={t("titles.account")} />
 
       <AuthenticationSection />
 
@@ -73,10 +79,10 @@ export const AccountScreen = () => {
 
       {/* Danger Zone */}
 
-      <GroupedInsetListSectionHeader label="Danger Zone" />
+      <GroupedInsetListSectionHeader label={t("profile.danger_zone")} />
       <GroupedInsetListCard>
         <GroupedPlainButtonCell
-          label="Delete account"
+          label={t("profile.delete_account.label")}
           textClassName="text-red text-left"
           onPress={async () => {
             Alert.alert("Delete account", "Are you sure you want to delete your account?", [
@@ -188,6 +194,7 @@ const AccountLinker: FC<{
 ;(AccountLinker as any).itemStyle = GroupedInsetListCardItemStyle.NavigationLink
 
 const AuthenticationSection = () => {
+  const { t } = useTranslation("settings")
   const { data: accounts } = useAccount()
 
   const { data: providers, isLoading } = useQuery({
@@ -207,7 +214,7 @@ const AuthenticationSection = () => {
 
   return (
     <>
-      <GroupedInsetListSectionHeader label="Authentication" />
+      <GroupedInsetListSectionHeader label={t("profile.link_social.authentication")} />
       <GroupedInsetListCard>
         {providers ? (
           Object.keys(providers).map((provider) => (
@@ -219,16 +226,16 @@ const AuthenticationSection = () => {
           ))
         ) : isLoading ? (
           <View className="flex h-12 flex-1 items-center justify-center">
-            <ActivityIndicator />
+            <PlatformActivityIndicator />
           </View>
         ) : null}
       </GroupedInsetListCard>
-      <GroupedOutlineDescription description="You can currently only connect social accounts with the same email." />
     </>
   )
 }
 
 const SecuritySection = () => {
+  const { t } = useTranslation("settings")
   const { data: account } = useAccount()
   const hasPassword = account?.data?.find((account) => account.provider === "credential")
   const whoAmI = useWhoami()
@@ -238,11 +245,11 @@ const SecuritySection = () => {
   const navigation = useNavigation()
   return (
     <>
-      <GroupedInsetListSectionHeader label="Security" />
+      <GroupedInsetListSectionHeader label={t("profile.security")} />
       <GroupedInsetListCard>
         <GroupedPlainButtonCell
           textClassName="text-left"
-          label="Change password"
+          label={t("profile.change_password.label")}
           onPress={() => {
             const email = whoAmI?.email || ""
             if (!email) {
@@ -259,7 +266,9 @@ const SecuritySection = () => {
         />
         <GroupedPlainButtonCell
           textClassName="text-left"
-          label={twoFactorEnabled ? "Disable 2FA" : "Setting 2FA"}
+          label={
+            twoFactorEnabled ? t("profile.two_factor.disable") : t("profile.two_factor.enable")
+          }
           onPress={() => {
             Dialog.show(ConfirmPasswordDialog, {
               override: {

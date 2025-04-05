@@ -19,7 +19,7 @@ export const ai = {
     extraFields?: string[]
     part?: string
   }) =>
-    defineQuery(["translation", entry, view, language, extraFields, part], () =>
+    defineQuery(["translation", entry?.entries.id, view, language, extraFields, part], () =>
       translate({ entry, view, language, extraFields, part }),
     ),
   summary: ({ entryId, language }: { entryId: string; language?: SupportedLanguages }) =>

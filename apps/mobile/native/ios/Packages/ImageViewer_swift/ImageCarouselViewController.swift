@@ -138,7 +138,7 @@ public class ImageCarouselViewController: UIPageViewController,
         let menu = UIMenu(title: "", children: [saveAction, copyAction, shareAction])
 
         let optionsButton = UIBarButtonItem(
-            image: UIImage(systemName: "ellipsis.circle")?.withAlpha(0.9).withTintColor(
+            image: UIImage(systemName: "ellipsis")?.withAlpha(0.9).withTintColor(
                 .white, renderingMode: .alwaysOriginal
             ),
             primaryAction: nil,
@@ -147,7 +147,7 @@ public class ImageCarouselViewController: UIPageViewController,
 
         navItem.leftBarButtonItem = closeBarButton
         navItem.rightBarButtonItem = optionsButton
-        navBar.alpha = 0.0
+//        navBar.alpha = 0.0
         navBar.items = [navItem]
 
         navBar.insert(to: view)

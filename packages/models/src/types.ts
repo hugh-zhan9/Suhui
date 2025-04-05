@@ -1,4 +1,4 @@
-import type { AppType, languageSchema, users } from "@follow/shared/hono"
+import type { AppType, languageSchema, users } from "@follow/shared"
 import type { hc } from "hono/client"
 import type { z } from "zod"
 
@@ -160,4 +160,16 @@ export type RSSHubModel = Omit<
   baseUrl?: string | null
   accessKey?: string | null
   userCount?: number
+}
+
+type Optional<T> = {
+  [K in keyof T]?: T[K]
+}
+
+export type EntryReadHistoriesModel = Optional<
+  ExtractBizResponse<
+    (typeof _apiClient.entries)["read-histories"][":id"]["$get"]
+  >["data"]["entryReadHistories"]
+> & {
+  entryId: string
 }

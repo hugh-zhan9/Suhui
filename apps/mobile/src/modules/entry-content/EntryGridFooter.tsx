@@ -9,8 +9,10 @@ import { FeedIcon } from "@/src/components/ui/icon/feed-icon"
 import { gentleSpringPreset } from "@/src/constants/spring"
 import { useEntry } from "@/src/store/entry/hooks"
 import { useFeed } from "@/src/store/feed/hooks"
+import { useEntryTranslation, usePrefetchEntryTranslation } from "@/src/store/translation/hooks"
 
 import { useEntryListContextView } from "../entry-list/EntryListContext"
+import { EntryTranslation } from "../entry-list/templates/EntryTranslation"
 
 export const EntryGridFooter = ({
   entryId,
@@ -20,6 +22,8 @@ export const EntryGridFooter = ({
   descriptionClassName?: string
 }) => {
   const entry = useEntry(entryId)
+  usePrefetchEntryTranslation(entryId)
+  const translation = useEntryTranslation(entryId)
   const feed = useFeed(entry?.feedId || "")
   const view = useEntryListContextView()
 
@@ -45,31 +49,33 @@ export const EntryGridFooter = ({
   if (!entry) return null
 
   return (
-    <View className={cn("my-2 px-2", view === FeedViewType.Videos && "h-[64]")}>
-      <View className="flex-row gap-2">
+    <View className={cn("my-1 px-1", view === FeedViewType.Videos && "h-[52]")}>
+      <View className="flex-row gap-1">
         <ReAnimated.View
-          className="bg-red mt-2 inline-block rounded-full"
+          className="bg-red mt-1.5 inline-block rounded-full"
           style={unreadIndicatorStyle}
         />
-        {entry.description && (
-          <Text
+        {entry.title && (
+          <EntryTranslation
             numberOfLines={2}
             className={cn(
-              "text-label shrink text-base font-medium",
-              view === FeedViewType.Videos && "min-h-12",
+              "text-label shrink text-sm font-medium",
+              view === FeedViewType.Videos && "min-h-10",
               descriptionClassName,
             )}
-          >
-            {entry.description}
-          </Text>
+            source={entry.title}
+            target={translation?.title}
+            showTranslation={!!entry.settings?.translation}
+            inline
+          />
         )}
       </View>
-      <View className="mt-1 flex-row items-center gap-1">
-        <FeedIcon fallback feed={feed} size={16} />
-        <Text numberOfLines={1} className="text-label shrink text-sm font-medium">
+      <View className="mt-1 flex-row items-center gap-1.5">
+        <FeedIcon fallback feed={feed} size={14} />
+        <Text numberOfLines={1} className="text-label shrink text-xs font-medium">
           {feed?.title}
         </Text>
-        <RelativeDateTime className="text-secondary-label" date={entry.publishedAt} />
+        <RelativeDateTime className="text-secondary-label text-xs" date={entry.publishedAt} />
       </View>
     </View>
   )

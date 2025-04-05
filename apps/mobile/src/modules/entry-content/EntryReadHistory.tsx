@@ -62,7 +62,13 @@ export const EntryReadHistory = ({ entryId }: { entryId: string }) => {
               ],
             }}
           >
-            <UserAvatar preview={false} size={25} name={user.name!} image={user.image} />
+            <UserAvatar
+              preview={false}
+              size={25}
+              name={user.name!}
+              image={user.image}
+              className="border-secondary-system-fill border"
+            />
           </Pressable>
         )
       })}

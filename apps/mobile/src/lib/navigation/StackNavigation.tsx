@@ -4,7 +4,13 @@ import type { FC, PropsWithChildren } from "react"
 import { memo, useContext, useEffect, useMemo, useRef, useState } from "react"
 import type { ScrollView } from "react-native"
 import { StyleSheet } from "react-native"
-import { SafeAreaProvider } from "react-native-safe-area-context"
+import {
+  SafeAreaFrameContext,
+  SafeAreaInsetsContext,
+  SafeAreaProvider,
+  useSafeAreaFrame,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context"
 import type { ScreenStackHeaderConfigProps } from "react-native-screens"
 import { ScreenStack } from "react-native-screens"
 
@@ -35,7 +41,7 @@ export const RootStackNavigation = ({ children, headerConfig }: RootStackNavigat
       <AttachNavigationScrollViewProvider>
         <ScreenNameContext.Provider value={useMemo(() => atom(""), [])}>
           <ChainNavigationContext.Provider
-            value={Navigation.rootNavigation.__internal_getCtxValue()}
+            value={Navigation.rootNavigation.__dangerous_getCtxValue()}
           >
             <NavigationInstanceContext.Provider value={Navigation.rootNavigation}>
               <ScreenStack style={StyleSheet.absoluteFill}>
@@ -76,7 +82,7 @@ const StateHandler = () => {
     return navigation.on("screenChange", (payload) => {
       if (!payload.route) return
       const Component = payload.route.Component as NavigationControllerView
-      const state = jotaiStore.get(navigationInstance.__internal_getCtxValue().routesAtom)
+      const state = jotaiStore.get(navigationInstance.__dangerous_getCtxValue().routesAtom)
       if (payload.type === "appear" && state.at(-1)?.id === payload.route.id) {
         previousName.current = jotaiStore.get(nameAtom)
         jotaiStore.set(nameAtom, Component.title || Component.displayName || Component.name)
@@ -177,6 +183,8 @@ const ModalScreenStackItems: FC<{
   }
   const isStackModal = rootModalRoute.type !== "formSheet"
 
+  const isFullScreen = rootModalRoute.type !== "modal" && rootModalRoute.type !== "formSheet"
+
   if (isStackModal) {
     return (
       <ModalScreenItemOptionsContext.Provider value={modalScreenOptionsCtxValue}>
@@ -187,30 +195,36 @@ const ModalScreenStackItems: FC<{
           screenOptions={rootModalRoute.screenOptions}
           {...modalScreenOptions}
         >
-          <ScreenStack style={StyleSheet.absoluteFill}>
-            <WrappedScreenItem
-              screenId={rootModalRoute.id}
-              screenOptions={rootModalRoute.screenOptions}
-            >
-              <ResolveView
-                comp={rootModalRoute.Component}
-                element={rootModalRoute.element}
-                props={rootModalRoute.props}
-              />
-            </WrappedScreenItem>
-            {routes.slice(1).map((route) => {
-              return (
-                <WrappedScreenItem
-                  stackPresentation={"push"}
-                  key={route.id}
-                  screenId={route.id}
-                  screenOptions={route.screenOptions}
-                >
-                  <ResolveView comp={route.Component} element={route.element} props={route.props} />
-                </WrappedScreenItem>
-              )
-            })}
-          </ScreenStack>
+          <ModalSafeAreaInsetsContext hasTopInset={isFullScreen}>
+            <ScreenStack style={StyleSheet.absoluteFill}>
+              <WrappedScreenItem
+                screenId={rootModalRoute.id}
+                screenOptions={rootModalRoute.screenOptions}
+              >
+                <ResolveView
+                  comp={rootModalRoute.Component}
+                  element={rootModalRoute.element}
+                  props={rootModalRoute.props}
+                />
+              </WrappedScreenItem>
+              {routes.slice(1).map((route) => {
+                return (
+                  <WrappedScreenItem
+                    stackPresentation={"push"}
+                    key={route.id}
+                    screenId={route.id}
+                    screenOptions={route.screenOptions}
+                  >
+                    <ResolveView
+                      comp={route.Component}
+                      element={route.element}
+                      props={route.props}
+                    />
+                  </WrappedScreenItem>
+                )
+              })}
+            </ScreenStack>
+          </ModalSafeAreaInsetsContext>
         </WrappedScreenItem>
       </ModalScreenItemOptionsContext.Provider>
     )
@@ -241,4 +255,28 @@ const ResolveView: FC<{
     return element
   }
   throw new Error("No component or element provided")
+}
+
+const ModalSafeAreaInsetsContext: FC<{
+  children: React.ReactNode
+  hasTopInset?: boolean
+}> = ({ children, hasTopInset = true }) => {
+  const rootInsets = useSafeAreaInsets()
+  const rootFrame = useSafeAreaFrame()
+
+  return (
+    <SafeAreaFrameContext.Provider value={rootFrame}>
+      <SafeAreaInsetsContext.Provider
+        value={useMemo(
+          () => ({
+            ...rootInsets,
+            top: hasTopInset ? rootInsets.top : 0,
+          }),
+          [hasTopInset, rootInsets],
+        )}
+      >
+        {children}
+      </SafeAreaInsetsContext.Provider>
+    </SafeAreaFrameContext.Provider>
+  )
 }

@@ -3,6 +3,7 @@ import { FeedViewType } from "@follow/constants"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { memo, useEffect, useState } from "react"
 import { Controller, useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 import { View } from "react-native"
 import { z } from "zod"
 
@@ -42,7 +43,7 @@ const listSchema = z.object({
     .optional()
     .transform((val) => (val === "" ? null : val)),
 
-  fee: z.number().min(0),
+  fee: z.number().min(0).nullable(),
   view: z.number().int(),
 })
 
@@ -56,10 +57,10 @@ const defaultValues = {
 export const ListScreen: NavigationControllerView<{
   listId?: string
 }> = ({ listId }) => {
+  const { t } = useTranslation("settings")
   const list = useList(listId || "")
   const form = useForm({
     defaultValues: list || defaultValues,
-    // @ts-ignore
     resolver: zodResolver(listSchema),
     mode: "all",
   })
@@ -80,7 +81,7 @@ export const ListScreen: NavigationControllerView<{
             }}
             render={({ field: { onChange, onBlur, ref, value } }) => (
               <TextField
-                label="Title"
+                label={t("lists.title")}
                 required={true}
                 wrapperClassName="mt-2"
                 placeholder=""
@@ -99,7 +100,7 @@ export const ListScreen: NavigationControllerView<{
               control={form.control}
               render={({ field: { onChange, onBlur, ref, value } }) => (
                 <TextField
-                  label="Description"
+                  label={t("lists.description")}
                   wrapperClassName="mt-2"
                   placeholder=""
                   onBlur={onBlur}
@@ -119,7 +120,7 @@ export const ListScreen: NavigationControllerView<{
               render={({ field: { onChange, onBlur, ref, value } }) => (
                 <TextField
                   autoCapitalize="none"
-                  label="Image"
+                  label={t("lists.image")}
                   wrapperClassName="mt-2"
                   placeholder="https://"
                   onBlur={onBlur}
@@ -135,7 +136,7 @@ export const ListScreen: NavigationControllerView<{
           </View>
 
           <View className="mt-4">
-            <FormLabel label="View" className="mb-4 pl-2.5" optional />
+            <FormLabel label={t("lists.view")} className="mb-4 pl-2.5" optional />
             <Controller
               name="view"
               control={form.control}
@@ -151,7 +152,7 @@ export const ListScreen: NavigationControllerView<{
               control={form.control}
               render={({ field: { onChange, onBlur, ref, value } }) => (
                 <NumberField
-                  label="Fee"
+                  label={t("lists.fee.label")}
                   wrapperClassName="mt-2"
                   placeholder="0"
                   onBlur={onBlur}
@@ -169,12 +170,15 @@ export const ListScreen: NavigationControllerView<{
         {isEditing && (
           <GroupedInsetListCard className="mt-6">
             <GroupedInsetButtonCell
-              label="Delete"
+              label={t("words.delete", { ns: "common" })}
               style="destructive"
               onPress={() => {
                 showActionSheetWithOptions(
                   {
-                    options: ["Delete", "Cancel"],
+                    options: [
+                      t("words.delete", { ns: "common" }),
+                      t("words.cancel", { ns: "common" }),
+                    ],
                     cancelButtonIndex: 1,
                     destructiveButtonIndex: 0,
                   },
@@ -199,6 +203,7 @@ interface ScreenOptionsProps {
   listId?: string
 }
 const ScreenOptions = memo(({ title, listId }: ScreenOptionsProps) => {
+  const { t } = useTranslation("settings")
   const form = useFormContext()
 
   const { isValid, isDirty } = form.formState
@@ -216,7 +221,7 @@ const ScreenOptions = memo(({ title, listId }: ScreenOptionsProps) => {
 
   return (
     <NavigationBlurEffectHeader
-      title={title ? `Edit List - ${title}` : "Create List"}
+      title={title ? `${t("lists.edit.label")} - ${title}` : t("lists.create")}
       headerRight={
         <FormProvider form={form}>
           <HeaderSubmitButton

@@ -1,6 +1,7 @@
 import { createContext, createElement, useCallback, useContext, useMemo } from "react"
+import { useTranslation } from "react-i18next"
 import type { ListRenderItem } from "react-native"
-import { ActivityIndicator, Image, StyleSheet, Text, View } from "react-native"
+import { Image, StyleSheet, Text, View } from "react-native"
 import Animated, { LinearTransition } from "react-native-reanimated"
 import { useColor, useColors } from "react-native-uikit-colors"
 
@@ -15,6 +16,7 @@ import {
   GroupedInsetListCard,
 } from "@/src/components/ui/grouped/GroupedList"
 import { FallbackIcon } from "@/src/components/ui/icon/fallback-icon"
+import { PlatformActivityIndicator } from "@/src/components/ui/loading/PlatformActivityIndicator"
 import { ItemPressable } from "@/src/components/ui/pressable/ItemPressable"
 import { views } from "@/src/constants/views"
 import { AddCuteReIcon } from "@/src/icons/add_cute_re"
@@ -34,13 +36,14 @@ import { ManageListScreen } from "./ManageList"
 
 const ListContext = createContext({} as Record<string, HonoApiClient.List_List_Get>)
 export const ListsScreen = () => {
+  const { t } = useTranslation("settings")
   const { isLoading, data } = usePrefetchOwnedLists()
   const lists = useOwnedLists()
 
   return (
     <SafeNavigationScrollView nestedScrollEnabled className="bg-system-grouped-background">
       <NavigationBlurEffectHeader
-        title="Lists"
+        title={t("titles.lists")}
         headerRight={useCallback(
           () => (
             <AddListButton />
@@ -52,8 +55,8 @@ export const ListsScreen = () => {
       <View className="mt-6">
         <GroupedInsetListCard>
           <GroupedInformationCell
-            title="Lists"
-            description="Lists are collections of feeds that you can share or sell for others to subscribe to. Subscribers will synchronize and access all feeds in the list."
+            title={t("titles.lists")}
+            description={t("lists.info")}
             icon={<RadaCuteFiIcon height={40} width={40} color="#fff" />}
             iconBackgroundColor="#34D399"
           />
@@ -88,7 +91,7 @@ export const ListsScreen = () => {
             )}
             {isLoading && lists.length === 0 && (
               <View className="mt-1">
-                <ActivityIndicator />
+                <PlatformActivityIndicator />
               </View>
             )}
           </GroupedInsetListCard>
@@ -128,6 +131,7 @@ const ListItemCell: ListRenderItem<ListModel> = (props) => {
   return <ListItemCellImpl {...props} />
 }
 const ListItemCellImpl: ListRenderItem<ListModel> = ({ item: list }) => {
+  const { t } = useTranslation("common")
   const { title, description } = list
   const listData = useContext(ListContext)[list.id]
 
@@ -139,14 +143,14 @@ const ListItemCellImpl: ListRenderItem<ListModel> = ({ item: list }) => {
       swipeRightToCallAction
       rightActions={[
         {
-          label: "Manage",
+          label: t("words.manage"),
           onPress: () => {
             navigation.pushControllerView(ManageListScreen, { id: list.id })
           },
           backgroundColor: accentColor,
         },
         {
-          label: "Edit",
+          label: t("words.edit"),
           onPress: () => {
             navigation.presentControllerView(ListScreen, { listId: list.id })
           },
@@ -185,7 +189,9 @@ const ListItemCellImpl: ListRenderItem<ListModel> = ({ item: list }) => {
                 height: 16,
                 width: 16,
               })}
-            <Text className="text-secondary-label text-base">{views[list.view]?.name}</Text>
+            {!!views[list.view]?.name && (
+              <Text className="text-secondary-label text-base">{t(views[list.view]!.name)}</Text>
+            )}
           </View>
         </View>
 

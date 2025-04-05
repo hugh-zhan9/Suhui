@@ -1,11 +1,14 @@
 import { FeedViewType } from "@follow/constants"
 import type { FlashList } from "@shopify/flash-list"
+import { useEffect } from "react"
 
+import { useGeneralSettingKey } from "@/src/atoms/settings/general"
 import { NoLoginInfo } from "@/src/components/common/NoLoginInfo"
 import { useRegisterNavigationScrollView } from "@/src/components/layouts/tabbar/hooks"
 import { EntryListContentPicture } from "@/src/modules/entry-list/EntryListContentPicture"
 import { useWhoami } from "@/src/store/user/hooks"
 
+import { useFetchEntriesControls } from "../feed-drawer/atoms"
 import { EntryListContentArticle } from "./EntryListContentArticle"
 import { EntryListContentSocial } from "./EntryListContentSocial"
 import { EntryListContentVideo } from "./EntryListContentVideo"
@@ -46,6 +49,22 @@ export function EntryListSelector({
       break
     }
   }
+
+  const unreadOnly = useGeneralSettingKey("unreadOnly")
+  useEffect(() => {
+    ref?.current?.scrollToOffset({
+      offset: 0,
+    })
+  }, [unreadOnly, ref])
+
+  const { isRefetching } = useFetchEntriesControls()
+  useEffect(() => {
+    if (isRefetching) {
+      ref?.current?.scrollToOffset({
+        offset: 0,
+      })
+    }
+  }, [isRefetching, ref])
 
   return (
     <EntryListContextViewContext.Provider value={viewId}>

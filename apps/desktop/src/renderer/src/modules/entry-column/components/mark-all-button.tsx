@@ -3,6 +3,7 @@ import { ActionButton, Button, IconButton } from "@follow/components/ui/button/i
 import { Kbd, KbdCombined } from "@follow/components/ui/kbd/Kbd.js"
 import { RootPortal } from "@follow/components/ui/portal/index.jsx"
 import { useCountdown } from "@follow/hooks"
+import { ELECTRON_BUILD } from "@follow/shared/constants"
 import { cn, getOS } from "@follow/utils/utils"
 import { AnimatePresence, m } from "framer-motion"
 import type { FC, ReactNode } from "react"
@@ -12,7 +13,7 @@ import { Trans, useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { useOnClickOutside } from "usehooks-ts"
 
-import { HotKeyScopeMap, isElectronBuild } from "~/constants"
+import { HotKeyScopeMap } from "~/constants"
 import { shortcuts } from "~/constants/shortcuts"
 import { useI18n } from "~/hooks/common"
 
@@ -20,7 +21,6 @@ import type { MarkAllFilter } from "../hooks/useMarkAll"
 import { useMarkAllByRoute } from "../hooks/useMarkAll"
 
 interface MarkAllButtonProps {
-  filter?: MarkAllFilter
   className?: string
   which?: ReactNode
   shortcut?: boolean
@@ -31,13 +31,13 @@ export const MarkAllReadWithOverlay = forwardRef<
   MarkAllButtonProps & {
     containerRef: React.RefObject<HTMLDivElement>
   }
->(({ filter, className, which = "all", shortcut, containerRef }, ref) => {
+>(({ className, which = "all", shortcut, containerRef }, ref) => {
   const { t } = useTranslation()
   const { t: commonT } = useTranslation("common")
 
   const [show, setShow] = useState(false)
 
-  const handleMarkAllAsRead = useMarkAllByRoute(filter)
+  const handleMarkAllAsRead = useMarkAllByRoute()
 
   const [popoverRef, setPopoverRef] = useState<HTMLDivElement | null>(null)
   useOnClickOutside({ current: popoverRef }, () => {
@@ -136,7 +136,7 @@ const Popup = ({ which, containerRef, setPopoverRef, setShow, handleMarkAllAsRea
   useViewport((v) => v.w)
 
   // electron window has pt-[calc(var(--fo-window-padding-top)_-10px)]
-  const isElectronWindows = isElectronBuild && getOS() === "Windows"
+  const isElectronWindows = ELECTRON_BUILD && getOS() === "Windows"
   return (
     <RootPortal to={$parent}>
       <m.div
@@ -206,10 +206,17 @@ const ConfirmMarkAllReadInfo = ({ undo }: { undo: () => any }) => {
   )
 }
 
-export const FlatMarkAllReadButton: FC<MarkAllButtonProps> = (props) => {
+export const FlatMarkAllReadButton: FC<
+  MarkAllButtonProps & {
+    filter?: MarkAllFilter
+    buttonClassName?: string
+    iconClassName?: string
+    text?: string
+  }
+> = (props) => {
   const t = useI18n()
 
-  const { className, filter, which } = props
+  const { className, filter, which, buttonClassName, iconClassName } = props
   const [status, setStatus] = useState<"initial" | "confirm" | "done">("initial")
   const handleMarkAll = useMarkAllByRoute(filter)
 
@@ -222,6 +229,7 @@ export const FlatMarkAllReadButton: FC<MarkAllButtonProps> = (props) => {
     <Button
       variant="ghost"
       disabled={status === "done"}
+      buttonClassName={buttonClassName}
       className={cn(
         "center relative flex h-auto gap-1",
 
@@ -245,9 +253,9 @@ export const FlatMarkAllReadButton: FC<MarkAllButtonProps> = (props) => {
     >
       <AnimatePresence mode="wait">
         {status === "confirm" ? (
-          <m.i key={1} {...animate} className="i-mgc-question-cute-re" />
+          <m.i key={1} {...animate} className={cn("i-mgc-question-cute-re", iconClassName)} />
         ) : (
-          <m.i key={2} {...animate} className="i-mgc-check-circle-cute-re" />
+          <m.i key={2} {...animate} className={cn("i-mgc-check-circle-cute-re", iconClassName)} />
         )}
       </AnimatePresence>
       <span className={cn(status === "confirm" ? "opacity-0" : "opacity-100", "duration-200")}>

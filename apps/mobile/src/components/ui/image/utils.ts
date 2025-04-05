@@ -16,6 +16,8 @@ export const getAllSources = (
     height?: number
   },
 ) => {
+  source.uri = source.uri.replace("http://", "https://")
+
   const safeSource: ImageProps["source"] = (() => {
     return source?.uri
       ? {
