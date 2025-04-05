@@ -8,14 +8,8 @@ import { BottomTabContext } from "./BottomTabContext"
 import { LifecycleEvents, ScreenNameRegister, TabScreenIdentifierRegister } from "./shared"
 import type { TabScreenContextType } from "./TabScreenContext"
 import { TabScreenContext } from "./TabScreenContext"
-import type { TabbarIconProps, TabScreenComponent } from "./types"
+import type { TabScreenComponent, TabScreenProps } from "./types"
 
-export interface TabScreenProps {
-  title: string
-  tabScreenIndex: number
-  identifier: string
-  renderIcon?: (props: TabbarIconProps) => React.ReactNode
-}
 export const TabScreen: FC<PropsWithChildren<Omit<TabScreenProps, "tabScreenIndex">>> = ({
   children,
   identifier,
@@ -85,7 +79,7 @@ export const TabScreen: FC<PropsWithChildren<Omit<TabScreenProps, "tabScreenInde
     () => ({
       tabScreenIndex,
       titleAtom: atom(props.title),
-      identifierAtom: atom(identifier),
+      identifierAtom: atom(identifier ?? ""),
     }),
     [tabScreenIndex, props.title, identifier],
   )
