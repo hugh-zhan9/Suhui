@@ -14,6 +14,8 @@ import {
 import { useSharedValue } from "react-native-reanimated"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
+import { ErrorBoundary } from "@/src/components/common/ErrorBoundary"
+import { ListErrorView } from "@/src/components/errors/ListErrorView"
 import { BottomTabBarHeightContext } from "@/src/components/layouts/tabbar/contexts/BottomTabBarHeightContext"
 import { NavigationHeaderHeightContext } from "@/src/components/layouts/views/NavigationHeaderContext"
 import { AccordionItem } from "@/src/components/ui/accordion/AccordionItem"
@@ -60,7 +62,9 @@ export const FeedPanel = () => {
               key={selectedCollection.viewId}
               value={selectedCollection.viewId}
             >
-              <SubscriptionList view={selectedCollection.viewId} />
+              <ErrorBoundary fallbackRender={ListErrorView}>
+                <SubscriptionList view={selectedCollection.viewId} />
+              </ErrorBoundary>
             </ViewPageCurrentViewProvider>
           </BottomTabBarHeightContext.Provider>
         </NavigationHeaderHeightContext.Provider>

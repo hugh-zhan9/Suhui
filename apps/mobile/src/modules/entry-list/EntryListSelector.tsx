@@ -3,7 +3,9 @@ import type { FlashList } from "@shopify/flash-list"
 import { useEffect } from "react"
 
 import { useGeneralSettingKey } from "@/src/atoms/settings/general"
+import { withErrorBoundary } from "@/src/components/common/ErrorBoundary"
 import { NoLoginInfo } from "@/src/components/common/NoLoginInfo"
+import { ListErrorView } from "@/src/components/errors/ListErrorView"
 import { useRegisterNavigationScrollView } from "@/src/components/layouts/tabbar/hooks"
 import { EntryListContentPicture } from "@/src/modules/entry-list/EntryListContentPicture"
 import { useWhoami } from "@/src/store/user/hooks"
@@ -14,7 +16,7 @@ import { EntryListContentSocial } from "./EntryListContentSocial"
 import { EntryListContentVideo } from "./EntryListContentVideo"
 import { EntryListContextViewContext } from "./EntryListContext"
 
-export function EntryListSelector({
+function EntryListSelectorImpl({
   entryIds,
   viewId,
   active = true,
@@ -76,3 +78,5 @@ export function EntryListSelector({
     </EntryListContextViewContext.Provider>
   )
 }
+
+export const EntryListSelector = withErrorBoundary(EntryListSelectorImpl, ListErrorView)

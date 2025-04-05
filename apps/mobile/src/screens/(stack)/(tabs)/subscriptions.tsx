@@ -1,9 +1,10 @@
 import type { FeedViewType } from "@follow/constants"
 import { useMemo } from "react"
-import { View } from "react-native"
 import { useColor } from "react-native-uikit-colors"
 
+import { ErrorBoundary } from "@/src/components/common/ErrorBoundary"
 import { NoLoginInfo } from "@/src/components/common/NoLoginInfo"
+import { ListErrorView } from "@/src/components/errors/ListErrorView"
 import { BlackBoard2CuteFiIcon } from "@/src/icons/black_board_2_cute_fi"
 import { BlackBoard2CuteReIcon } from "@/src/icons/black_board_2_cute_re"
 import type { TabScreenComponent } from "@/src/lib/navigation/bottom-tab/types"
@@ -42,7 +43,7 @@ SubscriptionsTabScreen.tabBarIcon = ({ focused, color }) => {
 }
 
 const renderItem = (view: FeedViewType, active: boolean) => (
-  <View key={view}>
+  <ErrorBoundary fallbackRender={ListErrorView} key={view}>
     <SubscriptionList view={view} active={active} />
-  </View>
+  </ErrorBoundary>
 )
