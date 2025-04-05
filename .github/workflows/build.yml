@@ -228,7 +228,7 @@ jobs:
 
       - uses: signpath/github-action-submit-signing-request@v1.1
         continue-on-error: true
-        if: runner.os == 'windows' && env.PROD == 'true'
+        if: runner.os == 'windows' && env.RELEASE == 'true'
         with:
           api-token: "${{ secrets.SIGNPATH_API_TOKEN }}"
           organization-id: "8c651516-fdaf-40a1-9fea-001dffde850e"
@@ -239,12 +239,12 @@ jobs:
           output-artifact-directory: "apps/desktop/out/make/"
 
       - name: Update latest.yml
-        if: runner.os == 'windows' && env.PROD == 'true'
+        if: runner.os == 'windows' && env.RELEASE == 'true'
         run: npx tsx apps/desktop/scripts/update-windows-yml.ts
 
       - name: Upload file (windows-x64-exe signed)
         uses: actions/upload-artifact@v4
-        if: runner.os == 'windows' && env.PROD == 'true'
+        if: runner.os == 'windows' && env.RELEASE == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
