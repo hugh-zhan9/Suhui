@@ -41,8 +41,6 @@ SubscriptionsTabScreen.tabBarIcon = ({ focused, color }) => {
   return <Icon color={color} width={24} height={24} />
 }
 
-SubscriptionsTabScreen.title = "Subscriptions"
-
 const renderItem = (view: FeedViewType, active: boolean) => (
   <View key={view}>
     <SubscriptionList view={view} active={active} />

@@ -46,7 +46,14 @@ export const Tabbar: FC<{
   }, [tabBarVisible, translateY])
 
   const placeholderTabScreens = useMemo<TabScreenProps[]>(() => {
-    return [{ tabScreenIndex: 0, title: "", renderIcon: () => <View className="size-5" /> }]
+    return [
+      {
+        tabScreenIndex: 0,
+        title: "",
+        renderIcon: () => <View className="size-5" />,
+        identifier: "placeholder",
+      },
+    ]
   }, [])
 
   const renderTabScreens = tabScreens.length > 0 ? tabScreens : placeholderTabScreens
