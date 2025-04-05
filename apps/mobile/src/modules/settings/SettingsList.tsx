@@ -29,7 +29,6 @@ import { useNavigation } from "@/src/lib/navigation/hooks"
 import type { Navigation } from "@/src/lib/navigation/Navigation"
 import { InvitationScreen } from "@/src/screens/(modal)/invitation"
 import { useRole, useWhoami } from "@/src/store/user/hooks"
-import { accentColor } from "@/src/theme/colors"
 
 import { AboutScreen } from "./routes/About"
 import { AccountScreen } from "./routes/Account"
@@ -60,7 +59,7 @@ const SettingGroupNavigationLinks: GroupNavigationLink[] = [
     onPress: ({ navigation }) => {
       navigation.pushControllerView(GeneralScreen)
     },
-    iconBackgroundColor: "#F59E0B",
+    iconBackgroundColor: "#FDA4AF",
   },
   {
     label: "titles.notifications",
@@ -68,7 +67,7 @@ const SettingGroupNavigationLinks: GroupNavigationLink[] = [
     onPress: ({ navigation }) => {
       navigation.pushControllerView(NotificationsScreen)
     },
-    iconBackgroundColor: "#FBBF24",
+    iconBackgroundColor: "#FCA5A5",
     todo: true,
     anonymous: false,
   },
@@ -78,7 +77,7 @@ const SettingGroupNavigationLinks: GroupNavigationLink[] = [
     onPress: ({ navigation }) => {
       navigation.pushControllerView(AppearanceScreen)
     },
-    iconBackgroundColor: "#FCD34D",
+    iconBackgroundColor: "#C4B5FD",
   },
   {
     label: "titles.data_control",
@@ -86,7 +85,7 @@ const SettingGroupNavigationLinks: GroupNavigationLink[] = [
     onPress: ({ navigation }) => {
       navigation.pushControllerView(DataScreen)
     },
-    iconBackgroundColor: "#CBAD6D",
+    iconBackgroundColor: "#93C5FD",
     anonymous: false,
   },
   {
@@ -95,7 +94,7 @@ const SettingGroupNavigationLinks: GroupNavigationLink[] = [
     onPress: ({ navigation }) => {
       navigation.pushControllerView(AccountScreen)
     },
-    iconBackgroundColor: "#d08700",
+    iconBackgroundColor: "#FDBA74",
     anonymous: false,
   },
 ]
@@ -108,7 +107,7 @@ const BetaGroupNavigationLinks: GroupNavigationLink[] = [
       navigation.pushControllerView(InvitationsScreen)
     },
 
-    iconBackgroundColor: accentColor,
+    iconBackgroundColor: "#F9A8D4",
     anonymous: false,
   },
 ]
@@ -120,7 +119,7 @@ const DataGroupNavigationLinks: GroupNavigationLink[] = [
     onPress: ({ navigation }) => {
       navigation.pushControllerView(ActionsScreen)
     },
-    iconBackgroundColor: "#059669",
+    iconBackgroundColor: "#D8B4FE",
     anonymous: false,
     trialNotAllowed: true,
   },
@@ -131,7 +130,7 @@ const DataGroupNavigationLinks: GroupNavigationLink[] = [
     onPress: ({ navigation }) => {
       navigation.pushControllerView(FeedsScreen)
     },
-    iconBackgroundColor: "#10B981",
+    iconBackgroundColor: "#FDE68A",
     todo: true,
     anonymous: false,
     trialNotAllowed: true,
@@ -142,8 +141,7 @@ const DataGroupNavigationLinks: GroupNavigationLink[] = [
     onPress: ({ navigation }) => {
       navigation.pushControllerView(ListsScreen)
     },
-    iconBackgroundColor: "#34D399",
-    // todo: true,
+    iconBackgroundColor: "#7DD3FC",
     anonymous: false,
     trialNotAllowed: true,
   },
@@ -156,7 +154,7 @@ const PrivacyGroupNavigationLinks: GroupNavigationLink[] = [
     onPress: ({ navigation }) => {
       navigation.pushControllerView(PrivacyScreen)
     },
-    iconBackgroundColor: "#EF4444",
+    iconBackgroundColor: "#A5B4FC",
   },
   {
     label: "titles.about",
@@ -164,7 +162,7 @@ const PrivacyGroupNavigationLinks: GroupNavigationLink[] = [
     onPress: ({ navigation }) => {
       navigation.pushControllerView(AboutScreen)
     },
-    iconBackgroundColor: "#F87181",
+    iconBackgroundColor: "#FCD34D",
   },
 ]
 

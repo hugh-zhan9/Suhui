@@ -57,7 +57,7 @@ export const ActionsScreen = () => {
             title={t("titles.actions")}
             description={t("actions.info")}
             icon={<Magic2CuteFiIcon height={40} width={40} color="#fff" />}
-            iconBackgroundColor="#059669"
+            iconBackgroundColor="#D8B4FE"
           />
         </GroupedInsetListCard>
       </View>

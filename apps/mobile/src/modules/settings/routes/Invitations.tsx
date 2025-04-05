@@ -71,13 +71,15 @@ export const InvitationsScreen: NavigationControllerView = () => {
           <GroupedInformationCell
             title={t("titles.invitations")}
             icon={<LoveCuteFiIcon height={40} width={40} color="#fff" />}
-            iconBackgroundColor={accentColor}
+            iconBackgroundColor={"#F9A8D4"}
           >
             <Trans
               ns="settings"
               i18nKey="invitation.earlyAccess"
               parent={({ children }: { children: React.ReactNode }) => (
-                <Text className="text-label mt-3 text-base leading-tight">{children}</Text>
+                <Text className="text-label mt-3 text-left text-base leading-tight">
+                  {children}
+                </Text>
               )}
               components={{ strong: <Text className="font-bold" /> }}
             />
@@ -85,7 +87,9 @@ export const InvitationsScreen: NavigationControllerView = () => {
               ns="settings"
               i18nKey="invitation.generateCost"
               parent={({ children }: { children: React.ReactNode }) => (
-                <Text className="text-label mt-3 text-base leading-tight">{children}</Text>
+                <Text className="text-label mt-3 text-left text-base leading-tight">
+                  {children}
+                </Text>
               )}
               values={{
                 INVITATION_PRICE: serverConfigs?.INVITATION_PRICE,

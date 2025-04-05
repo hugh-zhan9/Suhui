@@ -58,7 +58,7 @@ export const ListsScreen = () => {
             title={t("titles.lists")}
             description={t("lists.info")}
             icon={<RadaCuteFiIcon height={40} width={40} color="#fff" />}
-            iconBackgroundColor="#34D399"
+            iconBackgroundColor="#7DD3FC"
           />
         </GroupedInsetListCard>
       </View>
