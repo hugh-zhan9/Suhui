@@ -11,9 +11,9 @@ on:
       tag_version:
         type: boolean
         description: "Tag Version"
-      mas:
+      store:
         type: boolean
-        description: "Build for Mac App Store"
+        description: "Build for Mac App Store and Microsoft Store"
       build_version:
         type: string
         description: "Build Version, only available when mas is true"
@@ -35,7 +35,7 @@ jobs:
   release:
     runs-on: ${{ matrix.os }}
     env:
-      PROD: ${{ github.event.inputs.tag_version == 'true' || github.ref_type == 'tag' || github.event.inputs.mas == 'true' }}
+      PROD: ${{ github.event.inputs.tag_version == 'true' || github.ref_type == 'tag' || github.event.inputs.store == 'true' }}
       RELEASE: ${{ github.event.inputs.tag_version == 'true' || github.ref_type == 'tag' }}
 
     strategy:
@@ -43,8 +43,7 @@ jobs:
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
         exclude:
-          - os: ${{ github.event.inputs.mas == 'true' && 'ubuntu-latest' }}
-          - os: ${{ github.event.inputs.mas == 'true' && 'windows-latest' }}
+          - os: ${{ github.event.inputs.store == 'true' && 'ubuntu-latest' }}
 
     permissions:
       id-token: write
@@ -143,7 +142,7 @@ jobs:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
       - name: Build - macOS
-        if: runner.os == 'macOS' && github.event.inputs.mas != 'true'
+        if: runner.os == 'macOS' && github.event.inputs.store != 'true'
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
@@ -161,7 +160,7 @@ jobs:
             npx tsx scripts/merge-yml.ts
 
       - name: Build - Mac App Store
-        if: runner.os == 'macOS' && github.event.inputs.mas == 'true'
+        if: runner.os == 'macOS' && github.event.inputs.store == 'true'
         env:
           OSX_SIGN_KEYCHAIN_PATH: ${{ runner.temp }}/app-signing.keychain-db
           OSX_SIGN_IDENTITY: ${{ secrets.OSX_SIGN_IDENTITY_MAS }}
