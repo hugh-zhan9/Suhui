@@ -35,7 +35,8 @@ jobs:
   release:
     runs-on: ${{ matrix.os }}
     env:
-      PROD: ${{ github.event.inputs.tag_version == 'true' || github.ref_type == 'tag' }}
+      PROD: ${{ github.event.inputs.tag_version == 'true' || github.ref_type == 'tag' || github.event.inputs.mas == 'true' }}
+      RELEASE: ${{ github.event.inputs.tag_version == 'true' || github.ref_type == 'tag' }}
 
     strategy:
       fail-fast: false
@@ -279,7 +280,7 @@ jobs:
           retention-days: 90
 
       - name: Generate artifact attestation
-        if: env.PROD == 'true'
+        if: env.RELEASE == 'true'
         continue-on-error: true
         uses: actions/attest-build-provenance@v2
         with:
@@ -293,20 +294,20 @@ jobs:
             apps/desktop/dist/*.tar.gz
 
       - run: npx changelogithub
-        if: env.PROD == 'true'
+        if: env.RELEASE == 'true'
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Version
-        if: env.PROD == 'true'
+        if: env.RELEASE == 'true'
         id: version
         uses: ./.github/actions/setup-version
         with:
           type: "desktop"
 
       - name: Create Release Draft
-        if: env.PROD == 'true'
+        if: env.RELEASE == 'true'
         uses: softprops/action-gh-release@v2
         with:
           name: v${{ steps.version.outputs.APP_VERSION }}
