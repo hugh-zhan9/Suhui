@@ -1,21 +1,30 @@
 import { useTypeScriptHappyCallback } from "@follow/hooks"
 import { useSetAtom, useStore } from "jotai"
 import type { PropsWithChildren } from "react"
-import { forwardRef, useContext, useLayoutEffect, useState } from "react"
+import {
+  forwardRef,
+  useContext,
+  useImperativeHandle,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react"
 import type { ScrollView, ScrollViewProps, StyleProp, ViewStyle } from "react-native"
-import { View } from "react-native"
+import { findNodeHandle, View } from "react-native"
 import type { SharedValue } from "react-native-reanimated"
-import { useAnimatedScrollHandler } from "react-native-reanimated"
+import { runOnJS, useAnimatedScrollHandler } from "react-native-reanimated"
 import type { ReanimatedScrollEvent } from "react-native-reanimated/lib/typescript/hook/commonTypes"
 import { useSafeAreaFrame, useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { useBottomTabBarHeight } from "@/src/components/layouts/tabbar/hooks"
+import { isScrollToEnd } from "@/src/lib/native"
 import { useScreenIsInSheetModal } from "@/src/lib/navigation/hooks"
 import { ScreenItemContext } from "@/src/lib/navigation/ScreenItemContext"
 
 import { ReAnimatedScrollView } from "../../common/AnimatedComponents"
 import type { InternalNavigationHeaderProps } from "../header/NavigationHeader"
 import { InternalNavigationHeader } from "../header/NavigationHeader"
+import { BottomTabBarBackgroundContext } from "../tabbar/contexts/BottomTabBarBackgroundContext"
 import { getDefaultHeaderHeight } from "../utils"
 import {
   NavigationHeaderHeightContext,
@@ -48,7 +57,7 @@ export const SafeNavigationScrollView = forwardRef<ScrollView, SafeNavigationScr
       contentViewStyle,
       ...props
     },
-    ref,
+    forwardedRef,
   ) => {
     const insets = useSafeAreaInsets()
     const tabBarHeight = useBottomTabBarHeight()
@@ -60,12 +69,25 @@ export const SafeNavigationScrollView = forwardRef<ScrollView, SafeNavigationScr
     )
     const screenCtxValue = useContext(ScreenItemContext)
 
+    const ref = useRef<ScrollView>(null)
+    useImperativeHandle(forwardedRef, () => ref.current!)
+    const { opacity } = useContext(BottomTabBarBackgroundContext)
+    function checkScrollToBottom() {
+      const handle = findNodeHandle(ref.current!)
+      if (!handle) {
+        return
+      }
+      isScrollToEnd(handle).then((isEnd) => {
+        opacity.value = isEnd ? 0 : 1
+      })
+    }
     const scrollHandler = useAnimatedScrollHandler({
       onScroll: (event) => {
         if (reanimatedScrollY) {
           reanimatedScrollY.value = event.contentOffset.y
         }
 
+        runOnJS(checkScrollToBottom)()
         screenCtxValue.reAnimatedScrollY.value = event.contentOffset.y
       },
     })
@@ -85,6 +107,7 @@ export const SafeNavigationScrollView = forwardRef<ScrollView, SafeNavigationScr
             onLayout={useTypeScriptHappyCallback(
               (e) => {
                 screenCtxValue.scrollViewHeight.value = e.nativeEvent.layout.height - headerHeight
+                checkScrollToBottom()
               },
               [screenCtxValue.scrollViewHeight, headerHeight],
             )}
