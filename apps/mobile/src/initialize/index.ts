@@ -2,6 +2,7 @@ import { tracker } from "@follow/tracker"
 import { nativeApplicationVersion } from "expo-application"
 
 import { initializeDb } from "../database"
+import { settingSyncQueue } from "../modules/settings/sync-queue"
 import { initAnalytics } from "./analytics"
 import { initializeAppCheck } from "./app-check"
 import { initCrashlytics } from "./crashlytics"
@@ -28,6 +29,11 @@ export const initializeApp = async () => {
   await apm("hydrateQueryClient", hydrateQueryClient)
   await apm("initializeAppCheck", initializeAppCheck)
   await apm("initializePlayer", initializePlayer)
+
+  apm("setting sync", () => {
+    settingSyncQueue.init()
+    settingSyncQueue.syncLocal()
+  })
 
   await initAnalytics()
   const loadingTime = Date.now() - now
