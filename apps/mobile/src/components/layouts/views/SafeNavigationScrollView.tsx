@@ -43,6 +43,8 @@ type SafeNavigationScrollViewProps = Omit<ScrollViewProps, "onScroll"> & {
 
   contentViewStyle?: StyleProp<ViewStyle>
   contentViewClassName?: string
+
+  Header?: React.ReactNode
 } & PropsWithChildren
 
 export const SafeNavigationScrollView = forwardRef<ScrollView, SafeNavigationScrollViewProps>(
@@ -55,6 +57,7 @@ export const SafeNavigationScrollView = forwardRef<ScrollView, SafeNavigationScr
       reanimatedScrollY,
       contentViewClassName,
       contentViewStyle,
+      Header,
       ...props
     },
     forwardedRef,
@@ -95,6 +98,7 @@ export const SafeNavigationScrollView = forwardRef<ScrollView, SafeNavigationScr
     return (
       <NavigationHeaderHeightContext.Provider value={headerHeight}>
         <SetNavigationHeaderHeightContext.Provider value={setHeaderHeight}>
+          {Header}
           <ReAnimatedScrollView
             ref={ref}
             onScroll={scrollHandler}
@@ -130,6 +134,35 @@ export const SafeNavigationScrollView = forwardRef<ScrollView, SafeNavigationScr
     )
   },
 )
+
+export const NavigationBlurEffectHeaderView = ({
+  headerHideableBottom,
+  headerHideableBottomHeight,
+  headerTitleAbsolute,
+  ...props
+}: InternalNavigationHeaderProps & {
+  blurThreshold?: number
+  headerHideableBottom?: () => React.ReactNode
+  headerHideableBottomHeight?: number
+  headerTitleAbsolute?: boolean
+}) => {
+  const hideableBottom = headerHideableBottom?.()
+  return (
+    <View className="absolute inset-x-0 top-0 z-[99]">
+      <InternalNavigationHeader
+        title={props.title}
+        headerRight={props.headerRight}
+        headerLeft={props.headerLeft}
+        hideableBottom={hideableBottom}
+        hideableBottomHeight={headerHideableBottomHeight}
+        headerTitleAbsolute={headerTitleAbsolute}
+        headerTitle={props.headerTitle}
+        promptBeforeLeave={props.promptBeforeLeave}
+        isLoading={props.isLoading}
+      />
+    </View>
+  )
+}
 
 export const NavigationBlurEffectHeader = ({
   headerHideableBottom,

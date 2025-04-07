@@ -8,7 +8,7 @@ import type { MobileSupportedLanguages } from "@/src/@types/constants"
 import { currentSupportedLanguages } from "@/src/@types/constants"
 import { setGeneralSetting, useGeneralSettingKey } from "@/src/atoms/settings/general"
 import {
-  NavigationBlurEffectHeader,
+  NavigationBlurEffectHeaderView,
   SafeNavigationScrollView,
 } from "@/src/components/layouts/views/SafeNavigationScrollView"
 import { Select } from "@/src/components/ui/form/Select"
@@ -80,11 +80,13 @@ export const GeneralScreen: NavigationControllerView = () => {
   const openLinksInApp = useGeneralSettingKey("openLinksInApp")
 
   return (
-    <SafeNavigationScrollView className="bg-system-grouped-background">
-      <NavigationBlurEffectHeader title={t("titles.general")} />
+    <SafeNavigationScrollView
+      className="bg-system-grouped-background"
+      Header={<NavigationBlurEffectHeaderView title={t("titles.general")} />}
+    >
       {/* Language */}
 
-      <GroupedInsetListSectionHeader label={t("general.language")} />
+      <GroupedInsetListSectionHeader label={t("general.language")} marginSize="small" />
       <GroupedInsetListCard>
         <LanguageSelect settingKey="language" />
       </GroupedInsetListCard>
