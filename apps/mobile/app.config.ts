@@ -85,6 +85,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
     googleServicesFile: "./build/google-services.json",
   },
+  androidStatusBar: {
+    translucent: true,
+  },
   // web: {
   //   bundler: "metro",
   //   output: "static",
