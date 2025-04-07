@@ -71,8 +71,17 @@ jobs:
         run: eas build --platform android --profile ${{ github.event.inputs.profile || 'preview' }} --local --output=${{ github.workspace }}/build.apk
 
       - name: 📤 Upload apk Artifact
+        if: github.event.inputs.profile != 'production'
         uses: actions/upload-artifact@v4
         with:
           name: app-android
           path: ${{ github.workspace }}/build.apk
+          retention-days: 90
+
+      - name: 📤 Upload aab Artifact
+        if: github.event.inputs.profile == 'production'
+        uses: actions/upload-artifact@v4
+        with:
+          name: aab-android
+          path: ${{ github.workspace }}/build.aab
           retention-days: 90
