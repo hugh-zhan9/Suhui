@@ -11,6 +11,7 @@ import {
 } from "@/src/atoms/settings/general"
 import { __uiSettingAtom, getUISettings, uiServerSyncWhiteListKeys } from "@/src/atoms/settings/ui"
 import { apiClient } from "@/src/lib/api-fetch"
+import { kv } from "@/src/lib/kv"
 
 type SettingMapping = {
   appearance: UISettings
@@ -77,6 +78,8 @@ class SettingSyncQueue {
       const nextPayload = omit(data.payload, omitKeys, settingWhiteListMap[tab])
       if (isEmptyObject(nextPayload)) return
       this.enqueue(tab, nextPayload)
+
+      this.persist()
     })
 
     this.disposers.push(d1)
@@ -90,16 +93,16 @@ class SettingSyncQueue {
   }
 
   private readonly storageKey = "setting_sync_queue"
-  private persist() {
+  private async persist() {
     if (this.queue.length === 0) {
       return
     }
-    localStorage.setItem(this.storageKey, JSON.stringify(this.queue))
+    kv.set(this.storageKey, JSON.stringify(this.queue))
   }
 
-  private load() {
-    const queue = localStorage.getItem(this.storageKey)
-    localStorage.removeItem(this.storageKey)
+  private async load() {
+    const queue = await kv.get(this.storageKey)
+    kv.delete(this.storageKey)
     if (!queue) {
       return
     }
@@ -242,6 +245,10 @@ class SettingSyncQueue {
     const remoteSettings = await this.fetchSettingRemote()
 
     if (!remoteSettings) return
+    if (__DEV__) {
+      // eslint-disable-next-line no-console
+      console.log("remote settings:", remoteSettings)
+    }
 
     if (isEmptyObject(remoteSettings.settings)) return
 
