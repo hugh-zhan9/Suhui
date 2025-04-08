@@ -29,6 +29,7 @@ import { useModalStack } from "~/components/ui/modal/stacked/hooks"
 import { useFollow } from "~/hooks/biz/useFollow"
 import { getRouteParams } from "~/hooks/biz/useRouteParams"
 import { apiClient } from "~/lib/api-fetch"
+import { UrlBuilder } from "~/lib/url-builder"
 
 import { FollowSummary } from "../feed/feed-summary"
 import { FeedForm } from "./feed-form"
@@ -37,6 +38,8 @@ const formSchema = z.object({
   keyword: z.string().min(1),
   target: z.enum(["feeds", "lists"]),
 })
+
+const numberFormatter = new Intl.NumberFormat("en-US", {})
 
 const info: Record<
   string,
@@ -259,7 +262,7 @@ export function DiscoverForm({ type = "search" }: { type?: string }) {
       </Form>
       {mutation.isSuccess && (
         <div className="mt-8 w-full max-w-lg">
-          <div className="mb-4 text-zinc-500">
+          <div className="mb-4 pl-7 text-sm text-zinc-500">
             {t("discover.search.results", { count: mutation.data?.length || 0 })}
           </div>
           <div className="space-y-6 text-sm">
@@ -287,21 +290,26 @@ const SearchCard: FC<{
   const { t } = useTranslation()
 
   return (
-    <Card data-feed-id={item.feed?.id || item.list?.id} className="select-text">
-      <CardHeader>
+    <Card
+      data-feed-id={item.feed?.id || item.list?.id}
+      className="select-text border border-zinc-200/50 bg-white/80 shadow-sm backdrop-blur-xl transition-all duration-300 hover:shadow-lg dark:border-zinc-800/50 dark:bg-neutral-800/50"
+    >
+      <CardHeader className="pb-2">
         <FollowSummary className="max-w-[462px]" feed={item.feed || item.list!} docs={item.docs} />
       </CardHeader>
       {item.docs ? (
-        <CardFooter>
+        <CardFooter className="pt-4">
           <a href={item.docs} target="_blank" rel="noreferrer">
-            <Button>View Docs</Button>
+            <Button className="rounded-full bg-zinc-900 px-6 text-white transition-opacity hover:opacity-90 dark:bg-white dark:text-zinc-900">
+              View Docs
+            </Button>
           </a>
         </CardFooter>
       ) : (
         <>
           <CardContent>
             {!!item.entries?.length && (
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                 {item.entries
                   .filter((e) => !!e)
                   .map((entry) => {
@@ -311,12 +319,25 @@ const SearchCard: FC<{
                         key={assertEntry.id}
                         href={assertEntry.url || void 0}
                         target="_blank"
-                        className="flex min-w-0 flex-1 flex-col items-center gap-1"
+                        className="group relative flex flex-col overflow-hidden rounded-lg bg-zinc-50/50 shadow-zinc-100 transition-all duration-200 hover:-translate-y-px hover:shadow-md dark:bg-zinc-800/50 dark:shadow-neutral-700/50"
                         rel="noreferrer"
                       >
-                        <FeedCardMediaThumbnail entry={assertEntry} />
-                        <div className="line-clamp-2 w-full text-xs leading-tight">
-                          {assertEntry.title}
+                        <div className="aspect-[3/2] w-full overflow-hidden">
+                          <FeedCardMediaThumbnail entry={assertEntry} />
+                        </div>
+                        <div className="flex flex-1 flex-col justify-between p-3">
+                          {assertEntry.title ? (
+                            <div className="line-clamp-2 text-xs font-medium leading-4 text-zinc-900 group-hover:text-black dark:text-zinc-200 dark:group-hover:text-white">
+                              {assertEntry.title}
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400">
+                              <i className="i-mgc-link-cute-re shrink-0 translate-y-px self-start text-[14px]" />
+                              <span className="line-clamp-2 break-all">
+                                {assertEntry.url || "Untitled"}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </a>
                     )
@@ -324,31 +345,53 @@ const SearchCard: FC<{
               </div>
             )}
           </CardContent>
-          <CardFooter>
-            <Button
-              variant={item.isSubscribed ? "outline" : undefined}
-              disabled={item.isSubscribed}
-              onClick={() => {
-                follow({
-                  isList: !!item.list?.id,
-                  id: item.list?.id,
-                  url: item.feed?.url,
-                  defaultValues: {
-                    view: getRouteParams().view.toString(),
-                  },
-                  onSuccess() {
-                    onSuccess(item)
-                  },
-                })
-              }}
-            >
-              {item.isSubscribed ? t("feed.actions.followed") : t("feed.actions.follow")}
-            </Button>
-            <div className="ml-6 text-zinc-500">
-              <span className="font-medium text-zinc-800 dark:text-zinc-200">
-                {item.subscriptionCount ?? 0}
-              </span>{" "}
-              {t("feed.follower", { count: item.subscriptionCount })}
+          <CardFooter className="mt-4 flex flex-col gap-4 border-t border-zinc-100/80 pt-4 dark:border-zinc-800/80">
+            <div className="flex items-center gap-3 text-sm text-zinc-500 dark:text-zinc-400">
+              <div className="flex items-center gap-1.5">
+                <i className="i-mgc-user-3-cute-re" />
+
+                <span>
+                  {numberFormatter.format(item.subscriptionCount ?? 0)}{" "}
+                  {t("feed.follower", { count: item.subscriptionCount ?? 0 })}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex w-full items-center justify-between">
+              <Button
+                variant="ghost"
+                buttonClassName="rounded-full px-4 py-2 text-sm font-medium text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/80 dark:hover:text-white"
+                onClick={() => {
+                  if (!item.feed?.id) return
+                  window.open(UrlBuilder.shareFeed(item.feed.id, 0), "_blank")
+                }}
+              >
+                Preview
+              </Button>
+              <Button
+                variant={item.isSubscribed ? "outline" : undefined}
+                disabled={item.isSubscribed}
+                onClick={() => {
+                  follow({
+                    isList: !!item.list?.id,
+                    id: item.list?.id,
+                    url: item.feed?.url,
+                    defaultValues: {
+                      view: getRouteParams().view.toString(),
+                    },
+                    onSuccess() {
+                      onSuccess(item)
+                    },
+                  })
+                }}
+                buttonClassName={`relative overflow-hidden rounded-full px-8 py-2 text-sm font-medium transition-all duration-300 ${
+                  item.isSubscribed
+                    ? "border-zinc-200/80 text-zinc-400 dark:border-zinc-700/80"
+                    : "from-accent to-accent/90 hover:from-accent/90 hover:to-accent/80 bg-gradient-to-r text-white"
+                }`}
+              >
+                {item.isSubscribed ? t("feed.actions.followed") : t("feed.actions.follow")}
+              </Button>
             </div>
           </CardFooter>
         </>
@@ -360,22 +403,42 @@ const SearchCard: FC<{
 const FeedCardMediaThumbnail: FC<{
   entry: NonUndefined<DiscoverSearchData[number]["entries"]>[number]
 }> = ({ entry }) => {
-  const [, , , bgAccent, bgAccentLight, bgAccentUltraLight] = getBackgroundGradient(entry.title)
-  return entry.media?.[0] ? (
-    <Media
-      src={entry.media?.[0].url}
-      type={entry.media?.[0].type}
-      previewImageUrl={entry.media?.[0].preview_image_url}
-      className="aspect-square w-full"
-    />
-  ) : (
-    <div
-      className="relative flex aspect-square w-full items-end overflow-hidden rounded p-2 text-xs leading-tight text-zinc-900"
-      style={{
-        background: `linear-gradient(37deg, ${bgAccent} 27.82%, ${bgAccentLight} 79.68%, ${bgAccentUltraLight} 100%)`,
-      }}
-    >
-      <div className="line-clamp-2 text-right font-medium">{entry.title}</div>
+  const [, , , bgAccent, bgAccentLight] = getBackgroundGradient(
+    entry.title || entry.url || "Untitled",
+  )
+
+  if (entry.media?.[0]) {
+    return (
+      <div className="relative size-full bg-zinc-100 dark:bg-zinc-800">
+        <Media
+          src={entry.media[0].url}
+          type={entry.media[0].type}
+          previewImageUrl={entry.media[0].preview_image_url}
+          className="size-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+      </div>
+    )
+  }
+
+  return (
+    <div className="relative size-full bg-zinc-100 dark:bg-zinc-800">
+      <div
+        className="absolute inset-0 transition-transform duration-200 group-hover:scale-[1.01]"
+        style={{
+          background: `linear-gradient(145deg, ${bgAccent}, ${bgAccentLight})`,
+        }}
+      />
+      <div className="absolute inset-0 flex items-center justify-center">
+        {entry.title ? (
+          <div className="text-base font-medium text-white/90">
+            {entry.title.slice(0, 1).toUpperCase()}
+          </div>
+        ) : (
+          <i className="i-mingcute-news-line text-xl text-white/80" />
+        )}
+      </div>
+      <div className="absolute inset-0 bg-black/0 transition-colors duration-200 group-hover:bg-black/5" />
     </div>
   )
 }
