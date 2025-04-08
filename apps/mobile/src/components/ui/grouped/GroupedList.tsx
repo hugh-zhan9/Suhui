@@ -39,7 +39,10 @@ export const GroupedOutlineDescription: FC<{
 export const GroupedInsetListCard: FC<
   PropsWithChildren & ViewProps & GroupedInsetListCardProps
 > = ({ children, className, showSeparator = true, SeparatorComponent, ...props }) => {
-  const nextChildren = React.useMemo(() => React.Children.toArray(children).filter(Boolean), [])
+  const nextChildren = React.useMemo(
+    () => React.Children.toArray(children).filter(Boolean),
+    [children],
+  )
   return (
     <View
       {...props}
