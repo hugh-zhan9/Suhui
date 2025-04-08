@@ -54,13 +54,15 @@ import { useFeedById } from "~/store/feed"
 import type { DailyItemProps, DailyView } from "./types"
 import { useParseDailyDate } from "./useParseDailyDate"
 
-export const DailyItem = ({ view, day }: DailyItemProps) => {
+export const DailyItem = ({ view, day, className }: DailyItemProps) => {
   const { title, startDate, endDate } = useParseDailyDate(day)
+
   return (
     <Collapse
+      collapseId={`${day}`}
       hideArrow
       title={<DailyReportTitle title={title} startDate={startDate} endDate={endDate} />}
-      className="mx-auto w-full max-w-lg border-b pb-6 last:border-b-0"
+      className={cn(className, "mx-auto w-full max-w-lg border-b pb-6 last:border-b-0")}
     >
       <DailyReportContent endDate={endDate} view={view} startDate={startDate} />
     </Collapse>
@@ -78,7 +80,10 @@ export const DailyReportTitle = ({
 }) => {
   const { t } = useTranslation()
   return (
-    <div className="flex items-center justify-center gap-2 text-base">
+    <m.div
+      className="flex items-center justify-center gap-2 text-base"
+      layoutId={`daily-report-title-${title}`}
+    >
       <i className="i-mgc-magic-2-cute-re" />
       <div className="font-medium">{t("ai_daily.title", { title })}</div>
       <Tooltip>
@@ -118,7 +123,7 @@ export const DailyReportTitle = ({
           </TooltipContent>
         </TooltipPortal>
       </Tooltip>
-    </div>
+    </m.div>
   )
 }
 
@@ -163,7 +168,7 @@ export const DailyReportContent: Component<DailyReportContentProps> = ({
   return (
     <Card className="border-none bg-transparent">
       <CardContent className={cn("space-y-0 p-0", className)}>
-        <ScrollArea.ScrollArea mask={false} flex viewportClassName="max-h-[calc(100vh-500px)]">
+        <ScrollArea.ScrollArea mask={false} flex viewportClassName="max-h-[calc(100vh-176px)]">
           <AutoResizeHeight spring>
             {content.isLoading ? (
               <LoadingCircle size="large" className="mt-8 text-center" />
