@@ -1,7 +1,5 @@
-import { useAtomValue } from "jotai"
-import { useContext, useEffect } from "react"
+import { useContext } from "react"
 import type { StackPresentationTypes } from "react-native-screens"
-import { useEventCallback } from "usehooks-ts"
 
 import { GroupedNavigationRouteContext } from "./GroupedNavigationRouteContext"
 import { NavigationInstanceContext } from "./NavigationInstanceContext"
@@ -85,17 +83,4 @@ export const useIsTopRouteInGroup = () => {
   if (!routeGroup || routeGroup.length === 0) return false
 
   return routeGroup.at(0)?.screenOptions?.id === screenId
-}
-
-export const useViewDidAppear = (fn: () => void) => {
-  const { isAppearedAtom } = useContext(ScreenItemContext)
-
-  const isAppeared = useAtomValue(isAppearedAtom)
-
-  const fnEvent = useEventCallback(fn)
-  useEffect(() => {
-    if (isAppeared) {
-      fnEvent()
-    }
-  }, [fnEvent, isAppeared])
 }

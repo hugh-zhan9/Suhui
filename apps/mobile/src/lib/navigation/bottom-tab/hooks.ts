@@ -41,3 +41,7 @@ export const useTabScreenIdentifier = () => {
   const { identifierAtom } = useContext(TabScreenContext)
   return useAtomValue(identifierAtom)
 }
+
+export const useInTabScreen = () => {
+  return !!useContext(TabScreenContext)
+}

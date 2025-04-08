@@ -18,6 +18,7 @@ import { useSafeAreaFrame, useSafeAreaInsets } from "react-native-safe-area-cont
 
 import { useBottomTabBarHeight } from "@/src/components/layouts/tabbar/hooks"
 import { isScrollToEnd } from "@/src/lib/native"
+import { useInTabScreen } from "@/src/lib/navigation/bottom-tab/hooks"
 import { useScreenIsInSheetModal } from "@/src/lib/navigation/hooks"
 import { ScreenItemContext } from "@/src/lib/navigation/ScreenItemContext"
 
@@ -75,11 +76,18 @@ export const SafeNavigationScrollView = forwardRef<ScrollView, SafeNavigationScr
     const ref = useRef<ScrollView>(null)
     useImperativeHandle(forwardedRef, () => ref.current!)
     const { opacity } = useContext(BottomTabBarBackgroundContext)
+
+    const inTabScreen = useInTabScreen()
+
     function checkScrollToBottom() {
+      if (!inTabScreen) {
+        return
+      }
       const handle = findNodeHandle(ref.current!)
       if (!handle) {
         return
       }
+
       isScrollToEnd(handle).then((isEnd) => {
         opacity.value = isEnd ? 0 : 1
       })
