@@ -5,6 +5,7 @@ import { initializeDb } from "../database"
 import { settingSyncQueue } from "../modules/settings/sync-queue"
 import { initAnalytics } from "./analytics"
 import { initializeAppCheck } from "./app-check"
+import { initBackgroundFetch } from "./background"
 import { initCrashlytics } from "./crashlytics"
 import { initializeDayjs } from "./dayjs"
 import { hydrateDatabaseToStore, hydrateQueryClient, hydrateSettings } from "./hydrate"
@@ -46,6 +47,7 @@ export const initializeApp = async () => {
     using_indexed_db: true,
   })
   initCrashlytics()
+  initBackgroundFetch()
   console.log(`Initialize done,`, `${loadingTime}ms`)
 }
 
