@@ -100,4 +100,9 @@ export interface IntegrationSettings {
   enableReadeck: boolean
   readeckEndpoint: string
   readeckToken: string
+
+  // cubox
+  enableCubox: boolean
+  cuboxToken: string
+  enableCuboxAutoMemo: boolean
 }

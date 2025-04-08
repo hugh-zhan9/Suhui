@@ -114,6 +114,11 @@ export const defaultIntegrationSettings: IntegrationSettings = {
   enableReadeck: false,
   readeckEndpoint: "",
   readeckToken: "",
+
+  // cubox
+  enableCubox: false,
+  cuboxToken: "",
+  enableCuboxAutoMemo: false,
 }
 
 export const defaultSettings = {
