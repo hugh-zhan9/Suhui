@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next"
 import { Pressable, Text, View } from "react-native"
 
 import {
-  NavigationBlurEffectHeader,
+  NavigationBlurEffectHeaderView,
   SafeNavigationScrollView,
 } from "@/src/components/layouts/views/SafeNavigationScrollView"
 import { GroupedInsetListNavigationLinkIcon } from "@/src/components/ui/grouped/GroupedList"
@@ -19,9 +19,10 @@ export const SelectReadingModeScreen: NavigationControllerView = () => {
   const { behavior, updateSettings } = useReadingBehavior()
 
   return (
-    <SafeNavigationScrollView className="bg-system-grouped-background">
-      <NavigationBlurEffectHeader title={t("onboarding.reading_preferences")} />
-
+    <SafeNavigationScrollView
+      className="bg-system-grouped-background"
+      Header={<NavigationBlurEffectHeaderView title={t("onboarding.reading_preferences")} />}
+    >
       <View className="mt-8 flex w-full gap-4">
         <Card
           icon={

@@ -72,8 +72,7 @@ export const AboutScreen = () => {
               )}
               values={{
                 appName: "Folo",
-                // TODO: add commitSha
-                commitSha: "",
+                commitSha: `${appVersion}-${buildId}`,
               }}
               components={{
                 OpenIssueLink: (

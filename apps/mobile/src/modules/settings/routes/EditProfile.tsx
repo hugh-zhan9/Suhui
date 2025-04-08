@@ -7,7 +7,6 @@ import { KeyboardController } from "react-native-keyboard-controller"
 
 import { HeaderSubmitTextButton } from "@/src/components/layouts/header/HeaderElements"
 import {
-  NavigationBlurEffectHeader,
   NavigationBlurEffectHeaderView,
   SafeNavigationScrollView,
 } from "@/src/components/layouts/views/SafeNavigationScrollView"
@@ -76,7 +75,6 @@ export const EditProfileScreen = () => {
       }
       className="bg-system-grouped-background"
     >
-      <NavigationBlurEffectHeader title={t("profile.edit_profile")} />
       <AvatarSection whoami={whoami} />
       <ProfileForm whoami={whoami} dirtyFields={dirtyFields} setDirtyFields={setDirtyFields} />
     </SafeNavigationScrollView>

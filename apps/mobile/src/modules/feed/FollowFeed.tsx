@@ -8,7 +8,7 @@ import { z } from "zod"
 
 import { HeaderSubmitTextButton } from "@/src/components/layouts/header/HeaderElements"
 import {
-  NavigationBlurEffectHeader,
+  NavigationBlurEffectHeaderView,
   SafeNavigationScrollView,
 } from "@/src/components/layouts/views/SafeNavigationScrollView"
 import { FormProvider } from "@/src/components/ui/form/FormProvider"
@@ -129,7 +129,7 @@ function FollowImpl(props: { feedId: string }) {
       contentViewClassName="gap-y-4 mt-2"
       contentContainerStyle={{ paddingBottom: insets.bottom }}
       Header={
-        <NavigationBlurEffectHeader
+        <NavigationBlurEffectHeaderView
           title={`${isSubscribed ? "Edit" : "Follow"} - ${feed?.title}`}
           headerRight={
             <HeaderSubmitTextButton

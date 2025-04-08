@@ -136,7 +136,6 @@ export const WrappedScreenItem: FC<
               ...defaultHeaderConfig,
               ...headerConfig,
             }}
-            nativeID=""
             key={screenId}
             screenId={screenId}
             ref={ref}
