@@ -30,7 +30,7 @@ import { toastFetchError } from "@/src/lib/error-parser"
 import type { NavigationControllerView } from "@/src/lib/navigation/types"
 import { queryClient } from "@/src/lib/query-client"
 import { toast } from "@/src/lib/toast"
-import { accentColor } from "@/src/theme/colors"
+import { accentColor, useColor } from "@/src/theme/colors"
 
 import { useTOTPModalWrapper } from "../hooks/useTOTPModalWrapper"
 
@@ -60,6 +60,8 @@ export const InvitationsScreen: NavigationControllerView = () => {
     setStringAsync(code)
     toast.success("Copied to clipboard")
   }
+
+  const secondaryLabelColor = useColor("secondaryLabel")
   return (
     <SafeNavigationScrollView
       className="bg-system-grouped-background"
@@ -128,7 +130,12 @@ export const InvitationsScreen: NavigationControllerView = () => {
             <ContextMenu.Trigger>
               <GroupedInsetListBaseCell className="bg-secondary-system-grouped-background flex-1">
                 <View className="mr-2 shrink flex-row items-center gap-4">
-                  <UserAvatar size={26} image={invitation.users?.image} preview={false} />
+                  <UserAvatar
+                    size={26}
+                    image={invitation.users?.image}
+                    preview={false}
+                    color={secondaryLabelColor}
+                  />
                   <View className="min-w-0 shrink">
                     <Text
                       className={cn("text-label", !invitation.users && "text-secondary-label")}
