@@ -6,6 +6,8 @@
 
 ## Improvements
 
+- Optimized the AI summary design for improved UI/UX on the homepage.
+
 ## Bug Fixes
 
 - Incorrect translation result and format (55524b) (#3421)
