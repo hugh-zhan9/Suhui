@@ -1,7 +1,8 @@
+import { setStringAsync } from "expo-clipboard"
 import { useAtom } from "jotai"
 import { useCallback, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { Clipboard, Share, TouchableOpacity, View } from "react-native"
+import { Share, TouchableOpacity, View } from "react-native"
 import type { SharedValue } from "react-native-reanimated"
 import Animated, { interpolate, useAnimatedStyle } from "react-native-reanimated"
 import { useColor } from "react-native-uikit-colors"
@@ -136,7 +137,7 @@ const HeaderRightActionsImpl = ({
 
   const handleCopyLink = () => {
     if (!entry?.url) return
-    Clipboard.setString(entry.url)
+    setStringAsync(entry.url)
     toast.success("Link copied to clipboard")
   }
 
@@ -255,31 +256,8 @@ const HeaderRightActionsImpl = ({
         </DropdownMenu.Trigger>
 
         <DropdownMenu.Content>
-          {isHeaderTitleVisible && (
-            <DropdownMenu.Group>
-              {actionItems.map(
-                (item) =>
-                  item &&
-                  (item.isCheckbox ? (
-                    <DropdownMenu.CheckboxItem
-                      key={item.key}
-                      value={item.active!}
-                      onSelect={item.onPress}
-                    >
-                      <DropdownMenu.ItemTitle>{item.title}</DropdownMenu.ItemTitle>
-                      <DropdownMenu.ItemIcon ios={item.iconIOS} />
-                    </DropdownMenu.CheckboxItem>
-                  ) : (
-                    <DropdownMenu.Item key={item.key} onSelect={item.onPress}>
-                      <DropdownMenu.ItemTitle>{item.title}</DropdownMenu.ItemTitle>
-                      <DropdownMenu.ItemIcon ios={item.iconIOS} />
-                    </DropdownMenu.Item>
-                  )),
-              )}
-            </DropdownMenu.Group>
-          )}
           {actionItems
-            .filter((item) => item?.inMenu)
+            .filter((item) => (isHeaderTitleVisible ? true : item?.inMenu))
             .map(
               (item) =>
                 item &&
