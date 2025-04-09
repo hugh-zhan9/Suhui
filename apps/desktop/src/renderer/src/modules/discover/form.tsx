@@ -334,7 +334,7 @@ const SearchCard: FC<{
         </CardFooter>
       ) : (
         <>
-          <CardContent className="p-0">
+          <CardContent className="px-6 py-0">
             {!!item.entries?.length && (
               <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                 {item.entries
@@ -389,15 +389,21 @@ const SearchCard: FC<{
                   {t("feed.follower", { count: item.subscriptionCount ?? 0 })}
                 </span>
               </div>
-              {item.entries?.[0]?.publishedAt && (
+              {item.updatesPerWeek ? (
                 <div className="flex items-center gap-1.5">
-                  <i className="i-mgc-time-cute-re" />
+                  <i className="i-mgc-safety-certificate-cute-re" />
+                  <span>{t("feed.entry_week", { count: item.updatesPerWeek ?? 0 })}</span>
+                </div>
+              ) : item.entries?.[0]?.publishedAt ? (
+                <div className="flex items-center gap-1.5">
+                  <i className="i-mgc-safe-alert-cute-re" />
+                  <span>{t("feed.updated_at")}</span>
                   <RelativeTime
                     date={item.entries[0].publishedAt}
                     displayAbsoluteTimeAfterDay={Infinity}
                   />
                 </div>
-              )}
+              ) : null}
             </div>
 
             <div className="flex items-center justify-between gap-2">
