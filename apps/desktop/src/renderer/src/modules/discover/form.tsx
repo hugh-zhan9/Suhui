@@ -2,6 +2,7 @@ import { useMobile } from "@follow/components/hooks/useMobile.js"
 import { Button } from "@follow/components/ui/button/index.js"
 import { Card, CardContent, CardFooter, CardHeader } from "@follow/components/ui/card/index.jsx"
 import { RelativeTime } from "@follow/components/ui/datetime/index.js"
+import { Divider } from "@follow/components/ui/divider/Divider.js"
 import {
   Form,
   FormControl,
@@ -333,7 +334,7 @@ const SearchCard: FC<{
         </CardFooter>
       ) : (
         <>
-          <CardContent>
+          <CardContent className="p-0">
             {!!item.entries?.length && (
               <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                 {item.entries
@@ -376,8 +377,9 @@ const SearchCard: FC<{
                   })}
               </div>
             )}
+            <Divider className="mb-0" />
           </CardContent>
-          <CardFooter className="mt-4 flex justify-between gap-4 border-t border-zinc-100/80 py-3 dark:border-zinc-800/80">
+          <CardFooter className="flex justify-between gap-4 border-t border-zinc-100/80 py-3 dark:border-zinc-800/80">
             <div className="flex items-center gap-3 text-sm text-zinc-500 dark:text-zinc-400">
               <div className="flex items-center gap-1.5">
                 <i className="i-mgc-user-3-cute-re" />
@@ -387,6 +389,15 @@ const SearchCard: FC<{
                   {t("feed.follower", { count: item.subscriptionCount ?? 0 })}
                 </span>
               </div>
+              {item.entries?.[0]?.publishedAt && (
+                <div className="flex items-center gap-1.5">
+                  <i className="i-mgc-time-cute-re" />
+                  <RelativeTime
+                    date={item.entries[0].publishedAt}
+                    displayAbsoluteTimeAfterDay={Infinity}
+                  />
+                </div>
+              )}
             </div>
 
             <div className="flex items-center justify-between gap-2">
