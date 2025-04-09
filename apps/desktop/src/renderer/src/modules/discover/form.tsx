@@ -1,6 +1,7 @@
 import { useMobile } from "@follow/components/hooks/useMobile.js"
 import { Button } from "@follow/components/ui/button/index.js"
 import { Card, CardContent, CardFooter, CardHeader } from "@follow/components/ui/card/index.jsx"
+import { RelativeTime } from "@follow/components/ui/datetime/index.js"
 import {
   Form,
   FormControl,
@@ -363,6 +364,12 @@ const SearchCard: FC<{
                               </span>
                             </div>
                           )}
+                          <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                            <RelativeTime
+                              date={assertEntry.publishedAt}
+                              displayAbsoluteTimeAfterDay={Infinity}
+                            />
+                          </div>
                         </div>
                       </a>
                     )
