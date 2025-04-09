@@ -55,7 +55,7 @@ export const SubscriptionFeedItemContextMenu: FC<
           <ContextMenu.ItemTitle>{t("operation.mark_all_as_read")}</ContextMenu.ItemTitle>
           <ContextMenu.ItemIcon
             ios={{
-              name: "checklist.checked",
+              name: "checkmark.circle",
             }}
           />
         </ContextMenu.Item>
@@ -225,7 +225,7 @@ export const SubscriptionFeedCategoryContextMenu = ({
           <ContextMenu.ItemTitle>{t("operation.mark_all_as_read")}</ContextMenu.ItemTitle>
           <ContextMenu.ItemIcon
             ios={{
-              name: "checklist.checked",
+              name: "checkmark.circle",
             }}
           />
         </ContextMenu.Item>
