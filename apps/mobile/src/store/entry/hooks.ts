@@ -9,10 +9,10 @@ import { entrySyncServices, useEntryStore } from "./store"
 import type { EntryModel, FetchEntriesProps } from "./types"
 
 export const usePrefetchEntries = (props: Omit<FetchEntriesProps, "pageParam" | "read"> | null) => {
-  const { feedId, inboxId, listId, view, limit } = props || {}
+  const { feedId, inboxId, listId, view, limit, feedIdList } = props || {}
   const unreadOnly = useGeneralSettingKey("unreadOnly")
   return useInfiniteQuery({
-    queryKey: ["entries", feedId, inboxId, listId, view, unreadOnly, limit],
+    queryKey: ["entries", feedId, inboxId, listId, view, unreadOnly, limit, feedIdList],
     queryFn: ({ pageParam }) =>
       entrySyncServices.fetchEntries({ ...props, pageParam, read: unreadOnly ? false : undefined }),
     getNextPageParam: (lastPage) => lastPage.data?.at(-1)?.entries.publishedAt,
