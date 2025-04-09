@@ -21,7 +21,7 @@ function EntryHeaderImpl({ view, entryId, className, compact }: EntryHeaderProps
 
   const hideRecentReader = useUISettingKey("hideRecentReader")
 
-  const shouldShowMeta = (hideRecentReader || !isAtTop) && !!entryTitleMeta?.title
+  const shouldShowMeta = !isAtTop && !!entryTitleMeta?.title
 
   if (!entry?.entries) return null
 

@@ -1,5 +1,5 @@
 import { cn, formatEstimatedMins, formatTimeToSeconds } from "@follow/utils/utils"
-import { useMemo } from "react"
+import { useCallback, useMemo, useRef } from "react"
 
 import { useUISettingKey } from "~/atoms/settings/ui"
 import { useWhoami } from "~/atoms/user"
@@ -69,6 +69,32 @@ export const EntryTitle = ({ entryId, compact }: EntryLinkProps) => {
     return formatEstimatedMins(Math.floor(durationInSeconds / 60))
   }, [audioAttachment])
 
+  const titleRef = useRef<HTMLAnchorElement>(null)
+
+  const handleMouseEnter = () => {
+    if (!titleRef.current) return
+    titleRef.current.style.transition = "transform 0.2s cubic-bezier(0.33, 1, 0.68, 1)"
+  }
+
+  const handleMouseLeave = () => {
+    if (!titleRef.current) return
+    titleRef.current.style.transform = "translate(0px, 0px)"
+    titleRef.current.style.transition = "transform 0.4s cubic-bezier(0.33, 1, 0.68, 1)"
+  }
+
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (!titleRef.current) return
+    const rect = titleRef.current.getBoundingClientRect()
+
+    const centerX = rect.left + rect.width / 2
+    const centerY = rect.top + rect.height / 2
+
+    const distanceX = (e.clientX - centerX) * 0.05
+    const distanceY = (e.clientY - centerY) * 0.05
+
+    titleRef.current.style.transform = `translate(${distanceX}px, ${distanceY}px)`
+  }, [])
+
   if (!entry) return null
 
   return compact ? (
@@ -88,19 +114,27 @@ export const EntryTitle = ({ entryId, compact }: EntryLinkProps) => {
       <div className="flex flex-col gap-2">
         {/* Title Section with subtle hover effect */}
         <div>
-          <div className="flex items-center text-sm font-medium text-zinc-800/90 dark:text-zinc-300/90">
+          <a
+            className="cursor-link flex items-center text-sm font-medium text-zinc-800/90 duration-200 hover:text-zinc-900 dark:text-zinc-300/90 dark:hover:text-zinc-100"
+            href={feed?.siteUrl ?? feed?.url ?? "#"}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             <FeedIcon fallback feed={feed || inbox} entry={entry.entries} size={16} />
             {getPreferredTitle(feed || inbox, entry.entries)}
-          </div>
-
+          </a>
           <a
             href={populatedFullHref ?? "#"}
             target="_blank"
             rel="noopener noreferrer"
+            ref={titleRef}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+            onMouseMove={handleMouseMove}
             className={cn(
-              "relative select-text break-words font-medium transition-colors",
-              "text-2xl leading-normal",
-              "hover:text-zinc-900 dark:hover:text-zinc-100",
+              "cursor-link relative select-text break-words text-2xl font-medium leading-normal",
+              "inline-block transition-all duration-200 ease-out",
+              "before:absolute before:-inset-x-2 before:inset-y-0 before:rounded-xl before:bg-black/[0.03] before:opacity-0 before:transition-opacity hover:before:opacity-100 dark:before:bg-white/[0.07]",
             )}
           >
             <EntryTranslation
