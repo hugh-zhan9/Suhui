@@ -58,9 +58,9 @@ extension Toast.Position {
 extension Toast.ToastType {
     func image() -> UIImage {
         switch self {
-        case .error: UIImage(systemName: "xmark.octagon")!.withTintColor(.systemRed)
-        case .warn: UIImage(systemName: "exclamationmark.triangle")!.withTintColor(.systemOrange)
-        case .info: UIImage(systemName: "info.circle")!.withTintColor(.systemBlue)
+        case .error: UIImage(systemName: "xmark.circle.fill")!.withTintColor(.systemRed)
+        case .warn: UIImage(systemName: "exclamationmark.triangle.fill")!.withTintColor(.systemOrange)
+        case .info: UIImage(systemName: "info.circle.fill")!.withTintColor(.systemBlue)
         case .success: UIImage(systemName: "checkmark.circle.fill")!.withTintColor(.systemGreen)
         }
     }
