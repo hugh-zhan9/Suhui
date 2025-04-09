@@ -148,7 +148,7 @@ export const SubscriptionFeedItemContextMenu: FC<
                 const feed = getFeed(subscription.feedId)
                 if (!feed) return
                 Clipboard.setString(feed.url)
-                toast.info("Link copied to clipboard")
+                toast.success("Link copied to clipboard")
                 return
               }
             }

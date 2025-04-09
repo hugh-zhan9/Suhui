@@ -137,7 +137,7 @@ const HeaderRightActionsImpl = ({
   const handleCopyLink = () => {
     if (!entry?.url) return
     Clipboard.setString(entry.url)
-    toast.info("Link copied to clipboard")
+    toast.success("Link copied to clipboard")
   }
 
   const handleOpenInBrowser = () => {

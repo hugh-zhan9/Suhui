@@ -102,7 +102,6 @@ export const UnreadOnlyActionButton = ({ variant = "primary" }: HeaderActionButt
           unreadOnly
             ? t("operation.toggle_unread_only.show_all.success")
             : t("operation.toggle_unread_only.show_unread_only.success"),
-          { position: "bottom" },
         )
       }}
       selected={unreadOnly}
