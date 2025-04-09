@@ -6,6 +6,7 @@ export type EntryModel = EntrySchema
 export type EntryWithTranslation = EntryModel & { translation?: EntryTranslation }
 export type FetchEntriesProps = {
   feedId?: number | string
+  feedIdList?: string[]
   inboxId?: number | string
   listId?: number | string
   view?: number
