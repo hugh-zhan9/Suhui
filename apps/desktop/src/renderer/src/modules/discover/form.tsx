@@ -15,6 +15,7 @@ import { Input } from "@follow/components/ui/input/index.js"
 import { ResponsiveSelect } from "@follow/components/ui/select/responsive.js"
 import { getBackgroundGradient } from "@follow/utils/color"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { repository } from "@pkg"
 import { useMutation } from "@tanstack/react-query"
 import { m } from "framer-motion"
 import { produce } from "immer"
@@ -50,6 +51,7 @@ const info: Record<
     prefix?: string[]
     showModal?: boolean
     default?: string
+    bottom?: React.ReactNode
   }
 > = {
   search: {
@@ -60,12 +62,34 @@ const info: Record<
     default: "https://",
     prefix: ["https://", "http://"],
     showModal: true,
+    bottom: (
+      <a
+        href={`${repository.url}/wiki/Folo-Flavored-Feed-Spec`}
+        target="_blank"
+        rel="noreferrer"
+        className="text-accent border-accent inline-flex w-auto items-center gap-2 rounded-full border px-3 py-0.5 text-sm"
+      >
+        <i className="i-mgc-book-6-cute-re" />
+        <span>Folo Flavored Feed Spec</span>
+      </a>
+    ),
   },
   rsshub: {
     label: "discover.rss_hub_route",
     prefix: ["rsshub://"],
     default: "rsshub://",
     showModal: true,
+    bottom: (
+      <a
+        href="https://docs.rsshub.app/"
+        target="_blank"
+        rel="noreferrer"
+        className="text-accent border-accent inline-flex w-auto items-center gap-2 rounded-full border px-3 py-0.5 text-sm"
+      >
+        <i className="i-mgc-book-6-cute-re" />
+        <span>RSSHub Docs</span>
+      </a>
+    ),
   },
 }
 
@@ -304,6 +328,7 @@ export function DiscoverForm({ type = "search" }: { type?: string }) {
           </div>
         </div>
       )}
+      <div className="mt-8">{info[type]?.bottom}</div>
     </>
   )
 }
