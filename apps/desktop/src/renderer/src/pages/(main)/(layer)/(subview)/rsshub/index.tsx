@@ -162,6 +162,11 @@ function List({ data }: { data?: RSSHubModel[] }) {
                 <div className="flex w-max items-center gap-2">
                   <Button
                     className="shrink-0"
+                    disabled={
+                      instance.userCount && instance.userLimit
+                        ? instance.userCount >= instance.userLimit
+                        : false
+                    }
                     variant={status?.data?.usage?.rsshubId === instance.id ? "outline" : "primary"}
                     onClick={() => {
                       present({
