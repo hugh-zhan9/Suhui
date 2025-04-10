@@ -50,7 +50,7 @@ const info: Record<
     prefix?: string[]
     showModal?: boolean
     default?: string
-    bottom?: React.ReactNode
+    labelSuffix?: React.ReactNode
   }
 > = {
   search: {
@@ -61,12 +61,12 @@ const info: Record<
     default: "https://",
     prefix: ["https://", "http://"],
     showModal: true,
-    bottom: (
+    labelSuffix: (
       <a
         href={`${repository.url}/wiki/Folo-Flavored-Feed-Spec`}
         target="_blank"
         rel="noreferrer"
-        className="text-accent border-accent inline-flex w-auto items-center gap-2 rounded-full border px-3 py-0.5 text-sm"
+        className="text-accent border-accent inline-flex w-auto items-center gap-1 rounded-full border px-2 py-px text-sm font-normal"
       >
         <i className="i-mgc-book-6-cute-re" />
         <span>Folo Flavored Feed Spec</span>
@@ -78,12 +78,12 @@ const info: Record<
     prefix: ["rsshub://"],
     default: "rsshub://",
     showModal: true,
-    bottom: (
+    labelSuffix: (
       <a
         href="https://docs.rsshub.app/"
         target="_blank"
         rel="noreferrer"
-        className="text-accent border-accent inline-flex w-auto items-center gap-2 rounded-full border px-3 py-0.5 text-sm"
+        className="text-accent border-accent inline-flex w-auto items-center gap-1 rounded-full border px-2 py-px text-sm font-normal"
       >
         <i className="i-mgc-book-6-cute-re" />
         <span>RSSHub Docs</span>
@@ -234,7 +234,10 @@ export function DiscoverForm({ type = "search" }: { type?: string }) {
             name="keyword"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t(info[type]?.label!)}</FormLabel>
+                <FormLabel className="flex items-center gap-4">
+                  {t(info[type]?.label!)}
+                  {info[type]?.labelSuffix}
+                </FormLabel>
                 <FormControl>
                   <Input autoFocus {...field} onChange={handleKeywordChange} />
                 </FormControl>
@@ -327,7 +330,6 @@ export function DiscoverForm({ type = "search" }: { type?: string }) {
           </div>
         </div>
       )}
-      <div className="mt-8">{info[type]?.bottom}</div>
     </>
   )
 }

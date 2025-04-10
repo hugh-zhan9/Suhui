@@ -56,7 +56,7 @@
   "discover.inbox.handle": "Handle",
   "discover.inbox.secret": "Secret",
   "discover.inbox.title": "Title",
-  "discover.inbox.webhooks_docs": "Webhooks docs.",
+  "discover.inbox.webhooks_docs": "Webhooks docs",
   "discover.inbox_create": "New Inbox",
   "discover.inbox_create_description": "You don't have an inbox yet. Create an inbox to receive information via inbox.",
   "discover.inbox_create_error": "Failed to create inbox.",

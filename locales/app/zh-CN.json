@@ -56,7 +56,7 @@
   "discover.inbox.handle": "唯一标识",
   "discover.inbox.secret": "密钥",
   "discover.inbox.title": "标题",
-  "discover.inbox.webhooks_docs": "Webhook 文档。",
+  "discover.inbox.webhooks_docs": "Webhook 文档",
   "discover.inbox_create": "新建收件箱",
   "discover.inbox_create_description": "你还没有收件箱。创建一个收件箱以通过收件箱接收信息。",
   "discover.inbox_create_error": "创建收件箱失败。",
