@@ -57,7 +57,7 @@ export function AISummary({ entryId }: { entryId: string }) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           {/* Glowing AI icon */}
-          <div className="relative">
+          <div className="center relative">
             <i
               className={cn(
                 "i-mgc-magic-2-cute-re text-lg",
