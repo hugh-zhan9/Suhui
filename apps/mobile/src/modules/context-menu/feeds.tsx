@@ -11,7 +11,7 @@ import { views } from "@/src/constants/views"
 import { useNavigation } from "@/src/lib/navigation/hooks"
 import { toast } from "@/src/lib/toast"
 import { FeedScreen } from "@/src/screens/(stack)/feeds/[feedId]"
-import { useEntryIdsByFeedId } from "@/src/store/entry/hooks"
+import { useEntryIdsByFeedId, usePrefetchEntries } from "@/src/store/entry/hooks"
 import { getFeed } from "@/src/store/feed/getter"
 import { useFeed } from "@/src/store/feed/hooks"
 import { getSubscription } from "@/src/store/subscription/getter"
@@ -299,6 +299,7 @@ export const SubscriptionFeedCategoryContextMenu = ({
 const PreviewFeeds = (props: { id: string; view: FeedViewType }) => {
   const { id: feedId } = props
   const entryIds = useEntryIdsByFeedId(feedId)
+  usePrefetchEntries({ feedId, limit: 5 })
 
   const renderItem = useCallback(
     ({ item: id }: ListRenderItemInfo<string>) => (
