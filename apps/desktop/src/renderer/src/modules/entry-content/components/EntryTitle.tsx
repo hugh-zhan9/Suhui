@@ -1,10 +1,10 @@
-import { MagneticHoverEffect } from "@follow/components/ui/effect/MagneticHoverEffect.js"
 import { formatEstimatedMins, formatTimeToSeconds } from "@follow/utils/utils"
 import { useMemo } from "react"
 
 import { useUISettingKey } from "~/atoms/settings/ui"
 import { useWhoami } from "~/atoms/user"
 import { RelativeTime } from "~/components/ui/datetime"
+import { useNavigateEntry } from "~/hooks/biz/useNavigateEntry"
 import { FeedIcon } from "~/modules/feed/feed-icon"
 import { useEntryTranslation } from "~/store/ai/hook"
 import { useEntry, useEntryReadHistory } from "~/store/entry"
@@ -70,6 +70,8 @@ export const EntryTitle = ({ entryId, compact }: EntryLinkProps) => {
     return formatEstimatedMins(Math.floor(durationInSeconds / 60))
   }, [audioAttachment])
 
+  const navigateEntry = useNavigateEntry()
+
   if (!entry) return null
 
   return compact ? (
@@ -85,41 +87,39 @@ export const EntryTitle = ({ entryId, compact }: EntryLinkProps) => {
       </div>
     </div>
   ) : (
-    <div className="@sm:-mx-3 @sm:p-3 group relative block min-w-0 rounded-lg lg:-mx-6 lg:p-6">
-      <div className="flex flex-col gap-2">
-        {/* Title Section with subtle hover effect */}
+    <div className="group relative block min-w-0 rounded-lg">
+      <div className="flex flex-col gap-3">
         <div>
           <a
-            className="cursor-link flex items-center text-sm font-medium text-zinc-800/90 duration-200 hover:text-zinc-900 dark:text-zinc-300/90 dark:hover:text-zinc-100"
-            href={feed?.siteUrl ?? feed?.url ?? "#"}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <FeedIcon fallback feed={feed || inbox} entry={entry.entries} size={16} />
-            {getPreferredTitle(feed || inbox, entry.entries)}
-          </a>
-          <MagneticHoverEffect
-            as="a"
             href={populatedFullHref ?? "#"}
             target="_blank"
             rel="noopener noreferrer"
-            className={
-              "select-text break-words text-2xl font-medium leading-normal hover:before:-inset-x-3"
-            }
+            className="cursor-link select-text break-words text-[1.7rem] font-bold leading-normal hover:opacity-80"
           >
             <EntryTranslation
               source={entry.entries.title}
               target={translation.data?.title}
-              className="inline-block select-text hyphens-auto duration-200 hover:scale-[1.02]"
+              className="inline-block select-text hyphens-auto duration-200"
             />
-          </MagneticHoverEffect>
+          </a>
         </div>
 
         {/* Meta Information with improved layout */}
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
           <div className="flex flex-wrap items-center gap-4 text-gray-500 dark:text-gray-400">
+            <div
+              className="flex items-center text-xs font-medium text-zinc-800/90 duration-200 hover:text-zinc-900 dark:text-zinc-300/90 dark:hover:text-zinc-100"
+              onClick={() =>
+                navigateEntry({
+                  feedId: feed?.id,
+                })
+              }
+            >
+              <FeedIcon fallback feed={feed || inbox} entry={entry.entries} size={16} />
+              {getPreferredTitle(feed || inbox, entry.entries)}
+            </div>
             <div className="flex items-center gap-1.5 transition-colors hover:text-gray-700 dark:hover:text-gray-300">
-              <i className="i-mgc-calendar-time-add-cute-re text-[1.1em]" />
+              <i className="i-mgc-calendar-time-add-cute-re text-base" />
               <span className="text-xs tabular-nums">
                 <RelativeTime date={entry.entries.publishedAt} dateFormatTemplate={dateFormat} />
               </span>
@@ -127,7 +127,7 @@ export const EntryTitle = ({ entryId, compact }: EntryLinkProps) => {
 
             {estimatedMins && (
               <div className="flex items-center gap-1.5 transition-colors hover:text-gray-700 dark:hover:text-gray-300">
-                <i className="i-mgc-time-cute-re text-[1.1em]" />
+                <i className="i-mgc-time-cute-re text-base" />
                 <span className="text-xs tabular-nums">{estimatedMins}</span>
               </div>
             )}
@@ -139,7 +139,7 @@ export const EntryTitle = ({ entryId, compact }: EntryLinkProps) => {
 
               return readCount > 0 ? (
                 <div className="flex items-center gap-1.5 transition-colors hover:text-gray-700 dark:hover:text-gray-300">
-                  <i className="i-mgc-eye-2-cute-re text-[1.1em]" />
+                  <i className="i-mgc-eye-2-cute-re text-base" />
                   <span className="text-xs tabular-nums">{readCount.toLocaleString()}</span>
                 </div>
               ) : null
