@@ -1,6 +1,5 @@
 import { getViewport } from "@follow/components/hooks/useViewport.js"
 import { CircleProgress } from "@follow/components/icons/Progress.js"
-import { AutoResizeHeight } from "@follow/components/ui/auto-resize-height/index.js"
 import { Button, MotionButtonBase } from "@follow/components/ui/button/index.js"
 import { LoadingWithIcon } from "@follow/components/ui/loading/index.jsx"
 import { RootPortal } from "@follow/components/ui/portal/index.jsx"
@@ -14,27 +13,22 @@ import type { FC } from "react"
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 
-import { useShowAISummary } from "~/atoms/ai-summary"
 import {
   ReadabilityStatus,
   setReadabilityStatus,
   useEntryInReadabilityStatus,
   useEntryReadabilityContent,
 } from "~/atoms/readability"
-import { useActionLanguage } from "~/atoms/settings/general"
 import { enableShowSourceContent } from "~/atoms/source-content"
-import { CopyButton } from "~/components/ui/button/CopyButton"
 import { Toc } from "~/components/ui/markdown/components/Toc"
 import { useEntryReadabilityToggle } from "~/hooks/biz/useEntryActions"
 import { useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
-import { useAuthQuery } from "~/hooks/common/useBizQuery"
 import { getNewIssueUrl } from "~/lib/issues"
 import {
   useIsSoFWrappedElement,
   useWrappedElement,
   useWrappedElementSize,
 } from "~/providers/wrapped-element-provider"
-import { Queries } from "~/queries"
 import { useEntry } from "~/store/entry"
 import { useFeedById } from "~/store/feed"
 import { useInboxById } from "~/store/inbox"
@@ -314,76 +308,3 @@ const BackTopIndicator: Component = memo(({ className }) => {
     </span>
   )
 })
-
-export function AISummary({ entryId }: { entryId: string }) {
-  const { t } = useTranslation()
-  const entry = useEntry(entryId)
-  const showAISummary = useShowAISummary(entry)
-  const actionLanguage = useActionLanguage()
-  const summary = useAuthQuery(
-    Queries.ai.summary({
-      entryId,
-      language: actionLanguage,
-    }),
-    {
-      enabled: showAISummary,
-      refetchOnMount: false,
-      refetchOnWindowFocus: false,
-      meta: {
-        persist: true,
-      },
-    },
-  )
-
-  if (!showAISummary || (!summary.isLoading && !summary.data)) {
-    return null
-  }
-
-  return (
-    <div className="group relative my-8 overflow-hidden rounded-2xl border border-neutral-200/50 bg-gradient-to-b from-neutral-50/80 to-white/40 p-5 backdrop-blur-xl dark:border-neutral-800/50 dark:from-neutral-900/80 dark:to-neutral-900/40">
-      {/* Ambient gradient background effect */}
-      <div className="absolute inset-0 -z-10 bg-gradient-to-br from-purple-100/20 via-transparent to-blue-100/20 opacity-50 dark:from-purple-900/20 dark:to-blue-900/20" />
-
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {/* Glowing AI icon */}
-          <div className="relative">
-            <i className="i-mgc-magic-2-cute-re text-lg text-purple-600 dark:text-purple-400" />
-            <div className="absolute inset-0 animate-pulse rounded-full bg-purple-400/20 blur-sm dark:bg-purple-500/20" />
-          </div>
-          <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text font-medium text-transparent dark:from-purple-400 dark:to-blue-400">
-            {t("entry_content.ai_summary")}
-          </span>
-        </div>
-
-        {summary.data && (
-          <CopyButton
-            value={summary.data}
-            className={cn(
-              "!bg-white/10 !text-purple-600 dark:!text-purple-400",
-              "hover:!bg-white/20 dark:hover:!bg-neutral-800/30",
-              "!border-purple-200/30 dark:!border-purple-800/30",
-              "sm:opacity-0 sm:duration-300 sm:group-hover:translate-y-0 sm:group-hover:opacity-100",
-              "backdrop-blur-sm",
-            )}
-          />
-        )}
-      </div>
-
-      <AutoResizeHeight
-        spring
-        className="mt-2 text-sm leading-relaxed text-neutral-700 dark:text-neutral-300"
-      >
-        {summary.isLoading ? (
-          <div className="animate-pulse space-y-2">
-            <div className="h-3 w-full rounded-lg bg-neutral-200/50 dark:bg-neutral-800/50" />
-            <div className="h-3 w-[90%] rounded-lg bg-neutral-200/50 dark:bg-neutral-800/50" />
-            <div className="h-3 w-4/5 rounded-lg bg-neutral-200/50 dark:bg-neutral-800/50" />
-          </div>
-        ) : (
-          <div className="animate-in fade-in-0 duration-500">{summary.data}</div>
-        )}
-      </AutoResizeHeight>
-    </div>
-  )
-}

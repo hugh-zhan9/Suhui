@@ -21,6 +21,12 @@ export default resolveConfig({
   },
   theme: {
     ...baseTwConfig.theme,
+    keyframes: {
+      glow: {
+        "0%, 100%": { opacity: "0.5" },
+        "50%": { opacity: "0.7" },
+      },
+    },
     extend: {
       ...baseTwConfig.theme?.extend,
       spacing: {
