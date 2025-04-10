@@ -103,12 +103,14 @@ export const EntryTitle = ({ entryId, compact }: EntryLinkProps) => {
             href={populatedFullHref ?? "#"}
             target="_blank"
             rel="noopener noreferrer"
-            className={"select-text break-words text-2xl font-medium leading-normal"}
+            className={
+              "select-text break-words text-2xl font-medium leading-normal hover:before:-inset-x-3"
+            }
           >
             <EntryTranslation
               source={entry.entries.title}
               target={translation.data?.title}
-              className="select-text hyphens-auto"
+              className="inline-block select-text hyphens-auto duration-200 hover:scale-[1.02]"
             />
           </MagneticHoverEffect>
         </div>
