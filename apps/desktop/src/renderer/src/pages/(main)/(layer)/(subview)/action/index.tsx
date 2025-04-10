@@ -5,7 +5,7 @@ import { ActionSetting } from "~/modules/action/action-setting"
 import { useSubViewTitle } from "~/modules/app-layout/subview/hooks"
 
 export function Component() {
-  const { t } = useTranslation()
+  const { t } = useTranslation("common")
 
   useSubViewTitle("words.actions")
 
