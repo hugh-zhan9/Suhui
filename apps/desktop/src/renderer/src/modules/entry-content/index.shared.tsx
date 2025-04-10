@@ -340,21 +340,49 @@ export function AISummary({ entryId }: { entryId: string }) {
   }
 
   return (
-    <div className="group my-8 space-y-1 rounded-lg border px-4 py-3">
+    <div className="group relative my-8 overflow-hidden rounded-2xl border border-neutral-200/50 bg-gradient-to-b from-neutral-50/80 to-white/40 p-5 backdrop-blur-xl dark:border-neutral-800/50 dark:from-neutral-900/80 dark:to-neutral-900/40">
+      {/* Ambient gradient background effect */}
+      <div className="absolute inset-0 -z-10 bg-gradient-to-br from-purple-100/20 via-transparent to-blue-100/20 opacity-50 dark:from-purple-900/20 dark:to-blue-900/20" />
+
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 font-medium text-zinc-800 dark:text-neutral-400">
-          <i className="i-mgc-magic-2-cute-re align-middle" />
-          <span>{t("entry_content.ai_summary")}</span>
+        <div className="flex items-center gap-3">
+          {/* Glowing AI icon */}
+          <div className="relative">
+            <i className="i-mgc-magic-2-cute-re text-lg text-purple-600 dark:text-purple-400" />
+            <div className="absolute inset-0 animate-pulse rounded-full bg-purple-400/20 blur-sm dark:bg-purple-500/20" />
+          </div>
+          <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text font-medium text-transparent dark:from-purple-400 dark:to-blue-400">
+            {t("entry_content.ai_summary")}
+          </span>
         </div>
+
         {summary.data && (
           <CopyButton
             value={summary.data}
-            className="sm:opacity-0 sm:duration-200 sm:group-hover:opacity-100"
+            className={cn(
+              "!bg-white/10 !text-purple-600 dark:!text-purple-400",
+              "hover:!bg-white/20 dark:hover:!bg-neutral-800/30",
+              "!border-purple-200/30 dark:!border-purple-800/30",
+              "sm:opacity-0 sm:duration-300 sm:group-hover:translate-y-0 sm:group-hover:opacity-100",
+              "backdrop-blur-sm",
+            )}
           />
         )}
       </div>
-      <AutoResizeHeight spring className="text-sm leading-relaxed">
-        {summary.isLoading ? SummaryLoadingSkeleton : summary.data}
+
+      <AutoResizeHeight
+        spring
+        className="mt-2 text-sm leading-relaxed text-neutral-700 dark:text-neutral-300"
+      >
+        {summary.isLoading ? (
+          <div className="animate-pulse space-y-2">
+            <div className="h-3 w-full rounded-lg bg-neutral-200/50 dark:bg-neutral-800/50" />
+            <div className="h-3 w-[90%] rounded-lg bg-neutral-200/50 dark:bg-neutral-800/50" />
+            <div className="h-3 w-4/5 rounded-lg bg-neutral-200/50 dark:bg-neutral-800/50" />
+          </div>
+        ) : (
+          <div className="animate-in fade-in-0 duration-500">{summary.data}</div>
+        )}
       </AutoResizeHeight>
     </div>
   )
