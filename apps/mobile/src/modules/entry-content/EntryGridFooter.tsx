@@ -11,21 +11,21 @@ import { useEntry } from "@/src/store/entry/hooks"
 import { useFeed } from "@/src/store/feed/hooks"
 import { useEntryTranslation } from "@/src/store/translation/hooks"
 
-import { useEntryListContextView } from "../entry-list/EntryListContext"
 import { EntryTranslation } from "../entry-list/templates/EntryTranslation"
 
 export const EntryGridFooter = ({
   entryId,
   descriptionClassName,
+  view,
 }: {
   entryId: string
   descriptionClassName?: string
+  view: FeedViewType
 }) => {
   const entry = useEntry(entryId)
 
   const translation = useEntryTranslation(entryId)
   const feed = useFeed(entry?.feedId || "")
-  const view = useEntryListContextView()
 
   const unreadZoomSharedValue = useSharedValue(entry?.read ? 0 : 1)
 

@@ -123,7 +123,7 @@ export const MediaCarousel = ({
           </View>
         )}
       </View>
-      <EntryGridFooter entryId={entryId} />
+      <EntryGridFooter entryId={entryId} view={view!} />
     </View>
   )
 }

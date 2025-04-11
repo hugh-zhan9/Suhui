@@ -1,3 +1,4 @@
+import { FeedViewType } from "@follow/constants"
 import type { ListRenderItemInfo } from "@shopify/flash-list"
 import type { ElementRef } from "react"
 import { forwardRef, useCallback, useMemo } from "react"
@@ -24,7 +25,7 @@ export const EntryListContentArticle = forwardRef<
 
   const renderItem = useCallback(
     ({ item: id, extraData }: ListRenderItemInfo<string>) => (
-      <EntryNormalItem entryId={id} extraData={extraData} />
+      <EntryNormalItem entryId={id} extraData={extraData} view={FeedViewType.Articles} />
     ),
     [],
   )

@@ -1,4 +1,4 @@
-import { FeedViewType } from "@follow/constants"
+import type { FeedViewType } from "@follow/constants"
 import { PortalProvider } from "@gorhom/portal"
 import type { PropsWithChildren } from "react"
 import { useCallback } from "react"
@@ -19,12 +19,14 @@ import { collectionSyncService } from "@/src/store/collection/store"
 import { useEntry } from "@/src/store/entry/hooks"
 import { unreadSyncService } from "@/src/store/unread/store"
 
-export const EntryItemContextMenu = ({ id, children }: PropsWithChildren<{ id: string }>) => {
+export const EntryItemContextMenu = ({
+  id,
+  children,
+  view,
+}: PropsWithChildren<{ id: string; view: FeedViewType }>) => {
   const { t } = useTranslation()
   const entry = useEntry(id)
   const feedId = entry?.feedId
-  // const view = useSelectedView()
-  const view = FeedViewType.Articles
   const isEntryStarred = useIsEntryStarred(id)
 
   const navigation = useNavigation()

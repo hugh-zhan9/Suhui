@@ -14,18 +14,19 @@ import { useFetchEntriesControls } from "../screen/atoms"
 import { EntryListContentArticle } from "./EntryListContentArticle"
 import { EntryListContentSocial } from "./EntryListContentSocial"
 import { EntryListContentVideo } from "./EntryListContentVideo"
-import { EntryListContextViewContext } from "./EntryListContext"
 
-function EntryListSelectorImpl({
-  entryIds,
-  viewId,
-  active = true,
-}: {
+const NoLoginGuard = ({ children }: { children: React.ReactNode }) => {
+  const whoami = useWhoami()
+  return whoami ? children : <NoLoginInfo target="timeline" />
+}
+
+type EntryListSelectorProps = {
   entryIds: string[] | null
   viewId: FeedViewType
   active?: boolean
-}) {
-  const whoami = useWhoami()
+}
+
+function EntryListSelectorImpl({ entryIds, viewId, active = true }: EntryListSelectorProps) {
   const ref = useRegisterNavigationScrollView<FlashList<any>>(active)
 
   let ContentComponent:
@@ -68,15 +69,16 @@ function EntryListSelectorImpl({
     }
   }, [isRefetching, ref])
 
-  return (
-    <EntryListContextViewContext.Provider value={viewId}>
-      {whoami ? (
-        <ContentComponent ref={ref} entryIds={entryIds} active={active} />
-      ) : (
-        <NoLoginInfo target="timeline" />
-      )}
-    </EntryListContextViewContext.Provider>
-  )
+  return <ContentComponent ref={ref} entryIds={entryIds} active={active} />
 }
 
-export const EntryListSelector = withErrorBoundary(EntryListSelectorImpl, ListErrorView)
+export const EntryListSelector = withErrorBoundary(
+  ({ entryIds, viewId, active }: EntryListSelectorProps) => {
+    return (
+      <NoLoginGuard>
+        <EntryListSelectorImpl entryIds={entryIds} viewId={viewId} active={active} />
+      </NoLoginGuard>
+    )
+  },
+  ListErrorView,
+)

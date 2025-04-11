@@ -58,6 +58,8 @@ export function EntryPictureItem({ id }: { id: string }) {
   )
 }
 
+EntryPictureItem.displayName = "EntryPictureItem"
+
 const MediaItems = ({
   media,
   entryId,
