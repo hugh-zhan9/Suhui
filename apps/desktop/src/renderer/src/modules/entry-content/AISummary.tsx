@@ -90,6 +90,7 @@ export function AISummary({ entryId }: { entryId: string }) {
         {summary.data && (
           <CopyButton
             value={summary.data}
+            variant="outline"
             className={cn(
               "!bg-white/10 !text-purple-600 dark:!text-purple-400",
               "hover:!bg-white/20 dark:hover:!bg-neutral-800/30",
