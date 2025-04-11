@@ -1,6 +1,6 @@
 import { cn } from "@follow/utils"
+import { Text, View } from "react-native"
 import type { AnimatedProps } from "react-native-reanimated"
-import Animated from "react-native-reanimated"
 
 import { useUISettingKey } from "@/src/atoms/settings/ui"
 
@@ -22,14 +22,11 @@ export function UnreadCount({
 
   if (!unread) return null
   return showUnreadCount ? (
-    <Animated.Text
-      className={cn("text-tertiary-label text-xs", className, textClassName)}
-      {...rest}
-    >
+    <Text className={cn("text-tertiary-label text-xs", className, textClassName)} {...rest}>
       {unread > max ? `${max}+` : unread}
-    </Animated.Text>
+    </Text>
   ) : (
-    <Animated.View
+    <View
       className={cn("bg-tertiary-label size-1 rounded-full", className, dotClassName)}
       {...rest}
     />
