@@ -27,53 +27,55 @@ export const ListSubscriptionItem = memo(({ id, isFirst, isLast }: ListSubscript
 
   if (!list) return null
   return (
-    <Animated.View
-      exiting={FadeOutUp}
-      style={{ marginHorizontal: GROUPED_LIST_MARGIN }}
-      className={cn("overflow-hidden", {
-        "rounded-t-[10px]": isFirst,
-        "rounded-b-[10px]": isLast,
-      })}
-    >
-      <SubscriptionListItemContextMenu id={id}>
-        <ItemPressable
-          itemStyle={ItemPressableStyle.Grouped}
-          className="h-12 flex-row items-center px-3"
-          onPress={() => {
-            const isHorizontalScrolling = getHorizontalScrolling()
-            if (isHorizontalScrolling) {
-              return
-            }
-            selectFeed({
-              type: "list",
-              listId: id,
-            })
-            navigation.pushControllerView(FeedScreen, {
-              feedId: id,
-            })
-          }}
-        >
-          <View className="ml-1 overflow-hidden rounded">
-            {!!list.image && (
-              <Image
-                proxy={{
-                  width: 20,
-                  height: 20,
-                }}
-                style={{ height: 20, width: 20 }}
-                source={{ uri: list.image }}
-              />
-            )}
-            {!list.image && <FallbackIcon title={list.title} size={20} />}
-          </View>
+    <>
+      <Animated.View
+        exiting={FadeOutUp}
+        style={{ marginHorizontal: GROUPED_LIST_MARGIN }}
+        className={cn("overflow-hidden", {
+          "rounded-t-[10px]": isFirst,
+          "rounded-b-[10px]": isLast,
+        })}
+      >
+        <SubscriptionListItemContextMenu id={id}>
+          <ItemPressable
+            itemStyle={ItemPressableStyle.Grouped}
+            className="h-12 flex-row items-center px-3"
+            onPress={() => {
+              const isHorizontalScrolling = getHorizontalScrolling()
+              if (isHorizontalScrolling) {
+                return
+              }
+              selectFeed({
+                type: "list",
+                listId: id,
+              })
+              navigation.pushControllerView(FeedScreen, {
+                feedId: id,
+              })
+            }}
+          >
+            <View className="ml-1 overflow-hidden rounded">
+              {!!list.image && (
+                <Image
+                  proxy={{
+                    width: 20,
+                    height: 20,
+                  }}
+                  style={{ height: 20, width: 20 }}
+                  source={{ uri: list.image }}
+                />
+              )}
+              {!list.image && <FallbackIcon title={list.title} size={20} />}
+            </View>
 
-          <Text className="text-label font-medium" style={{ marginLeft: GROUPED_ICON_TEXT_GAP }}>
-            {list.title}
-          </Text>
-          <UnreadCount unread={unreadCount} className="ml-auto" />
-        </ItemPressable>
-      </SubscriptionListItemContextMenu>
+            <Text className="text-label font-medium" style={{ marginLeft: GROUPED_ICON_TEXT_GAP }}>
+              {list.title}
+            </Text>
+            <UnreadCount unread={unreadCount} className="ml-auto" />
+          </ItemPressable>
+        </SubscriptionListItemContextMenu>
+      </Animated.View>
       {!isLast && <ItemSeparator />}
-    </Animated.View>
+    </>
   )
 })
