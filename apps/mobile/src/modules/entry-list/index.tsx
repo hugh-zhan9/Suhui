@@ -3,7 +3,7 @@ import { useMemo } from "react"
 
 import { useSelectedFeed, useSelectedView } from "@/src/modules/screen/atoms"
 import { PagerList } from "@/src/modules/screen/PageList"
-import { TimelineSelectorProvider } from "@/src/modules/screen/TimelineSelectorProvider"
+import { TimelineHeader } from "@/src/modules/screen/TimelineSelectorProvider"
 import {
   useEntryIdsByCategory,
   useEntryIdsByFeedId,
@@ -45,11 +45,17 @@ export function EntryList() {
   }, [selectedFeed])
   if (!Content) return null
 
-  return <TimelineSelectorProvider>{Content}</TimelineSelectorProvider>
+  return (
+    <>
+      <TimelineHeader />
+      {Content}
+    </>
+  )
 }
 
 function ViewEntryList({ viewId, active }: { viewId: FeedViewType; active: boolean }) {
   const entryIds = useEntryIdsByView(viewId)
+
   return <EntryListSelector entryIds={entryIds} viewId={viewId} active={active} />
 }
 

@@ -2,7 +2,7 @@ import { FeedViewType } from "@follow/constants"
 import { jotaiStore } from "@follow/utils"
 import { EventBus } from "@follow/utils/src/event-bus"
 import { atom, useAtom, useAtomValue, useSetAtom } from "jotai"
-import { createContext, useCallback, useContext, useMemo } from "react"
+import { createContext, useCallback, useContext, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { views } from "@/src/constants/views"
@@ -124,12 +124,31 @@ export function useSelectedView() {
   }
 }
 
-export function useSelectedFeed() {
+export function useSelectedFeed(): SelectedTimeline | SelectedFeed
+export function useSelectedFeed<T>(
+  selector?: (selectedFeed: SelectedTimeline | SelectedFeed) => T,
+): T | null
+export function useSelectedFeed<T>(
+  selector?: (selectedFeed: SelectedTimeline | SelectedFeed) => T,
+) {
   const entryListContext = useEntryListContext()
 
-  const selectedTimeline = useAtomValue(selectedTimelineAtom)
-  const selectedFeed = useAtomValue(selectedFeedAtom)
-  return entryListContext.type === "feed" ? selectedFeed : selectedTimeline
+  const [stableSelector] = useState(() => selector)
+  return useAtomValue(
+    useMemo(
+      () =>
+        atom((get) => {
+          const selectedTimeline = get(selectedTimelineAtom)
+          const selectedFeed = get(selectedFeedAtom)
+          const result = entryListContext.type === "feed" ? selectedFeed : selectedTimeline
+          if (stableSelector) {
+            return stableSelector(result)
+          }
+          return result
+        }),
+      [entryListContext, stableSelector],
+    ),
+  )
 }
 
 export function useFetchEntriesControls() {
