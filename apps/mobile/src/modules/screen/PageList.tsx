@@ -1,7 +1,7 @@
 import type { FeedViewType } from "@follow/constants"
 import { EventBus } from "@follow/utils/src/event-bus"
 import * as Haptics from "expo-haptics"
-import { useCallback, useEffect, useMemo, useRef } from "react"
+import { useCallback, useEffect, useId, useMemo, useRef } from "react"
 import type { StyleProp, ViewStyle } from "react-native"
 import { Animated, StyleSheet } from "react-native"
 import PagerView from "react-native-pager-view"
@@ -33,13 +33,14 @@ export function PagerList({
 
   const pagerRef = useRef<PagerView>(null)
 
+  const rid = useId()
   useEffect(() => {
     return EventBus.subscribe("SELECT_TIMELINE", (data) => {
-      if (data.manual) {
+      if (data.target !== rid) {
         pagerRef.current?.setPage(activeViews.findIndex((view) => view.view === data.view.viewId))
       }
     })
-  }, [activeViews, pagerRef])
+  }, [activeViews, pagerRef, rid])
   const userInitiatedDragRef = useSharedValue(false)
 
   const pageScrollHandler = useCallback(
@@ -68,11 +69,11 @@ export function PagerList({
       }
 
       if (targetIndex !== activeViewIndex) {
-        selectTimeline({ type: "view", viewId: activeViews[targetIndex]!.view }, false)
+        selectTimeline({ type: "view", viewId: activeViews[targetIndex]!.view }, rid)
         userInitiatedDragRef.value = false
       }
     },
-    [activeViewIndex, activeViews, userInitiatedDragRef],
+    [activeViewIndex, activeViews, rid, userInitiatedDragRef],
   )
 
   return (
