@@ -12,7 +12,6 @@ import { FEED_COLLECTION_LIST } from "@/src/store/entry/utils"
 import { useFeed } from "@/src/store/feed/hooks"
 import { useInbox } from "@/src/store/inbox/hooks"
 import { useList } from "@/src/store/list/hooks"
-import { useSubscription } from "@/src/store/subscription/hooks"
 // drawer open state
 
 const drawerOpenAtom = atom<boolean>(false)
@@ -40,28 +39,6 @@ export function useIsDrawerSwipeDisabled() {
 
 export function useSetDrawerSwipeDisabled() {
   return useSetAtom(isDrawerSwipeDisabledAtom)
-}
-
-// collection panel selected state
-
-type CollectionPanelState = {
-  type: "view"
-  viewId: FeedViewType
-}
-
-const collectionPanelStateAtom = atom<CollectionPanelState>({
-  type: "view",
-  viewId: FeedViewType.Articles,
-})
-
-export function useSelectedCollection() {
-  return useAtomValue(collectionPanelStateAtom)
-}
-export const selectCollection = (state: CollectionPanelState) => {
-  jotaiStore.set(collectionPanelStateAtom, state)
-  if (state.type === "view" || state.type === "list") {
-    jotaiStore.set(selectedTimelineAtom, state)
-  }
 }
 
 // feed panel selected state
@@ -105,23 +82,16 @@ export const useEntryListContext = () => {
 }
 
 export function useSelectedView() {
-  const selectedTimeLine = useAtomValue(selectedTimelineAtom)
-  const selectedFeed = useAtomValue(selectedFeedAtom)
-
-  const list = useList(selectedFeed?.type === "list" ? selectedFeed.listId : "")
-  const subscription = useSubscription(
-    selectedFeed && selectedFeed.type === "feed" ? selectedFeed.feedId : "",
+  return useAtomValue(
+    useMemo(
+      () =>
+        atom((get) => {
+          const selectedTimeline = get(selectedTimelineAtom)
+          return selectedTimeline.viewId
+        }),
+      [],
+    ),
   )
-
-  if (selectedTimeLine.type === "view") {
-    return selectedTimeLine.viewId
-  }
-  if (selectedTimeLine.type === "list") {
-    return list?.view
-  }
-  if (selectedFeed?.type === "feed") {
-    return subscription?.view
-  }
 }
 
 export function useSelectedFeed(): SelectedTimeline | SelectedFeed
