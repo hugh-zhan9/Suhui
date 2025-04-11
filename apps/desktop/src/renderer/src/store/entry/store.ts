@@ -582,6 +582,8 @@ class EntryActions {
       const { inboxId } = entry
       const fullInboxId = `inbox-${inboxId}`
 
+      feedUnreadActions.incrementByFeedId(inboxId, -1)
+
       set((state) => {
         const nextFlatMapEntries = { ...state.flatMapEntries }
 
@@ -618,6 +620,9 @@ class EntryActions {
     })
 
     tx.rollback((entry, ctx) => {
+      const { inboxId } = entry
+      feedUnreadActions.incrementByFeedId(inboxId, 1)
+
       set((state) => ({
         ...state,
         entries: {
