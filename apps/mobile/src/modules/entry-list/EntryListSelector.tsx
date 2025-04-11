@@ -69,7 +69,7 @@ function EntryListSelectorImpl({ entryIds, viewId, active = true }: EntryListSel
     }
   }, [isRefetching, ref])
 
-  return <ContentComponent ref={ref} entryIds={entryIds} active={active} />
+  return <ContentComponent ref={ref} entryIds={entryIds} active={active} view={viewId} />
 }
 
 export const EntryListSelector = withErrorBoundary(

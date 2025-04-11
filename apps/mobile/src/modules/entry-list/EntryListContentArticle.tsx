@@ -1,4 +1,4 @@
-import { FeedViewType } from "@follow/constants"
+import type { FeedViewType } from "@follow/constants"
 import type { ListRenderItemInfo } from "@shopify/flash-list"
 import type { ElementRef } from "react"
 import { forwardRef, useCallback, useMemo } from "react"
@@ -16,8 +16,8 @@ import { EntryNormalItem } from "./templates/EntryNormalItem"
 
 export const EntryListContentArticle = forwardRef<
   ElementRef<typeof TimelineSelectorList>,
-  { entryIds: string[] | null; active?: boolean }
->(({ entryIds, active }, ref) => {
+  { entryIds: string[] | null; active?: boolean; view: FeedViewType }
+>(({ entryIds, active, view }, ref) => {
   const playingAudioUrl = usePlayingUrl()
 
   const { fetchNextPage, isFetching, refetch, isRefetching, hasNextPage } =
@@ -25,9 +25,9 @@ export const EntryListContentArticle = forwardRef<
 
   const renderItem = useCallback(
     ({ item: id, extraData }: ListRenderItemInfo<string>) => (
-      <EntryNormalItem entryId={id} extraData={extraData} view={FeedViewType.Articles} />
+      <EntryNormalItem entryId={id} extraData={extraData} view={view} />
     ),
-    [],
+    [view],
   )
 
   const ListFooterComponent = useMemo(
