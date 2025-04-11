@@ -86,6 +86,10 @@ export function useSelectedView() {
   return useAtomValue(useMemo(() => selectAtom(selectedTimelineAtom, (state) => state.viewId), []))
 }
 
+export const getSelectedView = () => {
+  return jotaiStore.get(selectedTimelineAtom).viewId
+}
+
 export function useSelectedFeed(): SelectedTimeline | SelectedFeed
 export function useSelectedFeed<T>(
   selector?: (selectedFeed: SelectedTimeline | SelectedFeed) => T,
