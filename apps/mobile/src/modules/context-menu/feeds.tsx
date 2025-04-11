@@ -325,7 +325,9 @@ const PreviewFeeds = (props: { id: string; view: FeedViewType }) => {
   usePrefetchEntries({ feedId, limit: 5 })
 
   const renderItem = useCallback(
-    ({ item: id }: ListRenderItemInfo<string>) => <EntryNormalItem entryId={id} extraData="" />,
+    ({ item: id }: ListRenderItemInfo<string>) => (
+      <EntryNormalItem entryId={id} extraData="" view={props.view} />
+    ),
     [],
   )
   return (
