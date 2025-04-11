@@ -38,7 +38,7 @@ export const SubscriptionItem = memo(
     const inGrouped = !!useContext(GroupedContext)
     const { isLoading } = usePrefetchFeed(id, { enabled: !subscription && !feed })
 
-    const view = useSelectedFeed((r) => (r && r.type === "feed" ? r.feedId : undefined)) as
+    const view = useSelectedFeed((r) => (r && r.type === "view" ? r.viewId : undefined)) as
       | FeedViewType
       | undefined
 
