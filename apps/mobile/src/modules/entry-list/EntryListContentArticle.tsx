@@ -62,7 +62,7 @@ export const EntryListContentArticle = forwardRef<
 
 export function EntryItemSkeleton() {
   return (
-    <View className="bg-secondary-system-grouped-background flex flex-row items-center p-4">
+    <View className="bg-system-background flex flex-row items-center p-4">
       <View className="flex flex-1 flex-col gap-2">
         <View className="flex flex-row gap-2">
           {/* Icon skeleton */}
