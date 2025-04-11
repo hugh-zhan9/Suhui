@@ -5,11 +5,15 @@ import { useEffect, useMemo } from "react"
 import { Pressable, Text, View } from "react-native"
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { useColor } from "react-native-uikit-colors"
 
 import { useGeneralSettingKey } from "@/src/atoms/settings/general"
 import { BottomTabBarHeightContext } from "@/src/components/layouts/tabbar/contexts/BottomTabBarHeightContext"
 import { SafeNavigationScrollView } from "@/src/components/layouts/views/SafeNavigationScrollView"
 import { EntryContentWebView } from "@/src/components/native/webview/EntryContentWebView"
+import { RelativeDateTime } from "@/src/components/ui/datetime/RelativeDateTime"
+import { FeedIcon } from "@/src/components/ui/icon/feed-icon"
+import { CalendarTimeAddCuteReIcon } from "@/src/icons/calendar_time_add_cute_re"
 import { openLink } from "@/src/lib/native"
 import type { NavigationControllerView } from "@/src/lib/navigation/types"
 import { EntryContentContext, useEntryContentContext } from "@/src/modules/entry-content/ctx"
@@ -119,17 +123,30 @@ const EntryContentWebViewWithContext = ({ entry }: { entry: EntryWithTranslation
 
 const EntryInfo = ({ entryId }: { entryId: string }) => {
   const entry = useEntry(entryId)
+  const feed = useFeed(entry?.feedId)
+  const secondaryLabelColor = useColor("secondaryLabel")
 
   if (!entry) return null
 
   const { publishedAt } = entry
 
   return (
-    <View className="mt-4 px-4">
-      <FeedInfo feedId={entry.feedId as string} />
-      <Text className="text-label text-sm leading-tight">
-        {publishedAt.toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}
-      </Text>
+    <View className="mt-4 flex flex-row items-center gap-4 px-4">
+      {feed && (
+        <View className="flex shrink flex-row items-center gap-2">
+          <FeedIcon feed={feed} />
+          <Text className="text-label shrink text-sm font-medium leading-tight" numberOfLines={1}>
+            {feed.title?.trim()}
+          </Text>
+        </View>
+      )}
+      <View className="flex flex-row items-center gap-1">
+        <CalendarTimeAddCuteReIcon width={16} height={16} color={secondaryLabelColor} />
+        <RelativeDateTime
+          date={publishedAt}
+          className="text-secondary-label text-sm leading-tight"
+        />
+      </View>
     </View>
   )
 }
@@ -144,16 +161,6 @@ const EntryInfoSocial = ({ entryId }: { entryId: string }) => {
       <Text className="text-secondary-label">
         {publishedAt.toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}
       </Text>
-    </View>
-  )
-}
-
-const FeedInfo = ({ feedId }: { feedId: string }) => {
-  const feed = useFeed(feedId)
-  if (!feed) return null
-  return (
-    <View className="mb-2">
-      <Text className="text-label text-sm leading-tight">{feed.title?.trim()}</Text>
     </View>
   )
 }
