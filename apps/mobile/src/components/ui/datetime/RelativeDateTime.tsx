@@ -65,6 +65,7 @@ export const RelativeDateTime = ({
   useEffect(() => {
     if (mode === "absolute") return
     if (!displayAbsoluteTimeAfterDay) return
+    setRelative(formatTime(date, displayAbsoluteTimeAfterDay, dateFormatTemplate))
     const interval = setInterval(
       () => {
         setRelative(formatTime(date, displayAbsoluteTimeAfterDay, dateFormatTemplate))
