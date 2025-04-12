@@ -20,25 +20,32 @@ export type ImageProps = Omit<ExpoImageProps, "source"> & {
   }
   blurhash?: string
   aspectRatio?: number
+  hideOnError?: boolean
 }
 
 export const Image = forwardRef<ExpoImage, ImageProps>(
-  ({ proxy, source, blurhash, aspectRatio, ...rest }, ref) => {
+  ({ proxy, source, blurhash, aspectRatio, hideOnError, ...rest }, ref) => {
     const [safeSource, proxiesSafeSource] = useMemo(
       () => getAllSources(source, proxy),
       [source, proxy],
     )
 
+    const [isFallback, setIsFallback] = useState(false)
     const [isError, setIsError] = useState(false)
     const onError = useCallback(
       (e: ImageErrorEventData) => {
-        if (isError) {
+        if (
+          isFallback ||
+          e.error === "Downloaded image has 0 pixels" ||
+          safeSource?.uri?.endsWith(".svg")
+        ) {
+          setIsError(true)
           rest.onError?.(e)
         } else {
-          setIsError(true)
+          setIsFallback(true)
         }
       },
-      [isError, rest],
+      [isFallback, rest, safeSource?.uri],
     )
 
     const [isLoading, setIsLoading] = useState(true)
@@ -50,9 +57,13 @@ export const Image = forwardRef<ExpoImage, ImageProps>(
       [rest],
     )
 
-    const backgroundColor = useColor("systemFill")
+    const backgroundColor = useColor("secondarySystemBackground")
 
     if (!source?.uri) {
+      return null
+    }
+
+    if (hideOnError && isError) {
       return null
     }
 
@@ -60,7 +71,7 @@ export const Image = forwardRef<ExpoImage, ImageProps>(
       <ExpoImage
         recyclingKey={source?.uri}
         {...rest}
-        source={isError ? safeSource : proxiesSafeSource}
+        source={isFallback ? safeSource : proxiesSafeSource}
         onError={onError}
         onLoad={onLoad}
         placeholder={{
@@ -70,7 +81,7 @@ export const Image = forwardRef<ExpoImage, ImageProps>(
         style={{
           aspectRatio,
           ...(typeof rest.style === "object" && { ...rest.style }),
-          ...(isLoading && { backgroundColor }),
+          ...((isLoading || isError) && { backgroundColor }),
         }}
         ref={ref}
       />
