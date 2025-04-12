@@ -1,7 +1,7 @@
 import { FeedViewType } from "@follow/constants"
 import { tracker } from "@follow/tracker"
 import { cn, formatEstimatedMins, formatTimeToSeconds } from "@follow/utils"
-import { memo, useCallback, useEffect, useMemo, useState } from "react"
+import { memo, useCallback, useEffect, useMemo } from "react"
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native"
 import ReAnimated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated"
 
@@ -221,7 +221,6 @@ const AspectRatioImage = ({
   height?: number
   width?: number
 }) => {
-  const [isLoaded, setIsLoaded] = useState(false)
   if (height === width || !height || !width) {
     return <SquareImage image={image} blurhash={blurhash} />
   }
@@ -251,9 +250,6 @@ const AspectRatioImage = ({
         className="overflow-hidden rounded-md"
       >
         <Image
-          onLoad={() => {
-            setIsLoaded(true)
-          }}
           proxy={{
             width: 96,
           }}
@@ -266,11 +262,9 @@ const AspectRatioImage = ({
           }}
           transition={100}
           blurhash={blurhash}
-          className={cn(
-            "rounded-md",
-            isLoaded ? "bg-transparent" : "bg-secondary-system-background",
-          )}
+          className="rounded-md"
           contentFit="cover"
+          hideOnError
         />
       </View>
     </View>
@@ -278,7 +272,6 @@ const AspectRatioImage = ({
 }
 
 const SquareImage = ({ image, blurhash }: { image: string; blurhash?: string }) => {
-  const [isLoaded, setIsLoaded] = useState(false)
   return (
     <Image
       proxy={{
@@ -289,15 +282,10 @@ const SquareImage = ({ image, blurhash }: { image: string; blurhash?: string }) 
       source={{
         uri: image,
       }}
-      onLoad={() => {
-        setIsLoaded(true)
-      }}
       blurhash={blurhash}
-      className={cn(
-        "size-24 overflow-hidden rounded-lg",
-        isLoaded ? "bg-transparent" : "bg-secondary-system-background",
-      )}
+      className="size-24 overflow-hidden rounded-lg"
       contentFit="cover"
+      hideOnError
     />
   )
 }
