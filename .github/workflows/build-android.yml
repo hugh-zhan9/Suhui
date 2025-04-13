@@ -81,3 +81,8 @@ jobs:
           name: aab-android
           path: ${{ github.workspace }}/build.aab
           retention-days: 90
+
+      - name: Submit to Google Play
+        if: github.event.inputs.profile == 'production'
+        working-directory: apps/mobile
+        run: eas submit --platform android --path build.apk --non-interactive
