@@ -79,7 +79,7 @@
     "react-dom": "18.3.1",
     "tar": "7.4.3",
     "tsup": "8.4.0",
-    "unplugin-ast": "0.14.5",
+    "unplugin-ast": "0.14.4",
     "utf-8-validate": "6.0.5"
   },
   "productName": "Folo",
