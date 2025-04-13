@@ -69,9 +69,8 @@ jobs:
         run: pnpm install
 
       - name: 🔨 Build iOS IPA
-        run: |
-          cd apps/mobile
-          eas build --platform ios --profile development --non-interactive --local --output=./build.ipa
+        working-directory: apps/mobile
+        run: eas build --platform ios --profile development --non-interactive --local --output=./build.ipa
         env:
           CI: true
 
@@ -116,9 +115,8 @@ jobs:
         run: pnpm install
 
       - name: 🔨 Build iOS IPA
-        run: |
-          cd apps/mobile
-          eas build --platform ios --profile ios-simulator --non-interactive --local --output=./build-simulator.ipa
+        working-directory: apps/mobile
+        run: eas build --platform ios --profile ios-simulator --non-interactive --local --output=./build-simulator.ipa
         env:
           CI: true
 
