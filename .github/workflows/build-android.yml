@@ -81,4 +81,4 @@ jobs:
       - name: Submit to Google Play
         if: github.event.inputs.profile == 'production'
         working-directory: apps/mobile
-        run: eas submit --platform android --path build.apk --non-interactive
+        run: eas submit --platform android --path build.aab --non-interactive
