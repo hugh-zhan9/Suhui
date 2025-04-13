@@ -2,12 +2,8 @@ name: Build iOS
 
 on:
   push:
-    branches: [dev]
-    paths:
-      - "apps/mobile/**"
-      - "pnpm-lock.yaml"
-  pull_request:
-    branches: [dev]
+    branches:
+      - "**"
     paths:
       - "apps/mobile/**"
       - "pnpm-lock.yaml"

@@ -4,8 +4,9 @@ on:
   push:
     branches:
       - "**"
-    tags:
-      - "v*"
+    paths:
+      - "apps/desktop/**"
+      - "pnpm-lock.yaml"
   workflow_dispatch:
     inputs:
       tag_version:

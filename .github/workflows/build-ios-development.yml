@@ -2,14 +2,8 @@ name: Build iOS for development
 
 on:
   push:
-    branches: [dev]
-    paths:
-      - "apps/mobile/web-app/**"
-      - "apps/mobile/native/**"
-      - "apps/mobile/package.json"
-      - "apps/mobile/app.config.ts"
-  pull_request:
-    branches: [dev]
+    branches:
+      - "**"
     paths:
       - "apps/mobile/web-app/**"
       - "apps/mobile/native/**"
