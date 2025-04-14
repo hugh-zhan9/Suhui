@@ -8,22 +8,13 @@ import type {
 import { FlashList, MasonryFlashList } from "@shopify/flash-list"
 import * as Haptics from "expo-haptics"
 import type { ElementRef, RefObject } from "react"
-import {
-  forwardRef,
-  useCallback,
-  useContext,
-  useImperativeHandle,
-  useLayoutEffect,
-  useRef,
-} from "react"
+import { forwardRef, useCallback, useContext, useImperativeHandle, useRef } from "react"
 import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native"
 import { RefreshControl, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useColor } from "react-native-uikit-colors"
 
-import { BottomTabBarBackgroundContext } from "@/src/components/layouts/tabbar/contexts/BottomTabBarBackgroundContext"
 import { useBottomTabBarHeight } from "@/src/components/layouts/tabbar/hooks"
-import { useTabScreenIsFocused } from "@/src/lib/navigation/bottom-tab/hooks"
 import { ScreenItemContext } from "@/src/lib/navigation/ScreenItemContext"
 import { useHeaderHeight } from "@/src/modules/screen/hooks/useHeaderHeight"
 import { usePrefetchSubscription } from "@/src/store/subscription/hooks"
@@ -48,13 +39,7 @@ export const TimelineSelectorList = forwardRef<
   const headerHeight = useHeaderHeight()
   const { scrollViewHeight, scrollViewContentHeight, reAnimatedScrollY } =
     useContext(ScreenItemContext)!
-  const { opacity } = useContext(BottomTabBarBackgroundContext)
-  const tabScreenIsFocus = useTabScreenIsFocused()
-  useLayoutEffect(() => {
-    if (tabScreenIsFocus) {
-      opacity.value = 1
-    }
-  }, [tabScreenIsFocus, opacity])
+
   const tabBarHeight = useBottomTabBarHeight()
   const onScroll = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
