@@ -8,7 +8,7 @@ import type {
 import { FlashList, MasonryFlashList } from "@shopify/flash-list"
 import * as Haptics from "expo-haptics"
 import type { ElementRef, RefObject } from "react"
-import { forwardRef, useCallback, useContext, useImperativeHandle, useRef } from "react"
+import { forwardRef, useCallback, useContext, useEffect, useImperativeHandle, useRef } from "react"
 import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native"
 import { findNodeHandle, RefreshControl } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
@@ -17,6 +17,7 @@ import { useColor } from "react-native-uikit-colors"
 import { BottomTabBarBackgroundContext } from "@/src/components/layouts/tabbar/contexts/BottomTabBarBackgroundContext"
 import { useBottomTabBarHeight } from "@/src/components/layouts/tabbar/hooks"
 import { isScrollToEnd } from "@/src/lib/native"
+import { useTabScreenIsFocused } from "@/src/lib/navigation/bottom-tab/hooks"
 import { ScreenItemContext } from "@/src/lib/navigation/ScreenItemContext"
 import { useHeaderHeight } from "@/src/modules/screen/hooks/useHeaderHeight"
 import { usePrefetchSubscription } from "@/src/store/subscription/hooks"
@@ -51,6 +52,12 @@ export const TimelineSelectorList = forwardRef<
       opacity.value = isEnd ? 0 : 1
     })
   }, [opacity])
+  const tabScreenIsFocus = useTabScreenIsFocused()
+  useEffect(() => {
+    if (tabScreenIsFocus) {
+      checkScrollToBottom()
+    }
+  }, [checkScrollToBottom, tabScreenIsFocus])
   const onScroll = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
       props.onScroll?.(e)

@@ -62,6 +62,14 @@ export const useRegisterNavigationScrollView = <T = unknown>(active = true) => {
     if (!active) return
     if (!setAttachNavigationScrollViewRef) return
     if (!tabScreenIsFocused) return
+    if (
+      scrollViewRef.current &&
+      typeof scrollViewRef.current === "object" &&
+      "checkScrollToBottom" in scrollViewRef.current &&
+      typeof scrollViewRef.current.checkScrollToBottom === "function"
+    ) {
+      scrollViewRef.current.checkScrollToBottom()
+    }
 
     setAttachNavigationScrollViewRef(scrollViewRef as unknown as RefObject<ScrollView>)
   }, [setAttachNavigationScrollViewRef, scrollViewRef, active, tabScreenIsFocused])
