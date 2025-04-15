@@ -1,7 +1,7 @@
 /**
  * This env for apps/desktop
  */
-import { DEFAULT_VALUES } from "@follow/shared/env"
+import { DEFAULT_VALUES } from "@follow/shared/env.common"
 import { createEnv } from "@t3-oss/env-core"
 import { z } from "zod"
 
