@@ -19,7 +19,7 @@ import { useColor } from "@/src/theme/colors"
 import { ReAnimatedPressable } from "../../common/AnimatedComponents"
 import { ItemPressableStyle } from "./enum"
 
-interface ItemPressableProps extends PressableProps {
+export interface ItemPressableProps extends PressableProps {
   itemStyle?: ItemPressableStyle
   touchHighlight?: boolean
 }

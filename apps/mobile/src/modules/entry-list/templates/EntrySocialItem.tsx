@@ -1,8 +1,7 @@
 import { FeedViewType } from "@follow/constants"
 import { tracker } from "@follow/tracker"
-import { memo, useCallback, useEffect, useMemo } from "react"
+import { memo, useCallback, useMemo } from "react"
 import { Pressable, Text, View } from "react-native"
-import ReAnimated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated"
 
 import { useGeneralSettingKey } from "@/src/atoms/settings/general"
 import { UserAvatar } from "@/src/components/ui/avatar/UserAvatar"
@@ -12,7 +11,6 @@ import { Galeria } from "@/src/components/ui/image/galeria"
 import { Image } from "@/src/components/ui/image/Image"
 import { ItemPressableStyle } from "@/src/components/ui/pressable/enum"
 import { ItemPressable } from "@/src/components/ui/pressable/ItemPressable"
-import { gentleSpringPreset } from "@/src/constants/spring"
 import { useNavigation } from "@/src/lib/navigation/hooks"
 import { getHorizontalScrolling } from "@/src/modules/screen/atoms"
 import { EntryDetailScreen } from "@/src/screens/(stack)/entries/[entryId]"
@@ -48,28 +46,6 @@ export const EntrySocialItem = memo(({ entryId }: { entryId: string }) => {
     }
   }, [entry?.feedId, entryId, navigation])
 
-  const unreadZoomSharedValue = useSharedValue(entry?.read ? 0 : 1)
-
-  const unreadIndicatorStyle = useAnimatedStyle(() => {
-    return {
-      transform: [
-        {
-          scale: unreadZoomSharedValue.value,
-        },
-      ],
-    }
-  })
-
-  useEffect(() => {
-    if (!entry) return
-
-    if (entry.read) {
-      unreadZoomSharedValue.value = withSpring(0, gentleSpringPreset)
-    } else {
-      unreadZoomSharedValue.value = withSpring(1, gentleSpringPreset)
-    }
-  }, [entry, entry?.read, unreadZoomSharedValue])
-
   const autoExpandLongSocialMedia = useGeneralSettingKey("autoExpandLongSocialMedia")
 
   const memoedMediaUrlList = useMemo(() => {
@@ -87,10 +63,7 @@ export const EntrySocialItem = memo(({ entryId }: { entryId: string }) => {
         className="flex flex-col gap-2 p-4 pl-6"
         onPress={handlePress}
       >
-        <ReAnimated.View
-          className="bg-red absolute left-1.5 top-[25] size-2 rounded-full"
-          style={unreadIndicatorStyle}
-        />
+        {!entry.read && <View className="bg-red absolute left-1.5 top-[25] size-2 rounded-full" />}
 
         <View className="flex flex-1 flex-row items-start gap-4">
           <Pressable

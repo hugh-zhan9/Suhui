@@ -1,9 +1,8 @@
 import { FeedViewType } from "@follow/constants"
 import { tracker } from "@follow/tracker"
 import { cn, formatEstimatedMins, formatTimeToSeconds } from "@follow/utils"
-import { memo, useCallback, useEffect, useMemo } from "react"
+import { memo, useCallback, useMemo } from "react"
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native"
-import ReAnimated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated"
 
 import { useUISettingKey } from "@/src/atoms/settings/ui"
 import { ThemedBlurView } from "@/src/components/common/ThemedBlurView"
@@ -14,7 +13,6 @@ import { Image } from "@/src/components/ui/image/Image"
 import { PlatformActivityIndicator } from "@/src/components/ui/loading/PlatformActivityIndicator"
 import { ItemPressableStyle } from "@/src/components/ui/pressable/enum"
 import { ItemPressable } from "@/src/components/ui/pressable/ItemPressable"
-import { gentleSpringPreset } from "@/src/constants/spring"
 import { PauseCuteFiIcon } from "@/src/icons/pause_cute_fi"
 import { PlayCuteFiIcon } from "@/src/icons/play_cute_fi"
 import { useNavigation } from "@/src/lib/navigation/hooks"
@@ -53,28 +51,6 @@ export const EntryNormalItem = memo(
       }
     }, [entryId, entry, navigation, view])
 
-    const unreadZoomSharedValue = useSharedValue(entry?.read ? 0 : 1)
-
-    const unreadIndicatorStyle = useAnimatedStyle(() => {
-      return {
-        transform: [
-          {
-            scale: unreadZoomSharedValue.value,
-          },
-        ],
-      }
-    })
-
-    useEffect(() => {
-      if (!entry) return
-
-      if (entry.read) {
-        unreadZoomSharedValue.value = withSpring(0, gentleSpringPreset)
-      } else {
-        unreadZoomSharedValue.value = withSpring(1, gentleSpringPreset)
-      }
-    }, [entry, entry?.read, unreadZoomSharedValue])
-
     const thumbnailRatio = useUISettingKey("thumbnailRatio")
 
     const coverImage = entry?.media?.[0]
@@ -105,14 +81,14 @@ export const EntryNormalItem = memo(
           )}
           onPress={handlePress}
         >
-          <ReAnimated.View
-            className={cn(
-              "bg-red absolute left-2 size-2 rounded-full",
-              view === FeedViewType.Notifications ? "top-[35]" : "top-[43]",
-            )}
-            style={unreadIndicatorStyle}
-          />
-
+          {!entry.read && (
+            <View
+              className={cn(
+                "bg-red absolute left-2 size-2 rounded-full",
+                view === FeedViewType.Notifications ? "top-[35]" : "top-[43]",
+              )}
+            />
+          )}
           <View className="flex-1 space-y-2 self-start">
             <View className="mb-1 flex-row items-center gap-1.5 pr-2">
               <FeedIcon fallback feed={feed} size={view === FeedViewType.Notifications ? 14 : 16} />
