@@ -114,28 +114,6 @@ function bootstrap() {
 
     mainWindow = createMainWindow()
 
-    // restore cookies
-    const cookies = store.get("cookies")
-    if (cookies) {
-      Promise.all(
-        cookies.map((cookie) => {
-          const setCookieDetails: Electron.CookiesSetDetails = {
-            url: apiURL,
-            name: cookie.name,
-            value: cookie.value,
-            domain: cookie.domain,
-            path: cookie.path,
-            secure: cookie.secure,
-            httpOnly: cookie.httpOnly,
-            expirationDate: cookie.expirationDate,
-            sameSite: cookie.sameSite as "unspecified" | "no_restriction" | "lax" | "strict",
-          }
-
-          return mainWindow.webContents.session.cookies.set(setCookieDetails)
-        }),
-      )
-    }
-
     updateProxy()
     registerUpdater()
     registerAppTray()
