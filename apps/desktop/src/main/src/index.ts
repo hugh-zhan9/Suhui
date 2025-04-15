@@ -17,7 +17,7 @@ import { updateProxy } from "./lib/proxy"
 import { handleUrlRouting } from "./lib/router"
 import { store } from "./lib/store"
 import { registerAppTray } from "./lib/tray"
-import { setBetterAuthSessionCookie, updateNotificationsToken } from "./lib/user"
+import { updateNotificationsToken } from "./lib/user"
 import { logger } from "./logger"
 import { registerUpdater } from "./updater"
 import { cleanupOldRender } from "./updater/hot-updater"
@@ -207,7 +207,6 @@ function bootstrap() {
         const userId = urlObj.searchParams.get("userId")
 
         if (ck && apiURL) {
-          setBetterAuthSessionCookie(ck)
           const cookie = parse(atob(ck), { decode: (value) => value })
           Object.keys(cookie).forEach((name) => {
             const value = cookie[name]
