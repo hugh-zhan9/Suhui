@@ -1,4 +1,5 @@
 import { cn } from "@follow/utils"
+import { cssInterop } from "nativewind"
 import type {
   FC,
   ForwardRefExoticComponent,
@@ -6,13 +7,16 @@ import type {
   ReactNode,
   RefAttributes,
 } from "react"
-import { forwardRef, useEffect, useRef, useState } from "react"
-import type { ViewStyle } from "react-native"
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react"
+import type { StyleProp, ViewStyle } from "react-native"
 import { StyleSheet } from "react-native"
 
 import type { PagerRef } from "./specs"
 import { EnhancePagerView, EnhancePageView } from "./specs"
 
+cssInterop(EnhancePagerView, {
+  className: "style",
+})
 interface PagerViewProps {
   pageContainerStyle?: ViewStyle
   pageContainerClassName?: string
@@ -24,27 +28,30 @@ interface PagerViewProps {
   onPageChange?: (index: number) => void
   onScroll?: (percent: number, direction: "left" | "right") => void
   onScrollBegin?: () => void
-  onScrollEnd?: () => void
+  onScrollEnd?: (index: number) => void
   onPageWillAppear?: (index: number) => void
-  containerStyle?: ViewStyle
+  containerStyle?: StyleProp<ViewStyle>
   containerClassName?: string
 }
-const PagerViewImpl: FC<PagerViewProps> = ({
-  pageContainerStyle,
-  pageContainerClassName,
-  renderPage,
-  pageTotal,
-  pageGap,
-  transitionStyle,
-  containerStyle,
-  containerClassName,
-  page,
-  onPageChange,
-  onScroll,
-  onScrollBegin,
-  onScrollEnd,
-  onPageWillAppear,
-}) => {
+const PagerViewImpl: FC<PagerViewProps> = (
+  {
+    pageContainerStyle,
+    pageContainerClassName,
+    renderPage,
+    pageTotal,
+    pageGap,
+    transitionStyle,
+    containerStyle,
+    containerClassName,
+    page,
+    onPageChange,
+    onScroll,
+    onScrollBegin,
+    onScrollEnd,
+    onPageWillAppear,
+  },
+  ref: any,
+) => {
   const [currentPage, setCurrentPage] = useState(page ?? 0)
 
   const nativeRef = useRef<PagerRef>(null)
@@ -56,6 +63,14 @@ const PagerViewImpl: FC<PagerViewProps> = ({
       }
     }
   }, [currentPage])
+  useImperativeHandle(ref, () => ({
+    setPage: (index: number) => {
+      setCurrentPage(index)
+      nativeRef.current?.setPage(index)
+    },
+    getPage: () => currentPage,
+    getState: () => nativeRef.current?.getState(),
+  }))
   return (
     <EnhancePagerView
       transitionStyle={transitionStyle}
@@ -70,15 +85,14 @@ const PagerViewImpl: FC<PagerViewProps> = ({
       onScrollBegin={() => {
         onScrollBegin?.()
       }}
-      onScrollEnd={() => {
-        onScrollEnd?.()
+      onScrollEnd={(e) => {
+        onScrollEnd?.(e.nativeEvent.index)
       }}
       onPageWillAppear={(e) => {
         onPageWillAppear?.(e.nativeEvent.index)
       }}
       className={cn("flex-1", containerClassName)}
       style={containerStyle}
-      // @ts-expect-error
       ref={nativeRef}
     >
       {Array.from({ length: pageTotal }).map((_, index) => (
