@@ -140,41 +140,6 @@ function bootstrap() {
     registerUpdater()
     registerAppTray()
 
-    // handle session cookie when sign in with email in electron
-    session.defaultSession.webRequest.onHeadersReceived(
-      {
-        urls: [
-          `${apiURL}/better-auth/sign-in/email`,
-          `${apiURL}/better-auth/sign-in/email?*`,
-          `${apiURL}/better-auth/two-factor/verify-totp`,
-          `${apiURL}/better-auth/two-factor/verify-totp?*`,
-        ],
-      },
-      (detail, callback) => {
-        const { responseHeaders } = detail
-        if (responseHeaders?.["set-cookie"]) {
-          const cookies = responseHeaders["set-cookie"] as string[]
-          cookies.forEach((cookie) => {
-            const cookieObj = parse(cookie, { decode: (value) => value })
-            Object.keys(cookieObj).forEach((name) => {
-              const value = cookieObj[name]
-              mainWindow.webContents.session.cookies.set({
-                url: apiURL,
-                name,
-                value,
-                secure: true,
-                httpOnly: true,
-                domain: new URL(apiURL).hostname,
-                sameSite: "no_restriction",
-              })
-            })
-          })
-        }
-
-        callback({ cancel: false, responseHeaders })
-      },
-    )
-
     app.on("open-url", (_, url) => {
       if (mainWindow && !mainWindow.isDestroyed()) {
         if (mainWindow.isMinimized()) mainWindow.restore()
@@ -232,29 +197,36 @@ function bootstrap() {
     const urlObj = new URL(url)
 
     if (urlObj.hostname === "auth" || urlObj.pathname === "//auth") {
-      const ck = urlObj.searchParams.get("ck")
-      const userId = urlObj.searchParams.get("userId")
+      const token = urlObj.searchParams.get("token")
 
-      if (ck && apiURL) {
-        setBetterAuthSessionCookie(ck)
-        const cookie = parse(atob(ck), { decode: (value) => value })
-        Object.keys(cookie).forEach((name) => {
-          const value = cookie[name]
-          mainWindow.webContents.session.cookies.set({
-            url: apiURL,
-            name,
-            value,
-            secure: true,
-            httpOnly: true,
-            domain: new URL(apiURL).hostname,
-            sameSite: "no_restriction",
+      if (token) {
+        await callWindowExpose(mainWindow).applyOneTimeToken(token)
+      } else {
+        // compatible with old version of ssr, should be removed in 0.4.4
+        const ck = urlObj.searchParams.get("ck")
+        const userId = urlObj.searchParams.get("userId")
+
+        if (ck && apiURL) {
+          setBetterAuthSessionCookie(ck)
+          const cookie = parse(atob(ck), { decode: (value) => value })
+          Object.keys(cookie).forEach((name) => {
+            const value = cookie[name]
+            mainWindow.webContents.session.cookies.set({
+              url: apiURL,
+              name,
+              value,
+              secure: true,
+              httpOnly: true,
+              domain: new URL(apiURL).hostname,
+              sameSite: "no_restriction",
+            })
           })
-        })
 
-        userId && (await callWindowExpose(mainWindow).clearIfLoginOtherAccount(userId))
-        mainWindow.reload()
+          userId && (await callWindowExpose(mainWindow).clearIfLoginOtherAccount(userId))
+          mainWindow.reload()
 
-        updateNotificationsToken()
+          updateNotificationsToken()
+        }
       }
     } else {
       handleUrlRouting(url)
