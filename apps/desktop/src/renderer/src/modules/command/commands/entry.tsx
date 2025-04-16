@@ -1,6 +1,6 @@
 import { FeedViewType, UserRole } from "@follow/constants"
 import { IN_ELECTRON } from "@follow/shared/constants"
-import { cn, getOS } from "@follow/utils/utils"
+import { cn } from "@follow/utils/utils"
 import { useMutation } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
@@ -265,12 +265,7 @@ export const useRegisterEntryCommands = () => {
     {
       id: COMMAND_ID.entry.share,
       label: t("entry_actions.share"),
-      icon:
-        getOS() === "macOS" ? (
-          <i className="i-mgc-share-3-cute-re" />
-        ) : (
-          <i className="i-mgc-share-forward-cute-re" />
-        ),
+      icon: <i className="i-mgc-share-forward-cute-re" />,
       run: ({ entryId }) => {
         const entry = useEntryStore.getState().flatMapEntries[entryId]
         if (!entry || !entry.entries.url) {
