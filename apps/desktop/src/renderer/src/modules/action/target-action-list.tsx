@@ -129,7 +129,7 @@ export const TargetActionList = ({ index }: { index: number }) => {
       },
       {
         title: t("actions.action_card.silence"),
-        icon: <i className="i-mgc-ghost-cute-re" />,
+        icon: <i className="i-mgc-volume-mute-cute-re" />,
         enabled: !!silence,
         onInit: (data) => {
           data.result.silence = true

@@ -137,7 +137,8 @@
     "eas-cli": "16.3.1",
     "expo-drizzle-studio-plugin": "0.1.2",
     "nbump": "2.0.9",
-    "postcss": "8.5.3"
+    "postcss": "8.5.3",
+    "sf-symbols-typescript": "2.1.0"
   },
   "appName": "Folo",
   "expo": {
