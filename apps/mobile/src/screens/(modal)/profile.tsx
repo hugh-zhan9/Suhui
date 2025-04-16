@@ -1,4 +1,5 @@
 import type { FeedViewType } from "@follow/constants"
+import { useQuery } from "@tanstack/react-query"
 import { Fragment, useCallback, useEffect, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { FlatList, Image, Share, Text, TouchableOpacity, View } from "react-native"
@@ -40,6 +41,7 @@ import { ItemSeparator } from "@/src/modules/subscription/ItemSeparator"
 import type { FeedModel } from "@/src/store/feed/types"
 import type { ListModel } from "@/src/store/list/store"
 import { useUser, useWhoami } from "@/src/store/user/hooks"
+import { userSyncService } from "@/src/store/user/store"
 import { useColor } from "@/src/theme/colors"
 
 type Subscription = Awaited<ReturnType<typeof apiClient.subscriptions.$get>>["data"][number]
@@ -55,6 +57,15 @@ export const ProfileScreen: NavigationControllerView<{
   return <ProfileScreenImpl userId={userId || whoami?.id} />
 }
 
+const usePrefetchUser = (userId: string) => {
+  const { data } = useQuery({
+    queryKey: ["user", userId],
+    queryFn: () => userSyncService.fetchUser(userId),
+    enabled: !!userId,
+    staleTime: 1000 * 60 * 5,
+  })
+  return data
+}
 function ProfileScreenImpl(props: { userId: string }) {
   const { t } = useTranslation()
   const scrollY = useSharedValue(0)
@@ -72,6 +83,7 @@ function ProfileScreenImpl(props: { userId: string }) {
     headerOpacity.value = scrollY.value / 100
   })
 
+  usePrefetchUser(props.userId)
   const user = useUser(props.userId)
   useEffect(() => {
     if (isError) {
@@ -103,7 +115,7 @@ function ProfileScreenImpl(props: { userId: string }) {
         <BlurEffect />
         <InternalNavigationHeader
           title={t("profile.title", {
-            name: user?.name,
+            name: user?.name || user?.handle,
           })}
           headerRight={
             <UINavigationHeaderActionButton onPress={openShareUrl}>
@@ -258,7 +270,11 @@ const renderListItems = ({ item }: { item: PickedListModel }) => (
       {!item.image && <FallbackIcon title={item.title} size={24} />}
     </View>
 
-    <Text className="text-text" style={{ marginLeft: GROUPED_ICON_TEXT_GAP }}>
+    <Text
+      className="text-text mr-4"
+      numberOfLines={1}
+      style={{ marginLeft: GROUPED_ICON_TEXT_GAP }}
+    >
       {item.title}
     </Text>
   </View>
@@ -284,7 +300,11 @@ const renderFeedItems = ({ item }: { item: PickedFeedModel }) => (
         size={24}
       />
     </View>
-    <Text className="text-text" style={{ marginLeft: GROUPED_ICON_TEXT_GAP }}>
+    <Text
+      className="text-text mr-4"
+      numberOfLines={1}
+      style={{ marginLeft: GROUPED_ICON_TEXT_GAP }}
+    >
       {item.title}
     </Text>
   </View>

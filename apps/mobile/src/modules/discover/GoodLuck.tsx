@@ -36,7 +36,7 @@ export const GoodLuck = () => {
   return (
     <View className="mt-4">
       {isLoading ? (
-        <View className="flex h-12 items-center justify-center">
+        <View className="mt-5 flex h-12 items-center justify-center">
           <PlatformActivityIndicator />
         </View>
       ) : (

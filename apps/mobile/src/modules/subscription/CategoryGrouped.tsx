@@ -9,7 +9,7 @@ import { ItemPressable } from "@/src/components/ui/pressable/ItemPressable"
 import { RightCuteFiIcon } from "@/src/icons/right_cute_fi"
 import { useNavigation } from "@/src/lib/navigation/hooks"
 import { closeDrawer, getHorizontalScrolling, selectFeed } from "@/src/modules/screen/atoms"
-import { FeedScreen } from "@/src/screens/(stack)/feeds/[feedId]"
+import { FeedScreen } from "@/src/screens/(stack)/feeds/[feedId]/FeedScreen"
 import { useUnreadCounts } from "@/src/store/unread/hooks"
 import { useColor } from "@/src/theme/colors"
 

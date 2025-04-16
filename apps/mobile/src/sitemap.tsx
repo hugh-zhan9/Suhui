@@ -12,7 +12,7 @@ import { ForgetPasswordScreen } from "./screens/(modal)/forget-password"
 import { InvitationScreen } from "./screens/(modal)/invitation"
 import { LoginScreen } from "./screens/(modal)/login"
 import { SignUpScreen } from "./screens/(modal)/sign-up"
-import { OnboardingScreen } from "./screens/onboarding"
+import { OnboardingScreen } from "./screens/OnboardingScreen"
 
 export function registerSitemap() {
   ;[TermsScreen].forEach((Component) => {

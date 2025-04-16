@@ -49,7 +49,7 @@ class ItemPressableView: ExpoView {
     if touchHighlight {
       layer.backgroundColor = UIColor.systemGray5.cgColor
 
-      UIView.animate(withDuration: 0.2, delay: 0.5, options: [.curveEaseOut]) {
+      UIView.animate(withDuration: 0.2, delay: 0.1, options: [.curveEaseOut]) {
         self.layer.backgroundColor = bgColor
       }
     }

@@ -32,19 +32,6 @@ export default function Discover() {
           </View>
         }
       >
-        {/* <Pressable
-          className="mt-6 flex-row items-center gap-1 px-6 pt-4"
-          onPress={() => {
-            navigation.pushControllerView(Recommendations)
-          }}
-        >
-          <Text className="text-label text-2xl font-bold leading-[1.1]">Trending</Text>
-
-          <RightCuteFiIcon height={20} width={20} color={secondaryLabelColor} />
-        </Pressable> */}
-
-        {/* <TrendingRecommendations /> */}
-
         <View className="mt-6 flex-row items-center gap-1 px-6 pt-4">
           <Text className="text-label text-2xl font-bold leading-[1.1]">Good Luck</Text>
         </View>
@@ -127,39 +114,6 @@ const styles = StyleSheet.create({
     aspectRatio: 1.6,
   },
 })
-
-// const TrendingRecommendations = () => {
-//   const { data, isLoading } = useQuery({
-//     queryKey: ["trending"],
-//     queryFn: () => getTrendingAggregates({ language: "en" }),
-//   })
-//   const array = data?.trendingFeeds.slice(0, 4)
-//   return (
-//     <View className="gap-y-4 p-4 pl-8">
-//       {array?.map((feed, index) => (
-//         <Fragment key={feed.id}>
-//           <View className="flex-row items-center gap-2">
-//             <FeedIcon size={36} feed={feed as any} />
-//             <View>
-//               <Text numberOfLines={1} className="text-label text-lg font-medium">
-//                 {feed.title}
-//               </Text>
-//               {!!feed.description && (
-//                 <Text numberOfLines={1} className="text-secondary-label text-sm">
-//                   {feed.description}
-//                 </Text>
-//               )}
-//             </View>
-//           </View>
-//           {index !== array.length - 1 && (
-//             <View className="bg-opaque-separator dark:bg-non-opaque-separator/50 h-px w-full" />
-//           )}
-//         </Fragment>
-//       ))}
-//     </View>
-//   )
-// }
-
 export const DiscoverTabScreen: TabScreenComponent = Discover
 DiscoverTabScreen.tabBarIcon = ({ focused, color }) => {
   const Icon = !focused ? Search3CuteReIcon : Search3CuteFiIcon

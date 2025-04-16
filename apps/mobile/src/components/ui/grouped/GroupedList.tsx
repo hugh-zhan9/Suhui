@@ -23,6 +23,7 @@ import { GroupedInsetListCardItemStyle } from "./GroupedInsetListCardItemStyle"
 interface GroupedInsetListCardProps {
   showSeparator?: boolean
   SeparatorComponent?: FC
+  SeparatorElement?: React.ReactNode
 }
 
 interface BaseCellClassNames {
@@ -38,7 +39,14 @@ export const GroupedOutlineDescription: FC<{
 
 export const GroupedInsetListCard: FC<
   PropsWithChildren & ViewProps & GroupedInsetListCardProps
-> = ({ children, className, showSeparator = true, SeparatorComponent, ...props }) => {
+> = ({
+  children,
+  className,
+  showSeparator = true,
+  SeparatorComponent,
+  SeparatorElement,
+  ...props
+}) => {
   const nextChildren = React.useMemo(
     () => React.Children.toArray(children).filter(Boolean),
     [children],
@@ -63,13 +71,19 @@ export const GroupedInsetListCard: FC<
               ((child.type as Function).name === GroupedInsetListNavigationLink.name ||
                 (child.type as any).itemStyle === GroupedInsetListCardItemStyle.NavigationLink)
 
+            const NextSeparatorComponent =
+              typeof SeparatorComponent === "function" ? <SeparatorComponent /> : undefined
+            const NextSeparatorElement = SeparatorElement
+              ? React.isValidElement(SeparatorElement)
+                ? SeparatorElement
+                : NextSeparatorComponent
+              : NextSeparatorComponent
+
             return (
               <Fragment key={index}>
                 {child}
                 {!isLast &&
-                  (SeparatorComponent ? (
-                    <SeparatorComponent />
-                  ) : (
+                  (NextSeparatorElement ?? (
                     <View
                       className={cn(
                         "bg-non-opaque-separator dark:bg-opaque-separator/70",
