@@ -6,6 +6,7 @@ import { setWhoami } from "~/atoms/user"
 import { QUERY_PERSIST_KEY } from "~/constants"
 import { useAuthQuery } from "~/hooks/common"
 import { getAccountInfo, getSession, signOut as signOutFn } from "~/lib/auth"
+import { tipcClient } from "~/lib/client"
 import { defineQuery } from "~/lib/defineQuery"
 import { clearLocalPersistStoreData } from "~/store/utils/clear"
 
@@ -71,6 +72,7 @@ export const useSession = (options?: { enabled?: boolean }) => {
 }
 
 export const handleSessionChanges = () => {
+  tipcClient?.sessionChanged()
   window.location.reload()
 }
 
@@ -92,7 +94,7 @@ export const signOut = async () => {
   // clear local store data
   await clearLocalPersistStoreData()
   // Sign out
-  await signOutFn().then(() => {
-    handleSessionChanges()
-  })
+  await tipcClient?.signOut()
+  await signOutFn()
+  window.location.reload()
 }

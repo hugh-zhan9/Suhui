@@ -2193,6 +2193,23 @@ declare const entries: drizzle_orm_pg_core.PgTableWithColumns<{
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
+        readabilityContent: drizzle_orm_pg_core.PgColumn<{
+            name: "readability_content";
+            tableName: "entries";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
     };
     dialect: "pg";
 }>;
@@ -2426,6 +2443,7 @@ declare const entriesOpenAPISchema: z.ZodObject<z.objectUtil.extendShape<Omit<{
     } | /*elided*/ any | null)[] | null)[] | null)[] | null)[] | null)[] | null)[] | null)[] | null)[] | null)[] | null)[] | null)[] | null>>;
     language: z.ZodNullable<z.ZodString>;
     feedId: z.ZodString;
+    readabilityContent: z.ZodNullable<z.ZodString>;
 }, "media" | "attachments" | "extra">, {
     attachments: z.ZodNullable<z.ZodOptional<z.ZodArray<z.ZodObject<{
         url: z.ZodString;
@@ -2504,6 +2522,7 @@ declare const entriesOpenAPISchema: z.ZodObject<z.objectUtil.extendShape<Omit<{
     url: string | null;
     language: string | null;
     feedId: string;
+    readabilityContent: string | null;
     guid: string;
     categories: string[] | null;
     authorUrl: string | null;
@@ -2541,6 +2560,7 @@ declare const entriesOpenAPISchema: z.ZodObject<z.objectUtil.extendShape<Omit<{
     url: string | null;
     language: string | null;
     feedId: string;
+    readabilityContent: string | null;
     guid: string;
     categories: string[] | null;
     authorUrl: string | null;
@@ -13218,6 +13238,7 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                     description?: string | undefined;
                     title?: string | undefined;
                     content?: string | undefined;
+                    readabilityContent?: string | undefined;
                 } | undefined;
             };
             outputFormat: "json";
@@ -13231,6 +13252,7 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                 query: {
                     id: string;
                     language?: "ar-DZ" | "ar-IQ" | "ar-KW" | "ar-MA" | "ar-SA" | "ar-TN" | "de" | "en" | "es" | "fi" | "fr" | "it" | "ja" | "ko" | "pt" | "ru" | "tr" | "zh-CN" | "zh-HK" | "zh-TW" | undefined;
+                    target?: "content" | "readabilityContent" | undefined;
                 };
             };
             output: {
@@ -13372,6 +13394,7 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                         url: string | null;
                         language: string | null;
                         feedId: string;
+                        readabilityContent: string | null;
                         guid: string;
                         categories: string[] | null;
                         authorUrl: string | null;
@@ -13835,6 +13858,7 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                         author: string | null;
                         url: string | null;
                         language: string | null;
+                        readabilityContent: string | null;
                         guid: string;
                         categories: string[] | null;
                         authorUrl: string | null;
@@ -13942,6 +13966,7 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                         author: string | null;
                         url: string | null;
                         language: string | null;
+                        readabilityContent: string | null;
                         guid: string;
                         categories: string[] | null;
                         authorUrl: string | null;
@@ -14010,6 +14035,24 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
         };
     };
 } & {
+    "/readability": {
+        $get: {
+            input: {
+                query: {
+                    id: string;
+                };
+            };
+            output: {
+                code: 0;
+                data: {
+                    content?: string | null | undefined;
+                } | null;
+            };
+            outputFormat: "json";
+            status: 200;
+        };
+    };
+} & {
     "/stream": {
         $post: {
             input: {
@@ -14041,6 +14084,7 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                     url: string | null;
                     language: string | null;
                     feedId: string;
+                    readabilityContent: string | null;
                     guid: string;
                     categories: string[] | null;
                     authorUrl: string | null;
@@ -14176,6 +14220,7 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                         author: string | null;
                         url: string | null;
                         language: string | null;
+                        readabilityContent: string | null;
                         guid: string;
                         categories: string[] | null;
                         authorUrl: string | null;
@@ -15203,6 +15248,7 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                         };
                         language: string | null;
                         feedId: string;
+                        readabilityContent: string | null;
                         guid: string;
                         categories: string[] | null;
                         authorUrl: string | null;
@@ -15808,6 +15854,21 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
     "/test": {
         $get: {
             input: {};
+            output: {
+                code: 0;
+            };
+            outputFormat: "json";
+            status: 200;
+        };
+    };
+} & {
+    "/": {
+        $delete: {
+            input: {
+                json: {
+                    channel: "macos" | "windows" | "linux" | "ios" | "android" | "web" | "desktop";
+                };
+            };
             output: {
                 code: 0;
             };
