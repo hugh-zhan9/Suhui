@@ -358,7 +358,7 @@ export const useRegisterEntryCommands = () => {
       {
         id: COMMAND_ID.entry.toggleAISummary,
         label: t("entry_actions.toggle_ai_summary"),
-        icon: <i className="i-mgc-magic-2-cute-re" />,
+        icon: <i className="i-mgc-ai-cute-re" />,
         run: () => {
           if (role === UserRole.Trial) {
             presentActivationModal()
