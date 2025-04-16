@@ -30,7 +30,7 @@ import { FallbackIcon } from "@/src/components/ui/icon/fallback-icon"
 import type { FeedIconRequiredFeed } from "@/src/components/ui/icon/feed-icon"
 import { FeedIcon } from "@/src/components/ui/icon/feed-icon"
 import { PlatformActivityIndicator } from "@/src/components/ui/loading/PlatformActivityIndicator"
-import { Share3CuteReIcon } from "@/src/icons/share_3_cute_re"
+import { ShareForwardCuteReIcon } from "@/src/icons/share_forward_cute_re"
 import type { apiClient } from "@/src/lib/api-fetch"
 import type { NavigationControllerView } from "@/src/lib/navigation/types"
 import { toast } from "@/src/lib/toast"
@@ -107,7 +107,7 @@ function ProfileScreenImpl(props: { userId: string }) {
           })}
           headerRight={
             <UINavigationHeaderActionButton onPress={openShareUrl}>
-              <Share3CuteReIcon color={textLabelColor} />
+              <ShareForwardCuteReIcon color={textLabelColor} />
             </UINavigationHeaderActionButton>
           }
         />
@@ -131,7 +131,7 @@ function ProfileScreenImpl(props: { userId: string }) {
       >
         <View />
         <TouchableOpacity onPress={openShareUrl}>
-          <Share3CuteReIcon color="#fff" />
+          <ShareForwardCuteReIcon color="#fff" />
         </TouchableOpacity>
       </Animated.View>
     </View>

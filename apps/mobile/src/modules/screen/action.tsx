@@ -12,7 +12,7 @@ import { AddCuteReIcon } from "@/src/icons/add_cute_re"
 import { CheckCircleCuteReIcon } from "@/src/icons/check_circle_cute_re"
 import { RoundCuteFiIcon } from "@/src/icons/round_cute_fi"
 import { RoundCuteReIcon } from "@/src/icons/round_cute_re"
-import { Share3CuteReIcon } from "@/src/icons/share_3_cute_re"
+import { ShareForwardCuteReIcon } from "@/src/icons/share_forward_cute_re"
 import { Dialog } from "@/src/lib/dialog"
 import { useNavigation } from "@/src/lib/navigation/hooks"
 import { proxyEnv } from "@/src/lib/proxy-env"
@@ -133,7 +133,7 @@ export const FeedShareActionButton = ({
   return (
     <UIBarButton
       label={t("operation.share")}
-      normalIcon={<Share3CuteReIcon height={size} width={size} color={color} />}
+      normalIcon={<ShareForwardCuteReIcon height={size} width={size} color={color} />}
       onPress={() => {
         const feed = getFeed(feedId)
         if (!feed) return
