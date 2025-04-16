@@ -57,8 +57,4 @@ class ItemPressableView: ExpoView {
   }
 }
 
-extension ItemPressableView: UIGestureRecognizerDelegate {
-  func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
-    return touch.view == gestureRecognizer.view
-  }
-}
+extension ItemPressableView: UIGestureRecognizerDelegate {}
