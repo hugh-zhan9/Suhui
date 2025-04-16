@@ -22,8 +22,8 @@ import { openLink } from "@/src/lib/native"
 import { useNavigation } from "@/src/lib/navigation/hooks"
 import type { NavigationControllerView } from "@/src/lib/navigation/types"
 
-import { FollowScreen } from "../../(modal)/follow"
-import { ProfileScreen } from "../../(modal)/profile"
+import { FollowScreen } from "../../(modal)/FollowScreen"
+import { ProfileScreen } from "../../(modal)/ProfileScreen"
 
 const UserCount = ({ count, className }: { count: number; className?: string }) => {
   const secondaryLabelColor = useColor("secondaryLabel")
