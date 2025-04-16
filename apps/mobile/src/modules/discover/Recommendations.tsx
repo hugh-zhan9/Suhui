@@ -25,10 +25,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { AnimatedScrollView } from "@/src/components/common/AnimatedComponents"
 import { BlurEffect } from "@/src/components/common/BlurEffect"
 import { UINavigationHeaderActionButton } from "@/src/components/layouts/header/NavigationHeader"
-import {
-  useBottomTabBarHeight,
-  useRegisterNavigationScrollView,
-} from "@/src/components/layouts/tabbar/hooks"
+import { useRegisterNavigationScrollView } from "@/src/components/layouts/tabbar/hooks"
 import { PlatformActivityIndicator } from "@/src/components/ui/loading/PlatformActivityIndicator"
 import { TabBar } from "@/src/components/ui/tabview/TabBar"
 import type { TabComponent } from "@/src/components/ui/tabview/TabView"
@@ -104,7 +101,10 @@ export const Recommendations = () => {
             {loadedTabIndex.has(index) && (
               <RecommendationTab
                 key={category}
-                contentContainerStyle={{ paddingTop: 44 + insets.top }}
+                contentContainerStyle={{
+                  paddingTop: 44 + insets.top,
+                  paddingBottom: insets.bottom,
+                }}
                 tab={{ name: t(`discover.category.${category}`), value: category }}
                 isSelected={currentTab === index}
               />
@@ -149,8 +149,6 @@ export const RecommendationTab: TabComponent<{
 
   reanimatedScrollY?: SharedValue<number>
 }> = ({ tab, isSelected, contentContainerStyle, reanimatedScrollY, ...rest }) => {
-  const tabHeight = useBottomTabBarHeight()
-
   const { data, isLoading } = useQuery({
     queryKey: ["rsshub-popular", "cache", tab.value],
     queryFn: () => fetchRsshubPopular(tab.value, "all").then((res) => res.data),
@@ -242,6 +240,8 @@ export const RecommendationTab: TabComponent<{
     }
   }, [animatedY, isSelected])
 
+  const insets = useSafeAreaInsets()
+
   if (isLoading) {
     return <PlatformActivityIndicator className="flex-1 items-center justify-center" />
   }
@@ -270,7 +270,7 @@ export const RecommendationTab: TabComponent<{
         scrollIndicatorInsets={{
           right: -2,
           top: 0,
-          bottom: tabHeight,
+          bottom: insets.bottom,
         }}
         removeClippedSubviews
       />
