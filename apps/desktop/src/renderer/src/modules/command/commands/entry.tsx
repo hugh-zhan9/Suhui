@@ -370,7 +370,7 @@ export const useRegisterEntryCommands = () => {
       {
         id: COMMAND_ID.entry.toggleAITranslation,
         label: t("entry_actions.toggle_ai_translation"),
-        icon: <i className="i-mgc-translate-2-cute-re" />,
+        icon: <i className="i-mgc-translate-2-ai-cute-re" />,
         run: () => {
           if (role === UserRole.Trial) {
             presentActivationModal()
