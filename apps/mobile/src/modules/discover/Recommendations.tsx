@@ -30,10 +30,10 @@ import { PlatformActivityIndicator } from "@/src/components/ui/loading/PlatformA
 import { TabBar } from "@/src/components/ui/tabview/TabBar"
 import type { TabComponent } from "@/src/components/ui/tabview/TabView"
 import { MingcuteLeftLineIcon } from "@/src/icons/mingcute_left_line"
-import { apiClient } from "@/src/lib/api-fetch"
 import { useNavigation } from "@/src/lib/navigation/hooks"
 import { useColor } from "@/src/theme/colors"
 
+import { fetchRsshubPopular } from "./api"
 import { RecommendationListItem } from "./RecommendationListItem"
 
 export const Recommendations = () => {
@@ -114,34 +114,6 @@ export const Recommendations = () => {
       </AnimatedScrollView>
     </View>
   )
-}
-
-const _languageOptions = [
-  {
-    label: "All",
-    value: "all",
-  },
-  {
-    label: "English",
-    value: "en",
-  },
-  {
-    label: "中文",
-    value: "zh-CN",
-  },
-] as const
-
-type Language = (typeof _languageOptions)[number]["value"]
-type DiscoverCategories = (typeof RSSHubCategories)[number] | string
-
-const fetchRsshubPopular = (category: DiscoverCategories, lang: Language) => {
-  return apiClient.discover.rsshub.$get({
-    query: {
-      category: "popular",
-      categories: category === "all" ? "popular" : `popular,${category}`,
-      lang: lang === "all" ? undefined : lang,
-    },
-  })
 }
 
 export const RecommendationTab: TabComponent<{
