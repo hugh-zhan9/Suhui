@@ -1,9 +1,13 @@
 import type { AuthSession } from "@follow/shared/hono"
+import { clearStorage } from "@follow/utils/ns"
 import type { FetchError } from "ofetch"
 
+import { setWhoami } from "~/atoms/user"
+import { QUERY_PERSIST_KEY } from "~/constants"
 import { useAuthQuery } from "~/hooks/common"
-import { getAccountInfo, getSession } from "~/lib/auth"
+import { getAccountInfo, getSession, signOut as signOutFn } from "~/lib/auth"
 import { defineQuery } from "~/lib/defineQuery"
+import { clearLocalPersistStoreData } from "~/store/utils/clear"
 
 export const auth = {
   getSession: () => defineQuery(["auth", "session"], () => getSession()),
@@ -68,4 +72,27 @@ export const useSession = (options?: { enabled?: boolean }) => {
 
 export const handleSessionChanges = () => {
   window.location.reload()
+}
+
+export const signOut = async () => {
+  if (window.__RN__) {
+    window.ReactNativeWebView?.postMessage("sign-out")
+    return
+  }
+
+  // Clear query cache
+  localStorage.removeItem(QUERY_PERSIST_KEY)
+
+  // setLoginModalShow(true)
+  setWhoami(null)
+
+  // Clear local storage
+  clearStorage()
+
+  // clear local store data
+  await clearLocalPersistStoreData()
+  // Sign out
+  await signOutFn().then(() => {
+    handleSessionChanges()
+  })
 }
