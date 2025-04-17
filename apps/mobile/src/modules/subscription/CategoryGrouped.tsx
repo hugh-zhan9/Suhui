@@ -8,7 +8,7 @@ import { ItemPressableStyle } from "@/src/components/ui/pressable/enum"
 import { ItemPressable } from "@/src/components/ui/pressable/ItemPressable"
 import { RightCuteFiIcon } from "@/src/icons/right_cute_fi"
 import { useNavigation } from "@/src/lib/navigation/hooks"
-import { closeDrawer, getHorizontalScrolling, selectFeed } from "@/src/modules/screen/atoms"
+import { closeDrawer, selectFeed } from "@/src/modules/screen/atoms"
 import { FeedScreen } from "@/src/screens/(stack)/feeds/[feedId]/FeedScreen"
 import { useUnreadCounts } from "@/src/store/unread/hooks"
 import { useColor } from "@/src/theme/colors"
@@ -50,10 +50,6 @@ export const CategoryGrouped = memo(
             <ItemPressable
               itemStyle={ItemPressableStyle.Grouped}
               onPress={() => {
-                const isHorizontalScrolling = getHorizontalScrolling()
-                if (isHorizontalScrolling) {
-                  return
-                }
                 selectFeed({
                   type: "category",
                   categoryName: category,

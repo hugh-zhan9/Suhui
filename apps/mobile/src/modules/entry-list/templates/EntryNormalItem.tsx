@@ -17,7 +17,6 @@ import { PauseCuteFiIcon } from "@/src/icons/pause_cute_fi"
 import { PlayCuteFiIcon } from "@/src/icons/play_cute_fi"
 import { useNavigation } from "@/src/lib/navigation/hooks"
 import { getAttachmentState, player } from "@/src/lib/player"
-import { getHorizontalScrolling } from "@/src/modules/screen/atoms"
 import { EntryDetailScreen } from "@/src/screens/(stack)/entries/[entryId]/EntryDetailScreen"
 import { useEntry } from "@/src/store/entry/hooks"
 import { getInboxFrom } from "@/src/store/entry/utils"
@@ -36,8 +35,7 @@ export const EntryNormalItem = memo(
     const feed = useFeed(entry?.feedId as string)
     const navigation = useNavigation()
     const handlePress = useCallback(() => {
-      const isHorizontalScrolling = getHorizontalScrolling()
-      if (entry && !isHorizontalScrolling) {
+      if (entry) {
         preloadWebViewEntry(entry)
         tracker.navigateEntry({
           feedId: entry.feedId!,
