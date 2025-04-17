@@ -13,6 +13,7 @@ import { Image } from "@/src/components/ui/image/Image"
 import { PlatformActivityIndicator } from "@/src/components/ui/loading/PlatformActivityIndicator"
 import { ItemPressableStyle } from "@/src/components/ui/pressable/enum"
 import { ItemPressable } from "@/src/components/ui/pressable/ItemPressable"
+import { NativePressable } from "@/src/components/ui/pressable/NativePressable"
 import { PauseCuteFiIcon } from "@/src/icons/pause_cute_fi"
 import { PlayCuteFiIcon } from "@/src/icons/play_cute_fi"
 import { useNavigation } from "@/src/lib/navigation/hooks"
@@ -146,9 +147,7 @@ export const EntryNormalItem = memo(
                 ))}
 
               {audio && (
-                <ItemPressable
-                  touchHighlight={false}
-                  itemStyle={ItemPressableStyle.UnStyled}
+                <NativePressable
                   className="absolute inset-0 flex items-center justify-center"
                   onPress={() => {
                     if (isLoading) return
@@ -174,7 +173,7 @@ export const EntryNormalItem = memo(
                       <PlayCuteFiIcon color="white" width={24} height={24} />
                     )}
                   </View>
-                </ItemPressable>
+                </NativePressable>
               )}
             </View>
           )}
