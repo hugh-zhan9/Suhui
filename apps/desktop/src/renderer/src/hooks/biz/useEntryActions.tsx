@@ -6,22 +6,22 @@ import { useMemo } from "react"
 import { useShowAISummaryAuto, useShowAISummaryOnce } from "~/atoms/ai-summary"
 import { useShowAITranslationAuto, useShowAITranslationOnce } from "~/atoms/ai-translation"
 import {
+  getReadabilityContent,
   getReadabilityStatus,
-  isInReadability,
   ReadabilityStatus,
   setReadabilityContent,
   setReadabilityStatus,
-  useEntryInReadabilityStatus,
+  useEntryIsInReadability,
 } from "~/atoms/readability"
 import { useShowSourceContent } from "~/atoms/source-content"
 import { useUserRole, whoami } from "~/atoms/user"
 import { shortcuts } from "~/constants/shortcuts"
-import { tipcClient } from "~/lib/client"
+import { apiClient } from "~/lib/api-fetch"
 import { COMMAND_ID } from "~/modules/command/commands/id"
 import { useRunCommandFn } from "~/modules/command/hooks/use-command"
 import type { FollowCommandId } from "~/modules/command/types"
 import { useToolbarOrderMap } from "~/modules/customize-toolbar/hooks"
-import { useEntry } from "~/store/entry"
+import { getEntry, useEntry } from "~/store/entry"
 import { useFeedById } from "~/store/feed"
 import { useInboxById } from "~/store/inbox"
 
@@ -35,24 +35,39 @@ export const toggleEntryReadability = async ({ id, url }: { id: string; url: str
     setReadabilityStatus({
       [id]: ReadabilityStatus.WAITING,
     })
-    const result = await tipcClient
-      ?.readability({
-        url,
-      })
-      .catch(() => {
-        setReadabilityStatus({
-          [id]: ReadabilityStatus.FAILURE,
-        })
-      })
+    try {
+      let data = getReadabilityContent()[id]
+      if (!data) {
+        const entry = getEntry(id)
+        if (
+          entry &&
+          "readabilityContent" in entry.entries &&
+          entry.entries.readabilityContent !== null
+        ) {
+          data = { content: entry.entries.readabilityContent }
+        }
 
-    if (result) {
-      const status = getReadabilityStatus()[id]
-      if (status !== ReadabilityStatus.WAITING) return
+        if (!data) {
+          const result = await apiClient.entries.readability.$get({ query: { id } })
+          if (result.data) {
+            data = result.data
+          }
+        }
+      }
+
+      if (data) {
+        const status = getReadabilityStatus()[id]
+        if (status !== ReadabilityStatus.WAITING) return
+        setReadabilityStatus({
+          [id]: ReadabilityStatus.SUCCESS,
+        })
+        setReadabilityContent({
+          [id]: data,
+        })
+      }
+    } catch {
       setReadabilityStatus({
-        [id]: ReadabilityStatus.SUCCESS,
-      })
-      setReadabilityContent({
-        [id]: result,
+        [id]: ReadabilityStatus.FAILURE,
       })
     }
   } else {
@@ -69,6 +84,12 @@ export type EntryActionItem = {
   shortcut?: string
   active?: boolean
   disabled?: boolean
+  notice?: boolean
+  entryId: string
+}
+
+function hasHTMLTags(text?: string | null): boolean {
+  return /<[^>]+>/.test(text || "")
 }
 
 export const useEntryActions = ({
@@ -81,7 +102,7 @@ export const useEntryActions = ({
   compact?: boolean
 }) => {
   const entry = useEntry(entryId)
-  const entryReadabilityStatus = useEntryInReadabilityStatus(entry?.entries.id)
+  const isEntryInReadability = useEntryIsInReadability(entry?.entries.id)
   const imageLength = entry?.entries.media?.filter((a) => a.type === "photo").length || 0
   const feed = useFeedById(entry?.feedId, (feed) => {
     return {
@@ -94,6 +115,7 @@ export const useEntryActions = ({
   const inList = !!listId
   const inbox = useInboxById(entry?.inboxId)
   const isInbox = !!inbox
+  const isContentContainsHTMLTags = hasHTMLTags(entry?.entries.content)
 
   const isShowSourceContent = useShowSourceContent()
   const isShowAISummaryAuto = useShowAISummaryAuto(entry)
@@ -231,23 +253,36 @@ export const useEntryActions = ({
         onClick: runCmdFn(COMMAND_ID.entry.readability, [
           { entryId, entryUrl: entry?.entries.url },
         ]),
-        hide: !IN_ELECTRON || compact || (view && views[view]!.wideMode) || !entry?.entries.url,
-        active: isInReadability(entryReadabilityStatus),
+        hide:
+          !!entry.settings?.readability ||
+          compact ||
+          (view && views[view]!.wideMode) ||
+          !entry?.entries.url,
+        active: isEntryInReadability,
+        notice: !isContentContainsHTMLTags && !isEntryInReadability,
       },
       {
         id: COMMAND_ID.settings.customizeToolbar,
         onClick: runCmdFn(COMMAND_ID.settings.customizeToolbar, []),
       },
-    ].filter((config) => !config.hide)
+    ]
+      .filter((config) => !config.hide)
+      .map((config) => {
+        return {
+          ...config,
+          entryId,
+        }
+      })
   }, [
     compact,
     entry?.collections,
     entry?.entries.content,
     entry?.entries.url,
     entry?.read,
+    entry?.settings?.readability,
     entry?.view,
     entryId,
-    entryReadabilityStatus,
+    isEntryInReadability,
     feed?.id,
     feed?.ownerUserId,
     hasEntry,
@@ -259,6 +294,7 @@ export const useEntryActions = ({
     isShowAITranslationAuto,
     isShowAITranslationOnce,
     isShowSourceContent,
+    isContentContainsHTMLTags,
     runCmdFn,
     userRole,
     view,
