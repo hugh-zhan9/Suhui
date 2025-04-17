@@ -133,7 +133,7 @@ export const EntryNormalItem = memo(
             )}
           </View>
           {view !== FeedViewType.Notifications && (
-            <View className="relative ml-2">
+            <View className="relative ml-4">
               {image &&
                 (thumbnailRatio === "square" ? (
                   <SquareImage image={image} blurhash={blurhash} />
