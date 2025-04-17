@@ -49,7 +49,11 @@ export const EntrySocialItem = memo(({ entryId }: { entryId: string }) => {
   const autoExpandLongSocialMedia = useGeneralSettingKey("autoExpandLongSocialMedia")
 
   const memoedMediaUrlList = useMemo(() => {
-    return entry?.media?.map((i) => i.url) ?? []
+    return (entry?.media
+      ?.map((i) =>
+        i.type === "video" ? i.preview_image_url : i.type === "photo" ? i.url : undefined,
+      )
+      .filter(Boolean) || []) as string[]
   }, [entry])
 
   if (!entry) return <EntryItemSkeleton />
