@@ -104,11 +104,19 @@ export const EntrySocialItem = memo(({ entryId }: { entryId: string }) => {
         {media && media.length > 0 && (
           <View className="ml-10 flex flex-row flex-wrap justify-between">
             <Galeria urls={memoedMediaUrlList}>
-              {media.map((image, index) => {
+              {media.map((mediaItem, index) => {
+                // TODO: support video
+                const imageUrl =
+                  mediaItem.type === "video"
+                    ? mediaItem.preview_image_url
+                    : mediaItem.type === "photo"
+                      ? mediaItem.url
+                      : undefined
                 const fullWidth = index === media.length - 1 && media.length % 2 === 1
+                if (!imageUrl) return null
                 return (
                   <Pressable
-                    key={`${entryId}-${image.url}`}
+                    key={`${entryId}-${imageUrl}`}
                     className={fullWidth ? "w-full" : "w-1/2 p-0.5"}
                   >
                     <Galeria.Image index={index}>
@@ -116,11 +124,13 @@ export const EntrySocialItem = memo(({ entryId }: { entryId: string }) => {
                         proxy={{
                           width: fullWidth ? 400 : 200,
                         }}
-                        source={{ uri: image.url }}
-                        blurhash={image.blurhash}
+                        source={{ uri: imageUrl }}
+                        blurhash={mediaItem.blurhash}
                         className="border-secondary-system-background w-full rounded-lg border"
                         aspectRatio={
-                          fullWidth && image.width && image.height ? image.width / image.height : 1
+                          fullWidth && mediaItem.width && mediaItem.height
+                            ? mediaItem.width / mediaItem.height
+                            : 1
                         }
                       />
                     </Galeria.Image>
