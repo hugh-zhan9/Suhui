@@ -334,7 +334,7 @@ export const InternalNavigationHeader = ({
               {/* Only show loading indicator when headerTitle is not absolute */}
               {!headerTitleAbsolute && isLoading && (
                 <View
-                  className="absolute right-0"
+                  className="absolute right-0 z-10"
                   style={{ transform: [{ translateX: "100%" }, { scale: 0.74 }] }}
                 >
                   <PlatformActivityIndicator size="small" />
