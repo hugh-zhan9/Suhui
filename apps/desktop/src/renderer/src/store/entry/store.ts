@@ -442,10 +442,12 @@ class EntryActions {
   }
 
   async markRead({ feedId, entryId, read }: { feedId: string; entryId: string; read: boolean }) {
+    if (!feedId || !entryId) {
+      return
+    }
     const entry = get().flatMapEntries[entryId]
     const isInbox = !!(entry?.entries && "inboxHandle" in entry.entries)
     const subscription = getSubscriptionByFeedId(feedId)
-
     if (read && entry?.read) {
       return
     }
