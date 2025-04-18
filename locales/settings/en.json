@@ -192,7 +192,7 @@
   "general.minimize_to_tray.description": "Minimize to system tray when closing window",
   "general.minimize_to_tray.label": "Minimize to tray",
   "general.network": "Network",
-  "general.open_links_in_app.label": "Open links in app",
+  "general.open_links_in_external_app.label": "Open links in external app",
   "general.privacy": "Privacy",
   "general.proxy.description": "Set proxy for network traffic routing, e.g., socks://proxy.example.com:1080",
   "general.proxy.label": "Proxy",
