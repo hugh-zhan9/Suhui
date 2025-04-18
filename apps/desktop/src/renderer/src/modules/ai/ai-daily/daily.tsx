@@ -19,6 +19,7 @@ import type { FC } from "react"
 import { useEffect, useMemo, useState } from "react"
 import { Trans, useTranslation } from "react-i18next"
 
+import { MenuItemText } from "~/atoms/context-menu"
 import { useGeneralSettingSelector } from "~/atoms/settings/general"
 import { Collapse } from "~/components/ui/collapse"
 import { RelativeTime } from "~/components/ui/datetime"
@@ -458,17 +459,26 @@ const EntryMoreActions: FC<{ entryId: string }> = ({ entryId }) => {
   const { moreAction, mainAction } = useSortedEntryActions({ entryId, view })
 
   const actionConfigs = useMemo(
-    () => [...moreAction, ...mainAction].filter((action) => hasCommand(action.id)),
+    () =>
+      [...moreAction, ...mainAction].filter(
+        (action) => action instanceof MenuItemText && hasCommand(action.id),
+      ),
     [moreAction, mainAction],
   )
 
   const availableActions = useMemo(
-    () => actionConfigs.filter((item) => item.id !== COMMAND_ID.settings.customizeToolbar),
+    () =>
+      actionConfigs.filter(
+        (item) => item instanceof MenuItemText && item.id !== COMMAND_ID.settings.customizeToolbar,
+      ),
     [actionConfigs],
   )
 
   const extraAction = useMemo(
-    () => actionConfigs.filter((item) => item.id === COMMAND_ID.settings.customizeToolbar),
+    () =>
+      actionConfigs.filter(
+        (item) => item instanceof MenuItemText && item.id === COMMAND_ID.settings.customizeToolbar,
+      ),
     [actionConfigs],
   )
 
@@ -483,14 +493,16 @@ const EntryMoreActions: FC<{ entryId: string }> = ({ entryId }) => {
       </DropdownMenuTrigger>
       <RootPortal>
         <DropdownMenuContent>
-          {availableActions.map((config) => (
-            <CommandDropdownMenuItem
-              key={config.id}
-              commandId={config.id}
-              onClick={config.onClick}
-              active={config.active}
-            />
-          ))}
+          {availableActions.map((config) =>
+            config instanceof MenuItemText ? (
+              <CommandDropdownMenuItem
+                key={config.id}
+                commandId={config.id}
+                onClick={config.click!}
+                active={config.active}
+              />
+            ) : null,
+          )}
         </DropdownMenuContent>
       </RootPortal>
     </DropdownMenu>
