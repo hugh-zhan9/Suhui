@@ -13,3 +13,4 @@
 
 - Fixed TTS failed to play (#3522)
 - Fixed corner player can not navigate to correct entry (#1401)
+- Fixed unable to save to Readwise (#3497)
