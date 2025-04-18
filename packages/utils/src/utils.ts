@@ -358,3 +358,15 @@ export const formatEstimatedMins = (estimatedMins: number) => {
   }
   return `${estimatedMins} mins`
 }
+
+export const omitShallow = (obj: any, ...keys: string[]) => {
+  if (!obj) return obj
+  if (typeof obj !== "object") return obj
+  if (Array.isArray(obj)) return obj
+
+  const nextObj = { ...obj }
+  for (const key of keys) {
+    Reflect.deleteProperty(nextObj, key)
+  }
+  return nextObj
+}
