@@ -1,7 +1,7 @@
 {
   "name": "Folo",
   "type": "module",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "private": true,
   "description": "Follow everything in one place",
   "author": "Folo Team",
@@ -84,5 +84,5 @@
     "utf-8-validate": "6.0.5"
   },
   "productName": "Folo",
-  "mainHash": "274b8ef4d0671d642c1350e1e4463fce6d677f81f77f59a666d6aa83f5866a22"
+  "mainHash": "5b48aebee3da3b31d2dc4db3bd768987d2c84e1b0ddf977fe28b57e8a3bc9361"
 }
