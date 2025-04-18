@@ -10,8 +10,8 @@ export default defineConfig({
     "pnpm prettier --ignore-unknown --write package.json",
     "git add package.json",
   ],
-  trailing: [
-    "git checkout -b release/mobile/${NEW_VERSION}",
+  trailing: ["git checkout -b release/mobile/${NEW_VERSION}"],
+  finally: [
     "git push origin release/mobile/${NEW_VERSION}",
     "gh pr create --title 'release(mobile): Release v${NEW_VERSION}' --body 'v${NEW_VERSION}' --base main --head release/mobile/${NEW_VERSION}",
   ],
