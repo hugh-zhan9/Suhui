@@ -36,7 +36,7 @@ export const defaultGeneralSettings: GeneralSettings = {
   enhancedSettings: false,
 
   // @mobile
-  openLinksInExternalApp: true,
+  openLinksInExternalApp: false,
 }
 
 export const defaultUISettings: UISettings = {
