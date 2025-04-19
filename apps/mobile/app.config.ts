@@ -41,11 +41,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   userInterfaceStyle: "automatic",
   newArchEnabled: true,
   ios: {
-    icon: {
-      dark: "./assets/images/ios-dark.png",
-      light: iconPath,
-      tinted: "./assets/images/ios-tinted.png",
-    },
     supportsTablet: true,
     bundleIdentifier: "is.follow",
     usesAppleSignIn: true,
