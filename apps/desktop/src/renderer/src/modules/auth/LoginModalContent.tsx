@@ -1,4 +1,5 @@
 import { useMobile } from "@follow/components/hooks/useMobile.js"
+import { Folo } from "@follow/components/icons/folo.js"
 import { Logo } from "@follow/components/icons/logo.js"
 import { MotionButtonBase } from "@follow/components/ui/button/index.js"
 import { Divider } from "@follow/components/ui/divider/Divider.js"
@@ -46,10 +47,9 @@ export const LoginModalContent = (props: LoginModalContentProps) => {
       <div className="-mt-8 mb-4 flex items-center justify-center">
         <Logo className="size-14" />
       </div>
-      <div className="mb-4 mt-6 text-center">
-        <span className="text-2xl">
-          {t("signin.sign_in_to")} <b>{APP_NAME}</b>
-        </span>
+      <div className="mb-4 mt-6 flex items-center justify-center text-center">
+        <span className="text-2xl">{t("signin.sign_in_to")}</span>
+        <Folo className="ml-2 size-10" />
       </div>
 
       <LoginWithPassword runtime={runtime} />

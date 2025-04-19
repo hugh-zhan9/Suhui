@@ -1,3 +1,4 @@
+import { Folo } from "@follow/components/icons/folo.js"
 import { Logo } from "@follow/components/icons/logo.jsx"
 import { LetsIconsResizeDownRightLight } from "@follow/components/icons/resize.jsx"
 import { IN_ELECTRON } from "@follow/shared/constants"
@@ -125,7 +126,8 @@ export function SettingModalLayout(
               <div className="bg-theme-modal-background-opaque flex min-h-0 min-w-44 max-w-[20ch] flex-col rounded-l-xl border-r px-2 py-6">
                 <div className="font-default mb-4 flex h-8 items-center gap-2 px-2 font-bold">
                   <Logo className="mr-1 size-6" />
-                  {APP_NAME}
+
+                  <Folo className="size-8" />
                 </div>
                 <nav className="flex grow flex-col">
                   <SidebarItems />
