@@ -200,7 +200,7 @@ const config: ForgeConfig = {
     }),
     new MakerPKG(
       {
-        name: "Folo Staging",
+        name: "Folo",
         keychain: process.env.KEYCHAIN_PATH,
       },
       ["mas"],
