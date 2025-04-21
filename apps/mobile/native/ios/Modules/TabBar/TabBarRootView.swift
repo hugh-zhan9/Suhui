@@ -22,7 +22,7 @@ class TabBarRootView: ExpoView {
     if #available(iOS 18.0, *) {
       tabBarController.isTabBarHidden = true
     }
-    
+
     return tabBarController
   }()
 
