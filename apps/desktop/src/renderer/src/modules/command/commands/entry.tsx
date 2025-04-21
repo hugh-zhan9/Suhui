@@ -20,6 +20,7 @@ import { navigateEntry } from "~/hooks/biz/useNavigateEntry"
 import { getRouteParams } from "~/hooks/biz/useRouteParams"
 import { tipcClient } from "~/lib/client"
 import { parseHtml } from "~/lib/parse-html"
+import { isInMASReview } from "~/lib/utils"
 import { useActivationModal } from "~/modules/activation"
 import { useGalleryModal } from "~/modules/entry-content/hooks"
 import { useTipModal } from "~/modules/wallet/hooks"
@@ -107,20 +108,24 @@ export const useRegisterEntryCommands = () => {
   const voice = useGeneralSettingKey("voice")
 
   useRegisterFollowCommand([
-    {
-      id: COMMAND_ID.entry.tip,
-      label: t("entry_actions.tip"),
-      icon: <i className="i-mgc-power-outline" />,
-      // keyBinding: shortcuts.entry.tip.key,
-      // when: !isInbox && feed?.ownerUserId !== whoami()?.id && !!populatedEntry,
-      run: ({ userId, feedId, entryId }) => {
-        openTipModal({
-          userId,
-          feedId,
-          entryId,
-        })
-      },
-    },
+    ...(isInMASReview()
+      ? ([] as any[])
+      : [
+          {
+            id: COMMAND_ID.entry.tip,
+            label: t("entry_actions.tip"),
+            icon: <i className="i-mgc-power-outline" />,
+            // keyBinding: shortcuts.entry.tip.key,
+            // when: !isInbox && feed?.ownerUserId !== whoami()?.id && !!populatedEntry,
+            run: ({ userId, feedId, entryId }) => {
+              openTipModal({
+                userId,
+                feedId,
+                entryId,
+              })
+            },
+          },
+        ]),
     {
       id: COMMAND_ID.entry.star,
       label: t("entry_actions.star"),

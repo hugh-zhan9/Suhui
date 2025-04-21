@@ -13,6 +13,7 @@ import { whoami } from "~/atoms/user"
 import { useModalStack } from "~/components/ui/modal/stacked/hooks"
 import { apiClient } from "~/lib/api-fetch"
 import { UrlBuilder } from "~/lib/url-builder"
+import { isInMASReview } from "~/lib/utils"
 import { useBoostModal } from "~/modules/boost/hooks"
 import { useFeedClaimModal } from "~/modules/claim"
 import { FeedForm } from "~/modules/discover/feed-form"
@@ -147,13 +148,17 @@ export const useFeedActions = ({
             },
           ]
         : []),
-      {
-        type: "text" as const,
-        label: t("words.boost"),
-        click: () => {
-          openBoostModal(feedId)
-        },
-      },
+      ...(isInMASReview()
+        ? []
+        : [
+            {
+              type: "text" as const,
+              label: t("words.boost"),
+              click: () => {
+                openBoostModal(feedId)
+              },
+            },
+          ]),
       {
         type: "separator" as const,
         disabled: isEntryList,

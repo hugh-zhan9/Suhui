@@ -108,3 +108,8 @@ export const getBlockchainExplorerUrl = () => {
 export const isInMAS = () => {
   return typeof process !== "undefined" && process.mas
 }
+
+export const isInMASReview = () => {
+  const serverConfigs = getServerConfigs()
+  return isInMAS() && serverConfigs?.MAS_IN_REVIEW
+}

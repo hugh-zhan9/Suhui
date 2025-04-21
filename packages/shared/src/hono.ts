@@ -15937,6 +15937,7 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                     ANNOUNCEMENT: string;
                     MAX_TRIAL_USER_FEED_SUBSCRIPTION: number;
                     MAX_TRIAL_USER_LIST_SUBSCRIPTION: number;
+                    MAS_IN_REVIEW: boolean;
                 };
             };
             outputFormat: "json";
