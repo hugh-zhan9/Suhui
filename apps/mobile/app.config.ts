@@ -25,9 +25,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
   },
   owner: "follow",
-  updates: {
-    url: "https://u.expo.dev/a6335b14-fb84-45aa-ba80-6f6ab8926920",
-  },
   runtimeVersion: {
     policy: "appVersion",
   },
