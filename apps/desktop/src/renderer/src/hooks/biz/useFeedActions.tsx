@@ -9,11 +9,11 @@ import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
 import type { FollowMenuItem, MenuItemInput } from "~/atoms/context-menu"
+import { useIsInMASReview } from "~/atoms/server-configs"
 import { whoami } from "~/atoms/user"
 import { useModalStack } from "~/components/ui/modal/stacked/hooks"
 import { apiClient } from "~/lib/api-fetch"
 import { UrlBuilder } from "~/lib/url-builder"
-import { isInMASReview } from "~/lib/utils"
 import { useBoostModal } from "~/modules/boost/hooks"
 import { useFeedClaimModal } from "~/modules/claim"
 import { FeedForm } from "~/modules/discover/feed-form"
@@ -103,6 +103,8 @@ export const useFeedActions = ({
 
   const isMultipleSelection = feedIds && feedIds.length > 1 && feedIds.includes(feedId)
 
+  const isInMASReview = useIsInMASReview()
+
   const items = useMemo(() => {
     const related = feed || inbox
     if (!related) return []
@@ -148,7 +150,7 @@ export const useFeedActions = ({
             },
           ]
         : []),
-      ...(isInMASReview()
+      ...(isInMASReview
         ? []
         : [
             {

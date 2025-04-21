@@ -3,8 +3,8 @@ import { Divider } from "@follow/components/ui/divider/index.js"
 import { useMemo } from "react"
 import { useTranslation } from "react-i18next"
 
+import { useIsInMASReview } from "~/atoms/server-configs"
 import { useWhoami } from "~/atoms/user"
-import { isInMASReview } from "~/lib/utils"
 import { useBoostModal } from "~/modules/boost/hooks"
 import { useFeedBoostersQuery } from "~/modules/boost/query"
 import { FeedIcon } from "~/modules/feed/feed-icon"
@@ -36,6 +36,8 @@ export const SupportCreator = ({ entryId }: { entryId: string }) => {
   )
   const supportAmount = allSupporters.length
 
+  const isInMASReview = useIsInMASReview()
+
   if (!feed || feed.type !== "feed") return null
 
   return (
@@ -55,7 +57,7 @@ export const SupportCreator = ({ entryId }: { entryId: string }) => {
         )}
         <span className="-mt-6 text-lg font-medium">{feed.title}</span>
 
-        {!isInMASReview() && (
+        {!isInMASReview && (
           <div className="flex items-center gap-4">
             {!isMyOwnedFeed && (
               <Button
