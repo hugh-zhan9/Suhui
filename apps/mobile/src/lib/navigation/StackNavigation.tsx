@@ -14,6 +14,7 @@ import {
 import type { ScreenStackHeaderConfigProps } from "react-native-screens"
 import { ScreenStack } from "react-native-screens"
 
+import { isAndroid } from "../platform"
 import {
   AttachNavigationScrollViewContext,
   SetAttachNavigationScrollViewContext,
@@ -184,7 +185,9 @@ const ModalScreenStackItems: FC<{
   const isFormSheet = rootModalRoute.type === "formSheet"
   const isStackModal = !isFormSheet
 
-  const isFullScreen = rootModalRoute.type !== "modal" && rootModalRoute.type !== "formSheet"
+  // Modal screens are always full screen on Android
+  const isFullScreen =
+    isAndroid || (rootModalRoute.type !== "modal" && rootModalRoute.type !== "formSheet")
 
   if (isStackModal) {
     return (
