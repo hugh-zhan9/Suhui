@@ -9,7 +9,7 @@ import { compareColors, stringToColor } from "@iconify/utils/lib/colors"
 import type { Config } from "tailwindcss"
 import { withUIKit } from "tailwindcss-uikit-colors/src/macos/tailwind"
 
-export const baseTwConfig = withUIKit({
+const twConfig = {
   darkMode: ["class", '[data-theme="dark"]'],
   content: [],
   prefix: "",
@@ -122,7 +122,8 @@ export const baseTwConfig = withUIKit({
 
     require(resolve(__dirname, "./tailwind-extend.css")),
   ],
-} satisfies Config)
+} satisfies Config
+export const baseTwConfig = withUIKit(twConfig) as typeof twConfig
 
 function getCollections(dir: string) {
   // Import icons
