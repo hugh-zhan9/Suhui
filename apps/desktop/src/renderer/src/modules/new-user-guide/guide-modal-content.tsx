@@ -67,6 +67,18 @@ function Outtro() {
       <Logo className="mx-auto size-20" />
       <p className="mt-5 text-xl font-semibold">{t("new_user_guide.outro.title")}</p>
       <p className="text-lg">{t("new_user_guide.outro.description")}</p>
+
+      <div className="space-y-2 text-sm opacity-80">
+        <p>Tip: {t("new_user_guide.step.shortcuts.description1")}</p>
+        <p>
+          <Trans
+            i18nKey="new_user_guide.step.shortcuts.description2"
+            components={{
+              kbd: <Kbd>H</Kbd>,
+            }}
+          />
+        </p>
+      </div>
     </div>
   )
 }
@@ -125,23 +137,23 @@ export function GuideModalContent({ onClose }: { onClose: () => void }) {
           }),
           icon: <img src={RSSHubIcon} className="size-[22px]" />,
         },
-        {
-          title: t.app("new_user_guide.step.shortcuts.title"),
-          content: (
-            <div className="space-y-2">
-              <p>{t.app("new_user_guide.step.shortcuts.description1")}</p>
-              <p>
-                <Trans
-                  i18nKey="new_user_guide.step.shortcuts.description2"
-                  components={{
-                    kbd: <Kbd>H</Kbd>,
-                  }}
-                />
-              </p>
-            </div>
-          ),
-          icon: "i-mgc-hotkey-cute-re",
-        },
+        // {
+        //   title: t.app("new_user_guide.step.shortcuts.title"),
+        //   content: (
+        //     <div className="space-y-2">
+        //       <p>{t.app("new_user_guide.step.shortcuts.description1")}</p>
+        //       <p>
+        //         <Trans
+        //           i18nKey="new_user_guide.step.shortcuts.description2"
+        //           components={{
+        //             kbd: <Kbd>H</Kbd>,
+        //           }}
+        //         />
+        //       </p>
+        //     </div>
+        //   ),
+        //   icon: "i-mgc-hotkey-cute-re",
+        // },
       ].filter((i) => !!i) as {
         title: string
         icon: React.ReactNode
