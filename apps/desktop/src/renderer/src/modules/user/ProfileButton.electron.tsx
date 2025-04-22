@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router"
 
 import rsshubLogoUrl from "~/assets/rsshub-icon.png?url"
+import { useIsInMASReview } from "~/atoms/server-configs"
 import { useIsZenMode, useSetZenMode } from "~/atoms/settings/ui"
 import { useUserRole } from "~/atoms/user"
 import {
@@ -62,6 +63,7 @@ export const ProfileButton: FC<ProfileButtonProps> = memo((props) => {
   const presentActivationModal = useActivationModal()
   const zenModeSetting = useIsZenMode()
   const setZenMode = useSetZenMode()
+  const isInMASReview = useIsInMASReview()
 
   if (status !== "authenticated") {
     return <LoginButton {...props} />
@@ -100,21 +102,23 @@ export const ProfileButton: FC<ProfileButtonProps> = memo((props) => {
           </div>
         </DropdownMenuLabel>
 
-        <DropdownMenuItem
-          onClick={() => {
-            navigate("/power")
-          }}
-        >
-          <div className="flex w-full items-center justify-between gap-6 px-1.5 font-semibold">
-            <PowerButton isLoading={isLoadingWallet} myWallet={myWallet} />
-            <Level level={myWallet?.level?.level || 0} isLoading={isLoadingWallet} />
-            <ActivityPoints
-              className="text-sm"
-              points={myWallet?.level?.prevActivityPoints || 0}
-              isLoading={isLoadingWallet}
-            />
-          </div>
-        </DropdownMenuItem>
+        {!isInMASReview && (
+          <DropdownMenuItem
+            onClick={() => {
+              navigate("/power")
+            }}
+          >
+            <div className="flex w-full items-center justify-between gap-6 px-1.5 font-semibold">
+              <PowerButton isLoading={isLoadingWallet} myWallet={myWallet} />
+              <Level level={myWallet?.level?.level || 0} isLoading={isLoadingWallet} />
+              <ActivityPoints
+                className="text-sm"
+                points={myWallet?.level?.prevActivityPoints || 0}
+                isLoading={isLoadingWallet}
+              />
+            </div>
+          </DropdownMenuItem>
+        )}
 
         <DropdownMenuSeparator />
 
