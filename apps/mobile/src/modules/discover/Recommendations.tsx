@@ -137,6 +137,7 @@ export const RecommendationTab: TabComponent<{
     if (!data) {
       return []
     }
+
     return Object.keys(data).sort((a, b) => {
       const aname = data[a]!.name
       const bname = data[b]!.name
@@ -224,6 +225,14 @@ export const RecommendationTab: TabComponent<{
 
   if (isLoading) {
     return <PlatformActivityIndicator className="flex-1 items-center justify-center" />
+  }
+
+  if (keys.length === 0) {
+    return (
+      <View className="flex-1 items-center justify-center">
+        <Text className="text-secondary-label">This is a barren wasteland of knowledge.</Text>
+      </View>
+    )
   }
 
   return (
