@@ -1,4 +1,3 @@
-import { Divider } from "@follow/components/ui/divider/index.js"
 import { RootPortalProvider } from "@follow/components/ui/portal/provider.js"
 import { EllipsisHorizontalTextWithTooltip } from "@follow/components/ui/typography/index.js"
 import { ZIndexProvider } from "@follow/components/ui/z-index/index.js"
@@ -213,7 +212,7 @@ export const ModalInternal = memo(
       [autoFocus],
     )
 
-    const measureDragConstraints = useCallback((constraints: BoundingBox) => {
+    const measureDragConstraints = useRef((constraints: BoundingBox) => {
       if (getOS() === "Windows") {
         return {
           ...constraints,
@@ -221,7 +220,7 @@ export const ModalInternal = memo(
         }
       }
       return constraints
-    }, [])
+    }).current
 
     useImperativeHandle(ref, () => modalElementRef.current!)
     const currentModalZIndex = MODAL_STACK_Z_INDEX + index * 2
@@ -382,7 +381,7 @@ export const ModalInternal = memo(
                         </Dialog.DialogClose>
                       )}
                     </div>
-                    <Divider className="my-2 shrink-0 border-slate-200 opacity-80 dark:border-neutral-800" />
+                    <div className="my-2 h-px w-full shrink-0 bg-slate-200 dark:bg-neutral-800" />
 
                     <div className="-mx-2 min-h-0 shrink grow overflow-auto px-6 py-2">
                       <ModalContext modalContextProps={ModalContextProps} isTop={!!isTop}>

@@ -129,7 +129,7 @@ function RegisterForm() {
       <h1 className="center flex text-2xl font-bold">
         {t("register.label", { app_name: APP_NAME })}
       </h1>
-      <div className="text-muted-foreground mt-2 text-center">
+      <div className="text-text-secondary mt-2 text-center">
         <Trans
           i18nKey="register.note"
           components={{

@@ -181,6 +181,9 @@ importers:
       tailwindcss-safe-area:
         specifier: 0.6.0
         version: 0.6.0(tailwindcss@3.4.17(ts-node@10.9.2(@types/node@22.14.1)(typescript@5.8.3)))
+      tailwindcss-uikit-colors:
+        specifier: 0.5.0
+        version: 0.5.0
       tar:
         specifier: 7.4.3
         version: 7.4.3
@@ -1061,8 +1064,8 @@ importers:
         specifier: 4.1.1
         version: 4.1.1(patch_hash=24a9527477cf307020abf337d3f5db78cdc015636e7ab47d085a1eb5792a5ff0)(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1))(react@18.3.1)
       react-native-uikit-colors:
-        specifier: 0.3.10
-        version: 0.3.10(27f1c20b5429d566f2f56a15bc4a2371)
+        specifier: 0.5.0
+        version: 0.5.0(27f1c20b5429d566f2f56a15bc4a2371)
       react-native-video:
         specifier: 6.13.0
         version: 6.13.0(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1))(react@18.3.1)
@@ -1472,6 +1475,9 @@ importers:
       sonner:
         specifier: 2.0.3
         version: 2.0.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      tailwindcss-uikit-colors:
+        specifier: 0.5.0
+        version: 0.5.0
       unified:
         specifier: 11.0.5
         version: 11.0.5
@@ -6532,8 +6538,8 @@ packages:
     os: [darwin]
     hasBin: true
 
-  apple-uikit-colors@0.3.10:
-    resolution: {integrity: sha512-X0JDuFSHCdTxmrspiIq2jb1u5xgh4w2Bi4C9hlBPFrlJMU2qcEdNjXDzBVg9gJAdc+UwRoOwuIikR3l0kkNJTQ==}
+  apple-uikit-colors@0.5.0:
+    resolution: {integrity: sha512-4xucVg1ulEh3F48PzbZ9wa7qJ0CwUaOgxuF+rtqTJYSYuus26HaH9xc5QnKpgd2scs9qg4AOP7oo2ACrk+pRZw==}
 
   archiver-utils@2.1.0:
     resolution: {integrity: sha512-bEL/yUb/fNNiNTuUz979Z0Yg5L+LzLxGJz8x79lYmR54fmTIb6ob/hNQgkQnIUDWIFjZVQwl9Xs356I6BAMHfw==}
@@ -12881,8 +12887,8 @@ packages:
       shaka-player:
         optional: true
 
-  react-native-uikit-colors@0.3.10:
-    resolution: {integrity: sha512-7YgdTZw7vJWg2l7lEAkn0Prs9hLBYPRbDOxzpqLqZLKo2KSbpvf8OCPxlzFoXhZ2fLCbRWHxZZ7YjmHAZhhvgQ==}
+  react-native-uikit-colors@0.5.0:
+    resolution: {integrity: sha512-CVZXlKXhTLJDL+M5mWzPfnM7RwIjGze0J85fMHOFm9nWxt4tEd/iFtgWOACQ3xplZJ3UBz2ZFry8iZcUu/jeGA==}
     peerDependencies:
       nativewind: '>=4.1.0'
       react: 18.3.1
@@ -14007,8 +14013,8 @@ packages:
     peerDependencies:
       tailwindcss: ^2.0.0 || >=3.0.0
 
-  tailwindcss-uikit-colors@0.3.10:
-    resolution: {integrity: sha512-++vPFEcbIM+13XSl/mFcF43PY4y7qMatnN0SuxvuaMRLPVQB9PHJ/QX1ZmaeiGK9idym8RQP4tIQv4NjkkrSVw==}
+  tailwindcss-uikit-colors@0.5.0:
+    resolution: {integrity: sha512-Puvb9js7VJ9fTcAuf9xKcHnRSzGoQTEnxAOlwPP8d55fvldECqW1tXevze6OGM7gT8Fl7B3wp2FgJPCDC7DrCg==}
 
   tailwindcss@3.4.17:
     resolution: {integrity: sha512-w33E2aCvSDP0tW9RZuNXadXlkHXqFzSkQew/aIa2i/Sj8fThxwovwlXHSPXTbAHwEIhBFXAedUhP2tueAKP8Og==}
@@ -21678,7 +21684,7 @@ snapshots:
       repeat-string: 1.6.1
     optional: true
 
-  apple-uikit-colors@0.3.10: {}
+  apple-uikit-colors@0.5.0: {}
 
   archiver-utils@2.1.0:
     dependencies:
@@ -29359,14 +29365,14 @@ snapshots:
       react: 18.3.1
       react-native: 0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)
 
-  react-native-uikit-colors@0.3.10(27f1c20b5429d566f2f56a15bc4a2371):
+  react-native-uikit-colors@0.5.0(27f1c20b5429d566f2f56a15bc4a2371):
     dependencies:
-      apple-uikit-colors: 0.3.10
+      apple-uikit-colors: 0.5.0
       nativewind: 4.1.23(react-native-reanimated@3.17.4(@babel/core@7.26.10)(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1))(react@18.3.1))(react-native-safe-area-context@5.4.0(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1))(react@18.3.1))(react-native-svg@15.11.2(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1))(react@18.3.1))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1))(react@18.3.1)(tailwindcss@3.4.17(ts-node@10.9.2(@types/node@22.14.1)(typescript@5.8.3)))
       react: 18.3.1
       react-native: 0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)
       tailwindcss: 3.4.17(ts-node@10.9.2(@types/node@22.14.1)(typescript@5.8.3))
-      tailwindcss-uikit-colors: 0.3.10
+      tailwindcss-uikit-colors: 0.5.0
 
   react-native-video@6.13.0(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1))(react@18.3.1):
     dependencies:
@@ -30801,9 +30807,9 @@ snapshots:
     dependencies:
       tailwindcss: 3.4.17(ts-node@10.9.2(@types/node@22.14.1)(typescript@5.8.3))
 
-  tailwindcss-uikit-colors@0.3.10:
+  tailwindcss-uikit-colors@0.5.0:
     dependencies:
-      apple-uikit-colors: 0.3.10
+      apple-uikit-colors: 0.5.0
 
   tailwindcss@3.4.17(ts-node@10.9.2(@types/node@22.14.1)(typescript@5.8.3)):
     dependencies:

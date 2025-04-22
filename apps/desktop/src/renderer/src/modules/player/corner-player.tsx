@@ -220,7 +220,7 @@ const CornerPlayerImpl = ({ hideControls, rounded }: ControlButtonProps) => {
           </Marquee>
           <div
             className={cn(
-              "text-muted-foreground mt-0.5 overflow-hidden truncate text-xs",
+              "text-text-secondary mt-0.5 overflow-hidden truncate text-xs",
               !isMobile && "group-hover:opacity-0",
             )}
           >

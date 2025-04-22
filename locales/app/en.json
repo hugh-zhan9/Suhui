@@ -215,7 +215,7 @@
   "login.continueWith": "Continue with {{provider}}",
   "login.email": "Email",
   "login.forget_password.note": "Forgot your password?",
-  "login.or": "Or",
+  "login.or": "OR",
   "login.password": "Password",
   "login.signUp": "Sign up with email",
   "login.submit": "Submit",

@@ -57,7 +57,7 @@ export const LoginModalContent = (props: LoginModalContentProps) => {
         <div className="my-3 w-full space-y-2">
           <div className="flex items-center justify-center">
             <Divider className="flex-1" />
-            <p className="text-muted-foreground px-4 text-center text-sm">{t("login.or")}</p>
+            <p className="text-text-tertiary px-4 text-center text-sm">{t("login.or")}</p>
             <Divider className="flex-1" />
           </div>
         </div>
@@ -73,7 +73,7 @@ export const LoginModalContent = (props: LoginModalContentProps) => {
               >
                 <div
                   className={clsx(
-                    "center hover:bg-muted inline-flex rounded-full border p-2.5 duration-200 [&_svg]:size-6",
+                    "center hover:bg-material-medium inline-flex rounded-full border p-2.5 duration-200 [&_svg]:size-6",
                     overrideAuthProvidersClassName[key],
                   )}
                   dangerouslySetInnerHTML={{

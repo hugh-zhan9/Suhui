@@ -99,7 +99,7 @@ export const Autocomplete = forwardRef<HTMLInputElement, AutocompleteProps>(
                     onWheel={stopPropagation}
                     className={cn(
                       "pointer-events-auto max-h-48 grow",
-                      "shadow-perfect border-border bg-popover text-popover-foreground overflow-auto rounded-md border",
+                      "shadow-perfect border-border bg-material-medium text-text backdrop-blur-background overflow-auto rounded-md border",
                       "w-[var(--input-width)] empty:invisible",
                     )}
                   >

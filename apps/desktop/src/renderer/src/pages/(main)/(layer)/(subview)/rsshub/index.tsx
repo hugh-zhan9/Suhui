@@ -54,7 +54,7 @@ export function Component() {
           <span>{t("rsshub.add_new_instance")}</span>
         </div>
       </Button>
-      <div className="text-muted-foreground text-sm">{t("rsshub.public_instances")}</div>
+      <div className="text-text-secondary text-sm">{t("rsshub.public_instances")}</div>
       <List data={list?.data} />
     </div>
   )

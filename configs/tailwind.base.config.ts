@@ -1,3 +1,4 @@
+/* @moduleResolution bundler */
 import "./tw-css-plugin"
 
 import path, { resolve } from "node:path"
@@ -6,8 +7,9 @@ import { getIconCollections, iconsPlugin } from "@egoist/tailwindcss-icons"
 import { cleanupSVG, importDirectorySync, isEmptyColor, parseColors, runSVGO } from "@iconify/tools"
 import { compareColors, stringToColor } from "@iconify/utils/lib/colors"
 import type { Config } from "tailwindcss"
+import { withUIKit } from "tailwindcss-uikit-colors/src/macos/tailwind"
 
-export const baseTwConfig = {
+export const baseTwConfig = withUIKit({
   darkMode: ["class", '[data-theme="dark"]'],
   content: [],
   prefix: "",
@@ -31,24 +33,8 @@ export const baseTwConfig = {
         background: "hsl(var(--background) / <alpha-value>)",
         foreground: "hsl(var(--foreground) / <alpha-value>)",
 
-        destructive: {
-          DEFAULT: "hsl(var(--destructive) / <alpha-value>)",
-          foreground: "hsl(var(--destructive-foreground) / <alpha-value>)",
-        },
-        muted: {
-          DEFAULT: "hsl(var(--muted) / <alpha-value>)",
-          foreground: "hsl(var(--muted-foreground) / <alpha-value>)",
-        },
         accent: "hsl(var(--fo-a) / <alpha-value>)",
 
-        popover: {
-          DEFAULT: "hsl(var(--popover) / <alpha-value>)",
-          foreground: "hsl(var(--popover-foreground) / <alpha-value>)",
-        },
-        card: {
-          DEFAULT: "hsl(var(--card) / <alpha-value>)",
-          foreground: "hsl(var(--card-foreground) / <alpha-value>)",
-        },
         native: {
           DEFAULT: "hsl(var(--fo-native) / <alpha-value>)",
           active: "hsl(var(--fo-native-active) / <alpha-value>)",
@@ -106,6 +92,9 @@ export const baseTwConfig = {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      backdropBlur: {
+        background: "80px",
+      },
 
       typography: (theme: any) => ({
         zinc: {
@@ -133,7 +122,7 @@ export const baseTwConfig = {
 
     require(resolve(__dirname, "./tailwind-extend.css")),
   ],
-} satisfies Config
+} satisfies Config)
 
 function getCollections(dir: string) {
   // Import icons
