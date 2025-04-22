@@ -137,23 +137,6 @@ export function GuideModalContent({ onClose }: { onClose: () => void }) {
           }),
           icon: <img src={RSSHubIcon} className="size-[22px]" />,
         },
-        // {
-        //   title: t.app("new_user_guide.step.shortcuts.title"),
-        //   content: (
-        //     <div className="space-y-2">
-        //       <p>{t.app("new_user_guide.step.shortcuts.description1")}</p>
-        //       <p>
-        //         <Trans
-        //           i18nKey="new_user_guide.step.shortcuts.description2"
-        //           components={{
-        //             kbd: <Kbd>H</Kbd>,
-        //           }}
-        //         />
-        //       </p>
-        //     </div>
-        //   ),
-        //   icon: "i-mgc-hotkey-cute-re",
-        // },
       ].filter((i) => !!i) as {
         title: string
         icon: React.ReactNode
@@ -290,9 +273,12 @@ export function GuideModalContent({ onClose }: { onClose: () => void }) {
 
                   onComplete() {
                     setIsLottieAnimating(false)
-                    onClose()
                   },
                 })
+
+                setTimeout(() => {
+                  onClose()
+                }, 50)
               }
             }}
           >
