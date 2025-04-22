@@ -260,7 +260,7 @@ const TabBarBackground = () => {
         <ThemedBlurView style={styles.blurEffect} />
       </Animated.View>
       <Animated.View
-        className="bg-non-opaque-separator dark:bg-opaque-separator/50 absolute top-0 w-full"
+        className="bg-opaque-separator/50 absolute top-0 w-full"
         style={[
           separatorStyle,
           {

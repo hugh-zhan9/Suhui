@@ -101,6 +101,7 @@ export const Recommendations = () => {
             {loadedTabIndex.has(index) && (
               <RecommendationTab
                 key={category}
+                insets={{ top: 44 + insets.top - 10, bottom: insets.bottom }}
                 contentContainerStyle={{
                   paddingTop: 44 + insets.top,
                   paddingBottom: insets.bottom,
@@ -118,9 +119,16 @@ export const Recommendations = () => {
 
 export const RecommendationTab: TabComponent<{
   contentContainerStyle?: ContentStyle
-
+  insets?: { top?: number; bottom?: number }
   reanimatedScrollY?: SharedValue<number>
-}> = ({ tab, isSelected, contentContainerStyle, reanimatedScrollY, ...rest }) => {
+}> = ({
+  tab,
+  isSelected,
+  contentContainerStyle,
+  reanimatedScrollY,
+  insets: customInsets,
+  ...rest
+}) => {
   const { data, isLoading } = useQuery({
     queryKey: ["rsshub-popular", "cache", tab.value],
     queryFn: () => fetchRsshubPopular(tab.value, "all").then((res) => res.data),
@@ -241,8 +249,8 @@ export const RecommendationTab: TabComponent<{
         contentContainerStyle={contentContainerStyle}
         scrollIndicatorInsets={{
           right: -2,
-          top: 0,
-          bottom: insets.bottom,
+          top: customInsets?.top ?? 0,
+          bottom: customInsets?.bottom ?? insets.bottom,
         }}
         removeClippedSubviews
       />
@@ -261,7 +269,8 @@ const ItemRenderer = ({
     // Rendering header
     return (
       <View className="border-b-opaque-separator mx-6 mb-1 mt-6 pb-1">
-        <Text className="text-label text-xl font-semibold">{item}</Text>
+        <Text className="text-label mb-4 text-xl font-semibold">{item}</Text>
+        <View className="bg-opaque-separator/30 mr-6 h-px" />
       </View>
     )
   } else {
