@@ -265,7 +265,7 @@ const MediaImpl: FC<MediaProps> = ({
         >
           <span
             className={cn(
-              "bg-theme-placeholder-image relative inline-block max-w-full",
+              "bg-material-ultra-thick relative inline-block max-w-full",
               mediaContainerClassName,
             )}
             style={{

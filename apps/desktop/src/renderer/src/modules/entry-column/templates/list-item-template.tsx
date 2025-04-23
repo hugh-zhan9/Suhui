@@ -189,7 +189,7 @@ export function ListItem({
               fallbackElement={
                 <div
                   className={clsx(
-                    "bg-theme-placeholder-image",
+                    "bg-material-ultra-thick",
                     settingWideMode ? "size-[65px]" : "size-[80px]",
                     "rounded",
                   )}

@@ -93,7 +93,7 @@ export const EntryUser: Component<{
           <Avatar className="border-border ring-background aspect-square size-7 border ring-1">
             <AvatarImage
               src={replaceImgUrlIfNeed(user?.image || undefined)}
-              className="bg-theme-placeholder-image"
+              className="bg-material-ultra-thick"
             />
             <AvatarFallback>{getNameInitials(user.name || "")}</AvatarFallback>
           </Avatar>

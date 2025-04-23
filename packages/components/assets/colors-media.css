@@ -15,14 +15,9 @@
   --fo-modal-background: theme(colors.zinc.50/0.8);
   --fo-modal-background-opaque: theme(colors.zinc.50);
 
-  --fo-text-primary-hover: 0 0% 14.9%;
-
   --fo-button-hover: theme(colors.zinc.500/0.1);
-  --fo-image-placeholder: theme(colors.zinc.100);
-  --fo-text-placeholder: theme(colors.zinc.400);
 
   --background: 0 0% 100%;
-  --foreground: 20 14.3% 4.1%;
 
   --border: 20 5.9% 90%;
   --radius: 0.5rem;
@@ -49,14 +44,9 @@
     --fo-modal-background: theme(colors.neutral.900/0.8);
     --fo-modal-background-opaque: theme(colors.neutral.900);
 
-    --fo-text-primary-hover: 240 4.9% 83.9%;
-
     --fo-button-hover: theme(colors.neutral.400/0.15);
-    --fo-image-placeholder: theme(colors.neutral.800);
-    --fo-text-placeholder: theme(colors.zinc.500);
 
     --background: 0 0% 7.1%;
-    --foreground: 60 9.1% 97.8%;
 
     --border: 0 0% 22.1%;
   }

@@ -86,19 +86,12 @@ const twConfig = {
 
           background: "var(--fo-background)",
 
-          "foreground-hover": "hsl(var(--fo-text-primary-hover) / <alpha-value>)",
-
           modal: {
             background: "var(--fo-modal-background)",
             "background-opaque": "var(--fo-modal-background-opaque)",
           },
           button: {
             hover: "var(--fo-button-hover)",
-          },
-
-          placeholder: {
-            text: "var(--fo-text-placeholder)",
-            image: "var(--fo-image-placeholder)",
           },
         },
       },

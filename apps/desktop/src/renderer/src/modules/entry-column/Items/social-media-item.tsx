@@ -289,7 +289,7 @@ const SocialMediaGallery = ({ media }: { media: MediaModel[] }) => {
               type={media.type}
               previewImageUrl={media.preview_image_url}
               blurhash={media.blurhash}
-              className="data-[state=loading]:!bg-theme-placeholder-image size-28 shrink-0"
+              className="data-[state=loading]:!bg-material-ultra-thick size-28 shrink-0"
               loading="lazy"
               proxy={proxySize}
               onClick={() => {
