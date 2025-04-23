@@ -48,10 +48,10 @@ export const ForgetPasswordScreen: NavigationControllerView = () => {
     >
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <HeaderCloseOnly />
-        <View className="flex-1 justify-between" style={{ paddingTop: insets.bottom + 56 }}>
+        <View className="flex-1 justify-between px-5" style={{ paddingTop: insets.bottom + 56 }}>
           <View className="items-center">
             <Text className="text-text text-center text-4xl font-bold">Forgot password?</Text>
-            <Text className="text-text mx-10 mt-6 text-lg">
+            <Text className="text-text mx-10 mt-6 text-center text-lg">
               Enter your email address that you use with your account to continue.
             </Text>
 
