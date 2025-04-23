@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { useAtomValue } from "jotai"
 import { memo } from "react"
-import { Text, View } from "react-native"
+import { Text, useWindowDimensions, View } from "react-native"
 
 import { FallbackIcon } from "@/src/components/ui/icon/fallback-icon"
 import { Image } from "@/src/components/ui/image/Image"
@@ -13,7 +13,7 @@ import { FollowScreen } from "@/src/screens/(modal)/FollowScreen"
 import { useSubscriptionByListId } from "@/src/store/subscription/hooks"
 
 import { useSearchPageContext } from "../ctx"
-import { BaseSearchPageFlatList, ItemSeparator, RenderScrollComponent } from "./__base"
+import { ItemSeparator } from "./__base"
 import { useDataSkeleton } from "./hooks"
 
 type SearchResultItem = Awaited<ReturnType<typeof apiClient.discover.$post>>["data"][number]
@@ -21,8 +21,9 @@ type SearchResultItem = Awaited<ReturnType<typeof apiClient.discover.$post>>["da
 export const SearchList = () => {
   const { searchValueAtom } = useSearchPageContext()
   const searchValue = useAtomValue(searchValueAtom)
+  const windowWidth = useWindowDimensions().width
 
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["searchList", searchValue],
     queryFn: () => {
       return apiClient.discover.$post({
@@ -40,23 +41,19 @@ export const SearchList = () => {
   if (data === undefined) return null
 
   return (
-    <BaseSearchPageFlatList
-      refreshing={isLoading}
-      onRefresh={refetch}
-      keyExtractor={keyExtractor}
-      renderScrollComponent={RenderScrollComponent}
-      data={data?.data}
-      renderItem={renderItem}
-      ItemSeparatorComponent={ItemSeparator}
-    />
+    <View style={{ width: windowWidth }}>
+      <Text className="text-text/60 px-6 pt-4">Found {data.data?.length} lists</Text>
+      <View>
+        {data.data?.map((item) => (
+          <View key={item.feed?.id || Math.random().toString()}>
+            <SearchListCard item={item} />
+            <ItemSeparator />
+          </View>
+        ))}
+      </View>
+    </View>
   )
 }
-
-const keyExtractor = (item: SearchResultItem) => item.list?.id ?? Math.random().toString()
-
-const renderItem = ({ item }: { item: SearchResultItem }) => (
-  <SearchListCard key={item.list?.id} item={item} />
-)
 
 const SearchListCard = memo(({ item }: { item: SearchResultItem }) => {
   const isSubscribed = useSubscriptionByListId(item.list?.id ?? "")
