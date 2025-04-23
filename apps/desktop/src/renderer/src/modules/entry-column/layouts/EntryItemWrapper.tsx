@@ -13,7 +13,7 @@ import {
   useShowContextMenu,
 } from "~/atoms/context-menu"
 import { useGeneralSettingKey } from "~/atoms/settings/general"
-import { useAsRead } from "~/hooks/biz/useAsRead"
+import { useEntryIsRead } from "~/hooks/biz/useAsRead"
 import { useEntryActions } from "~/hooks/biz/useEntryActions"
 import { useFeedActions } from "~/hooks/biz/useFeedActions"
 import { useNavigateEntry } from "~/hooks/biz/useNavigateEntry"
@@ -45,7 +45,7 @@ export const EntryItemWrapper: FC<
     [entry.entries.id],
   )
 
-  const asRead = useAsRead(entry)
+  const asRead = useEntryIsRead(entry)
   const hoverMarkUnread = useGeneralSettingKey("hoverMarkUnread")
 
   const handleMouseEnter = useDebounceCallback(

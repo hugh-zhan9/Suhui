@@ -101,6 +101,7 @@ export const ProfileButton: FC<ProfileButtonProps> = memo((props) => {
         </DropdownMenuLabel>
 
         <DropdownMenuItem
+          highlightColor="gray"
           onClick={() => {
             navigate("/power")
           }}

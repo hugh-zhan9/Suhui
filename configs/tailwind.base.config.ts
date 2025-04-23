@@ -6,7 +6,8 @@ import path, { resolve } from "node:path"
 import { getIconCollections, iconsPlugin } from "@egoist/tailwindcss-icons"
 import { cleanupSVG, importDirectorySync, isEmptyColor, parseColors, runSVGO } from "@iconify/tools"
 import { compareColors, stringToColor } from "@iconify/utils/lib/colors"
-import type { Config } from "tailwindcss"
+import { theme } from "tailwindcss/defaultConfig"
+import type { Config } from "tailwindcss/types/config"
 import { withUIKit } from "tailwindcss-uikit-colors/src/macos/tailwind"
 
 const twConfig = {
@@ -20,6 +21,20 @@ const twConfig = {
       screens: {
         "2xl": "1400px",
       },
+    },
+
+    fontSize: {
+      ...theme?.fontSize,
+      largeTitle: ["26px", "32px"],
+      title1: ["22px", "26px"],
+      title2: ["17px", "22px"],
+      title3: ["15px", "20px"],
+      headline: ["13px", "16px"],
+      body: ["13px", "16px"],
+      callout: ["12px", "15px"],
+      subheadline: ["11px", "14px"],
+      footnote: ["10px", "13px"],
+      caption: ["10px", "13px"],
     },
 
     extend: {
@@ -52,9 +67,19 @@ const twConfig = {
             "950": "#451505",
           },
 
+          boxShadow: {
+            "context-menu":
+              "0px 0px 1px rgba(0, 0, 0, 0.4), 0px 0px 1.5px rgba(0, 0, 0, 0.3), 0px 7px 22px rgba(0, 0, 0, 0.25)",
+          },
+
           item: {
             active: "var(--fo-item-active)",
             hover: "var(--fo-item-hover)",
+          },
+          selection: {
+            active: "var(--fo-selection-active)",
+            hover: "var(--fo-selection-hover)",
+            foreground: "var(--fo-selection-foreground)",
           },
 
           inactive: "hsl(var(--fo-inactive) / <alpha-value>)",

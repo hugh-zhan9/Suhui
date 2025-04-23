@@ -17,7 +17,7 @@ import { RelativeTime } from "~/components/ui/datetime"
 import { HTML } from "~/components/ui/markdown/HTML"
 import { Media } from "~/components/ui/media"
 import { usePreviewMedia } from "~/components/ui/media/hooks"
-import { useAsRead } from "~/hooks/biz/useAsRead"
+import { useEntryIsRead } from "~/hooks/biz/useAsRead"
 import { useSortedEntryActions } from "~/hooks/biz/useEntryActions"
 import { jotaiStore } from "~/lib/jotai"
 import { parseSocialMedia } from "~/lib/parsers"
@@ -34,7 +34,7 @@ const socialMediaContentWidthAtom = atom(0)
 export const SocialMediaItem: EntryListItemFC = ({ entryId, entryPreview, translation }) => {
   const entry = useEntry(entryId) || entryPreview
 
-  const asRead = useAsRead(entry)
+  const asRead = useEntryIsRead(entry)
   const feed = useFeedById(entry?.feedId)
 
   const ref = useRef<HTMLDivElement>(null)

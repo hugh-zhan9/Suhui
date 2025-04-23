@@ -1,3 +1,8 @@
+:root {
+  --fo-selection-active: theme(colors.accent/90);
+  --fo-selection-hover: theme(colors.accent/80);
+  --fo-selection-foreground: theme(colors.white);
+}
 [data-theme="light"] {
   --fo-a: 21.6 100% 50%;
 

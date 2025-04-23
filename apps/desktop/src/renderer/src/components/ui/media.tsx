@@ -340,7 +340,7 @@ const FallbackMedia: FC<MediaProps> = ({ type, mediaContainerClassName, classNam
       )}
     >
       <div className="@sm:hidden @md:contents hidden">
-        <i className="i-mgc-close-cute-re text-xl text-red-500" />
+        <i className="i-mgc-close-cute-re text-red text-xl" />
         <p>Media loaded failed</p>
         <div className="space-x-1 break-all px-4 text-sm">
           Go to{" "}

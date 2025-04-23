@@ -26,6 +26,10 @@
 
   --border: 20 5.9% 90%;
   --radius: 0.5rem;
+
+  --fo-selection-active: theme(colors.accent/90);
+  --fo-selection-hover: theme(colors.accent/80);
+  --fo-selection-foreground: theme(colors.white);
 }
 
 @media (prefers-color-scheme: dark) {

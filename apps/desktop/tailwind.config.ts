@@ -48,6 +48,7 @@ export default resolveConfig(
         colors: {
           sidebar: "hsl(var(--fo-sidebar) / <alpha-value>)",
         },
+
         keyframes: {
           "caret-blink": {
             "0%,70%,100%": { opacity: "1" },
@@ -77,7 +78,7 @@ export default resolveConfig(
         addVariant("macos", ":where(html[data-os='macOS']) &")
         addVariant("windows", ":where(html[data-os='Windows']) &")
       }),
-
+      require("tailwindcss-multi"),
       plugin(({ addUtilities, matchUtilities, theme }) => {
         addUtilities({
           ".safe-inset-top": {
