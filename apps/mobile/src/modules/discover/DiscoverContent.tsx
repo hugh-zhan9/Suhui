@@ -61,8 +61,8 @@ const CategoryItem = memo(({ category }: { category: string }) => {
     >
       <LinearGradient
         colors={[
-          CategoryMap[category as keyof typeof CategoryMap].fromColor,
-          CategoryMap[category as keyof typeof CategoryMap].toColor,
+          `${CategoryMap[category as keyof typeof CategoryMap].color}80`,
+          CategoryMap[category as keyof typeof CategoryMap].color,
         ]}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
