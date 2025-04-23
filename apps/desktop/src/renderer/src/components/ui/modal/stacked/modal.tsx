@@ -328,7 +328,7 @@ export const ModalInternal = memo(
                   {...modalMontionConfig}
                   animate={animateController}
                   className={cn(
-                    "relative flex flex-col overflow-hidden rounded-lg p-2",
+                    "relative flex flex-col overflow-hidden rounded-lg px-2 pt-2",
                     opaque
                       ? "bg-theme-modal-background-opaque"
                       : "bg-theme-modal-background backdrop-blur-sm",
@@ -381,9 +381,9 @@ export const ModalInternal = memo(
                         </Dialog.DialogClose>
                       )}
                     </div>
-                    <div className="my-2 h-px w-full shrink-0 bg-slate-200 dark:bg-neutral-800" />
+                    <div className="mt-2 h-px w-full shrink-0 bg-slate-200 dark:bg-neutral-800" />
 
-                    <div className="-mx-2 min-h-0 shrink grow overflow-auto px-6 py-2">
+                    <div className="-mx-2 min-h-0 shrink grow overflow-auto px-6 py-4">
                       <ModalContext modalContextProps={ModalContextProps} isTop={!!isTop}>
                         {finalChildren}
                       </ModalContext>

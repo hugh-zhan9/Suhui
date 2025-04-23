@@ -102,7 +102,7 @@ const ViewTabs = ({ onViewChange }: { onViewChange?: (view: number) => void }) =
 
   return (
     <div
-      className="text-theme-vibrancyFg flex w-full shrink items-center justify-between gap-4 overflow-x-auto overflow-y-hidden text-xl"
+      className="text-text-secondary flex w-full shrink items-center justify-between gap-4 overflow-x-auto overflow-y-hidden text-xl"
       onClick={stopPropagation}
     >
       {views.map((item) => (

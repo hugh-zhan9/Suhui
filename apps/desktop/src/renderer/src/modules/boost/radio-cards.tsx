@@ -48,7 +48,7 @@ export const RadioCards = ({
                 <h3 className="text-sm font-medium leading-none">
                   {dayjs.duration(item.value, "months").humanize()}
                 </h3>
-                <p className="text-theme-vibrancyFg mt-1 flex items-center justify-center gap-1 text-xs leading-none">
+                <p className="text-text-secondary mt-1 flex items-center justify-center gap-1 text-xs leading-none">
                   {item.value * monthlyBoostCost}
                   <i className="i-mgc-power text-accent" />
                 </p>

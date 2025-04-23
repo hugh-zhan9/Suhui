@@ -2,9 +2,6 @@
 :root {
   --fo-a: 21.6 100% 50%;
 
-  --fo-vibrancy-background: theme(colors.native.active);
-  --fo-vibrancy-foreground: 0 0% 45%;
-
   --fo-text-primary: 0 0% 10%;
 
   --fo-item-active: theme(colors.zinc.400/0.3);
@@ -34,9 +31,6 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --fo-a: 21.6 100% 50%;
-
-    --fo-vibrancy-foreground: 0 0% 83%;
-    --fo-vibrancy-background: theme(colors.native.active);
 
     --fo-text-primary: 0 0% 80%;
 

@@ -200,7 +200,7 @@ export function GuideModalContent({ onClose }: { onClose: () => void }) {
                   {title}
                 </h1>
                 {!!guideSteps[step - 1]!.description && (
-                  <div className="text-theme-vibrancyFg mx-auto mt-4 flex max-w-prose justify-center text-center text-sm">
+                  <div className="text-text-secondary mx-auto mt-4 flex max-w-prose justify-center text-center text-sm">
                     <Markdown className="prose max-w-[100ch] text-left text-sm">
                       {guideSteps[step - 1]!.description!}
                     </Markdown>

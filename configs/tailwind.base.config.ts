@@ -57,9 +57,6 @@ const twConfig = {
             "950": "#451505",
           },
 
-          vibrancyFg: "hsl(var(--fo-vibrancy-foreground) / <alpha-value>)",
-          vibrancyBg: "var(--fo-vibrancy-background)",
-
           item: {
             active: "var(--fo-item-active)",
             hover: "var(--fo-item-hover)",

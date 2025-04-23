@@ -206,7 +206,7 @@ export const AchievementModalContent: FC = () => {
 
       <div className="mt-4 text-xl font-bold">{t("words.achievement")}</div>
 
-      <small className="text-theme-vibrancyFg mt-1 gap-1">
+      <small className="text-text-secondary mt-1 gap-1">
         {t("achievement.description")}
         <sup className="inline-block translate-y-1 text-xs">*</sup>
       </small>
