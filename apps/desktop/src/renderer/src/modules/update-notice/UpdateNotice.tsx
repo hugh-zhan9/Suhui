@@ -1,3 +1,4 @@
+import { Spring } from "@follow/components/constants/spring.js"
 import { tracker } from "@follow/tracker"
 import { cn } from "@follow/utils/utils"
 import { m, useMotionTemplate, useMotionValue } from "motion/react"
@@ -6,7 +7,6 @@ import { useTranslation } from "react-i18next"
 
 import { useAudioPlayerAtomSelector } from "~/atoms/player"
 import { getUpdaterStatus, setUpdaterStatus, useUpdaterStatus } from "~/atoms/updater"
-import { softBouncePreset } from "~/components/ui/constants/spring"
 import { tipcClient } from "~/lib/client"
 import { handlers } from "~/tipc"
 
@@ -76,7 +76,7 @@ export const UpdateNotice = () => {
       onClick={handleClick}
       initial={{ y: 50, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={softBouncePreset}
+      transition={Spring.presets.softBounce}
     >
       <m.div
         layout

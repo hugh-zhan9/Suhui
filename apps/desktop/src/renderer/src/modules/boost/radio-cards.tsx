@@ -1,9 +1,8 @@
+import { Spring } from "@follow/components/constants/spring.js"
 import { RadioCard } from "@follow/components/ui/radio-group/RadioCard.js"
 import { RadioGroup } from "@follow/components/ui/radio-group/RadioGroup.js"
 import dayjs from "dayjs"
 import { m } from "motion/react"
-
-import { softSpringPreset } from "~/components/ui/constants/spring"
 
 const radios = [
   {
@@ -36,7 +35,7 @@ export const RadioCards = ({
         initial={{ height: "auto", opacity: 0 }}
         animate={{ height: "auto", opacity: 1 }}
         exit={{ height: 0, opacity: 0 }}
-        transition={softSpringPreset}
+        transition={Spring.presets.softSpring}
       >
         {radios.map((item) => (
           <RadioCard

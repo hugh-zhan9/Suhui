@@ -2,6 +2,7 @@
  * @see https://github.com/toeverything/AFFiNE/blob/98e35384a6f71bf64c668b8f13afcaf28c9b8e97/packages/frontend/core/src/modules/find-in-page/view/find-in-page-modal.tsx
  * @copyright AFFiNE, Folo
  */
+import { Spring } from "@follow/components/constants/spring.js"
 import { RootPortal } from "@follow/components/ui/portal/index.jsx"
 import { useInputComposition, useRefValue } from "@follow/hooks"
 import { useSubscribeElectronEvent } from "@follow/shared/event"
@@ -11,7 +12,6 @@ import type { FC } from "react"
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
 import { useDebounceCallback, useEventCallback } from "usehooks-ts"
 
-import { softSpringPreset } from "~/components/ui/constants/spring"
 import { tipcClient } from "~/lib/client"
 import { observeResize } from "~/lib/observe-resize"
 
@@ -258,7 +258,7 @@ export const CmdF = () => {
             initial={{ opacity: 0.8, y: -150 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -150 }}
-            transition={softSpringPreset}
+            transition={Spring.presets.softSpring}
           >
             <CmdFImpl
               onClose={() => {

@@ -1,6 +1,5 @@
+import { Spring } from "@follow/components/constants/spring.js"
 import type { MotionProps, Target } from "motion/react"
-
-import { microReboundPreset } from "../../constants/spring"
 
 const enterStyle: Target = {
   scale: 1,
@@ -21,7 +20,7 @@ export const modalMontionConfig = {
       type: "tween",
     },
   },
-  transition: microReboundPreset,
+  transition: Spring.presets.microRebound,
 } satisfies MotionProps
 
 // Radix context menu z-index 999

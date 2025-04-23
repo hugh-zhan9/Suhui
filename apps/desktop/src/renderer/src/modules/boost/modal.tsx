@@ -1,10 +1,10 @@
+import { Spring } from "@follow/components/constants/spring.js"
 import { Button } from "@follow/components/ui/button/index.js"
 import { LoadingWithIcon } from "@follow/components/ui/loading/index.jsx"
 import { from } from "dnum"
 import { AnimatePresence, m } from "motion/react"
 import { useCallback, useState } from "react"
 
-import { softSpringPreset } from "~/components/ui/constants/spring"
 import { useCurrentModal } from "~/components/ui/modal/stacked/hooks"
 import { useI18n } from "~/hooks/common"
 import { useBoostFeedMutation, useBoostStatusQuery } from "~/modules/boost/query"
@@ -84,7 +84,11 @@ export const BoostModalContent = ({ feedId }: { feedId: string }) => {
 
       {boostFeedMutation.isSuccess ? (
         <>
-          <m.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={softSpringPreset}>
+          <m.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={Spring.presets.softSpring}
+          >
             {t("boost.boost_success_thanks")}
           </m.p>
           <Button variant="primary" onClick={() => dismiss()}>

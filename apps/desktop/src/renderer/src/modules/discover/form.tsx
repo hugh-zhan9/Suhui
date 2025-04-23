@@ -1,3 +1,4 @@
+import { Spring } from "@follow/components/constants/spring.js"
 import { useMobile } from "@follow/components/hooks/useMobile.js"
 import { Button } from "@follow/components/ui/button/index.js"
 import { Card, CardContent, CardFooter, CardHeader } from "@follow/components/ui/card/index.jsx"
@@ -25,7 +26,6 @@ import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { z } from "zod"
 
-import { smoothPreset } from "~/components/ui/constants/spring"
 import { Media } from "~/components/ui/media"
 import { useModalStack } from "~/components/ui/modal/stacked/hooks"
 import { useFollow } from "~/hooks/biz/useFollow"
@@ -274,7 +274,7 @@ export function DiscoverForm({ type = "search" }: { type?: string }) {
                               x: field.value === "lists" ? "calc(100% + 2px)" : 0,
                               width: "calc(50% - 4px)",
                             }}
-                            transition={smoothPreset}
+                            transition={Spring.presets.smooth}
                           />
                           <button
                             type="button"

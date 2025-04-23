@@ -1,9 +1,9 @@
+import { Spring } from "@follow/components/constants/spring.js"
 import { m } from "motion/react"
 import { useCallback } from "react"
 import { useTranslation } from "react-i18next"
 
 import { getUpdaterStatus, setUpdaterStatus, useUpdaterStatus } from "~/atoms/updater"
-import { softBouncePreset } from "~/components/ui/constants/spring"
 
 export const UpdateNotice = () => {
   const updaterStatus = useUpdaterStatus()
@@ -32,7 +32,7 @@ export const UpdateNotice = () => {
       onClick={handleClick}
       initial={{ y: 50, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={softBouncePreset}
+      transition={Spring.presets.softBounce}
     >
       <div className="font-medium">{t("notify.update_info", { app_name: APP_NAME })}</div>
       <div className="text-xs text-zinc-500">{t("notify.update_info_3")}</div>

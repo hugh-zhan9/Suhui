@@ -1,10 +1,10 @@
+import { Spring } from "@follow/components/constants/spring.js"
 import { IN_ELECTRON } from "@follow/shared/constants"
 import { AnimatePresence } from "motion/react"
 import { useEffect, useRef, useState } from "react"
 
 import { useShowSourceContent } from "~/atoms/source-content"
 import { m } from "~/components/common/Motion"
-import { softSpringPreset } from "~/components/ui/constants/spring"
 
 import { EntryContentLoading } from "../loading"
 
@@ -47,7 +47,7 @@ export const SourceContentView = ({ src }: { src: string }) => {
         className="size-full"
         initial={{ opacity: 0 }}
         animate={{ opacity: loading ? 0 : 1 }}
-        transition={softSpringPreset}
+        transition={Spring.presets.softSpring}
       >
         <ViewTag
           ref={webviewRef}
@@ -74,7 +74,7 @@ export const SourceContentPanel = ({ src }: { src: string | null }) => {
           animate="visible"
           exit="exit"
           variants={variants}
-          transition={softSpringPreset}
+          transition={Spring.presets.softSpring}
         >
           <SourceContentView src={src} />
         </m.div>

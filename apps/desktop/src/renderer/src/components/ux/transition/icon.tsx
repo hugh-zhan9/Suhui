@@ -1,10 +1,9 @@
+import { Spring } from "@follow/components/constants/spring.js"
 import { cn } from "@follow/utils/utils"
-import type { Spring, Target } from "motion/react"
+import type { Target, Transition } from "motion/react"
 import { AnimatePresence, m } from "motion/react"
 import * as React from "react"
 import { cloneElement, useEffect, useState } from "react"
-
-import { smoothPreset } from "~/components/ui/constants/spring"
 
 type TransitionType = {
   initial: Target | boolean
@@ -88,7 +87,7 @@ const Presets = {
     initial: { opacity: 0 },
     animate: { opacity: 1 },
     exit: { opacity: 0 },
-    transition: smoothPreset,
+    transition: Spring.presets.smooth,
   },
 }
 export const IconTransition = (
@@ -97,7 +96,7 @@ export const IconTransition = (
     initial?: Target
     animate?: Target
     exit?: Target
-    transition?: Spring
+    transition?: Transition
 
     preset?: "fade"
   }>,

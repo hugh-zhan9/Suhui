@@ -1,3 +1,4 @@
+import { Spring } from "@follow/components/constants/spring.js"
 import { ActionButton, MotionButtonBase } from "@follow/components/ui/button/index.js"
 import { RootPortal } from "@follow/components/ui/portal/index.js"
 import { useMeasure } from "@follow/hooks"
@@ -19,7 +20,6 @@ import { COPY_MAP } from "~/constants"
 import { tipcClient } from "~/lib/client"
 import { replaceImgUrlIfNeed } from "~/lib/img-proxy"
 
-import { microReboundPreset } from "../constants/spring"
 import { FixedModalCloseButton } from "../modal/components/close"
 import { useCurrentModal } from "../modal/stacked/hooks"
 import { VideoPlayer } from "./VideoPlayer"
@@ -81,7 +81,7 @@ const Wrapper: Component<{
         initial={{ scale: 0.94, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.94, opacity: 0 }}
-        transition={microReboundPreset}
+        transition={Spring.presets.microRebound}
       >
         <div
           className={cn(

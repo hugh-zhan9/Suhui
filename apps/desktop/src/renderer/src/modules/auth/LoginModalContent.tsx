@@ -1,3 +1,4 @@
+import { Spring } from "@follow/components/constants/spring.js"
 import { useMobile } from "@follow/components/hooks/useMobile.js"
 import { Folo } from "@follow/components/icons/folo.js"
 import { Logo } from "@follow/components/icons/logo.js"
@@ -10,6 +11,7 @@ import {
   TooltipTrigger,
 } from "@follow/components/ui/tooltip/index.js"
 import type { LoginRuntime } from "@follow/shared/auth"
+import { stopPropagation } from "@follow/utils/dom"
 import { clsx } from "@follow/utils/utils"
 import { m } from "motion/react"
 import { useTranslation } from "react-i18next"
@@ -104,10 +106,14 @@ export const LoginModalContent = (props: LoginModalContentProps) => {
       <m.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 10, transition: { type: "tween" } }}
-        transition={{ type: "spring" }}
+        exit={{ opacity: 0, y: 10 }}
+        transition={Spring.presets.snappy}
       >
-        <div className="bg-background w-[25rem] rounded-xl border p-3 px-8 shadow-2xl shadow-stone-300 dark:border-neutral-700 dark:shadow-stone-800">
+        <div
+          onClick={stopPropagation}
+          tabIndex={-1}
+          className="bg-background w-[25rem] rounded-xl border p-3 px-8 shadow-2xl shadow-stone-300 dark:border-neutral-700 dark:shadow-stone-800"
+        >
           {Inner}
         </div>
       </m.div>

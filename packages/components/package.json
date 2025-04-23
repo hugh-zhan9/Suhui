@@ -6,6 +6,7 @@
     "./assets/*": "./assets/*",
     "./atoms/*": "./src/atoms/*",
     "./common/*": "./src/common/*",
+    "./constants/*": "./src/constants/*",
     "./dayjs": "./src/utils/dayjs.ts",
     "./hooks/*": "./src/hooks/*",
     "./icons/*": "./src/icons/*",
