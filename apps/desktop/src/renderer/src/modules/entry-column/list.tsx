@@ -302,6 +302,7 @@ const EntryHeadDateItem: FC<{
   const date = new Date(
     isList ? entry.entries.insertedAt : entry.entries.publishedAt,
   ).toDateString()
+
   return <DateItem isSticky={isSticky} date={date} view={view} />
 })
 

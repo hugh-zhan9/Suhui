@@ -62,9 +62,8 @@ export const RelativeDay = ({ date }: { date: Date }) => {
       timerRef.current = setTimeout(() => {
         setDateString(formatDateString(date))
       }, updateInterval)
-    } else {
-      setDateString(formatDateString(date))
     }
+    setDateString(formatDateString(date))
 
     return () => {
       timerRef.current = clearTimeout(timerRef.current)
@@ -72,6 +71,7 @@ export const RelativeDay = ({ date }: { date: Date }) => {
   }, [date, formatDateString, language])
 
   const formated = dayjs(date).format(formatTemplateStringShort)
+
   if (formated === dateString) {
     return <>{dateString}</>
   }

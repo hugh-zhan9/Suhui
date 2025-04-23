@@ -40,13 +40,12 @@ const useParseDate = (date: string) =>
     }
   }, [date])
 
+const dateItemclassName = tw`relative flex items-center text-sm lg:text-base gap-1 bg-background px-4 font-bold text-zinc-800 dark:text-neutral-400 h-7`
 export const DateItem = memo(({ date, view, isSticky }: DateItemProps) => {
-  const className = tw`relative flex items-center text-sm lg:text-base gap-1 bg-background px-4 font-bold text-zinc-800 dark:text-neutral-400 h-7`
-
   if (view === FeedViewType.SocialMedia) {
-    return <SocialMediaDateItem date={date} className={className} isSticky={isSticky} />
+    return <SocialMediaDateItem date={date} className={dateItemclassName} isSticky={isSticky} />
   }
-  return <UniversalDateItem date={date} className={className} isSticky={isSticky} />
+  return <UniversalDateItem date={date} className={dateItemclassName} isSticky={isSticky} />
 })
 const UniversalDateItem = ({ date, className, isSticky }: Omit<DateItemProps, "view">) => {
   const { startOfDay, endOfDay, dateObj } = useParseDate(date)
