@@ -23,7 +23,7 @@ export const ViewSelectorRadioGroup = forwardRef<
   const showLoading = !!feed && !showPreview
 
   return (
-    <Card>
+    <Card className={rest.disabled ? "pointer-events-none" : void 0}>
       <CardHeader className={cn("grid grid-cols-6 space-y-0 px-2 py-3", className)}>
         {views.map((view) => (
           <div key={view.name}>
