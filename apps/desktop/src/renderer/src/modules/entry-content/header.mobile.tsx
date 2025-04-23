@@ -175,7 +175,7 @@ const HeaderRightActions = ({
                     stiffness: 300,
                     mass: 0.8,
                   }}
-                  className="shadow-modal bg-theme-modal-background-opaque fixed right-1 top-1 z-[1] mt-14 max-w-full rounded-lg border"
+                  className="shadow-modal bg-theme-background fixed right-1 top-1 z-[1] mt-14 max-w-full rounded-lg border"
                 >
                   <div className="flex flex-col items-center py-2">
                     {actions

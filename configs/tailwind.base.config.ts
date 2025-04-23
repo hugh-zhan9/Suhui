@@ -85,14 +85,6 @@ const twConfig = {
           disabled: "hsl(var(--fo-disabled) / <alpha-value>)",
 
           background: "var(--fo-background)",
-
-          modal: {
-            background: "var(--fo-modal-background)",
-            "background-opaque": "var(--fo-modal-background-opaque)",
-          },
-          button: {
-            hover: "var(--fo-button-hover)",
-          },
         },
       },
       borderRadius: {
