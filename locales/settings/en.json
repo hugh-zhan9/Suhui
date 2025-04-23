@@ -22,6 +22,7 @@
   "actions.action_card.feed_options.feed_title": "Feed Title",
   "actions.action_card.feed_options.feed_url": "Feed URL",
   "actions.action_card.feed_options.site_url": "Site URL",
+  "actions.action_card.feed_options.status": "Status",
   "actions.action_card.feed_options.subscription_view": "Subscription View",
   "actions.action_card.field": "Field",
   "actions.action_card.from": "From",
