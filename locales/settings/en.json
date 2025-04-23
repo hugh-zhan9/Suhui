@@ -1,6 +1,6 @@
 {
   "about.changelog": "Changelog",
-  "about.feedbackInfo": "{{appName}} ({{commitSha}}) is in the early stages of development. If you have any feedback or suggestions, please feel free to <OpenIssueLink>open an issue</OpenIssueLink> <ExternalLinkIcon /> on our GitHub.",
+  "about.feedbackInfo": "{{appName}} ({{commitSha}}) is open-source and actively developed on GitHub. If you have any feedback or suggestions, please feel free to <OpenIssueLink>open an issue</OpenIssueLink> <ExternalLinkIcon /> on our GitHub.",
   "about.iconLibrary": "The icon library used is copyrighted by <IconLibraryLink /> <ExternalLinkIcon /> and cannot be redistributed.",
   "about.licenseInfo": "Copyright © {{currentYear}} {{appName}}. All rights reserved.",
   "about.sidebar_title": "About",
@@ -273,8 +273,8 @@
   "invitation.confirmModal.message": "Generating an invitation code will cost you {{INVITATION_PRICE}} <PowerIcon /> Power.",
   "invitation.confirmModal.title": "Confirm",
   "invitation.created_at": "Created at",
-  "invitation.earlyAccess": "Folo is currently in <strong>early access</strong> and requires an invitation code to use.",
-  "invitation.earlyAccessMessage": "😰 Sorry, Folo is currently in early access and requires an invitation code to use.",
+  "invitation.earlyAccess": "Folo is currently requires an invitation code to use.",
+  "invitation.earlyAccessMessage": "😰 Sorry, Folo is currently requires an invitation code to use.",
   "invitation.generate": "Generate",
   "invitation.generateButton": "Generate new code",
   "invitation.generateCost": "You can spend {{INVITATION_PRICE}} <PowerIcon /> Power to generate an invitation code for your friends.",
