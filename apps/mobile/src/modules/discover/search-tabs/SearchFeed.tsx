@@ -5,7 +5,6 @@ import { LinearGradient } from "expo-linear-gradient"
 import { useAtomValue } from "jotai"
 import { Text, useWindowDimensions, View } from "react-native"
 import { ScrollView } from "react-native-gesture-handler"
-import Animated, { FadeInUp } from "react-native-reanimated"
 
 import { RelativeDateTime } from "@/src/components/ui/datetime/RelativeDateTime"
 import { FeedIcon } from "@/src/components/ui/icon/feed-icon"
@@ -72,103 +71,107 @@ const SearchFeedItem = ({ item }: { item: SearchResultItem }) => {
   const iconColor = useColor("text")
 
   return (
-    <Animated.View entering={FadeInUp}>
-      <ItemPressable
-        itemStyle={ItemPressableStyle.Plain}
-        className="py-8"
-        onPress={() => {
-          if (item.feed?.id) {
-            navigation.presentControllerView(FollowScreen, {
-              id: item.feed.id,
-              type: "feed",
-            })
-          }
-        }}
-      >
-        {/* Headline */}
-        <View className="flex-row items-center gap-2 pl-4 pr-2">
-          <View className="size-[32px] overflow-hidden rounded-lg">
-            <FeedIcon
-              size={32}
-              feed={
-                item.feed
-                  ? {
-                      id: item.feed?.id!,
-                      title: item.feed?.title!,
-                      url: item.feed?.url!,
-                      image: item.feed?.image!,
-                      ownerUserId: item.feed?.ownerUserId!,
-                      siteUrl: item.feed?.siteUrl!,
-                      type: FeedViewType.Articles,
-                    }
-                  : undefined
-              }
-            />
-          </View>
-          <View className="flex-1">
-            <Text
-              className="text-text text-lg font-semibold"
-              ellipsizeMode="middle"
-              numberOfLines={1}
-            >
-              {item.feed?.title}
+    <ItemPressable
+      itemStyle={ItemPressableStyle.Plain}
+      className="py-8"
+      onPress={() => {
+        if (item.feed?.id) {
+          navigation.presentControllerView(FollowScreen, {
+            id: item.feed.id,
+            type: "feed",
+          })
+        }
+      }}
+    >
+      {/* Headline */}
+      <View className="flex-row items-center gap-2 pl-4 pr-2">
+        <View className="size-[32px] overflow-hidden rounded-lg">
+          <FeedIcon
+            size={32}
+            feed={
+              item.feed
+                ? {
+                    id: item.feed?.id!,
+                    title: item.feed?.title!,
+                    url: item.feed?.url!,
+                    image: item.feed?.image!,
+                    ownerUserId: item.feed?.ownerUserId!,
+                    siteUrl: item.feed?.siteUrl!,
+                    type: FeedViewType.Articles,
+                  }
+                : undefined
+            }
+          />
+        </View>
+        <View className="flex-1">
+          <Text
+            className="text-text text-lg font-semibold"
+            ellipsizeMode="middle"
+            numberOfLines={1}
+          >
+            {item.feed?.title}
+          </Text>
+          {!!item.feed?.description && (
+            <Text className="text-text/60" ellipsizeMode="tail" numberOfLines={1}>
+              {item.feed?.description}
             </Text>
-            {!!item.feed?.description && (
-              <Text className="text-text/60" ellipsizeMode="tail" numberOfLines={1}>
-                {item.feed?.description}
-              </Text>
-            )}
-          </View>
-          {/* Subscribe */}
-          {isSubscribed && (
-            <View className="ml-auto">
-              <View className="bg-gray-5/60 rounded-lg px-3 py-2">
-                <Text className="text-gray-2 text-sm font-medium">Followed</Text>
-              </View>
-            </View>
           )}
         </View>
-
-        <View className="mt-3 flex-row items-center gap-1 pl-4 opacity-60">
-          <RightCuteReIcon width={16} height={16} />
-          <Text className="text-text">{item.feed?.url}</Text>
-        </View>
-
-        {/* Preview */}
-        <View className="mt-3">
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerClassName="flex flex-row gap-4 pl-4"
-          >
-            {item.entries?.map((entry) => <PreviewItem entry={entry} key={entry.id} />)}
-          </ScrollView>
-        </View>
-        <View className="mt-4 flex-row items-center gap-6 pl-4 opacity-60">
-          <View className="flex-row items-center gap-2">
-            <User3CuteReIcon width={16} height={16} color={iconColor} />
-            <Text className="text-text">{item.subscriptionCount} followers</Text>
+        {/* Subscribe */}
+        {isSubscribed ? (
+          <View className="ml-auto">
+            <View className="bg-gray-5/60 rounded-lg px-3 py-2">
+              <Text className="text-gray-2 text-sm font-bold">Followed</Text>
+            </View>
           </View>
-          <View className="flex-row items-center gap-2">
-            {item.updatesPerWeek ? (
-              <>
-                <SafetyCertificateCuteReIcon width={16} height={16} color={iconColor} />
-                <Text className="text-text">{item.updatesPerWeek} entries/week</Text>
-              </>
-            ) : item.entries?.[0]?.publishedAt ? (
-              <>
-                <SafeAlertCuteReIcon width={16} height={16} color={iconColor} />
-                <Text className="text-text">Updated</Text>
-                <RelativeDateTime
-                  className="text-text"
-                  date={new Date(item.entries[0].publishedAt)}
-                />
-              </>
-            ) : null}
+        ) : (
+          <View className="ml-auto">
+            <View className="bg-accent rounded-lg px-3 py-2">
+              <Text className="text-sm font-bold text-white">Follow</Text>
+            </View>
           </View>
+        )}
+      </View>
+
+      <View className="mt-3 flex-row items-center gap-1 pl-4 opacity-60">
+        <RightCuteReIcon width={16} height={16} />
+        <Text className="text-text">{item.feed?.url}</Text>
+      </View>
+
+      {/* Preview */}
+      <View className="mt-3">
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerClassName="flex flex-row gap-4 pl-4"
+        >
+          {item.entries?.map((entry) => <PreviewItem entry={entry} key={entry.id} />)}
+        </ScrollView>
+      </View>
+      <View className="mt-4 flex-row items-center gap-6 pl-4 opacity-60">
+        <View className="flex-row items-center gap-2">
+          <User3CuteReIcon width={16} height={16} color={iconColor} />
+          <Text className="text-text">{item.subscriptionCount} followers</Text>
         </View>
-      </ItemPressable>
-    </Animated.View>
+        <View className="flex-row items-center gap-2">
+          {item.updatesPerWeek ? (
+            <>
+              <SafetyCertificateCuteReIcon width={16} height={16} color={iconColor} />
+              <Text className="text-text">{item.updatesPerWeek} entries/week</Text>
+            </>
+          ) : item.entries?.[0]?.publishedAt ? (
+            <>
+              <SafeAlertCuteReIcon width={16} height={16} color={iconColor} />
+              <Text className="text-text">Updated</Text>
+              <RelativeDateTime
+                className="text-text"
+                date={new Date(item.entries[0].publishedAt)}
+              />
+            </>
+          ) : null}
+        </View>
+      </View>
+    </ItemPressable>
   )
 }
 

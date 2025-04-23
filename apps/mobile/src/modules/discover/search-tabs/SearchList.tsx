@@ -7,10 +7,14 @@ import { FallbackIcon } from "@/src/components/ui/icon/fallback-icon"
 import { Image } from "@/src/components/ui/image/Image"
 import { ItemPressableStyle } from "@/src/components/ui/pressable/enum"
 import { ItemPressable } from "@/src/components/ui/pressable/ItemPressable"
+import { RightCuteReIcon } from "@/src/icons/right_cute_re"
+import { User3CuteReIcon } from "@/src/icons/user_3_cute_re"
 import { apiClient } from "@/src/lib/api-fetch"
 import { useNavigation } from "@/src/lib/navigation/hooks"
+import { UrlBuilder } from "@/src/lib/url-builder"
 import { FollowScreen } from "@/src/screens/(modal)/FollowScreen"
 import { useSubscriptionByListId } from "@/src/store/subscription/hooks"
+import { useColor } from "@/src/theme/colors"
 
 import { useSearchPageContext } from "../ctx"
 import { ItemSeparator } from "./__base"
@@ -58,10 +62,12 @@ export const SearchList = () => {
 const SearchListCard = memo(({ item }: { item: SearchResultItem }) => {
   const isSubscribed = useSubscriptionByListId(item.list?.id ?? "")
   const navigation = useNavigation()
+  const iconColor = useColor("text")
+
   return (
     <ItemPressable
       itemStyle={ItemPressableStyle.Plain}
-      className="py-2"
+      className="py-8"
       onPress={() => {
         if (item.list?.id) {
           navigation.presentControllerView(FollowScreen, {
@@ -95,13 +101,31 @@ const SearchListCard = memo(({ item }: { item: SearchResultItem }) => {
           )}
         </View>
         {/* Subscribe */}
-        {isSubscribed && (
+        {isSubscribed ? (
           <View className="ml-auto">
-            <View className="bg-gray-5/60 rounded-full px-2 py-1">
-              <Text className="text-gray-2 text-sm font-medium">Subscribed</Text>
+            <View className="bg-gray-5/60 rounded-lg px-3 py-2">
+              <Text className="text-gray-2 text-sm font-bold">Followed</Text>
+            </View>
+          </View>
+        ) : (
+          <View className="ml-auto">
+            <View className="bg-accent rounded-lg px-3 py-2">
+              <Text className="text-sm font-bold text-white">Follow</Text>
             </View>
           </View>
         )}
+      </View>
+
+      <View className="mt-3 flex-row items-center gap-1 pl-4 opacity-60">
+        <RightCuteReIcon width={16} height={16} />
+        <Text className="text-text text-sm">{UrlBuilder.shareList(item.list?.id ?? "")}</Text>
+      </View>
+
+      <View className="mt-4 flex-row items-center gap-6 pl-4 opacity-60">
+        <View className="flex-row items-center gap-2">
+          <User3CuteReIcon width={16} height={16} color={iconColor} />
+          <Text className="text-text">{item.subscriptionCount} followers</Text>
+        </View>
       </View>
     </ItemPressable>
   )
