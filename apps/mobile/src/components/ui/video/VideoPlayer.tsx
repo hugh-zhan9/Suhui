@@ -35,7 +35,8 @@ export function VideoPlayer({
       <VideoView
         ref={viewViewRef}
         style={{
-          width: "100%",
+          width: width ?? "100%",
+          height,
           aspectRatio: width && height ? width / height : 1,
         }}
         contentFit={isFullScreen ? "contain" : "cover"}
