@@ -275,7 +275,7 @@ const createRelatedEntryLink = (variant: "toast" | "modal") => (props: LinkProps
   return (
     <button
       type="button"
-      className="follow-link--underline text-foreground cursor-pointer font-semibold no-underline"
+      className="follow-link--underline text-text cursor-pointer font-semibold no-underline"
       onClick={() => {
         peekModal(entryId, variant)
       }}
@@ -532,7 +532,7 @@ const SnowflakeId: React.FC<SnowflakeIdProps> = ({ id: entryId, index }) => {
   return (
     <button
       type="button"
-      className="follow-link--underline text-foreground cursor-pointer font-semibold no-underline"
+      className="follow-link--underline text-text cursor-pointer font-semibold no-underline"
       onClick={() => {
         peekModal(entryId, "modal")
       }}

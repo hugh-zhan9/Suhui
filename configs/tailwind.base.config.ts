@@ -46,7 +46,6 @@ const twConfig = {
       colors: {
         border: "hsl(var(--border) / <alpha-value>)",
         background: "hsl(var(--background) / <alpha-value>)",
-        foreground: "hsl(var(--foreground) / <alpha-value>)",
 
         accent: "hsl(var(--fo-a) / <alpha-value>)",
 
@@ -85,7 +84,6 @@ const twConfig = {
           inactive: "hsl(var(--fo-inactive) / <alpha-value>)",
           disabled: "hsl(var(--fo-disabled) / <alpha-value>)",
 
-          foreground: "hsl(var(--fo-text-primary) / <alpha-value>)",
           background: "var(--fo-background)",
 
           "foreground-hover": "hsl(var(--fo-text-primary-hover) / <alpha-value>)",

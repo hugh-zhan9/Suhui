@@ -38,10 +38,10 @@ export const ViewSelectorRadioGroup = forwardRef<
             <label
               htmlFor={view.name}
               className={cn(
-                "hover:text-theme-foreground dark:hover:text-white",
+                "hover:text-text",
                 view.peerClassName,
                 "center flex h-10 flex-col text-xs leading-none opacity-80 duration-200",
-                "text-neutral-800 dark:text-zinc-200",
+                "text-text-secondary",
                 "peer-checked:opacity-100",
                 "whitespace-nowrap",
               )}

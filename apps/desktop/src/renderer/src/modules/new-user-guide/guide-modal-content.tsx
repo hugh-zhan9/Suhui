@@ -325,7 +325,7 @@ function Step({ step, currentStep }: { step: number; currentStep: number }) {
           inactive: {
             backgroundColor: "var(--fo-background)",
             borderColor: "hsl(var(--border) / 0.5)",
-            color: "hsl(var(--fo-foreground) / 0.2)",
+            color: "hsl(var(--color-textTertiary))",
           },
           active: {
             backgroundColor: "var(--fo-background)",

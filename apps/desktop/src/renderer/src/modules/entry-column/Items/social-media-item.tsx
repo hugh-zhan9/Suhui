@@ -401,7 +401,7 @@ const CollapsedSocialMediaItem: Component<{
               collapsedItemCache.put(entryId, true)
             }}
             aria-hidden
-            className="hover:text-foreground flex items-center justify-center text-xs duration-200"
+            className="hover:text-text flex items-center justify-center text-xs duration-200"
           >
             <i className="i-mingcute-arrow-to-down-line" />
             <span className="ml-2">{t("words.show_more")}</span>

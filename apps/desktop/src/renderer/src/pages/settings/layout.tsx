@@ -61,8 +61,8 @@ const SettingItemButton = (props: { tab: string; item: SettingPageConfig; path: 
   return (
     <button
       className={cn(
-        "text-theme-foreground/70 my-0.5 flex w-full items-center rounded-lg px-2.5 py-0.5 leading-loose",
-        tab === path && "!bg-theme-item-active !text-theme-foreground/90",
+        "text-text-secondary my-0.5 flex w-full items-center rounded-lg px-2.5 py-0.5 leading-loose",
+        tab === path && "!bg-theme-item-active !text-text",
         !IN_ELECTRON && "hover:bg-theme-item-hover duration-200",
         disabled && "cursor-not-allowed opacity-50",
       )}
