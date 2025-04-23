@@ -61,8 +61,8 @@ export function createWindow(
           x: 18,
           y: 18,
         },
-        vibrancy: "under-window",
-        visualEffectState: "active",
+        vibrancy: "sidebar",
+        visualEffectState: "followWindow",
         transparent: true,
       } as Electron.BrowserWindowConstructorOptions)
       break

@@ -59,13 +59,13 @@
 }
 
 :root {
-  --fo-native: 240 4.8% 95.9%;
-  --fo-native-active: 240 4.9% 83.9%;
+  --fo-sidebar: 240 4.8% 95.9%;
+  --fo-sidebar-active: 240 4.9% 83.9%;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --fo-native: 220 8.1% 14.5%;
-    --fo-native-active: 198 31.3% 6.3%;
+    --fo-sidebar: 220 8.1% 14.5%;
+    --fo-sidebar-active: 198 31.3% 6.3%;
   }
 }

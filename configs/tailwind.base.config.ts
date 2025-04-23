@@ -35,11 +35,6 @@ const twConfig = {
 
         accent: "hsl(var(--fo-a) / <alpha-value>)",
 
-        native: {
-          DEFAULT: "hsl(var(--fo-native) / <alpha-value>)",
-          active: "hsl(var(--fo-native-active) / <alpha-value>)",
-        },
-
         theme: {
           // https://uicolors.app/create
           accent: {

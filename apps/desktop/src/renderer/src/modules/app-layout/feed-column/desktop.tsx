@@ -287,7 +287,7 @@ const FeedResponsiveResizerContainer = ({
           "--fo-feed-col-w": `${position}px`,
         }}
       >
-        <Slot className={!feedColumnShow ? "!bg-native" : ""}>{children}</Slot>
+        <Slot className={!feedColumnShow ? "!bg-sidebar" : ""}>{children}</Slot>
       </div>
 
       <div

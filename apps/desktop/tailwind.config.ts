@@ -1,6 +1,7 @@
 import { merge } from "es-toolkit/compat"
 import plugin from "tailwindcss/plugin"
 import resolveConfig from "tailwindcss/resolveConfig"
+import type { Config } from "tailwindcss/types/config"
 
 import { baseTwConfig } from "../../configs/tailwind.base.config"
 
@@ -44,7 +45,9 @@ export default resolveConfig(
         height: {
           screen: "100svh",
         },
-
+        colors: {
+          sidebar: "hsl(var(--fo-sidebar) / <alpha-value>)",
+        },
         keyframes: {
           "caret-blink": {
             "0%,70%,100%": { opacity: "1" },
@@ -116,5 +119,5 @@ export default resolveConfig(
         )
       }),
     ],
-  }),
+  } as Config),
 )

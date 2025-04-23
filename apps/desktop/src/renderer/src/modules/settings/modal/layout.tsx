@@ -1,3 +1,4 @@
+import { Spring } from "@follow/components/constants/spring.js"
 import { Folo } from "@follow/components/icons/folo.js"
 import { Logo } from "@follow/components/icons/logo.jsx"
 import { LetsIconsResizeDownRightLight } from "@follow/components/icons/resize.jsx"
@@ -66,7 +67,7 @@ export function SettingModalLayout(
     overlay: state.modalOverlay,
   }))
 
-  const measureDragConstraints = useCallback((constraints: BoundingBox) => {
+  const measureDragConstraints = useRef((constraints: BoundingBox) => {
     if (getOS() === "Windows") {
       return {
         ...constraints,
@@ -74,7 +75,7 @@ export function SettingModalLayout(
       }
     }
     return constraints
-  }, [])
+  }).current
 
   return (
     <div
@@ -87,6 +88,7 @@ export function SettingModalLayout(
           opacity: 0,
           scale: 0.96,
         }}
+        transition={Spring.presets.smooth}
         className={cn(
           "border-border bg-theme-background relative flex rounded-xl rounded-br-none border",
           !overlay && "shadow-perfect",

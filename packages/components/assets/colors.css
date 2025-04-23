@@ -45,20 +45,20 @@
 }
 
 [data-theme="light"] {
-  --fo-native: 240 1.6% 87.6%;
-  --fo-native-active: 240 0.9% 78.2%;
+  --fo-sidebar: 240 1.6% 87.6%;
+  --fo-sidebar-active: 240 0.9% 78.2%;
 }
 [data-theme="dark"] {
-  --fo-native: 30 1.7% 23.5%;
-  --fo-native-active: 20 2.1% 28.4%;
+  --fo-sidebar: 30 1.7% 23.5%;
+  --fo-sidebar-active: 20 2.1% 28.4%;
 }
 
 [data-build-type="web"] {
-  --fo-native: 240 4.8% 95.9%;
-  --fo-native-active: 240 4.9% 83.9%;
+  --fo-sidebar: 240 4.8% 95.9%;
+  --fo-sidebar-active: 240 4.9% 83.9%;
 }
 
 [data-build-type="web"][data-theme="dark"] {
-  --fo-native: 220 8.1% 14.5%;
-  --fo-native-active: 198 31.3% 6.3%;
+  --fo-sidebar: 220 8.1% 14.5%;
+  --fo-sidebar-active: 198 31.3% 6.3%;
 }
