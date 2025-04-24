@@ -12,6 +12,7 @@ import { Tooltip, TooltipContent, TooltipPortal, TooltipRoot, TooltipTrigger } f
 export interface ActionButtonProps {
   icon?: React.ReactNode | ((props: { isActive?: boolean; className: string }) => React.ReactNode)
   tooltip?: React.ReactNode
+  tooltipDescription?: React.ReactNode
   tooltipSide?: "top" | "bottom"
   tooltipDefaultOpen?: boolean
   active?: boolean
@@ -22,7 +23,10 @@ export interface ActionButtonProps {
   enableHoverableContent?: boolean
   size?: "sm" | "base" | "lg"
   id?: string
-
+  /**
+   * Use motion effects to prompt and guide users to pay attention or click this button
+   */
+  highlightMotion?: boolean
   /**
    * @description only trigger shortcut when focus with in `<Focusable />`
    * @default false
@@ -47,9 +51,11 @@ export const ActionButton = React.forwardRef<
       icon,
       id,
       tooltip,
+      tooltipDescription,
       className,
       tooltipSide,
       tooltipDefaultOpen,
+      highlightMotion,
       children,
       active,
       shortcut,
@@ -82,9 +88,14 @@ export const ActionButton = React.forwardRef<
           "hover:bg-theme-item-hover data-[state=open]:bg-theme-item-active rounded-md duration-200",
           "disabled:cursor-not-allowed disabled:opacity-50",
           clickableDisabled && "cursor-not-allowed opacity-50",
+          highlightMotion &&
+            "before:via-theme-accent/30 relative before:absolute before:inset-0 before:animate-[shine_6s_ease-in-out_infinite] before:rounded-md before:bg-gradient-to-r before:from-transparent before:to-transparent before:bg-[length:200%_100%]",
           actionButtonStyleVariant.size[size],
           className,
         )}
+        style={{
+          ...(highlightMotion && { animationDelay: "0.5s" }),
+        }}
         type="button"
         disabled={disabled}
         onClick={
@@ -137,13 +148,21 @@ export const ActionButton = React.forwardRef<
                 {Trigger}
               </TooltipTrigger>
               <TooltipPortal>
-                <TooltipContent className="flex items-center gap-1" side={tooltipSide ?? "bottom"}>
-                  {tooltip}
-                  {!!finalShortcut && (
-                    <div className="ml-1">
-                      <KbdCombined className="text-foreground/80">{finalShortcut}</KbdCombined>
-                    </div>
-                  )}
+                <TooltipContent
+                  className="max-w-[300px] flex-col gap-1"
+                  side={tooltipSide ?? "bottom"}
+                >
+                  <div className="flex items-center gap-1">
+                    {tooltip}
+                    {!!finalShortcut && (
+                      <div className="ml-1">
+                        <KbdCombined className="text-text">{finalShortcut}</KbdCombined>
+                      </div>
+                    )}
+                  </div>
+                  {tooltipDescription ? (
+                    <div className="text-text-secondary text-body">{tooltipDescription}</div>
+                  ) : null}
                 </TooltipContent>
               </TooltipPortal>
             </TooltipRoot>
