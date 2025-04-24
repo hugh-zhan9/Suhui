@@ -75,6 +75,7 @@ export const ActionButton = React.forwardRef<
     const buttonRef = React.useRef<HTMLButtonElement>(null)
     React.useImperativeHandle(ref, () => buttonRef.current!)
 
+    const [shouldHighlightMotion, setShouldHighlightMotion] = useState(highlightMotion)
     const [loading, setLoading] = useState(false)
 
     const Trigger = (
@@ -88,19 +89,26 @@ export const ActionButton = React.forwardRef<
           "hover:bg-theme-item-hover data-[state=open]:bg-theme-item-active rounded-md duration-200",
           "disabled:cursor-not-allowed disabled:opacity-50",
           clickableDisabled && "cursor-not-allowed opacity-50",
-          highlightMotion &&
-            "before:via-theme-accent/30 relative before:absolute before:inset-0 before:animate-[shine_6s_ease-in-out_infinite] before:rounded-md before:bg-gradient-to-r before:from-transparent before:to-transparent before:bg-[length:200%_100%]",
+          shouldHighlightMotion &&
+            "relative after:absolute after:inset-0 after:animate-[radialPulse_3s_ease-in-out_infinite] after:rounded-md after:bg-center after:bg-no-repeat after:content-['']",
           actionButtonStyleVariant.size[size],
           className,
         )}
         style={{
-          ...(highlightMotion && { animationDelay: "0.5s" }),
+          ...rest.style,
+          ...(shouldHighlightMotion
+            ? ({
+                "--tw-accent-opacity": "0.3",
+                "--highlight-color": "hsl(var(--fo-a) / var(--tw-accent-opacity))",
+              } as React.CSSProperties)
+            : {}),
         }}
         type="button"
         disabled={disabled}
         onClick={
-          typeof onClick === "function"
+          onClick
             ? async (e) => {
+                setShouldHighlightMotion(false)
                 if (loading) return
                 setLoading(true)
                 try {
@@ -109,7 +117,7 @@ export const ActionButton = React.forwardRef<
                   setLoading(false)
                 }
               }
-            : onClick
+            : void 0
         }
         {...rest}
       >

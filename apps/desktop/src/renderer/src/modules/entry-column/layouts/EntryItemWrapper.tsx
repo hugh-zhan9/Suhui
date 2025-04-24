@@ -110,6 +110,7 @@ export const EntryItemWrapper: FC<
               COMMAND_ID.entry.toggleAISummary,
               COMMAND_ID.entry.toggleAITranslation,
               COMMAND_ID.settings.customizeToolbar,
+              COMMAND_ID.entry.readability,
             ].includes(item.id as any)
           }),
           MENU_ITEM_SEPARATOR,
