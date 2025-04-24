@@ -340,7 +340,10 @@ export const useRegisterEntryCommands = () => {
     },
     {
       id: COMMAND_ID.entry.readability,
-      label: t("entry_content.header.readability"),
+      label: {
+        title: t("entry_content.header.readability"),
+        description: t("entry_content.header.readability_description"),
+      },
       icon: (props) => (
         <i className={props?.isActive ? "i-mgc-docment-cute-fi" : "i-mgc-docment-cute-re"} />
       ),
