@@ -130,7 +130,7 @@ export function ListItem({
         <div
           className={cn(
             "flex gap-1 text-[10px] font-bold",
-            isRead ? "text-text-tertiary" : "text-text-secondary",
+            "text-text-secondary",
             entry.collections && "text-text-secondary",
           )}
         >
@@ -147,7 +147,7 @@ export function ListItem({
         <div
           className={cn(
             "relative my-0.5 break-words",
-            isRead ? "text-text-secondary" : "text-text",
+            "text-text",
             !!entry.collections && "pr-5",
             entry.entries.title ? "font-medium" : "text-[13px]",
           )}
@@ -168,7 +168,7 @@ export function ListItem({
           {!!entry.collections && <StarIcon className="absolute right-0 top-0" />}
         </div>
         {!simple && (
-          <div className={cn("text-[13px]", isRead ? "text-text-tertiary" : "text-text-secondary")}>
+          <div className={cn("text-[13px]", "text-text-secondary")}>
             <EntryTranslation
               className={cn("hyphens-auto", lineClamp.description)}
               source={entry.entries.description}
