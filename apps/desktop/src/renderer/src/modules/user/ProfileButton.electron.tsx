@@ -168,15 +168,17 @@ export const ProfileButton: FC<ProfileButtonProps> = memo((props) => {
         >
           {t("words.actions")}
         </DropdownMenuItem>
-        <DropdownMenuItem
-          className="pl-3"
-          onClick={() => {
-            navigate("/rsshub")
-          }}
-          icon={<img src={rsshubLogo} className="size-3 grayscale" />}
-        >
-          {t("words.rsshub")}
-        </DropdownMenuItem>
+        {!isInMASReview && (
+          <DropdownMenuItem
+            className="pl-3"
+            onClick={() => {
+              navigate("/rsshub")
+            }}
+            icon={<img src={rsshubLogo} className="size-3 grayscale" />}
+          >
+            {t("words.rsshub")}
+          </DropdownMenuItem>
+        )}
 
         <DropdownMenuSeparator />
         <DropdownMenuItem
