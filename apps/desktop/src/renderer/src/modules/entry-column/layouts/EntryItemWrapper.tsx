@@ -63,7 +63,7 @@ export const EntryItemWrapper: FC<
   )
 
   const navigate = useNavigateEntry()
-  const handleClick: React.MouseEventHandler<HTMLDivElement> = useCallback(
+  const handleClick = useCallback(
     (e) => {
       e.stopPropagation()
 
@@ -149,6 +149,7 @@ export const EntryItemWrapper: FC<
         onMouseLeave={handleMouseEnter.cancel}
         onDoubleClick={handleDoubleClick}
         {...contextMenuProps}
+        onTouchStart={handleClick}
       >
         {children}
       </div>
