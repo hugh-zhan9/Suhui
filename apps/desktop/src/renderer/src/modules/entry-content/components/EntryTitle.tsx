@@ -71,7 +71,7 @@ export const EntryTitle = ({ entryId, compact }: EntryLinkProps) => {
             href={populatedFullHref ?? "#"}
             target="_blank"
             rel="noopener noreferrer"
-            className="cursor-link hover:multi-[scale-105;opacity-95] inline-block select-text break-words text-[1.7rem] font-bold leading-normal duration-200"
+            className="cursor-link hover:multi-[scale-[1.01];opacity-95] inline-block select-text break-words text-[1.7rem] font-bold leading-normal duration-200"
           >
             <EntryTranslation
               source={entry.entries.title}
