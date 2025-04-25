@@ -1,7 +1,8 @@
-import { Spring } from "@follow/components/constants/spring"
 import { cn } from "@follow/utils/utils"
 import { m } from "motion/react"
 import { useEffect, useRef, useState } from "react"
+
+import { Spring } from "../../constants/spring"
 
 interface AnimateChangeInHeightProps {
   children: React.ReactNode
