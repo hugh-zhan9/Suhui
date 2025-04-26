@@ -2,6 +2,7 @@
  * @see https://github.com/toeverything/AFFiNE/blob/98e35384a6f71bf64c668b8f13afcaf28c9b8e97/packages/frontend/core/src/modules/find-in-page/view/find-in-page-modal.tsx
  * @copyright AFFiNE, Folo
  */
+import { Spring } from "@follow/components/constants/spring.js"
 import { RootPortal } from "@follow/components/ui/portal/index.jsx"
 import { useInputComposition, useRefValue } from "@follow/hooks"
 import { useSubscribeElectronEvent } from "@follow/shared/event"
@@ -11,7 +12,6 @@ import type { FC } from "react"
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
 import { useDebounceCallback, useEventCallback } from "usehooks-ts"
 
-import { softSpringPreset } from "~/components/ui/constants/spring"
 import { tipcClient } from "~/lib/client"
 import { observeResize } from "~/lib/observe-resize"
 
@@ -149,7 +149,7 @@ const CmdFImpl: FC<{
 
         <CanvasText
           scrollLeft={scrollLeft}
-          className="[&::placeholder]:text-foreground pointer-events-none absolute inset-0 size-full text-transparent"
+          className="[&::placeholder]:text-text pointer-events-none absolute inset-0 size-full text-transparent"
           text={value}
         />
       </div>
@@ -205,7 +205,7 @@ const drawText = (canvas: HTMLCanvasElement, text: string, scrollLeft: number) =
 
   const rootStyles = getComputedStyle(document.documentElement)
 
-  const textColor = `hsl(${rootStyles.getPropertyValue("--foreground").trim()})`
+  const textColor = `hsl(${rootStyles.getPropertyValue("--color-text").trim()})`
 
   ctx.scale(dpr, dpr)
   ctx.clearRect(0, 0, canvas.width, canvas.height)
@@ -258,7 +258,7 @@ export const CmdF = () => {
             initial={{ opacity: 0.8, y: -150 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -150 }}
-            transition={softSpringPreset}
+            transition={Spring.presets.softSpring}
           >
             <CmdFImpl
               onClose={() => {

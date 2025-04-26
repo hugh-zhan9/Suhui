@@ -1,4 +1,3 @@
-import { Divider } from "@follow/components/ui/divider/index.js"
 import { RootPortalProvider } from "@follow/components/ui/portal/provider.js"
 import { EllipsisHorizontalTextWithTooltip } from "@follow/components/ui/typography/index.js"
 import { ZIndexProvider } from "@follow/components/ui/z-index/index.js"
@@ -114,7 +113,6 @@ export const ModalInternal = memo(
       [close],
     )
 
-    const opaque = useUISettingKey("modalOpaque")
     const modalSettingOverlay = useUISettingKey("modalOverlay")
 
     const dismiss = useCallback(
@@ -213,7 +211,7 @@ export const ModalInternal = memo(
       [autoFocus],
     )
 
-    const measureDragConstraints = useCallback((constraints: BoundingBox) => {
+    const measureDragConstraints = useRef((constraints: BoundingBox) => {
       if (getOS() === "Windows") {
         return {
           ...constraints,
@@ -221,7 +219,7 @@ export const ModalInternal = memo(
         }
       }
       return constraints
-    }, [])
+    }).current
 
     useImperativeHandle(ref, () => modalElementRef.current!)
     const currentModalZIndex = MODAL_STACK_Z_INDEX + index * 2
@@ -329,14 +327,12 @@ export const ModalInternal = memo(
                   {...modalMontionConfig}
                   animate={animateController}
                   className={cn(
-                    "relative flex flex-col overflow-hidden rounded-lg p-2",
-                    opaque
-                      ? "bg-theme-modal-background-opaque"
-                      : "bg-theme-modal-background backdrop-blur-sm",
+                    "relative flex flex-col overflow-hidden rounded-lg px-2 pt-2",
+                    "bg-background",
                     "shadow-modal",
                     max ? "h-[90vh] w-[90vw]" : "max-h-[90vh]",
 
-                    "border border-slate-200 dark:border-neutral-800",
+                    "border-border border",
                     modalClassName,
                   )}
                   tabIndex={-1}
@@ -374,7 +370,7 @@ export const ModalInternal = memo(
                       </Dialog.Title>
                       {canClose && (
                         <Dialog.DialogClose
-                          className="center hover:bg-theme-button-hover z-[2] rounded-lg p-2"
+                          className="center hover:bg-material-ultra-thick z-[2] rounded-lg p-2"
                           tabIndex={1}
                           onClick={close}
                         >
@@ -382,9 +378,9 @@ export const ModalInternal = memo(
                         </Dialog.DialogClose>
                       )}
                     </div>
-                    <Divider className="my-2 shrink-0 border-slate-200 opacity-80 dark:border-neutral-800" />
+                    <div className="bg-border mx-1 mt-2 h-px shrink-0" />
 
-                    <div className="-mx-2 min-h-0 shrink grow overflow-auto px-6 py-2">
+                    <div className="-mx-2 min-h-0 shrink grow overflow-auto p-4">
                       <ModalContext modalContextProps={ModalContextProps} isTop={!!isTop}>
                         {finalChildren}
                       </ModalContext>

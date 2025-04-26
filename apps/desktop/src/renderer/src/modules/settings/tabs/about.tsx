@@ -35,10 +35,12 @@ export const SettingAbout = () => {
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {appVersion && (
-                <span className="bg-muted rounded px-2 py-1 text-xs">app: {appVersion}</span>
+                <span className="bg-material-medium rounded px-2 py-1 text-xs">
+                  app: {appVersion}
+                </span>
               )}
               {rendererVersion && (
-                <span className="bg-muted rounded px-2 py-1 text-xs">
+                <span className="bg-material-medium rounded px-2 py-1 text-xs">
                   renderer: {rendererVersion}
                 </span>
               )}
@@ -49,7 +51,7 @@ export const SettingAbout = () => {
                     ? `${currentEnvironment}\n**Renderer**: ${rendererVersion}`
                     : currentEnvironment
                 }
-                className="text-foreground/80 hover:bg-theme-item-hover hover:text-foreground active:bg-theme-item-active border-0 bg-transparent p-1 [&_i]:size-3"
+                className="text-text-secondary hover:bg-theme-item-hover hover:text-text active:bg-theme-item-active border-0 bg-transparent p-1 [&_i]:size-3"
               />
             </div>
           </div>

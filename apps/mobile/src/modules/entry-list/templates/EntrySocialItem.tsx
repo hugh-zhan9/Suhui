@@ -11,6 +11,7 @@ import { Galeria } from "@/src/components/ui/image/galeria"
 import { Image } from "@/src/components/ui/image/Image"
 import { ItemPressableStyle } from "@/src/components/ui/pressable/enum"
 import { ItemPressable } from "@/src/components/ui/pressable/ItemPressable"
+import { VideoPlayer } from "@/src/components/ui/video/VideoPlayer"
 import { useNavigation } from "@/src/lib/navigation/hooks"
 import { EntryDetailScreen } from "@/src/screens/(stack)/entries/[entryId]/EntryDetailScreen"
 import { FeedScreen } from "@/src/screens/(stack)/feeds/[feedId]/FeedScreen"
@@ -114,26 +115,45 @@ export const EntrySocialItem = memo(({ entryId }: { entryId: string }) => {
                       : undefined
                 const fullWidth = index === media.length - 1 && media.length % 2 === 1
                 if (!imageUrl) return null
+
+                const ImageItem = (
+                  <Galeria.Image index={index}>
+                    <Image
+                      proxy={{
+                        width: fullWidth ? 400 : 200,
+                      }}
+                      source={{ uri: imageUrl }}
+                      blurhash={mediaItem.blurhash}
+                      className="border-secondary-system-background w-full rounded-lg border"
+                      aspectRatio={
+                        fullWidth && mediaItem.width && mediaItem.height
+                          ? mediaItem.width / mediaItem.height
+                          : 1
+                      }
+                    />
+                  </Galeria.Image>
+                )
+
+                if (mediaItem.type === "video") {
+                  return (
+                    <View key={`${entryId}-${mediaItem.url}`} className="w-full">
+                      <VideoPlayer
+                        source={{
+                          uri: mediaItem.url,
+                        }}
+                        height={mediaItem.height}
+                        width={mediaItem.width}
+                        placeholder={ImageItem}
+                      />
+                    </View>
+                  )
+                }
                 return (
                   <Pressable
                     key={`${entryId}-${imageUrl}`}
                     className={fullWidth ? "w-full" : "w-1/2 p-0.5"}
                   >
-                    <Galeria.Image index={index}>
-                      <Image
-                        proxy={{
-                          width: fullWidth ? 400 : 200,
-                        }}
-                        source={{ uri: imageUrl }}
-                        blurhash={mediaItem.blurhash}
-                        className="border-secondary-system-background w-full rounded-lg border"
-                        aspectRatio={
-                          fullWidth && mediaItem.width && mediaItem.height
-                            ? mediaItem.width / mediaItem.height
-                            : 1
-                        }
-                      />
-                    </Galeria.Image>
+                    {ImageItem}
                   </Pressable>
                 )
               })}

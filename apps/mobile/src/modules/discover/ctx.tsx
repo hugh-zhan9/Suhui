@@ -37,7 +37,7 @@ export const useSetSearchBarHeight = () => {
 
 export const SearchPageProvider = ({ children }: { children: React.ReactNode }) => {
   const [atomRefs] = useState((): SearchPageContextType => {
-    const searchFocusedAtom = atom(true)
+    const searchFocusedAtom = atom(false)
     const searchValueAtom = atom("")
     const searchTypeAtom = atom(SearchType.Feed)
     return {

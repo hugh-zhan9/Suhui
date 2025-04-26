@@ -70,6 +70,10 @@ const parseSchemeLink = (url: string) => {
       const bvid = urlObject.pathname.match(/video\/(BV\w+)/)?.[1]
       return bvid ? `bilibili://video/${bvid}` : null
     }
+    case "t.bilibili.com": {
+      const id = urlObject.pathname.match(/\d+/)?.[0]
+      return id ? `bilibili://following/detail/${id}` : null
+    }
     case "www.youtube.com": {
       // youtube://watch?v=xxx
       const videoId = urlObject.searchParams.get("v")

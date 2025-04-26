@@ -13,7 +13,6 @@ import {
   Fragment,
   memo,
   startTransition,
-  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -30,11 +29,7 @@ import { isListSubscription } from "~/store/subscription"
 
 import { DateItem } from "./components/DateItem"
 import { EntryColumnShortcutHandler } from "./EntryColumnShortcutHandler"
-import { EntryItem, EntryItemSkeleton } from "./item"
-
-export const EntryListContent = forwardRef<HTMLDivElement>((props, ref) => (
-  <div className="px-2" {...props} ref={ref} />
-))
+import { EntryItemSkeleton, EntryVirtualListItem } from "./item"
 
 export const EntryEmptyList = forwardRef<HTMLDivElement, HTMLMotionProps<"div">>((props, ref) => {
   const unreadOnly = useGeneralSettingKey("unreadOnly")
@@ -82,6 +77,12 @@ export type EntryListProps = {
 const capacity = 3
 const offsetCache = new LRUCache<string, number>(capacity)
 const measurementsCache = new LRUCache<string, VirtualItem[]>(capacity)
+// Prevent scroll list move when press up/down key, the up/down key should be taken over by the shortcut key we defined.
+const handleKeyDown: React.KeyboardEventHandler<HTMLDivElement> = (e) => {
+  if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+    e.preventDefault()
+  }
+}
 export const EntryList: FC<EntryListProps> = memo(
   ({
     feedId,
@@ -96,13 +97,6 @@ export const EntryList: FC<EntryListProps> = memo(
     onRangeChange,
     gap,
   }) => {
-    // Prevent scroll list move when press up/down key, the up/down key should be taken over by the shortcut key we defined.
-    const handleKeyDown: React.KeyboardEventHandler<HTMLDivElement> = useCallback((e) => {
-      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-        e.preventDefault()
-      }
-    }, [])
-
     const scrollRef = useScrollViewElement()
 
     const stickyIndexes = useMemo(
@@ -268,17 +262,17 @@ export const EntryList: FC<EntryListProps> = memo(
                     />
                   </div>
                 )}
-                <div
-                  className="absolute left-0 top-0 w-full will-change-transform"
+
+                <EntryVirtualListItem
+                  entryId={entriesIds[virtualRow.index]!}
+                  view={view}
+                  data-index={virtualRow.index}
                   style={{
                     transform,
                     paddingTop: isStickyItem ? "1.75rem" : undefined,
                   }}
                   ref={rowVirtualizer.measureElement}
-                  data-index={virtualRow.index}
-                >
-                  <EntryItem entryId={entriesIds[virtualRow.index]!} view={view} />
-                </div>
+                />
               </Fragment>
             )
           })}
@@ -308,6 +302,7 @@ const EntryHeadDateItem: FC<{
   const date = new Date(
     isList ? entry.entries.insertedAt : entry.entries.publishedAt,
   ).toDateString()
+
   return <DateItem isSticky={isSticky} date={date} view={view} />
 })
 

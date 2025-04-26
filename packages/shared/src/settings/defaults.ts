@@ -56,7 +56,7 @@ export const defaultUISettings: UISettings = {
   // Misc
   modalOverlay: true,
   modalDraggable: true,
-  modalOpaque: true,
+
   reduceMotion: false,
   usePointerCursor: false,
 

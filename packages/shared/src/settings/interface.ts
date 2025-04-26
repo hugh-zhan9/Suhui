@@ -43,7 +43,6 @@ export interface UISettings {
   showDockBadge: boolean
   modalOverlay: boolean
   modalDraggable: boolean
-  modalOpaque: boolean
   reduceMotion: boolean
   usePointerCursor: boolean | null
   uiFontFamily: string

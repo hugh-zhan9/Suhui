@@ -1,9 +1,27 @@
 import type { ClassValue } from "clsx"
 import { clsx } from "clsx"
 import dayjs from "dayjs"
-import { twMerge } from "tailwind-merge"
+import { extendTailwindMerge } from "tailwind-merge"
 import { parse } from "tldts"
 
+const twMerge = extendTailwindMerge({
+  extend: {
+    theme: {
+      text: [
+        "largeTitle",
+        "title1",
+        "title2",
+        "title3",
+        "headline",
+        "body",
+        "callout",
+        "subheadline",
+        "footnote",
+        "caption",
+      ],
+    },
+  },
+})
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
@@ -186,6 +204,18 @@ export const parseSafeUrl = (url: string) => {
     return null
   }
 }
+
+/**
+ * @deprecated Remove it in the future but not now
+ */
+export const resolveUrlWithBase = (url: string, baseUrl: string) => {
+  try {
+    return new URL(url, baseUrl).href
+  } catch {
+    return url
+  }
+}
+
 export const getUrlIcon = (url: string, fallback?: boolean | undefined) => {
   let src: string
   let fallbackUrl = ""
@@ -261,7 +291,8 @@ export const toScientificNotation = (
     // Use provided locale or default to en-US
     const localeString = locale?.toString() || "en-US"
     const formatter = new Intl.NumberFormat(localeString, {
-      maximumFractionDigits: decimals,
+      maximumFractionDigits: 2,
+      minimumFractionDigits: 2,
     })
 
     // Convert bigint to number with correct decimal places
@@ -357,4 +388,16 @@ export const formatEstimatedMins = (estimatedMins: number) => {
     return `${hours}h ${minutes}m`
   }
   return `${estimatedMins} mins`
+}
+
+export const omitShallow = (obj: any, ...keys: string[]) => {
+  if (!obj) return obj
+  if (typeof obj !== "object") return obj
+  if (Array.isArray(obj)) return obj
+
+  const nextObj = { ...obj }
+  for (const key of keys) {
+    Reflect.deleteProperty(nextObj, key)
+  }
+  return nextObj
 }

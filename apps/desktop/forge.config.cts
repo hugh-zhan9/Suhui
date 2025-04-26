@@ -117,6 +117,9 @@ const config: ForgeConfig = {
     ignore: [ignorePattern],
 
     prune: true,
+    extendInfo: {
+      ITSAppUsesNonExemptEncryption: false,
+    },
     osxSign: {
       optionsForFile:
         platform === "mas"

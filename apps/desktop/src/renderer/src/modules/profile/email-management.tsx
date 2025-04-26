@@ -59,7 +59,7 @@ export function EmailManagement() {
           {user?.emailVerified ? t("profile.email.verified") : t("profile.email.unverified")}
         </span>
       </div>
-      <p className="text-muted-foreground group flex gap-2 text-sm">
+      <p className="text-text-secondary group flex gap-2 text-sm">
         {user?.email}
 
         <AnimatedCommandButton

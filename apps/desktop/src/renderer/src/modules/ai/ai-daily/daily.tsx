@@ -1,6 +1,5 @@
+import { Spring } from "@follow/components/constants/spring.js"
 import { EmptyIcon } from "@follow/components/icons/empty.jsx"
-import { AutoResizeHeight } from "@follow/components/ui/auto-resize-height/index.jsx"
-import { Card, CardContent } from "@follow/components/ui/card/index.jsx"
 import { LoadingCircle } from "@follow/components/ui/loading/index.jsx"
 import { RootPortal } from "@follow/components/ui/portal/index.js"
 import { ScrollArea } from "@follow/components/ui/scroll-area/index.js"
@@ -12,15 +11,17 @@ import {
 } from "@follow/components/ui/tooltip/index.jsx"
 import { nextFrame, stopPropagation } from "@follow/utils/dom"
 import { cn, isBizId } from "@follow/utils/utils"
+import { noop } from "foxact/noop"
 import type { Components } from "hast-util-to-jsx-runtime"
 import type { Variant } from "motion/react"
 import { m, useAnimationControls } from "motion/react"
 import type { FC } from "react"
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { Trans, useTranslation } from "react-i18next"
 
+import { MenuItemText } from "~/atoms/context-menu"
 import { useGeneralSettingSelector } from "~/atoms/settings/general"
-import { Collapse } from "~/components/ui/collapse"
+import { CollapseControlled } from "~/components/ui/collapse"
 import { RelativeTime } from "~/components/ui/datetime"
 import {
   DropdownMenu,
@@ -52,21 +53,38 @@ import { Queries } from "~/queries"
 import { useEntry } from "~/store/entry"
 import { useFeedById } from "~/store/feed"
 
+import { remarkSnowflakeId } from "./plugins/parse-snowflake"
 import type { DailyItemProps, DailyView } from "./types"
 import { useParseDailyDate } from "./useParseDailyDate"
 
-export const DailyItem = ({ view, day, className }: DailyItemProps) => {
+export const DailyItem = ({
+  view,
+  day,
+  className,
+  onClick,
+  isOpened,
+}: DailyItemProps & {
+  isOpened: boolean
+  onClick: () => void
+}) => {
   const { title, startDate, endDate } = useParseDailyDate(day)
 
   return (
-    <Collapse
+    <CollapseControlled
+      isOpened={isOpened}
+      onOpenChange={noop}
       collapseId={`${day}`}
       hideArrow
-      title={<DailyReportTitle title={title} startDate={startDate} endDate={endDate} />}
-      className={cn(className, "mx-auto w-full max-w-lg border-b pb-6 last:border-b-0")}
+      contentClassName="flex-1 flex flex-col"
+      title={
+        <button type="button" className="container" onClick={onClick}>
+          <DailyReportTitle title={title} startDate={startDate} endDate={endDate} />
+        </button>
+      }
+      className={cn(className, "mx-auto w-full max-w-lg border-b last:border-b-0")}
     >
       <DailyReportContent endDate={endDate} view={view} startDate={startDate} />
-    </Collapse>
+    </CollapseControlled>
   )
 }
 
@@ -91,8 +109,9 @@ export const DailyReportTitle = ({
 
   return (
     <m.div
-      className="flex items-center justify-center gap-2 text-base"
+      className="flex items-center justify-center gap-2 pb-6 text-base"
       layoutId={`daily-report-title-${title}`}
+      transition={Spring.presets.smooth}
     >
       <i className="i-mgc-ai-cute-re" />
       <div className="font-medium">{t("ai_daily.title", { title })}</div>
@@ -165,48 +184,51 @@ interface DailyReportContentProps {
   endDate: number
 }
 
-export const DailyReportContent: Component<DailyReportContentProps> = ({
+const DailyReportContent: Component<DailyReportContentProps> = ({
   endDate,
   startDate,
 
   view,
-  className,
 }) => {
   const content = useQueryData({ endDate, startDate, view })
 
   const RelatedEntryLink = useState(() => createRelatedEntryLink("modal"))[0]
+
   return (
-    <Card className="border-none bg-transparent">
-      <CardContent className={cn("space-y-0 p-0", className)}>
-        <ScrollArea.ScrollArea mask={false} flex viewportClassName="max-h-[calc(100vh-176px)]">
-          <AutoResizeHeight spring>
-            {content.isLoading ? (
-              <LoadingCircle size="large" className="mt-8 text-center" />
-            ) : (
-              !!content.data && (
+    <div className="relative h-0 flex-1 grow">
+      <div className="absolute inset-0 flex">
+        <ScrollArea.ScrollArea mask flex viewportClassName="grow" rootClassName="grow">
+          {content.isLoading ? (
+            <LoadingCircle size="large" className="center flex h-[calc(100vh-176px)] text-center" />
+          ) : (
+            !!content.data && (
+              <m.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={Spring.smooth(0.35)}
+                className="overflow-hidden"
+              >
                 <Markdown
+                  applyMiddleware={(pipeline) => {
+                    pipeline.use(remarkSnowflakeId)
+
+                    return pipeline
+                  }}
                   components={{
+                    // @ts-expect-error
+                    "snowflake-id": SnowflakeId,
                     a: RelatedEntryLink as Components["a"],
                   }}
                   className="prose-sm prose-p:my-1 prose-ul:my-1 prose-ul:list-outside prose-ul:list-disc prose-li:marker:text-accent mt-4 px-6"
                 >
                   {content.data}
                 </Markdown>
-              )
-            )}
-          </AutoResizeHeight>
+              </m.div>
+            )
+          )}
         </ScrollArea.ScrollArea>
-        {!!content.data && (
-          <FlatMarkAllReadButton
-            className="ml-auto"
-            filter={{
-              startTime: startDate,
-              endTime: endDate,
-            }}
-          />
-        )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }
 
@@ -264,59 +286,16 @@ const createRelatedEntryLink = (variant: "toast" | "modal") => (props: LinkProps
   const { href, children } = props
   const entryId = isBizId(href) ? href : null
 
-  const { present } = useModalStack()
-
+  const peekModal = usePeekModal()
   if (!entryId) {
     return <MarkdownLink {...props} />
   }
   return (
     <button
       type="button"
-      className="follow-link--underline text-foreground cursor-pointer font-semibold no-underline"
+      className="follow-link--underline text-text cursor-pointer font-semibold no-underline"
       onClick={() => {
-        const basePresentProps = {
-          clickOutsideToDismiss: true,
-          title: "Entry Preview",
-        }
-
-        if (variant === "toast") {
-          present({
-            ...basePresentProps,
-            CustomModalComponent: PlainModal,
-            content: () => <EntryToastPreview entryId={entryId} />,
-            overlay: false,
-            modal: false,
-            modalContainerClassName: "right-0 left-[auto]",
-          })
-        } else {
-          present({
-            ...basePresentProps,
-            autoFocus: false,
-            modalClassName:
-              "relative mx-auto mt-[10vh] scrollbar-none max-w-full overflow-auto px-2 lg:max-w-[65rem] lg:p-0",
-            // eslint-disable-next-line @eslint-react/no-nested-component-definitions
-            CustomModalComponent: ({ children }) => {
-              const { feedId } = useEntry(entryId) || {}
-
-              return (
-                <PeekModal
-                  rightActions={[
-                    {
-                      onClick: () => {},
-                      label: "More Actions",
-                      icon: <EntryMoreActions entryId={entryId} />,
-                    },
-                  ]}
-                  to={`/timeline/view-${getRouteParams().view}/${feedId}/${entryId}`}
-                >
-                  {children}
-                </PeekModal>
-              )
-            },
-            content: () => <EntryModalPreview entryId={entryId} />,
-            overlay: true,
-          })
-        }
+        peekModal(entryId, variant)
       }}
     >
       {children}
@@ -325,6 +304,57 @@ const createRelatedEntryLink = (variant: "toast" | "modal") => (props: LinkProps
   )
 }
 
+const usePeekModal = () => {
+  const { present } = useModalStack()
+  return useCallback(
+    (entryId: string, variant: "toast" | "modal") => {
+      const basePresentProps = {
+        clickOutsideToDismiss: true,
+        title: "Entry Preview",
+      }
+
+      if (variant === "toast") {
+        present({
+          ...basePresentProps,
+          CustomModalComponent: PlainModal,
+          content: () => <EntryToastPreview entryId={entryId} />,
+          overlay: false,
+          modal: false,
+          modalContainerClassName: "right-0 left-[auto]",
+        })
+      } else {
+        present({
+          ...basePresentProps,
+          autoFocus: false,
+          modalClassName:
+            "relative mx-auto mt-[10vh] scrollbar-none max-w-full overflow-auto px-2 lg:max-w-[65rem] lg:p-0",
+
+          CustomModalComponent: ({ children }) => {
+            const { feedId } = useEntry(entryId) || {}
+
+            return (
+              <PeekModal
+                rightActions={[
+                  {
+                    onClick: () => {},
+                    label: "More Actions",
+                    icon: <EntryMoreActions entryId={entryId} />,
+                  },
+                ]}
+                to={`/timeline/view-${getRouteParams().view}/${feedId}/${entryId}`}
+              >
+                {children}
+              </PeekModal>
+            )
+          },
+          content: () => <EntryModalPreview entryId={entryId} />,
+          overlay: true,
+        })
+      }
+    },
+    [present],
+  )
+}
 const EntryToastPreview = ({ entryId }: { entryId: string }) => {
   useAuthQuery(Queries.entries.byId(entryId))
 
@@ -445,7 +475,7 @@ const EntryToastPreview = ({ entryId }: { entryId: string }) => {
 }
 
 const EntryModalPreview = ({ entryId }: { entryId: string }) => (
-  <Paper className="!p-0">
+  <Paper className="p-0 !pt-16 empty:hidden">
     <EntryContent
       className="h-auto [&_#entry-action-header-bar]:!bg-transparent"
       entryId={entryId}
@@ -458,17 +488,26 @@ const EntryMoreActions: FC<{ entryId: string }> = ({ entryId }) => {
   const { moreAction, mainAction } = useSortedEntryActions({ entryId, view })
 
   const actionConfigs = useMemo(
-    () => [...moreAction, ...mainAction].filter((action) => hasCommand(action.id)),
+    () =>
+      [...moreAction, ...mainAction].filter(
+        (action) => action instanceof MenuItemText && hasCommand(action.id),
+      ),
     [moreAction, mainAction],
   )
 
   const availableActions = useMemo(
-    () => actionConfigs.filter((item) => item.id !== COMMAND_ID.settings.customizeToolbar),
+    () =>
+      actionConfigs.filter(
+        (item) => item instanceof MenuItemText && item.id !== COMMAND_ID.settings.customizeToolbar,
+      ),
     [actionConfigs],
   )
 
   const extraAction = useMemo(
-    () => actionConfigs.filter((item) => item.id === COMMAND_ID.settings.customizeToolbar),
+    () =>
+      actionConfigs.filter(
+        (item) => item instanceof MenuItemText && item.id === COMMAND_ID.settings.customizeToolbar,
+      ),
     [actionConfigs],
   )
 
@@ -482,17 +521,43 @@ const EntryMoreActions: FC<{ entryId: string }> = ({ entryId }) => {
         <i className="i-mgc-more-1-cute-re" />
       </DropdownMenuTrigger>
       <RootPortal>
-        <DropdownMenuContent>
-          {availableActions.map((config) => (
-            <CommandDropdownMenuItem
-              key={config.id}
-              commandId={config.id}
-              onClick={config.onClick}
-              active={config.active}
-            />
-          ))}
+        <DropdownMenuContent alignOffset={20} sideOffset={30}>
+          {availableActions.map((config) =>
+            config instanceof MenuItemText ? (
+              <CommandDropdownMenuItem
+                key={config.id}
+                commandId={config.id}
+                onClick={config.click!}
+                active={config.active}
+              />
+            ) : null,
+          )}
         </DropdownMenuContent>
       </RootPortal>
     </DropdownMenu>
+  )
+}
+
+interface SnowflakeIdProps {
+  id: string
+  children?: React.ReactNode
+  index: number
+}
+
+const SnowflakeId: React.FC<SnowflakeIdProps> = ({ id: entryId, index }) => {
+  const peekModal = usePeekModal()
+
+  return (
+    <button
+      type="button"
+      className="follow-link--underline text-text cursor-pointer font-semibold no-underline"
+      onClick={() => {
+        peekModal(entryId, "modal")
+      }}
+    >
+      <sup className="inline-flex items-center gap-0.5 font-medium">
+        <span className="text-[0.65rem] opacity-70">{index}</span>
+      </sup>
+    </button>
   )
 }

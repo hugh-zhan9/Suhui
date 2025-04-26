@@ -6,16 +6,20 @@ import { useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useDebounceCallback } from "usehooks-ts"
 
-import { useShowContextMenu } from "~/atoms/context-menu"
+import {
+  MENU_ITEM_SEPARATOR,
+  MenuItemSeparator,
+  MenuItemText,
+  useShowContextMenu,
+} from "~/atoms/context-menu"
 import { useGeneralSettingKey } from "~/atoms/settings/general"
-import { useAsRead } from "~/hooks/biz/useAsRead"
+import { useEntryIsRead } from "~/hooks/biz/useAsRead"
 import { useEntryActions } from "~/hooks/biz/useEntryActions"
 import { useFeedActions } from "~/hooks/biz/useFeedActions"
 import { useNavigateEntry } from "~/hooks/biz/useNavigateEntry"
 import { useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
 import { useContextMenu } from "~/hooks/common/useContextMenu"
 import { COMMAND_ID } from "~/modules/command/commands/id"
-import { getCommand } from "~/modules/command/hooks/use-command"
 import type { FlatEntryModel } from "~/store/entry"
 import { entryActions } from "~/store/entry"
 
@@ -41,7 +45,7 @@ export const EntryItemWrapper: FC<
     [entry.entries.id],
   )
 
-  const asRead = useAsRead(entry)
+  const asRead = useEntryIsRead(entry)
   const hoverMarkUnread = useGeneralSettingKey("hoverMarkUnread")
 
   const handleMouseEnter = useDebounceCallback(
@@ -59,7 +63,7 @@ export const EntryItemWrapper: FC<
   )
 
   const navigate = useNavigateEntry()
-  const handleClick: React.MouseEventHandler<HTMLDivElement> = useCallback(
+  const handleClick = useCallback(
     (e) => {
       e.stopPropagation()
 
@@ -94,47 +98,36 @@ export const EntryItemWrapper: FC<
 
       e.preventDefault()
       setIsContextMenuOpen(true)
+
       await showContextMenu(
         [
-          ...actionConfigs
-            .filter(
-              (item) =>
-                !(
-                  [
-                    COMMAND_ID.entry.viewSourceContent,
-                    COMMAND_ID.entry.toggleAISummary,
-                    COMMAND_ID.entry.toggleAITranslation,
-                    COMMAND_ID.settings.customizeToolbar,
-                  ] as string[]
-                ).includes(item.id),
-            )
-            .map((item) => {
-              const cmd = getCommand(item.id)
+          ...actionConfigs.filter((item) => {
+            if (item instanceof MenuItemSeparator) {
+              return true
+            }
+            return ![
+              COMMAND_ID.entry.viewSourceContent,
+              COMMAND_ID.entry.toggleAISummary,
+              COMMAND_ID.entry.toggleAITranslation,
+              COMMAND_ID.settings.customizeToolbar,
+              COMMAND_ID.entry.readability,
+            ].includes(item.id as any)
+          }),
+          MENU_ITEM_SEPARATOR,
+          ...feedItems.filter((item) => {
+            if (item instanceof MenuItemSeparator) {
+              return true
+            }
+            return item && !item.disabled
+          }),
 
-              if (!cmd) return null
-
-              return {
-                type: "text" as const,
-                label: cmd?.label.title || "",
-                click: () => item.onClick(),
-                shortcut: item.shortcut,
-              }
-            }),
-          {
-            type: "separator" as const,
-          },
-          ...feedItems.filter((item) => item && !item.disabled),
-
-          {
-            type: "separator" as const,
-          },
-          {
-            type: "text" as const,
+          MENU_ITEM_SEPARATOR,
+          new MenuItemText({
             label: `${t("words.copy")}${t("space")}${t("words.entry")} ${t("words.id")}`,
             click: () => {
               navigator.clipboard.writeText(entry.entries.id)
             },
-          },
+          }),
         ],
         e,
       )
@@ -147,7 +140,6 @@ export const EntryItemWrapper: FC<
       <div
         className={cn(
           "hover:bg-theme-item-hover relative duration-200",
-          asRead ? "text-zinc-700 dark:text-neutral-400" : "text-zinc-900 dark:text-neutral-300",
           views[view as FeedViewType]?.wideMode ? "rounded-md" : "px-2",
           (isActive || isContextMenuOpen) && "!bg-theme-item-active",
           itemClassName,
@@ -157,6 +149,7 @@ export const EntryItemWrapper: FC<
         onMouseLeave={handleMouseEnter.cancel}
         onDoubleClick={handleDoubleClick}
         {...contextMenuProps}
+        onTouchStart={handleClick}
       >
         {children}
       </div>

@@ -1,4 +1,5 @@
 import { Focusable } from "@follow/components/common/Focusable.js"
+import { Spring } from "@follow/components/constants/spring.js"
 import { ActionButton, MotionButtonBase } from "@follow/components/ui/button/index.js"
 import type { HTMLMediaState } from "@follow/hooks"
 import { useRefValue, useVideo } from "@follow/hooks"
@@ -25,7 +26,6 @@ import { useEventCallback } from "usehooks-ts"
 import { AudioPlayer } from "~/atoms/player"
 import { IconScaleTransition } from "~/components/ux/transition/icon"
 
-import { softSpringPreset } from "../constants/spring"
 import { VolumeSlider } from "./VolumeSlider"
 
 type VideoPlayerProps = {
@@ -63,8 +63,8 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
     const isPlayer = variant === "player"
     const [clickToStatus, setClickToStatus] = useState(null as "play" | "pause" | null)
 
-    const scaleValue = useSpring(1, softSpringPreset)
-    const opacityValue = useSpring(0, softSpringPreset)
+    const scaleValue = useSpring(1, Spring.presets.softSpring)
+    const opacityValue = useSpring(0, Spring.presets.softSpring)
     const handleClick = useEventCallback((e?: any) => {
       if (!isPlayer) return
       e?.stopPropagation()
@@ -221,7 +221,7 @@ const ControlBar = memo(() => {
       dragMomentum={false}
       dragConstraints={{ current: document.documentElement }}
       className={cn(
-        "absolute inset-x-2 bottom-2 h-8 rounded-2xl border bg-zinc-100/90 backdrop-blur-xl dark:border-transparent dark:bg-neutral-700/90",
+        "bg-material-thick backdrop-blur-background border-border absolute inset-x-2 bottom-2 h-8 rounded-2xl border",
         "flex items-center gap-3 px-3",
         "mx-auto max-w-[80vw]",
       )}

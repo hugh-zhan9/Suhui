@@ -169,7 +169,7 @@ export function Login() {
               <div className="mt-2 w-full space-y-2">
                 <div className="flex items-center justify-center">
                   <Divider className="flex-1" />
-                  <p className="text-muted-foreground px-4 text-center text-sm">{t("login.or")}</p>
+                  <p className="text-text-secondary px-4 text-center text-sm">{t("login.or")}</p>
                   <Divider className="flex-1" />
                 </div>
               </div>
@@ -184,7 +184,7 @@ export function Login() {
                       }}
                     >
                       <div
-                        className="center hover:bg-muted inline-flex rounded-full border p-2.5 duration-200 [&_svg]:size-6"
+                        className="center hover:bg-material-medium inline-flex rounded-full border p-2.5 duration-200 [&_svg]:size-6"
                         dangerouslySetInnerHTML={{
                           __html: provider.icon,
                         }}

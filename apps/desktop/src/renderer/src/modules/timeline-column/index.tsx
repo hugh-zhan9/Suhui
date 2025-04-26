@@ -135,7 +135,7 @@ export function FeedColumn({ children, className }: PropsWithChildren<{ classNam
       className={cn(
         "relative flex h-full flex-col pt-2.5",
 
-        !feedColumnShow && ELECTRON_BUILD && "bg-zinc-200 dark:bg-neutral-800",
+        !feedColumnShow && ELECTRON_BUILD && "bg-material-opaque",
         className,
       )}
       onClick={useCallback(() => navigateBackHome(), [navigateBackHome])}
@@ -154,7 +154,7 @@ export function FeedColumn({ children, className }: PropsWithChildren<{ classNam
       )}
 
       <div className="relative mb-4 mt-3">
-        <div className="text-theme-vibrancyFg flex h-11 justify-between gap-0 px-3 text-xl">
+        <div className="text-text-secondary flex h-11 justify-between gap-0 px-3 text-xl">
           {timelineList.map((timelineId) => (
             <TimelineSwitchButton key={timelineId} timelineId={timelineId} />
           ))}

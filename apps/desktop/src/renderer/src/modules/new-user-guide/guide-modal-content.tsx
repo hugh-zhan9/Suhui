@@ -5,10 +5,11 @@ import { tracker } from "@follow/tracker"
 import { cn } from "@follow/utils/utils"
 import { AnimatePresence, m } from "motion/react"
 import type { ComponentProps, FunctionComponentElement } from "react"
-import { createElement, useCallback, useEffect, useMemo, useState } from "react"
+import { createElement, useEffect, useMemo, useRef, useState } from "react"
 import { Trans, useTranslation } from "react-i18next"
 
 import RSSHubIconUrl from "~/assets/rsshub-icon.png?url"
+import { useIsInMASReview } from "~/atoms/server-configs"
 import { useGeneralSettingKey } from "~/atoms/settings/general"
 import { mountLottie } from "~/components/ui/lottie-container"
 import { Markdown } from "~/components/ui/markdown/Markdown"
@@ -67,6 +68,18 @@ function Outtro() {
       <Logo className="mx-auto size-20" />
       <p className="mt-5 text-xl font-semibold">{t("new_user_guide.outro.title")}</p>
       <p className="text-lg">{t("new_user_guide.outro.description")}</p>
+
+      <div className="space-y-2 text-sm opacity-80">
+        <p>Tip: {t("new_user_guide.step.shortcuts.description1")}</p>
+        <p>
+          <Trans
+            i18nKey="new_user_guide.step.shortcuts.description2"
+            components={{
+              kbd: <Kbd>H</Kbd>,
+            }}
+          />
+        </p>
+      </div>
     </div>
   )
 }
@@ -78,6 +91,7 @@ export function GuideModalContent({ onClose }: { onClose: () => void }) {
   const [direction, setDirection] = useState(1)
   const lang = useGeneralSettingKey("language")
   const defaultLang = ["zh-CN", "zh-HK", "zh-TW"].includes(lang ?? "") ? "zh-CN" : "en"
+  const isInMASReview = useIsInMASReview()
 
   const guideSteps = useMemo(
     () =>
@@ -92,17 +106,23 @@ export function GuideModalContent({ onClose }: { onClose: () => void }) {
           ),
           icon: "i-mgc-user-setting-cute-re",
         },
-        {
-          title: t.app("new_user_guide.step.activation.title"),
-          description: t.app("new_user_guide.step.activation.description"),
-          content: <ActivationModalContent className="w-full max-w-[500px]" hideDescription />,
-          icon: "i-mgc-love-cute-re",
-        },
-        {
-          title: t.app("new_user_guide.step.migrate.wallet"),
-          content: <MyWalletSection className="w-full max-w-[600px]" />,
-          icon: <i className="i-mgc-power text-accent" />,
-        },
+        ...(!isInMASReview
+          ? [
+              {
+                title: t.app("new_user_guide.step.activation.title"),
+                description: t.app("new_user_guide.step.activation.description"),
+                content: (
+                  <ActivationModalContent className="w-full max-w-[500px]" hideDescription />
+                ),
+                icon: "i-mgc-love-cute-re",
+              },
+              {
+                title: t.app("new_user_guide.step.migrate.wallet"),
+                content: <MyWalletSection className="w-full max-w-[600px]" />,
+                icon: <i className="i-mgc-power text-accent" />,
+              },
+            ]
+          : []),
         {
           title: t.app("new_user_guide.step.behavior.unread_question.content"),
           description: t.app("new_user_guide.step.behavior.unread_question.description"),
@@ -124,23 +144,6 @@ export function GuideModalContent({ onClose }: { onClose: () => void }) {
             lang: defaultLang,
           }),
           icon: <img src={RSSHubIcon} className="size-[22px]" />,
-        },
-        {
-          title: t.app("new_user_guide.step.shortcuts.title"),
-          content: (
-            <div className="space-y-2">
-              <p>{t.app("new_user_guide.step.shortcuts.description1")}</p>
-              <p>
-                <Trans
-                  i18nKey="new_user_guide.step.shortcuts.description2"
-                  components={{
-                    kbd: <Kbd>H</Kbd>,
-                  }}
-                />
-              </p>
-            </div>
-          ),
-          icon: "i-mgc-hotkey-cute-re",
         },
       ].filter((i) => !!i) as {
         title: string
@@ -168,11 +171,11 @@ export function GuideModalContent({ onClose }: { onClose: () => void }) {
 
   const [isLottieAnimating, setIsLottieAnimating] = useState(false)
 
-  const finishGuide = useCallback(() => {
+  const finishGuide = useRef(() => {
     settingSyncQueue.replaceRemote().then(() => {
       settings.get().invalidate()
     })
-  }, [])
+  }).current
 
   return (
     <m.div
@@ -205,7 +208,7 @@ export function GuideModalContent({ onClose }: { onClose: () => void }) {
                   {title}
                 </h1>
                 {!!guideSteps[step - 1]!.description && (
-                  <div className="text-theme-vibrancyFg flex justify-center text-center text-sm">
+                  <div className="text-text-secondary mx-auto mt-4 flex max-w-prose justify-center text-center text-sm">
                     <Markdown className="prose max-w-[100ch] text-left text-sm">
                       {guideSteps[step - 1]!.description!}
                     </Markdown>
@@ -278,9 +281,12 @@ export function GuideModalContent({ onClose }: { onClose: () => void }) {
 
                   onComplete() {
                     setIsLottieAnimating(false)
-                    onClose()
                   },
                 })
+
+                setTimeout(() => {
+                  onClose()
+                }, 50)
               }
             }}
           >
@@ -327,7 +333,7 @@ function Step({ step, currentStep }: { step: number; currentStep: number }) {
           inactive: {
             backgroundColor: "var(--fo-background)",
             borderColor: "hsl(var(--border) / 0.5)",
-            color: "hsl(var(--fo-foreground) / 0.2)",
+            color: "hsl(var(--color-textTertiary))",
           },
           active: {
             backgroundColor: "var(--fo-background)",

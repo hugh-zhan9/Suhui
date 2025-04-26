@@ -54,7 +54,7 @@ const FeedListImpl = ({ className, view }: { className?: string; view: number })
         <StarredItem view={view} />
         {hasListData && (
           <>
-            <div className="text-theme-vibrancyFg mt-1 flex h-6 w-full shrink-0 items-center rounded-md px-2.5 text-xs font-semibold transition-colors">
+            <div className="text-text-secondary mt-1 flex h-6 w-full shrink-0 items-center rounded-md px-2.5 text-xs font-semibold transition-colors">
               {t("words.lists")}
             </div>
             <SortByAlphabeticalList view={view} data={listsData} />
@@ -62,7 +62,7 @@ const FeedListImpl = ({ className, view }: { className?: string; view: number })
         )}
         {hasInboxData && (
           <>
-            <div className="text-theme-vibrancyFg mt-1 flex h-6 w-full shrink-0 items-center rounded-md px-2.5 text-xs font-semibold transition-colors">
+            <div className="text-text-secondary mt-1 flex h-6 w-full shrink-0 items-center rounded-md px-2.5 text-xs font-semibold transition-colors">
               {t("words.inbox")}
             </div>
             <SortByAlphabeticalInbox view={view} data={inboxesData} />
@@ -73,7 +73,7 @@ const FeedListImpl = ({ className, view }: { className?: string; view: number })
           {(hasListData || hasInboxData) && (
             <div
               className={cn(
-                "text-theme-vibrancyFg mb-1 flex h-6 w-full shrink-0 items-center rounded-md px-2.5 text-xs font-semibold transition-colors",
+                "text-text-secondary mb-1 flex h-6 w-full shrink-0 items-center rounded-md px-2.5 text-xs font-semibold transition-colors",
                 Object.keys(feedsData).length === 0 ? "mt-0" : "mt-1",
               )}
             >

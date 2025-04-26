@@ -48,7 +48,7 @@ export function PictureItem({ entryId, entryPreview, translation }: UniversalIte
             }}
           />
         ) : (
-          <div className="center bg-muted text-muted-foreground aspect-square w-full flex-col gap-1 rounded-md text-xs">
+          <div className="center bg-material-medium text-text-secondary aspect-square w-full flex-col gap-1 rounded-md text-xs">
             <i className="i-mgc-sad-cute-re size-6" />
             {t("entry_content.no_content")}
           </div>
@@ -127,7 +127,7 @@ export const PictureWaterFallItem = memo(function PictureWaterFallItem({
             </div>
           </MasonryItemFixedDimensionWrapper>
         ) : (
-          <div className="center bg-muted text-muted-foreground aspect-video flex-col gap-1 rounded-md text-xs">
+          <div className="center bg-material-medium text-text-secondary aspect-video flex-col gap-1 rounded-md text-xs">
             <i className="i-mgc-sad-cute-re size-6" />
             No media available
           </div>
@@ -178,7 +178,7 @@ MasonryItemFixedDimensionWrapper.whyDidYouRender = {
 }
 
 export const PictureItemSkeleton = (
-  <div className="bg-theme-background relative max-w-md rounded-md text-zinc-700 transition-colors dark:text-neutral-400">
+  <div className="relative max-w-md rounded-md">
     <div className="relative">
       <div className="p-1.5">
         <div className="relative flex gap-2 overflow-x-auto">
@@ -193,7 +193,7 @@ export const PictureItemSkeleton = (
           <div className="mt-1 flex items-center gap-1 truncate text-[13px]">
             <Skeleton className="mr-0.5 size-4" />
             <Skeleton className="h-3 w-1/2" />
-            <span className="text-zinc-500">·</span>
+            <span className="text-material-opaque">·</span>
             <Skeleton className="h-3 w-12" />
           </div>
         </div>
