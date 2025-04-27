@@ -22,6 +22,7 @@ import { getRouteParams } from "~/hooks/biz/useRouteParams"
 import { tipcClient } from "~/lib/client"
 import { parseHtml } from "~/lib/parse-html"
 import { useActivationModal } from "~/modules/activation"
+import { markAllByRoute } from "~/modules/entry-column/hooks/useMarkAll"
 import { useGalleryModal } from "~/modules/entry-content/hooks"
 import { useTipModal } from "~/modules/wallet/hooks"
 import { entryActions, useEntryStore } from "~/store/entry"
@@ -296,6 +297,16 @@ export const useRegisterEntryCommands = () => {
         },
       },
       {
+        id: COMMAND_ID.entry.readAbove,
+        label: t("entry_actions.mark_above_as_read"),
+        run: ({ publishedAt }: { publishedAt: string }) => {
+          return markAllByRoute({
+            startTime: new Date(publishedAt).getTime(),
+            endTime: Date.now(),
+          })
+        },
+      },
+      {
         id: COMMAND_ID.entry.read,
         label: t("entry_actions.mark_as_read"),
         icon: (props) => (
@@ -312,6 +323,16 @@ export const useRegisterEntryCommands = () => {
           } else {
             read.mutate({ entryId, feedId: entry.feedId })
           }
+        },
+      },
+      {
+        id: COMMAND_ID.entry.readBelow,
+        label: t("entry_actions.mark_below_as_read"),
+        run: ({ publishedAt }: { publishedAt: string }) => {
+          return markAllByRoute({
+            startTime: 1,
+            endTime: new Date(publishedAt).getTime() - 1,
+          })
         },
       },
       {

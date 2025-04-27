@@ -286,11 +286,21 @@ export const useEntryActions = ({
         entryId,
       }),
       new EntryActionMenuItem({
+        id: COMMAND_ID.entry.readAbove,
+        onClick: runCmdFn(COMMAND_ID.entry.readAbove, [{ publishedAt: entry.entries.publishedAt }]),
+        entryId,
+      }),
+      new EntryActionMenuItem({
         id: COMMAND_ID.entry.read,
         onClick: runCmdFn(COMMAND_ID.entry.read, [{ entryId }]),
         hide: !hasEntry || !!entry.collections || !!inList,
         active: !!entry?.read,
         shortcut: shortcuts.entry.toggleRead.key,
+        entryId,
+      }),
+      new EntryActionMenuItem({
+        id: COMMAND_ID.entry.readBelow,
+        onClick: runCmdFn(COMMAND_ID.entry.readBelow, [{ publishedAt: entry.entries.publishedAt }]),
         entryId,
       }),
       MENU_ITEM_SEPARATOR,
@@ -304,7 +314,7 @@ export const useEntryActions = ({
       new EntryActionMenuItem({
         id: COMMAND_ID.entry.tts,
         onClick: runCmdFn(COMMAND_ID.entry.tts, [
-          { entryId, entryContent: entry?.entries.content },
+          { entryId, entryContent: entry?.entries.content! },
         ]),
         hide: !IN_ELECTRON || compact || !entry?.entries.content,
         shortcut: shortcuts.entry.tts.key,
@@ -313,7 +323,7 @@ export const useEntryActions = ({
       new EntryActionMenuItem({
         id: COMMAND_ID.entry.readability,
         onClick: runCmdFn(COMMAND_ID.entry.readability, [
-          { entryId, entryUrl: entry?.entries.url },
+          { entryId, entryUrl: entry?.entries.url! },
         ]),
         hide:
           !!entry.settings?.readability ||
@@ -342,6 +352,7 @@ export const useEntryActions = ({
     compact,
     entry?.collections,
     entry?.entries.content,
+    entry?.entries.publishedAt,
     entry?.entries.url,
     entry?.read,
     entry?.settings?.readability,
@@ -410,8 +421,7 @@ export const useSortedEntryActions = ({
             return false
           }
           const order = orderMap.get(item.id)
-          // If the order is not set, it should be in the "more" menu
-          if (!order) return true
+          if (!order) return false
           return order.type !== "main"
         })
         // .filter((item) => item.id !== COMMAND_ID.settings.customizeToolbar)

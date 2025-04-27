@@ -1,6 +1,8 @@
 export const COMMAND_ID = {
   entry: {
     read: "entry:read",
+    readAbove: "entry:read-above",
+    readBelow: "entry:read-below",
     viewSourceContent: "entry:view-source-content",
     readability: "entry:ability",
     openInBrowser: "entry:open-in-browser",
