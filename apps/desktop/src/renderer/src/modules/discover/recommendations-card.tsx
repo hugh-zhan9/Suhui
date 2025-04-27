@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@follow/components/ui/card/index.jsx"
 import { RSSHubCategories } from "@follow/constants"
-import { getDominantColor } from "@follow/utils/color"
+import { getHighestWeightColor } from "@follow/utils/color"
 import { clsx, cn, getUrlIcon } from "@follow/utils/utils"
 import { upperFirst } from "es-toolkit/compat"
 import type { FC } from "react"
@@ -168,7 +168,7 @@ const BackgroundGradient = memo(({ url, className }: { url: string; className?: 
     image.crossOrigin = "anonymous"
     image.onload = () => {
       try {
-        const color = getDominantColor(image)
+        const color = getHighestWeightColor(image)
         setColor(color)
       } catch {
         setColor("#333")

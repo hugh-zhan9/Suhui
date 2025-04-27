@@ -139,6 +139,62 @@ export function getDominantColor(imageObject: HTMLImageElement) {
 
   return `#${((1 << 24) + (i[0]! << 16) + (i[1]! << 8) + i[2]!).toString(16).slice(1)}`
 }
+export const getHighestWeightColor = (imageObject: HTMLImageElement): string => {
+  const canvas = document.createElement("canvas")
+  canvas.width = imageObject.width
+  canvas.height = imageObject.height
+  const context = canvas.getContext("2d")
+  if (!context) {
+    throw new Error("Unable to get canvas context")
+  }
+  context.drawImage(imageObject, 0, 0)
+  const imageData = context.getImageData(0, 0, canvas.width, canvas.height)
+  const pixels = imageData.data
+
+  const shift = 4 // 颜色量化的位移值，可调整
+  const colorCount = new Map<string, number>()
+
+  // 统计每个颜色范围的像素数量
+  for (let i = 0; i < pixels.length; i += 4) {
+    const r = pixels[i]! >> shift
+    const g = pixels[i + 1]! >> shift
+    const b = pixels[i + 2]! >> shift
+    const colorKey = `${r},${g},${b}`
+    colorCount.set(colorKey, (colorCount.get(colorKey) || 0) + 1)
+  }
+
+  // 找到出现次数最多的颜色范围
+  let maxCount = 0
+  let maxColorKey = ""
+  for (const [key, count] of colorCount) {
+    if (count > maxCount) {
+      maxCount = count
+      maxColorKey = key
+    }
+  }
+
+  // 计算该颜色范围内所有像素的平均 RGB 值
+  const [targetR, targetG, targetB] = maxColorKey.split(",").map(Number)
+  let sumR = 0
+  let sumG = 0
+  let sumB = 0
+  let count = 0
+  for (let i = 0; i < pixels.length; i += 4) {
+    const r = pixels[i]! >> shift
+    const g = pixels[i + 1]! >> shift
+    const b = pixels[i + 2]! >> shift
+    if (r === targetR && g === targetG && b === targetB) {
+      sumR += pixels[i]!
+      sumG += pixels[i + 1]!
+      sumB += pixels[i + 2]!
+      count++
+    }
+  }
+  const avgR = Math.round(sumR / count)
+  const avgG = Math.round(sumG / count)
+  const avgB = Math.round(sumB / count)
+  return rgbToHex(avgR, avgG, avgB)
+}
 
 export const isHexColor = (color: string) => {
   return /^#[0-9a-f]{6}$/i.test(color)
