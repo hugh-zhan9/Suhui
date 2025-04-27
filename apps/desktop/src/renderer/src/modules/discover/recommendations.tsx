@@ -1,4 +1,5 @@
 import { isMobile } from "@follow/components/hooks/useMobile.js"
+import { EmptyIcon } from "@follow/components/icons/empty.js"
 import { ActionButton } from "@follow/components/ui/button/action-button.js"
 import { Card, CardContent } from "@follow/components/ui/card/index.jsx"
 import { Divider } from "@follow/components/ui/divider/Divider.js"
@@ -236,8 +237,8 @@ const RecommendationDrawerContent = ({
         <i className="i-mgc-close-cute-re" />
       </ActionButton>
       <Divider className="m-4" />
-      <ScrollArea rootClassName="w-full" viewportClassName="px-8">
-        <div className="w-full">
+      {filteredItems.length > 0 ? (
+        <ScrollArea rootClassName="w-full" viewportClassName="px-8">
           <Masonry
             items={filteredItems}
             columnGutter={16}
@@ -256,8 +257,22 @@ const RecommendationDrawerContent = ({
               )
             }}
           />
+        </ScrollArea>
+      ) : (
+        <div className="flex h-full -translate-y-12 flex-col items-center justify-center text-center">
+          <div className="mb-4 text-6xl">
+            <EmptyIcon />
+          </div>
+          <p className="text-text text-title2">
+            {t("common.noContent", { defaultValue: "No content found in this category" })}
+          </p>
+          <p className="text-text-secondary text-body mt-2">
+            {t("discover.tryAnotherCategory", {
+              defaultValue: "Try selecting another category or language",
+            })}
+          </p>
         </div>
-      </ScrollArea>
+      )}
     </div>
   )
 }
