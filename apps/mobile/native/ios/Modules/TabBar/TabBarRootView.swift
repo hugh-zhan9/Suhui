@@ -11,6 +11,7 @@ import SnapKit
 import UIKit
 
 class TabBarRootView: ExpoView {
+  private var touchHandler: RCTTouchHandler?
   private lazy var tabBarController = {
     let tabBarController = UITabBarController()
     if #available(iOS 16.0, *), UIDevice.current.userInterfaceIdiom == .pad {
@@ -33,6 +34,10 @@ class TabBarRootView: ExpoView {
 
   required init(appContext: AppContext? = nil) {
     super.init(appContext: appContext)
+
+    touchHandler = RCTTouchHandler(
+      bridge: appContext?.reactBridge
+    )
 
     tabBarController.delegate = self
     addSubview(vc.view)
@@ -74,7 +79,8 @@ class TabBarRootView: ExpoView {
           to: toView,
           duration: 0.1,
           options: [.transitionCrossDissolve, .preferredFramesPerSecond60],
-          completion: nil)
+          completion: nil
+        )
       }
     }
 
@@ -85,6 +91,7 @@ class TabBarRootView: ExpoView {
   }
 
   override func insertSubview(_ subview: UIView, at atIndex: Int) {
+    touchHandler?.attach(to: subview)
     if let tabScreenView = subview as? TabScreenView {
       let screenVC = UIViewController()
       screenVC.view = tabScreenView
@@ -100,6 +107,7 @@ class TabBarRootView: ExpoView {
   }
 
   override func willRemoveSubview(_ subview: UIView) {
+    touchHandler?.detach(from: subview)
     if let tabScreenView = subview as? TabScreenView {
       tabViewControllers.removeAll { viewController in
         viewController.view == tabScreenView
