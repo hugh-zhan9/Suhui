@@ -75,23 +75,18 @@ private class EnhancePagerView: ExpoView, UIGestureRecognizerDelegate {
   private let onPageChange = EventDispatcher()
   private let onPageWillAppear = EventDispatcher()
 
-  private var touchHandler: RCTTouchHandler?
-
   private var pageViews: [UIView] = []
 
   required init(appContext: AppContext? = nil) {
     super.init(appContext: appContext)
-    touchHandler = RCTTouchHandler(bridge: appContext?.reactBridge)
   }
 
   override func insertSubview(_ view: UIView, at index: Int) {
-    touchHandler?.attach(to: view)
     pageViews.insert(view, at: index)
     pageController?.insertPageView(view: view)
   }
 
   func willRemoveSubview(_ subview: UIView, at index: Int) {
-    touchHandler?.detach(from: subview)
     pageViews.remove(at: index)
     pageController?.removePageView(at: index)
   }
