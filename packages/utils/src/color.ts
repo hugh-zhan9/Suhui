@@ -145,16 +145,15 @@ export const getHighestWeightColor = (imageObject: HTMLImageElement): string => 
   canvas.height = imageObject.height
   const context = canvas.getContext("2d")
   if (!context) {
-    throw new Error("Unable to get canvas context")
+    return "#000000"
   }
   context.drawImage(imageObject, 0, 0)
   const imageData = context.getImageData(0, 0, canvas.width, canvas.height)
   const pixels = imageData.data
 
-  const shift = 4 // 颜色量化的位移值，可调整
+  const shift = 4
   const colorCount = new Map<string, number>()
 
-  // 统计每个颜色范围的像素数量
   for (let i = 0; i < pixels.length; i += 4) {
     const r = pixels[i]! >> shift
     const g = pixels[i + 1]! >> shift
@@ -163,7 +162,6 @@ export const getHighestWeightColor = (imageObject: HTMLImageElement): string => 
     colorCount.set(colorKey, (colorCount.get(colorKey) || 0) + 1)
   }
 
-  // 找到出现次数最多的颜色范围
   let maxCount = 0
   let maxColorKey = ""
   for (const [key, count] of colorCount) {
@@ -173,7 +171,6 @@ export const getHighestWeightColor = (imageObject: HTMLImageElement): string => 
     }
   }
 
-  // 计算该颜色范围内所有像素的平均 RGB 值
   const [targetR, targetG, targetB] = maxColorKey.split(",").map(Number)
   let sumR = 0
   let sumG = 0
