@@ -25,7 +25,7 @@ import { toastFetchError } from "~/lib/error-parser"
 const formSchema = z.object({
   handle: z.string().max(50).optional(),
   name: z.string().min(3).max(50),
-  image: z.string().url(),
+  image: z.string().url().or(z.literal("")).optional(),
 })
 
 export const ProfileSettingForm = ({
