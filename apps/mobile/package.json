@@ -138,7 +138,7 @@
     "drizzle-kit": "0.31.0",
     "eas-cli": "16.3.3",
     "expo-drizzle-studio-plugin": "0.1.2",
-    "nbump": "2.1.1",
+    "nbump": "2.1.2",
     "postcss": "8.5.3",
     "sf-symbols-typescript": "2.1.0"
   },

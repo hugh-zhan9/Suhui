@@ -1,8 +1,7 @@
 packages:
   - apps/*
   - packages/**/*
-  - apps/desktop/*
-  - apps/desktop/src/*
+  - apps/desktop/layer/*
   - "!apps/mobile/native/example"
   - apps/mobile/web-app
   - "!**/example"

@@ -12,6 +12,6 @@ export default defineConfig({
   ],
   commit_message: "release(desktop): hotfix to release v${NEW_VERSION}",
   tag: false,
-  changelog: true,
+  changelog: false,
   allowedBranches: ["hotfix/*"],
 })

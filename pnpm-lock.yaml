@@ -106,9 +106,6 @@ importers:
       lint-staged:
         specifier: 15.5.1
         version: 15.5.1
-      nbump:
-        specifier: 2.1.1
-        version: 2.1.1(conventional-commits-filter@5.0.0)
       prettier:
         specifier: 3.5.3
         version: 3.5.3
@@ -236,6 +233,9 @@ importers:
       '@vitejs/plugin-react':
         specifier: 4.4.1
         version: 4.4.1(vite@6.3.3(@types/node@22.15.3)(jiti@2.4.2)(lightningcss@1.29.3)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.1))
+      async-es:
+        specifier: 3.2.6
+        version: 3.2.6
       autoprefixer:
         specifier: 10.4.21
         version: 10.4.21(postcss@8.5.3)
@@ -282,8 +282,8 @@ importers:
         specifier: 4.1.0
         version: 4.1.0
       nbump:
-        specifier: 2.1.1
-        version: 2.1.1(conventional-commits-filter@5.0.0)
+        specifier: 2.1.2
+        version: 2.1.2(conventional-commits-filter@5.0.0)
       react:
         specifier: 18.3.1
         version: 18.3.1
@@ -318,7 +318,7 @@ importers:
         specifier: 5.1.4
         version: 5.1.4(typescript@5.8.3)(vite@6.3.3(@types/node@22.15.3)(jiti@2.4.2)(lightningcss@1.29.3)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.1))
 
-  apps/desktop/src/main:
+  apps/desktop/layer/main:
     dependencies:
       '@egoist/tipc':
         specifier: 0.3.2
@@ -427,7 +427,7 @@ importers:
         specifier: 4.7.7
         version: 4.7.7(patch_hash=5c74c2d2afaa5880c13d75458dd26c84da568851691b1fb6de6d877c29936d05)
 
-  apps/desktop/src/renderer:
+  apps/desktop/layer/renderer:
     dependencies:
       '@dnd-kit/core':
         specifier: 6.3.1
@@ -1077,8 +1077,8 @@ importers:
         specifier: 0.1.2
         version: 0.1.2(expo@52.0.46(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@expo/metro-runtime@4.0.1(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)))(bufferutil@4.0.9)(encoding@0.1.13)(graphql@16.8.1)(react-native-webview@13.13.5(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1))(react@18.3.1))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1))(react@18.3.1))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1))(react@18.3.1)
       nbump:
-        specifier: 2.1.1
-        version: 2.1.1(conventional-commits-filter@5.0.0)
+        specifier: 2.1.2
+        version: 2.1.2(conventional-commits-filter@5.0.0)
       postcss:
         specifier: 8.5.3
         version: 8.5.3
@@ -1291,7 +1291,7 @@ importers:
         version: 1.36.0
       tailwindcss:
         specifier: '>=3 || <4'
-        version: 3.4.17(ts-node@10.9.2(@types/node@22.14.1)(typescript@5.8.3))
+        version: 3.4.17(ts-node@10.9.2(@types/node@22.15.3)(typescript@5.8.3))
       tailwindcss-animate:
         specifier: 1.0.7
         version: 1.0.7(tailwindcss@3.4.17(ts-node@10.9.2(@types/node@22.15.3)(typescript@5.8.3)))
@@ -5070,19 +5070,6 @@ packages:
       '@types/react-dom':
         optional: true
 
-  '@radix-ui/react-primitive@2.0.3':
-    resolution: {integrity: sha512-Pf/t/GkndH7CQ8wE2hbkXA+WyZ83fhQQn5DDmwDiDo6AwN/fhaH8oqZ0jRjMrO2iaMhDi6P1HRx6AZwyMinY1g==}
-    peerDependencies:
-      '@types/react': '*'
-      '@types/react-dom': '*'
-      react: 18.3.1
-      react-dom: 18.3.1
-    peerDependenciesMeta:
-      '@types/react':
-        optional: true
-      '@types/react-dom':
-        optional: true
-
   '@radix-ui/react-primitive@2.1.0':
     resolution: {integrity: sha512-/J/FhLdK0zVcILOwt5g+dH4KnkonCtkVJsa2G6JmvbbtZfBEI1gMsO3QMjseL4F/SwfAMt1Vc/0XKYKq+xJ1sw==}
     peerDependencies:
@@ -6141,9 +6128,6 @@ packages:
     peerDependencies:
       tailwindcss: '>=3.0.0 || insiders || >=4.0.0-alpha.20 || >=4.0.0-beta.1'
 
-  '@tanstack/query-core@5.74.4':
-    resolution: {integrity: sha512-YuG0A0+3i9b2Gfo9fkmNnkUWh5+5cFhWBN0pJAHkHilTx6A0nv8kepkk4T4GRt4e5ahbtFj2eTtkiPcVU1xO4A==}
-
   '@tanstack/query-core@5.74.7':
     resolution: {integrity: sha512-X3StkN/Y6KGHndTjJf8H8th7AX4bKfbRpiVhVqevf0QWlxl6DhyJ0TYG3R0LARa/+xqDwzU9mA4pbJxzPCI29A==}
 
@@ -6166,11 +6150,6 @@ packages:
     resolution: {integrity: sha512-0/znLQyc7TtAoZf31tDOjgdlj7meD7qVPXgK3Vr++zExQ+tcNfiIsSrS1RS6AKtUIHVl1MVZRdt3MPnthxAmNA==}
     peerDependencies:
       '@tanstack/react-query': ^5.74.7
-      react: 18.3.1
-
-  '@tanstack/react-query@5.74.4':
-    resolution: {integrity: sha512-mAbxw60d4ffQ4qmRYfkO1xzRBPUEf/72Dgo3qqea0J66nIKuDTLEqQt0ku++SDFlMGMnB6uKDnEG1xD/TDse4Q==}
-    peerDependencies:
       react: 18.3.1
 
   '@tanstack/react-query@5.74.7':
@@ -6996,6 +6975,9 @@ packages:
   astral-regex@2.0.0:
     resolution: {integrity: sha512-Z7tMw1ytTXt5jqMcOP+OQteU1VuNK9Y02uuJtKQ1Sv69jXQKKg5cibLwGJow8yzZP+eAc18EmLGPal0bp36rvQ==}
     engines: {node: '>=8'}
+
+  async-es@3.2.6:
+    resolution: {integrity: sha512-9C2+oOPd7/EzIeneF4k24o75oY7OcHU/Isl7xIot12EBRwXonyuqKsmxwLuAbFWL6B/FucTQip09xTbiu1CA8A==}
 
   async-exit-hook@2.0.1:
     resolution: {integrity: sha512-NW2cX8m1Q7KPA7a5M2ULQeZ2wR5qI5PAbw5L0UOMxdioVk9PMZ0h1TmyZEkPYrCvYjDlFICusOu1dlEKAAeXBw==}
@@ -11860,8 +11842,8 @@ packages:
   natural-orderby@2.0.3:
     resolution: {integrity: sha512-p7KTHxU0CUrcOXe62Zfrb5Z13nLvPhSWR/so3kFulUQU0sgUll2Z0LwpsLN351eOOD+hRGu/F1g+6xDfPeD++Q==}
 
-  nbump@2.1.1:
-    resolution: {integrity: sha512-oaVobQLOVHAdL9ImlovQi32KVRTCkTkLsPsGErcAzQByhqzT0xy8MbQKc6EslvfOi0pWuDqiAGjQGGoxAwpImA==}
+  nbump@2.1.2:
+    resolution: {integrity: sha512-E01rSixCNR/fTwmf8YhBD7kVmCQDojlb+kuafGv8qo5B3GOD84Ql8UvOAVwQiQvCaz25mR9f7rK3Sn8ZoDPC5A==}
     hasBin: true
 
   ncp@2.0.0:
@@ -16704,7 +16686,7 @@ snapshots:
     dependencies:
       electron: 35.1.5
     optionalDependencies:
-      '@tanstack/react-query': 5.74.4(react@18.3.1)
+      '@tanstack/react-query': 5.74.7(react@18.3.1)
     transitivePeerDependencies:
       - react
 
@@ -17721,7 +17703,7 @@ snapshots:
       getenv: 1.0.0
       glob: 10.4.5
       resolve-from: 5.0.0
-      semver: 7.5.4
+      semver: 7.7.1
       slash: 3.0.0
       slugify: 1.6.6
       xcode: 3.0.1
@@ -17989,8 +17971,8 @@ snapshots:
       ejs: 3.1.10
       fs-extra: 10.1.0
       http-call: 5.3.0
-      semver: 7.5.4
-      tslib: 2.6.2
+      semver: 7.7.1
+      tslib: 2.8.1
     transitivePeerDependencies:
       - '@swc/core'
       - '@swc/wasm'
@@ -18062,7 +18044,7 @@ snapshots:
       '@expo/logger': 1.0.117
       '@expo/spawn-async': 1.7.2
       arg: 5.0.2
-      fs-extra: 11.2.0
+      fs-extra: 11.3.0
       joi: 17.13.3
       jsep: 1.4.0
       lodash.clonedeep: 4.5.0
@@ -19307,12 +19289,12 @@ snapshots:
       natural-orderby: 2.0.3
       object-treeify: 1.1.33
       password-prompt: 1.1.3
-      semver: 7.5.4
+      semver: 7.7.1
       string-width: 4.2.3
       strip-ansi: 6.0.1
       supports-color: 8.1.1
       supports-hyperlinks: 2.3.0
-      tslib: 2.6.2
+      tslib: 2.8.1
       widest-line: 3.1.0
       wrap-ansi: 7.0.0
 
@@ -19342,7 +19324,7 @@ snapshots:
       supports-color: 8.1.1
       supports-hyperlinks: 2.3.0
       ts-node: 10.9.2(@types/node@22.15.3)(typescript@5.8.3)
-      tslib: 2.6.2
+      tslib: 2.8.1
       widest-line: 3.1.0
       wordwrap: 1.0.0
       wrap-ansi: 7.0.0
@@ -20111,15 +20093,6 @@ snapshots:
     dependencies:
       '@radix-ui/react-compose-refs': 1.1.2(@types/react@18.3.12)(react@18.3.1)
       '@radix-ui/react-use-layout-effect': 1.1.1(@types/react@18.3.12)(react@18.3.1)
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
-    optionalDependencies:
-      '@types/react': 18.3.12
-      '@types/react-dom': 18.3.1
-
-  '@radix-ui/react-primitive@2.0.3(@types/react-dom@18.3.1)(@types/react@18.3.12)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
-    dependencies:
-      '@radix-ui/react-slot': 1.2.0(@types/react@18.3.12)(react@18.3.1)
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
     optionalDependencies:
@@ -21359,9 +21332,6 @@ snapshots:
       postcss-selector-parser: 6.0.10
       tailwindcss: 3.4.17(ts-node@10.9.2(@types/node@22.15.3)(typescript@5.8.3))
 
-  '@tanstack/query-core@5.74.4':
-    optional: true
-
   '@tanstack/query-core@5.74.7': {}
 
   '@tanstack/query-devtools@5.74.7': {}
@@ -21386,12 +21356,6 @@ snapshots:
       '@tanstack/query-persist-client-core': 5.74.7
       '@tanstack/react-query': 5.74.7(react@18.3.1)
       react: 18.3.1
-
-  '@tanstack/react-query@5.74.4(react@18.3.1)':
-    dependencies:
-      '@tanstack/query-core': 5.74.4
-      react: 18.3.1
-    optional: true
 
   '@tanstack/react-query@5.74.7(react@18.3.1)':
     dependencies:
@@ -21693,7 +21657,7 @@ snapshots:
 
   '@types/yauzl@2.10.3':
     dependencies:
-      '@types/node': 22.14.1
+      '@types/node': 22.15.3
     optional: true
 
   '@typescript-eslint/eslint-plugin@8.30.1(@typescript-eslint/parser@8.30.1(eslint@9.25.1(jiti@2.4.2))(typescript@5.8.3))(eslint@9.25.1(jiti@2.4.2))(typescript@5.8.3)':
@@ -22413,6 +22377,8 @@ snapshots:
       tslib: 2.8.1
 
   astral-regex@2.0.0: {}
+
+  async-es@3.2.6: {}
 
   async-exit-hook@2.0.1: {}
 
@@ -23240,7 +23206,7 @@ snapshots:
       '@radix-ui/react-compose-refs': 1.1.2(@types/react@18.3.12)(react@18.3.1)
       '@radix-ui/react-dialog': 1.1.11(@types/react-dom@18.3.1)(@types/react@18.3.12)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@radix-ui/react-id': 1.1.1(@types/react@18.3.12)(react@18.3.1)
-      '@radix-ui/react-primitive': 2.0.3(@types/react-dom@18.3.1)(@types/react@18.3.12)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-primitive': 2.1.0(@types/react-dom@18.3.1)(@types/react@18.3.12)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
     transitivePeerDependencies:
@@ -26306,7 +26272,7 @@ snapshots:
   graphql-tag@2.12.6(graphql@16.8.1):
     dependencies:
       graphql: 16.8.1
-      tslib: 2.6.2
+      tslib: 2.8.1
 
   graphql@16.8.1: {}
 
@@ -27316,7 +27282,7 @@ snapshots:
       jws: 3.2.2
       lodash: 4.17.21
       ms: 2.1.3
-      semver: 7.5.4
+      semver: 7.7.1
 
   jsonwebtoken@9.0.2:
     dependencies:
@@ -28707,7 +28673,7 @@ snapshots:
 
   natural-orderby@2.0.3: {}
 
-  nbump@2.1.1(conventional-commits-filter@5.0.0):
+  nbump@2.1.2(conventional-commits-filter@5.0.0):
     dependencies:
       c12: 3.0.3
       conventional-changelog: 6.0.0(conventional-commits-filter@5.0.0)
@@ -29389,14 +29355,6 @@ snapshots:
     dependencies:
       camelcase-css: 2.0.1
       postcss: 8.5.3
-
-  postcss-load-config@4.0.2(postcss@8.5.3)(ts-node@10.9.2(@types/node@22.14.1)(typescript@5.8.3)):
-    dependencies:
-      lilconfig: 3.1.3
-      yaml: 2.7.1
-    optionalDependencies:
-      postcss: 8.5.3
-      ts-node: 10.9.2(@types/node@22.14.1)(typescript@5.8.3)
 
   postcss-load-config@4.0.2(postcss@8.5.3)(ts-node@10.9.2(@types/node@22.15.3)(typescript@5.8.3)):
     dependencies:
@@ -31479,33 +31437,6 @@ snapshots:
     dependencies:
       apple-uikit-colors: 0.6.0
 
-  tailwindcss@3.4.17(ts-node@10.9.2(@types/node@22.14.1)(typescript@5.8.3)):
-    dependencies:
-      '@alloc/quick-lru': 5.2.0
-      arg: 5.0.2
-      chokidar: 3.6.0
-      didyoumean: 1.2.2
-      dlv: 1.1.3
-      fast-glob: 3.3.3
-      glob-parent: 6.0.2
-      is-glob: 4.0.3
-      jiti: 1.21.7
-      lilconfig: 3.1.3
-      micromatch: 4.0.8
-      normalize-path: 3.0.0
-      object-hash: 3.0.0
-      picocolors: 1.1.1
-      postcss: 8.5.3
-      postcss-import: 15.1.0(postcss@8.5.3)
-      postcss-js: 4.0.1(postcss@8.5.3)
-      postcss-load-config: 4.0.2(postcss@8.5.3)(ts-node@10.9.2(@types/node@22.14.1)(typescript@5.8.3))
-      postcss-nested: 6.2.0(postcss@8.5.3)
-      postcss-selector-parser: 6.1.2
-      resolve: 1.22.10
-      sucrase: 3.35.0
-    transitivePeerDependencies:
-      - ts-node
-
   tailwindcss@3.4.17(ts-node@10.9.2(@types/node@22.15.3)(typescript@5.8.3)):
     dependencies:
       '@alloc/quick-lru': 5.2.0
@@ -31784,25 +31715,6 @@ snapshots:
       typescript: 4.9.5
       v8-compile-cache-lib: 3.0.1
       yn: 3.1.1
-
-  ts-node@10.9.2(@types/node@22.14.1)(typescript@5.8.3):
-    dependencies:
-      '@cspotcode/source-map-support': 0.8.1
-      '@tsconfig/node10': 1.0.11
-      '@tsconfig/node12': 1.0.11
-      '@tsconfig/node14': 1.0.3
-      '@tsconfig/node16': 1.0.4
-      '@types/node': 22.14.1
-      acorn: 8.14.1
-      acorn-walk: 8.3.4
-      arg: 4.1.3
-      create-require: 1.1.1
-      diff: 4.0.2
-      make-error: 1.3.6
-      typescript: 5.8.3
-      v8-compile-cache-lib: 3.0.1
-      yn: 3.1.1
-    optional: true
 
   ts-node@10.9.2(@types/node@22.15.3)(typescript@5.8.3):
     dependencies:

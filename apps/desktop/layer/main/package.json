@@ -15,7 +15,6 @@
       "import": "./export.js"
     }
   },
-  "main": "./src/index.ts",
   "scripts": {
     "build": "tsc",
     "test": "vitest",

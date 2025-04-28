@@ -39,7 +39,7 @@ function compressAndFingerprintPlugin(outDir: string): Plugin {
       const hex = hashSum.digest("hex")
 
       // Calculate main hash
-      const mainHash = await calculateMainHash(path.resolve(process.cwd(), "src/main"))
+      const mainHash = await calculateMainHash(path.resolve(process.cwd(), "layer/main"))
 
       // Get the current git tag version
       let version = "unknown"

@@ -4,10 +4,10 @@ import plugin from "tailwindcss/plugin"
 const isWebBuild = !!process.env.WEB_BUILD || !!process.env.RN_BUILD || !!process.env.VERCEL
 export default extendConfig({
   content: [
-    "./src/renderer/src/**/*.{ts,tsx}",
+    "./layer/renderer/src/**/*.{ts,tsx}",
     "./apps/web/src/**/*.{ts,tsx}",
 
-    "./src/renderer/index.html",
+    "./layer/renderer/index.html",
     "./apps/web/index.html",
     "../../packages/**/*.{ts,tsx}",
     "!../../packages/**/node_modules",

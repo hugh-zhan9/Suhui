@@ -33,10 +33,10 @@ const changelogFile = getChangelogFileContent()
 export const viteRenderBaseConfig = {
   resolve: {
     alias: {
-      "~": resolve("src/renderer/src"),
+      "~": resolve("layer/renderer/src"),
       "@pkg": resolve("package.json"),
       "@locales": resolve("../../locales"),
-      "@follow/electron-main": resolve("src/main/src"),
+      "@follow/electron-main": resolve("layer/main/src"),
     },
   },
   base: "/",

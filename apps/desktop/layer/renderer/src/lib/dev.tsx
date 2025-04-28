@@ -37,7 +37,7 @@ export const attachOpenInEditor = (stack: string) => {
             <div
               className="cursor-pointer"
               key={line}
-              onClick={openInEditor.bind(null, `${APP_DEV_CWD}/src/renderer/src${fs}`)}
+              onClick={openInEditor.bind(null, `${APP_DEV_CWD}/layer/renderer/src${fs}`)}
             >
               {line}
             </div>
