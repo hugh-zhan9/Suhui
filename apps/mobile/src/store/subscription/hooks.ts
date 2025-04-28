@@ -255,8 +255,8 @@ export const getSubscriptionCategory = (view?: FeedViewType) => {
   return view === undefined ? [] : Array.from(state.categories[view])
 }
 
-export const useSubscriptionByFeedId = (feedId: string) =>
-  useSubscriptionStore(useCallback((state) => state.data[feedId] || null, [feedId]))
+export const useSubscriptionByFeedId = (feedId?: string) =>
+  useSubscriptionStore(useCallback((state) => (feedId ? state.data[feedId] : undefined), [feedId]))
 
 export const useSubscriptionByListId = (listId: string) =>
   useSubscriptionStore(useCallback((state) => state.data[listId] || null, [listId]))
