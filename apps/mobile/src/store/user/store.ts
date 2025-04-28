@@ -161,7 +161,7 @@ class UserSyncService {
       immerSet((state) => {
         state.users[userId] = {
           email: null,
-          isMe: whoami?.id === userId ? 1 : 0,
+          isMe: whoami?.id === userId,
           ...res.data,
         }
       })
@@ -188,9 +188,7 @@ class UserActions {
     tx.store(() => this.upsertManyInSession(users))
     const { whoami } = useUserStore.getState()
     tx.persist(() =>
-      UserService.upsertMany(
-        users.map((user) => ({ ...user, isMe: whoami?.id === user.id ? 1 : 0 })),
-      ),
+      UserService.upsertMany(users.map((user) => ({ ...user, isMe: whoami?.id === user.id }))),
     )
     await tx.run()
   }

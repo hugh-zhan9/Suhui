@@ -42,7 +42,7 @@ export const EntryReadHistory = ({ entryId }: { entryId: string }) => {
                   id: user.id,
                   name: user.name,
                   image: user.image,
-                  isMe: 0,
+                  isMe: false,
                   email: null,
                   emailVerified: null,
                 },

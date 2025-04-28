@@ -24,7 +24,7 @@ class UserServiceStatic implements Hydratable {
   }
 
   async removeCurrentUser() {
-    await db.update(usersTable).set({ isMe: 0 }).where(eq(usersTable.isMe, 1))
+    await db.update(usersTable).set({ isMe: false }).where(eq(usersTable.isMe, true))
   }
 }
 
