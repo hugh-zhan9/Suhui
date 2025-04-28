@@ -130,7 +130,7 @@ export default ({ mode }) => {
     resolve: {
       alias: {
         ...viteRenderBaseConfig.resolve?.alias,
-        "@follow/logger": resolve(__dirname, "../../packages/logger/web.ts"),
+        "@follow/logger": resolve(__dirname, "../../packages/internal/logger/web.ts"),
       },
     },
     plugins: [

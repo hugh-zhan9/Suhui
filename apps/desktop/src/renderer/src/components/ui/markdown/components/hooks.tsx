@@ -3,6 +3,7 @@ import { useScrollViewElement } from "@follow/components/ui/scroll-area/hooks.js
 import { getElementTop } from "@follow/utils/dom"
 import { springScrollToElement } from "@follow/utils/scroller"
 import { throttle } from "es-toolkit/compat"
+import { useStore } from "jotai"
 import {
   startTransition,
   useCallback,
@@ -129,6 +130,7 @@ export const useScrollTracking = (
 
   const throttleCallerRef = useRef<DebouncedFuncLeading<() => void>>()
 
+  const store = useStore()
   useEffect(() => {
     if (!scrollContainerElement) return
 
@@ -140,7 +142,7 @@ export const useScrollTracking = (
           ? document.documentElement.scrollTop + y
           : (scrollContainerElement as HTMLElement).scrollTop + y
 
-      const winHeight = getViewport().h
+      const winHeight = getViewport(store).h
       const deltaHeight = top >= winHeight ? winHeight : (top / winHeight) * winHeight
 
       const actualTop = Math.floor(Math.max(0, top - y + deltaHeight)) || 0
@@ -180,7 +182,7 @@ export const useScrollTracking = (
       scrollContainerElement.removeEventListener("scroll", handler)
       handler.cancel()
     }
-  }, [getWrappedElPos, scrollContainerElement, titleBetweenPositionTopRangeMap])
+  }, [getWrappedElPos, scrollContainerElement, store, titleBetweenPositionTopRangeMap])
 
   const handleScrollTo = useEventCallback(
     (i: number, $el: HTMLElement | null, _anchorId: string) => {

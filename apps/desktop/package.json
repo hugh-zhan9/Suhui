@@ -49,6 +49,7 @@
     "@electron-forge/publisher-github": "7.8.0",
     "@electron-toolkit/tsconfig": "1.0.1",
     "@follow/components": "workspace:*",
+    "@follow/configs": "workspace:*",
     "@follow/constants": "workspace:*",
     "@follow/hooks": "workspace:*",
     "@follow/models": "workspace:*",
@@ -70,7 +71,7 @@
     "electron-devtools-installer": "4.0.0",
     "electron-packager-languages": "0.6.0",
     "electron-vite": "3.1.0",
-    "es-toolkit": "1.35.0",
+    "es-toolkit": "1.36.0",
     "fake-indexeddb": "6.0.0",
     "happy-dom": "17.4.4",
     "hono": "4.7.7",
@@ -79,10 +80,15 @@
     "nbump": "2.1.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
+    "tailwindcss-multi": "0.4.6",
     "tar": "7.4.3",
     "tsup": "8.4.0",
     "unplugin-ast": "0.14.6",
-    "utf-8-validate": "6.0.5"
+    "utf-8-validate": "6.0.5",
+    "vite-bundle-analyzer": "0.19.0",
+    "vite-plugin-mkcert": "1.17.8",
+    "vite-plugin-pwa": "1.0.0",
+    "vite-tsconfig-paths": "5.1.4"
   },
   "productName": "Folo",
   "mainHash": "940434b28461617481f90649e06860933a1fbadcd739f08fbf84659701fd1bee"

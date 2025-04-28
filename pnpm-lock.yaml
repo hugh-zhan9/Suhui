@@ -64,30 +64,9 @@ importers:
 
   .:
     devDependencies:
-      '@egoist/tailwindcss-icons':
-        specifier: 1.9.0
-        version: 1.9.0(tailwindcss@3.4.17(ts-node@10.9.2(@types/node@22.14.1)(typescript@5.8.3)))
       '@eslint/compat':
         specifier: 1.2.8
         version: 1.2.8(eslint@9.25.0(jiti@2.4.2))
-      '@iconify-json/logos':
-        specifier: 1.2.4
-        version: 1.2.4
-      '@iconify-json/mingcute':
-        specifier: 1.2.3
-        version: 1.2.3
-      '@iconify-json/simple-icons':
-        specifier: 1.2.32
-        version: 1.2.32
-      '@iconify/tools':
-        specifier: 4.1.2
-        version: 4.1.2
-      '@tailwindcss/container-queries':
-        specifier: 0.1.1
-        version: 0.1.1(tailwindcss@3.4.17(ts-node@10.9.2(@types/node@22.14.1)(typescript@5.8.3)))
-      '@tailwindcss/typography':
-        specifier: 0.5.16
-        version: 0.5.16(tailwindcss@3.4.17(ts-node@10.9.2(@types/node@22.14.1)(typescript@5.8.3)))
       '@tsslint/cli':
         specifier: 1.5.14
         version: 1.5.14(typescript@5.8.3)
@@ -108,19 +87,10 @@ importers:
         version: 18.3.1
       '@vercel/node':
         specifier: 5.1.14
-        version: 5.1.14(encoding@0.1.13)(rollup@2.79.2)
-      async-es:
-        specifier: 3.2.6
-        version: 3.2.6
-      autoprefixer:
-        specifier: 10.4.21
-        version: 10.4.21(postcss@8.5.3)
+        version: 5.1.14(encoding@0.1.13)(rollup@4.40.0)
       cross-env:
         specifier: 7.0.3
         version: 7.0.3
-      cssnano:
-        specifier: 7.0.6
-        version: 7.0.6(postcss@8.5.3)
       eslint:
         specifier: 9.25.0
         version: 9.25.0(jiti@2.4.2)
@@ -139,12 +109,6 @@ importers:
       nbump:
         specifier: 2.1.0
         version: 2.1.0(conventional-commits-filter@5.0.0)
-      postcss:
-        specifier: 8.5.3
-        version: 8.5.3
-      postcss-js:
-        specifier: 4.0.1
-        version: 4.0.1(postcss@8.5.3)
       prettier:
         specifier: 3.5.3
         version: 3.5.3
@@ -169,24 +133,6 @@ importers:
       svg-parser:
         specifier: 2.0.4
         version: 2.0.4
-      tailwindcss:
-        specifier: 3.4.17
-        version: 3.4.17(ts-node@10.9.2(@types/node@22.14.1)(typescript@5.8.3))
-      tailwindcss-animate:
-        specifier: 1.0.7
-        version: 1.0.7(tailwindcss@3.4.17(ts-node@10.9.2(@types/node@22.14.1)(typescript@5.8.3)))
-      tailwindcss-motion:
-        specifier: 1.1.0
-        version: 1.1.0(tailwindcss@3.4.17(ts-node@10.9.2(@types/node@22.14.1)(typescript@5.8.3)))
-      tailwindcss-multi:
-        specifier: 0.4.6
-        version: 0.4.6
-      tailwindcss-safe-area:
-        specifier: 0.6.0
-        version: 0.6.0(tailwindcss@3.4.17(ts-node@10.9.2(@types/node@22.14.1)(typescript@5.8.3)))
-      tailwindcss-uikit-colors:
-        specifier: 0.5.2
-        version: 0.5.2
       tar:
         specifier: 7.4.3
         version: 7.4.3
@@ -202,18 +148,6 @@ importers:
       vite:
         specifier: 6.3.2
         version: 6.3.2(@types/node@22.14.1)(jiti@2.4.2)(lightningcss@1.29.3)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.1)
-      vite-bundle-analyzer:
-        specifier: 0.19.0
-        version: 0.19.0
-      vite-plugin-mkcert:
-        specifier: 1.17.8
-        version: 1.17.8(vite@6.3.2(@types/node@22.14.1)(jiti@2.4.2)(lightningcss@1.29.3)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.1))
-      vite-plugin-pwa:
-        specifier: 1.0.0
-        version: 1.0.0(@vite-pwa/assets-generator@1.0.0)(vite@6.3.2(@types/node@22.14.1)(jiti@2.4.2)(lightningcss@1.29.3)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.1))(workbox-build@7.3.0(@types/babel__core@7.20.5))(workbox-window@7.3.0)
-      vite-tsconfig-paths:
-        specifier: 5.1.4
-        version: 5.1.4(typescript@5.8.3)(vite@6.3.2(@types/node@22.14.1)(jiti@2.4.2)(lightningcss@1.29.3)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.1))
       vitest:
         specifier: 3.1.1
         version: 3.1.1(@edge-runtime/vm@3.2.0)(@types/debug@4.1.12)(@types/node@22.14.1)(happy-dom@17.4.4)(jiti@2.4.2)(lightningcss@1.29.3)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.1)
@@ -262,22 +196,25 @@ importers:
         version: 1.0.1(@types/node@22.14.1)
       '@follow/components':
         specifier: workspace:*
-        version: link:../../packages/components
+        version: link:../../packages/internal/components
+      '@follow/configs':
+        specifier: workspace:*
+        version: link:../../packages/configs
       '@follow/constants':
         specifier: workspace:*
-        version: link:../../packages/constants
+        version: link:../../packages/internal/constants
       '@follow/hooks':
         specifier: workspace:*
-        version: link:../../packages/hooks
+        version: link:../../packages/internal/hooks
       '@follow/models':
         specifier: workspace:*
-        version: link:../../packages/models
+        version: link:../../packages/internal/models
       '@follow/shared':
         specifier: workspace:*
-        version: link:../../packages/shared
+        version: link:../../packages/internal/shared
       '@follow/utils':
         specifier: workspace:*
-        version: link:../../packages/utils
+        version: link:../../packages/internal/utils
       '@pengx17/electron-forge-maker-appimage':
         specifier: 1.2.1
         version: 1.2.1(patch_hash=5b5ab1ba36e8c0d7ffee912ebf29c1a18bc101c9c661ceb1bb0bda3deaf4c667)(dmg-builder@24.13.3)(electron-builder-squirrel-windows@24.13.3)
@@ -327,8 +264,8 @@ importers:
         specifier: 3.1.0
         version: 3.1.0(vite@6.3.2(@types/node@22.14.1)(jiti@2.4.2)(lightningcss@1.29.3)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.1))
       es-toolkit:
-        specifier: 1.35.0
-        version: 1.35.0
+        specifier: 1.36.0
+        version: 1.36.0
       fake-indexeddb:
         specifier: 6.0.0
         version: 6.0.0
@@ -353,6 +290,9 @@ importers:
       react-dom:
         specifier: 18.3.1
         version: 18.3.1(react@18.3.1)
+      tailwindcss-multi:
+        specifier: 0.4.6
+        version: 0.4.6
       tar:
         specifier: 7.4.3
         version: 7.4.3
@@ -365,6 +305,18 @@ importers:
       utf-8-validate:
         specifier: 6.0.5
         version: 6.0.5
+      vite-bundle-analyzer:
+        specifier: 0.19.0
+        version: 0.19.0
+      vite-plugin-mkcert:
+        specifier: 1.17.8
+        version: 1.17.8(vite@6.3.2(@types/node@22.14.1)(jiti@2.4.2)(lightningcss@1.29.3)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.1))
+      vite-plugin-pwa:
+        specifier: 1.0.0
+        version: 1.0.0(@vite-pwa/assets-generator@1.0.0)(vite@6.3.2(@types/node@22.14.1)(jiti@2.4.2)(lightningcss@1.29.3)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.1))(workbox-build@7.3.0(@types/babel__core@7.20.5))(workbox-window@7.3.0)
+      vite-tsconfig-paths:
+        specifier: 5.1.4
+        version: 5.1.4(typescript@5.8.3)(vite@6.3.2(@types/node@22.14.1)(jiti@2.4.2)(lightningcss@1.29.3)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.1))
 
   apps/desktop/src/main:
     dependencies:
@@ -382,10 +334,10 @@ importers:
         version: 4.3.0
       '@follow/shared':
         specifier: workspace:*
-        version: link:../../../../packages/shared
+        version: link:../../../../packages/internal/shared
       '@follow/utils':
         specifier: workspace:*
-        version: link:../../../../packages/utils
+        version: link:../../../../packages/internal/utils
       '@openpanel/web':
         specifier: 1.0.1
         version: 1.0.1
@@ -414,8 +366,8 @@ importers:
         specifier: 6.6.2
         version: 6.6.2
       es-toolkit:
-        specifier: 1.35.0
-        version: 1.35.0
+        specifier: 1.36.0
+        version: 1.36.0
       fast-folder-size:
         specifier: 2.4.0
         version: 2.4.0
@@ -455,10 +407,10 @@ importers:
     devDependencies:
       '@follow/models':
         specifier: workspace:*
-        version: link:../../../../packages/models
+        version: link:../../../../packages/internal/models
       '@follow/types':
         specifier: workspace:*
-        version: link:../../../../packages/types
+        version: link:../../../../packages/internal/types
       '@types/js-yaml':
         specifier: 4.0.9
         version: 4.0.9
@@ -494,10 +446,10 @@ importers:
         version: link:../main
       '@follow/shared':
         specifier: workspace:*
-        version: link:../../../../packages/shared
+        version: link:../../../../packages/internal/shared
       '@follow/tracker':
         specifier: workspace:*
-        version: link:../../../../packages/tracker
+        version: link:../../../../packages/internal/tracker
       '@fontsource/sn-pro':
         specifier: 5.2.5
         version: 5.2.5
@@ -601,8 +553,8 @@ importers:
         specifier: 8.0.2
         version: 8.0.2(embla-carousel@8.6.0)
       es-toolkit:
-        specifier: 1.35.0
-        version: 1.35.0
+        specifier: 1.36.0
+        version: 1.36.0
       firebase:
         specifier: 11.6.0
         version: 11.6.0
@@ -729,28 +681,28 @@ importers:
     devDependencies:
       '@follow/atoms':
         specifier: workspace:*
-        version: link:../../../../packages/atoms
+        version: link:../../../../packages/internal/atoms
       '@follow/components':
         specifier: workspace:*
-        version: link:../../../../packages/components
+        version: link:../../../../packages/internal/components
       '@follow/constants':
         specifier: workspace:*
-        version: link:../../../../packages/constants
+        version: link:../../../../packages/internal/constants
       '@follow/hooks':
         specifier: workspace:*
-        version: link:../../../../packages/hooks
+        version: link:../../../../packages/internal/hooks
       '@follow/logger':
         specifier: workspace:*
-        version: link:../../../../packages/logger
+        version: link:../../../../packages/internal/logger
       '@follow/models':
         specifier: workspace:*
-        version: link:../../../../packages/models
+        version: link:../../../../packages/internal/models
       '@follow/types':
         specifier: workspace:*
-        version: link:../../../../packages/types
+        version: link:../../../../packages/internal/types
       '@follow/utils':
         specifier: workspace:*
-        version: link:../../../../packages/utils
+        version: link:../../../../packages/internal/utils
       '@types/node':
         specifier: 22.14.1
         version: 22.14.1
@@ -780,28 +732,28 @@ importers:
         version: 4.1.1(react@18.3.1)
       '@follow/components':
         specifier: workspace:*
-        version: link:../../packages/components
+        version: link:../../packages/internal/components
       '@follow/constants':
         specifier: workspace:*
-        version: link:../../packages/constants
+        version: link:../../packages/internal/constants
       '@follow/hooks':
         specifier: workspace:*
-        version: link:../../packages/hooks
+        version: link:../../packages/internal/hooks
       '@follow/models':
         specifier: workspace:*
-        version: link:../../packages/models
+        version: link:../../packages/internal/models
       '@follow/shared':
         specifier: workspace:*
-        version: link:../../packages/shared
+        version: link:../../packages/internal/shared
       '@follow/tracker':
         specifier: workspace:*
-        version: link:../../packages/tracker
+        version: link:../../packages/internal/tracker
       '@follow/types':
         specifier: workspace:*
-        version: link:../../packages/types
+        version: link:../../packages/internal/types
       '@follow/utils':
         specifier: workspace:*
-        version: link:../../packages/utils
+        version: link:../../packages/internal/utils
       '@gorhom/portal':
         specifier: 1.0.14
         version: 1.0.14(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1))(react@18.3.1)
@@ -866,8 +818,8 @@ importers:
         specifier: 2.14.0
         version: 2.14.0
       es-toolkit:
-        specifier: 1.35.0
-        version: 1.35.0
+        specifier: 1.36.0
+        version: 1.36.0
       expo:
         specifier: 52.0.46
         version: 52.0.46(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@expo/metro-runtime@4.0.1(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)))(bufferutil@4.0.9)(encoding@0.1.13)(graphql@16.8.1)(react-native-webview@13.13.5(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1))(react@18.3.1))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1))(react@18.3.1)
@@ -1103,6 +1055,9 @@ importers:
       '@babel/core':
         specifier: 7.26.10
         version: 7.26.10
+      '@follow/configs':
+        specifier: workspace:*
+        version: link:../../packages/configs
       '@types/react':
         specifier: 18.3.12
         version: 18.3.12
@@ -1143,7 +1098,7 @@ importers:
         version: 6.1.0
       '@follow/tracker':
         specifier: workspace:*
-        version: link:../../packages/tracker
+        version: link:../../packages/internal/tracker
       '@fontsource/sn-pro':
         specifier: 5.2.5
         version: 5.2.5
@@ -1231,25 +1186,28 @@ importers:
     devDependencies:
       '@follow/components':
         specifier: workspace:*
-        version: link:../../packages/components
+        version: link:../../packages/internal/components
+      '@follow/configs':
+        specifier: workspace:*
+        version: link:../../packages/configs
       '@follow/constants':
         specifier: workspace:*
-        version: link:../../packages/constants
+        version: link:../../packages/internal/constants
       '@follow/hooks':
         specifier: workspace:*
-        version: link:../../packages/hooks
+        version: link:../../packages/internal/hooks
       '@follow/models':
         specifier: workspace:*
-        version: link:../../packages/models
+        version: link:../../packages/internal/models
       '@follow/shared':
         specifier: workspace:*
-        version: link:../../packages/shared
+        version: link:../../packages/internal/shared
       '@follow/types':
         specifier: workspace:*
-        version: link:../../packages/types
+        version: link:../../packages/internal/types
       '@follow/utils':
         specifier: workspace:*
-        version: link:../../packages/utils
+        version: link:../../packages/internal/utils
       '@radix-ui/react-avatar':
         specifier: 1.1.6
         version: 1.1.6(@types/react-dom@18.3.1)(@types/react@18.3.12)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1269,8 +1227,8 @@ importers:
         specifier: 4.1.0
         version: 4.1.0
       es-toolkit:
-        specifier: 1.35.0
-        version: 1.35.0
+        specifier: 1.36.0
+        version: 1.36.0
       fast-glob:
         specifier: 3.3.3
         version: 3.3.3
@@ -1302,8 +1260,69 @@ importers:
         specifier: 6.3.2
         version: 6.3.2(@types/node@22.14.1)(jiti@2.4.2)(lightningcss@1.29.3)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.1)
 
-  packages/atoms:
+  packages/configs:
     dependencies:
+      '@egoist/tailwindcss-icons':
+        specifier: 1.9.0
+        version: 1.9.0(tailwindcss@3.4.17(ts-node@10.9.2(@types/node@22.14.1)(typescript@5.8.3)))
+      '@iconify-json/logos':
+        specifier: 1.2.4
+        version: 1.2.4
+      '@iconify-json/mingcute':
+        specifier: 1.2.3
+        version: 1.2.3
+      '@iconify-json/simple-icons':
+        specifier: 1.2.32
+        version: 1.2.32
+      '@iconify/tools':
+        specifier: 4.1.2
+        version: 4.1.2
+      '@iconify/utils':
+        specifier: 2.3.0
+        version: 2.3.0
+      '@tailwindcss/container-queries':
+        specifier: 0.1.1
+        version: 0.1.1(tailwindcss@3.4.17(ts-node@10.9.2(@types/node@22.14.1)(typescript@5.8.3)))
+      '@tailwindcss/typography':
+        specifier: 0.5.16
+        version: 0.5.16(tailwindcss@3.4.17(ts-node@10.9.2(@types/node@22.14.1)(typescript@5.8.3)))
+      es-toolkit:
+        specifier: 1.36.0
+        version: 1.36.0
+      tailwindcss:
+        specifier: '>=3 || <4'
+        version: 3.4.17(ts-node@10.9.2(@types/node@22.14.1)(typescript@5.8.3))
+      tailwindcss-animate:
+        specifier: 1.0.7
+        version: 1.0.7(tailwindcss@3.4.17(ts-node@10.9.2(@types/node@22.14.1)(typescript@5.8.3)))
+      tailwindcss-motion:
+        specifier: 1.1.0
+        version: 1.1.0(tailwindcss@3.4.17(ts-node@10.9.2(@types/node@22.14.1)(typescript@5.8.3)))
+      tailwindcss-multi:
+        specifier: 0.4.6
+        version: 0.4.6
+      tailwindcss-safe-area:
+        specifier: 0.6.0
+        version: 0.6.0(tailwindcss@3.4.17(ts-node@10.9.2(@types/node@22.14.1)(typescript@5.8.3)))
+      tailwindcss-uikit-colors:
+        specifier: 0.6.0
+        version: 0.6.0
+    devDependencies:
+      postcss:
+        specifier: 8.5.3
+        version: 8.5.3
+      postcss-js:
+        specifier: 4.0.1
+        version: 4.0.1(postcss@8.5.3)
+      workspace-root:
+        specifier: 3.3.1
+        version: 3.3.1
+
+  packages/internal/atoms:
+    dependencies:
+      '@follow/configs':
+        specifier: workspace:*
+        version: link:../../configs
       '@follow/hooks':
         specifier: workspace:*
         version: link:../hooks
@@ -1317,7 +1336,7 @@ importers:
         specifier: 2.12.3
         version: 2.12.3(@types/react@18.3.12)(react@18.3.1)
 
-  packages/components:
+  packages/internal/components:
     dependencies:
       '@essentials/request-timeout':
         specifier: 1.3.0
@@ -1325,12 +1344,6 @@ importers:
       '@follow/hooks':
         specifier: workspace:*
         version: link:../hooks
-      '@follow/models':
-        specifier: workspace:*
-        version: link:../models
-      '@follow/shared':
-        specifier: workspace:*
-        version: link:../shared
       '@follow/types':
         specifier: workspace:*
         version: link:../types
@@ -1500,17 +1513,23 @@ importers:
         specifier: 5.3.7
         version: 5.3.7
     devDependencies:
+      '@follow/configs':
+        specifier: workspace:*
+        version: link:../../configs
       '@types/katex':
         specifier: 0.16.7
         version: 0.16.7
 
-  packages/constants:
+  packages/internal/constants:
     dependencies:
+      '@follow/configs':
+        specifier: workspace:*
+        version: link:../../configs
       '@follow/types':
         specifier: workspace:*
         version: link:../types
 
-  packages/hooks:
+  packages/internal/hooks:
     dependencies:
       '@follow/shared':
         specifier: workspace:*
@@ -1530,14 +1549,22 @@ importers:
       usehooks-ts:
         specifier: 3.1.1
         version: 3.1.1(react@18.3.1)
+    devDependencies:
+      '@follow/configs':
+        specifier: workspace:*
+        version: link:../../configs
 
-  packages/logger:
+  packages/internal/logger:
     dependencies:
       electron-log:
         specifier: 5.3.4
         version: 5.3.4
+    devDependencies:
+      '@follow/configs':
+        specifier: workspace:*
+        version: link:../../configs
 
-  packages/models:
+  packages/internal/models:
     dependencies:
       '@follow/constants':
         specifier: workspace:*
@@ -1554,8 +1581,12 @@ importers:
       hono:
         specifier: 4.7.7
         version: 4.7.7(patch_hash=5c74c2d2afaa5880c13d75458dd26c84da568851691b1fb6de6d877c29936d05)
+    devDependencies:
+      '@follow/configs':
+        specifier: workspace:*
+        version: link:../../configs
 
-  packages/shared:
+  packages/internal/shared:
     dependencies:
       '@electron-toolkit/preload':
         specifier: 3.0.2
@@ -1585,15 +1616,18 @@ importers:
         specifier: 3.24.3
         version: 3.24.3
 
-  packages/tracker:
+  packages/internal/tracker:
     devDependencies:
+      '@follow/configs':
+        specifier: workspace:*
+        version: link:../../configs
       '@react-native-firebase/analytics':
         specifier: 21.14.0
         version: 21.14.0(@react-native-firebase/app@21.14.0(expo@52.0.46(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@expo/metro-runtime@4.0.1(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)))(bufferutil@4.0.9)(encoding@0.1.13)(graphql@16.8.1)(react-native-webview@13.13.5(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1))(react@18.3.1))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1))(react@18.3.1))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1))(react@18.3.1))
 
-  packages/types: {}
+  packages/internal/types: {}
 
-  packages/utils:
+  packages/internal/utils:
     dependencies:
       '@follow/shared':
         specifier: workspace:*
@@ -1637,6 +1671,13 @@ importers:
       uniqolor:
         specifier: 1.1.1
         version: 1.1.1
+    devDependencies:
+      '@follow/configs':
+        specifier: workspace:*
+        version: link:../../configs
+      vite-tsconfig-paths:
+        specifier: 5.1.4
+        version: 5.1.4(typescript@5.8.3)(vite@6.3.2(@types/node@22.14.1)(jiti@2.4.2)(lightningcss@1.29.3)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.1))
 
 packages:
 
@@ -4186,6 +4227,22 @@ packages:
     resolution: {integrity: sha512-biZ0NUSxyjLLqo6KxEJ1b+C2NAx0wtDoFvCaXHGgUkeHzf3Xc1xKumFKREuT7f7DARNZ/slvYUwFG6B0f2b6hQ==}
     engines: {node: ^14.21.3 || >=16}
 
+  '@node-kit/extra.fs@3.3.1':
+    resolution: {integrity: sha512-3HJ6g6kADuVBASMgo99iJf1P2UToxOYtxjzt8JrpaSdfPw2YM9U9FzWAoM8vMdfTMwXCX7t7jVM7nqxZ3VJTeg==}
+    hasBin: true
+
+  '@node-kit/lerna-workspace-root@3.3.1':
+    resolution: {integrity: sha512-NoQ2+L13iqRLx3J8uyW7+05x/POMGwYcF8mzLpYvfrKFTPPh8XdN7YNuHguba0jXZwV6X2VDn8dAGdMhNERcNg==}
+    hasBin: true
+
+  '@node-kit/pnpm-workspace-root@3.3.1':
+    resolution: {integrity: sha512-IBvLeY+X3CgvS7aLQnn4AZDRTguFs5W/WxZJNi4YWlvAIdua1N8GTCjQQps3f6NUnV83IPrZkTJh5HTzYTMY2w==}
+    hasBin: true
+
+  '@node-kit/yarn-workspace-root@3.3.1':
+    resolution: {integrity: sha512-9PmP3y9814aPOsB4CFnYDbIcJ7/nPZZolbFhJ0f0gqYG3aySFrBTL1o2RRq9KlBct19HfceyT80Ut4c/Q+UVpA==}
+    hasBin: true
+
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
     engines: {node: '>= 8'}
@@ -4529,6 +4586,14 @@ packages:
   '@pkgr/core@0.2.4':
     resolution: {integrity: sha512-ROFF39F6ZrnzSUEmQQZUar0Jt4xVoP9WnDRdWwF4NNcXs3xBTLgBUDoOwW141y1jP+S8nahIbdxbFC7IShw9Iw==}
     engines: {node: ^12.20.0 || ^14.18.0 || >=16.0.0}
+
+  '@pnpm/constants@7.1.1':
+    resolution: {integrity: sha512-31pZqMtjwV+Vaq7MaPrT1EoDFSYwye3dp6BiHIGRJmVThCQwySRKM7hCvqqI94epNkqFAAYoWrNynWoRYosGdw==}
+    engines: {node: '>=16.14'}
+
+  '@pnpm/error@5.0.3':
+    resolution: {integrity: sha512-ONJU5cUeoeJSy50qOYsMZQHTA/9QKmGgh1ATfEpCLgtbdwqUiwD9MxHNeXUYYI/pocBCz6r1ZCFqiQvO+8SUKA==}
+    engines: {node: '>=16.14'}
 
   '@preact/signals-core@1.8.0':
     resolution: {integrity: sha512-OBvUsRZqNmjzCZXWLxkZfhcgT+Fk8DDcT/8vD6a1xhDemodyy87UJRJfASMuSD8FaAIeGgGm85ydXhm7lr4fyA==}
@@ -6541,6 +6606,9 @@ packages:
   apple-uikit-colors@0.5.2:
     resolution: {integrity: sha512-APXPAIxarSwknfrruUOGyegV1czmFWk1hnO+tgK6QNKpGjF8/Yk5/um/MLydZSUhAA1RAmMkYvFASqIVkWN3qw==}
 
+  apple-uikit-colors@0.6.0:
+    resolution: {integrity: sha512-F9PRddVxfsNGhcY5AXwrdM1wmGqErESPOrB3lRhoH02xeIJLVRmHkhk+qH3OD99btAqtA7oL2HFYSdfj2tLsMg==}
+
   archiver-utils@2.1.0:
     resolution: {integrity: sha512-bEL/yUb/fNNiNTuUz979Z0Yg5L+LzLxGJz8x79lYmR54fmTIb6ob/hNQgkQnIUDWIFjZVQwl9Xs356I6BAMHfw==}
     engines: {node: '>= 6'}
@@ -6629,9 +6697,6 @@ packages:
   astral-regex@2.0.0:
     resolution: {integrity: sha512-Z7tMw1ytTXt5jqMcOP+OQteU1VuNK9Y02uuJtKQ1Sv69jXQKKg5cibLwGJow8yzZP+eAc18EmLGPal0bp36rvQ==}
     engines: {node: '>=8'}
-
-  async-es@3.2.6:
-    resolution: {integrity: sha512-9C2+oOPd7/EzIeneF4k24o75oY7OcHU/Isl7xIot12EBRwXonyuqKsmxwLuAbFWL6B/FucTQip09xTbiu1CA8A==}
 
   async-exit-hook@2.0.1:
     resolution: {integrity: sha512-NW2cX8m1Q7KPA7a5M2ULQeZ2wR5qI5PAbw5L0UOMxdioVk9PMZ0h1TmyZEkPYrCvYjDlFICusOu1dlEKAAeXBw==}
@@ -8330,8 +8395,8 @@ packages:
     resolution: {integrity: sha512-w+5mJ3GuFL+NjVtJlvydShqE1eN3h3PbI7/5LAsYJP/2qtuMXjfL2LpHSRqo4b4eSF5K/DH1JXKUAHSB2UW50g==}
     engines: {node: '>= 0.4'}
 
-  es-toolkit@1.35.0:
-    resolution: {integrity: sha512-kVHyrRoC0eLc1hWJ6npG8nNFtOG+nWfcMI+XE0RaFO0gxd6Ions8r0O/U64QyZgY7IeidUnS5oZlRZYUgMGCAg==}
+  es-toolkit@1.36.0:
+    resolution: {integrity: sha512-5lpkRpDELuTSeAL//Rcg5urg+K/yOD1BobJSiNeCc89snMqgrhckmj8jdljqraDbpREiXTNW311RN518eVHBng==}
 
   es6-error@4.1.1:
     resolution: {integrity: sha512-Um/+FxMr9CISWh0bi5Zv0iOD+4cFh5qLeks1qhAopKVAJw3drgKbKySikp7wGhDL0HPeaja0P5ULZrxLkniUVg==}
@@ -14009,6 +14074,9 @@ packages:
   tailwindcss-uikit-colors@0.5.2:
     resolution: {integrity: sha512-itP1VBOADp/ePTqsMTuNh8Z0kIhVWIb3xQ9wbyKSLkm28jdmKH6+AU3hh/490UmE0gAomiNA3Y3Ob0iGbvghMA==}
 
+  tailwindcss-uikit-colors@0.6.0:
+    resolution: {integrity: sha512-Z4IPzvghlivjVn7O67lKezLiSR5PhKLlyzJtcVo2byORm6I46pLw/IX+Ye0dyLz0M6JcdlpXmtQbX24HqM7reg==}
+
   tailwindcss@3.4.17:
     resolution: {integrity: sha512-w33E2aCvSDP0tW9RZuNXadXlkHXqFzSkQew/aIa2i/Sj8fThxwovwlXHSPXTbAHwEIhBFXAedUhP2tueAKP8Og==}
     engines: {node: '>=14.0.0'}
@@ -15038,6 +15106,10 @@ packages:
 
   workbox-window@7.3.0:
     resolution: {integrity: sha512-qW8PDy16OV1UBaUNGlTVcepzrlzyzNW/ZJvFQQs2j2TzGsg6IKjcpZC1RSquqQnTOafl5pCj5bGfAHlCjOOjdA==}
+
+  workspace-root@3.3.1:
+    resolution: {integrity: sha512-t/KqdJ8+Fa6ovo2o0tV2+WKfd+5gg2SP59MicW8dnwiN6A2huw73yQrnFyrFokJLPJ+ItwJHUjjhNvabUvl/gg==}
+    hasBin: true
 
   wrap-ansi@6.2.0:
     resolution: {integrity: sha512-r6lPcBGxZXlIcymEu7InxDMhdW0KDxpLgoFLcguasxCaJ/SOIZwINatK9KY/tf+ZrlywOKU0UDj3ATXUBfxJXA==}
@@ -18769,6 +18841,25 @@ snapshots:
 
   '@noble/hashes@1.7.2': {}
 
+  '@node-kit/extra.fs@3.3.1': {}
+
+  '@node-kit/lerna-workspace-root@3.3.1':
+    dependencies:
+      '@node-kit/extra.fs': 3.3.1
+      find-up: 5.0.0
+
+  '@node-kit/pnpm-workspace-root@3.3.1':
+    dependencies:
+      '@node-kit/extra.fs': 3.3.1
+      '@pnpm/error': 5.0.3
+      find-up: 5.0.0
+
+  '@node-kit/yarn-workspace-root@3.3.1':
+    dependencies:
+      '@node-kit/extra.fs': 3.3.1
+      find-up: 5.0.0
+      micromatch: 4.0.8
+
   '@nodelib/fs.scandir@2.1.5':
     dependencies:
       '@nodelib/fs.stat': 2.0.5
@@ -19288,6 +19379,12 @@ snapshots:
   '@pkgr/core@0.1.2': {}
 
   '@pkgr/core@0.2.4': {}
+
+  '@pnpm/constants@7.1.1': {}
+
+  '@pnpm/error@5.0.3':
+    dependencies:
+      '@pnpm/constants': 7.1.1
 
   '@preact/signals-core@1.8.0': {}
 
@@ -21324,10 +21421,10 @@ snapshots:
 
   '@vercel/error-utils@2.0.3': {}
 
-  '@vercel/nft@0.27.10(encoding@0.1.13)(rollup@2.79.2)':
+  '@vercel/nft@0.27.10(encoding@0.1.13)(rollup@4.40.0)':
     dependencies:
       '@mapbox/node-pre-gyp': 2.0.0(encoding@0.1.13)
-      '@rollup/pluginutils': 5.1.4(rollup@2.79.2)
+      '@rollup/pluginutils': 5.1.4(rollup@4.40.0)
       acorn: 8.14.1
       acorn-import-attributes: 1.9.5(acorn@8.14.1)
       async-sema: 3.1.1
@@ -21343,7 +21440,7 @@ snapshots:
       - rollup
       - supports-color
 
-  '@vercel/node@5.1.14(encoding@0.1.13)(rollup@2.79.2)':
+  '@vercel/node@5.1.14(encoding@0.1.13)(rollup@4.40.0)':
     dependencies:
       '@edge-runtime/node-utils': 2.3.0
       '@edge-runtime/primitives': 4.1.0
@@ -21351,7 +21448,7 @@ snapshots:
       '@types/node': 16.18.11
       '@vercel/build-utils': 10.5.1
       '@vercel/error-utils': 2.0.3
-      '@vercel/nft': 0.27.10(encoding@0.1.13)(rollup@2.79.2)
+      '@vercel/nft': 0.27.10(encoding@0.1.13)(rollup@4.40.0)
       '@vercel/static-config': 3.0.0
       async-listen: 3.0.0
       cjs-module-lexer: 1.2.3
@@ -21679,6 +21776,8 @@ snapshots:
 
   apple-uikit-colors@0.5.2: {}
 
+  apple-uikit-colors@0.6.0: {}
+
   archiver-utils@2.1.0:
     dependencies:
       glob: 7.2.3
@@ -21797,8 +21896,6 @@ snapshots:
       tslib: 2.8.1
 
   astral-regex@2.0.0: {}
-
-  async-es@3.2.6: {}
 
   async-exit-hook@2.0.1: {}
 
@@ -23853,7 +23950,7 @@ snapshots:
       is-date-object: 1.1.0
       is-symbol: 1.1.1
 
-  es-toolkit@1.35.0: {}
+  es-toolkit@1.36.0: {}
 
   es6-error@4.1.1:
     optional: true
@@ -30801,6 +30898,10 @@ snapshots:
     dependencies:
       apple-uikit-colors: 0.5.2
 
+  tailwindcss-uikit-colors@0.6.0:
+    dependencies:
+      apple-uikit-colors: 0.6.0
+
   tailwindcss@3.4.17(ts-node@10.9.2(@types/node@22.14.1)(typescript@5.8.3)):
     dependencies:
       '@alloc/quick-lru': 5.2.0
@@ -31636,7 +31737,7 @@ snapshots:
     dependencies:
       debug: 4.4.0(supports-color@8.1.1)
       pretty-bytes: 6.1.1
-      tinyglobby: 0.2.12
+      tinyglobby: 0.2.13
       vite: 6.3.2(@types/node@22.14.1)(jiti@2.4.2)(lightningcss@1.29.3)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.1)
       workbox-build: 7.3.0(@types/babel__core@7.20.5)
       workbox-window: 7.3.0
@@ -31967,6 +32068,12 @@ snapshots:
     dependencies:
       '@types/trusted-types': 2.0.7
       workbox-core: 7.3.0
+
+  workspace-root@3.3.1:
+    dependencies:
+      '@node-kit/lerna-workspace-root': 3.3.1
+      '@node-kit/pnpm-workspace-root': 3.3.1
+      '@node-kit/yarn-workspace-root': 3.3.1
 
   wrap-ansi@6.2.0:
     dependencies:

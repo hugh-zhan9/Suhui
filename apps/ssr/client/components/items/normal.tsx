@@ -1,10 +1,10 @@
 import { RelativeTime } from "@follow/components/ui/datetime/index.jsx"
 import { MagneticHoverEffect } from "@follow/components/ui/effect/MagneticHoverEffect.js"
-import { FeedIcon } from "@follow/components/ui/feed-icon/index.jsx"
 import { EllipsisHorizontalTextWithTooltip } from "@follow/components/ui/typography/index.js"
 import { cn } from "@follow/utils/utils"
 import { memo } from "react"
 
+import { FeedIcon } from "../ui/feed-icon"
 import { LazyImage } from "../ui/image"
 import type { UniversalItemProps } from "./types"
 

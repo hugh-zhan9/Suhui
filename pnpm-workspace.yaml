@@ -1,6 +1,6 @@
 packages:
   - apps/*
-  - packages/*
+  - packages/**/*
   - apps/desktop/*
   - apps/desktop/src/*
   - "!apps/mobile/native/example"

@@ -9,6 +9,7 @@ import { EventBus } from "@follow/utils/event-bus"
 import { springScrollTo } from "@follow/utils/scroller"
 import { cn } from "@follow/utils/utils"
 import type { FallbackRender } from "@sentry/react"
+import { useStore } from "jotai"
 import type { FC } from "react"
 import { forwardRef, memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -236,12 +237,13 @@ const useReadPercent = () => {
     }
   }, [scrollElement])
 
+  const store = useStore()
   const readPercent = useMemo(() => {
-    const winHeight = getViewport().h
+    const winHeight = getViewport(store).h
     const deltaHeight = Math.min(scrollTop, winHeight)
 
     return Math.floor(Math.min(Math.max(0, ((scrollTop - y + deltaHeight) / h) * 100), 100)) || 0
-  }, [y, h, scrollTop])
+  }, [store, scrollTop, h])
 
   return [readPercent, scrollTop]
 }

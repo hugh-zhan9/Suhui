@@ -1,12 +1,12 @@
 import type { EntriesPreview } from "@client/query/entries"
 import type { Feed } from "@client/query/feed"
-import { FeedIcon } from "@follow/components/ui/feed-icon/index.jsx"
 import { TitleMarquee } from "@follow/components/ui/marquee/index.jsx"
 import { cn } from "@follow/utils/utils"
 import dayjs from "dayjs"
 import type { FC } from "react"
 
 import { TeleportalTakeOff } from "../layout/main/teleportal"
+import { FeedIcon } from "../ui/feed-icon"
 import { LazyImage } from "../ui/image"
 
 export const GridList: FC<{
