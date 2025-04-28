@@ -1,4 +1,4 @@
-import { extendConfig } from "@follow/configs/tailwind/web"
+import { extendConfig } from "@follow/configs/tailwindcss/web"
 import plugin from "tailwindcss/plugin"
 
 const isWebBuild = !!process.env.WEB_BUILD || !!process.env.RN_BUILD || !!process.env.VERCEL

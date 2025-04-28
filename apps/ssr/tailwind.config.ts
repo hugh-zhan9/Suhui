@@ -1,4 +1,4 @@
-import { extendConfig } from "@follow/configs/tailwind/web"
+import { extendConfig } from "@follow/configs/tailwindcss/web"
 import daisyui from "daisyui"
 import resolveConfig from "tailwindcss/resolveConfig"
 
