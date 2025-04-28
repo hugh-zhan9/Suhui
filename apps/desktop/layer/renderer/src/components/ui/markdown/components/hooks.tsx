@@ -4,21 +4,8 @@ import { getElementTop } from "@follow/utils/dom"
 import { springScrollToElement } from "@follow/utils/scroller"
 import { throttle } from "es-toolkit/compat"
 import { useStore } from "jotai"
-import {
-  startTransition,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react"
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import { useEventCallback } from "usehooks-ts"
-
-import {
-  useGetWrappedElementPosition,
-  useWrappedElementSize,
-} from "~/providers/wrapped-element-provider"
 
 import type { ITocItem, TocProps } from "./Toc"
 
@@ -88,121 +75,106 @@ export const useScrollTracking = (
   const _scrollContainerElement = useScrollViewElement()
   const scrollContainerElement = options.useWindowScroll ? document : _scrollContainerElement
   const [currentScrollRange, setCurrentScrollRange] = useState([-1, 0] as [number, number])
-  const { h } = useWrappedElementSize()
 
-  const getWrappedElPos = useGetWrappedElementPosition()
-
-  const headingRangeParser = useCallback(() => {
-    // calculate the range of data-container-top between each two headings
-    const titleBetweenPositionTopRangeMap = [] as [number, number][]
-    for (let i = 0; i < toc.length - 1; i++) {
-      const { $heading } = toc[i]!
-      const $nextHeading = toc[i + 1]!.$heading
-
-      const headingTop =
-        Number.parseInt($heading.dataset["containerTop"] || "0") || getElementTop($heading)
-      if (!$heading.dataset) {
-        // @ts-expect-error
-        $heading.dataset["containerTop"] = headingTop.toString()
-      }
-
-      const nextTop = getElementTop($nextHeading)
-      if (!$nextHeading.dataset) {
-        // @ts-expect-error
-        $nextHeading.dataset["containerTop"] = nextTop.toString()
-      }
-
-      titleBetweenPositionTopRangeMap.push([headingTop, nextTop])
-    }
-    return titleBetweenPositionTopRangeMap
-  }, [toc])
-
-  const headingRangeParserEvent = useEventCallback(headingRangeParser)
-
-  const [titleBetweenPositionTopRangeMap, setTitleBetweenPositionTopRangeMap] =
-    useState(headingRangeParser)
+  const headingTopsRef = useRef<number[]>([])
+  const [headingTopsVersion, setHeadingTopsVersion] = useState(0)
+  const throttleCallerRef = useRef<DebouncedFuncLeading<() => void>>()
+  const store = useStore()
 
   useLayoutEffect(() => {
-    startTransition(() => {
-      setTitleBetweenPositionTopRangeMap(headingRangeParserEvent)
+    if (!scrollContainerElement || toc.length === 0) {
+      headingTopsRef.current = []
+      setHeadingTopsVersion((v) => v + 1)
+      return
+    }
+
+    const scrollContainerTop =
+      scrollContainerElement === document ? 0 : getElementTop(scrollContainerElement as HTMLElement)
+
+    const tops = toc.map(({ $heading }) => {
+      const elementTop = getElementTop($heading)
+      const top = elementTop - scrollContainerTop
+      return top
     })
-  }, [toc, h, headingRangeParserEvent])
 
-  const throttleCallerRef = useRef<DebouncedFuncLeading<() => void>>()
+    headingTopsRef.current = tops
+    setHeadingTopsVersion((v) => v + 1)
+  }, [toc, scrollContainerElement])
 
-  const store = useStore()
   useEffect(() => {
-    if (!scrollContainerElement) return
+    if (!scrollContainerElement || toc.length === 0) return
 
     const handler = throttle(() => {
-      const { y } = getWrappedElPos()
+      const storeViewport = getViewport(store)
+      const winHeight = storeViewport.h
+      const headingTops = headingTopsRef.current
 
-      const top =
+      if (headingTops.length === 0) return
+
+      const scrollTop =
         scrollContainerElement === document
-          ? document.documentElement.scrollTop + y
-          : (scrollContainerElement as HTMLElement).scrollTop + y
+          ? document.documentElement.scrollTop
+          : (scrollContainerElement as HTMLElement).scrollTop
 
-      const winHeight = getViewport(store).h
-      const deltaHeight = top >= winHeight ? winHeight : (top / winHeight) * winHeight
+      const activationLine = scrollTop + winHeight / 3
 
-      const actualTop = Math.floor(Math.max(0, top - y + deltaHeight)) || 0
-
-      // current top is in which range?
-      const currentRangeIndex = titleBetweenPositionTopRangeMap.findIndex(
-        ([start, end]) => actualTop >= start && actualTop <= end,
-      )
-      const currentRange = titleBetweenPositionTopRangeMap[currentRangeIndex]
-
-      if (currentRange) {
-        const [start, end] = currentRange
-
-        // current top is this range, the precent is ?
-        const precent = (actualTop - start) / (end - start)
-
-        // position , precent
-        setCurrentScrollRange([currentRangeIndex, precent])
-      } else {
-        const last = titleBetweenPositionTopRangeMap.at(-1) || [0, 0]
-
-        if (top + winHeight > last[1]) {
-          setCurrentScrollRange([
-            titleBetweenPositionTopRangeMap.length,
-            1 - (last[1] - top) / winHeight,
-          ])
-        } else {
-          setCurrentScrollRange([-1, 1])
+      let activeIndex = -1
+      for (let i = headingTops.length - 1; i >= 0; i--) {
+        if (activationLine >= headingTops[i]!) {
+          activeIndex = i
+          break
         }
+      }
+
+      if (activeIndex === -1) {
+        setCurrentScrollRange([-1, 0])
+      } else if (activeIndex === headingTops.length - 1) {
+        const lastHeadingTop = headingTops[activeIndex]!
+        const contentEnd =
+          scrollContainerElement === document
+            ? document.documentElement.scrollHeight
+            : (scrollContainerElement as HTMLElement).scrollHeight
+
+        const total = contentEnd - lastHeadingTop
+        const current = activationLine - lastHeadingTop
+        const progress = Math.min(1, Math.max(0, total > 0 ? current / total : 0))
+        setCurrentScrollRange([activeIndex, progress])
+      } else {
+        const currentHeadingTop = headingTops[activeIndex]!
+        const nextHeadingTop = headingTops[activeIndex + 1]!
+        const total = nextHeadingTop - currentHeadingTop
+        const current = activationLine - currentHeadingTop
+        const progress = Math.min(1, Math.max(0, total > 0 ? current / total : 0))
+        setCurrentScrollRange([activeIndex, progress])
       }
     }, 100)
 
     throttleCallerRef.current = handler
-    scrollContainerElement.addEventListener("scroll", handler)
+
+    handler()
+
+    scrollContainerElement.addEventListener("scroll", handler, { passive: true })
 
     return () => {
       scrollContainerElement.removeEventListener("scroll", handler)
       handler.cancel()
     }
-  }, [getWrappedElPos, scrollContainerElement, store, titleBetweenPositionTopRangeMap])
+  }, [scrollContainerElement, store, toc, headingTopsVersion])
 
   const handleScrollTo = useEventCallback(
     (i: number, $el: HTMLElement | null, _anchorId: string) => {
       options.onItemClick?.(i, $el, _anchorId)
-      if ($el) {
-        const handle = () => {
-          springScrollToElement(
-            $el,
-            -100,
-            scrollContainerElement === document
-              ? undefined
-              : (scrollContainerElement as HTMLElement),
-          ).then(() => {
-            throttleCallerRef.current?.cancel()
-            setTimeout(() => {
-              setCurrentScrollRange([i, 1])
-            }, 36)
-          })
-        }
-        handle()
+      if ($el && scrollContainerElement) {
+        springScrollToElement(
+          $el,
+          -100,
+          scrollContainerElement === document ? undefined : (scrollContainerElement as HTMLElement),
+        ).then(() => {
+          throttleCallerRef.current?.cancel()
+          setTimeout(() => {
+            throttleCallerRef.current?.()
+          }, 50)
+        })
       }
     },
   )
