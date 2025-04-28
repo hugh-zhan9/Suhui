@@ -332,6 +332,9 @@ importers:
       '@eneris/push-receiver':
         specifier: 4.3.0
         version: 4.3.0
+      '@follow-app/readability':
+        specifier: workspace:*
+        version: link:../../../../packages/readability
       '@follow/shared':
         specifier: workspace:*
         version: link:../../../../packages/internal/shared
@@ -1684,6 +1687,9 @@ importers:
       '@follow/configs':
         specifier: workspace:*
         version: link:../configs
+      '@mozilla/readability':
+        specifier: 0.6.0
+        version: 0.6.0(patch_hash=61709486ef07e9c8175a4b3f19f1aa4e2a1a75a3c557643c574d6cdacd6dd959)
       chardet:
         specifier: 2.1.0
         version: 2.1.0
@@ -1696,9 +1702,6 @@ importers:
       nbump:
         specifier: 2.1.2
         version: 2.1.2(conventional-commits-filter@5.0.0)
-      readability:
-        specifier: 0.1.0
-        version: 0.1.0(bufferutil@4.0.9)(utf-8-validate@6.0.5)
       tsup:
         specifier: 8.4.0
         version: 8.4.0(jiti@2.4.2)(postcss@8.5.3)(tsx@4.19.3)(typescript@5.8.3)(yaml@2.7.1)
@@ -10254,10 +10257,6 @@ packages:
   htmlparser2@9.1.0:
     resolution: {integrity: sha512-5zfg6mHUoaer/97TxnGpxmbR7zJtPwIYFMZ/H5ucTlPZhKvtum05yiPK3Mgai3a0DyVxv7qYqoweaEd2nrYQzQ==}
 
-  htmlparser@1.7.7:
-    resolution: {integrity: sha512-zpK66ifkT0fauyFh2Mulrq4AqGTucxGtOhZ8OjkbSfcCpkqQEI8qRkY0tSQSJNAQ4HUZkgWaU4fK4EH6SVH9PQ==}
-    engines: {node: '>=0.1.33'}
-
   http-cache-semantics@4.1.1:
     resolution: {integrity: sha512-er295DKPVsV82j5kw1Gjt+ADA/XYHsajl82cGNQG2eyoPkvgUhX+nDIyelzhIWbbsXP39EHcI6l5tYs2FYqYXQ==}
 
@@ -11813,10 +11812,6 @@ packages:
   minizlib@3.0.2:
     resolution: {integrity: sha512-oG62iEk+CYt5Xj2YqI5Xi9xWUeZhDI8jjQmC5oThVH5JGCTgIjr7ciJDzC7MBzYd//WvR1OTmP5Q38Q8ShQtVA==}
     engines: {node: '>= 18'}
-
-  mjsunit.runner@0.1.3:
-    resolution: {integrity: sha512-m0LYKN/kv+Yx1TwYGneCsztgPp5zTa5Erx0KuF20opXjeEO+5xOCjwoaq+qx69/tte3DaFD6atgcf/JFW0l8Pw==}
-    engines: {node: '>=0.1.9'}
 
   mkdirp@0.5.6:
     resolution: {integrity: sha512-FP+p8RB8OWpF3YZBCrP5gtADmtXApB5AMLn+vdyA+PyxCjrCs00mjyUozssO33cwDeT3wNGdLxJ5M//YqtHAJw==}
@@ -13494,10 +13489,6 @@ packages:
   read-pkg@9.0.1:
     resolution: {integrity: sha512-9viLL4/n1BJUCT1NXVTdS1jtm80yDEgR5T4yCelII49Mbj0v1rZdKqj7zCiYdbB0CuCgdrvHcNogAKTFPBocFA==}
     engines: {node: '>=18'}
-
-  readability@0.1.0:
-    resolution: {integrity: sha512-rt7d3Us0ev/VNBfsSdNHjWn1xibcfkvpQ/Ahtt87s9nzcIri5L4b6r3oxqBjKh1BhTwJcGk6kUd0Y6Q5jl+20Q==}
-    engines: {node: '>=0.3.1'}
 
   readable-stream@2.3.8:
     resolution: {integrity: sha512-8p0AUk4XODgIewSi0l8Epjs+EVnWiK7NoDIEGU0HhE7+ZyY8D1IMY7odu5lRrFXGg71L15KG8QrPmum45RTtdA==}
@@ -15810,6 +15801,7 @@ snapshots:
       '@csstools/css-parser-algorithms': 3.0.4(@csstools/css-tokenizer@3.0.3)
       '@csstools/css-tokenizer': 3.0.3
       lru-cache: 10.4.3
+    optional: true
 
   '@babel/code-frame@7.10.4':
     dependencies:
@@ -16772,12 +16764,14 @@ snapshots:
     dependencies:
       '@jridgewell/trace-mapping': 0.3.9
 
-  '@csstools/color-helpers@5.0.2': {}
+  '@csstools/color-helpers@5.0.2':
+    optional: true
 
   '@csstools/css-calc@2.1.3(@csstools/css-parser-algorithms@3.0.4(@csstools/css-tokenizer@3.0.3))(@csstools/css-tokenizer@3.0.3)':
     dependencies:
       '@csstools/css-parser-algorithms': 3.0.4(@csstools/css-tokenizer@3.0.3)
       '@csstools/css-tokenizer': 3.0.3
+    optional: true
 
   '@csstools/css-color-parser@3.0.9(@csstools/css-parser-algorithms@3.0.4(@csstools/css-tokenizer@3.0.3))(@csstools/css-tokenizer@3.0.3)':
     dependencies:
@@ -16785,12 +16779,15 @@ snapshots:
       '@csstools/css-calc': 2.1.3(@csstools/css-parser-algorithms@3.0.4(@csstools/css-tokenizer@3.0.3))(@csstools/css-tokenizer@3.0.3)
       '@csstools/css-parser-algorithms': 3.0.4(@csstools/css-tokenizer@3.0.3)
       '@csstools/css-tokenizer': 3.0.3
+    optional: true
 
   '@csstools/css-parser-algorithms@3.0.4(@csstools/css-tokenizer@3.0.3)':
     dependencies:
       '@csstools/css-tokenizer': 3.0.3
+    optional: true
 
-  '@csstools/css-tokenizer@3.0.3': {}
+  '@csstools/css-tokenizer@3.0.3':
+    optional: true
 
   '@daybrush/utils@1.13.0': {}
 
@@ -23796,6 +23793,7 @@ snapshots:
     dependencies:
       '@asamuzakjp/css-color': 3.1.5
       rrweb-cssom: 0.8.0
+    optional: true
 
   csstype@3.1.3: {}
 
@@ -23814,6 +23812,7 @@ snapshots:
     dependencies:
       whatwg-mimetype: 4.0.0
       whatwg-url: 14.2.0
+    optional: true
 
   data-view-buffer@1.0.2:
     dependencies:
@@ -23857,7 +23856,8 @@ snapshots:
 
   decamelize@1.2.0: {}
 
-  decimal.js@10.5.0: {}
+  decimal.js@10.5.0:
+    optional: true
 
   decode-bmp@0.2.1:
     dependencies:
@@ -26587,6 +26587,7 @@ snapshots:
   html-encoding-sniffer@4.0.0:
     dependencies:
       whatwg-encoding: 3.1.1
+    optional: true
 
   html-escaper@3.0.3: {}
 
@@ -26619,8 +26620,6 @@ snapshots:
       domhandler: 5.0.3
       domutils: 3.2.2
       entities: 4.5.0
-
-  htmlparser@1.7.7: {}
 
   http-cache-semantics@4.1.1: {}
 
@@ -26659,6 +26658,7 @@ snapshots:
       debug: 4.4.0(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
+    optional: true
 
   http2-wrapper@1.0.3:
     dependencies:
@@ -27010,7 +27010,8 @@ snapshots:
 
   is-plain-object@5.0.0: {}
 
-  is-potential-custom-element-name@1.0.1: {}
+  is-potential-custom-element-name@1.0.1:
+    optional: true
 
   is-property@1.0.2:
     optional: true
@@ -27319,6 +27320,7 @@ snapshots:
       - bufferutil
       - supports-color
       - utf-8-validate
+    optional: true
 
   jsep@1.4.0: {}
 
@@ -28566,8 +28568,6 @@ snapshots:
     dependencies:
       minipass: 7.1.2
 
-  mjsunit.runner@0.1.3: {}
-
   mkdirp@0.5.6:
     dependencies:
       minimist: 1.2.8
@@ -28824,7 +28824,8 @@ snapshots:
 
   nullthrows@1.1.1: {}
 
-  nwsapi@2.2.20: {}
+  nwsapi@2.2.20:
+    optional: true
 
   nypm@0.6.0:
     dependencies:
@@ -30207,17 +30208,6 @@ snapshots:
       type-fest: 4.40.0
       unicorn-magic: 0.1.0
 
-  readability@0.1.0(bufferutil@4.0.9)(utf-8-validate@6.0.5):
-    dependencies:
-      htmlparser: 1.7.7
-      jsdom: 26.1.0(bufferutil@4.0.9)(utf-8-validate@6.0.5)
-      mjsunit.runner: 0.1.3
-    transitivePeerDependencies:
-      - bufferutil
-      - canvas
-      - supports-color
-      - utf-8-validate
-
   readable-stream@2.3.8:
     dependencies:
       core-util-is: 1.0.3
@@ -30641,7 +30631,8 @@ snapshots:
 
   rou3@0.5.1: {}
 
-  rrweb-cssom@0.8.0: {}
+  rrweb-cssom@0.8.0:
+    optional: true
 
   rtl-detect@1.1.2: {}
 
@@ -30714,6 +30705,7 @@ snapshots:
   saxes@6.0.0:
     dependencies:
       xmlchars: 2.2.0
+    optional: true
 
   scheduler@0.23.2:
     dependencies:
@@ -31370,7 +31362,8 @@ snapshots:
       csso: 5.0.5
       picocolors: 1.1.1
 
-  symbol-tree@3.2.4: {}
+  symbol-tree@3.2.4:
+    optional: true
 
   synckit@0.10.3:
     dependencies:
@@ -31587,13 +31580,15 @@ snapshots:
 
   tinyspy@3.0.2: {}
 
-  tldts-core@6.1.86: {}
+  tldts-core@6.1.86:
+    optional: true
 
   tldts-core@7.0.4: {}
 
   tldts@6.1.86:
     dependencies:
       tldts-core: 6.1.86
+    optional: true
 
   tldts@7.0.4:
     dependencies:
@@ -31637,6 +31632,7 @@ snapshots:
   tough-cookie@5.1.2:
     dependencies:
       tldts: 6.1.86
+    optional: true
 
   tr46@0.0.3: {}
 
@@ -31647,6 +31643,7 @@ snapshots:
   tr46@5.1.1:
     dependencies:
       punycode: 2.3.1
+    optional: true
 
   tree-kill@1.2.2: {}
 
@@ -32355,6 +32352,7 @@ snapshots:
   w3c-xmlserializer@5.0.0:
     dependencies:
       xml-name-validator: 5.0.0
+    optional: true
 
   walker@1.0.8:
     dependencies:
@@ -32414,6 +32412,7 @@ snapshots:
     dependencies:
       tr46: 5.1.1
       webidl-conversions: 7.0.0
+    optional: true
 
   whatwg-url@5.0.0:
     dependencies:
@@ -32690,7 +32689,8 @@ snapshots:
       parse-headers: 2.0.6
       xtend: 4.0.2
 
-  xml-name-validator@5.0.0: {}
+  xml-name-validator@5.0.0:
+    optional: true
 
   xml-parse-from-string@1.0.1: {}
 
@@ -32710,7 +32710,8 @@ snapshots:
 
   xmlbuilder@15.1.1: {}
 
-  xmlchars@2.2.0: {}
+  xmlchars@2.2.0:
+    optional: true
 
   xss@1.0.15:
     dependencies:

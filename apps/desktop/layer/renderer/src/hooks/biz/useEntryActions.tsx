@@ -18,6 +18,7 @@ import { useShowSourceContent } from "~/atoms/source-content"
 import { useUserRole, whoami } from "~/atoms/user"
 import { shortcuts } from "~/constants/shortcuts"
 import { apiClient } from "~/lib/api-fetch"
+import { tipcClient } from "~/lib/client"
 import { COMMAND_ID } from "~/modules/command/commands/id"
 import { getCommand, useRunCommandFn } from "~/modules/command/hooks/use-command"
 import type { FollowCommandId } from "~/modules/command/types"
@@ -57,9 +58,19 @@ export const toggleEntryReadability = async ({ id, url }: { id: string; url: str
         })
       }
     } catch {
-      setReadabilityStatus({
-        [id]: ReadabilityStatus.FAILURE,
-      })
+      const result = await tipcClient?.readability({ url })
+      if (result) {
+        setReadabilityContent({
+          [id]: result,
+        })
+        setReadabilityStatus({
+          [id]: ReadabilityStatus.SUCCESS,
+        })
+      } else {
+        setReadabilityStatus({
+          [id]: ReadabilityStatus.FAILURE,
+        })
+      }
     }
   } else {
     setReadabilityStatus({
