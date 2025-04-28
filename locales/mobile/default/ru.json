@@ -1,7 +1,6 @@
 {
   "operation.add_feeds_to_category": "Переместить в категорию",
   "operation.change_to_other_view": "Изменить на другой вид",
-  "operation.copy_link": "Копировать ссылку",
   "operation.delete_category": "Удалить категорию",
   "operation.edit": "Редактировать",
   "operation.error_since": "Ошибка с",

@@ -203,13 +203,17 @@ const generateSubscriptionContextMenu = (navigation: Navigation, id: string) => 
               const feed = getFeed(subscription.feedId)
               if (!feed) return
               setStringAsync(feed.url)
-              toast.success("Link copied to clipboard")
+              toast.success(t("operation.copy_which_success", { which: t("operation.copy.link") }))
               return
             }
           }
         }}
       >
-        <ContextMenu.ItemTitle>{t("operation.copy_link")}</ContextMenu.ItemTitle>
+        <ContextMenu.ItemTitle>
+          {t("operation.copy_which", {
+            which: t("operation.copy.link"),
+          })}
+        </ContextMenu.ItemTitle>
         <ContextMenu.ItemIcon
           ios={{
             name: "link",

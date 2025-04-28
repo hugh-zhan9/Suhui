@@ -32,11 +32,11 @@ export const SubscriptionListItemContextMenu: FC<
         },
       },
       {
-        title: t("operation.copy_link"),
+        title: t("operation.copy_which", { which: t("operation.copy.link") }),
         onSelect: () => {
           const list = getList(id)
           if (!list) return
-          toast.success("Link copied to clipboard")
+          toast.success(t("operation.copy_which_success", { which: t("operation.copy.link") }))
           Clipboard.setString(`${env.WEB_URL}/share/lists/${list.id}`)
         },
       },

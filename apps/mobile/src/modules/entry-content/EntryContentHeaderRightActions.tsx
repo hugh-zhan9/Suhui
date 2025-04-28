@@ -208,7 +208,7 @@ const HeaderRightActionsImpl = ({
     },
     {
       key: "CopyLink",
-      title: t("operation.copy_link"),
+      title: t("operation.copy_which", { which: t("operation.copy.link") }),
       iconIOS: { name: "link" },
       onPress: handleCopyLink,
       inMenu: true,

@@ -1,7 +1,6 @@
 {
   "operation.add_feeds_to_category": "카테고리로 이동",
   "operation.change_to_other_view": "다른 보기로 변경",
-  "operation.copy_link": "링크 복사",
   "operation.delete_category": "카테고리 삭제",
   "operation.edit": "편집",
   "operation.error_since": "오류 발생:",
