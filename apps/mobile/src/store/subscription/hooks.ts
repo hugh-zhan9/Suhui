@@ -3,6 +3,7 @@ import { sortByAlphabet } from "@follow/utils"
 import { useQuery } from "@tanstack/react-query"
 import { useCallback } from "react"
 
+import { getGeneralSettings } from "@/src/atoms/settings/general"
 import { views } from "@/src/constants/views"
 
 import { getFeed } from "../feed/getter"
@@ -15,6 +16,7 @@ import {
   getSubscriptionByView,
 } from "./getter"
 import { subscriptionSyncService, useSubscriptionStore } from "./store"
+import { getDefaultCategory } from "./utils"
 
 export const usePrefetchSubscription = (view?: FeedViewType) => {
   return useQuery({
@@ -61,19 +63,39 @@ export const useGroupedSubscription = (view: FeedViewType) => {
 
         const grouped = {} as Record<string, string[]>
         const unGrouped = []
+        const { autoGroup } = getGeneralSettings()
+        const autoGrouped = {} as Record<string, string[]>
 
         for (const feedId of feedIds) {
           const subscription = state.data[feedId]
           if (!subscription) continue
           const { category } = subscription
           if (!category) {
-            unGrouped.push(feedId)
+            const defaultCategory = getDefaultCategory(subscription)
+            if (defaultCategory && autoGroup) {
+              if (!autoGrouped[defaultCategory]) {
+                autoGrouped[defaultCategory] = []
+              }
+              autoGrouped[defaultCategory].push(feedId)
+            } else {
+              unGrouped.push(feedId)
+            }
             continue
           }
           if (!grouped[category]) {
             grouped[category] = []
           }
           grouped[category].push(feedId)
+        }
+
+        if (autoGroup) {
+          for (const category of Object.keys(autoGrouped)) {
+            if (autoGrouped[category] && autoGrouped[category].length > 1) {
+              grouped[category] = autoGrouped[category]
+            } else {
+              unGrouped.push(...autoGrouped[category]!)
+            }
+          }
         }
 
         return {
