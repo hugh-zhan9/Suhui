@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "private": true,
   "exports": {
-    "./tailwind/web": "./tailwindcss/web.ts",
+    "./tailwindcss/web": "./tailwindcss/web.ts",
     "./tsconfig.extend.json": "./tsconfig.extend.json"
   },
   "peerDependencies": {
