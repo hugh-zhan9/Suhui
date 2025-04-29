@@ -113,8 +113,10 @@ function ProfileScreenImpl(props: { userId: string }) {
   const textLabelColor = useColor("label")
   const openShareUrl = useCallback(() => {
     if (!user?.id) return
+    const shareUrl = `https://app.follow.is/share/users/${user.id}`
     Share.share({
-      url: `https://app.follow.is/share/users/${user.id}`,
+      message: shareUrl,
+      url: shareUrl,
       title: `Folo | ${user.name}'s Profile`,
     })
   }, [user?.id, user?.name])
