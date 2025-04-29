@@ -12,7 +12,7 @@ import { FeedNotFound } from "~/components/errors/FeedNotFound"
 import { FEED_COLLECTION_LIST, ROUTE_FEED_PENDING } from "~/constants"
 import { useNavigateEntry } from "~/hooks/biz/useNavigateEntry"
 import { useRouteParams, useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
-import { useFeed } from "~/queries/feed"
+import { useFeedQuery } from "~/queries/feed"
 import { entryActions, useEntry } from "~/store/entry"
 import { useFeedById, useFeedHeaderTitle } from "~/store/feed"
 import { useSubscriptionByFeedId } from "~/store/subscription"
@@ -172,7 +172,7 @@ function EntryColumnImpl() {
 
 const AddFeedHelper = () => {
   const feedId = useRouteParamsSelector((s) => s.feedId)
-  const feedQuery = useFeed({ id: feedId })
+  const feedQuery = useFeedQuery({ id: feedId })
 
   const hasSubscription = useSubscriptionByFeedId(feedId || "")
 

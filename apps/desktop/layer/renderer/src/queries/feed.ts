@@ -44,7 +44,7 @@ export const feed = {
     }),
 }
 
-export const useFeed = ({ id, url }: FeedQueryParams) =>
+export const useFeedQuery = ({ id, url }: FeedQueryParams) =>
   useAuthQuery(
     feed.byId({
       id,

@@ -12,7 +12,7 @@ import type { UniversalItemProps } from "~/modules/entry-column/types"
 import { FeedIcon } from "~/modules/feed/feed-icon"
 import { FeedTitle } from "~/modules/feed/feed-title"
 import { useEntriesPreview } from "~/queries/entries"
-import { useFeed } from "~/queries/feed"
+import { useFeedQuery } from "~/queries/feed"
 
 export function FeedPreview(props: {
   feedId: string
@@ -25,7 +25,7 @@ export function FeedPreview(props: {
   const [search] = useSearchParams()
   const view = Number.parseInt(search.get("view") || "0")
 
-  const feed = useFeed({
+  const feed = useFeedQuery({
     id,
   })
   const feedData = feed.data?.feed as FeedModel

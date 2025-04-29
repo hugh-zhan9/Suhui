@@ -31,10 +31,9 @@ import { useCurrentModal, useIsInModal } from "~/components/ui/modal/stacked/hoo
 import { useAuthQuery, useI18n } from "~/hooks/common"
 import { apiClient } from "~/lib/api-fetch"
 import { tipcClient } from "~/lib/client"
-import { getFetchErrorMessage, toastFetchError } from "~/lib/error-parser"
-import { getNewIssueUrl } from "~/lib/issues"
+import { toastFetchError } from "~/lib/error-parser"
 import { FollowSummary } from "~/modules/feed/feed-summary"
-import { feed as feedQuery, useFeed } from "~/queries/feed"
+import { feed as feedQuery, useFeedQuery } from "~/queries/feed"
 import { subscription as subscriptionQuery } from "~/queries/subscriptions"
 import { useFeedByIdOrUrl } from "~/store/feed"
 import { useSubscriptionByFeedId } from "~/store/subscription"
@@ -61,7 +60,7 @@ export const FeedForm: Component<{
 }> = ({ id: _id, defaultValues = defaultValue, url, onSuccess }) => {
   const queryParams = { id: _id, url }
 
-  const feedQuery = useFeed(queryParams)
+  const feedQuery = useFeedQuery(queryParams)
 
   const id = feedQuery.data?.feed.id || _id
   const feed = useFeedByIdOrUrl({
@@ -75,95 +74,84 @@ export const FeedForm: Component<{
   const rootContainerRef = useRef<HTMLDivElement>(null)
 
   return (
-    <div className="flex flex-col" ref={rootContainerRef}>
-      <ScrollArea.ScrollArea
-        rootClassName={cn(
-          "flex h-full max-h-[calc(100vh-300px)] flex-col",
-          "mx-auto min-h-[420px] w-full max-w-[550px] lg:min-w-[550px]",
-          isInModal && "-mx-4 px-4",
-        )}
-      >
-        {feed ? (
-          // Workaround for the issue with the scroll area viewport setting the display to table
-          // Learn more about the issue here:
-          // https://github.com/radix-ui/primitives/issues/926 https://github.com/radix-ui/primitives/issues/3129 https://github.com/radix-ui/primitives/pull/3225
-          <div className="flex">
-            <div className="w-0 grow truncate">
-              <FeedInnerForm
-                {...{
-                  defaultValues,
-                  id,
-                  url,
-
-                  onSuccess,
-                  subscriptionData: feedQuery.data?.subscription,
-                  entries: feedQuery.data?.entries,
-                  feed,
-                  rootContainerRef,
-                }}
-              />
-            </div>
-          </div>
-        ) : feedQuery.isLoading ? (
-          <div className="flex flex-1 items-center justify-center">
-            <LoadingCircle size="large" />
-          </div>
-        ) : feedQuery.error ? (
-          <div className="center grow flex-col gap-3">
-            <i className="i-mgc-close-cute-re text-red size-7" />
-            <p>{t("feed_form.error_fetching_feed")}</p>
-            <p className="cursor-text select-text break-all px-8 text-center">
-              {getFetchErrorMessage(feedQuery.error)}
-            </p>
-
-            <div className="flex items-center gap-4">
-              <Button
-                variant="text"
-                onClick={() => {
-                  feedQuery.refetch()
-                }}
+    <div
+      className={cn(
+        "flex h-full max-h-[calc(100vh-300px)] flex-col",
+        "mx-auto min-h-[420px] w-full max-w-[550px] lg:min-w-[550px]",
+      )}
+      ref={rootContainerRef}
+    >
+      {useMemo(() => {
+        switch (true) {
+          case !!feed: {
+            return (
+              <ScrollArea.ScrollArea
+                flex
+                rootClassName={cn(isInModal && "-mx-4 px-4 -mt-4", "h-0 grow")}
+                viewportClassName="pt-4"
               >
-                {t("feed_form.retry")}
-              </Button>
-
-              <Button
-                variant="primary"
-                onClick={() => {
-                  window.open(
-                    getNewIssueUrl({
-                      body: [
-                        "### Info:",
-                        "",
-                        "Feed URL:",
-                        "```",
+                {/* // Workaround for the issue with the scroll area viewport setting the display to
+                table // Learn more about the issue here: //
+                https://github.com/radix-ui/primitives/issues/926
+                https://github.com/radix-ui/primitives/issues/3129
+                https://github.com/radix-ui/primitives/pull/3225 */}
+                <div className="flex">
+                  <div className="w-0 grow truncate">
+                    <FeedInnerForm
+                      {...{
+                        defaultValues,
+                        id,
                         url,
-                        "```",
-                        "",
-                        "Error:",
-                        "```",
-                        getFetchErrorMessage(feedQuery.error),
-                        "```",
-                      ].join("\n"),
-                      title: `Error in fetching feed: ${id ?? url}`,
-                      target: "discussion",
-                      category: "feed-expired",
-                    }),
-                    "_blank",
-                  )
-                }}
-              >
-                {t("feed_form.feedback")}
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="center h-full grow flex-col">
-            <i className="i-mgc-question-cute-re mb-6 size-12 text-zinc-500" />
-            <p>{t("feed_form.feed_not_found")}</p>
-            <p>{url}</p>
-          </div>
-        )}
-      </ScrollArea.ScrollArea>
+
+                        onSuccess,
+                        subscriptionData: feedQuery.data?.subscription,
+                        entries: feedQuery.data?.entries,
+                        feed,
+                        rootContainerRef,
+                      }}
+                    />
+                  </div>
+                </div>
+              </ScrollArea.ScrollArea>
+            )
+          }
+          case feedQuery.isLoading: {
+            return (
+              <div className="flex flex-1 items-center justify-center">
+                <LoadingCircle size="large" />
+              </div>
+            )
+          }
+          case !!feedQuery.error: {
+            return (
+              <div className="center grow flex-col gap-3">
+                <i className="i-mgc-close-cute-re text-red size-7" />
+                <p>{t("feed_form.error_fetching_feed")}</p>
+              </div>
+            )
+          }
+          default: {
+            return (
+              <div className="center h-full grow flex-col">
+                <i className="i-mgc-question-cute-re mb-6 size-12 text-zinc-500" />
+                <p>{t("feed_form.feed_not_found")}</p>
+              </div>
+            )
+          }
+        }
+      }, [
+        defaultValues,
+        feed,
+        feedQuery.data?.entries,
+        feedQuery.data?.subscription,
+        feedQuery.error,
+        feedQuery.isLoading,
+        id,
+        isInModal,
+        onSuccess,
+        t,
+        url,
+      ])}
     </div>
   )
 }
