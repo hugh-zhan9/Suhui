@@ -68,7 +68,7 @@ export const Tabbar: FC<{
     <Animated.View
       pointerEvents={tabScreens.length > 0 ? "auto" : "none"}
       accessibilityRole="tablist"
-      className="absolute inset-x-0 bottom-0 z-10"
+      className="absolute inset-x-0 bottom-0"
       style={{
         paddingBottom: Math.max(insets.bottom, 8),
         transform: [{ translateY }],

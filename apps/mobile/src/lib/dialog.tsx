@@ -199,7 +199,7 @@ class DialogStatic {
           <FullWindowOverlay>
             <Overlay onPress={handleClose} />
             <Animated.View
-              className="bg-secondary-system-background absolute inset-x-0 -top-8 pt-8"
+              className="bg-secondary-system-background absolute inset-x-0 -top-8 z-10 pt-8"
               entering={entering}
               exiting={exiting}
             >

@@ -170,7 +170,7 @@ const Header = () => {
   if (!Slot.header) {
     return null
   }
-  return <View className="absolute inset-x-0 top-0 z-[99]">{Slot.header}</View>
+  return <View className="absolute inset-x-0 top-0 z-10">{Slot.header}</View>
 }
 
 WrappedScreenItem.displayName = "WrappedScreenItem"
