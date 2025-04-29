@@ -1683,10 +1683,7 @@ importers:
         version: 5.1.4(typescript@5.8.3)(vite@6.3.3(@types/node@22.15.3)(jiti@2.4.2)(lightningcss@1.29.3)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.1))
 
   packages/readability:
-    devDependencies:
-      '@follow/configs':
-        specifier: workspace:*
-        version: link:../configs
+    dependencies:
       '@mozilla/readability':
         specifier: 0.6.0
         version: 0.6.0(patch_hash=61709486ef07e9c8175a4b3f19f1aa4e2a1a75a3c557643c574d6cdacd6dd959)
@@ -1699,6 +1696,10 @@ importers:
       linkedom:
         specifier: 0.18.10
         version: 0.18.10
+    devDependencies:
+      '@follow/configs':
+        specifier: workspace:*
+        version: link:../configs
       nbump:
         specifier: 2.1.2
         version: 2.1.2(conventional-commits-filter@5.0.0)
