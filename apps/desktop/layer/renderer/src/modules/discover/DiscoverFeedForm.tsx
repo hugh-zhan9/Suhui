@@ -1,6 +1,9 @@
+import { Spring } from "@follow/components/constants/spring.js"
 import { Button } from "@follow/components/ui/button/index.js"
 import { Form, FormItem, FormLabel } from "@follow/components/ui/form/index.jsx"
 import { Input } from "@follow/components/ui/input/index.js"
+import { RootPortal } from "@follow/components/ui/portal/index.js"
+import { ScrollArea } from "@follow/components/ui/scroll-area/index.js"
 import {
   Select,
   SelectContent,
@@ -18,6 +21,7 @@ import {
 } from "@follow/utils/path-parser"
 import { cn } from "@follow/utils/utils"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { m } from "motion/react"
 import type { FC } from "react"
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react"
 import type { UseFormReturn } from "react-hook-form"
@@ -28,7 +32,12 @@ import { z } from "zod"
 
 import { CopyButton } from "~/components/ui/button/CopyButton"
 import { Markdown } from "~/components/ui/markdown/Markdown"
-import { useCurrentModal, useIsTopModal, useModalStack } from "~/components/ui/modal/stacked/hooks"
+import {
+  useCurrentModal,
+  useIsInModal,
+  useIsTopModal,
+  useModalStack,
+} from "~/components/ui/modal/stacked/hooks"
 import { getViewFromRoute } from "~/lib/utils"
 
 import { FeedForm } from "./feed-form"
@@ -67,23 +76,6 @@ const FeedMaintainers = ({ maintainers }: { maintainers?: string[] }) => {
   )
 }
 
-const FeedDescription = ({ description }: { description?: string }) => {
-  const { t } = useTranslation()
-  if (!description) {
-    return null
-  }
-
-  return (
-    <>
-      <p>{t("discover.feed_description")}</p>
-      <Markdown className="prose-p:my-1 w-full max-w-full cursor-text select-text break-all">
-        {/* Fix markdown directive */}
-        {description.replaceAll("::: ", ":::")}
-      </Markdown>
-    </>
-  )
-}
-
 const routeParamsKeyPrefix = "route-params-"
 
 export type RouteParams = Record<
@@ -98,13 +90,13 @@ export const DiscoverFeedForm = ({
   route,
   routePrefix,
   noDescription,
-  submitButtonClassName,
+
   routeParams,
 }: {
   route: RSSHubRoute
   routePrefix: string
   noDescription?: boolean
-  submitButtonClassName?: string
+
   routeParams?: RouteParams
 }) => {
   const { t } = useTranslation()
@@ -170,6 +162,8 @@ export const DiscoverFeedForm = ({
   }) as UseFormReturn<any>
 
   const { present, dismissAll } = useModalStack()
+  const rootContainerRef = useRef<HTMLDivElement>(null)
+  const isInModal = useIsInModal()
 
   const onSubmit = useCallback(
     (_data: Record<string, string>) => {
@@ -241,106 +235,160 @@ export const DiscoverFeedForm = ({
   }, [form.formState.isDirty, modal])
 
   return (
-    <Form {...form}>
-      {!noDescription && (
-        <PreviewUrl watch={form.watch} path={route.path} routePrefix={`rsshub://${routePrefix}`} />
-      )}
-      <form className="flex flex-col gap-4" onSubmit={form.handleSubmit(onSubmit)} ref={formElRef}>
-        {keys.map((keyItem) => {
-          const parameters = normalizeRSSHubParameters(route.parameters?.[keyItem.name]!)
-
-          const { ref, ...formRegister } = form.register(keyItem.name)
-
-          return (
-            <FormItem key={keyItem.name} className="flex flex-col space-y-2">
-              <FormLabel className="text-text text-headline pl-3 capitalize">
-                {keyItem.name}
-                {!keyItem.optional && <sup className="text-red ml-1 align-sub">*</sup>}
-              </FormLabel>
-              {parameters?.options ? (
-                <Select
-                  {...formRegister}
-                  onValueChange={(value) => {
-                    form.setValue(keyItem.name, value)
-                  }}
-                  defaultValue={parameters.default || void 0}
-                >
-                  {/* Select focused ref on `SelectTrigger` or `Select` */}
-                  <SelectTrigger ref={ref}>
-                    <SelectValue placeholder={t("discover.select_placeholder")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {parameters.options.map((option) => (
-                      <SelectItem key={option.value} value={option.value || ""}>
-                        {option.label}
-                        {parameters.default === option.value && t("discover.default_option")}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Input
-                  {...formRegister}
-                  onBlur={(e) => {
-                    // Fix #535
-                    nextFrame(() => {
-                      formRegister.onBlur(e)
-                    })
-                  }}
-                  onChange={(e) => {
-                    form.setValue(keyItem.name, e.target.value)
-                  }}
-                  defaultValue={parameters?.default ?? ""}
-                  placeholder={
-                    (parameters?.default ?? formPlaceholder[keyItem.name])
-                      ? `e.g. ${formPlaceholder[keyItem.name]}`
-                      : void 0
-                  }
-                />
-              )}
-              {!!parameters && (
-                <Markdown className="text-text-secondary text-footnote w-full max-w-full pl-3">
-                  {parameters.description}
-                </Markdown>
-              )}
-            </FormItem>
-          )
-        })}
-        {routeParams && (
-          <div className="grid grid-cols-1 gap-x-2 gap-y-5 sm:grid-cols-2">
-            {Object.entries(routeParams).map(([key, value]) => (
-              <FormItem key={`${routeParamsKeyPrefix}${key}`} className="flex flex-col space-y-2">
-                <FormLabel className="text-text text-headline pl-3 capitalize">{key}</FormLabel>
-                <Input
-                  {...form.register(`${routeParamsKeyPrefix}${key}`)}
-                  placeholder={value.default}
-                  className="grow-0"
-                />
-                {!!value.description && (
-                  <Markdown className="text-text-secondary text-footnote w-full max-w-full pl-3">
-                    {value.description}
-                  </Markdown>
-                )}
-              </FormItem>
-            ))}
-          </div>
-        )}
-        {!noDescription && (
-          <>
-            <FeedDescription description={route.description} />
-            <FeedMaintainers maintainers={route.maintainers} />
-          </>
-        )}
-        <div
-          className={cn(
-            "sticky bottom-0 -mt-4 mb-1 flex w-full justify-end pt-3",
-            submitButtonClassName,
-          )}
+    <div className={cn("flex h-full flex-col", "mx-auto")} ref={rootContainerRef}>
+      <Form {...form}>
+        <ScrollArea.ScrollArea
+          flex
+          rootClassName={cn(isInModal && "-mx-4 px-4 -mt-4", "max-h-[calc(100vh-200px)] grow")}
+          viewportClassName="pt-4"
         >
-          <Button type="submit">{t("discover.preview")}</Button>
-        </div>
-      </form>
-    </Form>
+          <div className="flex">
+            <div className="w-0 grow truncate">
+              {!noDescription && (
+                <PreviewUrl
+                  watch={form.watch}
+                  path={route.path}
+                  routePrefix={`rsshub://${routePrefix}`}
+                />
+              )}
+              <form className="flex flex-col gap-4 px-1" ref={formElRef}>
+                {keys.map((keyItem) => {
+                  const parameters = normalizeRSSHubParameters(route.parameters?.[keyItem.name]!)
+
+                  const { ref, ...formRegister } = form.register(keyItem.name)
+
+                  return (
+                    <FormItem key={keyItem.name} className="flex flex-col space-y-2">
+                      <FormLabel className="text-text text-headline pl-3 capitalize">
+                        {keyItem.name}
+                        {!keyItem.optional && <sup className="text-red ml-1 align-sub">*</sup>}
+                      </FormLabel>
+                      {parameters?.options ? (
+                        <Select
+                          {...formRegister}
+                          onValueChange={(value) => {
+                            form.setValue(keyItem.name, value)
+                          }}
+                          defaultValue={parameters.default || void 0}
+                        >
+                          <SelectTrigger ref={ref}>
+                            <SelectValue placeholder={t("discover.select_placeholder")} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {parameters.options.map((option) => (
+                              <SelectItem key={option.value} value={option.value || ""}>
+                                {option.label}
+                                {parameters.default === option.value &&
+                                  t("discover.default_option")}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Input
+                          {...formRegister}
+                          onBlur={(e) => {
+                            nextFrame(() => {
+                              formRegister.onBlur(e)
+                            })
+                          }}
+                          onChange={(e) => {
+                            form.setValue(keyItem.name, e.target.value)
+                          }}
+                          defaultValue={parameters?.default ?? ""}
+                          placeholder={
+                            (parameters?.default ?? formPlaceholder[keyItem.name])
+                              ? `e.g. ${formPlaceholder[keyItem.name]}`
+                              : void 0
+                          }
+                        />
+                      )}
+                      {!!parameters && (
+                        <Markdown className="text-text-secondary text-footnote w-full max-w-full whitespace-normal break-all pl-3">
+                          {parameters.description}
+                        </Markdown>
+                      )}
+                    </FormItem>
+                  )
+                })}
+                {routeParams && (
+                  <div className="grid grid-cols-1 gap-x-2 gap-y-5 sm:grid-cols-2">
+                    {Object.entries(routeParams).map(([key, value]) => (
+                      <FormItem
+                        key={`${routeParamsKeyPrefix}${key}`}
+                        className="flex flex-col space-y-2"
+                      >
+                        <FormLabel className="text-text text-headline pl-3 capitalize">
+                          {key}
+                        </FormLabel>
+                        <Input
+                          {...form.register(`${routeParamsKeyPrefix}${key}`)}
+                          placeholder={value.default}
+                          className="grow-0"
+                        />
+                        {!!value.description && (
+                          <Markdown className="text-text-secondary text-footnote w-full max-w-full pl-3">
+                            {value.description}
+                          </Markdown>
+                        )}
+                      </FormItem>
+                    ))}
+                  </div>
+                )}
+                {!noDescription && (
+                  <>
+                    <FeedMaintainers maintainers={route.maintainers} />
+                  </>
+                )}
+              </form>
+            </div>
+          </div>
+        </ScrollArea.ScrollArea>
+        <RootPortal to={rootContainerRef.current}>
+          <div className="flex items-center justify-end gap-4 pt-2">
+            <Button onClick={form.handleSubmit(onSubmit)}>{t("discover.preview")}</Button>
+          </div>
+        </RootPortal>
+      </Form>
+
+      <ReadmeAside description={route.description} />
+    </div>
+  )
+}
+
+const ReadmeAside = ({ description }: { description?: string }) => {
+  const { modalElementRef } = useCurrentModal()
+  const { t } = useTranslation()
+  useLayoutEffect(() => {
+    if (!modalElementRef.current) return
+    modalElementRef.current.style.overflow = "visible"
+    modalElementRef.current.style.zIndex = "2"
+  }, [modalElementRef])
+
+  if (!description) return null
+  return (
+    <RootPortal to={modalElementRef.current}>
+      <div className="absolute inset-y-0 -right-px z-0">
+        <m.div
+          className="bg-background border-border absolute inset-y-0 left-0 z-[-1] flex w-[40ch] flex-col rounded-md border pt-4 shadow-lg"
+          initial={{ x: "-50px" }}
+          animate={{ x: "0px" }}
+          transition={Spring.presets.smooth}
+        >
+          <h3 className="text-headline mb-2 shrink-0 px-4 font-medium">
+            {t("discover.feed_description")}
+          </h3>
+          <ScrollArea.ScrollArea viewportClassName="px-4 pb-4" rootClassName="h-0 grow">
+            <div className="pr-4">
+              <Markdown className="prose-p:my-1 w-full cursor-text select-text break-words">
+                {/* Fix markdown directive */}
+                {description.replaceAll("::: ", ":::")}
+              </Markdown>
+            </div>
+          </ScrollArea.ScrollArea>
+        </m.div>
+      </div>
+    </RootPortal>
   )
 }
 
@@ -362,15 +410,17 @@ const PreviewUrl: FC<{
 
   const renderedPath = `${routePrefix}${fullPath}`
   return (
-    <div className="group relative min-w-0 pb-4">
-      <pre className="text-text-tertiary w-full whitespace-pre-line break-words text-xs">
+    <div className="group relative min-w-0 px-1 pb-2">
+      <pre className="bg-material-medium text-text-secondary relative w-full whitespace-pre-line break-words rounded p-2 text-xs">
         {renderedPath}
+        <div className="absolute right-1 top-1/2 -translate-y-1/2">
+          <CopyButton
+            variant="outline"
+            value={renderedPath}
+            className="opacity-0 duration-200 group-hover:opacity-100"
+          />
+        </div>
       </pre>
-      <CopyButton
-        variant="outline"
-        value={renderedPath}
-        className="absolute right-0 top-0 opacity-0 duration-200 group-hover:opacity-100"
-      />
     </div>
   )
 }

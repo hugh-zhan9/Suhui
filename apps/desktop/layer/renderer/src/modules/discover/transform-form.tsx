@@ -74,7 +74,6 @@ export function DiscoverTransform() {
             route={data?.rsshub.routes["/transform/html/:url/:routeParams"]!}
             routeParams={transformRouteParams}
             noDescription
-            submitButtonClassName="justify-center"
           />
         </div>
       )}

@@ -166,6 +166,7 @@ export const ModalInternal = memo(
       () => ({
         ...ModalProps,
         ref: { current: modalContentRef },
+        modalElementRef,
       }),
       [ModalProps, modalContentRef],
     )

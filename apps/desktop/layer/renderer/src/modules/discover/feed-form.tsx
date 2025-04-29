@@ -284,7 +284,7 @@ const FeedInnerForm = ({
         <form
           id="feed-form"
           onSubmit={form.handleSubmit(onSubmit)}
-          className="flex flex-1 flex-col gap-y-4"
+          className="flex flex-1 flex-col gap-y-4 px-1"
         >
           <FormField
             control={form.control}

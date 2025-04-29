@@ -33,7 +33,6 @@ export function DiscoverUser() {
             routePrefix="follow"
             route={data.follow.routes[Object.keys(data.follow.routes)[0]!]!}
             noDescription
-            submitButtonClassName="justify-center"
           />
         </div>
       )}

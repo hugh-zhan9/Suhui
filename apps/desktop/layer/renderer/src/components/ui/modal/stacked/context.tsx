@@ -4,6 +4,7 @@ import { createContext as createContextSelector } from "use-context-selector"
 
 export type CurrentModalContentProps = ModalActionsInternal & {
   ref: RefObject<HTMLElement | null>
+  modalElementRef: RefObject<HTMLElement | null>
 }
 
 const warnNoProvider = () => {
@@ -17,6 +18,7 @@ const defaultCtxValue: CurrentModalContentProps = {
   dismiss: warnNoProvider,
   setClickOutSideToDismiss: warnNoProvider,
   ref: { current: null },
+  modalElementRef: { current: null },
   getIndex: () => 0,
 }
 
