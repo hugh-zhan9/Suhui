@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@follow/components/ui/card/index.jsx"
+import { SiteIcon } from "@follow/components/ui/icon/SiteIcon.js"
 import { RSSHubCategories } from "@follow/constants"
 import { getHighestWeightColor } from "@follow/utils/color"
 import { clsx, cn, getUrlIcon } from "@follow/utils/utils"
@@ -54,7 +55,7 @@ export const RecommendationCard: FC<RecommendationCardProps> = memo(
           <CardTitle className="@[280px]:pt-10 relative z-[1] flex items-center pt-[10px] text-base">
             <span className="center bg-background box-content flex aspect-square rounded-full p-1.5">
               <span className="overflow-hidden rounded-full">
-                <FeedIcon size={28} noMargin siteUrl={`https://${data.url}`} />
+                <SiteIcon size={28} siteUrl={`https://${data.url}`} />
               </span>
             </span>
             <a

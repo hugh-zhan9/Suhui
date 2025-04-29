@@ -28,6 +28,11 @@ export const SlideUpModal: ModalTemplateType = (props) => {
           y: winHeight,
           opacity: 0,
         }}
+        onAnimationComplete={(definition) => {
+          if (definition === "exit") {
+            dismiss()
+          }
+        }}
         className={cn(
           "bg-theme-background relative flex flex-col items-center overflow-hidden rounded-xl border p-8 pb-0",
           "aspect-[7/9] w-[600px] max-w-full shadow lg:max-h-[calc(100vh-10rem)]",
@@ -63,6 +68,7 @@ const modalVariant = {
     opacity: 0,
   },
 }
+
 export const DrawerModalLayout: FC<PropsWithChildren> = ({ children }) => {
   const { dismiss } = useCurrentModal()
   const controller = useAnimationControls()
@@ -83,6 +89,11 @@ export const DrawerModalLayout: FC<PropsWithChildren> = ({ children }) => {
           mass: 0.4,
           tension: 100,
           friction: 1,
+        }}
+        onAnimationComplete={(definition) => {
+          if (definition === "exit") {
+            dismiss()
+          }
         }}
         exit="exit"
         layout="size"

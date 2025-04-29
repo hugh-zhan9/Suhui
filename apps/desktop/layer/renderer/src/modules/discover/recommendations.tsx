@@ -2,15 +2,15 @@ import { isMobile } from "@follow/components/hooks/useMobile.js"
 import { EmptyIcon } from "@follow/components/icons/empty.js"
 import { ActionButton } from "@follow/components/ui/button/action-button.js"
 import { Card, CardContent } from "@follow/components/ui/card/index.jsx"
-import { Divider } from "@follow/components/ui/divider/Divider.js"
 import { LoadingCircle } from "@follow/components/ui/loading/index.js"
-import { Masonry } from "@follow/components/ui/masonry/index.js"
 import { ScrollArea } from "@follow/components/ui/scroll-area/ScrollArea.js"
 import { ResponsiveSelect } from "@follow/components/ui/select/responsive.js"
 import { CategoryMap, RSSHubCategories } from "@follow/constants"
+import { nextFrame } from "@follow/utils/dom"
 import { isASCII } from "@follow/utils/utils"
 import { keepPreviousData } from "@tanstack/react-query"
-import { useMemo, useState } from "react"
+import { Masonry } from "masonic"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { flushSync } from "react-dom"
 import { useTranslation } from "react-i18next"
 
@@ -95,19 +95,25 @@ export function Recommendations() {
     })
   }, [data])
 
-  const handleCategoryChange = (value: DiscoverCategories) => {
-    flushSync(() => {
-      setCategory(value)
-    })
-    rsshubPopular.refetch()
-  }
+  const handleCategoryChange = useCallback(
+    (value: DiscoverCategories) => {
+      flushSync(() => {
+        setCategory(value)
+      })
+      rsshubPopular.refetch()
+    },
+    [rsshubPopular],
+  )
 
-  const handleLangChange = (value: string) => {
-    flushSync(() => {
-      setSelectedLang(value as Language)
-    })
-    rsshubPopular.refetch()
-  }
+  const handleLangChange = useCallback(
+    (value: string) => {
+      flushSync(() => {
+        setSelectedLang(value as Language)
+      })
+      rsshubPopular.refetch()
+    },
+    [rsshubPopular],
+  )
 
   const handleShowCategoryContent = (selectedCategory: DiscoverCategories) => {
     present({
@@ -222,6 +228,16 @@ const RecommendationDrawerContent = ({
 
   const { dismiss } = useCurrentModal()
 
+  // Delay the masonry rendering to avoid layout shift
+  const [ready, setReady] = useState(false)
+  const [masonryReady, setMasonryReady] = useState(false)
+
+  useEffect(() => {
+    nextFrame(() => {
+      setReady(true)
+    })
+  }, [])
+
   return (
     <div className="absolute inset-0 flex flex-col">
       <h1 className="text-title2 mt-4 pl-8 font-semibold">
@@ -236,27 +252,34 @@ const RecommendationDrawerContent = ({
       >
         <i className="i-mgc-close-cute-re" />
       </ActionButton>
-      <Divider className="m-4" />
+      <div className="bg-border m-4 h-px shrink-0" />
       {filteredItems.length > 0 ? (
-        <ScrollArea rootClassName="w-full" viewportClassName="px-8">
-          <Masonry
-            items={filteredItems}
-            columnGutter={16}
-            columnWidth={280}
-            columnCount={isMobile() ? 1 : 2}
-            overscanBy={2}
-            render={({ data: itemData }) => {
-              if (!itemData) return null
-              return (
-                <RecommendationCard
-                  key={itemData.key}
-                  data={itemData.data}
-                  routePrefix={itemData.routePrefix}
-                  setCategory={handleCategoryChange}
-                />
-              )
-            }}
-          />
+        <ScrollArea rootClassName="w-full -mt-4" viewportClassName="px-8 pt-4">
+          {ready && (
+            <Masonry
+              className={masonryReady ? "opacity-100" : "opacity-0"}
+              items={filteredItems}
+              columnGutter={16}
+              onRender={() => {
+                setTimeout(() => {
+                  setMasonryReady(true)
+                }, 36)
+              }}
+              columnCount={isMobile() ? 1 : 2}
+              overscanBy={2}
+              render={({ data: itemData }) => {
+                if (!itemData) return null
+                return (
+                  <RecommendationCard
+                    key={itemData.key}
+                    data={itemData.data}
+                    routePrefix={itemData.routePrefix}
+                    setCategory={handleCategoryChange}
+                  />
+                )
+              }}
+            />
+          )}
         </ScrollArea>
       ) : (
         <div className="flex h-full -translate-y-12 flex-col items-center justify-center text-center">

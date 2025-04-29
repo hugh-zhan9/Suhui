@@ -3,7 +3,7 @@ import { EllipsisHorizontalTextWithTooltip } from "@follow/components/ui/typogra
 import { ZIndexProvider } from "@follow/components/ui/z-index/index.js"
 import { useRefValue } from "@follow/hooks"
 import { ELECTRON_BUILD } from "@follow/shared/constants"
-import { nextFrame, preventDefault, stopPropagation } from "@follow/utils/dom"
+import { preventDefault, stopPropagation } from "@follow/utils/dom"
 import { cn, getOS } from "@follow/utils/utils"
 import * as Dialog from "@radix-ui/react-dialog"
 import { produce } from "immer"
@@ -100,9 +100,7 @@ export const ModalInternal = memo(
           setStack((p) => p.filter((modal) => modal.id !== item.id))
         })
       } else {
-        nextFrame(() => {
-          setStack((p) => p.filter((modal) => modal.id !== item.id))
-        })
+        setStack((p) => p.filter((modal) => modal.id !== item.id))
       }
       onPropsClose?.(false)
     })
