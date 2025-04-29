@@ -73,7 +73,7 @@ export const EntryItemContextMenu = ({
               view: selectedView,
               filter: payload,
               time: {
-                startTime: new Date(publishedAt).getTime(),
+                startTime: new Date(publishedAt).getTime() + 1,
                 endTime: Date.now(),
               },
             })

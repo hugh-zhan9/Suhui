@@ -301,7 +301,7 @@ export const useRegisterEntryCommands = () => {
         label: t("entry_actions.mark_above_as_read"),
         run: ({ publishedAt }: { publishedAt: string }) => {
           return markAllByRoute({
-            startTime: new Date(publishedAt).getTime(),
+            startTime: new Date(publishedAt).getTime() + 1,
             endTime: Date.now(),
           })
         },
