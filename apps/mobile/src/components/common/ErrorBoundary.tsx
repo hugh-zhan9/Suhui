@@ -1,5 +1,5 @@
 import { useTypeScriptHappyCallback } from "@follow/hooks"
-import crashlytics from "@react-native-firebase/crashlytics"
+import { getCrashlytics, recordError } from "@react-native-firebase/crashlytics"
 import { createElement, useEffect } from "react"
 import { ErrorBoundary as ReactErrorBoundary } from "react-error-boundary"
 import { Text, View } from "react-native"
@@ -41,7 +41,7 @@ const defaultFallbackRender = ({ error }: { error: Error }) => {
 
 const ErrorReport = ({ error }: { error: Error }) => {
   useEffect(() => {
-    crashlytics().recordError(error)
+    recordError(getCrashlytics(), error)
 
     console.error(error)
   }, [error])

@@ -770,20 +770,20 @@ importers:
         specifier: 4.3.0
         version: 4.3.0(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))
       '@react-native-firebase/analytics':
-        specifier: 21.14.0
-        version: 21.14.0(@react-native-firebase/app@21.14.0(expo@52.0.46(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@expo/metro-runtime@4.0.1(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5)))(bufferutil@4.0.9)(encoding@0.1.13)(graphql@16.8.1)(react-native-webview@13.13.5(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1)(utf-8-validate@6.0.5))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1))
+        specifier: 22.0.0
+        version: 22.0.0(@react-native-firebase/app@22.0.0(expo@52.0.46(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@expo/metro-runtime@4.0.1(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5)))(bufferutil@4.0.9)(encoding@0.1.13)(graphql@16.8.1)(react-native-webview@13.13.5(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1)(utf-8-validate@6.0.5))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1))
       '@react-native-firebase/app':
-        specifier: 21.14.0
-        version: 21.14.0(expo@52.0.46(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@expo/metro-runtime@4.0.1(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5)))(bufferutil@4.0.9)(encoding@0.1.13)(graphql@16.8.1)(react-native-webview@13.13.5(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1)(utf-8-validate@6.0.5))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1)
+        specifier: 22.0.0
+        version: 22.0.0(expo@52.0.46(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@expo/metro-runtime@4.0.1(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5)))(bufferutil@4.0.9)(encoding@0.1.13)(graphql@16.8.1)(react-native-webview@13.13.5(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1)(utf-8-validate@6.0.5))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1)
       '@react-native-firebase/app-check':
-        specifier: 21.14.0
-        version: 21.14.0(21fb7edb71e7d0731f9ddb20f02a89c2)
+        specifier: 22.0.0
+        version: 22.0.0(9a1b147fee94f75a167a9f30c38c1fb1)
       '@react-native-firebase/crashlytics':
-        specifier: 21.14.0
-        version: 21.14.0(21fb7edb71e7d0731f9ddb20f02a89c2)
+        specifier: 22.0.0
+        version: 22.0.0(9a1b147fee94f75a167a9f30c38c1fb1)
       '@react-native-firebase/messaging':
-        specifier: 21.14.0
-        version: 21.14.0(21fb7edb71e7d0731f9ddb20f02a89c2)
+        specifier: 22.0.0
+        version: 22.0.0(9a1b147fee94f75a167a9f30c38c1fb1)
       '@react-native-masked-view/masked-view':
         specifier: 0.3.2
         version: 0.3.2(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1)
@@ -1626,7 +1626,7 @@ importers:
         version: link:../../configs
       '@react-native-firebase/analytics':
         specifier: 21.14.0
-        version: 21.14.0(@react-native-firebase/app@21.14.0(expo@52.0.46(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@expo/metro-runtime@4.0.1(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5)))(bufferutil@4.0.9)(encoding@0.1.13)(graphql@16.8.1)(react-native-webview@13.13.5(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1)(utf-8-validate@6.0.5))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1))
+        version: 21.14.0(@react-native-firebase/app@22.0.0(expo@52.0.46(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@expo/metro-runtime@4.0.1(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5)))(bufferutil@4.0.9)(encoding@0.1.13)(graphql@16.8.1)(react-native-webview@13.13.5(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1)(utf-8-validate@6.0.5))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1))
 
   packages/internal/types: {}
 
@@ -5437,17 +5437,22 @@ packages:
     peerDependencies:
       '@react-native-firebase/app': 21.14.0
 
-  '@react-native-firebase/app-check@21.14.0':
-    resolution: {integrity: sha512-44zbx3v51mn6SUvZXQAC5sStVW+VLYnbqum+Y6zy1j9fEVKhCtu4kGVnt7aN2eQhYlUxggD8BUt90QclRyYWug==}
+  '@react-native-firebase/analytics@22.0.0':
+    resolution: {integrity: sha512-cEcL8CJr33YF9NWgu33/2Pp5A2rbZ0GGv12pUQGBZ8l2OEzNnXp5BbcbIKdowvGU/vexY0bdwQlgRZo9ZAbrIg==}
     peerDependencies:
-      '@react-native-firebase/app': 21.14.0
+      '@react-native-firebase/app': 22.0.0
+
+  '@react-native-firebase/app-check@22.0.0':
+    resolution: {integrity: sha512-1X7Cvv6OUfoccl0NXbeGDRmF2vdRH+D7h3GU7MaMBSOLfPHEFdvPV/t2vUSZeN3/KURbfiHDV8ODLL1pUO2yOw==}
+    peerDependencies:
+      '@react-native-firebase/app': 22.0.0
       expo: '>=47.0.0'
     peerDependenciesMeta:
       expo:
         optional: true
 
-  '@react-native-firebase/app@21.14.0':
-    resolution: {integrity: sha512-vBNfn7PoQrZfANLJnJiWZSHVu7WG6hjM5w3MDfmG8DLdr8VsAVBUgsn8lGpqobSuno1vTgwDIhR8PYZjMGsuvg==}
+  '@react-native-firebase/app@22.0.0':
+    resolution: {integrity: sha512-fbagoIrTJy8edCTiEI7OeAUqO5XoifMirEKoXJDHlsFrPJBfxqMGDhSJutUoWLNHt8KxDtLG9JWnKuW23ISq2Q==}
     peerDependencies:
       expo: '>=47.0.0'
       react: 18.3.1
@@ -5456,19 +5461,19 @@ packages:
       expo:
         optional: true
 
-  '@react-native-firebase/crashlytics@21.14.0':
-    resolution: {integrity: sha512-w51Huoyg3iWgS0UfiozBqofnIaG2ZY8pdVI8iEMRAD82PKYCxFABH7WqSZOefJHvYuqip02DCmEZ9Q0b3lpBug==}
+  '@react-native-firebase/crashlytics@22.0.0':
+    resolution: {integrity: sha512-YOo5hC2YM/83pbiGuyM5RZmI7MTzGhsDT/j0Vt+kl2w76yb7AQN3+MbSULa7hTEtS5J6U29EQLK8Xj0waJ6Ntw==}
     peerDependencies:
-      '@react-native-firebase/app': 21.14.0
+      '@react-native-firebase/app': 22.0.0
       expo: '>=47.0.0'
     peerDependenciesMeta:
       expo:
         optional: true
 
-  '@react-native-firebase/messaging@21.14.0':
-    resolution: {integrity: sha512-EwJVFr2xtQFf6wQ3anXvnxCyFNRc6Hw7B6Ov4GYwgBEXNzw0MIPN2qDDA3lIN2a6nf6zESPuflYyG6Tel1ovSQ==}
+  '@react-native-firebase/messaging@22.0.0':
+    resolution: {integrity: sha512-l9wVECx1FdK5W5FK2PjnEnPFVg0bDvMuA5CUOzLhItnRAXKsvR8ovo/YCZxWqF16PxSlxxcBgDISHqlppH2Svw==}
     peerDependencies:
-      '@react-native-firebase/app': 21.14.0
+      '@react-native-firebase/app': 22.0.0
       expo: '>=47.0.0'
     peerDependenciesMeta:
       expo:
@@ -20596,18 +20601,23 @@ snapshots:
     optionalDependencies:
       react-native: 0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5)
 
-  '@react-native-firebase/analytics@21.14.0(@react-native-firebase/app@21.14.0(expo@52.0.46(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@expo/metro-runtime@4.0.1(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5)))(bufferutil@4.0.9)(encoding@0.1.13)(graphql@16.8.1)(react-native-webview@13.13.5(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1)(utf-8-validate@6.0.5))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1))':
+  '@react-native-firebase/analytics@21.14.0(@react-native-firebase/app@22.0.0(expo@52.0.46(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@expo/metro-runtime@4.0.1(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5)))(bufferutil@4.0.9)(encoding@0.1.13)(graphql@16.8.1)(react-native-webview@13.13.5(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1)(utf-8-validate@6.0.5))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1))':
     dependencies:
-      '@react-native-firebase/app': 21.14.0(expo@52.0.46(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@expo/metro-runtime@4.0.1(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5)))(bufferutil@4.0.9)(encoding@0.1.13)(graphql@16.8.1)(react-native-webview@13.13.5(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1)(utf-8-validate@6.0.5))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1)
+      '@react-native-firebase/app': 22.0.0(expo@52.0.46(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@expo/metro-runtime@4.0.1(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5)))(bufferutil@4.0.9)(encoding@0.1.13)(graphql@16.8.1)(react-native-webview@13.13.5(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1)(utf-8-validate@6.0.5))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1)
       superstruct: 2.0.2
 
-  '@react-native-firebase/app-check@21.14.0(21fb7edb71e7d0731f9ddb20f02a89c2)':
+  '@react-native-firebase/analytics@22.0.0(@react-native-firebase/app@22.0.0(expo@52.0.46(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@expo/metro-runtime@4.0.1(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5)))(bufferutil@4.0.9)(encoding@0.1.13)(graphql@16.8.1)(react-native-webview@13.13.5(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1)(utf-8-validate@6.0.5))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1))':
     dependencies:
-      '@react-native-firebase/app': 21.14.0(expo@52.0.46(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@expo/metro-runtime@4.0.1(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5)))(bufferutil@4.0.9)(encoding@0.1.13)(graphql@16.8.1)(react-native-webview@13.13.5(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1)(utf-8-validate@6.0.5))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1)
+      '@react-native-firebase/app': 22.0.0(expo@52.0.46(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@expo/metro-runtime@4.0.1(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5)))(bufferutil@4.0.9)(encoding@0.1.13)(graphql@16.8.1)(react-native-webview@13.13.5(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1)(utf-8-validate@6.0.5))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1)
+      superstruct: 2.0.2
+
+  '@react-native-firebase/app-check@22.0.0(9a1b147fee94f75a167a9f30c38c1fb1)':
+    dependencies:
+      '@react-native-firebase/app': 22.0.0(expo@52.0.46(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@expo/metro-runtime@4.0.1(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5)))(bufferutil@4.0.9)(encoding@0.1.13)(graphql@16.8.1)(react-native-webview@13.13.5(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1)(utf-8-validate@6.0.5))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1)
     optionalDependencies:
       expo: 52.0.46(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@expo/metro-runtime@4.0.1(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5)))(bufferutil@4.0.9)(encoding@0.1.13)(graphql@16.8.1)(react-native-webview@13.13.5(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1)(utf-8-validate@6.0.5)
 
-  '@react-native-firebase/app@21.14.0(expo@52.0.46(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@expo/metro-runtime@4.0.1(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5)))(bufferutil@4.0.9)(encoding@0.1.13)(graphql@16.8.1)(react-native-webview@13.13.5(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1)(utf-8-validate@6.0.5))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1)':
+  '@react-native-firebase/app@22.0.0(expo@52.0.46(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@expo/metro-runtime@4.0.1(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5)))(bufferutil@4.0.9)(encoding@0.1.13)(graphql@16.8.1)(react-native-webview@13.13.5(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1)(utf-8-validate@6.0.5))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1)':
     dependencies:
       firebase: 11.3.1
       react: 18.3.1
@@ -20617,16 +20627,16 @@ snapshots:
     transitivePeerDependencies:
       - '@react-native-async-storage/async-storage'
 
-  '@react-native-firebase/crashlytics@21.14.0(21fb7edb71e7d0731f9ddb20f02a89c2)':
+  '@react-native-firebase/crashlytics@22.0.0(9a1b147fee94f75a167a9f30c38c1fb1)':
     dependencies:
-      '@react-native-firebase/app': 21.14.0(expo@52.0.46(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@expo/metro-runtime@4.0.1(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5)))(bufferutil@4.0.9)(encoding@0.1.13)(graphql@16.8.1)(react-native-webview@13.13.5(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1)(utf-8-validate@6.0.5))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1)
+      '@react-native-firebase/app': 22.0.0(expo@52.0.46(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@expo/metro-runtime@4.0.1(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5)))(bufferutil@4.0.9)(encoding@0.1.13)(graphql@16.8.1)(react-native-webview@13.13.5(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1)(utf-8-validate@6.0.5))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1)
       stacktrace-js: 2.0.2
     optionalDependencies:
       expo: 52.0.46(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@expo/metro-runtime@4.0.1(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5)))(bufferutil@4.0.9)(encoding@0.1.13)(graphql@16.8.1)(react-native-webview@13.13.5(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1)(utf-8-validate@6.0.5)
 
-  '@react-native-firebase/messaging@21.14.0(21fb7edb71e7d0731f9ddb20f02a89c2)':
+  '@react-native-firebase/messaging@22.0.0(9a1b147fee94f75a167a9f30c38c1fb1)':
     dependencies:
-      '@react-native-firebase/app': 21.14.0(expo@52.0.46(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@expo/metro-runtime@4.0.1(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5)))(bufferutil@4.0.9)(encoding@0.1.13)(graphql@16.8.1)(react-native-webview@13.13.5(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1)(utf-8-validate@6.0.5))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1)
+      '@react-native-firebase/app': 22.0.0(expo@52.0.46(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@expo/metro-runtime@4.0.1(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5)))(bufferutil@4.0.9)(encoding@0.1.13)(graphql@16.8.1)(react-native-webview@13.13.5(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1)(utf-8-validate@6.0.5))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1)
     optionalDependencies:
       expo: 52.0.46(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@expo/metro-runtime@4.0.1(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5)))(bufferutil@4.0.9)(encoding@0.1.13)(graphql@16.8.1)(react-native-webview@13.13.5(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1))(react-native@0.77.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@6.0.5))(react@18.3.1)(utf-8-validate@6.0.5)
 

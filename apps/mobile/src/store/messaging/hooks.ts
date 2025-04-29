@@ -1,5 +1,6 @@
+import { getApp } from "@react-native-firebase/app"
 import type { FirebaseMessagingTypes } from "@react-native-firebase/messaging"
-import messaging from "@react-native-firebase/messaging"
+import { getMessaging } from "@react-native-firebase/messaging"
 import { useMutation } from "@tanstack/react-query"
 import { useEffect } from "react"
 import { Platform } from "react-native"
@@ -16,7 +17,8 @@ import { useWhoami } from "../user/hooks"
 const FIREBASE_MESSAGING_TOKEN_STORAGE_KEY = "firebase_messaging_token"
 
 async function saveMessagingToken() {
-  const token = await messaging().getToken()
+  const app = getApp()
+  const token = await getMessaging(app).getToken()
   const storedToken = await kv.get(FIREBASE_MESSAGING_TOKEN_STORAGE_KEY)
   if (storedToken === token) {
     return
@@ -63,8 +65,9 @@ export function useMessaging() {
       })
     }
 
+    const app = getApp()
     async function init() {
-      const message = await messaging().getInitialNotification()
+      const message = await getMessaging(app).getInitialNotification()
       if (message) {
         navigateToEntry(message)
       }
@@ -72,7 +75,7 @@ export function useMessaging() {
 
     init()
 
-    const unsubscribe = messaging().onNotificationOpenedApp((remoteMessage) => {
+    const unsubscribe = getMessaging(app).onNotificationOpenedApp((remoteMessage) => {
       navigateToEntry(remoteMessage)
     })
 
