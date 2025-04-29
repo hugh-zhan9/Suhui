@@ -1,13 +1,6 @@
 import { useMobile } from "@follow/components/hooks/useMobile.js"
 import { Button } from "@follow/components/ui/button/index.js"
 import { LoadingCircle } from "@follow/components/ui/loading/index.js"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@follow/components/ui/select/index.jsx"
 import { ResponsiveSelect } from "@follow/components/ui/select/responsive.js"
 import { useIsDark, useThemeAtomValue } from "@follow/hooks"
 import { ELECTRON_BUILD, IN_ELECTRON } from "@follow/shared/constants"
@@ -100,10 +93,9 @@ export const SettingAppearance = () => {
             type: "title",
             value: t("appearance.fonts"),
           },
-          !isMobile && UIFontSelector,
-          !isMobile && TextSize,
-
-          !isMobile && ContentFontSelector,
+          UIFontSelector,
+          TextSize,
+          ContentFontSelector,
           ContentFontSize,
           ContentLineHeight,
 
@@ -207,24 +199,19 @@ export const TextSize = () => {
   return (
     <div className="mb-3 flex items-center justify-between">
       <span className="shrink-0 text-sm font-medium">{t("appearance.text_size.label")}</span>
-      <Select
+      <ResponsiveSelect
         defaultValue={textSizeMap.default.toString()}
         value={uiTextSize.toString() || textSizeMap.default.toString()}
         onValueChange={(value) => {
           setUISetting("uiTextSize", Number.parseInt(value) || textSizeMap.default)
         }}
-      >
-        <SelectTrigger size="sm" className="w-48 capitalize">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent position="item-aligned">
-          {Object.entries(textSizeMap).map(([size, value]) => (
-            <SelectItem className="capitalize" key={size} value={value.toString()}>
-              {t(`appearance.text_size.${size as keyof typeof textSizeMap}`)}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+        size="sm"
+        triggerClassName="w-48 capitalize"
+        items={Object.entries(textSizeMap).map(([size, value]) => ({
+          label: t(`appearance.text_size.${size as keyof typeof textSizeMap}`),
+          value: value.toString(),
+        }))}
+      />
     </div>
   )
 }

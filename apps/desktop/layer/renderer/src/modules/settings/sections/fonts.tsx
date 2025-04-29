@@ -1,18 +1,12 @@
 import { Button } from "@follow/components/ui/button/index.js"
 import { Input } from "@follow/components/ui/input/index.js"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@follow/components/ui/select/index.jsx"
+import { ResponsiveSelect } from "@follow/components/ui/select/responsive.js"
 import { IN_ELECTRON } from "@follow/shared/constants"
 import { nextFrame } from "@follow/utils/dom"
 import { getStorageNS } from "@follow/utils/ns"
 import { useQuery } from "@tanstack/react-query"
-import { useCallback, useEffect, useMemo, useRef } from "react"
 import * as React from "react"
+import { useCallback, useEffect, useMemo, useRef } from "react"
 import { useTranslation } from "react-i18next"
 
 import { setUISetting, useUISettingSelector } from "~/atoms/settings/ui"
@@ -76,7 +70,7 @@ export const ContentFontSelector = () => {
   return (
     <div className="mb-3 flex items-center justify-between">
       <span className="shrink-0 text-sm font-medium">{t("appearance.content_font.label")}</span>
-      <Select
+      <ResponsiveSelect
         defaultValue={FALLBACK_FONT}
         value={readerFontFamily}
         onValueChange={(value) => {
@@ -87,19 +81,13 @@ export const ContentFontSelector = () => {
 
           setUISetting("readerFontFamily", value)
         }}
-      >
-        <SelectTrigger size="sm" className="w-48">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent position="item-aligned">
-          {isCustomFont && <SelectItem value={readerFontFamily}>{readerFontFamily}</SelectItem>}
-          {data.map(({ label, value }) => (
-            <SelectItem key={value} value={value}>
-              {label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+        size="sm"
+        triggerClassName="w-48"
+        items={[
+          isCustomFont && { label: readerFontFamily, value: readerFontFamily },
+          ...data,
+        ].filter((i) => typeof i === "object")}
+      />
     </div>
   )
 }
@@ -120,7 +108,7 @@ export const UIFontSelector = () => {
   return (
     <div className="-mt-1 mb-3 flex items-center justify-between">
       <span className="shrink-0 text-sm font-medium">{t("appearance.ui_font")}</span>
-      <Select
+      <ResponsiveSelect
         defaultValue={FALLBACK_FONT}
         value={uiFont}
         onValueChange={(value) => {
@@ -131,20 +119,14 @@ export const UIFontSelector = () => {
 
           setUISetting("uiFontFamily", value)
         }}
-      >
-        <SelectTrigger size="sm" className="w-48">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent position="item-aligned">
-          {isCustomFont && <SelectItem value={uiFont}>{uiFont}</SelectItem>}
-          <SelectItem value={DEFAULT_FONT}>{DEFAULT_FONT}</SelectItem>
-          {data.map(({ label, value }) => (
-            <SelectItem key={value} value={value}>
-              {label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+        size="sm"
+        triggerClassName="w-48"
+        items={[
+          isCustomFont && { label: uiFont, value: uiFont },
+          { label: DEFAULT_FONT, value: DEFAULT_FONT },
+          ...data,
+        ].filter((i) => typeof i === "object")}
+      />
     </div>
   )
 }
