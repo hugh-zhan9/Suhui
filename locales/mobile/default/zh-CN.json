@@ -30,6 +30,7 @@
   "operation.mark_all_as_read_confirm": "确认将全部标记为已读？",
   "operation.mark_all_as_read_which": "将{{which}}标记为已读",
   "operation.mark_all_as_read_which_above": "以上",
+  "operation.mark_all_as_read_which_below": "以下",
   "operation.mark_as_read": "标记为已读",
   "operation.mark_as_unread": "标记为未读",
   "operation.open_link": "打开链接",
