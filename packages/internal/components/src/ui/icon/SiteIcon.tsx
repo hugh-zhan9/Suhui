@@ -1,8 +1,8 @@
-import { getFeedIconSrc } from "@follow/components/utils/icon"
 import { cn } from "@follow/utils/utils"
 import { m, useAnimationControls } from "motion/react"
 import { useRef } from "react"
 
+import { getFeedIconSrc } from "../../utils/icon"
 import { PlatformIcon } from "../platform-icon"
 
 interface SiteIconProps {
