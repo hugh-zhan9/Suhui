@@ -293,7 +293,11 @@ const FeedInnerForm = ({
         </CardHeader>
       </Card>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-1 flex-col gap-y-4">
+        <form
+          id="feed-form"
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex flex-1 flex-col gap-y-4"
+        >
           <FormField
             control={form.control}
             name="title"
@@ -373,7 +377,7 @@ const FeedInnerForm = ({
             control={form.control}
             name="view"
             render={() => (
-              <FormItem className="mb-16">
+              <FormItem className="mb-4">
                 <FormLabel>{t("feed_form.view")}</FormLabel>
 
                 <ViewSelectorRadioGroup
@@ -399,7 +403,7 @@ const FeedInnerForm = ({
                   {t.common("words.cancel")}
                 </Button>
               )}
-              <Button type="submit" isLoading={followMutation.isPending}>
+              <Button form="feed-form" type="submit" isLoading={followMutation.isPending}>
                 {isSubscribed ? t("feed_form.update") : t("feed_form.follow")}
               </Button>
             </div>
