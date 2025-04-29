@@ -100,7 +100,11 @@ const HeaderRightActionsImpl = ({
 
   const handleShare = () => {
     if (!entry?.title || !entry?.url) return
-    Share.share({ title: entry.title, url: entry.url })
+    Share.share({
+      message: entry.url,
+      title: entry.title,
+      url: entry.url,
+    })
   }
 
   const toggleAISummary = () => {
