@@ -71,7 +71,7 @@ export const FeedForm: Component<{
   const { t } = useTranslation()
 
   const isInModal = useIsInModal()
-  const rootContainerRef = useRef<HTMLDivElement>(null)
+  const placeholderRef = useRef<HTMLDivElement>(null)
 
   return (
     <div
@@ -79,7 +79,6 @@ export const FeedForm: Component<{
         "flex h-full max-h-[calc(100vh-300px)] flex-col",
         "mx-auto min-h-[420px] w-full max-w-[550px] lg:min-w-[550px]",
       )}
-      ref={rootContainerRef}
     >
       {useMemo(() => {
         switch (true) {
@@ -107,7 +106,7 @@ export const FeedForm: Component<{
                         subscriptionData: feedQuery.data?.subscription,
                         entries: feedQuery.data?.entries,
                         feed,
-                        rootContainerRef,
+                        placeholderRef,
                       }}
                     />
                   </div>
@@ -152,6 +151,7 @@ export const FeedForm: Component<{
         t,
         url,
       ])}
+      <div ref={placeholderRef} />
     </div>
   )
 }
@@ -165,7 +165,7 @@ const FeedInnerForm = ({
   feed,
   entries,
 
-  rootContainerRef,
+  placeholderRef,
 }: {
   defaultValues?: z.infer<typeof formSchema>
   id?: string
@@ -180,7 +180,7 @@ const FeedInnerForm = ({
   feed: FeedModel
   entries?: EntryModelSimple[]
 
-  rootContainerRef: React.RefObject<HTMLDivElement>
+  placeholderRef: React.RefObject<HTMLDivElement>
 }) => {
   const subscription = useSubscriptionByFeedId(id || "") || subscriptionData
   const isSubscribed = !!subscription
@@ -378,26 +378,26 @@ const FeedInnerForm = ({
               </FormItem>
             )}
           />
-          <RootPortal to={rootContainerRef.current}>
-            <div className="flex items-center justify-end gap-4 px-4 pt-2">
-              {isSubscribed && (
-                <Button
-                  type="button"
-                  variant="text"
-                  onClick={() => {
-                    dismiss()
-                  }}
-                >
-                  {t.common("words.cancel")}
-                </Button>
-              )}
-              <Button form="feed-form" type="submit" isLoading={followMutation.isPending}>
-                {isSubscribed ? t("feed_form.update") : t("feed_form.follow")}
-              </Button>
-            </div>
-          </RootPortal>
         </form>
       </Form>
+      <RootPortal to={placeholderRef.current}>
+        <div className="flex items-center justify-end gap-4 pt-2">
+          {isSubscribed && (
+            <Button
+              type="button"
+              variant="text"
+              onClick={() => {
+                dismiss()
+              }}
+            >
+              {t.common("words.cancel")}
+            </Button>
+          )}
+          <Button form="feed-form" type="submit" isLoading={followMutation.isPending}>
+            {isSubscribed ? t("feed_form.update") : t("feed_form.follow")}
+          </Button>
+        </div>
+      </RootPortal>
     </div>
   )
 }
