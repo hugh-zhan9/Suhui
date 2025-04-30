@@ -28,7 +28,7 @@ export function DiscoverUser() {
   return (
     <>
       {data?.follow!.routes && (
-        <div className="bg-material-ultra-thin w-full max-w-[540px] rounded-lg border p-5 shadow-sm">
+        <div className="w-full max-w-[540px]">
           <DiscoverFeedForm
             routePrefix="follow"
             route={data.follow.routes[Object.keys(data.follow.routes)[0]!]!}

@@ -106,10 +106,7 @@ export function DiscoverImport({ isInit = false }: { isInit?: boolean }) {
   return (
     <>
       <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="bg-material-ultra-thin w-full max-w-[540px] space-y-8 rounded-lg border p-5 shadow-sm"
-        >
+        <form onSubmit={form.handleSubmit(onSubmit)} className="w-full max-w-[540px] space-y-8">
           <FormField
             control={form.control}
             name="file"

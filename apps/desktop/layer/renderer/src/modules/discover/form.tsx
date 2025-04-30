@@ -237,7 +237,7 @@ export function DiscoverForm({ type = "search" }: { type?: string }) {
           className="w-full max-w-[540px]"
           data-testid="discover-form"
         >
-          <div className="border-border bg-material-ultra-thin rounded-lg border p-5 shadow-sm">
+          <div className="p-5 shadow-sm">
             <FormField
               control={form.control}
               name="keyword"
