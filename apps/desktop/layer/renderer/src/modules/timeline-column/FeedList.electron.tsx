@@ -1,5 +1,4 @@
 import { useDraggable } from "@dnd-kit/core"
-import { Checkbox } from "@follow/components/ui/checkbox/index.js"
 import { ScrollArea } from "@follow/components/ui/scroll-area/index.js"
 import { cn, isKeyForMultiSelectPressed } from "@follow/utils/utils"
 import { forwardRef, memo, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react"
