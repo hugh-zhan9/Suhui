@@ -505,8 +505,6 @@ declare const achievementsOpenAPISchema: zod.ZodObject<{
 }>;
 
 declare const languageSchema: z.ZodEnum<["en", "ja", "zh-CN", "zh-TW"]>;
-declare const ruleFieldSchema: z.ZodEnum<["all", "title", "content", "author", "url", "order"]>;
-declare const ruleOperatorSchema: z.ZodEnum<["contains", "not_contains", "eq", "not_eq", "gt", "lt", "regex"]>;
 declare const conditionItemSchema: z.ZodObject<{
     field: z.ZodEnum<["view", "title", "site_url", "feed_url", "category", "entry_title", "entry_content", "entry_url", "entry_author", "entry_media_length", "status"]>;
     operator: z.ZodEnum<["contains", "not_contains", "eq", "not_eq", "gt", "lt", "regex"]>;
@@ -583,26 +581,35 @@ declare const actions: drizzle_orm_pg_core.PgTableWithColumns<{
             columnType: "PgJsonb";
             data: {
                 name: string;
-                condition: ConditionItem[] | ConditionItem[][];
+                condition: {
+                    value: string;
+                    field: "title" | "status" | "view" | "site_url" | "feed_url" | "category" | "entry_title" | "entry_content" | "entry_url" | "entry_author" | "entry_media_length";
+                    operator: "contains" | "not_contains" | "eq" | "not_eq" | "gt" | "lt" | "regex";
+                }[] | {
+                    value: string;
+                    field: "title" | "status" | "view" | "site_url" | "feed_url" | "category" | "entry_title" | "entry_content" | "entry_url" | "entry_author" | "entry_media_length";
+                    operator: "contains" | "not_contains" | "eq" | "not_eq" | "gt" | "lt" | "regex";
+                }[][];
                 result: {
-                    disabled?: boolean;
-                    translation?: z.infer<typeof languageSchema> | boolean;
-                    summary?: boolean;
-                    readability?: boolean;
-                    sourceContent?: boolean;
-                    silence?: boolean;
-                    block?: boolean;
-                    newEntryNotification?: boolean;
+                    disabled?: boolean | undefined;
+                    translation?: boolean | "en" | "ja" | "zh-CN" | "zh-TW" | undefined;
+                    summary?: boolean | undefined;
+                    readability?: boolean | undefined;
+                    sourceContent?: boolean | undefined;
+                    silence?: boolean | undefined;
+                    block?: boolean | undefined;
+                    star?: boolean | undefined;
+                    newEntryNotification?: boolean | undefined;
                     rewriteRules?: {
                         from: string;
                         to: string;
-                    }[];
+                    }[] | undefined;
                     blockRules?: {
-                        field: z.infer<typeof ruleFieldSchema>;
-                        operator: z.infer<typeof ruleOperatorSchema>;
                         value: string | number;
-                    }[];
-                    webhooks?: string[];
+                        field: "title" | "content" | "all" | "author" | "url" | "order";
+                        operator: "contains" | "not_contains" | "eq" | "not_eq" | "gt" | "lt" | "regex";
+                    }[] | undefined;
+                    webhooks?: string[] | undefined;
                 };
             }[];
             driverParam: unknown;
@@ -618,26 +625,35 @@ declare const actions: drizzle_orm_pg_core.PgTableWithColumns<{
         }, {}, {
             $type: {
                 name: string;
-                condition: ConditionItem[] | ConditionItem[][];
+                condition: {
+                    value: string;
+                    field: "title" | "status" | "view" | "site_url" | "feed_url" | "category" | "entry_title" | "entry_content" | "entry_url" | "entry_author" | "entry_media_length";
+                    operator: "contains" | "not_contains" | "eq" | "not_eq" | "gt" | "lt" | "regex";
+                }[] | {
+                    value: string;
+                    field: "title" | "status" | "view" | "site_url" | "feed_url" | "category" | "entry_title" | "entry_content" | "entry_url" | "entry_author" | "entry_media_length";
+                    operator: "contains" | "not_contains" | "eq" | "not_eq" | "gt" | "lt" | "regex";
+                }[][];
                 result: {
-                    disabled?: boolean;
-                    translation?: z.infer<typeof languageSchema> | boolean;
-                    summary?: boolean;
-                    readability?: boolean;
-                    sourceContent?: boolean;
-                    silence?: boolean;
-                    block?: boolean;
-                    newEntryNotification?: boolean;
+                    disabled?: boolean | undefined;
+                    translation?: boolean | "en" | "ja" | "zh-CN" | "zh-TW" | undefined;
+                    summary?: boolean | undefined;
+                    readability?: boolean | undefined;
+                    sourceContent?: boolean | undefined;
+                    silence?: boolean | undefined;
+                    block?: boolean | undefined;
+                    star?: boolean | undefined;
+                    newEntryNotification?: boolean | undefined;
                     rewriteRules?: {
                         from: string;
                         to: string;
-                    }[];
+                    }[] | undefined;
                     blockRules?: {
-                        field: z.infer<typeof ruleFieldSchema>;
-                        operator: z.infer<typeof ruleOperatorSchema>;
                         value: string | number;
-                    }[];
-                    webhooks?: string[];
+                        field: "title" | "content" | "all" | "author" | "url" | "order";
+                        operator: "contains" | "not_contains" | "eq" | "not_eq" | "gt" | "lt" | "regex";
+                    }[] | undefined;
+                    webhooks?: string[] | undefined;
                 };
             }[];
         }>;
@@ -679,6 +695,7 @@ declare const actionsItemOpenAPISchema: z.ZodObject<{
         sourceContent: z.ZodOptional<z.ZodBoolean>;
         silence: z.ZodOptional<z.ZodBoolean>;
         block: z.ZodOptional<z.ZodBoolean>;
+        star: z.ZodOptional<z.ZodBoolean>;
         newEntryNotification: z.ZodOptional<z.ZodBoolean>;
         rewriteRules: z.ZodOptional<z.ZodArray<z.ZodObject<{
             from: z.ZodString;
@@ -696,11 +713,11 @@ declare const actionsItemOpenAPISchema: z.ZodObject<{
             value: z.ZodUnion<[z.ZodString, z.ZodNumber]>;
         }, "strip", z.ZodTypeAny, {
             value: string | number;
-            field: "title" | "all" | "content" | "author" | "url" | "order";
+            field: "title" | "content" | "all" | "author" | "url" | "order";
             operator: "contains" | "not_contains" | "eq" | "not_eq" | "gt" | "lt" | "regex";
         }, {
             value: string | number;
-            field: "title" | "all" | "content" | "author" | "url" | "order";
+            field: "title" | "content" | "all" | "author" | "url" | "order";
             operator: "contains" | "not_contains" | "eq" | "not_eq" | "gt" | "lt" | "regex";
         }>, "many">>;
         webhooks: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
@@ -712,6 +729,7 @@ declare const actionsItemOpenAPISchema: z.ZodObject<{
         sourceContent?: boolean | undefined;
         silence?: boolean | undefined;
         block?: boolean | undefined;
+        star?: boolean | undefined;
         newEntryNotification?: boolean | undefined;
         rewriteRules?: {
             from: string;
@@ -719,7 +737,7 @@ declare const actionsItemOpenAPISchema: z.ZodObject<{
         }[] | undefined;
         blockRules?: {
             value: string | number;
-            field: "title" | "all" | "content" | "author" | "url" | "order";
+            field: "title" | "content" | "all" | "author" | "url" | "order";
             operator: "contains" | "not_contains" | "eq" | "not_eq" | "gt" | "lt" | "regex";
         }[] | undefined;
         webhooks?: string[] | undefined;
@@ -731,6 +749,7 @@ declare const actionsItemOpenAPISchema: z.ZodObject<{
         sourceContent?: boolean | undefined;
         silence?: boolean | undefined;
         block?: boolean | undefined;
+        star?: boolean | undefined;
         newEntryNotification?: boolean | undefined;
         rewriteRules?: {
             from: string;
@@ -738,7 +757,7 @@ declare const actionsItemOpenAPISchema: z.ZodObject<{
         }[] | undefined;
         blockRules?: {
             value: string | number;
-            field: "title" | "all" | "content" | "author" | "url" | "order";
+            field: "title" | "content" | "all" | "author" | "url" | "order";
             operator: "contains" | "not_contains" | "eq" | "not_eq" | "gt" | "lt" | "regex";
         }[] | undefined;
         webhooks?: string[] | undefined;
@@ -762,6 +781,7 @@ declare const actionsItemOpenAPISchema: z.ZodObject<{
         sourceContent?: boolean | undefined;
         silence?: boolean | undefined;
         block?: boolean | undefined;
+        star?: boolean | undefined;
         newEntryNotification?: boolean | undefined;
         rewriteRules?: {
             from: string;
@@ -769,7 +789,7 @@ declare const actionsItemOpenAPISchema: z.ZodObject<{
         }[] | undefined;
         blockRules?: {
             value: string | number;
-            field: "title" | "all" | "content" | "author" | "url" | "order";
+            field: "title" | "content" | "all" | "author" | "url" | "order";
             operator: "contains" | "not_contains" | "eq" | "not_eq" | "gt" | "lt" | "regex";
         }[] | undefined;
         webhooks?: string[] | undefined;
@@ -793,6 +813,7 @@ declare const actionsItemOpenAPISchema: z.ZodObject<{
         sourceContent?: boolean | undefined;
         silence?: boolean | undefined;
         block?: boolean | undefined;
+        star?: boolean | undefined;
         newEntryNotification?: boolean | undefined;
         rewriteRules?: {
             from: string;
@@ -800,12 +821,13 @@ declare const actionsItemOpenAPISchema: z.ZodObject<{
         }[] | undefined;
         blockRules?: {
             value: string | number;
-            field: "title" | "all" | "content" | "author" | "url" | "order";
+            field: "title" | "content" | "all" | "author" | "url" | "order";
             operator: "contains" | "not_contains" | "eq" | "not_eq" | "gt" | "lt" | "regex";
         }[] | undefined;
         webhooks?: string[] | undefined;
     };
 }>;
+type ActionItem = z.infer<typeof actionsItemOpenAPISchema>;
 declare const actionsOpenAPISchema: z.ZodObject<z.objectUtil.extendShape<Omit<{
     userId: z.ZodString;
     createdAt: z.ZodNullable<z.ZodString>;
@@ -895,6 +917,7 @@ declare const actionsOpenAPISchema: z.ZodObject<z.objectUtil.extendShape<Omit<{
             sourceContent: z.ZodOptional<z.ZodBoolean>;
             silence: z.ZodOptional<z.ZodBoolean>;
             block: z.ZodOptional<z.ZodBoolean>;
+            star: z.ZodOptional<z.ZodBoolean>;
             newEntryNotification: z.ZodOptional<z.ZodBoolean>;
             rewriteRules: z.ZodOptional<z.ZodArray<z.ZodObject<{
                 from: z.ZodString;
@@ -912,11 +935,11 @@ declare const actionsOpenAPISchema: z.ZodObject<z.objectUtil.extendShape<Omit<{
                 value: z.ZodUnion<[z.ZodString, z.ZodNumber]>;
             }, "strip", z.ZodTypeAny, {
                 value: string | number;
-                field: "title" | "all" | "content" | "author" | "url" | "order";
+                field: "title" | "content" | "all" | "author" | "url" | "order";
                 operator: "contains" | "not_contains" | "eq" | "not_eq" | "gt" | "lt" | "regex";
             }, {
                 value: string | number;
-                field: "title" | "all" | "content" | "author" | "url" | "order";
+                field: "title" | "content" | "all" | "author" | "url" | "order";
                 operator: "contains" | "not_contains" | "eq" | "not_eq" | "gt" | "lt" | "regex";
             }>, "many">>;
             webhooks: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
@@ -928,6 +951,7 @@ declare const actionsOpenAPISchema: z.ZodObject<z.objectUtil.extendShape<Omit<{
             sourceContent?: boolean | undefined;
             silence?: boolean | undefined;
             block?: boolean | undefined;
+            star?: boolean | undefined;
             newEntryNotification?: boolean | undefined;
             rewriteRules?: {
                 from: string;
@@ -935,7 +959,7 @@ declare const actionsOpenAPISchema: z.ZodObject<z.objectUtil.extendShape<Omit<{
             }[] | undefined;
             blockRules?: {
                 value: string | number;
-                field: "title" | "all" | "content" | "author" | "url" | "order";
+                field: "title" | "content" | "all" | "author" | "url" | "order";
                 operator: "contains" | "not_contains" | "eq" | "not_eq" | "gt" | "lt" | "regex";
             }[] | undefined;
             webhooks?: string[] | undefined;
@@ -947,6 +971,7 @@ declare const actionsOpenAPISchema: z.ZodObject<z.objectUtil.extendShape<Omit<{
             sourceContent?: boolean | undefined;
             silence?: boolean | undefined;
             block?: boolean | undefined;
+            star?: boolean | undefined;
             newEntryNotification?: boolean | undefined;
             rewriteRules?: {
                 from: string;
@@ -954,7 +979,7 @@ declare const actionsOpenAPISchema: z.ZodObject<z.objectUtil.extendShape<Omit<{
             }[] | undefined;
             blockRules?: {
                 value: string | number;
-                field: "title" | "all" | "content" | "author" | "url" | "order";
+                field: "title" | "content" | "all" | "author" | "url" | "order";
                 operator: "contains" | "not_contains" | "eq" | "not_eq" | "gt" | "lt" | "regex";
             }[] | undefined;
             webhooks?: string[] | undefined;
@@ -978,6 +1003,7 @@ declare const actionsOpenAPISchema: z.ZodObject<z.objectUtil.extendShape<Omit<{
             sourceContent?: boolean | undefined;
             silence?: boolean | undefined;
             block?: boolean | undefined;
+            star?: boolean | undefined;
             newEntryNotification?: boolean | undefined;
             rewriteRules?: {
                 from: string;
@@ -985,7 +1011,7 @@ declare const actionsOpenAPISchema: z.ZodObject<z.objectUtil.extendShape<Omit<{
             }[] | undefined;
             blockRules?: {
                 value: string | number;
-                field: "title" | "all" | "content" | "author" | "url" | "order";
+                field: "title" | "content" | "all" | "author" | "url" | "order";
                 operator: "contains" | "not_contains" | "eq" | "not_eq" | "gt" | "lt" | "regex";
             }[] | undefined;
             webhooks?: string[] | undefined;
@@ -1009,6 +1035,7 @@ declare const actionsOpenAPISchema: z.ZodObject<z.objectUtil.extendShape<Omit<{
             sourceContent?: boolean | undefined;
             silence?: boolean | undefined;
             block?: boolean | undefined;
+            star?: boolean | undefined;
             newEntryNotification?: boolean | undefined;
             rewriteRules?: {
                 from: string;
@@ -1016,7 +1043,7 @@ declare const actionsOpenAPISchema: z.ZodObject<z.objectUtil.extendShape<Omit<{
             }[] | undefined;
             blockRules?: {
                 value: string | number;
-                field: "title" | "all" | "content" | "author" | "url" | "order";
+                field: "title" | "content" | "all" | "author" | "url" | "order";
                 operator: "contains" | "not_contains" | "eq" | "not_eq" | "gt" | "lt" | "regex";
             }[] | undefined;
             webhooks?: string[] | undefined;
@@ -1045,6 +1072,7 @@ declare const actionsOpenAPISchema: z.ZodObject<z.objectUtil.extendShape<Omit<{
             sourceContent?: boolean | undefined;
             silence?: boolean | undefined;
             block?: boolean | undefined;
+            star?: boolean | undefined;
             newEntryNotification?: boolean | undefined;
             rewriteRules?: {
                 from: string;
@@ -1052,7 +1080,7 @@ declare const actionsOpenAPISchema: z.ZodObject<z.objectUtil.extendShape<Omit<{
             }[] | undefined;
             blockRules?: {
                 value: string | number;
-                field: "title" | "all" | "content" | "author" | "url" | "order";
+                field: "title" | "content" | "all" | "author" | "url" | "order";
                 operator: "contains" | "not_contains" | "eq" | "not_eq" | "gt" | "lt" | "regex";
             }[] | undefined;
             webhooks?: string[] | undefined;
@@ -1081,6 +1109,7 @@ declare const actionsOpenAPISchema: z.ZodObject<z.objectUtil.extendShape<Omit<{
             sourceContent?: boolean | undefined;
             silence?: boolean | undefined;
             block?: boolean | undefined;
+            star?: boolean | undefined;
             newEntryNotification?: boolean | undefined;
             rewriteRules?: {
                 from: string;
@@ -1088,7 +1117,7 @@ declare const actionsOpenAPISchema: z.ZodObject<z.objectUtil.extendShape<Omit<{
             }[] | undefined;
             blockRules?: {
                 value: string | number;
-                field: "title" | "all" | "content" | "author" | "url" | "order";
+                field: "title" | "content" | "all" | "author" | "url" | "order";
                 operator: "contains" | "not_contains" | "eq" | "not_eq" | "gt" | "lt" | "regex";
             }[] | undefined;
             webhooks?: string[] | undefined;
@@ -13237,6 +13266,7 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                             sourceContent?: boolean | undefined;
                             silence?: boolean | undefined;
                             block?: boolean | undefined;
+                            star?: boolean | undefined;
                             newEntryNotification?: boolean | undefined;
                             rewriteRules?: {
                                 from: string;
@@ -13244,7 +13274,7 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                             }[] | undefined;
                             blockRules?: {
                                 value: string | number;
-                                field: "title" | "all" | "content" | "author" | "url" | "order";
+                                field: "title" | "content" | "all" | "author" | "url" | "order";
                                 operator: "contains" | "not_contains" | "eq" | "not_eq" | "gt" | "lt" | "regex";
                             }[] | undefined;
                             webhooks?: string[] | undefined;
@@ -13280,6 +13310,7 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                             sourceContent?: boolean | undefined;
                             silence?: boolean | undefined;
                             block?: boolean | undefined;
+                            star?: boolean | undefined;
                             newEntryNotification?: boolean | undefined;
                             rewriteRules?: {
                                 from: string;
@@ -13287,7 +13318,7 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                             }[] | undefined;
                             blockRules?: {
                                 value: string | number;
-                                field: "title" | "all" | "content" | "author" | "url" | "order";
+                                field: "title" | "content" | "all" | "author" | "url" | "order";
                                 operator: "contains" | "not_contains" | "eq" | "not_eq" | "gt" | "lt" | "regex";
                             }[] | undefined;
                             webhooks?: string[] | undefined;
@@ -13746,6 +13777,7 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                         sourceContent?: boolean | undefined;
                         silence?: boolean | undefined;
                         block?: boolean | undefined;
+                        star?: boolean | undefined;
                         newEntryNotification?: boolean | undefined;
                         rewriteRules?: {
                             from: string;
@@ -14013,6 +14045,7 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                         sourceContent?: boolean | undefined;
                         silence?: boolean | undefined;
                         block?: boolean | undefined;
+                        star?: boolean | undefined;
                         newEntryNotification?: boolean | undefined;
                         rewriteRules?: {
                             from: string;
@@ -16244,4 +16277,4 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
 }, "/upload">, "/">;
 type AppType = typeof _routes;
 
-export { type ActionsModel, type AirdropActivity, type AppType, type AttachmentsModel, type AuthSession, type AuthUser, CommonEntryFields, type ConditionItem, type DetailModel, type EntriesModel, type ExtraModel, type FeedModel, type ListModel, type MediaModel, type MessagingData, MessagingType, type SettingsModel, type UrlReadsModel, account, achievements, achievementsOpenAPISchema, actions, actionsItemOpenAPISchema, actionsOpenAPISchema, actionsRelations, activityEnum, airdrops, airdropsOpenAPISchema, attachmentsZodSchema, authPlugins, boosts, captcha, collections, collectionsOpenAPISchema, collectionsRelations, detailModelSchema, entries, entriesOpenAPISchema, entriesRelations, extraZodSchema, feedPowerTokens, feedPowerTokensOpenAPISchema, feedPowerTokensRelations, feeds, feedsOpenAPISchema, feedsRelations, inboxHandleSchema, inboxes, inboxesEntries, inboxesEntriesInsertOpenAPISchema, type inboxesEntriesModel, inboxesEntriesOpenAPISchema, inboxesEntriesRelations, inboxesOpenAPISchema, inboxesRelations, invitations, invitationsOpenAPISchema, invitationsRelations, languageSchema, levels, levelsOpenAPISchema, levelsRelations, lists, listsOpenAPISchema, listsRelations, listsSubscriptions, listsSubscriptionsOpenAPISchema, listsSubscriptionsRelations, lower, mediaZodSchema, messaging, messagingOpenAPISchema, messagingRelations, readabilities, rsshub, rsshubOpenAPISchema, rsshubPurchase, rsshubUsage, rsshubUsageOpenAPISchema, rsshubUsageRelations, session, settings, subscriptions, subscriptionsOpenAPISchema, subscriptionsRelations, timeline, timelineOpenAPISchema, timelineRelations, transactionType, transactions, transactionsOpenAPISchema, transactionsRelations, twoFactor, uploads, urlReads, urlReadsOpenAPISchema, user, users, usersOpenApiSchema, usersRelations, verification, wallets, walletsOpenAPISchema, walletsRelations };
+export { type ActionItem, type ActionsModel, type AirdropActivity, type AppType, type AttachmentsModel, type AuthSession, type AuthUser, CommonEntryFields, type ConditionItem, type DetailModel, type EntriesModel, type ExtraModel, type FeedModel, type ListModel, type MediaModel, type MessagingData, MessagingType, type SettingsModel, type UrlReadsModel, account, achievements, achievementsOpenAPISchema, actions, actionsItemOpenAPISchema, actionsOpenAPISchema, actionsRelations, activityEnum, airdrops, airdropsOpenAPISchema, attachmentsZodSchema, authPlugins, boosts, captcha, collections, collectionsOpenAPISchema, collectionsRelations, detailModelSchema, entries, entriesOpenAPISchema, entriesRelations, extraZodSchema, feedPowerTokens, feedPowerTokensOpenAPISchema, feedPowerTokensRelations, feeds, feedsOpenAPISchema, feedsRelations, inboxHandleSchema, inboxes, inboxesEntries, inboxesEntriesInsertOpenAPISchema, type inboxesEntriesModel, inboxesEntriesOpenAPISchema, inboxesEntriesRelations, inboxesOpenAPISchema, inboxesRelations, invitations, invitationsOpenAPISchema, invitationsRelations, languageSchema, levels, levelsOpenAPISchema, levelsRelations, lists, listsOpenAPISchema, listsRelations, listsSubscriptions, listsSubscriptionsOpenAPISchema, listsSubscriptionsRelations, lower, mediaZodSchema, messaging, messagingOpenAPISchema, messagingRelations, readabilities, rsshub, rsshubOpenAPISchema, rsshubPurchase, rsshubUsage, rsshubUsageOpenAPISchema, rsshubUsageRelations, session, settings, subscriptions, subscriptionsOpenAPISchema, subscriptionsRelations, timeline, timelineOpenAPISchema, timelineRelations, transactionType, transactions, transactionsOpenAPISchema, transactionsRelations, twoFactor, uploads, urlReads, urlReadsOpenAPISchema, user, users, usersOpenApiSchema, usersRelations, verification, wallets, walletsOpenAPISchema, walletsRelations };
