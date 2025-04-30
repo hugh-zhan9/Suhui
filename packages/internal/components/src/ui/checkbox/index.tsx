@@ -2,7 +2,7 @@
 
 import { cn } from "@follow/utils/utils"
 import * as CheckboxPrimitive from "@radix-ui/react-checkbox"
-import type {HTMLMotionProps} from "motion/react";
+import type { HTMLMotionProps } from "motion/react"
 import { m } from "motion/react"
 import * as React from "react"
 
