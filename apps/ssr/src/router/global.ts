@@ -135,10 +135,16 @@ async function injectMetaToTemplate(document: Document, req: FastifyRequest, res
         break
       }
       case "meta": {
-        const $meta = document.createElement("meta")
-        $meta.setAttribute("property", meta.property)
-        $meta.setAttribute("content", xss(meta.content))
-        document.head.append($meta)
+        // Find Old Meta
+        const $oldMeta = document.querySelector(`meta[name="${meta.property}"]`)
+        if ($oldMeta) {
+          $oldMeta.setAttribute("content", xss(meta.content))
+        } else {
+          const $meta = document.createElement("meta")
+          $meta.setAttribute("name", meta.property)
+          $meta.setAttribute("content", xss(meta.content))
+          document.head.append($meta)
+        }
         break
       }
       case "title": {
