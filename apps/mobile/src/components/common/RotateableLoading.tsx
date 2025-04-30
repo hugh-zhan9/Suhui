@@ -10,6 +10,7 @@ import Animated, {
 } from "react-native-reanimated"
 
 import { Loading3CuteReIcon } from "@/src/icons/loading_3_cute_re"
+import { useColor } from "@/src/theme/colors"
 
 export interface RotateableLoadingProps {
   className?: string
@@ -19,10 +20,12 @@ export interface RotateableLoadingProps {
 }
 export const RotateableLoading: FC<RotateableLoadingProps> = ({
   size = 36,
-  color = "#fff",
+  color,
   className,
   style,
 }) => {
+  const label = useColor("label")
+  const iconColor = color ?? label
   const rotate = useSharedValue(0)
   useEffect(() => {
     rotate.value = withRepeat(
@@ -44,7 +47,7 @@ export const RotateableLoading: FC<RotateableLoadingProps> = ({
 
   return (
     <Animated.View className={className} style={[rotateStyle, style]}>
-      <Loading3CuteReIcon height={size} width={size} color={color} />
+      <Loading3CuteReIcon height={size} width={size} color={iconColor} />
     </Animated.View>
   )
 }
