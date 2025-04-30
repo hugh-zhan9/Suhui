@@ -11,11 +11,11 @@ import { initialize } from "./initialize"
 import { router } from "./router"
 
 const $container = document.querySelector("#root") as HTMLElement
-initialize()
-
-ReactDOM.createRoot($container).render(
-  <React.StrictMode>
-    <RouterProvider router={router} />
-    <ClickToComponent editor={import.meta.env.VITE_EDITOR} />
-  </React.StrictMode>,
-)
+initialize().finally(() => {
+  ReactDOM.createRoot($container).render(
+    <React.StrictMode>
+      <RouterProvider router={router} />
+      <ClickToComponent editor={import.meta.env.VITE_EDITOR} />
+    </React.StrictMode>,
+  )
+})

@@ -29,7 +29,7 @@ function NormalListItemImpl({
         <div
           className={cn(
             "flex gap-1 text-[10px] font-bold",
-            "text-zinc-400 dark:text-neutral-500",
+            "text-text-secondary",
             entry.collections && "text-zinc-600 dark:text-zinc-500",
           )}
         >
@@ -41,7 +41,7 @@ function NormalListItemImpl({
         </div>
         <div
           className={cn(
-            "relative my-0.5 line-clamp-2 break-words",
+            "text-text relative my-0.5 line-clamp-2 break-words",
             !!entry.collections && "pr-5",
             entry.entries.title ? withDetails && "font-medium" : "text-[13px]",
           )}
@@ -52,9 +52,7 @@ function NormalListItemImpl({
         </div>
         {withDetails && (
           <div className="flex gap-2">
-            <div
-              className={cn("grow text-[13px]", "line-clamp-5 text-zinc-400 dark:text-neutral-500")}
-            >
+            <div className={cn("grow text-[13px]", "text-text-secondary line-clamp-5")}>
               {entry.entries.description}
             </div>
 
