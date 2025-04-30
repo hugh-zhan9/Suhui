@@ -204,7 +204,6 @@ export const LanguageSelector = ({
   contentClassName?: string
 }) => {
   const { t } = useTranslation("settings")
-  const { t: langT } = useTranslation("lang")
   const language = useGeneralSettingSelector((state) => state.language)
 
   const finalRenderLanguage = currentSupportedLanguages.includes(language)
@@ -229,44 +228,26 @@ export const LanguageSelector = ({
         onValueChange={(value) => {
           setGeneralSetting("language", value as string)
         }}
-        renderItem={useTypeScriptHappyCallback(
-          (item) => {
-            const lang = item.value
-            const percent = I18N_COMPLETENESS_MAP[lang]
+        renderItem={useTypeScriptHappyCallback((item) => {
+          const lang = item.value
+          const percent = I18N_COMPLETENESS_MAP[lang]
 
-            const languageName =
-              langT(`langs.${lang}` as any) === `langs.${lang}`
-                ? defaultResources[lang].lang.name
-                : langT(`langs.${lang}` as any)
+          const originalLanguageName = defaultResources[lang].lang.name
 
-            const originalLanguageName = defaultResources[lang].lang.name
-
-            if (isMobile) {
-              return `${languageName} - ${originalLanguageName} (${percent}%)`
-            }
-            return (
-              <span className="group" key={lang}>
-                <span
-                  className={cn(originalLanguageName !== languageName && "group-hover:invisible")}
-                >
-                  {languageName}
-                  {typeof percent === "number" ? (percent >= 100 ? null : ` (${percent}%)`) : null}
-                </span>
-                {originalLanguageName !== languageName && (
-                  <span
-                    className="absolute inset-0 hidden items-center pl-2 group-hover:flex"
-                    key={"org"}
-                  >
-                    {originalLanguageName}
-                  </span>
-                )}
+          if (isMobile) {
+            return `${originalLanguageName} (${percent}%)`
+          }
+          return (
+            <span className="group" key={lang}>
+              <span>
+                {originalLanguageName}
+                {typeof percent === "number" ? (percent >= 100 ? null : ` (${percent}%)`) : null}
               </span>
-            )
-          },
-          [langT],
-        )}
+            </span>
+          )
+        }, [])}
         items={currentSupportedLanguages.map((lang) => ({
-          label: langT(`langs.${lang}` as any),
+          label: `langs.${lang}`,
           value: lang,
         }))}
       />
@@ -319,7 +300,10 @@ const ActionLanguageSelector = () => {
         }}
         items={[
           { label: t("general.action_language.default"), value: DEFAULT_ACTION_LANGUAGE },
-          ...Object.values(ACTION_LANGUAGE_MAP),
+          ...Object.values(ACTION_LANGUAGE_MAP).map((item) => ({
+            label: defaultResources[item.value].lang.name,
+            value: item.value,
+          })),
         ]}
       />
     </div>

@@ -10,27 +10,26 @@ export const ACTION_LANGUAGE_MAP: Record<
     value: string
     code?: string
   }
-> =
-  /// keep-sorted
-  {
-    "zh-CN": {
-      label: "Simplified Chinese",
-      value: "zh-CN",
-      code: "cmn",
-    },
-    "zh-TW": {
-      label: "Traditional Chinese (Taiwan)",
-      value: "zh-TW",
-    },
-    en: {
-      label: "English",
-      value: "en",
-      code: "eng",
-    },
-    ja: {
-      label: "Japanese",
-      value: "ja",
-      code: "jpn",
-    },
-  }
+> = {
+  // keep-sorted
+  en: {
+    label: "English",
+    value: "en",
+    code: "eng",
+  },
+  "zh-CN": {
+    code: "cmn",
+    label: "Simplified Chinese",
+    value: "zh-CN",
+  },
+  "zh-TW": {
+    label: "Traditional Chinese (Taiwan)",
+    value: "zh-TW",
+  },
+  ja: {
+    label: "Japanese",
+    value: "ja",
+    code: "jpn",
+  },
+}
 export const ACTION_LANGUAGE_KEYS = Object.keys(ACTION_LANGUAGE_MAP) as SupportedActionLanguage[]
