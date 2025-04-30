@@ -113,6 +113,7 @@ export const EntryItemWrapper: FC<
               COMMAND_ID.entry.toggleAITranslation,
               COMMAND_ID.settings.customizeToolbar,
               COMMAND_ID.entry.readability,
+              COMMAND_ID.entry.exportAsPDF,
               // Copy
               COMMAND_ID.entry.copyTitle,
               COMMAND_ID.entry.copyLink,
