@@ -32,11 +32,17 @@ export function LanguageSelect({ settingKey }: { settingKey: "language" | "actio
             (a, b) => currentSupportedLanguages.indexOf(a) - currentSupportedLanguages.indexOf(b),
           )
 
-    return languageKeys.map((key) => ({
-      label: defaultResources[key].lang.name,
-      value: key,
-    }))
-  }, [settingKey])
+    return [
+      settingKey === "actionLanguage" && {
+        label: t("general.action_language.default"),
+        value: "default",
+      },
+      ...languageKeys.map((key) => ({
+        label: defaultResources[key].lang.name,
+        value: key,
+      })),
+    ].filter((i) => typeof i !== "boolean")
+  }, [settingKey, t])
   const language = useGeneralSettingKey(settingKey) as MobileSupportedLanguages | "default"
 
   return (

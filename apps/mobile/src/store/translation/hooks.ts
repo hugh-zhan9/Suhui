@@ -1,8 +1,7 @@
 import { useQueries } from "@tanstack/react-query"
 import { useCallback } from "react"
 
-import { useGeneralSettingKey } from "@/src/atoms/settings/general"
-import type { SupportedLanguages } from "@/src/lib/language"
+import { useActionLanguage, useGeneralSettingKey } from "@/src/atoms/settings/general"
 
 import { useEntryList } from "../entry/hooks"
 import { translationSyncService, useTranslationStore } from "./store"
@@ -22,7 +21,7 @@ export const usePrefetchEntryTranslation = ({
       ?.filter((entry) => entry !== null && (translation || !!entry?.settings?.translation))
       .map((entry) => entry!.id) || []
 
-  const actionLanguage = useGeneralSettingKey("actionLanguage") as SupportedLanguages
+  const actionLanguage = useActionLanguage()
 
   return useQueries({
     queries: entryList.map((entryId) => ({
@@ -39,7 +38,7 @@ export const usePrefetchEntryTranslation = ({
 }
 
 export const useEntryTranslation = (entryId: string) => {
-  const language = useGeneralSettingKey("actionLanguage") as SupportedLanguages
+  const language = useActionLanguage()
   return useTranslationStore(
     useCallback(
       (state) => {
