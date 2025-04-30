@@ -50,7 +50,7 @@ function Switch({
       checked={isChecked}
       onChange={handleChange}
       className={cn(
-        "focus-visible:ring-border cursor-switch data-[checked]:bg-accent bg-material-opaque relative flex h-6 w-10 shrink-0 items-center justify-start rounded-full p-[3px] transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[checked]:justify-end",
+        "focus-visible:ring-border cursor-switch data-[checked]:bg-accent bg-fill relative flex h-6 w-10 shrink-0 items-center justify-start rounded-full p-[3px] transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[checked]:justify-end",
         className,
       )}
       as={as}

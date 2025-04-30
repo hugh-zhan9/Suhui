@@ -3,6 +3,7 @@ import { cn } from "@follow/utils/utils"
 import { atom, useAtom, useStore } from "jotai"
 import type { Variants } from "motion/react"
 import { AnimatePresence, m } from "motion/react"
+import type { FC } from "react"
 import * as React from "react"
 import { useEffect } from "react"
 
@@ -18,10 +19,12 @@ interface CollapseProps {
   contentClassName?: string
 }
 
-export const CollapseGroup: Component<{
-  defaultOpenId?: string
-  onOpenChange?: (state: Record<string, boolean>) => void
-}> = ({ children, defaultOpenId, onOpenChange }) => {
+export const CollapseGroup: FC<
+  {
+    defaultOpenId?: string
+    onOpenChange?: (state: Record<string, boolean>) => void
+  } & React.PropsWithChildren
+> = ({ children, defaultOpenId, onOpenChange }) => {
   const ctxValue = React.useMemo<CollapseContextValue>(
     () => ({
       currentOpenCollapseIdAtom: atom<string | null>(defaultOpenId ?? null),
