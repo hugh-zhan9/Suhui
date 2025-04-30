@@ -1,11 +1,12 @@
 "use client"
 
-import { Spring } from "@follow/components/constants/spring"
 import { cn } from "@follow/utils/utils"
 import * as RadioGroupPrimitive from "@radix-ui/react-radio-group"
 import type { HTMLMotionProps, Transition } from "motion/react"
 import { AnimatePresence, m } from "motion/react"
 import * as React from "react"
+
+import { Spring } from "../../constants/spring"
 
 type RadioGroupProps = React.ComponentProps<typeof RadioGroupPrimitive.Root> & {
   transition?: Transition

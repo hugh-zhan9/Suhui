@@ -47,7 +47,7 @@ const WarnGoToExternalLinkImpl = forwardRef<
   React.DetailedHTMLProps<React.AnchorHTMLAttributes<HTMLAnchorElement>, HTMLAnchorElement>
 >(({ ...rest }, ref) => {
   const [open, setOpen] = useState(false)
-  const [checked, setChecked] = useState(false)
+  const [checked, setChecked] = useState<boolean | "indeterminate">(false)
 
   const shouldWarn = useGeneralSettingKey("jumpOutLinkWarn")
   const handleOpen: React.MouseEventHandler<HTMLAnchorElement> = (e) => {
