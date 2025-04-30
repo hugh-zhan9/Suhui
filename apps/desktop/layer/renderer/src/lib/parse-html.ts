@@ -98,6 +98,7 @@ export const parseHtml = (
         }),
       input: ({ node, ...props }) => {
         if (props.type === "checkbox") {
+          // @ts-expect-error
           return createElement(Checkbox, {
             ...props,
             disabled: false,

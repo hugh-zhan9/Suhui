@@ -60,60 +60,7 @@
     --animation-input: 0;
   }
 }
-
-/* Radio styling */
-@layer components {
-  .radio {
-    flex-shrink: 0;
-    height: 1rem;
-    width: 1rem;
-    cursor: pointer;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-    border-radius: 9999px;
-    border-width: 1px;
-    border-color: var(--fallback-bc, theme(colors.theme.accent.DEFAULT));
-
-    --bc: theme(colors.background);
-    --fallback-bc: var(--bc);
-    --chkbg: var(--bc);
-    --fallback-b1: theme(colors.background);
-  }
-
-  .radio-current {
-    --chkbg: currentColor;
-    --fallback-bc: currentColor;
-  }
-
-  .radio-accent {
-    --chkbg: theme(colors.theme.accent.DEFAULT);
-    --fallback-bc: theme(colors.theme.accent.DEFAULT);
-    --fallback-b1: theme(colors.background);
-  }
-
-  .radio-sm {
-    @apply size-[0.9rem];
-  }
-
-  .radio-md {
-    @apply size-[1.2rem];
-  }
-
-  .radio:checked,
-  .radio[aria-checked="true"] {
-    --tw-bg-opacity: 1;
-    background-color: var(
-      --fallback-bc,
-      oklch(theme(colors.theme.accent.DEFAULT) / var(--tw-bg-opacity))
-    );
-    background-image: none;
-    animation: radiomark var(--animation-input, 0.2s) ease-out;
-    box-shadow:
-      0 0 0 4px var(--fallback-b1, oklch(var(--b1) / 1)) inset,
-      0 0 0 4px var(--fallback-b1, oklch(var(--b1) / 1)) inset;
-  }
-
+ 
   @keyframes radiomark {
     0% {
       box-shadow:

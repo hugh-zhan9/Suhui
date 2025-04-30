@@ -1,6 +1,6 @@
 import { Button } from "@follow/components/ui/button/index.js"
 import { Input } from "@follow/components/ui/input/index.js"
-import { Radio, RadioGroup } from "@follow/components/ui/radio-group/index.js"
+import { RadioGroup, RadioGroupItem } from "@follow/components/ui/radio-group/motion.js"
 import {
   Select,
   SelectContent,
@@ -100,8 +100,8 @@ export const FeedFilter = ({ index }: { index: number }) => {
             })
           }}
         >
-          <Radio disabled={disabled} label={t("actions.action_card.all")} value="all" />
-          <Radio
+          <RadioGroupItem disabled={disabled} label={t("actions.action_card.all")} value="all" />
+          <RadioGroupItem
             disabled={disabled}
             label={t("actions.action_card.custom_filters")}
             value="filter"

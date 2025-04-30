@@ -11,7 +11,7 @@ import {
 } from "@follow/components/ui/form/index.js"
 import { Input } from "@follow/components/ui/input/Input.js"
 import { Label } from "@follow/components/ui/label/index.jsx"
-import { Radio, RadioGroup } from "@follow/components/ui/radio-group/index.js"
+import { RadioGroup, RadioGroupItem } from "@follow/components/ui/radio-group/motion.js"
 import { Slider } from "@follow/components/ui/slider/index.js"
 import { ELECTRON_BUILD } from "@follow/shared/constants"
 import { env } from "@follow/shared/env.desktop"
@@ -184,8 +184,11 @@ const ExportFeedsForm = () => {
                   }}
                 >
                   <div className="flex gap-4">
-                    <Radio label={t("general.export.folder_mode.option.view")} value="view" />
-                    <Radio
+                    <RadioGroupItem
+                      label={t("general.export.folder_mode.option.view")}
+                      value="view"
+                    />
+                    <RadioGroupItem
                       label={t("general.export.folder_mode.option.category")}
                       value="category"
                     />

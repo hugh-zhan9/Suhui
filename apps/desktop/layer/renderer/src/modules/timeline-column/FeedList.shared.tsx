@@ -1,4 +1,5 @@
 import { isMobile } from "@follow/components/hooks/useMobile.js"
+import { Checkbox } from "@follow/components/ui/checkbox/index.js"
 import { RootPortal } from "@follow/components/ui/portal/index.js"
 import { views } from "@follow/constants"
 import { stopPropagation } from "@follow/utils/dom"

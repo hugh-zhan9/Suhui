@@ -1,4 +1,5 @@
 import { useDraggable } from "@dnd-kit/core"
+import { Checkbox } from "@follow/components/ui/checkbox/index.js"
 import { ScrollArea } from "@follow/components/ui/scroll-area/index.js"
 import { cn, isKeyForMultiSelectPressed } from "@follow/utils/utils"
 import { forwardRef, memo, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react"
@@ -229,6 +230,7 @@ const FeedListImpl = forwardRef<HTMLDivElement, { className?: string; view: numb
               <SortByAlphabeticalInbox view={view} data={inboxesData} />
             </>
           )}
+
           {(hasListData || hasInboxData) && (
             <div
               className={cn(

@@ -1,24 +1,110 @@
+"use client"
+
 import { cn } from "@follow/utils/utils"
-import * as SwitchPrimitives from "@radix-ui/react-switch"
+import type { SwitchProps as SwitchPrimitiveProps } from "@headlessui/react"
+import { Switch as SwitchPrimitive } from "@headlessui/react"
+import type { HTMLMotionProps } from "motion/react"
+import { m as motion } from "motion/react"
 import * as React from "react"
 
-export const Switch = React.forwardRef<
-  React.ElementRef<typeof SwitchPrimitives.Root>,
-  React.ComponentPropsWithoutRef<typeof SwitchPrimitives.Root>
->(({ className, ...props }, ref) => (
-  <SwitchPrimitives.Root
-    className={cn(
-      "cursor-switch focus-visible:ring-accent focus-visible:ring-offset-background peer inline-flex h-5 w-9 shrink-0 items-center rounded-full border-2 border-transparent shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-      "data-[state=checked]:bg-accent data-[state=unchecked]:bg-theme-inactive dark:data-[state=unchecked]:bg-theme-accent-100/10 duration-200",
-      "hover:data-[state=unchecked]:bg-theme-inactive/80 dark:hover:data-[state=unchecked]:bg-theme-accent-100/15",
-      "hover:data-[state=checked]:bg-accent/80 dark:hover:data-[state=checked]:bg-accent",
-      "group",
-      className,
-    )}
-    {...props}
-    ref={ref}
-  >
-    <SwitchPrimitives.Thumb className="bg-background pointer-events-none block size-4 rounded-full ring-0 transition-transform duration-200 data-[state=checked]:translate-x-4 data-[state=unchecked]:translate-x-0 group-hover:dark:data-[state=checked]:!bg-black/80" />
-  </SwitchPrimitives.Root>
-))
-Switch.displayName = SwitchPrimitives.Root.displayName
+type SwitchProps<TTag extends React.ElementType = typeof motion.button> =
+  SwitchPrimitiveProps<TTag> &
+    Omit<HTMLMotionProps<"button">, "children"> & {
+      leftIcon?: React.ReactNode
+      rightIcon?: React.ReactNode
+      thumbIcon?: React.ReactNode
+      onCheckedChange?: (checked: boolean) => void
+      as?: TTag
+    }
+
+function Switch({
+  className,
+  leftIcon,
+  rightIcon,
+  thumbIcon,
+  onChange,
+  onCheckedChange,
+  as = motion.button,
+  ...props
+}: SwitchProps) {
+  const [isChecked, setIsChecked] = React.useState(props.checked ?? props.defaultChecked ?? false)
+  const [isTapped, setIsTapped] = React.useState(false)
+
+  React.useEffect(() => {
+    setIsChecked(props.checked ?? props.defaultChecked ?? false)
+  }, [props.checked, props.defaultChecked])
+
+  const handleChange = React.useCallback(
+    (checked: boolean) => {
+      setIsChecked(checked)
+      onCheckedChange?.(checked)
+      onChange?.(checked)
+    },
+    [onCheckedChange, onChange],
+  )
+
+  return (
+    // @ts-expect-error
+    <SwitchPrimitive
+      data-slot="switch"
+      checked={isChecked}
+      onChange={handleChange}
+      className={cn(
+        "focus-visible:ring-border cursor-switch data-[checked]:bg-accent bg-material-opaque relative flex h-6 w-10 shrink-0 items-center justify-start rounded-full p-[3px] transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[checked]:justify-end",
+        className,
+      )}
+      as={as}
+      whileTap="tap"
+      initial={false}
+      onTapStart={() => setIsTapped(true)}
+      onTapCancel={() => setIsTapped(false)}
+      onTap={() => setIsTapped(false)}
+      {...props}
+    >
+      {leftIcon && (
+        <motion.div
+          data-slot="switch-left-icon"
+          animate={isChecked ? { scale: 1, opacity: 1 } : { scale: 0, opacity: 0 }}
+          transition={{ type: "spring", bounce: 0 }}
+          className="absolute left-1 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500 [&_svg]:size-3"
+        >
+          {typeof leftIcon !== "string" ? leftIcon : null}
+        </motion.div>
+      )}
+
+      {rightIcon && (
+        <motion.div
+          data-slot="switch-right-icon"
+          animate={isChecked ? { scale: 0, opacity: 0 } : { scale: 1, opacity: 1 }}
+          transition={{ type: "spring", bounce: 0 }}
+          className="absolute right-1 top-1/2 -translate-y-1/2 text-neutral-500 dark:text-neutral-400 [&_svg]:size-3"
+        >
+          {typeof rightIcon !== "string" ? rightIcon : null}
+        </motion.div>
+      )}
+
+      <motion.span
+        data-slot="switch-thumb"
+        whileTap="tab"
+        className={cn(
+          "bg-background relative z-[1] flex items-center justify-center rounded-full text-neutral-500 shadow-lg ring-0 dark:text-neutral-400 [&_svg]:size-3",
+        )}
+        layout
+        transition={{ type: "spring", stiffness: 300, damping: 25 }}
+        style={{
+          width: 18,
+          height: 18,
+        }}
+        animate={
+          isTapped
+            ? { width: 21, transition: { duration: 0.1 } }
+            : { width: 18, transition: { duration: 0.1 } }
+        }
+      >
+        {thumbIcon && typeof thumbIcon !== "string" ? thumbIcon : null}
+      </motion.span>
+    </SwitchPrimitive>
+  )
+}
+
+export { Switch, type SwitchProps }

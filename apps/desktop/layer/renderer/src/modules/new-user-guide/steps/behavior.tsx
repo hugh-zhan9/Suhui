@@ -1,4 +1,5 @@
-import { Radio, RadioGroup } from "@follow/components/ui/radio-group/index.js"
+import { RadioGroup } from "@follow/components/ui/radio-group/index.js"
+import { RadioCard } from "@follow/components/ui/radio-group/RadioCard.js"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 
@@ -43,26 +44,20 @@ export function BehaviorGuide() {
             updateSettings(value as Behavior)
           }}
         >
-          <Radio
-            wrapperClassName="border rounded-lg p-3 has-[:checked]:bg-theme-accent has-[:checked]:text-white transition-colors"
+          <RadioCard
+            wrapperClassName="has-[:checked]:bg-theme-accent has-[:checked]:font-normal rounded-lg border p-3 transition-colors has-[:checked]:text-white"
             label={t("new_user_guide.step.behavior.unread_question.option1")}
             value="radical"
-            className="hidden"
-            labelClassName="pl-0"
           />
-          <Radio
-            wrapperClassName="border rounded-lg p-3 has-[:checked]:bg-theme-accent has-[:checked]:text-white transition-colors"
+          <RadioCard
+            wrapperClassName="has-[:checked]:bg-theme-accent has-[:checked]:font-normal rounded-lg border p-3 transition-colors has-[:checked]:text-white"
             label={t("new_user_guide.step.behavior.unread_question.option2")}
             value="balanced"
-            className="hidden"
-            labelClassName="pl-0"
           />
-          <Radio
-            wrapperClassName="border rounded-lg p-3 has-[:checked]:bg-theme-accent has-[:checked]:text-white transition-colors"
+          <RadioCard
+            wrapperClassName="has-[:checked]:bg-theme-accent has-[:checked]:font-normal rounded-lg border p-3 transition-colors has-[:checked]:text-white"
             label={t("new_user_guide.step.behavior.unread_question.option3")}
             value="conservative"
-            className="hidden"
-            labelClassName="pl-0"
           />
         </RadioGroup>
       </div>
