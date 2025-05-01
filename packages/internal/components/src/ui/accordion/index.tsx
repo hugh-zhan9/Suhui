@@ -1,6 +1,6 @@
 "use client"
 
-import { Spring } from "@follow/components/constants/spring"
+import { Spring } from "@follow/components/constants/spring.js"
 import { cn } from "@follow/utils/utils"
 import * as AccordionPrimitive from "@radix-ui/react-accordion"
 import type { HTMLMotionProps, Transition } from "motion/react"
