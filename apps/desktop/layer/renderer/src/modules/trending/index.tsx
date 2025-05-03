@@ -29,27 +29,6 @@ const LanguageOptions = [
 
 type Language = (typeof LanguageOptions)[number]["value"]
 
-const rangeOptions = [
-  {
-    label: "Today",
-    value: "1d",
-  },
-  {
-    label: "Three days",
-    value: "3d",
-  },
-  {
-    label: "This week",
-    value: "7d",
-  },
-  {
-    label: "This month",
-    value: "30d",
-  },
-]
-
-type Range = (typeof rangeOptions)[number]["value"]
-
 const viewOptions = [
   {
     label: "All",
@@ -77,11 +56,10 @@ export function Trending({
   const lang = useGeneralSettingKey("language")
 
   const [selectedLang, setSelectedLang] = useState<Language>(lang.startsWith("zh") ? "all" : "eng")
-  const [selectedRange, setSelectedRange] = useState<Range>("7d")
   const [selectedView, setSelectedView] = useState<View>("all")
 
   const { data, isLoading } = useQuery({
-    queryKey: ["trending", selectedLang, selectedView, selectedRange],
+    queryKey: ["trending", selectedLang, selectedView],
     queryFn: async () => {
       return await apiFetch<{
         data: {
@@ -121,18 +99,6 @@ export function Trending({
               triggerClassName="h-8 rounded border-0"
               size="sm"
               items={LanguageOptions}
-            />
-          </div>
-          <div className="flex items-center">
-            <span className="text-text text-sm font-medium">Range:</span>
-            <ResponsiveSelect
-              value={selectedRange}
-              onValueChange={(value: string) => {
-                setSelectedRange(value as Range)
-              }}
-              triggerClassName="h-8 rounded border-0"
-              size="sm"
-              items={rangeOptions}
             />
           </div>
           <div className="flex items-center">
