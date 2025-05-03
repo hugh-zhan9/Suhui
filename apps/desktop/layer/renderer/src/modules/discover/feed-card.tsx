@@ -13,6 +13,7 @@ import { getRouteParams } from "~/hooks/biz/useRouteParams"
 import { useFeedSafeUrl } from "~/hooks/common/useFeedSafeUrl"
 import type { apiClient } from "~/lib/api-fetch"
 import { UrlBuilder } from "~/lib/url-builder"
+import { useSubscriptionByFeedId } from "~/store/subscription"
 
 import { FollowSummary } from "../feed/feed-summary"
 
@@ -25,13 +26,27 @@ export const FeedCard: FC<{
   onSuccess?: (item: DiscoverSearchData[number]) => void
   onUnSubscribed?: (item: DiscoverSearchData[number]) => void
   children?: React.ReactNode
-  followButtonVariant?: "ghost"
+  followButtonVariant?: "ghost" | "outline"
+  followedButtonVariant?: "ghost" | "outline"
   followButtonClassName?: string
+  followedButtonClassName?: string
   className?: string
 }> = memo(
-  ({ item, onSuccess, children, followButtonVariant, followButtonClassName, className }) => {
+  ({
+    item,
+    onSuccess,
+    children,
+    followButtonVariant,
+    followedButtonVariant,
+    followButtonClassName,
+    followedButtonClassName,
+    className,
+  }) => {
     const follow = useFollow()
     const { t } = useTranslation()
+
+    const subscription = useSubscriptionByFeedId(item.feed?.id || item.list?.id || "")
+    const isSubscribed = !!subscription
 
     return (
       <Card
@@ -110,8 +125,7 @@ export const FeedCard: FC<{
                   {t("discover.preview")}
                 </Button>
                 <Button
-                  variant={item.isSubscribed ? "outline" : followButtonVariant}
-                  disabled={item.isSubscribed}
+                  variant={isSubscribed ? followedButtonVariant : followButtonVariant}
                   onClick={() => {
                     follow({
                       isList: !!item.list?.id,
@@ -127,13 +141,11 @@ export const FeedCard: FC<{
                   }}
                   buttonClassName={cn(
                     "relative overflow-hidden rounded-lg text-sm font-medium transition-all duration-300",
-                    item.isSubscribed
-                      ? "border-zinc-200/80 text-zinc-400 dark:border-zinc-700/80"
-                      : "",
-                    followButtonClassName,
+                    isSubscribed ? "border-zinc-200/80 text-zinc-400 dark:border-zinc-700/80" : "",
+                    isSubscribed ? followedButtonClassName : followButtonClassName,
                   )}
                 >
-                  {item.isSubscribed ? t("feed.actions.followed") : t("feed.actions.follow")}
+                  {isSubscribed ? t("feed.actions.followed") : t("feed.actions.follow")}
                 </Button>
               </div>
             </CardFooter>

@@ -162,7 +162,9 @@ export function Trending({
             <FeedCard
               key={item.feed.id}
               item={item}
+              followedButtonVariant="ghost"
               followButtonVariant="ghost"
+              followedButtonClassName="px-3 -mr-3"
               followButtonClassName="border-accent text-accent px-3 -mr-3"
               className="pl-2"
             >
