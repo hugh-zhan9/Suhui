@@ -3063,6 +3063,7 @@ declare const feedsRelations: drizzle_orm.Relations<"feeds", {
     entries: drizzle_orm.Many<"entries">;
     owner: drizzle_orm.One<"user", false>;
     migrateTo: drizzle_orm.One<"feeds", false>;
+    trendingFeeds: drizzle_orm.Many<"trendings_feeds">;
 }>;
 type FeedModel = InferInsertModel<typeof feeds>;
 
@@ -5468,6 +5469,181 @@ declare const timelineRelations: drizzle_orm.Relations<"timeline", {
     feeds: drizzle_orm.One<"feeds", true>;
     collections: drizzle_orm.One<"collections", true>;
     subscriptions: drizzle_orm.One<"subscriptions", true>;
+}>;
+
+declare const trendingFeeds: drizzle_orm_pg_core.PgTableWithColumns<{
+    name: "trendings_feeds";
+    schema: undefined;
+    columns: {
+        feedId: drizzle_orm_pg_core.PgColumn<{
+            name: "feed_id";
+            tableName: "trendings_feeds";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        rankedAt: drizzle_orm_pg_core.PgColumn<{
+            name: "ranked_at";
+            tableName: "trendings_feeds";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        score1d: drizzle_orm_pg_core.PgColumn<{
+            name: "score_1d";
+            tableName: "trendings_feeds";
+            dataType: "string";
+            columnType: "PgNumeric";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        score3d: drizzle_orm_pg_core.PgColumn<{
+            name: "score_3d";
+            tableName: "trendings_feeds";
+            dataType: "string";
+            columnType: "PgNumeric";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        score7d: drizzle_orm_pg_core.PgColumn<{
+            name: "score_7d";
+            tableName: "trendings_feeds";
+            dataType: "string";
+            columnType: "PgNumeric";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        score30d: drizzle_orm_pg_core.PgColumn<{
+            name: "score_30d";
+            tableName: "trendings_feeds";
+            dataType: "string";
+            columnType: "PgNumeric";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        view: drizzle_orm_pg_core.PgColumn<{
+            name: "view";
+            tableName: "trendings_feeds";
+            dataType: "number";
+            columnType: "PgSmallInt";
+            data: number;
+            driverParam: string | number;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        language: drizzle_orm_pg_core.PgColumn<{
+            name: "language";
+            tableName: "trendings_feeds";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+    };
+    dialect: "pg";
+}>;
+declare const trendingFeedsRelations: drizzle_orm.Relations<"trendings_feeds", {
+    feed: drizzle_orm.One<"feeds", true>;
+}>;
+declare const trendingFeedsOpenAPISchema: zod.ZodObject<{
+    feedId: zod.ZodString;
+    rankedAt: zod.ZodString;
+    score1d: zod.ZodString;
+    score3d: zod.ZodString;
+    score7d: zod.ZodString;
+    score30d: zod.ZodString;
+    view: zod.ZodNumber;
+    language: zod.ZodString;
+}, zod.UnknownKeysParam, zod.ZodTypeAny, {
+    view: number;
+    language: string;
+    feedId: string;
+    rankedAt: string;
+    score1d: string;
+    score3d: string;
+    score7d: string;
+    score30d: string;
+}, {
+    view: number;
+    language: string;
+    feedId: string;
+    rankedAt: string;
+    score1d: string;
+    score3d: string;
+    score7d: string;
+    score30d: string;
 }>;
 
 declare enum UploadType {
@@ -16274,7 +16450,47 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
             status: 200;
         };
     };
-}, "/upload">, "/">;
+}, "/upload"> | hono_types.MergeSchemaPath<{
+    "/feeds": {
+        $get: {
+            input: {
+                query: {
+                    view?: number | undefined;
+                    language?: "eng" | "cmn" | undefined;
+                    limit?: number | undefined;
+                    range?: "1d" | "3d" | "7d" | "30d" | undefined;
+                };
+            };
+            output: {
+                code: 0;
+                data: {
+                    view: number | null;
+                    feedId: string;
+                    feed: {
+                        id: string;
+                        image: string | null;
+                        description: string | null;
+                        title: string | null;
+                        url: string;
+                        siteUrl: string | null;
+                        checkedAt: string;
+                        lastModifiedHeader: string | null;
+                        etagHeader: string | null;
+                        ttl: number | null;
+                        errorMessage: string | null;
+                        errorAt: string | null;
+                        ownerUserId: string | null;
+                        language: string | null;
+                        migrateTo: string | null;
+                    } | null;
+                    subscriptionCount: number;
+                }[];
+            };
+            outputFormat: "json";
+            status: 200;
+        };
+    };
+}, "/trending">, "/">;
 type AppType = typeof _routes;
 
-export { type ActionItem, type ActionsModel, type AirdropActivity, type AppType, type AttachmentsModel, type AuthSession, type AuthUser, CommonEntryFields, type ConditionItem, type DetailModel, type EntriesModel, type ExtraModel, type FeedModel, type ListModel, type MediaModel, type MessagingData, MessagingType, type SettingsModel, type UrlReadsModel, account, achievements, achievementsOpenAPISchema, actions, actionsItemOpenAPISchema, actionsOpenAPISchema, actionsRelations, activityEnum, airdrops, airdropsOpenAPISchema, attachmentsZodSchema, authPlugins, boosts, captcha, collections, collectionsOpenAPISchema, collectionsRelations, detailModelSchema, entries, entriesOpenAPISchema, entriesRelations, extraZodSchema, feedPowerTokens, feedPowerTokensOpenAPISchema, feedPowerTokensRelations, feeds, feedsOpenAPISchema, feedsRelations, inboxHandleSchema, inboxes, inboxesEntries, inboxesEntriesInsertOpenAPISchema, type inboxesEntriesModel, inboxesEntriesOpenAPISchema, inboxesEntriesRelations, inboxesOpenAPISchema, inboxesRelations, invitations, invitationsOpenAPISchema, invitationsRelations, languageSchema, levels, levelsOpenAPISchema, levelsRelations, lists, listsOpenAPISchema, listsRelations, listsSubscriptions, listsSubscriptionsOpenAPISchema, listsSubscriptionsRelations, lower, mediaZodSchema, messaging, messagingOpenAPISchema, messagingRelations, readabilities, rsshub, rsshubOpenAPISchema, rsshubPurchase, rsshubUsage, rsshubUsageOpenAPISchema, rsshubUsageRelations, session, settings, subscriptions, subscriptionsOpenAPISchema, subscriptionsRelations, timeline, timelineOpenAPISchema, timelineRelations, transactionType, transactions, transactionsOpenAPISchema, transactionsRelations, twoFactor, uploads, urlReads, urlReadsOpenAPISchema, user, users, usersOpenApiSchema, usersRelations, verification, wallets, walletsOpenAPISchema, walletsRelations };
+export { type ActionItem, type ActionsModel, type AirdropActivity, type AppType, type AttachmentsModel, type AuthSession, type AuthUser, CommonEntryFields, type ConditionItem, type DetailModel, type EntriesModel, type ExtraModel, type FeedModel, type ListModel, type MediaModel, type MessagingData, MessagingType, type SettingsModel, type UrlReadsModel, account, achievements, achievementsOpenAPISchema, actions, actionsItemOpenAPISchema, actionsOpenAPISchema, actionsRelations, activityEnum, airdrops, airdropsOpenAPISchema, attachmentsZodSchema, authPlugins, boosts, captcha, collections, collectionsOpenAPISchema, collectionsRelations, detailModelSchema, entries, entriesOpenAPISchema, entriesRelations, extraZodSchema, feedPowerTokens, feedPowerTokensOpenAPISchema, feedPowerTokensRelations, feeds, feedsOpenAPISchema, feedsRelations, inboxHandleSchema, inboxes, inboxesEntries, inboxesEntriesInsertOpenAPISchema, type inboxesEntriesModel, inboxesEntriesOpenAPISchema, inboxesEntriesRelations, inboxesOpenAPISchema, inboxesRelations, invitations, invitationsOpenAPISchema, invitationsRelations, languageSchema, levels, levelsOpenAPISchema, levelsRelations, lists, listsOpenAPISchema, listsRelations, listsSubscriptions, listsSubscriptionsOpenAPISchema, listsSubscriptionsRelations, lower, mediaZodSchema, messaging, messagingOpenAPISchema, messagingRelations, readabilities, rsshub, rsshubOpenAPISchema, rsshubPurchase, rsshubUsage, rsshubUsageOpenAPISchema, rsshubUsageRelations, session, settings, subscriptions, subscriptionsOpenAPISchema, subscriptionsRelations, timeline, timelineOpenAPISchema, timelineRelations, transactionType, transactions, transactionsOpenAPISchema, transactionsRelations, trendingFeeds, trendingFeedsOpenAPISchema, trendingFeedsRelations, twoFactor, uploads, urlReads, urlReadsOpenAPISchema, user, users, usersOpenApiSchema, usersRelations, verification, wallets, walletsOpenAPISchema, walletsRelations };

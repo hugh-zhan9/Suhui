@@ -143,7 +143,7 @@ export function Recommendations() {
   }
 
   return (
-    <div className="mt-12 w-full max-w-[1200px]">
+    <div className="mt-12 w-full max-w-[800px]">
       <div className="center relative flex">
         <div className="absolute bottom-0 right-0 flex items-center gap-2">
           <span className="text-headline text-text font-medium">Preferred language:</span>
@@ -167,7 +167,7 @@ export function Recommendations() {
         )}
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+      <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
         {RSSHubCategories.map((cat) => (
           <Card
             key={cat}
@@ -177,7 +177,7 @@ export function Recommendations() {
             }}
             onClick={() => handleShowCategoryContent(cat)}
           >
-            <CardContent className="flex min-h-[100px] flex-col items-center justify-center p-4 text-center">
+            <CardContent className="flex aspect-square flex-col items-center justify-center p-4 text-center">
               <div className="mb-2 text-2xl">{CategoryMap[cat]?.emoji}</div>
               <div className="font-medium text-white">
                 {t(`discover.category.${cat}`, { ns: "common" })}

@@ -2,6 +2,7 @@ import { Button } from "@follow/components/ui/button/index.js"
 import { Card, CardContent, CardFooter, CardHeader } from "@follow/components/ui/card/index.jsx"
 import { RelativeTime } from "@follow/components/ui/datetime/index.js"
 import { getBackgroundGradient } from "@follow/utils/color"
+import { cn } from "@follow/utils/utils"
 import type { FC } from "react"
 import { memo } from "react"
 import { useTranslation } from "react-i18next"
@@ -24,7 +25,9 @@ export const FeedCard: FC<{
   onSuccess?: (item: DiscoverSearchData[number]) => void
   onUnSubscribed?: (item: DiscoverSearchData[number]) => void
   children?: React.ReactNode
-}> = memo(({ item, onSuccess, children }) => {
+  followButtonVariant?: "ghost"
+  followButtonClassName?: string
+}> = memo(({ item, onSuccess, children, followButtonVariant, followButtonClassName }) => {
   const follow = useFollow()
   const { t } = useTranslation()
 
@@ -58,7 +61,7 @@ export const FeedCard: FC<{
               </div>
             </CardContent>
           )}
-          <CardFooter className="flex justify-between gap-4 border-t border-zinc-100/80 py-3 dark:border-zinc-800/80">
+          <CardFooter className="flex justify-between gap-4 pb-3">
             <div className="flex items-center gap-3 text-sm text-zinc-500 dark:text-zinc-400">
               <div className="flex items-center gap-1.5">
                 <i className="i-mgc-user-3-cute-re" />
@@ -98,7 +101,7 @@ export const FeedCard: FC<{
                 {t("discover.preview")}
               </Button>
               <Button
-                variant={item.isSubscribed ? "outline" : undefined}
+                variant={item.isSubscribed ? "outline" : followButtonVariant}
                 disabled={item.isSubscribed}
                 onClick={() => {
                   follow({
@@ -113,14 +116,15 @@ export const FeedCard: FC<{
                     },
                   })
                 }}
-                buttonClassName={`relative overflow-hidden rounded-lg text-sm font-medium transition-all duration-300 ${
+                buttonClassName={cn(
+                  "relative overflow-hidden rounded-lg text-sm font-medium transition-all duration-300",
                   item.isSubscribed
                     ? "border-zinc-200/80 text-zinc-400 dark:border-zinc-700/80"
-                    : ""
-                }`}
+                    : "",
+                  followButtonClassName,
+                )}
               >
                 {item.isSubscribed ? t("feed.actions.followed") : t("feed.actions.follow")}
-                {/* <i className="i-mgc-add-cute-re size-5 text-white" /> */}
               </Button>
             </div>
           </CardFooter>

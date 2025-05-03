@@ -16,6 +16,7 @@ import { DiscoverImport } from "~/modules/discover/import"
 import { DiscoverInboxList } from "~/modules/discover/inbox-list-form"
 import { Recommendations } from "~/modules/discover/recommendations"
 import { DiscoverTransform } from "~/modules/discover/transform-form"
+import { Trending } from "~/modules/discover/trending"
 import { DiscoverUser } from "~/modules/discover/user-form"
 
 const tabs: {
@@ -114,6 +115,7 @@ export function Component() {
           </TabsContent>
         ))}
       </Tabs>
+      <Trending />
       <AppErrorBoundary errorType={ErrorComponentType.RSSHubDiscoverError}>
         <Recommendations />
       </AppErrorBoundary>
