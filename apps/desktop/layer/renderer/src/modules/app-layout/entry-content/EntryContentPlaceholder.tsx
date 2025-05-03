@@ -10,9 +10,9 @@ import { ROUTE_FEED_PENDING } from "~/constants"
 import { useRouteParams } from "~/hooks/biz/useRouteParams"
 import { DayOf } from "~/modules/ai/ai-daily/constants"
 import { DailyItem } from "~/modules/ai/ai-daily/daily"
-import { EntryPlaceholderDaily } from "~/modules/ai/ai-daily/EntryPlaceholderDaily"
 import type { DailyView } from "~/modules/ai/ai-daily/types"
 import { EntryPlaceholderLogo } from "~/modules/entry-content/components/EntryPlaceholderLogo"
+import { Trending } from "~/modules/trending"
 
 import type { EntryContentPlaceholderContextValue } from "./EntryContentPlaceholderContext"
 import { EntryContentPlaceholderContext } from "./EntryContentPlaceholderContext"
@@ -28,20 +28,23 @@ export const EntryContentPlaceholder = () => {
   )
 
   const openedSummary = useAtomValue(ctxValue.openedSummary)
+
+  const isTrending = feedId === ROUTE_FEED_PENDING && view === FeedViewType.Articles
+
   return (
     <LayoutGroup>
       <EntryContentPlaceholderContext.Provider value={ctxValue}>
         <AnimatePresence>
           {openedSummary === null ? (
             <m.div
-              className="center size-full flex-col"
+              className={cn(
+                "flex size-full flex-col items-center",
+                isTrending ? "overflow-scroll p-11" : "center",
+              )}
               initial={{ opacity: 0.01, y: 300 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <EntryPlaceholderLogo />
-              {feedId === ROUTE_FEED_PENDING && view === FeedViewType.Articles && (
-                <EntryPlaceholderDaily view={view} />
-              )}
+              {isTrending ? <Trending narrow center /> : <EntryPlaceholderLogo />}
             </m.div>
           ) : (
             <SummaryDetailContent />

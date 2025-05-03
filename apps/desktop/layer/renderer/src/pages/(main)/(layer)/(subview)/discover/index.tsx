@@ -1,3 +1,4 @@
+import { Divider } from "@follow/components/ui/divider/Divider.js"
 import { ScrollArea } from "@follow/components/ui/scroll-area/index.js"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@follow/components/ui/tabs/index.jsx"
 import { UserRole } from "@follow/constants"
@@ -115,7 +116,9 @@ export function Component() {
           </TabsContent>
         ))}
       </Tabs>
-      <Trending />
+      <Divider className="w-full max-w-[800px]" />
+      <Trending center />
+      <Divider className="w-full max-w-[800px]" />
       <AppErrorBoundary errorType={ErrorComponentType.RSSHubDiscoverError}>
         <Recommendations />
       </AppErrorBoundary>

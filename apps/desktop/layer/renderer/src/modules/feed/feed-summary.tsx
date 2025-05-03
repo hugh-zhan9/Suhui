@@ -43,7 +43,7 @@ export function FollowSummary({
           size={32}
         />
         <div className="min-w-0 leading-tight">
-          <FeedTitle feed={feed} className="text-base font-semibold" />
+          <FeedTitle feed={feed} className="text-sm font-semibold" />
           <EllipsisHorizontalTextWithTooltip className="truncate text-xs font-normal text-zinc-500">
             {feed.description}
           </EllipsisHorizontalTextWithTooltip>
@@ -52,7 +52,9 @@ export function FollowSummary({
       <div className="flex items-center gap-1 truncate text-zinc-500">
         <i className="i-mgc-right-cute-re shrink-0" />
         <div className="truncate">
-          <EllipsisHorizontalTextWithTooltip>{feedText}</EllipsisHorizontalTextWithTooltip>
+          <EllipsisHorizontalTextWithTooltip className="text-xs">
+            {feedText}
+          </EllipsisHorizontalTextWithTooltip>
         </div>
       </div>
     </div>

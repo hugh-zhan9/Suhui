@@ -317,7 +317,7 @@ export function DiscoverForm({ type = "search" }: { type?: string }) {
               </button>
             )}
           </div>
-          <div className="space-y-4 text-sm">
+          <div className="text-sm">
             {discoverSearchData?.map((item) => (
               <FeedCard
                 key={item.feed?.id || item.list?.id}

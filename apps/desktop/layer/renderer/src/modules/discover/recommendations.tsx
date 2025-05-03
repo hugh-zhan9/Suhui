@@ -141,21 +141,23 @@ export function Recommendations() {
   }
 
   return (
-    <div className="mt-12 w-full max-w-[800px] space-y-6">
-      <div className="flex items-center justify-center gap-2 text-center text-xl font-bold">
-        <i className="i-mgc-grid-2-cute-re text-xl" />
-        <span>{t("words.categories")}</span>
-      </div>
-      <div className="center flex justify-center">
-        <div className="flex items-center gap-2">
-          <span className="text-headline text-text font-medium">Language:</span>
-          <ResponsiveSelect
-            value={selectedLang}
-            onValueChange={handleLangChange}
-            triggerClassName="w-32 h-8 rounded"
-            size="sm"
-            items={LanguageOptions as any}
-          />
+    <div className="mt-4 w-full max-w-[800px] space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center justify-center gap-2 text-center text-xl font-bold">
+          <i className="i-mgc-grid-2-cute-re text-xl" />
+          <span>{t("words.categories")}</span>
+        </div>
+        <div className="center flex justify-center">
+          <div className="flex items-center gap-2">
+            <span className="text-text text-sm font-medium">Language:</span>
+            <ResponsiveSelect
+              value={selectedLang}
+              onValueChange={handleLangChange}
+              triggerClassName="h-8 rounded border-0"
+              size="sm"
+              items={LanguageOptions as any}
+            />
+          </div>
         </div>
       </div>
 

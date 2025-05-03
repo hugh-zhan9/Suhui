@@ -27,112 +27,122 @@ export const FeedCard: FC<{
   children?: React.ReactNode
   followButtonVariant?: "ghost"
   followButtonClassName?: string
-}> = memo(({ item, onSuccess, children, followButtonVariant, followButtonClassName }) => {
-  const follow = useFollow()
-  const { t } = useTranslation()
+  className?: string
+}> = memo(
+  ({ item, onSuccess, children, followButtonVariant, followButtonClassName, className }) => {
+    const follow = useFollow()
+    const { t } = useTranslation()
 
-  return (
-    <Card
-      data-feed-id={item.feed?.id || item.list?.id}
-      className="select-text overflow-hidden border border-zinc-200/50 bg-white/80 shadow-sm backdrop-blur-xl transition-all duration-300 hover:shadow-lg dark:border-zinc-800/50 dark:bg-neutral-800/50"
-    >
-      {children}
-      <CardHeader className="pb-2">
-        <FollowSummary className="max-w-[462px]" feed={item.feed || item.list!} docs={item.docs} />
-      </CardHeader>
-      {item.docs ? (
-        <CardFooter className="pt-4">
-          <a href={item.docs} target="_blank" rel="noreferrer">
-            <Button className="rounded-full bg-zinc-900 px-6 text-white transition-opacity hover:opacity-90 dark:bg-white dark:text-zinc-900">
-              View Docs
-            </Button>
-          </a>
-        </CardFooter>
-      ) : (
-        <>
-          {!!item.entries?.length && (
-            <CardContent className="mb-4 px-6 py-0">
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                {item.entries
-                  .filter((e) => !!e)
-                  .map((entry) => (
-                    <SearchResultContent key={entry.id} entry={entry} />
-                  ))}
-              </div>
-            </CardContent>
-          )}
-          <CardFooter className="flex justify-between gap-4 pb-3">
-            <div className="flex items-center gap-3 text-sm text-zinc-500 dark:text-zinc-400">
-              <div className="flex items-center gap-1.5">
-                <i className="i-mgc-user-3-cute-re" />
-
-                <span>
-                  {numberFormatter.format(item.subscriptionCount ?? 0)}{" "}
-                  {t("feed.follower", { count: item.subscriptionCount ?? 0 })}
-                </span>
-              </div>
-              {item.updatesPerWeek ? (
-                <div className="flex items-center gap-1.5">
-                  <i className="i-mgc-safety-certificate-cute-re" />
-                  <span>{t("feed.entry_week", { count: item.updatesPerWeek ?? 0 })}</span>
-                </div>
-              ) : item.entries?.[0]?.publishedAt ? (
-                <div className="flex items-center gap-1.5">
-                  <i className="i-mgc-safe-alert-cute-re" />
-                  <span>{t("feed.updated_at")}</span>
-                  <RelativeTime
-                    date={item.entries[0].publishedAt}
-                    displayAbsoluteTimeAfterDay={Infinity}
-                  />
-                </div>
-              ) : null}
-            </div>
-
-            <div className="flex items-center justify-between gap-2">
-              <Button
-                variant="ghost"
-                disabled={!item.feed?.id}
-                buttonClassName="rounded-lg px-3 text-sm font-medium text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/80 dark:hover:text-white"
-                onClick={() => {
-                  if (!item.feed?.id) return
-                  window.open(UrlBuilder.shareFeed(item.feed.id, 0), "_blank")
-                }}
-              >
-                {t("discover.preview")}
+    return (
+      <Card
+        data-feed-id={item.feed?.id || item.list?.id}
+        className={cn(
+          "select-text overflow-hidden rounded-b-none border-0 border-b border-zinc-200/50 bg-white/80 backdrop-blur-xl transition-all duration-300 dark:border-zinc-800/50 dark:bg-neutral-800/50",
+          className,
+        )}
+      >
+        {children}
+        <CardHeader className="px-4 py-5 pb-2">
+          <FollowSummary
+            className="max-w-[462px]"
+            feed={item.feed || item.list!}
+            docs={item.docs}
+          />
+        </CardHeader>
+        {item.docs ? (
+          <CardFooter className="p-4">
+            <a href={item.docs} target="_blank" rel="noreferrer">
+              <Button className="rounded-full bg-zinc-900 px-6 text-white transition-opacity hover:opacity-90 dark:bg-white dark:text-zinc-900">
+                View Docs
               </Button>
-              <Button
-                variant={item.isSubscribed ? "outline" : followButtonVariant}
-                disabled={item.isSubscribed}
-                onClick={() => {
-                  follow({
-                    isList: !!item.list?.id,
-                    id: item.list?.id,
-                    url: item.feed?.url,
-                    defaultValues: {
-                      view: getRouteParams().view.toString(),
-                    },
-                    onSuccess() {
-                      onSuccess?.(item)
-                    },
-                  })
-                }}
-                buttonClassName={cn(
-                  "relative overflow-hidden rounded-lg text-sm font-medium transition-all duration-300",
-                  item.isSubscribed
-                    ? "border-zinc-200/80 text-zinc-400 dark:border-zinc-700/80"
-                    : "",
-                  followButtonClassName,
-                )}
-              >
-                {item.isSubscribed ? t("feed.actions.followed") : t("feed.actions.follow")}
-              </Button>
-            </div>
+            </a>
           </CardFooter>
-        </>
-      )}
-    </Card>
-  )
-})
+        ) : (
+          <>
+            {!!item.entries?.length && (
+              <CardContent className="mb-4 px-4 py-0">
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                  {item.entries
+                    .filter((e) => !!e)
+                    .map((entry) => (
+                      <SearchResultContent key={entry.id} entry={entry} />
+                    ))}
+                </div>
+              </CardContent>
+            )}
+            <CardFooter className="flex justify-between gap-4 px-4 pb-3">
+              <div className="flex items-center gap-3 text-sm text-zinc-500 dark:text-zinc-400">
+                <div className="flex items-center gap-1.5">
+                  <i className="i-mgc-user-3-cute-re" />
+
+                  <span>
+                    {numberFormatter.format(item.subscriptionCount ?? 0)}{" "}
+                    {t("feed.follower", { count: item.subscriptionCount ?? 0 })}
+                  </span>
+                </div>
+                {item.updatesPerWeek ? (
+                  <div className="flex items-center gap-1.5">
+                    <i className="i-mgc-safety-certificate-cute-re" />
+                    <span>{t("feed.entry_week", { count: item.updatesPerWeek ?? 0 })}</span>
+                  </div>
+                ) : item.entries?.[0]?.publishedAt ? (
+                  <div className="flex items-center gap-1.5">
+                    <i className="i-mgc-safe-alert-cute-re" />
+                    <span>{t("feed.updated_at")}</span>
+                    <RelativeTime
+                      date={item.entries[0].publishedAt}
+                      displayAbsoluteTimeAfterDay={Infinity}
+                    />
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="flex items-center justify-between gap-2">
+                <Button
+                  variant="ghost"
+                  disabled={!item.feed?.id}
+                  buttonClassName="rounded-lg px-3 text-sm font-medium text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/80 dark:hover:text-white"
+                  onClick={() => {
+                    if (!item.feed?.id) return
+                    window.open(UrlBuilder.shareFeed(item.feed.id, 0), "_blank")
+                  }}
+                >
+                  {t("discover.preview")}
+                </Button>
+                <Button
+                  variant={item.isSubscribed ? "outline" : followButtonVariant}
+                  disabled={item.isSubscribed}
+                  onClick={() => {
+                    follow({
+                      isList: !!item.list?.id,
+                      id: item.list?.id,
+                      url: item.feed?.url,
+                      defaultValues: {
+                        view: getRouteParams().view.toString(),
+                      },
+                      onSuccess() {
+                        onSuccess?.(item)
+                      },
+                    })
+                  }}
+                  buttonClassName={cn(
+                    "relative overflow-hidden rounded-lg text-sm font-medium transition-all duration-300",
+                    item.isSubscribed
+                      ? "border-zinc-200/80 text-zinc-400 dark:border-zinc-700/80"
+                      : "",
+                    followButtonClassName,
+                  )}
+                >
+                  {item.isSubscribed ? t("feed.actions.followed") : t("feed.actions.follow")}
+                </Button>
+              </div>
+            </CardFooter>
+          </>
+        )}
+      </Card>
+    )
+  },
+)
 
 const SearchResultContent: FC<{
   entry: NonUndefined<DiscoverSearchData[number]["entries"]>[number]
