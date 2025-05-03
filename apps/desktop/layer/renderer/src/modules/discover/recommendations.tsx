@@ -171,10 +171,17 @@ export function Recommendations() {
             }}
             onClick={() => handleShowCategoryContent(cat)}
           >
-            <CardContent className="flex aspect-square flex-col items-center justify-center p-4 text-center">
-              <div className="mb-2 text-2xl">{CategoryMap[cat]?.emoji}</div>
-              <div className="font-medium text-white">
-                {t(`discover.category.${cat}`, { ns: "common" })}
+            <CardContent className="group relative flex aspect-square flex-col overflow-hidden p-0">
+              <div className="absolute right-2 top-2 size-12 rotate-12 opacity-20">
+                <div className="text-5xl">{CategoryMap[cat]?.emoji}</div>
+              </div>
+              <div className="flex size-full flex-col items-start justify-end p-6 text-left">
+                <div className="mb-3 text-4xl transition-transform duration-300 group-hover:scale-[1.2]">
+                  {CategoryMap[cat]?.emoji}
+                </div>
+                <div className="text-lg font-bold text-white drop-shadow-sm">
+                  {t(`discover.category.${cat}`, { ns: "common" })}
+                </div>
               </div>
             </CardContent>
           </Card>
