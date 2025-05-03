@@ -2,7 +2,6 @@ import { isMobile } from "@follow/components/hooks/useMobile.js"
 import { EmptyIcon } from "@follow/components/icons/empty.js"
 import { ActionButton } from "@follow/components/ui/button/action-button.js"
 import { Card, CardContent } from "@follow/components/ui/card/index.jsx"
-import { LoadingCircle } from "@follow/components/ui/loading/index.js"
 import { ScrollArea } from "@follow/components/ui/scroll-area/ScrollArea.js"
 import { ResponsiveSelect } from "@follow/components/ui/select/responsive.js"
 import { CategoryMap, RSSHubCategories } from "@follow/constants"
@@ -20,7 +19,6 @@ import { useCurrentModal, useModalStack } from "~/components/ui/modal/stacked/ho
 import { useAuthQuery } from "~/hooks/common"
 import { Queries } from "~/queries"
 
-import { TrendingButton } from "../trending"
 import { RecommendationCard } from "./recommendations-card"
 
 const LanguageOptions = [
@@ -69,7 +67,7 @@ export function Recommendations() {
 
   firstLoad = false
 
-  const { data, isLoading, isFetching } = rsshubPopular
+  const { data, isLoading } = rsshubPopular
 
   const keys = useMemo(() => {
     if (!data) {
@@ -143,10 +141,14 @@ export function Recommendations() {
   }
 
   return (
-    <div className="mt-12 w-full max-w-[800px]">
-      <div className="center relative flex">
-        <div className="absolute bottom-0 right-0 flex items-center gap-2">
-          <span className="text-headline text-text font-medium">Preferred language:</span>
+    <div className="mt-12 w-full max-w-[800px] space-y-6">
+      <div className="flex items-center justify-center gap-2 text-center text-xl font-bold">
+        <i className="i-mgc-grid-2-cute-re text-xl" />
+        <span>{t("words.categories")}</span>
+      </div>
+      <div className="center flex justify-center">
+        <div className="flex items-center gap-2">
+          <span className="text-headline text-text font-medium">Language:</span>
           <ResponsiveSelect
             value={selectedLang}
             onValueChange={handleLangChange}
@@ -154,20 +156,10 @@ export function Recommendations() {
             size="sm"
             items={LanguageOptions as any}
           />
-          <TrendingButton language={selectedLang} />
         </div>
-        {isFetching && (
-          <div className="pointer-events-none absolute inset-x-0 top-0 flex items-center justify-center gap-8">
-            <span className="opacity-0" aria-hidden>
-              {t("discover.popular")}
-            </span>
-
-            <LoadingCircle size="small" className="center flex" />
-          </div>
-        )}
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
         {RSSHubCategories.map((cat) => (
           <Card
             key={cat}
