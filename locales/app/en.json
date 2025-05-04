@@ -406,6 +406,7 @@
   "words.achievement": "Achievements",
   "words.actions": "Actions",
   "words.add": "Add",
+  "words.all": "All",
   "words.boost": "Boost",
   "words.browser": "Browser",
   "words.categories": "Categories",
@@ -436,6 +437,7 @@
   "words.undo": "Undo",
   "words.unread": "Unread",
   "words.user": "User",
+  "words.view": "View",
   "words.which.all": "all",
   "words.zero_items": "Zero items",
   "zen.exit": "Exit Zen Mode"

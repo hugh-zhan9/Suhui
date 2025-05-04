@@ -14,7 +14,7 @@ import { FeedCard } from "../discover/feed-card"
 
 const LanguageOptions = [
   {
-    label: "All",
+    label: "words.all",
     value: "all",
   },
   {
@@ -31,7 +31,7 @@ type Language = (typeof LanguageOptions)[number]["value"]
 
 const viewOptions = [
   {
-    label: "All",
+    label: "words.all",
     value: "all",
   },
   ...views.map((view) => ({
@@ -90,7 +90,7 @@ export function Trending({
         </div>
         <div className={cn("flex gap-4", center && "center")}>
           <div className="flex items-center">
-            <span className="text-text text-sm font-medium">Language:</span>
+            <span className="text-text shrink-0 text-sm font-medium">{t("words.language")}:</span>
             <ResponsiveSelect
               value={selectedLang}
               onValueChange={(value) => {
@@ -99,10 +99,11 @@ export function Trending({
               triggerClassName="h-8 rounded border-0"
               size="sm"
               items={LanguageOptions}
+              renderItem={(item) => <>{tCommon(item.label as any)}</>}
             />
           </div>
           <div className="flex items-center">
-            <span className="text-text text-sm font-medium">View:</span>
+            <span className="text-text shrink-0 text-sm font-medium">{t("words.view")}:</span>
             <ResponsiveSelect
               value={selectedView}
               onValueChange={(value: string) => {
