@@ -182,7 +182,6 @@ export function DiscoverForm({ type = "search" }: { type?: string }) {
             return false
           })
           if (!sub) return
-          sub.isSubscribed = true
           sub.subscriptionCount = -~(sub.subscriptionCount as number)
         }),
       )
@@ -201,7 +200,6 @@ export function DiscoverForm({ type = "search" }: { type?: string }) {
             (i) => i.feed?.id === item.feed?.id || i.list?.id === item.list?.id,
           )
           if (!sub) return
-          sub.isSubscribed = false
           sub.subscriptionCount = Number.isNaN(sub.subscriptionCount)
             ? 0
             : (sub.subscriptionCount as number) - 1
