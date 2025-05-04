@@ -120,7 +120,7 @@ export function Trending({
         {isLoading ? (
           <>
             {Array.from({ length: limit }).map((_, index) => (
-              <Skeleton key={index} className="h-[146px]" />
+              <Skeleton key={index} className="h-[146px] w-[386px]" />
             ))}
           </>
         ) : (
