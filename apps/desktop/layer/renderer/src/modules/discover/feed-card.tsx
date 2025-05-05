@@ -6,25 +6,29 @@ import { cn } from "@follow/utils/utils"
 import type { FC } from "react"
 import { memo } from "react"
 import { useTranslation } from "react-i18next"
+import { useLocation } from "react-router"
 
+import { setPreviewBackPath } from "~/atoms/preview"
 import { Media } from "~/components/ui/media"
 import { useFollow } from "~/hooks/biz/useFollow"
+import { navigateEntry } from "~/hooks/biz/useNavigateEntry"
 import { getRouteParams } from "~/hooks/biz/useRouteParams"
 import { useFeedSafeUrl } from "~/hooks/common/useFeedSafeUrl"
 import type { apiClient } from "~/lib/api-fetch"
-import { UrlBuilder } from "~/lib/url-builder"
 import { useSubscriptionByFeedId } from "~/store/subscription"
 
 import { FollowSummary } from "../feed/feed-summary"
 
 const numberFormatter = new Intl.NumberFormat("en-US", {})
 
-type DiscoverSearchData = Awaited<ReturnType<typeof apiClient.discover.$post>>["data"]
+type DiscoverItem = Awaited<ReturnType<typeof apiClient.discover.$post>>["data"][number] & {
+  view?: number
+}
 
 export const FeedCard: FC<{
-  item: DiscoverSearchData[number]
-  onSuccess?: (item: DiscoverSearchData[number]) => void
-  onUnSubscribed?: (item: DiscoverSearchData[number]) => void
+  item: DiscoverItem
+  onSuccess?: (item: DiscoverItem) => void
+  onUnSubscribed?: (item: DiscoverItem) => void
   children?: React.ReactNode
   followButtonVariant?: "ghost" | "outline"
   followedButtonVariant?: "ghost" | "outline"
@@ -47,6 +51,7 @@ export const FeedCard: FC<{
 
     const subscription = useSubscriptionByFeedId(item.feed?.id || item.list?.id || "")
     const isSubscribed = !!subscription
+    const location = useLocation()
 
     return (
       <Card
@@ -113,17 +118,23 @@ export const FeedCard: FC<{
               </div>
 
               <div className="flex items-center justify-between gap-2">
-                <Button
-                  variant="ghost"
-                  disabled={!item.feed?.id}
-                  buttonClassName="rounded-lg px-3 text-sm font-medium text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/80 dark:hover:text-white"
-                  onClick={() => {
-                    if (!item.feed?.id) return
-                    window.open(UrlBuilder.shareFeed(item.feed.id, 0), "_blank")
-                  }}
-                >
-                  {t("discover.preview")}
-                </Button>
+                {!isSubscribed && (
+                  <Button
+                    variant="ghost"
+                    disabled={!item.feed?.id}
+                    buttonClassName="rounded-lg px-3 text-sm font-medium text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/80 dark:hover:text-white"
+                    onClick={() => {
+                      if (!item.feed?.id) return
+                      setPreviewBackPath(location.pathname)
+                      navigateEntry({
+                        feedId: item.feed.id,
+                        view: item.view ?? 0,
+                      })
+                    }}
+                  >
+                    {t("discover.preview")}
+                  </Button>
+                )}
                 <Button
                   variant={isSubscribed ? followedButtonVariant : followButtonVariant}
                   onClick={() => {
@@ -157,7 +168,7 @@ export const FeedCard: FC<{
 )
 
 const SearchResultContent: FC<{
-  entry: NonUndefined<DiscoverSearchData[number]["entries"]>[number]
+  entry: NonUndefined<DiscoverItem["entries"]>[number]
 }> = memo(({ entry }) => {
   const safeUrl = useFeedSafeUrl(entry.id)
   return (
@@ -191,7 +202,7 @@ const SearchResultContent: FC<{
 })
 
 const FeedCardMediaThumbnail: FC<{
-  entry: NonUndefined<DiscoverSearchData[number]["entries"]>[number]
+  entry: NonUndefined<DiscoverItem["entries"]>[number]
 }> = ({ entry }) => {
   const [, , , bgAccent, bgAccentLight] = getBackgroundGradient(
     entry.title || entry.url || "Untitled",

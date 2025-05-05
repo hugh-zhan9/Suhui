@@ -8,7 +8,9 @@ import { stopPropagation } from "@follow/utils/dom"
 import { cn, isBizId } from "@follow/utils/utils"
 import type { FC } from "react"
 import { useTranslation } from "react-i18next"
+import { useNavigate } from "react-router"
 
+import { previewBackPath } from "~/atoms/preview"
 import { setGeneralSetting, useGeneralSettingKey } from "~/atoms/settings/general"
 import { useTimelineColumnShow } from "~/atoms/sidebar"
 import { useWhoami } from "~/atoms/user"
@@ -64,6 +66,9 @@ export const EntryListHeader: FC<{
   const titleStyleBasedView = ["pl-6", "pl-7", "pl-7", "pl-7", "px-5", "pl-6"]
 
   const feedColumnShow = useTimelineColumnShow()
+
+  const navigate = useNavigate()
+
   return (
     <div
       className={cn(
@@ -144,19 +149,32 @@ export const EntryListHeader: FC<{
         </div>
       </div>
       {isPreview && (
-        <Button
-          size="lg"
-          buttonClassName="mt-4"
-          onClick={() => {
-            follow({
-              isList: !!listId,
-              id: listId ?? feedId,
-              url: feed?.url,
-            })
-          }}
-        >
-          {tCommon("words.follow")}
-        </Button>
+        <div className="mt-4 flex items-center justify-center gap-2">
+          <Button
+            size="lg"
+            buttonClassName="flex-1 max-w-72"
+            variant="outline"
+            onClick={(e) => {
+              e.stopPropagation()
+              navigate(previewBackPath() || "/")
+            }}
+          >
+            {tCommon("words.back")}
+          </Button>
+          <Button
+            size="lg"
+            buttonClassName="flex-1 max-w-72"
+            onClick={() => {
+              follow({
+                isList: !!listId,
+                id: listId ?? feedId,
+                url: feed?.url,
+              })
+            }}
+          >
+            {tCommon("words.follow")}
+          </Button>
+        </div>
       )}
 
       {/* <TimelineTabs /> */}

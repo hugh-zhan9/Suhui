@@ -14,7 +14,7 @@ import { feedUnreadActions } from "~/store/unread"
 
 const anyString = [] as string[]
 export const useEntriesByView = ({ onReset }: { onReset?: () => void }) => {
-  const { feedId, isAllFeeds, view, isCollection, inboxId, listId } = useRouteParams()
+  const { feedId, isAllFeeds, view, isCollection, inboxId, listId, isPreview } = useRouteParams()
 
   const unreadOnly = useGeneralSettingKey("unreadOnly")
 
@@ -29,7 +29,7 @@ export const useEntriesByView = ({ onReset }: { onReset?: () => void }) => {
       inboxId,
       listId,
       view,
-      ...(unreadOnly === true && { read: false }),
+      ...(unreadOnly === true && !isPreview && { read: false }),
     }
 
     if (feedId && listId && isBizId(feedId)) {
@@ -37,7 +37,7 @@ export const useEntriesByView = ({ onReset }: { onReset?: () => void }) => {
     }
 
     return params
-  }, [feedId, folderIds, inboxId, listId, unreadOnly, view])
+  }, [feedId, folderIds, inboxId, listId, unreadOnly, view, isPreview])
   const query = useEntries(entriesOptions)
 
   const [fetchedTime, setFetchedTime] = useState<number>()

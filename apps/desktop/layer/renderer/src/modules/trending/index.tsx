@@ -64,6 +64,8 @@ export function Trending({
       return await apiFetch<{
         data: {
           feed: FeedModel
+          view: number
+          subscriptionCount: number
         }[]
       }>("/trending/feeds", {
         method: "GET",
