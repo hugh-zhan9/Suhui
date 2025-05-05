@@ -1,4 +1,4 @@
-import { ActionButton } from "@follow/components/ui/button/index.js"
+import { ActionButton, Button } from "@follow/components/ui/button/index.js"
 import { DividerVertical } from "@follow/components/ui/divider/index.js"
 import { RotatingRefreshIcon } from "@follow/components/ui/loading/index.jsx"
 import { EllipsisHorizontalTextWithTooltip } from "@follow/components/ui/typography/index.js"
@@ -14,6 +14,7 @@ import { useTimelineColumnShow } from "~/atoms/sidebar"
 import { useWhoami } from "~/atoms/user"
 import { FEED_COLLECTION_LIST, ROUTE_ENTRY_PENDING } from "~/constants"
 import { shortcuts } from "~/constants/shortcuts"
+import { useFollow } from "~/hooks/biz/useFollow"
 import { useRouteParams } from "~/hooks/biz/useRouteParams"
 import { EntryHeader } from "~/modules/entry-content/header"
 import { useRefreshFeedMutation } from "~/queries/feed"
@@ -34,10 +35,11 @@ export const EntryListHeader: FC<{
 }> = ({ refetch, isRefreshing, hasUpdate }) => {
   const routerParams = useRouteParams()
   const { t } = useTranslation()
+  const { t: tCommon } = useTranslation("common")
 
   const unreadOnly = useGeneralSettingKey("unreadOnly")
 
-  const { feedId, entryId, view } = routerParams
+  const { feedId, entryId, view, isPreview, listId } = routerParams
 
   const headerTitle = useFeedHeaderTitle()
 
@@ -56,6 +58,8 @@ export const EntryListHeader: FC<{
   const isOnline = useIsOnline()
 
   const feed = useFeedById(feedId)
+
+  const follow = useFollow()
 
   const titleStyleBasedView = ["pl-6", "pl-7", "pl-7", "pl-7", "px-5", "pl-6"]
 
@@ -139,6 +143,21 @@ export const EntryListHeader: FC<{
           <MarkAllReadButton shortcut />
         </div>
       </div>
+      {isPreview && (
+        <Button
+          size="lg"
+          buttonClassName="mt-4"
+          onClick={() => {
+            follow({
+              isList: !!listId,
+              id: listId ?? feedId,
+              url: feed?.url,
+            })
+          }}
+        >
+          {tCommon("words.follow")}
+        </Button>
+      )}
 
       {/* <TimelineTabs /> */}
     </div>

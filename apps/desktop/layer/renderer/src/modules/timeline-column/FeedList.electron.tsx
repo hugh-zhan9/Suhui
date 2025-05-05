@@ -6,8 +6,11 @@ import { useTranslation } from "react-i18next"
 import Selecto from "react-selecto"
 import { useEventListener } from "usehooks-ts"
 
+import { useRouteParams } from "~/hooks/biz/useRouteParams"
 import { useAuthQuery } from "~/hooks/common"
 import { Queries } from "~/queries"
+import { useFeedQuery } from "~/queries/feed"
+import { useList } from "~/queries/lists"
 import {
   useCategoryOpenStateByView,
   useFeedsGroupedData,
@@ -21,6 +24,7 @@ import {
   useSelectedFeedIdsState,
 } from "./atom"
 import { DraggableContext } from "./context"
+import { FeedItem, ListItem } from "./FeedItem"
 import { EmptyFeedList, ListHeader, StarredItem } from "./FeedList.shared"
 import { useShouldFreeUpSpace } from "./hook"
 import { SortableFeedList, SortByAlphabeticalInbox, SortByAlphabeticalList } from "./sort-by"
@@ -111,6 +115,14 @@ const FeedListImpl = forwardRef<HTMLDivElement, { className?: string; view: numb
     )
 
     const shouldFreeUpSpace = useShouldFreeUpSpace()
+
+    const routerParams = useRouteParams()
+    const { listId, isPreview, feedId } = routerParams
+    const isFeedPreview = isPreview && !listId
+    const isListPreview = isPreview && listId
+
+    useFeedQuery({ id: isFeedPreview ? feedId : undefined })
+    useList({ id: isListPreview ? listId : undefined })
 
     return (
       <div className={cn(className, "font-medium")}>
@@ -213,11 +225,14 @@ const FeedListImpl = forwardRef<HTMLDivElement, { className?: string; view: numb
           rootClassName={cn("h-full", shouldFreeUpSpace && "overflow-visible")}
         >
           <StarredItem view={view} />
-          {hasListData && (
+          {(hasListData || (isListPreview && listId)) && (
             <>
               <div className="text-text-secondary mt-1 flex h-6 w-full shrink-0 items-center rounded-md px-2.5 text-xs font-semibold transition-colors">
                 {t("words.lists")}
               </div>
+              {isListPreview && listId && (
+                <ListItem listId={listId} view={view} className="pl-2.5 pr-0" isPreview />
+              )}
               <SortByAlphabeticalList view={view} data={listsData} />
             </>
           )}
@@ -239,6 +254,9 @@ const FeedListImpl = forwardRef<HTMLDivElement, { className?: string; view: numb
             >
               {t("words.feeds")}
             </div>
+          )}
+          {isFeedPreview && feedId && (
+            <FeedItem feedId={feedId} view={view} className="pl-2.5 pr-0.5" isPreview />
           )}
           <DraggableContext.Provider value={draggableContextValue}>
             <div className="space-y-px" id="feeds-area" ref={setNodeRef}>
