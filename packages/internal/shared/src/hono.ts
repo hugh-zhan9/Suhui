@@ -13915,6 +13915,13 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                         } | null | undefined;
                     } | undefined;
                     docs?: string | undefined;
+                    analytics?: {
+                        view: number | null;
+                        feedId: string;
+                        updatesPerWeek: number | null;
+                        subscriptionCount: number | null;
+                        latestEntryPublishedAt: string | null;
+                    } | undefined;
                 }[];
             };
             outputFormat: "json";
@@ -14682,6 +14689,12 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                         }[] | null | undefined;
                     };
                     readCount: number;
+                    analytics?: {
+                        view: number | null;
+                        updatesPerWeek: number | null;
+                        subscriptionCount: number | null;
+                        latestEntryPublishedAt: string | null;
+                    } | undefined;
                     subscription?: {
                         createdAt: string;
                         userId: string;
@@ -16580,7 +16593,6 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                 data: {
                     view: number | null;
                     feedId: string;
-                    subscriptionCount: number;
                     feed: {
                         id: string;
                         type: "feed";
@@ -16612,6 +16624,13 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                             updatedAt: string;
                             suspended: boolean | null;
                         }[] | null | undefined;
+                    } | null;
+                    analytics: {
+                        view: number | null;
+                        feedId: string;
+                        updatesPerWeek: number | null;
+                        subscriptionCount: number | null;
+                        latestEntryPublishedAt: string | null;
                     } | null;
                 }[];
             };

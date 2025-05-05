@@ -135,7 +135,7 @@ export function Trending({
               followButtonVariant="ghost"
               followedButtonClassName="px-3 -mr-3"
               followButtonClassName="border-accent text-accent px-3 -mr-3"
-              className="pl-2"
+              className="pl-2 [&:nth-last-child(-n+2)]:border-b-0"
             >
               <div
                 className={cn(

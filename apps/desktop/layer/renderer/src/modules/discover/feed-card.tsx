@@ -41,7 +41,7 @@ export const FeedCard: FC<{
     onSuccess,
     children,
     followButtonVariant,
-    followedButtonVariant,
+    followedButtonVariant = "ghost",
     followButtonClassName,
     followedButtonClassName,
     className,
@@ -92,25 +92,29 @@ export const FeedCard: FC<{
             )}
             <CardFooter className="flex justify-between gap-4 px-4 pb-3">
               <div className="flex items-center gap-3 text-sm text-zinc-500 dark:text-zinc-400">
-                <div className="flex items-center gap-1.5">
-                  <i className="i-mgc-user-3-cute-re" />
+                {item.analytics?.subscriptionCount && (
+                  <div className="flex items-center gap-1.5">
+                    <i className="i-mgc-user-3-cute-re" />
 
-                  <span>
-                    {numberFormatter.format(item.subscriptionCount ?? 0)}{" "}
-                    {t("feed.follower", { count: item.subscriptionCount ?? 0 })}
-                  </span>
-                </div>
-                {item.updatesPerWeek ? (
+                    <span>
+                      {numberFormatter.format(item.analytics.subscriptionCount)}{" "}
+                      {t("feed.follower", { count: item.analytics.subscriptionCount })}
+                    </span>
+                  </div>
+                )}
+                {item.analytics?.updatesPerWeek ? (
                   <div className="flex items-center gap-1.5">
                     <i className="i-mgc-safety-certificate-cute-re" />
-                    <span>{t("feed.entry_week", { count: item.updatesPerWeek ?? 0 })}</span>
+                    <span>
+                      {t("feed.entry_week", { count: item.analytics.updatesPerWeek ?? 0 })}
+                    </span>
                   </div>
-                ) : item.entries?.[0]?.publishedAt ? (
+                ) : item.analytics?.latestEntryPublishedAt ? (
                   <div className="flex items-center gap-1.5">
                     <i className="i-mgc-safe-alert-cute-re" />
                     <span>{t("feed.updated_at")}</span>
                     <RelativeTime
-                      date={item.entries[0].publishedAt}
+                      date={item.analytics.latestEntryPublishedAt}
                       displayAbsoluteTimeAfterDay={Infinity}
                     />
                   </div>
@@ -140,7 +144,7 @@ export const FeedCard: FC<{
                   onClick={() => {
                     follow({
                       isList: !!item.list?.id,
-                      id: item.list?.id,
+                      id: item.list?.id || item.feed?.id,
                       url: item.feed?.url,
                       defaultValues: {
                         view: getRouteParams().view.toString(),
