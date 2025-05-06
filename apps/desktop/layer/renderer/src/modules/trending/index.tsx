@@ -131,11 +131,12 @@ export function Trending({
             <FeedCard
               key={item.feed.id}
               item={item}
+              simple
               followedButtonVariant="ghost"
               followButtonVariant="ghost"
               followedButtonClassName="px-3 -mr-3"
               followButtonClassName="border-accent text-accent px-3 -mr-3"
-              className="pl-2 [&:nth-last-child(-n+2)]:border-b-0"
+              className="py-5 pl-6 pr-4 [&:nth-last-child(-n+2)]:border-b-0"
             >
               <div
                 className={cn(

@@ -14691,6 +14691,7 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                     readCount: number;
                     analytics?: {
                         view: number | null;
+                        feedId: string;
                         updatesPerWeek: number | null;
                         subscriptionCount: number | null;
                         latestEntryPublishedAt: string | null;

@@ -322,7 +322,7 @@ export function DiscoverForm({ type = "search" }: { type?: string }) {
                 item={item}
                 onSuccess={handleSuccess}
                 onUnSubscribed={handleUnSubscribed}
-                className="last:border-b-0"
+                className="py-5 last:border-b-0"
               />
             ))}
           </div>

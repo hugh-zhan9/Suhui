@@ -1,5 +1,5 @@
 import { Button } from "@follow/components/ui/button/index.js"
-import { Card, CardContent, CardFooter, CardHeader } from "@follow/components/ui/card/index.jsx"
+import { Card, CardContent, CardHeader } from "@follow/components/ui/card/index.jsx"
 import { RelativeTime } from "@follow/components/ui/datetime/index.js"
 import { getBackgroundGradient } from "@follow/utils/color"
 import { cn } from "@follow/utils/utils"
@@ -21,9 +21,7 @@ import { FollowSummary } from "../feed/feed-summary"
 
 const numberFormatter = new Intl.NumberFormat("en-US", {})
 
-type DiscoverItem = Awaited<ReturnType<typeof apiClient.discover.$post>>["data"][number] & {
-  view?: number
-}
+type DiscoverItem = Awaited<ReturnType<typeof apiClient.discover.$post>>["data"][number]
 
 export const FeedCard: FC<{
   item: DiscoverItem
@@ -35,6 +33,8 @@ export const FeedCard: FC<{
   followButtonClassName?: string
   followedButtonClassName?: string
   className?: string
+  simple?: boolean
+  hideButtons?: boolean
 }> = memo(
   ({
     item,
@@ -45,6 +45,8 @@ export const FeedCard: FC<{
     followButtonClassName,
     followedButtonClassName,
     className,
+    simple,
+    hideButtons,
   }) => {
     const follow = useFollow()
     const { t } = useTranslation()
@@ -62,108 +64,111 @@ export const FeedCard: FC<{
         )}
       >
         {children}
-        <CardHeader className="px-4 py-5 pb-2">
-          <FollowSummary
-            className="max-w-[462px]"
-            feed={item.feed || item.list!}
-            docs={item.docs}
-          />
+        <CardHeader className="p-0 pb-2">
+          <FollowSummary feed={item.feed || item.list!} docs={item.docs} simple={simple} />
         </CardHeader>
         {item.docs ? (
-          <CardFooter className="p-4">
+          <CardContent className="p-0">
             <a href={item.docs} target="_blank" rel="noreferrer">
               <Button className="rounded-full bg-zinc-900 px-6 text-white transition-opacity hover:opacity-90 dark:bg-white dark:text-zinc-900">
                 View Docs
               </Button>
             </a>
-          </CardFooter>
+          </CardContent>
         ) : (
           <>
-            {!!item.entries?.length && (
-              <CardContent className="mb-4 px-4 py-0">
-                <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                  {item.entries
-                    .filter((e) => !!e)
-                    .map((entry) => (
-                      <SearchResultContent key={entry.id} entry={entry} />
-                    ))}
-                </div>
-              </CardContent>
-            )}
-            <CardFooter className="flex justify-between gap-4 px-4 pb-3">
-              <div className="flex items-center gap-3 text-sm text-zinc-500 dark:text-zinc-400">
-                {!!item.analytics?.subscriptionCount && (
-                  <div className="flex items-center gap-1.5">
-                    <i className="i-mgc-user-3-cute-re" />
+            <CardContent className="p-0">
+              <div className="flex justify-between gap-4">
+                <div className="flex items-center gap-3 text-sm text-zinc-500 dark:text-zinc-400">
+                  {!!item.analytics?.subscriptionCount && (
+                    <div className="flex items-center gap-1.5">
+                      <i className="i-mgc-user-3-cute-re" />
 
-                    <span>
-                      {numberFormatter.format(item.analytics.subscriptionCount)}{" "}
-                      {t("feed.follower", { count: item.analytics.subscriptionCount })}
-                    </span>
-                  </div>
-                )}
-                {item.analytics?.updatesPerWeek ? (
-                  <div className="flex items-center gap-1.5">
-                    <i className="i-mgc-safety-certificate-cute-re" />
-                    <span>
-                      {t("feed.entry_week", { count: item.analytics.updatesPerWeek ?? 0 })}
-                    </span>
-                  </div>
-                ) : item.analytics?.latestEntryPublishedAt ? (
-                  <div className="flex items-center gap-1.5">
-                    <i className="i-mgc-safe-alert-cute-re" />
-                    <span>{t("feed.updated_at")}</span>
-                    <RelativeTime
-                      date={item.analytics.latestEntryPublishedAt}
-                      displayAbsoluteTimeAfterDay={Infinity}
-                    />
-                  </div>
-                ) : null}
-              </div>
-
-              <div className="flex items-center justify-between gap-2">
-                {!isSubscribed && (
-                  <Button
-                    variant="ghost"
-                    disabled={!item.feed?.id}
-                    buttonClassName="rounded-lg px-3 text-sm font-medium text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/80 dark:hover:text-white"
-                    onClick={() => {
-                      if (!item.feed?.id) return
-                      setPreviewBackPath(location.pathname)
-                      navigateEntry({
-                        feedId: item.feed.id,
-                        view: item.view ?? 0,
-                      })
-                    }}
-                  >
-                    {t("discover.preview")}
-                  </Button>
-                )}
-                <Button
-                  variant={isSubscribed ? followedButtonVariant : followButtonVariant}
-                  onClick={() => {
-                    follow({
-                      isList: !!item.list?.id,
-                      id: item.list?.id || item.feed?.id,
-                      url: item.feed?.url,
-                      defaultValues: {
-                        view: getRouteParams().view.toString(),
-                      },
-                      onSuccess() {
-                        onSuccess?.(item)
-                      },
-                    })
-                  }}
-                  buttonClassName={cn(
-                    "relative overflow-hidden rounded-lg text-sm font-medium transition-all duration-300",
-                    isSubscribed ? "border-zinc-200/80 text-zinc-400 dark:border-zinc-700/80" : "",
-                    isSubscribed ? followedButtonClassName : followButtonClassName,
+                      <span>
+                        {numberFormatter.format(item.analytics.subscriptionCount)}{" "}
+                        {t("feed.follower", { count: item.analytics.subscriptionCount })}
+                      </span>
+                    </div>
                   )}
-                >
-                  {isSubscribed ? t("feed.actions.followed") : t("feed.actions.follow")}
-                </Button>
+                  {!simple &&
+                    (item.analytics?.updatesPerWeek ? (
+                      <div className="flex items-center gap-1.5">
+                        <i className="i-mgc-safety-certificate-cute-re" />
+                        <span>
+                          {t("feed.entry_week", { count: item.analytics.updatesPerWeek ?? 0 })}
+                        </span>
+                      </div>
+                    ) : item.analytics?.latestEntryPublishedAt ? (
+                      <div className="flex items-center gap-1.5">
+                        <i className="i-mgc-safe-alert-cute-re" />
+                        <span>{t("feed.updated_at")}</span>
+                        <RelativeTime
+                          date={item.analytics.latestEntryPublishedAt}
+                          displayAbsoluteTimeAfterDay={Infinity}
+                        />
+                      </div>
+                    ) : null)}
+                </div>
+
+                {!hideButtons && (
+                  <div className="flex items-center justify-between gap-2">
+                    {!isSubscribed && (
+                      <Button
+                        variant="ghost"
+                        disabled={!item.feed?.id}
+                        buttonClassName="rounded-lg px-3 font-medium text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/80 dark:hover:text-white"
+                        onClick={() => {
+                          if (!item.feed?.id) return
+                          setPreviewBackPath(location.pathname)
+                          navigateEntry({
+                            feedId: item.feed.id,
+                            view: item.analytics?.view ?? 0,
+                          })
+                        }}
+                      >
+                        {t("discover.preview")}
+                      </Button>
+                    )}
+                    <Button
+                      variant={isSubscribed ? followedButtonVariant : followButtonVariant}
+                      onClick={() => {
+                        follow({
+                          isList: !!item.list?.id,
+                          id: item.list?.id || item.feed?.id,
+                          url: item.feed?.url,
+                          defaultValues: {
+                            view: getRouteParams().view.toString(),
+                          },
+                          onSuccess() {
+                            onSuccess?.(item)
+                          },
+                        })
+                      }}
+                      buttonClassName={cn(
+                        "relative overflow-hidden rounded-lg font-medium transition-all duration-300",
+                        isSubscribed
+                          ? "border-zinc-200/80 text-zinc-400 dark:border-zinc-700/80"
+                          : "",
+                        isSubscribed ? followedButtonClassName : followButtonClassName,
+                      )}
+                    >
+                      {isSubscribed ? t("feed.actions.followed") : t("feed.actions.follow")}
+                    </Button>
+                  </div>
+                )}
               </div>
-            </CardFooter>
+              {!!item.entries?.length && (
+                <div className="mt-2">
+                  <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                    {item.entries
+                      .filter((e) => !!e)
+                      .map((entry) => (
+                        <SearchResultContent key={entry.id} entry={entry} />
+                      ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
           </>
         )}
       </Card>

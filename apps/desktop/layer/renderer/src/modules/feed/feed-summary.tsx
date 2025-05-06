@@ -11,10 +11,12 @@ export function FollowSummary({
   feed,
   docs,
   className,
+  simple,
 }: {
   feed: FeedOrListRespModel
   docs?: string
   className?: string
+  simple?: boolean
 }) {
   let feedText: string | undefined
 
@@ -39,24 +41,21 @@ export function FollowSummary({
         <FeedIcon
           feed={feed}
           fallbackUrl={docs}
-          className="mask-squircle mask mr-3 shrink-0 rounded-none"
+          className="mask-squircle mask shrink-0 rounded-none"
           size={32}
         />
         <div className="min-w-0 leading-tight">
-          <FeedTitle feed={feed} className="text-sm font-semibold" />
+          <FeedTitle feed={feed} className="mb-0.5 text-[15px] font-semibold" />
           <EllipsisHorizontalTextWithTooltip className="truncate text-xs font-normal text-zinc-500">
-            {feed.description}
-          </EllipsisHorizontalTextWithTooltip>
-        </div>
-      </div>
-      <div className="flex items-center gap-1 truncate text-zinc-500">
-        <i className="i-mgc-right-cute-re shrink-0" />
-        <div className="truncate">
-          <EllipsisHorizontalTextWithTooltip className="text-xs">
             {feedText}
           </EllipsisHorizontalTextWithTooltip>
         </div>
       </div>
+      {!simple && (
+        <EllipsisHorizontalTextWithTooltip className="truncate text-sm font-normal text-zinc-500">
+          {feed.description}
+        </EllipsisHorizontalTextWithTooltip>
+      )}
     </div>
   )
 }
