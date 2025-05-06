@@ -1,13 +1,10 @@
 import { requireNativeView } from "expo"
-import type { NativeSyntheticEvent, ViewProps } from "react-native"
+import type { ViewProps } from "react-native"
+
+import type { TabBarRootWrapperProps } from "./types"
 
 export const TabBarPortalWrapper = requireNativeView<ViewProps>("TabBarPortal")
 
 export const TabScreenWrapper = requireNativeView<ViewProps>("TabScreen")
 
-export const TabBarRootWrapper = requireNativeView<
-  {
-    onTabIndexChange: (e: NativeSyntheticEvent<{ index: number }>) => void
-    selectedIndex: number
-  } & ViewProps
->("TabBarRoot")
+export const TabBarRootWrapper = requireNativeView<TabBarRootWrapperProps>("TabBarRoot")
