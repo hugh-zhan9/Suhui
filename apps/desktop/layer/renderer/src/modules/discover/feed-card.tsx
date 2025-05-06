@@ -12,7 +12,6 @@ import { setPreviewBackPath } from "~/atoms/preview"
 import { Media } from "~/components/ui/media"
 import { useFollow } from "~/hooks/biz/useFollow"
 import { navigateEntry } from "~/hooks/biz/useNavigateEntry"
-import { getRouteParams } from "~/hooks/biz/useRouteParams"
 import { useFeedSafeUrl } from "~/hooks/common/useFeedSafeUrl"
 import type { apiClient } from "~/lib/api-fetch"
 import { useSubscriptionByFeedId } from "~/store/subscription"
@@ -136,9 +135,6 @@ export const FeedCard: FC<{
                           isList: !!item.list?.id,
                           id: item.list?.id || item.feed?.id,
                           url: item.feed?.url,
-                          defaultValues: {
-                            view: getRouteParams().view.toString(),
-                          },
                           onSuccess() {
                             onSuccess?.(item)
                           },

@@ -27,6 +27,7 @@ import { z } from "zod"
 
 import { Autocomplete } from "~/components/ui/auto-completion"
 import { useCurrentModal, useIsInModal } from "~/components/ui/modal/stacked/hooks"
+import { getRouteParams } from "~/hooks/biz/useRouteParams"
 import { useAuthQuery, useI18n } from "~/hooks/common"
 import { apiClient } from "~/lib/api-fetch"
 import { tipcClient } from "~/lib/client"
@@ -48,15 +49,13 @@ const formSchema = z.object({
 })
 export type FeedFormDataValuesType = z.infer<typeof formSchema>
 
-const defaultValue = { view: FeedViewType.Articles.toString() } as FeedFormDataValuesType
-
 export const FeedForm: Component<{
   url?: string
   id?: string
   defaultValues?: FeedFormDataValuesType
 
   onSuccess?: () => void
-}> = ({ id: _id, defaultValues = defaultValue, url, onSuccess }) => {
+}> = ({ id: _id, defaultValues, url, onSuccess }) => {
   const queryParams = { id: _id, url }
 
   const feedQuery = useFeedQuery(queryParams)
@@ -189,7 +188,9 @@ const FeedInnerForm = ({
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues,
+    defaultValues: defaultValues || {
+      view: getRouteParams().view.toString() || FeedViewType.Articles.toString(),
+    },
   })
 
   const { setClickOutSideToDismiss, dismiss } = useCurrentModal()
@@ -206,6 +207,12 @@ const FeedInnerForm = ({
       form.setValue("title", subscription?.title || "")
     }
   }, [subscription])
+
+  useEffect(() => {
+    if (analytics?.view !== undefined && !subscription && defaultValues?.view === undefined) {
+      form.setValue("view", `${analytics.view}`)
+    }
+  }, [analytics, subscription, defaultValues?.view])
 
   const followMutation = useMutation({
     mutationFn: async (values: z.infer<typeof formSchema>) => {

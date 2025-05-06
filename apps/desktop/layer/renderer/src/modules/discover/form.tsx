@@ -24,7 +24,6 @@ import { z } from "zod"
 
 import { useIsInMASReview } from "~/atoms/server-configs"
 import { useModalStack } from "~/components/ui/modal/stacked/hooks"
-import { getRouteParams } from "~/hooks/biz/useRouteParams"
 import { apiClient } from "~/lib/api-fetch"
 
 import { FeedCard } from "./feed-card"
@@ -126,18 +125,9 @@ export function DiscoverForm({ type = "search" }: { type?: string }) {
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     if (info[type]!.showModal) {
-      const defaultView = getRouteParams().view
       present({
         title: t("feed_form.add_feed"),
-        content: () => (
-          <FeedForm
-            url={values.keyword}
-            defaultValues={{
-              view: defaultView.toString(),
-            }}
-            onSuccess={dismissAll}
-          />
-        ),
+        content: () => <FeedForm url={values.keyword} onSuccess={dismissAll} />,
       })
     } else {
       mutation.mutate(values)
