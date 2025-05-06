@@ -7,7 +7,7 @@ import type { NativeSyntheticEvent, ViewProps } from "react-native"
 import { StyleSheet } from "react-native"
 
 import { BottomTabContext } from "./BottomTabContext"
-import { TabScreen } from "./TabScreen.ios"
+import { TabScreen } from "./TabScreen"
 
 const TabBarRoot = requireNativeView<
   {
