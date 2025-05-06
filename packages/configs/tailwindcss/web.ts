@@ -1,8 +1,7 @@
 /* @moduleResolution bundler */
 import "./tw-css-plugin"
 
-import path, { dirname, resolve } from "node:path"
-import { fileURLToPath } from "node:url"
+import path, { resolve } from "node:path"
 
 import { getIconCollections, iconsPlugin } from "@egoist/tailwindcss-icons"
 import { cleanupSVG, importDirectorySync, isEmptyColor, parseColors, runSVGO } from "@iconify/tools"
@@ -13,9 +12,7 @@ import type { Config } from "tailwindcss/types/config"
 import { withUIKit } from "tailwindcss-uikit-colors/src/macos/tailwind"
 import { workspaceRootSync } from "workspace-root"
 
-const _dirname =
-  typeof __dirname !== "undefined" ? __dirname : dirname(fileURLToPath(import.meta.url))
-const workspaceRoot = workspaceRootSync(_dirname)
+const workspaceRoot = workspaceRootSync(__dirname)
 const twConfig = {
   darkMode: ["class", '[data-theme="dark"]'],
   content: [],
