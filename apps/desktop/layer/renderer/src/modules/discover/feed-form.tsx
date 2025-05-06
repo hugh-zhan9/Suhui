@@ -86,7 +86,7 @@ export const FeedForm: Component<{
             return (
               <ScrollArea.ScrollArea
                 flex
-                rootClassName={cn(isInModal && "-mx-4 px-4 -mt-4", "h-0 grow")}
+                rootClassName={cn(isInModal && "-mx-4 px-4 -mt-4", "h-[500px] grow")}
                 viewportClassName="pt-4"
               >
                 {/* // Workaround for the issue with the scroll area viewport setting the display to
