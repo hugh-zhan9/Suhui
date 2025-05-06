@@ -3,12 +3,13 @@ import { useContext } from "react"
 import { StyleSheet, View } from "react-native"
 
 import { BottomTabContext } from "./BottomTabContext"
+import { TabBarPortalWrapper } from "./native"
 
 export const TabBarPortal = ({ children }: { children: React.ReactNode }) => {
   const { tabHeightAtom } = useContext(BottomTabContext)
   const setTabHeight = useSetAtom(tabHeightAtom)
   return (
-    <View style={styles.container}>
+    <TabBarPortalWrapper style={styles.container}>
       <View
         onLayout={(e) => {
           setTabHeight(e.nativeEvent.layout.height)
@@ -16,7 +17,7 @@ export const TabBarPortal = ({ children }: { children: React.ReactNode }) => {
       >
         {children}
       </View>
-    </View>
+    </TabBarPortalWrapper>
   )
 }
 
