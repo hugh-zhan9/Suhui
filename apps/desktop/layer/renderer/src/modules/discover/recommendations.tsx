@@ -4,11 +4,11 @@ import { ActionButton } from "@follow/components/ui/button/action-button.js"
 import { Card, CardContent } from "@follow/components/ui/card/index.jsx"
 import { ScrollArea } from "@follow/components/ui/scroll-area/ScrollArea.js"
 import { ResponsiveSelect } from "@follow/components/ui/select/responsive.js"
+import { EllipsisHorizontalTextWithTooltip } from "@follow/components/ui/typography/EllipsisWithTooltip.js"
 import { CategoryMap, RSSHubCategories } from "@follow/constants"
 import { nextFrame } from "@follow/utils/dom"
 import { isASCII } from "@follow/utils/utils"
 import { keepPreviousData } from "@tanstack/react-query"
-import { Masonry } from "masonic"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { flushSync } from "react-dom"
 import { useTranslation } from "react-i18next"
@@ -19,7 +19,8 @@ import { useCurrentModal, useModalStack } from "~/components/ui/modal/stacked/ho
 import { useAuthQuery } from "~/hooks/common"
 import { Queries } from "~/queries"
 
-import { RecommendationCard } from "./recommendations-card"
+import { FeedIcon } from "../feed/feed-icon"
+import { RecommendationContent } from "./recommendation-content"
 
 const LanguageOptions = [
   {
@@ -229,9 +230,8 @@ const RecommendationDrawerContent = ({
 
   const { dismiss } = useCurrentModal()
 
-  // Delay the masonry rendering to avoid layout shift
+  // Delay rendering to avoid layout shift
   const [ready, setReady] = useState(false)
-  const [masonryReady, setMasonryReady] = useState(false)
 
   useEffect(() => {
     nextFrame(() => {
@@ -255,31 +255,29 @@ const RecommendationDrawerContent = ({
       </ActionButton>
       <div className="bg-border m-4 h-px shrink-0" />
       {filteredItems.length > 0 ? (
-        <ScrollArea rootClassName="w-full -mt-4" viewportClassName="px-8 pt-4">
+        <ScrollArea rootClassName="w-full -mt-4" viewportClassName="px-8 pt-4 pb-8">
           {ready && (
-            <Masonry
-              className={masonryReady ? "opacity-100" : "opacity-0"}
-              items={filteredItems}
-              columnGutter={16}
-              onRender={() => {
-                setTimeout(() => {
-                  setMasonryReady(true)
-                }, 36)
+            <div
+              className="animate-in fade-in duration-300"
+              style={{
+                columnCount: isMobile() ? 1 : 2,
+                columnGap: "16px",
+                width: "100%",
               }}
-              columnCount={isMobile() ? 1 : 2}
-              overscanBy={2}
-              render={({ data: itemData }) => {
-                if (!itemData) return null
-                return (
-                  <RecommendationCard
-                    key={itemData.key}
-                    data={itemData.data}
-                    routePrefix={itemData.routePrefix}
-                    setCategory={handleCategoryChange}
-                  />
-                )
-              }}
-            />
+            >
+              {filteredItems.map(
+                (item) =>
+                  item && (
+                    <div key={item.key} className="mb-4 break-inside-avoid">
+                      <RecommendationListItem
+                        data={item.data}
+                        routePrefix={item.routePrefix}
+                        setCategory={handleCategoryChange}
+                      />
+                    </div>
+                  ),
+              )}
+            </div>
           )}
         </ScrollArea>
       ) : (
@@ -298,5 +296,141 @@ const RecommendationDrawerContent = ({
         </div>
       )}
     </div>
+  )
+}
+
+const RecommendationListItem = ({
+  data,
+  routePrefix,
+  setCategory,
+}: {
+  data: any
+  routePrefix: string
+  setCategory: (category: string) => void
+}) => {
+  const { t } = useTranslation()
+  const { present } = useModalStack()
+
+  const { maintainers, categories, routes } = useMemo(() => {
+    const maintainers = new Set<string>()
+    const categories = new Set<string>()
+    const routes = Object.keys(data.routes)
+
+    for (const route in data.routes) {
+      const routeData = data.routes[route]!
+      if (routeData.maintainers) {
+        routeData.maintainers.forEach((m) => maintainers.add(m))
+      }
+      if (routeData.categories) {
+        routeData.categories.forEach((c) => categories.add(c))
+      }
+    }
+    categories.delete("popular")
+    return {
+      maintainers: Array.from(maintainers),
+      categories: Array.from(categories) as unknown as typeof RSSHubCategories,
+      routes,
+    }
+  }, [data])
+
+  return (
+    <Card className="shadow-background border-border overflow-hidden rounded-lg border transition-shadow duration-200 hover:shadow-md">
+      <div className="border-border flex items-center gap-3 border-b p-4">
+        <div className="bg-background size-8 overflow-hidden rounded-full">
+          <FeedIcon className="mr-0 size-8" size={32} siteUrl={`https://${data.url}`} />
+        </div>
+        <div className="flex-1">
+          <h3 className="text-title3 line-clamp-1 font-medium">
+            <a
+              href={`https://${data.url}`}
+              target="_blank"
+              rel="noreferrer"
+              className="hover:underline"
+            >
+              {data.name}
+            </a>
+          </h3>
+        </div>
+      </div>
+      <div className="p-4">
+        <div className="mb-3">
+          <div className="flex flex-wrap gap-1.5 text-xs">
+            {categories.map((c) => (
+              <button
+                onClick={() => {
+                  if (!RSSHubCategories.includes(c)) return
+                  setCategory(c)
+                }}
+                key={c}
+                type="button"
+                className={`bg-material-medium hover:bg-material-medium cursor-pointer rounded-full px-2 py-0.5 duration-200 ${
+                  !RSSHubCategories.includes(c) ? "pointer-events-none opacity-50" : ""
+                }`}
+              >
+                {RSSHubCategories.includes(c)
+                  ? t(`discover.category.${c}`, { ns: "common" })
+                  : c.charAt(0).toUpperCase() + c.slice(1)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <ul className="text-text mb-3">
+          {routes.map((route) => {
+            const routeData = data.routes[route]!
+            if (Array.isArray(routeData.path)) {
+              routeData.path = routeData.path.find((p) => p === route) ?? routeData.path[0]
+            }
+            return (
+              <li
+                key={route}
+                className="hover:bg-material-opaque -mx-4 flex items-center rounded p-1 px-5 transition-colors"
+                role="button"
+                onClick={() => {
+                  present({
+                    id: `recommendation-content-${route}`,
+                    content: () => (
+                      <RecommendationContent
+                        routePrefix={routePrefix}
+                        route={data.routes[route]!}
+                      />
+                    ),
+                    icon: <FeedIcon className="size-4" size={16} siteUrl={`https://${data.url}`} />,
+                    title: `${data.name} - ${data.routes[route]!.name}`,
+                  })
+                }}
+              >
+                <div className="bg-accent mr-2 size-1.5 rounded-full" />
+
+                <EllipsisHorizontalTextWithTooltip className="text-sm">
+                  {routeData.name}
+                </EllipsisHorizontalTextWithTooltip>
+              </li>
+            )
+          })}
+        </ul>
+
+        {maintainers.length > 0 && (
+          <div className="text-text-secondary mt-2 flex items-center text-xs">
+            <i className="i-mingcute-hammer-line mr-1 shrink-0" />
+            <span className="line-clamp-1">
+              {maintainers.map((m, i) => (
+                <span key={m}>
+                  <a
+                    href={`https://github.com/${m}`}
+                    className="hover:underline"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    @{m}
+                  </a>
+                  {i < maintainers.length - 1 ? ", " : ""}
+                </span>
+              ))}
+            </span>
+          </div>
+        )}
+      </div>
+    </Card>
   )
 }
