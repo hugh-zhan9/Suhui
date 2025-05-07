@@ -2,7 +2,7 @@ import { FeedViewType } from "@follow/constants"
 import { tracker } from "@follow/tracker"
 import { transformVideoUrl } from "@follow/utils"
 import { memo } from "react"
-import { Linking } from "react-native"
+import { Linking, View } from "react-native"
 
 import { getGeneralSettings } from "@/src/atoms/settings/general"
 import { Image } from "@/src/components/ui/image/Image"
@@ -23,34 +23,36 @@ export const EntryVideoItem = memo(({ id }: { id: string }) => {
   }
 
   return (
-    <VideoContextMenu entryId={id}>
-      <ItemPressable
-        className="m-1"
-        onPress={() => {
-          unreadSyncService.markEntryAsRead(id)
-          tracker.navigateEntry({
-            feedId: item.feedId!,
-            entryId: id,
-          })
-          if (!item.url) {
-            toast.error("No video URL found")
-            return
-          }
+    <View className="m-1">
+      <VideoContextMenu entryId={id}>
+        <ItemPressable
+          className="overflow-hidden rounded-md"
+          onPress={() => {
+            unreadSyncService.markEntryAsRead(id)
+            tracker.navigateEntry({
+              feedId: item.feedId!,
+              entryId: id,
+            })
+            if (!item.url) {
+              toast.error("No video URL found")
+              return
+            }
 
-          openVideo(item.url)
-        }}
-      >
-        <Image
-          source={{ uri: item.media[0]?.url || "" }}
-          aspectRatio={16 / 9}
-          className="w-full rounded-lg"
-          proxy={{
-            width: 200,
+            openVideo(item.url)
           }}
-        />
-        <EntryGridFooter entryId={id} view={FeedViewType.Videos} />
-      </ItemPressable>
-    </VideoContextMenu>
+        >
+          <Image
+            source={{ uri: item.media[0]?.url || "" }}
+            aspectRatio={16 / 9}
+            className="w-full rounded-lg"
+            proxy={{
+              width: 200,
+            }}
+          />
+          <EntryGridFooter entryId={id} view={FeedViewType.Videos} />
+        </ItemPressable>
+      </VideoContextMenu>
+    </View>
   )
 })
 
