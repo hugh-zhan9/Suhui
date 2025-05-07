@@ -49,7 +49,7 @@ export const LazyImage = ({
         src={nextSrc}
         height={height}
         width={width}
-        className={cn("size-full", className)}
+        className={cn("size-full object-cover", className)}
         onClick={onClick}
         tabIndex={1}
       />

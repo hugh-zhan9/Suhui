@@ -100,7 +100,7 @@ export function Component() {
           </Button>
         </div>
       </div>
-      <div className={cn("w-full pb-12 pt-8", "flex max-w-3xl flex-col gap-2")}>
+      <div className={cn("w-full pb-12 pt-8", "flex flex-col gap-2")}>
         {entries.isLoading && !entries.data ? (
           <LoadingCircle size="large" className="center mt-12" />
         ) : (

@@ -1,4 +1,3 @@
-import { TeleportalTakeOff } from "@client/components/layout/main/teleportal"
 import { LazyImage } from "@client/components/ui/image"
 import { getPreferredTitle } from "@client/lib/helper"
 import type { EntriesPreview } from "@client/query/entries"
@@ -75,7 +74,7 @@ const breakpoints = {
   // 48rem => 48 * 16= 768
   768: 3,
   // 72rem => 72 * 16= 1152
-  1152: 4,
+  976: 4,
   // 80rem => 80 * 16= 1280
   1280: 5,
   1536: 6,
@@ -173,33 +172,31 @@ export const PictureList: FC<{
 
   return (
     <PhotoProvider>
-      <TeleportalTakeOff>
-        <div className="relative flex min-w-0 px-2 lg:px-6">
-          <MemoedDangerousHTMLStyle>{inlineStyle}</MemoedDangerousHTMLStyle>
-          <div className="flex w-full flex-wrap" ref={containerRef}>
-            {isInitLayout && (
-              <MasonryItemWidthContext value={currentItemWidth}>
-                {/* eslint-disable-next-line @eslint-react/no-context-provider */}
-                <MasonryItemsAspectRatioContext.Provider value={masonryItemsRadio}>
-                  <MasonryItemsAspectRatioSetterContext value={setMasonryItemsRadio}>
-                    <div className="relative w-full">
-                      <Masonry
-                        items={items}
-                        columnGutter={yGutter}
-                        columnWidth={currentItemWidth}
-                        columnCount={currentColumn}
-                        overscanBy={2}
-                        render={render}
-                        itemKey={itemKey}
-                      />
-                    </div>
-                  </MasonryItemsAspectRatioSetterContext>
-                </MasonryItemsAspectRatioContext.Provider>
-              </MasonryItemWidthContext>
-            )}
-          </div>
+      <div className="relative flex min-w-0 px-2 lg:px-6">
+        <MemoedDangerousHTMLStyle>{inlineStyle}</MemoedDangerousHTMLStyle>
+        <div className="flex w-full flex-wrap" ref={containerRef}>
+          {isInitLayout && (
+            <MasonryItemWidthContext value={currentItemWidth}>
+              {/* eslint-disable-next-line @eslint-react/no-context-provider */}
+              <MasonryItemsAspectRatioContext.Provider value={masonryItemsRadio}>
+                <MasonryItemsAspectRatioSetterContext value={setMasonryItemsRadio}>
+                  <div className="relative w-full">
+                    <Masonry
+                      items={items}
+                      columnGutter={yGutter}
+                      columnWidth={currentItemWidth}
+                      columnCount={currentColumn}
+                      overscanBy={2}
+                      render={render}
+                      itemKey={itemKey}
+                    />
+                  </div>
+                </MasonryItemsAspectRatioSetterContext>
+              </MasonryItemsAspectRatioContext.Provider>
+            </MasonryItemWidthContext>
+          )}
         </div>
-      </TeleportalTakeOff>
+      </div>
     </PhotoProvider>
   )
 }
@@ -226,7 +223,7 @@ const render: React.ComponentType<
       ratio={data.height && data.width ? data.height / data.width : undefined}
     >
       <div
-        className="overflow-hidden rounded-md"
+        className="size-full overflow-hidden rounded-md"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >

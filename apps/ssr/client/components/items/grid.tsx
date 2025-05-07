@@ -1,11 +1,9 @@
 import type { EntriesPreview } from "@client/query/entries"
 import type { Feed } from "@client/query/feed"
 import { TitleMarquee } from "@follow/components/ui/marquee/index.jsx"
-import { cn } from "@follow/utils/utils"
 import dayjs from "dayjs"
 import type { FC } from "react"
 
-import { TeleportalTakeOff } from "../layout/main/teleportal"
 import { FeedIcon } from "../ui/feed-icon"
 import { LazyImage } from "../ui/image"
 
@@ -14,41 +12,22 @@ export const GridList: FC<{
   feed?: Feed
 }> = ({ entries, feed }) => {
   return (
-    <TeleportalTakeOff>
-      <div className="grid grid-cols-1 gap-3 px-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 lg:px-3">
-        {entries.map((entry) => (
-          <Wrapper key={entry.id} href={entry.url || entry.authorUrl || ""}>
-            <div className="relative -mx-1.5 -mt-1.5">
-              <LazyImage
-                src={entry.media?.[0]!.url}
-                className="aspect-video h-auto w-full shrink-0 rounded-md object-cover"
-              />
-            </div>
-            <GridItemFooter feed={feed} entryId={entry.id} entryPreview={entry} />
-          </Wrapper>
-        ))}
-      </div>
-    </TeleportalTakeOff>
-  )
-}
-
-const Wrapper: FC<{
-  children: React.ReactNode
-  href: string
-  wrapperClassName?: string
-}> = ({ children, href, wrapperClassName }) => {
-  return (
-    <a
-      href={href}
-      rel="noopener noreferrer"
-      target="_blank"
-      className={cn(
-        "hover:bg-material-medium overflow-hidden rounded-md p-1.5 duration-200",
-        wrapperClassName,
-      )}
-    >
-      {children}
-    </a>
+    <div className="grid grid-cols-1 gap-3 px-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 lg:px-3">
+      {entries.map((entry) => (
+        <div
+          className="hover:bg-material-medium overflow-hidden rounded-md p-1.5 duration-200"
+          key={entry.id}
+        >
+          <div className="relative -mx-1.5 -mt-1.5">
+            <LazyImage
+              src={entry.media?.[0]!.url}
+              className="aspect-video h-auto w-full shrink-0 rounded-md object-cover"
+            />
+          </div>
+          <GridItemFooter feed={feed} entryId={entry.id} entryPreview={entry} />
+        </div>
+      ))}
+    </div>
   )
 }
 

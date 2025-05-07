@@ -50,7 +50,7 @@ const NormalList: FC<{
   return (
     <>
       {entries?.map((entry) => (
-        <a className="relative" href={entry.url || void 0} target="_blank" key={entry.id}>
+        <div className="relative cursor-default" key={entry.id}>
           <NormalListItem
             withDetails
             entryId={entry.id}
@@ -61,7 +61,7 @@ const NormalList: FC<{
               feedId: feed?.feed.id || entry.feeds?.id!,
             }}
           />
-        </a>
+        </div>
       ))}
     </>
   )
