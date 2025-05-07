@@ -13,7 +13,7 @@ export const useUserSubscriptionsQuery = (userId: string | undefined) => {
         query: { userId },
       })
       const groupFolder = {} as Record<string, typeof res.data>
-      for (const subscription of res.data || []) {
+      for (const subscription of res.data.filter((s) => !s.isPrivate) || []) {
         if (!subscription.category && "feeds" in subscription) {
           const { siteUrl } = subscription.feeds
           if (!siteUrl) continue

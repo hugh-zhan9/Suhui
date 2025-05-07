@@ -1,4 +1,3 @@
-import { useWhoami } from "@client/atoms/user"
 import { MainContainer } from "@client/components/layout/main"
 import { FeedIcon } from "@client/components/ui/feed-icon"
 import { openInFollowApp } from "@client/lib/helper"
@@ -22,10 +21,8 @@ export const Component = () => {
   const subscriptions = useUserSubscriptionsQuery(user.data?.id)
 
   useTitle(user.data?.name)
-  const me = useWhoami()
-  const isMe = user.data?.id === me?.id
 
-  const { t } = useTranslation("common")
+  const { t } = useTranslation()
 
   return (
     <MainContainer className="items-center">
@@ -43,19 +40,6 @@ export const Component = () => {
             </div>
             {user.data?.handle && (
               <div className="mb-2 text-sm text-zinc-500">@{user.data.handle}</div>
-            )}
-            {user.data?.id && (
-              <Button
-                onClick={() => {
-                  openInFollowApp({
-                    deeplink: `add?url=rsshub://follow/profile/${user.data?.id}`,
-                    fallbackUrl: `/timeline/view-0/all/pending?follow=${user.data?.id}&follow_type=user`,
-                  })
-                }}
-              >
-                <FollowIcon className="mr-1 size-3" />
-                {t("words.follow")}
-              </Button>
             )}
           </div>
           <div
@@ -107,19 +91,13 @@ export const Component = () => {
                                 onClick={(e) => {
                                   e.stopPropagation()
                                   openInFollowApp({
-                                    deeplink: `add?id=${subscription.feedId}`,
+                                    deeplink: `feed?id=${subscription.feedId}&view=${subscription.view}`,
                                     fallbackUrl: `/timeline/view-${subscription.view}/${subscription.feedId}/pending`,
                                   })
                                 }}
                               >
-                                {isMe ? (
-                                  t("words.edit")
-                                ) : (
-                                  <>
-                                    <FollowIcon className="mr-1 size-3" />
-                                    {APP_NAME}
-                                  </>
-                                )}
+                                <FollowIcon className="mr-1 size-3" />
+                                {t("feed.actions.open", { which: APP_NAME })}
                               </Button>
                             </span>
                           </div>
