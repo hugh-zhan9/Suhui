@@ -46,6 +46,7 @@ interface RenderGlobalContext {
   // Navigate
   goToDiscover: () => void
   goToFeed: ({ id, view }: { id: string; view?: number }) => void
+  goToList: ({ id, view }: { id: string; view?: number }) => void
 
   // user data
   clearIfLoginOtherAccount: (newUserId: string) => void

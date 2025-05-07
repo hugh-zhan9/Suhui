@@ -134,6 +134,13 @@ export function FeedColumn({ children, className }: PropsWithChildren<{ classNam
       backPath: location.pathname,
     })
   })
+  useRegisterGlobalContext("goToList", ({ id, view }: { id: string; view?: number }) => {
+    navigateEntry({
+      listId: id,
+      view: view ?? 0,
+      backPath: location.pathname,
+    })
+  })
 
   const shouldFreeUpSpace = useShouldFreeUpSpace()
   const feedColumnShow = useTimelineColumnShow()

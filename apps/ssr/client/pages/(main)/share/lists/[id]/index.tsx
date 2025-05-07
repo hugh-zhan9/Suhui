@@ -13,7 +13,6 @@ import { useTitle } from "@follow/hooks"
 import { cn } from "@follow/utils/utils"
 import { useTranslation } from "react-i18next"
 import { useParams } from "react-router"
-import { toast } from "sonner"
 
 const numberFormatter = new Intl.NumberFormat()
 export function Component() {
@@ -40,89 +39,95 @@ export function Component() {
 
   const handleOpenInFollowApp = () => {
     openInFollowApp({
-      deeplink: `add?type=list&id=${id!}`,
-      fallbackUrl: `/timeline/view-0/all/pending?follow=${id}&follow_type=list`,
+      deeplink: `list?id=${id}&view=${list.data.list.view}`,
+      fallbackUrl: `/timeline/view-${list.data.list.view}/list-${id}/pending`,
     })
   }
 
   return (
-    <MainContainer>
+    <MainContainer className="items-center">
       {list.isLoading ? (
         <LoadingCircle size="large" className="center fixed inset-0" />
       ) : (
         list.data?.list && (
-          <div className="mx-auto mt-12 flex w-full max-w-5xl flex-col items-center justify-center p-4 lg:p-0">
-            <FeedIcon
-              fallback
-              feed={list.data.list}
-              className="mask-squircle mask shrink-0"
-              size={64}
-            />
-            <div className="mb-6 flex max-w-prose flex-col items-center">
-              <div className="mb-2 mt-4 flex items-center text-2xl font-bold">
-                <h1>{list.data.list.title}</h1>
+          <>
+            <div className="my-4 flex max-w-prose flex-col items-center space-y-5">
+              <FeedIcon
+                fallback
+                feed={list.data.list}
+                className="mask-squircle mask shrink-0"
+                size={64}
+              />
+              <div className="flex max-w-prose flex-col items-center">
+                <div className="mb-2 flex items-center text-2xl font-bold">
+                  <h1>{list.data.list.title}</h1>
+                </div>
+                <a
+                  href={`/share/users/${list.data.list.owner?.id}`}
+                  target="_blank"
+                  className="flex items-center gap-1 text-sm text-zinc-500"
+                >
+                  <span>{t("feed.madeby")}</span>
+                  <Avatar className="inline-flex aspect-square size-5 rounded-full">
+                    <AvatarImage src={list.data.list.owner?.image || undefined} />
+                    <AvatarFallback>{list.data.list.owner?.name?.slice(0, 2)}</AvatarFallback>
+                  </Avatar>
+                </a>
               </div>
-              <div className="mb-2 text-sm text-zinc-500">{list.data.list.description}</div>
-              <a
-                href={`/share/users/${list.data.list.owner?.id}`}
-                target="_blank"
-                className="flex items-center gap-1 text-sm text-zinc-500"
-              >
-                <span>{t("feed.madeby")}</span>
-                <Avatar className="inline-flex aspect-square size-5 rounded-full">
-                  <AvatarImage src={list.data.list.owner?.image || undefined} />
-                  <AvatarFallback>{list.data.list.owner?.name?.slice(0, 2)}</AvatarFallback>
-                </Avatar>
-              </a>
-            </div>
-            <div className="mb-4 text-sm">
-              {t("feed.followsAndFeeds", {
-                subscriptionCount: numberFormatter.format(list.data?.subscriptionCount),
-                subscriptionNoun: t("feed.follower", { count: list.data?.subscriptionCount }),
-                feedsCount: numberFormatter.format(list.data?.feedCount || 0),
-                feedsNoun: t("feed.feeds", { count: listData?.feedIds?.length }),
-                appName: APP_NAME,
-              })}
-            </div>
-            <span className="center mb-8 flex gap-4">
-              <Button
-                variant={"outline"}
-                onClick={() => {
-                  toast.success(t("copied_link"))
-                  navigator.clipboard.writeText(id!)
-                }}
-              >
-                Copy List ID
-              </Button>
-              <Button
-                variant={isSubscribed ? "outline" : undefined}
-                onClick={handleOpenInFollowApp}
-              >
-                <FollowIcon className="mr-2 size-3" />
-                {isSubscribed ? "Followed" : <>{APP_NAME}</>}
-              </Button>
-            </span>
-            <div className="flex w-full max-w-3xl flex-col gap-4 pb-12 pt-8">
-              {listData!.feedIds
-                ?.slice(0, 7)
-                .map((feedId) => <FeedRow feed={feedMap[feedId]!} key={feedId} />)}
-              {"feedCount" in list.data && (
-                <div onClick={handleOpenInFollowApp} className="text-sm text-zinc-500">
-                  {t("feed.follow_to_view_all", {
-                    count: list.data.feedCount || 0,
-                  })}
+              {list.data.list.description && (
+                <div className="line-clamp-2 text-balance text-center text-zinc-600">
+                  {list.data.list.description}
                 </div>
               )}
+              <div className="flex justify-between gap-4">
+                <div className="flex items-center gap-4 text-base text-zinc-500 dark:text-zinc-400">
+                  {!!list.data?.subscriptionCount && (
+                    <div className="flex items-center gap-1">
+                      <i className="i-mgc-user-3-cute-re" />
+
+                      <span>
+                        {numberFormatter.format(list.data?.subscriptionCount)}{" "}
+                        {t("feed.follower", { count: list.data?.subscriptionCount })}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="center flex gap-4">
+                <Button
+                  variant={isSubscribed ? "outline" : undefined}
+                  onClick={() => {
+                    handleOpenInFollowApp()
+                  }}
+                >
+                  <FollowIcon className="mr-2 size-3" />
+                  {isSubscribed
+                    ? t("feed.actions.followed")
+                    : t("feed.actions.open", { which: APP_NAME })}
+                </Button>
+              </div>
+              <div className="flex w-full max-w-3xl flex-col gap-4 pb-12 pt-8">
+                {listData!.feedIds
+                  ?.slice(0, 7)
+                  .map((feedId) => <FeedRow feed={feedMap[feedId]!} key={feedId} />)}
+                {"feedCount" in list.data && (
+                  <div onClick={handleOpenInFollowApp} className="text-sm text-zinc-500">
+                    {t("feed.follow_to_view_all", {
+                      count: list.data.feedCount || 0,
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
             {!!list.data.entries?.length && (
               <>
                 <div className="mt-8 text-zinc-500">{t("feed.preview")}</div>
-                <div className={cn("w-full pb-12 pt-8", "flex max-w-3xl flex-col gap-2")}>
+                <div className={cn("w-full pb-12 pt-8", "flex flex-col gap-2")}>
                   <Item entries={list.data.entries} view={list.data.list.view} />
                 </div>
               </>
             )}
-          </div>
+          </>
         )
       )}
     </MainContainer>
