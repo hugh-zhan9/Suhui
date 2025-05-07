@@ -1,5 +1,4 @@
 import { Card, CardContent, CardHeader } from "@follow/components/ui/card/index.jsx"
-import { ScrollArea } from "@follow/components/ui/scroll-area/ScrollArea.js"
 import { FeedViewType, views } from "@follow/constants"
 import type { EntryModelSimple, FeedModel } from "@follow/models"
 import { cn } from "@follow/utils/utils"
@@ -64,14 +63,10 @@ export const ViewSelectorRadioGroup = ({
         ))}
       </CardHeader>
       {showPreview && (
-        <CardContent className="relative h-64 w-full">
-          <div className="absolute inset-0">
-            <ScrollArea flex rootClassName="h-full" viewportClassName="flex flex-col gap-2">
-              {entries.slice(0, 2).map((entry) => (
-                <EntryItemStateless entry={entry} feed={feed} view={view} key={entry.guid} />
-              ))}
-            </ScrollArea>
-          </div>
+        <CardContent className="relative flex w-full flex-col gap-2">
+          {entries.slice(0, 2).map((entry) => (
+            <EntryItemStateless entry={entry} feed={feed} view={view} key={entry.guid} />
+          ))}
         </CardContent>
       )}
       {showLoading && <EntryItemSkeleton view={view ?? FeedViewType.Articles} count={2} />}
