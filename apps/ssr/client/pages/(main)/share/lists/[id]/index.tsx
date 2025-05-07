@@ -50,15 +50,16 @@ export function Component() {
         <LoadingCircle size="large" className="center fixed inset-0" />
       ) : (
         list.data?.list && (
-          <>
-            <div className="my-4 flex max-w-prose flex-col items-center space-y-5">
+          <div className="w-full max-w-full">
+            <div className="mx-auto my-4 flex max-w-prose flex-col items-center space-y-5 px-2">
               <FeedIcon
                 fallback
                 feed={list.data.list}
                 className="mask-squircle mask shrink-0"
                 size={64}
+                noMargin
               />
-              <div className="flex max-w-prose flex-col items-center">
+              <div className="flex flex-col items-center">
                 <div className="mb-2 flex items-center text-2xl font-bold">
                   <h1>{list.data.list.title}</h1>
                 </div>
@@ -127,7 +128,7 @@ export function Component() {
                 </div>
               </>
             )}
-          </>
+          </div>
         )
       )}
     </MainContainer>
@@ -137,15 +138,17 @@ export function Component() {
 const FeedRow = ({ feed }: { feed: Feed["feed"] }) => {
   return (
     <a
-      className="relative flex cursor-pointer items-center text-base"
+      className="relative flex cursor-pointer items-center justify-between text-base"
       href={`/share/feeds/${feed.id}`}
       target="_blank"
       key={feed.id}
     >
-      <FeedIcon fallback feed={feed} className="mask-squircle mask mr-2 shrink-0" size={20} />
-      <div className="shrink-0">{feed.title}</div>
-      <FeedCertification feed={feed} />
-      <div className="ml-8 truncate text-sm text-zinc-500">{feed.description}</div>
+      <div className="flex shrink-0 items-center">
+        <FeedIcon fallback feed={feed} className="mask-squircle mask mr-2 shrink-0" size={20} />
+        <div className="shrink-0">{feed.title}</div>
+        <FeedCertification feed={feed} />
+      </div>
+      <div className="ml-4 truncate break-all text-sm text-zinc-500">{feed.description}</div>
     </a>
   )
 }

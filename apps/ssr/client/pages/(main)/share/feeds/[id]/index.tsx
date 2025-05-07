@@ -41,71 +41,79 @@ export function Component() {
 
   return (
     <MainContainer className="items-center">
-      <div className="my-4 flex max-w-prose flex-col items-center space-y-5">
-        <FeedIcon fallback feed={feedData} className="mask-squircle mask shrink-0" size={64} />
-        <div className="flex flex-col items-center space-y-1">
-          <div className="flex items-center text-2xl font-bold">
-            <h1>{feedData.title}</h1>
-            <FeedCertification feed={feedData} />
+      <div className="w-full max-w-full">
+        <div className="mx-auto my-4 flex max-w-prose flex-col items-center space-y-5">
+          <FeedIcon
+            fallback
+            feed={feedData}
+            className="mask-squircle mask shrink-0"
+            noMargin
+            size={64}
+          />
+          <div className="flex flex-col items-center space-y-1">
+            <div className="flex items-center text-2xl font-bold">
+              <h1>{feedData.title}</h1>
+              <FeedCertification feed={feedData} />
+            </div>
+            <div className="break-all text-center text-sm text-zinc-500">{feedData.url}</div>
           </div>
-          <div className="text-center text-sm text-zinc-500">{feedData.url}</div>
-        </div>
-        <div className="line-clamp-2 text-balance text-center text-zinc-600">
-          {feedData.description}
-        </div>
+          <div className="line-clamp-2 text-balance text-center text-zinc-600">
+            {feedData.description}
+          </div>
 
-        <div className="flex justify-between gap-4">
-          <div className="flex items-center gap-4 text-base text-zinc-500 dark:text-zinc-400">
-            {!!analytics?.subscriptionCount && (
-              <div className="flex items-center gap-1">
-                <i className="i-mgc-user-3-cute-re" />
+          <div className="flex justify-between gap-4">
+            <div className="flex items-center gap-4 text-base text-zinc-500 dark:text-zinc-400">
+              {!!analytics?.subscriptionCount && (
+                <div className="flex items-center gap-1">
+                  <i className="i-mgc-user-3-cute-re" />
 
-                <span>
-                  {numberFormatter.format(analytics.subscriptionCount)}{" "}
-                  {t("feed.follower", { count: analytics.subscriptionCount })}
-                </span>
-              </div>
-            )}
-            {analytics?.updatesPerWeek ? (
-              <div className="flex items-center gap-1">
-                <i className="i-mgc-safety-certificate-cute-re" />
-                <span>{t("feed.entry_week", { count: analytics.updatesPerWeek ?? 0 })}</span>
-              </div>
-            ) : analytics?.latestEntryPublishedAt ? (
-              <div className="flex items-center gap-1">
-                <i className="i-mgc-safe-alert-cute-re" />
-                <span>{t("feed.updated_at")}</span>
-                <RelativeTime
-                  date={analytics.latestEntryPublishedAt}
-                  displayAbsoluteTimeAfterDay={Infinity}
-                />
-              </div>
-            ) : null}
+                  <span>
+                    {numberFormatter.format(analytics.subscriptionCount)}{" "}
+                    {t("feed.follower", { count: analytics.subscriptionCount })}
+                  </span>
+                </div>
+              )}
+              {analytics?.updatesPerWeek ? (
+                <div className="flex items-center gap-1">
+                  <i className="i-mgc-safety-certificate-cute-re" />
+                  <span>{t("feed.entry_week", { count: analytics.updatesPerWeek ?? 0 })}</span>
+                </div>
+              ) : analytics?.latestEntryPublishedAt ? (
+                <div className="flex items-center gap-1">
+                  <i className="i-mgc-safe-alert-cute-re" />
+                  <span>{t("feed.updated_at")}</span>
+                  <RelativeTime
+                    date={analytics.latestEntryPublishedAt}
+                    displayAbsoluteTimeAfterDay={Infinity}
+                  />
+                </div>
+              ) : null}
+            </div>
+          </div>
+          <div className="center flex gap-4">
+            <Button
+              variant={isSubscribed ? "outline" : undefined}
+              onClick={() => {
+                openInFollowApp({
+                  deeplink: `feed?id=${id}&view=${view}`,
+                  fallbackUrl: `/timeline/view-${view}/${id}/pending`,
+                })
+              }}
+            >
+              <FollowIcon className="mr-2 size-3" />
+              {isSubscribed
+                ? t("feed.actions.followed")
+                : t("feed.actions.open", { which: APP_NAME })}
+            </Button>
           </div>
         </div>
-        <div className="center flex gap-4">
-          <Button
-            variant={isSubscribed ? "outline" : undefined}
-            onClick={() => {
-              openInFollowApp({
-                deeplink: `feed?id=${id}&view=${view}`,
-                fallbackUrl: `/timeline/view-${view}/${id}/pending`,
-              })
-            }}
-          >
-            <FollowIcon className="mr-2 size-3" />
-            {isSubscribed
-              ? t("feed.actions.followed")
-              : t("feed.actions.open", { which: APP_NAME })}
-          </Button>
+        <div className={cn("w-full pb-12 pt-8", "flex flex-col gap-2")}>
+          {entries.isLoading && !entries.data ? (
+            <LoadingCircle size="large" className="center mt-12" />
+          ) : (
+            <Item entries={entries.data} feed={feed.data} view={view} />
+          )}
         </div>
-      </div>
-      <div className={cn("w-full pb-12 pt-8", "flex flex-col gap-2")}>
-        {entries.isLoading && !entries.data ? (
-          <LoadingCircle size="large" className="center mt-12" />
-        ) : (
-          <Item entries={entries.data} feed={feed.data} view={view} />
-        )}
       </div>
     </MainContainer>
   )
