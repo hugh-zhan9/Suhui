@@ -261,7 +261,6 @@
   "quick_add.title": "クイックフォロー",
   "register.confirm_password": "パスワードを確認する",
   "register.email": "Email",
-  "register.label": "{{app_name}} アカウントを作成する",
   "register.login": "ログイン",
   "register.note": "既にアカウントをお持ちですか？ <LoginLink />",
   "register.password": "パスワード",
