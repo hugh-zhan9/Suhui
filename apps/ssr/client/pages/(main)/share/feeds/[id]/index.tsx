@@ -50,7 +50,9 @@ export function Component() {
           </div>
           <div className="text-center text-sm text-zinc-500">{feedData.url}</div>
         </div>
-        <div className="line-clamp-2 text-center text-zinc-600">{feedData.description}</div>
+        <div className="line-clamp-2 text-balance text-center text-zinc-600">
+          {feedData.description}
+        </div>
 
         <div className="flex justify-between gap-4">
           <div className="flex items-center gap-4 text-base text-zinc-500 dark:text-zinc-400">
@@ -86,8 +88,8 @@ export function Component() {
             variant={isSubscribed ? "outline" : undefined}
             onClick={() => {
               openInFollowApp({
-                deeplink: `add?id=${id}`,
-                fallbackUrl: `/timeline/view-${view}/all/pending?follow=${id}&follow_type=feed`,
+                deeplink: `feed?id=${id}&view=${view}`,
+                fallbackUrl: `/timeline/view-${view}/${id}/pending`,
               })
             }}
           >
