@@ -3,6 +3,7 @@ import { tracker } from "@follow/tracker"
 
 import type { SubscriptionSchema } from "@/src/database/schemas/types"
 import { apiClient } from "@/src/lib/api-fetch"
+import { toast } from "@/src/lib/toast"
 import { honoMorph } from "@/src/morph/hono"
 import { buildSubscriptionDbId, storeDbMorph } from "@/src/morph/store-db"
 import { SubscriptionService } from "@/src/services/subscription"
@@ -165,6 +166,10 @@ class SubscriptionSyncService {
   async edit(subscription: SubscriptionModel) {
     const subscriptionId = getSubscriptionStoreId(subscription)
     const current = get().data[subscriptionId]
+    if (!current) {
+      toast.error("Subscription to edit not found")
+      return
+    }
     const tx = createTransaction(current)
 
     let addNewCategory = false
@@ -172,10 +177,15 @@ class SubscriptionSyncService {
       immerSet((draft) => {
         if (
           subscription.category &&
-          !draft.categories[subscription.view as FeedViewType].has(subscription.category)
+          !draft.categories[subscription.view].has(subscription.category)
         ) {
           addNewCategory = true
-          draft.categories[subscription.view as FeedViewType].add(subscription.category)
+          draft.categories[subscription.view].add(subscription.category)
+        }
+
+        if (subscription.type === "feed") {
+          draft.feedIdByView[current.view].delete(current.feedId!)
+          draft.feedIdByView[subscription.view].add(subscription.feedId!)
         }
 
         draft.data[subscriptionId] = subscription
@@ -184,8 +194,14 @@ class SubscriptionSyncService {
     tx.rollback((current) => {
       immerSet((draft) => {
         if (addNewCategory && subscription.category) {
-          draft.categories[subscription.view as FeedViewType].delete(subscription.category)
+          draft.categories[subscription.view].delete(subscription.category)
         }
+
+        if (subscription.type === "feed") {
+          draft.feedIdByView[subscription.view].delete(subscription.feedId!)
+          draft.feedIdByView[current.view].add(current.feedId!)
+        }
+
         draft.data[subscriptionId] = current
       })
     })
