@@ -12,7 +12,7 @@ import type { FeedViewType } from "@follow/constants"
 import { nextFrame } from "@follow/utils/dom"
 import { cn, isKeyForMultiSelectPressed } from "@follow/utils/utils"
 import dayjs from "dayjs"
-import { memo, useCallback, useContext, useState } from "react"
+import { memo, use, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { MenuItemSeparator, MenuItemText, useShowContextMenu } from "~/atoms/context-menu"
@@ -51,7 +51,7 @@ const DraggableItemWrapper: Component<
     isInMultipleSelection: boolean
   } & React.HTMLAttributes<HTMLDivElement>
 > = ({ children, isInMultipleSelection, ...props }) => {
-  const draggableContext = useContext(DraggableContext)
+  const draggableContext = use(DraggableContext)
 
   return (
     <div

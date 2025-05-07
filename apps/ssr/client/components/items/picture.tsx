@@ -178,9 +178,10 @@ export const PictureList: FC<{
           <MemoedDangerousHTMLStyle>{inlineStyle}</MemoedDangerousHTMLStyle>
           <div className="flex w-full flex-wrap" ref={containerRef}>
             {isInitLayout && (
-              <MasonryItemWidthContext.Provider value={currentItemWidth}>
+              <MasonryItemWidthContext value={currentItemWidth}>
+                {/* eslint-disable-next-line @eslint-react/no-context-provider */}
                 <MasonryItemsAspectRatioContext.Provider value={masonryItemsRadio}>
-                  <MasonryItemsAspectRatioSetterContext.Provider value={setMasonryItemsRadio}>
+                  <MasonryItemsAspectRatioSetterContext value={setMasonryItemsRadio}>
                     <div className="relative w-full">
                       <Masonry
                         items={items}
@@ -192,9 +193,9 @@ export const PictureList: FC<{
                         itemKey={itemKey}
                       />
                     </div>
-                  </MasonryItemsAspectRatioSetterContext.Provider>
+                  </MasonryItemsAspectRatioSetterContext>
                 </MasonryItemsAspectRatioContext.Provider>
-              </MasonryItemWidthContext.Provider>
+              </MasonryItemWidthContext>
             )}
           </div>
         </div>

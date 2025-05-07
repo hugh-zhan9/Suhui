@@ -1,16 +1,8 @@
 import type { FlashList } from "@shopify/flash-list"
 import type ViewToken from "@shopify/flash-list/dist/viewability/ViewToken"
 import type { RefObject } from "react"
-import {
-  useCallback,
-  useContext,
-  useEffect,
-  useInsertionEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react"
-import type { NativeScrollEvent, NativeSyntheticEvent, StyleProp, ViewStyle } from "react-native"
+import { use, useCallback, useEffect, useInsertionEffect, useMemo, useRef, useState } from "react"
+import type { NativeScrollEvent, NativeSyntheticEvent, ViewStyle } from "react-native"
 import { useEventCallback } from "usehooks-ts"
 
 import { useGeneralSettingKey } from "@/src/atoms/settings/general"
@@ -128,7 +120,7 @@ function useNonReactiveCallback<T extends (...args: any[]) => any>(fn: T): T {
   ) as unknown as T
 }
 
-export const usePagerListPerformanceHack = (provideRef?: RefObject<FlashList<any>>) => {
+export const usePagerListPerformanceHack = (provideRef?: RefObject<FlashList<any> | null>) => {
   const lastY = useRef(0)
 
   const onScroll = useEventCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -137,15 +129,15 @@ export const usePagerListPerformanceHack = (provideRef?: RefObject<FlashList<any
     lastY.current = e.nativeEvent.contentOffset.y
   })
 
-  const visible = useContext(PagerListVisibleContext)
-  const willVisible = useContext(PagerListWillVisibleContext)
+  const visible = use(PagerListVisibleContext)
+  const willVisible = use(PagerListWillVisibleContext)
 
   const nextVisible = visible || willVisible
 
   const ref = useRef<FlashList<any>>(null)
 
   const usingRef = provideRef ?? ref
-  const [style, setStyle] = useState<StyleProp<ViewStyle>>({})
+  const [style, setStyle] = useState<ViewStyle>({})
   useEffect(() => {
     setStyle({ display: nextVisible ? "flex" : "none" })
     if (nextVisible && lastY.current > 0) {

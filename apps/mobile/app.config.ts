@@ -4,7 +4,6 @@ import type { ConfigContext, ExpoConfig } from "expo/config"
 
 import PKG from "./package.json"
 
-const isCI = process.env.CI === "true"
 // const roundedIconPath = resolve(__dirname, "../../resources/icon.png")
 const iconPathMap = {
   production: resolve(__dirname, "./assets/icon.png"),
@@ -16,8 +15,10 @@ const iconPath = iconPathMap[process.env.PROFILE || "production"] || iconPathMap
 
 const adaptiveIconPath = resolve(__dirname, "./assets/adaptive-icon.png")
 
+const isDev = process.env.NODE_ENV === "development"
+
 export default ({ config }: ConfigContext): ExpoConfig => {
-  const result = {
+  const result: ExpoConfig = {
     ...config,
 
     extra: {
@@ -29,9 +30,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     updates: {
       url: "https://u.expo.dev/a6335b14-fb84-45aa-ba80-6f6ab8926920",
     },
-    runtimeVersion: {
-      policy: "appVersion" as const,
-    },
+    runtimeVersion: isDev ? "0.0.0-dev" : PKG.version,
 
     name: "Folo",
     slug: "follow",
@@ -112,6 +111,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         },
       ],
       "expo-apple-authentication",
+      "expo-web-browser",
       [
         "expo-video",
         {
@@ -123,16 +123,15 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         require("./plugins/with-follow-assets.js"),
         {
           // Add asset directory paths, the plugin copies the files in the given paths to the app bundle folder named Assets
-          assetsPath: !isCI ? resolve(__dirname, "..", "..", "out", "rn-web") : "/tmp/rn-web",
+          assetsPath: resolve(__dirname, "..", "..", "out", "rn-web"),
         },
       ],
-      require("./plugins/with-follow-app-delegate.js"),
+
       require("./plugins/with-gradle-jvm-heap-size-increase.js"),
       require("./plugins/with-android-day-night-theme-plugin.js"),
       "expo-secure-store",
       "@react-native-firebase/app",
       "@react-native-firebase/crashlytics",
-      "@react-native-firebase/app-check",
       [
         "expo-image-picker",
         {
@@ -145,21 +144,11 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           enableBackgroundRemoteNotifications: true,
         },
       ],
-      [
-        // Fix status bar flash issue on Android
-        // Learn more: https://github.com/expo/expo/blob/main/packages/expo-status-bar/src/StatusBar.android.tsx#L21
-        "react-native-edge-to-edge",
-        {
-          android: {
-            parentTheme: "Default",
-            enforceNavigationBarContrast: false,
-          },
-        },
-      ],
     ],
   }
 
   if (process.env.PROFILE !== "production") {
+    result.plugins ||= []
     result.plugins.push(require("./plugins/android-trust-user-certs.js"))
   }
 

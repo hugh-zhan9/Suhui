@@ -1,13 +1,7 @@
 import { cn } from "@follow/utils"
 import { cssInterop } from "nativewind"
-import type {
-  FC,
-  ForwardRefExoticComponent,
-  PropsWithoutRef,
-  ReactNode,
-  RefAttributes,
-} from "react"
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react"
+import type { FC, ReactNode, Ref } from "react"
+import { useEffect, useImperativeHandle, useRef, useState } from "react"
 import type { StyleProp, ViewStyle } from "react-native"
 import { StyleSheet } from "react-native"
 
@@ -33,27 +27,26 @@ interface PagerViewProps {
   containerStyle?: StyleProp<ViewStyle>
   containerClassName?: string
   initialPageIndex?: number
+  ref?: Ref<PagerRef>
 }
-const PagerViewImpl: FC<PagerViewProps> = (
-  {
-    pageContainerStyle,
-    pageContainerClassName,
-    renderPage,
-    pageTotal,
-    pageGap,
-    transitionStyle,
-    containerStyle,
-    containerClassName,
-    page,
-    onPageChange,
-    onScroll,
-    onScrollBegin,
-    onScrollEnd,
-    onPageWillAppear,
-    initialPageIndex,
-  },
-  ref: any,
-) => {
+export const PagerView: FC<PagerViewProps> = ({
+  pageContainerStyle,
+  pageContainerClassName,
+  renderPage,
+  pageTotal,
+  pageGap,
+  transitionStyle,
+  containerStyle,
+  containerClassName,
+  page,
+  onPageChange,
+  onScroll,
+  onScrollBegin,
+  onScrollEnd,
+  onPageWillAppear,
+  initialPageIndex,
+  ref,
+}) => {
   const [currentPage, setCurrentPage] = useState(page ?? 0)
 
   const nativeRef = useRef<PagerRef>(null)
@@ -71,7 +64,7 @@ const PagerViewImpl: FC<PagerViewProps> = (
       nativeRef.current?.setPage(index)
     },
     getPage: () => currentPage,
-    getState: () => nativeRef.current?.getState(),
+    getState: () => nativeRef.current?.getState() ?? "idle",
   }))
   return (
     <EnhancePagerView
@@ -110,7 +103,3 @@ const PagerViewImpl: FC<PagerViewProps> = (
     </EnhancePagerView>
   )
 }
-
-export const PagerView = forwardRef(PagerViewImpl as any) as ForwardRefExoticComponent<
-  PropsWithoutRef<PagerViewProps> & RefAttributes<PagerRef>
->

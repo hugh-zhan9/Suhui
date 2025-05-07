@@ -1,6 +1,6 @@
 import { atom, useAtom, useAtomValue, useSetAtom } from "jotai"
 import type { FC, PropsWithChildren } from "react"
-import { useContext, useEffect, useMemo } from "react"
+import { use, useEffect, useMemo } from "react"
 import { StyleSheet } from "react-native"
 
 import { WrappedScreenItem } from "../WrappedScreenItem"
@@ -21,7 +21,7 @@ export const TabScreen: FC<PropsWithChildren<Omit<TabScreenProps, "tabScreenInde
     loadedableIndexAtom,
     currentIndexAtom,
     tabScreensAtom: tabScreens,
-  } = useContext(BottomTabContext)
+  } = use(BottomTabContext)
 
   const setTabScreens = useSetAtom(tabScreens)
 
@@ -95,7 +95,7 @@ export const TabScreen: FC<PropsWithChildren<Omit<TabScreenProps, "tabScreenInde
   const render = __DEV__ ? isSelected : true
   return (
     <TabScreenWrapper style={StyleSheet.absoluteFill}>
-      <TabScreenContext.Provider value={ctxValue}>
+      <TabScreenContext value={ctxValue}>
         {shouldLoadReact && render && (
           <WrappedScreenItem screenId={`tab-screen-${tabScreenIndex}`}>
             {children}
@@ -103,7 +103,7 @@ export const TabScreen: FC<PropsWithChildren<Omit<TabScreenProps, "tabScreenInde
             <LifecycleEvents isSelected={isSelected} />
           </WrappedScreenItem>
         )}
-      </TabScreenContext.Provider>
+      </TabScreenContext>
     </TabScreenWrapper>
   )
 }
