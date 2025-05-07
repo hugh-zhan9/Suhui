@@ -20,7 +20,7 @@ import { isAndroid } from "@/src/lib/platform"
 
 export const AISummary: FC<{
   className?: string
-  summary: string
+  summary?: string
   pending?: boolean
   error?: string
   onRetry?: () => void
@@ -59,7 +59,7 @@ export const AISummary: FC<{
 
   const purpleColor = useColor("purple")
 
-  if (pending) return null
+  if (pending || (!summary && !error)) return null
   return (
     <Animated.View
       className={cn(
@@ -105,7 +105,7 @@ export const AISummary: FC<{
               readOnly
               multiline
               className="text-label text-[15px] leading-[22px]"
-              value={summary.trim()}
+              value={summary?.trim()}
             />
           )}
         </View>
@@ -126,7 +126,7 @@ export const AISummary: FC<{
             </View>
           ) : (
             <Text className="text-label mt-2 text-[14px] leading-[22px]" selectable>
-              {summary.trim()}
+              {summary?.trim()}
             </Text>
           )}
         </View>
