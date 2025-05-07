@@ -14,6 +14,8 @@ import { entryActions, getEntry, useEntryIdsByFeedIdOrView } from "~/store/entry
 import { useFolderFeedsByFeedId } from "~/store/subscription"
 import { feedUnreadActions } from "~/store/unread"
 
+import { useIsPreviewFeed } from "./useIsPreviewFeed"
+
 interface UseEntriesReturn {
   entriesIds: string[]
   hasNext: boolean
@@ -46,7 +48,8 @@ const fallbackReturn: UseEntriesReturn = {
   error: null,
 }
 const useRemoteEntries = (): UseEntriesReturn => {
-  const { feedId, view, inboxId, listId, isPreview } = useRouteParams()
+  const { feedId, view, inboxId, listId } = useRouteParams()
+  const isPreview = useIsPreviewFeed()
 
   const unreadOnly = useGeneralSettingKey("unreadOnly")
 
