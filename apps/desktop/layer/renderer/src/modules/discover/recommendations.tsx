@@ -339,7 +339,7 @@ const RecommendationListItem = ({
         <div className="bg-background size-8 overflow-hidden rounded-full">
           <FeedIcon className="mr-0 size-8" size={32} siteUrl={`https://${data.url}`} />
         </div>
-        <div className="flex-1">
+        <div className="flex w-full flex-1 justify-between">
           <h3 className="text-title3 line-clamp-1 font-medium">
             <a
               href={`https://${data.url}`}
@@ -350,10 +350,7 @@ const RecommendationListItem = ({
               {data.name}
             </a>
           </h3>
-        </div>
-      </div>
-      <div className="p-4">
-        <div className="mb-3">
+
           <div className="flex flex-wrap gap-1.5 text-xs">
             {categories.map((c) => (
               <button
@@ -363,7 +360,7 @@ const RecommendationListItem = ({
                 }}
                 key={c}
                 type="button"
-                className={`bg-material-medium hover:bg-material-medium cursor-pointer rounded-full px-2 py-0.5 duration-200 ${
+                className={`bg-accent/10 cursor-pointer rounded-full px-2 py-0.5 duration-200 ${
                   !RSSHubCategories.includes(c) ? "pointer-events-none opacity-50" : ""
                 }`}
               >
@@ -374,7 +371,8 @@ const RecommendationListItem = ({
             ))}
           </div>
         </div>
-
+      </div>
+      <div className="p-4">
         <ul className="text-text mb-3">
           {routes.map((route) => {
             const routeData = data.routes[route]!
@@ -401,10 +399,13 @@ const RecommendationListItem = ({
                 }}
               >
                 <div className="bg-accent mr-2 size-1.5 rounded-full" />
-
-                <EllipsisHorizontalTextWithTooltip className="text-sm">
-                  {routeData.name}
-                </EllipsisHorizontalTextWithTooltip>
+                <div className="relative h-5 grow">
+                  <div className="absolute inset-0">
+                    <EllipsisHorizontalTextWithTooltip className="text-sm">
+                      {routeData.name}
+                    </EllipsisHorizontalTextWithTooltip>
+                  </div>
+                </div>
               </li>
             )
           })}
@@ -412,8 +413,8 @@ const RecommendationListItem = ({
 
         {maintainers.length > 0 && (
           <div className="text-text-secondary mt-2 flex items-center text-xs">
-            <i className="i-mingcute-hammer-line mr-1 shrink-0" />
-            <span className="line-clamp-1">
+            <i className="i-mingcute-hammer-line mr-1 shrink-0 self-start" />
+            <span>
               {maintainers.map((m, i) => (
                 <span key={m}>
                   <a
