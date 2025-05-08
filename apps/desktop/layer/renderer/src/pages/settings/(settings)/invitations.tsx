@@ -12,7 +12,7 @@ export const loader = defineSettingPageData({
   name: "titles.invitations",
   priority,
   disableIf: (ctx) => [ctx.role === UserRole.Trial, DisableWhy.NotActivation],
-  hideIf: (ctx) => ctx.isInMASReview,
+  hideIf: (ctx, serverConfigs) => ctx.isInMASReview || !serverConfigs?.INVITATION_ENABLED,
 })
 
 export function Component() {

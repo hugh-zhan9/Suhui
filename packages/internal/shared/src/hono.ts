@@ -11779,7 +11779,7 @@ declare const auth: {
                         ipAddress?: string | null | undefined | undefined;
                         userAgent?: string | null | undefined | undefined;
                     };
-                    invitation: {
+                    invitation: boolean | {
                         code: string;
                         createdAt: Date | null;
                         usedAt: Date | null;
@@ -11812,7 +11812,7 @@ declare const auth: {
                     ipAddress?: string | null | undefined | undefined;
                     userAgent?: string | null | undefined | undefined;
                 };
-                invitation: {
+                invitation: boolean | {
                     code: string;
                     createdAt: Date | null;
                     usedAt: Date | null;
@@ -13030,7 +13030,7 @@ declare const auth: {
                                 ipAddress?: string | null | undefined | undefined;
                                 userAgent?: string | null | undefined | undefined;
                             };
-                            invitation: {
+                            invitation: boolean | {
                                 code: string;
                                 createdAt: Date | null;
                                 usedAt: Date | null;
@@ -13063,7 +13063,7 @@ declare const auth: {
                             ipAddress?: string | null | undefined | undefined;
                             userAgent?: string | null | undefined | undefined;
                         };
-                        invitation: {
+                        invitation: boolean | {
                             code: string;
                             createdAt: Date | null;
                             usedAt: Date | null;
@@ -16382,6 +16382,7 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                     TAX_POINT: string;
                     INVITATION_INTERVAL_DAYS: number;
                     INVITATION_PRICE: number;
+                    INVITATION_ENABLED: boolean;
                     DAILY_POWER_SUPPLY: number;
                     IS_RSS3_TESTNET: boolean;
                     PRODUCT_HUNT_VOTE_URL: string;

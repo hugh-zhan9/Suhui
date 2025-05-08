@@ -1,6 +1,6 @@
 import { useMemo } from "react"
 
-import { useIsInMASReview } from "~/atoms/server-configs"
+import { useIsInMASReview, useServerConfigs } from "~/atoms/server-configs"
 import { useUserRole } from "~/atoms/user"
 
 import { getMemoizedSettings } from "../settings-glob"
@@ -14,5 +14,9 @@ export const useSettingPageContext = (): SettingPageContext => {
 
 export const useAvailableSettings = () => {
   const ctx = useSettingPageContext()
-  return useMemo(() => getMemoizedSettings().filter((t) => !t.loader.hideIf?.(ctx)), [ctx])
+  const serverConfigs = useServerConfigs()
+  return useMemo(
+    () => getMemoizedSettings().filter((t) => !t.loader.hideIf?.(ctx, serverConfigs)),
+    [ctx, serverConfigs],
+  )
 }
