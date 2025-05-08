@@ -68,19 +68,20 @@ const TabsList = ({
       )}
     >
       {props.children}
-
-      <span
-        className={cn(
-          "absolute left-0 duration-200 will-change-[transform,width]",
-          variant === "rounded"
-            ? "bg-material-medium group-hover:bg-theme-item-hover inset-0 z-0 h-full rounded-lg"
-            : "bg-accent bottom-0 h-0.5 rounded",
-        )}
-        style={{
-          width: indicator?.w,
-          transform: `translate3d(${indicator?.x}px, 0, 0)`,
-        }}
-      />
+      {indicator && (
+        <span
+          className={cn(
+            "absolute left-0 duration-200 will-change-[transform,width]",
+            variant === "rounded"
+              ? "bg-material-medium group-hover:bg-theme-item-hover inset-0 z-0 h-full rounded-lg"
+              : "bg-accent bottom-0 h-0.5 rounded",
+          )}
+          style={{
+            width: indicator.w,
+            transform: `translate3d(${indicator.x}px, 0, 0)`,
+          }}
+        />
+      )}
     </TabsPrimitive.List>
   )
 }
