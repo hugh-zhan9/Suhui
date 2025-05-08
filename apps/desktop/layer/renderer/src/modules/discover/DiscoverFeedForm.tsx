@@ -38,7 +38,7 @@ import {
   useModalStack,
 } from "~/components/ui/modal/stacked/hooks"
 
-import { FeedForm } from "./feed-form"
+import { FeedForm } from "./FeedForm"
 import type { RSSHubRoute } from "./types"
 import { normalizeRSSHubParameters } from "./utils"
 

@@ -10,6 +10,7 @@ import {
   feedSubscriptionCountSelector,
   folderFeedsByFeedIdSelector,
   inboxSubscriptionCountSelector,
+  isSubscribedSelector,
   listSubscriptionCountSelector,
   subscriptionByFeedIdSelector,
   subscriptionByViewSelector,
@@ -207,3 +208,6 @@ export const useInboxesGroupedData = (view: FeedViewType) => {
     return groupFolder
   }, [data])
 }
+
+export const useIsSubscribed = (feedId: string) =>
+  useSubscriptionStore(useCallback((state) => isSubscribedSelector(feedId)(state), [feedId]))

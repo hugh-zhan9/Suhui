@@ -17,9 +17,9 @@ import { apiClient } from "~/lib/api-fetch"
 import { UrlBuilder } from "~/lib/url-builder"
 import { useBoostModal } from "~/modules/boost/hooks"
 import { useFeedClaimModal } from "~/modules/claim"
-import { FeedForm } from "~/modules/discover/feed-form"
-import { InboxForm } from "~/modules/discover/inbox-form"
-import { ListForm } from "~/modules/discover/list-form"
+import { FeedForm } from "~/modules/discover/FeedForm"
+import { InboxForm } from "~/modules/discover/InboxForm"
+import { ListForm } from "~/modules/discover/ListForm"
 import {
   CategoryCreationModalContent,
   ListCreationModalContent,

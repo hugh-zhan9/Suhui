@@ -11,7 +11,7 @@ import { useTranslation } from "react-i18next"
 import { useModalStack } from "~/components/ui/modal/stacked/hooks"
 import { FeedIcon } from "~/modules/feed/feed-icon"
 
-import { RecommendationContent } from "./recommendation-content"
+import { RecommendationContent } from "./RecommendationContent"
 import type { RSSHubRouteDeclaration } from "./types"
 
 interface RecommendationCardProps {

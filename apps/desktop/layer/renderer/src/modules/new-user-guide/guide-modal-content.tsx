@@ -14,7 +14,7 @@ import { useI18n } from "~/hooks/common"
 import confettiUrl from "~/lottie/confetti.lottie?url"
 import { settings } from "~/queries/settings"
 
-import { DiscoverImport } from "../discover/import"
+import { DiscoverImport } from "../discover/DiscoverImport"
 import { ProfileSettingForm } from "../profile/profile-setting-form"
 import { settingSyncQueue } from "../settings/helper/sync-queue"
 import { LanguageSelector } from "../settings/tabs/general"

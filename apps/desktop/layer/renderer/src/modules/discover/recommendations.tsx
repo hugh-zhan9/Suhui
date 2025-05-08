@@ -20,7 +20,7 @@ import { useAuthQuery } from "~/hooks/common"
 import { Queries } from "~/queries"
 
 import { FeedIcon } from "../feed/feed-icon"
-import { RecommendationContent } from "./recommendation-content"
+import { RecommendationContent } from "./RecommendationContent"
 
 const LanguageOptions = [
   {

@@ -11,7 +11,7 @@ import { createErrorToaster } from "~/lib/error-parser"
 import { inboxActions } from "~/store/inbox"
 import { subscriptionActions } from "~/store/subscription"
 
-import { InboxForm } from "./inbox-form"
+import { InboxForm } from "./InboxForm"
 
 export const InboxEmail = ({ id }: { id: string }) => {
   return (

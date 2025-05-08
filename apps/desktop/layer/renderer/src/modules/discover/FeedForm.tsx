@@ -39,7 +39,7 @@ import { useSubscriptionByFeedId } from "~/store/subscription"
 import { feedUnreadActions } from "~/store/unread"
 
 import { ViewSelectorRadioGroup } from "../shared/ViewSelectorRadioGroup"
-import { FeedCard } from "./feed-card"
+import { FeedSummary } from "./FeedSummary"
 
 const formSchema = z.object({
   view: z.string(),
@@ -284,14 +284,7 @@ const FeedInnerForm = ({
 
   return (
     <div className="flex flex-1 flex-col gap-y-4">
-      <FeedCard
-        item={{
-          feed,
-          analytics,
-        }}
-        hideButtons
-        className="px-1 pb-5 pt-2"
-      />
+      <FeedSummary feed={feed} analytics={analytics} showAnalytics />
       <Form {...form}>
         <form
           id="feed-form"

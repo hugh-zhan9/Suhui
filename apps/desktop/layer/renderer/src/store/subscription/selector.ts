@@ -54,3 +54,5 @@ export const folderFeedsByFeedIdSelector =
 export const listSubscriptionCountSelector = (state: State) => state.listIds.size
 
 export const inboxSubscriptionCountSelector = (state: State) => state.inboxIds.size
+
+export const isSubscribedSelector = (feedId: string) => (state: State) => !!state.data[feedId]

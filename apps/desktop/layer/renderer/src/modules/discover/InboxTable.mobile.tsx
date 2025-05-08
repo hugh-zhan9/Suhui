@@ -4,7 +4,7 @@ import { memo } from "react"
 import { useInboxList } from "~/queries/inboxes"
 import { useInboxById } from "~/store/inbox"
 
-import { InboxActions, InboxEmail, InboxSecret } from "./inbox-table.shared"
+import { InboxActions, InboxEmail, InboxSecret } from "./InboxTable.shared"
 
 export const InboxTable = () => {
   const inboxes = useInboxList()

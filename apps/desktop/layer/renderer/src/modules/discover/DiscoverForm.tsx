@@ -1,5 +1,5 @@
 import { useMobile } from "@follow/components/hooks/useMobile.js"
-import { Button } from "@follow/components/ui/button/index.js"
+import { Button, MotionButtonBase } from "@follow/components/ui/button/index.js"
 import {
   Form,
   FormControl,
@@ -26,8 +26,8 @@ import { useIsInMASReview } from "~/atoms/server-configs"
 import { useModalStack } from "~/components/ui/modal/stacked/hooks"
 import { apiClient } from "~/lib/api-fetch"
 
-import { FeedCard } from "./feed-card"
-import { FeedForm } from "./feed-form"
+import { DiscoverFeedCard } from "./DiscoverFeedCard"
+import { FeedForm } from "./FeedForm"
 
 const formSchema = z.object({
   keyword: z.string().min(1),
@@ -296,18 +296,18 @@ export function DiscoverForm({ type = "search" }: { type?: string }) {
             {t("discover.search.results", { count: mutation.data?.length || 0 })}
 
             {mutation.data?.length > 0 && (
-              <button
-                className="hover:text-accent flex cursor-pointer items-center justify-between gap-2"
+              <MotionButtonBase
+                className="hover:text-accent cursor-button flex items-center justify-between gap-2"
                 type="button"
                 onClick={mutation.reset}
               >
                 <i className="i-mgc-close-cute-re" />
-              </button>
+              </MotionButtonBase>
             )}
           </div>
           <div className="text-sm">
             {discoverSearchData?.map((item) => (
-              <FeedCard
+              <DiscoverFeedCard
                 key={item.feed?.id || item.list?.id}
                 item={item}
                 onSuccess={handleSuccess}

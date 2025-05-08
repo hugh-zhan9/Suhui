@@ -16,7 +16,7 @@ import { HotKeyScopeMap } from "~/constants"
 import { getRouteParams } from "~/hooks/biz/useRouteParams"
 import { tipcClient } from "~/lib/client"
 
-import { FeedForm } from "../discover/feed-form"
+import { FeedForm } from "../discover/FeedForm"
 
 const CmdNPanel = () => {
   const { t } = useTranslation()

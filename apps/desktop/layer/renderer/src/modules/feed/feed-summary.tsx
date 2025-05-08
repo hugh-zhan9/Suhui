@@ -52,7 +52,7 @@ export function FollowSummary({
         </div>
       </div>
       {!simple && (
-        <EllipsisHorizontalTextWithTooltip className="truncate text-sm font-normal text-zinc-500">
+        <EllipsisHorizontalTextWithTooltip className="text-text/80 text-body truncate pl-10 font-normal">
           {feed.description}
         </EllipsisHorizontalTextWithTooltip>
       )}

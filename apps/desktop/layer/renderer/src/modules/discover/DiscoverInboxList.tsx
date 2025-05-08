@@ -10,8 +10,8 @@ import { CustomSafeError } from "~/errors/CustomSafeError"
 import { useInboxList } from "~/queries/inboxes"
 
 import { useActivationModal } from "../activation"
-import { InboxForm } from "./inbox-form"
-import { InboxTable } from "./inbox-table"
+import { InboxForm } from "./InboxForm"
+import { InboxTable } from "./InboxTable"
 
 const useCanCreateMoreInboxAndNotify = () => {
   const role = useUserRole()

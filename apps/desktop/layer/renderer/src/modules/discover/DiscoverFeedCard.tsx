@@ -4,7 +4,7 @@ import { RelativeTime } from "@follow/components/ui/datetime/index.js"
 import { getBackgroundGradient } from "@follow/utils/color"
 import { cn } from "@follow/utils/utils"
 import type { FC } from "react"
-import { memo } from "react"
+import { memo, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { useLocation } from "react-router"
 
@@ -13,45 +13,92 @@ import { useFollow } from "~/hooks/biz/useFollow"
 import { navigateEntry } from "~/hooks/biz/useNavigateEntry"
 import { useFeedSafeUrl } from "~/hooks/common/useFeedSafeUrl"
 import type { apiClient } from "~/lib/api-fetch"
-import { useSubscriptionByFeedId } from "~/store/subscription"
+import { useIsSubscribed } from "~/store/subscription"
 
 import { FollowSummary } from "../feed/feed-summary"
 
-const numberFormatter = new Intl.NumberFormat("en-US", {})
+export type DiscoverItem = Awaited<ReturnType<typeof apiClient.discover.$post>>["data"][number]
 
-type DiscoverItem = Awaited<ReturnType<typeof apiClient.discover.$post>>["data"][number]
-
-export const FeedCard: FC<{
+export const FeedCardActions: FC<{
   item: DiscoverItem
   onSuccess?: (item: DiscoverItem) => void
-  onUnSubscribed?: (item: DiscoverItem) => void
-  children?: React.ReactNode
+  isSubscribed: boolean
   followButtonVariant?: "ghost" | "outline"
   followedButtonVariant?: "ghost" | "outline"
   followButtonClassName?: string
   followedButtonClassName?: string
-  className?: string
-  simple?: boolean
-  hideButtons?: boolean
 }> = memo(
   ({
     item,
     onSuccess,
-    children,
+    isSubscribed,
     followButtonVariant,
     followedButtonVariant = "ghost",
     followButtonClassName,
     followedButtonClassName,
-    className,
-    simple,
-    hideButtons,
   }) => {
     const follow = useFollow()
     const { t } = useTranslation()
-
-    const subscription = useSubscriptionByFeedId(item.feed?.id || item.list?.id || "")
-    const isSubscribed = !!subscription
     const location = useLocation()
+
+    return (
+      <div className="flex items-center justify-between gap-2">
+        {!isSubscribed && (
+          <Button
+            variant="ghost"
+            disabled={!item.feed?.id}
+            buttonClassName="rounded-lg px-3 font-medium text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/80 dark:hover:text-white"
+            onClick={() => {
+              if (!item.feed?.id) return
+              navigateEntry({
+                feedId: item.feed.id,
+                view: item.analytics?.view ?? 0,
+                backPath: location.pathname,
+              })
+            }}
+          >
+            {t("discover.preview")}
+          </Button>
+        )}
+        <Button
+          variant={isSubscribed ? followedButtonVariant : followButtonVariant}
+          onClick={() => {
+            follow({
+              isList: !!item.list?.id,
+              id: item.list?.id || item.feed?.id,
+              url: item.feed?.url,
+              onSuccess() {
+                onSuccess?.(item)
+              },
+            })
+          }}
+          buttonClassName={cn(
+            "relative overflow-hidden rounded-lg font-medium transition-all duration-300",
+            isSubscribed ? "border-zinc-200/80 px-3 text-zinc-400 dark:border-zinc-700/80" : "",
+            isSubscribed ? followedButtonClassName : followButtonClassName,
+          )}
+        >
+          {isSubscribed ? t("feed.actions.followed") : t("feed.actions.follow")}
+        </Button>
+      </div>
+    )
+  },
+)
+
+interface DiscoverFeedCardProps {
+  item: DiscoverItem
+  onSuccess?: (item: DiscoverItem) => void
+  onUnSubscribed?: (item: DiscoverItem) => void
+
+  className?: string
+}
+
+export const DiscoverFeedCard: FC<DiscoverFeedCardProps> = memo(
+  ({ item, onSuccess, className }) => {
+    const numberFormatter = useMemo(() => new Intl.NumberFormat("en-US", {}), [])
+    const { t } = useTranslation()
+
+    const isSubscribed = useIsSubscribed(item.feed?.id || item.list?.id || "")
 
     return (
       <Card
@@ -61,9 +108,8 @@ export const FeedCard: FC<{
           className,
         )}
       >
-        {children}
         <CardHeader className="p-0 pb-2">
-          <FollowSummary feed={item.feed || item.list!} docs={item.docs} simple={simple} />
+          <FollowSummary feed={item.feed || item.list!} docs={item.docs} />
         </CardHeader>
         {item.docs ? (
           <CardContent className="p-0">
@@ -76,82 +122,6 @@ export const FeedCard: FC<{
         ) : (
           <>
             <CardContent className="p-0">
-              <div className="flex justify-between gap-4">
-                <div className="text-text-secondary flex items-center gap-3 text-sm">
-                  {!!item.analytics?.subscriptionCount && (
-                    <div className="flex items-center gap-1.5">
-                      <i className="i-mgc-user-3-cute-re" />
-
-                      <span>
-                        {numberFormatter.format(item.analytics.subscriptionCount)}{" "}
-                        {t("feed.follower", { count: item.analytics.subscriptionCount })}
-                      </span>
-                    </div>
-                  )}
-                  {!simple &&
-                    (item.analytics?.updatesPerWeek ? (
-                      <div className="flex items-center gap-1.5">
-                        <i className="i-mgc-safety-certificate-cute-re" />
-                        <span>
-                          {t("feed.entry_week", { count: item.analytics.updatesPerWeek ?? 0 })}
-                        </span>
-                      </div>
-                    ) : item.analytics?.latestEntryPublishedAt ? (
-                      <div className="flex items-center gap-1.5">
-                        <i className="i-mgc-safe-alert-cute-re" />
-                        <span>{t("feed.updated_at")}</span>
-                        <RelativeTime
-                          date={item.analytics.latestEntryPublishedAt}
-                          displayAbsoluteTimeAfterDay={Infinity}
-                        />
-                      </div>
-                    ) : null)}
-                </div>
-
-                {!hideButtons && (
-                  <div className="flex items-center justify-between gap-2">
-                    {!isSubscribed && (
-                      <Button
-                        variant="ghost"
-                        disabled={!item.feed?.id}
-                        buttonClassName="rounded-lg px-3 font-medium text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/80 dark:hover:text-white"
-                        onClick={() => {
-                          if (!item.feed?.id) return
-                          navigateEntry({
-                            feedId: item.feed.id,
-                            view: item.analytics?.view ?? 0,
-                            backPath: location.pathname,
-                          })
-                        }}
-                      >
-                        {t("discover.preview")}
-                      </Button>
-                    )}
-                    <Button
-                      variant={isSubscribed ? followedButtonVariant : followButtonVariant}
-                      onClick={() => {
-                        follow({
-                          isList: !!item.list?.id,
-                          id: item.list?.id || item.feed?.id,
-                          url: item.feed?.url,
-                          onSuccess() {
-                            onSuccess?.(item)
-                          },
-                        })
-                      }}
-                      buttonClassName={cn(
-                        "relative overflow-hidden rounded-lg font-medium transition-all duration-300",
-                        isSubscribed
-                          ? "border-zinc-200/80 text-zinc-400 dark:border-zinc-700/80"
-                          : "",
-                        isSubscribed ? followedButtonClassName : followButtonClassName,
-                      )}
-                    >
-                      {isSubscribed ? t("feed.actions.followed") : t("feed.actions.follow")}
-                    </Button>
-                  </div>
-                )}
-              </div>
               {!!item.entries?.length && (
                 <div className="mt-2">
                   <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -163,6 +133,39 @@ export const FeedCard: FC<{
                   </div>
                 </div>
               )}
+              <div className="mt-2 flex justify-between gap-4">
+                <div className="text-text-secondary flex items-center gap-3 text-sm">
+                  {!!item.analytics?.subscriptionCount && (
+                    <div className="flex items-center gap-1.5">
+                      <i className="i-mgc-user-3-cute-re" />
+
+                      <span>
+                        {numberFormatter.format(item.analytics.subscriptionCount)}{" "}
+                        {t("feed.follower", { count: item.analytics.subscriptionCount })}
+                      </span>
+                    </div>
+                  )}
+                  {item.analytics?.updatesPerWeek ? (
+                    <div className="flex items-center gap-1.5">
+                      <i className="i-mgc-safety-certificate-cute-re" />
+                      <span>
+                        {t("feed.entry_week", { count: item.analytics.updatesPerWeek ?? 0 })}
+                      </span>
+                    </div>
+                  ) : item.analytics?.latestEntryPublishedAt ? (
+                    <div className="flex items-center gap-1.5">
+                      <i className="i-mgc-safe-alert-cute-re" />
+                      <span>{t("feed.updated_at")}</span>
+                      <RelativeTime
+                        date={item.analytics.latestEntryPublishedAt}
+                        displayAbsoluteTimeAfterDay={Infinity}
+                      />
+                    </div>
+                  ) : null}
+                </div>
+
+                <FeedCardActions item={item} onSuccess={onSuccess} isSubscribed={isSubscribed} />
+              </div>
             </CardContent>
           </>
         )}

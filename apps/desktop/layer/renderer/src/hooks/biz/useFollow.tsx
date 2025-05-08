@@ -8,10 +8,10 @@ import { useUserRole } from "~/atoms/user"
 import { useModalStack } from "~/components/ui/modal/stacked/hooks"
 import { CustomSafeError } from "~/errors/CustomSafeError"
 import { useActivationModal } from "~/modules/activation"
-import type { FeedFormDataValuesType } from "~/modules/discover/feed-form"
-import { FeedForm } from "~/modules/discover/feed-form"
-import type { ListFormDataValuesType } from "~/modules/discover/list-form"
-import { ListForm } from "~/modules/discover/list-form"
+import type { FeedFormDataValuesType } from "~/modules/discover/FeedForm"
+import { FeedForm } from "~/modules/discover/FeedForm"
+import type { ListFormDataValuesType } from "~/modules/discover/ListForm"
+import { ListForm } from "~/modules/discover/ListForm"
 import {
   getSubscriptionByFeedId,
   useFeedSubscriptionCount,

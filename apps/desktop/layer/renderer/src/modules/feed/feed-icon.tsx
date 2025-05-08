@@ -246,7 +246,7 @@ export function FeedIcon({
 
   if (fallback && !!finalSrc) {
     return (
-      <Avatar className={cn("shrink-0", marginClassName)} style={sizeStyle}>
+      <Avatar className={cn("shrink-0 [&_*]:select-none", marginClassName)} style={sizeStyle}>
         <AvatarImage className="rounded-sm object-cover" asChild src={finalSrc}>
           {ImageElement}
         </AvatarImage>
@@ -261,7 +261,7 @@ export function FeedIcon({
   if (!finalSrc) return ImageElement
   // Else
   return (
-    <Avatar className={cn("shrink-0", marginClassName)} style={sizeStyle}>
+    <Avatar className={cn("shrink-0 [&_*]:select-none", marginClassName)} style={sizeStyle}>
       <AvatarImage asChild src={finalSrc}>
         {ImageElement}
       </AvatarImage>

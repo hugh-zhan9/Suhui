@@ -7,7 +7,7 @@ import { useNavigateEntry } from "~/hooks/biz/useNavigateEntry"
 import { getRouteParams } from "~/hooks/biz/useRouteParams"
 import { useDeleteSubscription } from "~/hooks/biz/useSubscriptionActions"
 import { UrlBuilder } from "~/lib/url-builder"
-import { ListForm } from "~/modules/discover/list-form"
+import { ListForm } from "~/modules/discover/ListForm"
 
 import { useRegisterCommandEffect } from "../hooks/use-register-command"
 import { COMMAND_ID } from "./id"
