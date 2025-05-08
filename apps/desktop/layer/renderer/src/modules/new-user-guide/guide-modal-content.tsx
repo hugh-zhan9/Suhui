@@ -153,10 +153,7 @@ export function GuideModalContent({ onClose }: { onClose: () => void }) {
   }).current
 
   return (
-    <m.div
-      layout
-      className="bg-theme-background center relative flex size-full flex-col items-center justify-center overflow-scroll pb-14 sm:size-4/5 sm:rounded-xl sm:shadow-xl"
-    >
+    <div className="bg-theme-background center relative flex size-full flex-col items-center justify-center overflow-hidden pb-14 sm:size-4/5 sm:rounded-xl sm:shadow-xl">
       <div className="relative mx-auto flex max-h-full w-full justify-center">
         <AnimatePresence initial={false} custom={direction} mode="popLayout">
           <m.div
@@ -273,7 +270,7 @@ export function GuideModalContent({ onClose }: { onClose: () => void }) {
           </Button>
         </div>
       </div>
-    </m.div>
+    </div>
   )
 }
 
