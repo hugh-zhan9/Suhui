@@ -130,7 +130,7 @@ export function Trending({
           data?.data?.map((item, index) => (
             <div className="relative m-4" key={item.feed.id}>
               <TrendingFeedCard item={item} />
-              <div className="absolute inset-0 -left-5 -top-6 overflow-hidden rounded-xl">
+              <div className="pointer-events-none absolute inset-0 -left-5 -top-6 overflow-hidden rounded-xl">
                 <div
                   className={cn(
                     "center absolute -left-5 -top-6 size-12 rounded-br-3xl pl-4 pt-5 text-xs",
