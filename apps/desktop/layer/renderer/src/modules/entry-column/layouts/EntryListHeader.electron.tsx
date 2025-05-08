@@ -174,7 +174,7 @@ const PreviewHeaderInfoWrapper: Component = ({ children }) => {
       </div>
       <button
         type="button"
-        className="text-accent cursor-button hover:bg-fill-quaternary -mr-2 rounded px-2 py-0.5 font-semibold"
+        className="text-accent cursor-button from-accent/10 via-accent/15 to-accent/20 hover:bg-accent animate-gradient-x -mr-2 flex items-center gap-1.5 rounded-md bg-gradient-to-r px-3 py-1 font-semibold transition-all duration-300 hover:text-white"
         onClick={() => {
           const { feedId, listId } = getRouteParams()
           if (!feedId) return
@@ -187,6 +187,7 @@ const PreviewHeaderInfoWrapper: Component = ({ children }) => {
           })
         }}
       >
+        <i className="i-mgc-add-cute-re size-4" />
         {tCommon("words.follow")}
       </button>
     </div>

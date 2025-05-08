@@ -225,6 +225,7 @@ const FeedItemImpl = ({ view, feedId, className, isPreview }: FeedItemProps) => 
         <Button
           size="sm"
           variant="ghost"
+          buttonClassName="!p-1 mr-0.5"
           onClick={() => {
             follow({
               isList: false,
@@ -320,6 +321,7 @@ const ListItemImpl: Component<{
         <Button
           size="sm"
           variant="ghost"
+          buttonClassName="!p-1 mr-0.5"
           onClick={() => {
             follow({
               isList: true,
