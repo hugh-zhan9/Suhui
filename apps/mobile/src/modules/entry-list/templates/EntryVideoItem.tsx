@@ -6,6 +6,7 @@ import { Linking, View } from "react-native"
 
 import { getGeneralSettings } from "@/src/atoms/settings/general"
 import { Image } from "@/src/components/ui/image/Image"
+import { ItemPressableStyle } from "@/src/components/ui/pressable/enum"
 import { ItemPressable } from "@/src/components/ui/pressable/ItemPressable"
 import { openLink } from "@/src/lib/native"
 import { toast } from "@/src/lib/toast"
@@ -26,7 +27,7 @@ export const EntryVideoItem = memo(({ id }: { id: string }) => {
     <View className="m-1">
       <VideoContextMenu entryId={id}>
         <ItemPressable
-          className="overflow-hidden rounded-md"
+          itemStyle={ItemPressableStyle.Plain}
           onPress={() => {
             unreadSyncService.markEntryAsRead(id)
             tracker.navigateEntry({
