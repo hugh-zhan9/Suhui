@@ -88,7 +88,7 @@ function Switch({
         className={cn(
           "bg-background relative z-[1] flex items-center justify-center rounded-full text-neutral-500 shadow-lg ring-0 dark:text-neutral-400 [&_svg]:size-3",
         )}
-        layout
+        layout={isTapped}
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
         style={{
           width: 18,
