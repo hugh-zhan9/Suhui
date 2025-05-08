@@ -189,7 +189,7 @@ const PreviewHeaderInfoWrapper: Component = ({ children }) => {
           })
         }}
       >
-        <i className="i-mgc-add-cute-re size-4" />
+        <i className="i-mgc-add-cute-fi size-4" />
         {tCommon("words.follow")}
       </button>
     </div>
