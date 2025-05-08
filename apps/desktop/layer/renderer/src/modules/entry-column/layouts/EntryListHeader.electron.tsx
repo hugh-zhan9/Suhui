@@ -157,24 +157,26 @@ const PreviewHeaderInfoWrapper: Component = ({ children }) => {
 
   const navigate = useNavigate()
   return (
-    <div className="grid w-full grid-cols-[auto_1fr_auto] items-center gap-2">
-      <button
-        type="button"
-        className="cursor-button text-text-secondary hover:text-accent inline-flex items-center gap-1 duration-200"
-        onClick={(e) => {
-          e.stopPropagation()
-          navigate(previewBackPath() || "/")
-        }}
-      >
-        <i className="i-mingcute-left-line size-4" />
-        {tCommon("words.back")}
-      </button>
-      <div className="relative flex justify-center">
-        <div className="absolute inset-0 flex items-center justify-center">{children}</div>
+    <div className="flex w-full flex-col">
+      <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-2">
+        <button
+          type="button"
+          className="cursor-button text-text-secondary hover:text-accent inline-flex items-center gap-1 duration-200"
+          onClick={(e) => {
+            e.stopPropagation()
+            navigate(previewBackPath() || "/")
+          }}
+        >
+          <i className="i-mingcute-left-line size-4" />
+          {tCommon("words.back")}
+        </button>
+        <div className="relative flex justify-center">{children}</div>
+        <div />
       </div>
+
       <button
         type="button"
-        className="text-accent cursor-button from-accent/10 via-accent/15 to-accent/20 hover:bg-accent animate-gradient-x -mr-2 flex items-center gap-1.5 rounded-md bg-gradient-to-r px-3 py-1 font-semibold transition-all duration-300 hover:text-white"
+        className="text-accent cursor-button from-accent/10 via-accent/15 to-accent/20 hover:bg-accent animate-gradient-x -mx-4 mt-2 flex place-items-center justify-center gap-3 bg-gradient-to-r px-3 py-1 font-semibold transition-all duration-300 hover:text-white"
         onClick={() => {
           const { feedId, listId } = getRouteParams()
           if (!feedId) return

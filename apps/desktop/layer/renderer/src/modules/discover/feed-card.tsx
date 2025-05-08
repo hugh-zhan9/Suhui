@@ -77,7 +77,7 @@ export const FeedCard: FC<{
           <>
             <CardContent className="p-0">
               <div className="flex justify-between gap-4">
-                <div className="flex items-center gap-3 text-sm text-zinc-500 dark:text-zinc-400">
+                <div className="text-text-secondary flex items-center gap-3 text-sm">
                   {!!item.analytics?.subscriptionCount && (
                     <div className="flex items-center gap-1.5">
                       <i className="i-mgc-user-3-cute-re" />
