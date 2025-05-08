@@ -413,7 +413,7 @@ const RecommendationListItem = ({
 
         {maintainers.length > 0 && (
           <div className="text-text-secondary mt-2 flex items-center text-xs">
-            <i className="i-mingcute-hammer-line mr-1 shrink-0 translate-y-0.5 self-start" />
+            <i className="i-mgc-hammer-cute-re mr-1 shrink-0 translate-y-0.5 self-start" />
             <span>
               {maintainers.map((m, i) => (
                 <span key={m}>
