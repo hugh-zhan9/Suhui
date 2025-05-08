@@ -275,7 +275,6 @@
   "register.confirm_password": "確認密碼",
   "register.email": "電子信箱",
   "register.login": "登入",
-  "register.note": "已經有帳號了嗎？ <LoginLink />",
   "register.password": "密碼",
   "register.submit": "創建帳號",
   "resize.tooltip.double_click_to_collapse": "<b>雙擊</b>以摺疊",

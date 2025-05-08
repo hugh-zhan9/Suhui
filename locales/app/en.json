@@ -299,7 +299,6 @@
   "register.confirm_password": "Confirm Password",
   "register.email": "Email",
   "register.login": "Login",
-  "register.note": "Already have an account? <LoginLink />",
   "register.password": "Password",
   "register.submit": "Create account",
   "resize.tooltip.double_click_to_collapse": "<b>Double click</b> to collapse",
