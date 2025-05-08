@@ -3,7 +3,6 @@ import { isBizId } from "@follow/utils/utils"
 import { useMutation } from "@tanstack/react-query"
 import { debounce } from "es-toolkit/compat"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { toast } from "sonner"
 
 import { useGeneralSettingKey } from "~/atoms/settings/general"
 import { useRouteParams } from "~/hooks/biz/useRouteParams"
@@ -102,12 +101,6 @@ const useRemoteEntries = (): UseEntriesReturn => {
   useEffect(() => {
     setPauseQuery(hasUpdate)
   }, [hasUpdate])
-
-  useEffect(() => {
-    if (query.isError) {
-      toast.error(query.error.message)
-    }
-  }, [query.isError])
 
   const refetch = useCallback(async () => void query.refetch(), [query])
   const fetchNextPage = useCallback(async () => void query.fetchNextPage(), [query])
