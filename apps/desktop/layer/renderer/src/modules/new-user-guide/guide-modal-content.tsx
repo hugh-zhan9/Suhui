@@ -1,6 +1,7 @@
 import { Logo } from "@follow/components/icons/logo.jsx"
 import { Button } from "@follow/components/ui/button/index.js"
 import { Kbd } from "@follow/components/ui/kbd/Kbd.js"
+import { ScrollArea } from "@follow/components/ui/scroll-area/index.js"
 import { tracker } from "@follow/tracker"
 import { cn } from "@follow/utils/utils"
 import { AnimatePresence, m } from "motion/react"
@@ -188,13 +189,15 @@ export function GuideModalContent({ onClose }: { onClose: () => void }) {
                 )}
               </div>
             )}
-            {status === "initial" ? (
-              <Intro />
-            ) : status === "active" ? (
-              guideSteps[step - 1]!.content
-            ) : status === "complete" ? (
-              <Outtro />
-            ) : null}
+            <ScrollArea.ScrollArea viewportClassName="px-6">
+              {status === "initial" ? (
+                <Intro />
+              ) : status === "active" ? (
+                guideSteps[step - 1]!.content
+              ) : status === "complete" ? (
+                <Outtro />
+              ) : null}
+            </ScrollArea.ScrollArea>
           </m.div>
         </AnimatePresence>
       </div>
