@@ -105,6 +105,7 @@ const StateHandler = () => {
   }, [jotaiStore, nameAtom, navigation, navigationInstance])
   return null
 }
+
 const ScreenItemsMapper = () => {
   const chainCtxValue = use(ChainNavigationContext)
   const routes = useAtomValue(chainCtxValue.routesAtom)
