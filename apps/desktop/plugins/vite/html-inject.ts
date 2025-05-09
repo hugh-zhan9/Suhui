@@ -1,6 +1,5 @@
+import type { env as EnvType } from "@follow/shared/env.desktop"
 import type { PluginOption } from "vite"
-
-import type { env as EnvType } from "../../../../packages/shared/src/env"
 
 export function htmlInjectPlugin(env: typeof EnvType): PluginOption {
   return {

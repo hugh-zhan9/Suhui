@@ -27,7 +27,7 @@ export const MediaCarousel = ({
   media: MediaModel[]
   onPreview?: () => void
   aspectRatio: number
-  view?: FeedViewType
+  view: FeedViewType
 }) => {
   const [containerWidth, setContainerWidth] = useState(0)
   const containerHeight = Math.floor(containerWidth / aspectRatio)
@@ -108,6 +108,7 @@ export const MediaCarousel = ({
                       height={containerHeight}
                       width={containerWidth}
                       placeholder={ImageItem}
+                      view={view}
                     />
                   </ImageContextMenu>
                 )

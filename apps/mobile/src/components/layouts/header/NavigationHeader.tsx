@@ -3,8 +3,8 @@ import { EventBus } from "@follow/utils/src/event-bus"
 import type { FC, PropsWithChildren, ReactNode } from "react"
 import {
   createElement,
+  use,
   useCallback,
-  useContext,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -84,7 +84,7 @@ const useHideableBottom = (
     })
   }, [hideableBottomRef, largeHeaderHeight, originalDefaultHeaderHeight])
 
-  const { reAnimatedScrollY } = useContext(ScreenItemContext)!
+  const { reAnimatedScrollY } = use(ScreenItemContext)!
   useAnimatedReaction(
     () => reAnimatedScrollY.value,
     (value) => {
@@ -192,9 +192,9 @@ export const InternalNavigationHeader = ({
 
   const border = useColor("opaqueSeparator")
   const opacityAnimated = useSharedValue(0)
-  const { reAnimatedScrollY } = useContext(ScreenItemContext)!
+  const { reAnimatedScrollY } = use(ScreenItemContext)!
 
-  const setHeaderHeight = useContext(SetNavigationHeaderHeightContext)
+  const setHeaderHeight = use(SetNavigationHeaderHeightContext)
 
   useAnimatedReaction(
     () => reAnimatedScrollY.value,
@@ -323,26 +323,27 @@ export const InternalNavigationHeader = ({
             marginHorizontal: titleMarginHorizontal,
           }}
         >
-          <View className="shrink" style={{ flexBasis: rightWidth }} />
-
           {headerTitleAbsolute ? (
             <View />
           ) : (
-            <View>
+            <View className="flex-row">
+              <View className="shrink" style={{ width: rightWidth }} />
               {headerTitle}
 
               {/* Only show loading indicator when headerTitle is not absolute */}
-              {!headerTitleAbsolute && isLoading && (
-                <View
-                  className="absolute right-0 z-10"
-                  style={{ transform: [{ translateX: "100%" }, { scale: 0.74 }] }}
-                >
-                  <PlatformActivityIndicator size="small" />
-                </View>
-              )}
+              <View>
+                {!headerTitleAbsolute && isLoading && (
+                  <View
+                    className="absolute right-0 z-10"
+                    style={{ transform: [{ translateX: "100%" }, { scale: 0.74 }] }}
+                  >
+                    <PlatformActivityIndicator size="small" />
+                  </View>
+                )}
+              </View>
+              <View className="shrink" style={{ width: leftWidth }} />
             </View>
           )}
-          <View className="shrink" style={{ flexBasis: leftWidth }} />
         </Animated.View>
 
         {/* Right */}

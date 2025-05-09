@@ -31,26 +31,7 @@ export function createDependencyChunksPlugin(dependencies: string[][]): Plugin {
         if (matchedDep !== -1) {
           return `vendor/${matchedDep}`
         }
-        // const chunkMap: Record<string, string[]> = {
-        //   modules: ["/src/modules"],
-        //   infra: [
-        //     "/src/store",
-        //     "/src/atoms",
-        //     "/src/database",
-        //     "/src/services",
-        //     "/src/initialize",
-        //     "/src/lib",
-        //     "/src/queries",
-        //   ],
-        //   components: ["/src/components", "/src/hooks"],
-        //   packages: ["@follow/"],
-        //   app: ["/src/pages", "/src/providers", "/src/constants", "/src/App", "/src/main"],
-        // }
-        // for (const [chunk, paths] of Object.entries(chunkMap)) {
-        //   if (paths.some((path) => id.includes(path))) {
-        //     return chunk
-        //   }
-        // }
+
         return null
       }
     },

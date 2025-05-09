@@ -83,7 +83,22 @@ export const createApp = async () => {
 
 if (!isVercel) {
   createApp().then(async (app) => {
-    await app.listen({ port: 2234 })
+    await app.listen({ port: 2234, host: "0.0.0.0" })
     console.info("Server is running on http://localhost:2234")
+    const ip = getIPAddress()
+
+    if (ip) console.info(`Server is running on http://${ip}:2234`)
   })
+}
+function getIPAddress() {
+  const interfaces = require("node:os").networkInterfaces()
+  for (const devName in interfaces) {
+    const iface = interfaces[devName]
+
+    for (const alias of iface) {
+      if (alias.family === "IPv4" && alias.address !== "127.0.0.1" && !alias.internal)
+        return alias.address
+    }
+  }
+  return "0.0.0.0"
 }

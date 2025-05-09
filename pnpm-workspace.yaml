@@ -1,8 +1,7 @@
 packages:
   - apps/*
-  - packages/*
-  - apps/desktop/*
-  - apps/desktop/src/*
+  - packages/**/*
+  - apps/desktop/layer/*
   - "!apps/mobile/native/example"
   - apps/mobile/web-app
   - "!**/example"
@@ -26,3 +25,6 @@ onlyBuiltDependencies:
   - sharp
   - simple-git-hooks
   - utf-8-validate
+
+catalog:
+  typescript: "5.8.3"

@@ -4,9 +4,8 @@ import { initializeDayjs } from "@follow/components/dayjs"
 import { initAnalytics } from "./analytics"
 import { initSentry } from "./sentry"
 
-export const initialize = () => {
-  initializeDayjs()
-  initI18n()
+export const initialize = async () => {
   initAnalytics()
-  initSentry()
+  initializeDayjs()
+  await Promise.all([initI18n(), initSentry()])
 }

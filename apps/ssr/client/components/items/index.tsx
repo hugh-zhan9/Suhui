@@ -27,7 +27,7 @@ export const Item = ({
   feed?: Feed
   view: FeedViewType
 }) => {
-  const renderContent = useMemo(() => {
+  return useMemo(() => {
     switch (true) {
       case viewsRenderType.Normal.includes(view): {
         return <NormalList entries={entries} feed={feed} />
@@ -40,8 +40,6 @@ export const Item = ({
       }
     }
   }, [entries, feed, view])
-
-  return <div>{renderContent}</div>
 }
 
 const NormalList: FC<{
@@ -52,20 +50,18 @@ const NormalList: FC<{
   return (
     <>
       {entries?.map((entry) => (
-        <a className="relative" href={entry.url || void 0} target="_blank" key={entry.id}>
-          <div className="rounded-xl pl-3 duration-300">
-            <NormalListItem
-              withDetails
-              entryId={entry.id}
-              entryPreview={{
-                entries: entry,
-                feeds: feed?.feed || entry.feeds!,
-                read: true,
-                feedId: feed?.feed.id || entry.feeds?.id!,
-              }}
-            />
-          </div>
-        </a>
+        <div className="relative cursor-default" key={entry.id}>
+          <NormalListItem
+            withDetails
+            entryId={entry.id}
+            entryPreview={{
+              entries: entry,
+              feeds: feed?.feed || entry.feeds!,
+              read: true,
+              feedId: feed?.feed.id || entry.feeds?.id!,
+            }}
+          />
+        </div>
       ))}
     </>
   )

@@ -106,7 +106,6 @@ export const EntrySocialItem = memo(({ entryId }: { entryId: string }) => {
           <View className="ml-10 flex flex-row flex-wrap justify-between">
             <Galeria urls={memoedMediaUrlList}>
               {media.map((mediaItem, index) => {
-                // TODO: support video
                 const imageUrl =
                   mediaItem.type === "video"
                     ? mediaItem.preview_image_url
@@ -144,6 +143,7 @@ export const EntrySocialItem = memo(({ entryId }: { entryId: string }) => {
                         height={mediaItem.height}
                         width={mediaItem.width}
                         placeholder={ImageItem}
+                        view={FeedViewType.SocialMedia}
                       />
                     </View>
                   )

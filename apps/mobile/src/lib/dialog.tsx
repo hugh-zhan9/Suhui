@@ -6,7 +6,7 @@ import {
   createContext,
   createElement,
   isValidElement,
-  useContext,
+  use,
   useEffect,
   useMemo,
   useState,
@@ -15,6 +15,7 @@ import { Text, TouchableOpacity, View } from "react-native"
 import Animated, { SlideInUp, SlideOutUp } from "react-native-reanimated"
 import RootSiblings from "react-native-root-siblings"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import type { ImageProps } from "react-native-svg"
 import { useColor } from "react-native-uikit-colors"
 
 import { FullWindowOverlay } from "../components/common/FullWindowOverlay"
@@ -79,7 +80,7 @@ export type DialogComponent<Ctx = unknown> = FC<{ ctx: Ctx }> & Omit<DialogProps
 class DialogStatic {
   useDialogContext = () => {
     // eslint-disable-next-line react-hooks/rules-of-hooks
-    return useContext(DialogContext)
+    return use(DialogContext)
   }
 
   private currentStackedDialogs = new Set<string>()
@@ -87,7 +88,7 @@ class DialogStatic {
   // Components
   DialogConfirm: FC<{ onPress: () => void }> = ({ onPress }) => {
     // eslint-disable-next-line react-hooks/rules-of-hooks
-    const { setOnConfirm } = useContext(SetDialogDynamicButtonActionContext)
+    const { setOnConfirm } = use(SetDialogDynamicButtonActionContext)
 
     // eslint-disable-next-line react-hooks/rules-of-hooks
     useEffect(() => {
@@ -100,9 +101,9 @@ class DialogStatic {
 
   DialogCancel: FC<{ onPress: () => void }> = ({ onPress }) => {
     // eslint-disable-next-line react-hooks/rules-of-hooks
-    const { setOnCancel } = useContext(SetDialogDynamicButtonActionContext)
+    const { setOnCancel } = use(SetDialogDynamicButtonActionContext)
     // eslint-disable-next-line react-hooks/rules-of-hooks
-    const { dismiss } = useContext(DialogContext)!
+    const { dismiss } = use(DialogContext)!
 
     // eslint-disable-next-line react-hooks/rules-of-hooks
     useEffect(() => {
@@ -195,11 +196,11 @@ class DialogStatic {
 
     const siblings = new RootSiblings(
       (
-        <NavigationInstanceContext.Provider value={Navigation.rootNavigation}>
+        <NavigationInstanceContext value={Navigation.rootNavigation}>
           <FullWindowOverlay>
             <Overlay onPress={handleClose} />
             <Animated.View
-              className="bg-secondary-system-background absolute inset-x-0 -top-8 pt-8"
+              className="bg-secondary-system-background absolute inset-x-0 -top-8 z-10 pt-8"
               entering={entering}
               exiting={exiting}
             >
@@ -207,7 +208,7 @@ class DialogStatic {
               <DialogDynamicButtonActionProvider>
                 {Header}
                 <View className={cn("px-6 pb-4", Header ? "pt-4" : "pt-0")}>
-                  <DialogContext.Provider value={reactCtx}>{children}</DialogContext.Provider>
+                  <DialogContext value={reactCtx}>{children}</DialogContext>
                 </View>
 
                 <View className="flex-row gap-4 px-6 pb-4">
@@ -229,7 +230,7 @@ class DialogStatic {
               </DialogDynamicButtonActionProvider>
             </Animated.View>
           </FullWindowOverlay>
-        </NavigationInstanceContext.Provider>
+        </NavigationInstanceContext>
       ),
     )
 
@@ -257,11 +258,14 @@ const DefaultHeader = (props: { title?: string; headerIcon?: ReactNode }) => {
       {isValidElement(props.headerIcon) &&
         props.headerIcon &&
         typeof props.headerIcon === "object" &&
-        cloneElement(props.headerIcon as ReactElement, {
-          color: label,
-          height: 20,
-          width: 20,
-        })}
+        cloneElement(
+          props.headerIcon as ReactElement,
+          {
+            color: label,
+            height: 20,
+            width: 20,
+          } as Partial<ImageProps>,
+        )}
       <Text className="text-label text-lg font-semibold">{props.title}</Text>
     </View>
   )
@@ -275,7 +279,7 @@ const DialogDynamicButtonAction = (props: {
   className?: string
   textClassName?: string
 }) => {
-  const { onConfirm, onCancel } = useContext(DialogDynamicButtonActionContext)
+  const { onConfirm, onCancel } = use(DialogDynamicButtonActionContext)
   const caller =
     {
       confirm: onConfirm,
@@ -303,10 +307,10 @@ const DialogDynamicButtonActionProvider = (props: { children: ReactNode }) => {
   const ctx1 = useMemo(() => ({ onConfirm, onCancel }), [onConfirm, onCancel])
   const ctx2 = useMemo(() => ({ setOnConfirm, setOnCancel }), [setOnConfirm, setOnCancel])
   return (
-    <DialogDynamicButtonActionContext.Provider value={ctx1}>
-      <SetDialogDynamicButtonActionContext.Provider value={ctx2}>
+    <DialogDynamicButtonActionContext value={ctx1}>
+      <SetDialogDynamicButtonActionContext value={ctx2}>
         {props.children}
-      </SetDialogDynamicButtonActionContext.Provider>
-    </DialogDynamicButtonActionContext.Provider>
+      </SetDialogDynamicButtonActionContext>
+    </DialogDynamicButtonActionContext>
   )
 }

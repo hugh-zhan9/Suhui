@@ -1,5 +1,5 @@
 import { useSetAtom } from "jotai"
-import { useContext } from "react"
+import { use } from "react"
 import { Text, View } from "react-native"
 
 import { UserAvatar } from "@/src/components/ui/avatar/UserAvatar"
@@ -14,7 +14,7 @@ import { EntryTranslation } from "../entry-list/templates/EntryTranslation"
 export const EntryTitle = ({ title, entryId }: { title: string; entryId: string }) => {
   const translation = useEntryTranslation(entryId)
 
-  const { titleHeightAtom } = useContext(EntryContentContext)
+  const { titleHeightAtom } = use(EntryContentContext)
   const setTitleHeight = useSetAtom(titleHeightAtom)
 
   return (
@@ -27,6 +27,7 @@ export const EntryTitle = ({ title, entryId }: { title: string; entryId: string 
         className="text-label px-5 text-4xl font-bold leading-snug"
         source={title}
         target={translation?.title}
+        bilingual
       />
     </View>
   )

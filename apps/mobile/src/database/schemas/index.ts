@@ -30,7 +30,7 @@ export const subscriptionsTable = sqliteTable("subscriptions", {
   inboxId: text("inbox_id"),
   userId: text("user_id").notNull(),
   view: integer("view").notNull().$type<FeedViewType>(),
-  isPrivate: integer("is_private").notNull(),
+  isPrivate: integer("is_private", { mode: "boolean" }).notNull(),
   title: text("title"),
   category: text("category"),
   createdAt: text("created_at"),
@@ -66,7 +66,7 @@ export const usersTable = sqliteTable("users", {
   handle: text("handle"),
   name: text("name"),
   image: text("image"),
-  isMe: integer("is_me").notNull(),
+  isMe: integer("is_me", { mode: "boolean" }).notNull(),
   emailVerified: integer("email_verified", { mode: "boolean" }),
 })
 
@@ -121,9 +121,9 @@ export const translationsTable = sqliteTable(
   (t) => ({
     entryId: t.text("entry_id").notNull().primaryKey(),
     language: t.text("language").$type<SupportedLanguages>().notNull(),
-    title: t.text("title").notNull(),
-    description: t.text("description").notNull(),
-    content: t.text("content").notNull(),
+    title: t.text("title"),
+    description: t.text("description"),
+    content: t.text("content"),
     readabilityContent: t.text("readability_content"),
     createdAt: t
       .text("created_at")

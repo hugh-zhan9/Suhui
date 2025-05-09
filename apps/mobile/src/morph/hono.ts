@@ -209,7 +209,7 @@ class Morph {
       email: data.email,
       handle: data.handle,
       image: data.image,
-      isMe: isMe ? 1 : 0,
+      isMe: isMe ?? false,
       emailVerified: data.emailVerified,
       twoFactorEnabled: data.twoFactorEnabled,
     }

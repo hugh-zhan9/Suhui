@@ -2,6 +2,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs"
 import { resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 
+import type { env as EnvType } from "@follow/shared/env.desktop"
 import legacy from "@vitejs/plugin-legacy"
 import { minify as htmlMinify } from "html-minifier-terser"
 import { cyan, dim, green } from "kolorist"
@@ -12,7 +13,6 @@ import { analyzer } from "vite-bundle-analyzer"
 import mkcert from "vite-plugin-mkcert"
 import { VitePWA } from "vite-plugin-pwa"
 
-import type { env as EnvType } from "../../packages/shared/src/env.ssr"
 import { viteRenderBaseConfig } from "./configs/vite.render.config"
 import { createDependencyChunksPlugin } from "./plugins/vite/deps"
 import { htmlInjectPlugin } from "./plugins/vite/html-inject"
@@ -21,7 +21,7 @@ import { createPlatformSpecificImportPlugin } from "./plugins/vite/specific-impo
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url))
 const isCI = process.env.CI === "true" || process.env.CI === "1"
-const ROOT = "./src/renderer"
+const ROOT = "./layer/renderer"
 
 const devPrint = (): PluginOption => ({
   name: "dev-print",
@@ -115,6 +115,7 @@ export default ({ mode }) => {
         "/forget-password": proxyConfig,
         "/reset-password": proxyConfig,
         "/register": proxyConfig,
+        "/share": proxyConfig,
 
         ...(env.VITE_DEV_PROXY
           ? {
@@ -130,7 +131,7 @@ export default ({ mode }) => {
     resolve: {
       alias: {
         ...viteRenderBaseConfig.resolve?.alias,
-        "@follow/logger": resolve(__dirname, "../../packages/logger/web.ts"),
+        "@follow/logger": resolve(__dirname, "../../packages/internal/logger/web.ts"),
       },
     },
     plugins: [

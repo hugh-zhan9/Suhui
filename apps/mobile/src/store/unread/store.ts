@@ -12,6 +12,7 @@ import { createTransaction, createZustandStore } from "../internal/helper"
 import { getListFeedIds } from "../list/getters"
 import { getSubscriptionByView } from "../subscription/getter"
 import { getAllUnreadCount } from "./getter"
+import type { PublishAtTimeRangeFilter, UnreadUpdateOptions } from "./types"
 
 type SubscriptionId = string
 interface UnreadStore {
@@ -23,72 +24,85 @@ export const useUnreadStore = createZustandStore<UnreadStore>("unread")(() => ({
 const set = useUnreadStore.setState
 
 class UnreadSyncService {
-  async fetch() {
+  async resetFromRemote() {
     const res = await apiClient.reads.$get({
       query: {},
     })
 
-    await unreadActions.reset()
-    await unreadActions.upsertMany(res.data)
+    await unreadActions.upsertMany(res.data, { reset: true })
     return res.data
   }
 
   async updateBadgeAtBackground() {
-    await this.fetch()
+    await this.resetFromRemote()
     const allUnreadCount = getAllUnreadCount()
     setBadgeCountAsyncWithPermission(allUnreadCount)
     return true
   }
 
-  private async updateUnreadStatus(feedIds: string[]) {
-    await unreadActions.upsertMany(feedIds.map((id) => ({ subscriptionId: id, count: 0 })))
-    entryActions.markEntryReadStatusInSession({ feedIds, read: true })
+  private async updateUnreadStatus(feedIds: string[], time?: PublishAtTimeRangeFilter) {
+    if (time) {
+      await this.resetFromRemote()
+    } else {
+      await unreadActions.upsertMany(feedIds.map((id) => ({ subscriptionId: id, count: 0 })))
+    }
+    entryActions.markEntryReadStatusInSession({ feedIds, read: true, time })
     await EntryService.patchMany({
       feedIds,
       entry: { read: true },
+      time,
     })
   }
 
-  async markViewAsRead(
-    view: FeedViewType,
+  async markViewAsRead({
+    view,
+    filter,
+    time,
+  }: {
+    view: FeedViewType
     filter?: {
       feedId?: string
       listId?: string
       feedIdList?: string[]
       inboxId?: string
-    } | null,
-  ) {
+    } | null
+    time?: PublishAtTimeRangeFilter
+  }) {
     await apiClient.reads.all.$post({
       json: {
         view,
         ...filter,
+        ...time,
       },
     })
     if (filter?.feedIdList) {
-      this.updateUnreadStatus(filter.feedIdList)
+      this.updateUnreadStatus(filter.feedIdList, time)
     } else if (filter?.feedId) {
-      this.updateUnreadStatus([filter.feedId])
+      this.updateUnreadStatus([filter.feedId], time)
     } else if (filter?.listId) {
       const feedIds = getListFeedIds(filter.listId)
       if (feedIds) {
-        this.updateUnreadStatus(feedIds)
+        this.updateUnreadStatus(feedIds, time)
       }
     } else if (filter?.inboxId) {
-      this.updateUnreadStatus([filter.inboxId])
+      this.updateUnreadStatus([filter.inboxId], time)
     } else {
       const subscriptionIds = getSubscriptionByView(view)
-      this.updateUnreadStatus(subscriptionIds)
+      this.updateUnreadStatus(subscriptionIds, time)
     }
   }
 
-  async markFeedAsRead(feedId: string | string[]) {
+  async markFeedAsRead(feedId: string | string[], time?: PublishAtTimeRangeFilter) {
     const feedIds = Array.isArray(feedId) ? feedId : [feedId]
 
     await apiClient.reads.all.$post({
-      json: { feedIdList: feedIds },
+      json: {
+        feedIdList: feedIds,
+        ...time,
+      },
     })
 
-    this.updateUnreadStatus(feedIds)
+    this.updateUnreadStatus(feedIds, time)
   }
 
   async markEntryAsRead(entryId: string) {
@@ -169,9 +183,9 @@ class UnreadSyncService {
 }
 
 class UnreadActions {
-  upsertManyInSession(unreads: UnreadSchema[]) {
+  upsertManyInSession(unreads: UnreadSchema[], options?: UnreadUpdateOptions) {
     const state = useUnreadStore.getState()
-    const nextData = { ...state.data }
+    const nextData = options?.reset ? {} : { ...state.data }
     for (const unread of unreads) {
       nextData[unread.subscriptionId] = unread.count
     }
@@ -180,16 +194,17 @@ class UnreadActions {
     })
   }
 
-  async upsertMany(unreads: UnreadSchema[] | Record<SubscriptionId, number>) {
-    const tx = createTransaction()
-
+  async upsertMany(
+    unreads: UnreadSchema[] | Record<SubscriptionId, number>,
+    options?: UnreadUpdateOptions,
+  ) {
     const normalizedUnreads = Array.isArray(unreads)
       ? unreads
       : Object.entries(unreads).map(([subscriptionId, count]) => ({ subscriptionId, count }))
-    tx.store(() => this.upsertManyInSession(normalizedUnreads))
-    tx.persist(() => {
-      return UnreadService.upsertMany(normalizedUnreads)
-    })
+
+    const tx = createTransaction()
+    tx.store(() => this.upsertManyInSession(normalizedUnreads, options))
+    tx.persist(() => UnreadService.upsertMany(normalizedUnreads, options))
     await tx.run()
   }
 

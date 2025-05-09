@@ -1,7 +1,6 @@
-import { getGeneralSettings } from "@/src/atoms/settings/general"
+import { getActionLanguage } from "@/src/atoms/settings/general"
 import type { SummarySchema } from "@/src/database/schemas/types"
 import { apiClient } from "@/src/lib/api-fetch"
-import type { SupportedLanguages } from "@/src/lib/language"
 import { summaryService } from "@/src/services/summary"
 
 import { getEntry } from "../entry/getter"
@@ -111,30 +110,24 @@ class SummarySyncService {
       state.generatingStatus[entryId] = SummaryGeneratingStatus.Pending
     })
 
-    const { actionLanguage } = getGeneralSettings()
-
+    const actionLanguage = getActionLanguage()
     // Use Our AI to generate summary
     const pendingPromise = apiClient.ai.summary
       .$get({
         query: {
           id: entryId,
-          language: actionLanguage as SupportedLanguages,
+          language: actionLanguage,
           target,
         },
       })
       .then((summary) => {
         immerSet((state) => {
-          if (!summary.data) {
-            state.generatingStatus[entryId] = SummaryGeneratingStatus.Error
-            return ""
-          }
-
           state.data[entryId] = {
             lang: actionLanguage,
-            summary: target === "content" ? summary.data : state.data[entryId]?.summary || "",
+            summary: target === "content" ? summary.data || "" : state.data[entryId]?.summary || "",
             readabilitySummary:
               target === "readabilityContent"
-                ? summary.data
+                ? summary.data || ""
                 : state.data[entryId]?.readabilitySummary || null,
             lastAccessed: Date.now(),
           }

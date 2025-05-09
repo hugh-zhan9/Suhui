@@ -14,25 +14,25 @@ import type {
   usersTable,
 } from "."
 
-export type SubscriptionSchema = typeof subscriptionsTable.$inferSelect
+export type SubscriptionSchema = typeof subscriptionsTable.$inferInsert
 
-export type FeedSchema = typeof feedsTable.$inferSelect
+export type FeedSchema = typeof feedsTable.$inferInsert
 
-export type InboxSchema = typeof inboxesTable.$inferSelect
+export type InboxSchema = typeof inboxesTable.$inferInsert
 
-export type ListSchema = typeof listsTable.$inferSelect
+export type ListSchema = typeof listsTable.$inferInsert
 
-export type UnreadSchema = typeof unreadTable.$inferSelect
+export type UnreadSchema = typeof unreadTable.$inferInsert
 
-export type UserSchema = typeof usersTable.$inferSelect
+export type UserSchema = typeof usersTable.$inferInsert
 
-export type EntrySchema = typeof entriesTable.$inferSelect
+export type EntrySchema = typeof entriesTable.$inferInsert
 
-export type CollectionSchema = typeof collectionsTable.$inferSelect
+export type CollectionSchema = typeof collectionsTable.$inferInsert
 
-export type SummarySchema = typeof summariesTable.$inferSelect
+export type SummarySchema = typeof summariesTable.$inferInsert
 
-export type TranslationSchema = typeof translationsTable.$inferSelect
+export type TranslationSchema = typeof translationsTable.$inferInsert
 
 export type ImageSchema = typeof imagesTable.$inferInsert
 

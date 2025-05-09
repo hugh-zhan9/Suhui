@@ -1,3 +1,5 @@
+import { APPLE_APP_STORE_ID } from "@follow/constants"
+
 import { defineMetadata } from "~/meta-handler"
 
 export default defineMetadata(async ({ params, apiClient, origin, throwError }) => {
@@ -23,6 +25,11 @@ export default defineMetadata(async ({ params, apiClient, origin, throwError }) 
       data: list.data,
       path: apiClient.lists.$url({ query: { listId } }).pathname,
       key: `lists.$get,query:listId=${listId}`,
+    },
+    {
+      type: "meta",
+      property: "apple-itunes-app",
+      content: `app-id=${APPLE_APP_STORE_ID}, app-argument=follow://add?id=${listId}&type=list`,
     },
   ]
 })

@@ -15,6 +15,7 @@ import { useSubscription } from "@/src/store/subscription/hooks"
 import { getInboxStoreId } from "@/src/store/subscription/utils"
 import { useUnreadCount } from "@/src/store/unread/hooks"
 
+import { InboxContextMenu } from "../../context-menu/inbox"
 import type { SubscriptionItemBaseProps } from "./types"
 import { UnreadCount } from "./UnreadCount"
 
@@ -33,29 +34,31 @@ export const InboxItem = memo(({ id, isFirst, isLast }: SubscriptionItemBaseProp
         "rounded-b-[10px]": isLast,
       })}
     >
-      <ItemPressable
-        itemStyle={ItemPressableStyle.Grouped}
-        className="h-12 flex-row items-center px-3"
-        onPress={() => {
-          selectFeed({ type: "inbox", inboxId: id })
-          navigation.pushControllerView(FeedScreen, {
-            feedId: id,
-          })
-        }}
-      >
-        <View className="ml-0.5 overflow-hidden rounded">
-          <InboxCuteFiIcon
-            height={20}
-            width={20}
-            color={colorScheme === "dark" ? "white" : "black"}
-          />
-        </View>
+      <InboxContextMenu inboxId={id}>
+        <ItemPressable
+          itemStyle={ItemPressableStyle.Grouped}
+          className="h-12 flex-row items-center px-3"
+          onPress={() => {
+            selectFeed({ type: "inbox", inboxId: id })
+            navigation.pushControllerView(FeedScreen, {
+              feedId: id,
+            })
+          }}
+        >
+          <View className="ml-0.5 overflow-hidden rounded">
+            <InboxCuteFiIcon
+              height={20}
+              width={20}
+              color={colorScheme === "dark" ? "white" : "black"}
+            />
+          </View>
 
-        <Text className="text-label font-medium" style={{ marginLeft: GROUPED_ICON_TEXT_GAP }}>
-          {subscription.title}
-        </Text>
-        <UnreadCount unread={unreadCount} className="ml-auto" />
-      </ItemPressable>
+          <Text className="text-label font-medium" style={{ marginLeft: GROUPED_ICON_TEXT_GAP }}>
+            {subscription.title}
+          </Text>
+          <UnreadCount unread={unreadCount} className="ml-auto" />
+        </ItemPressable>
+      </InboxContextMenu>
     </Animated.View>
   )
 })

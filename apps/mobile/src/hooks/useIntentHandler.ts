@@ -26,9 +26,10 @@ export function useIntentHandler() {
       }
 
       navigation.presentControllerView(FollowScreen, {
-        id: searchParams.get("id") ?? undefined,
-        type: (searchParams.get("type") as "url" | "feed" | "list") ?? undefined,
-        url: searchParams.get("url") ?? undefined,
+        id: searchParams.id ?? undefined,
+        type: (searchParams.type as "url" | "feed" | "list") ?? undefined,
+        url: searchParams.url ?? undefined,
+        view: searchParams.view ?? undefined,
       })
     }
   }, [incomingUrl, navigation])
@@ -37,19 +38,54 @@ export function useIntentHandler() {
 // follow://add?id=41147805276726272
 // follow://add?type=list&id=60580187699502080
 // follow://add?type=url&url=rsshub://rsshub/routes/en
-const extractParamsFromDeepLink = (incomingUrl: string | null): URLSearchParams | null => {
+// follow://list?id=60580187699502080
+// follow://feed?id=60580187699502080&view=1
+const extractParamsFromDeepLink = (
+  incomingUrl: string | null,
+): { id: string | null; type: string | null; url?: string | null; view?: string | null } | null => {
   if (!incomingUrl) return null
 
   try {
     const url = new URL(incomingUrl)
-    if (url.protocol !== "follow:" || url.hostname !== "add") return null
+    if (url.protocol !== "follow:") return null
 
-    const { searchParams } = url
+    switch (url.hostname) {
+      case "add": {
+        const { searchParams } = url
+        if (!searchParams.has("id") && !searchParams.has("url")) return null
 
-    // If no valid parameters were found (neither id nor url)
-    if (!searchParams.has("id") && !searchParams.has("url")) return null
+        return {
+          id: searchParams.get("id"),
+          type: searchParams.get("type"),
+          url: searchParams.get("url"),
+          view: searchParams.get("view"),
+        }
+      }
+      case "list": {
+        const { searchParams } = url
+        if (!searchParams.has("id") && !searchParams.has("url")) return null
 
-    return searchParams
+        return {
+          id: searchParams.get("id"),
+          type: "list",
+          view: searchParams.get("view"),
+        }
+      }
+      case "feed": {
+        const { searchParams } = url
+        if (!searchParams.has("id") && !searchParams.has("url")) return null
+
+        return {
+          id: searchParams.get("id"),
+          type: "feed",
+          url: searchParams.get("url"),
+          view: searchParams.get("view"),
+        }
+      }
+      default: {
+        return null
+      }
+    }
   } catch {
     return null
   }

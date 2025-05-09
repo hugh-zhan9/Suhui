@@ -3,6 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useQuery } from "@tanstack/react-query"
 import { useEffect } from "react"
 import { Controller, useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 import { Alert, StyleSheet, Text, View } from "react-native"
 import { z } from "zod"
 
@@ -19,23 +20,23 @@ import { GroupedInsetListCard } from "@/src/components/ui/grouped/GroupedList"
 import { IconWithFallback } from "@/src/components/ui/icon/fallback-icon"
 import { PlatformActivityIndicator } from "@/src/components/ui/loading/PlatformActivityIndicator"
 import { PowerIcon } from "@/src/icons/power"
-import { apiClient } from "@/src/lib/api-fetch"
 import { useNavigation, useScreenIsInSheetModal } from "@/src/lib/navigation/hooks"
 import { useSetModalScreenOptions } from "@/src/lib/navigation/ScreenOptionsContext"
 import { toast } from "@/src/lib/toast"
 import { useList } from "@/src/store/list/hooks"
 import { listSyncServices } from "@/src/store/list/store"
 import { useSubscriptionByListId } from "@/src/store/subscription/hooks"
+import { subscriptionSyncService } from "@/src/store/subscription/store"
 import { accentColor } from "@/src/theme/colors"
 
 import { FeedViewSelector } from "../feed/view-selector"
 
 export const FollowList = (props: { id: string }) => {
   const { id } = props
-  const list = useList(id as string)
+  const list = useList(id)
   const { isLoading } = useQuery({
     queryKey: ["list", id],
-    queryFn: () => listSyncServices.fetchListById({ id: id as string }),
+    queryFn: () => listSyncServices.fetchListById({ id }),
     enabled: !list,
   })
 
@@ -51,27 +52,34 @@ export const FollowList = (props: { id: string }) => {
 }
 
 const formSchema = z.object({
-  view: z.string(),
-  isPrivate: z.boolean().optional(),
+  view: z.number(),
+  isPrivate: z.boolean().default(false),
   title: z.string().optional(),
 })
-const defaultValues = { view: FeedViewType.Articles.toString() }
 
 const Impl = (props: { id: string }) => {
+  const { t } = useTranslation()
+  const { t: tCommon } = useTranslation("common")
   const { id } = props
-  const list = useList(id as string)!
+  const list = useList(id)
 
-  const isSubscribed = useSubscriptionByListId(id as string)
+  const subscription = useSubscriptionByListId(id)
+  const isSubscribed = !!subscription
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues,
+    defaultValues: {
+      view: list?.view ?? FeedViewType.Articles,
+      isPrivate: subscription?.isPrivate,
+      title: subscription?.title ?? undefined,
+    },
   })
   const { isValid, isDirty } = form.formState
 
   const isModal = useScreenIsInSheetModal()
   const navigation = useNavigation()
   const submit = async () => {
+    if (!list) return
     const payload = form.getValues()
 
     const subscribeOrUpdate = async () => {
@@ -82,11 +90,16 @@ const Impl = (props: { id: string }) => {
         isPrivate: payload.isPrivate,
         title: payload.title,
       }
-      const $method = isSubscribed ? apiClient.subscriptions.$patch : apiClient.subscriptions.$post
 
-      await $method({
-        json: body,
-      })
+      if (isSubscribed) {
+        await subscriptionSyncService.edit({
+          ...subscription,
+          ...body,
+        })
+      } else {
+        await subscriptionSyncService.subscribe(body)
+      }
+
       if (isModal) {
         navigation.dismiss()
       } else {
@@ -125,19 +138,24 @@ const Impl = (props: { id: string }) => {
       gestureEnabled: !isDirty,
     })
   }, [isDirty, setModalOptions])
+
+  if (!list) {
+    return null
+  }
+
   return (
     <SafeNavigationScrollView
       className="bg-system-grouped-background"
       contentViewClassName="gap-y-4 mt-2"
       Header={
         <NavigationBlurEffectHeaderView
-          title={`${isSubscribed ? "Edit" : "Follow"} - ${list?.title}`}
+          title={`${isSubscribed ? tCommon("words.edit") : tCommon("words.follow")} - ${list?.title}`}
           headerRight={
             <HeaderSubmitTextButton
               isValid={isValid}
               onPress={form.handleSubmit(submit)}
               isLoading={isLoading}
-              label={isSubscribed ? "Save" : "Follow"}
+              label={isSubscribed ? tCommon("words.save") : tCommon("words.follow")}
             />
           }
         />
@@ -164,36 +182,37 @@ const Impl = (props: { id: string }) => {
       <GroupedInsetListCard className="gap-y-6 px-5 py-4">
         <FormProvider form={form}>
           <View className="-mx-4">
-            <FormLabel className="mb-4 pl-5" label="View" optional />
+            <FormLabel className="mb-4 pl-4" label={t("subscription_form.view")} optional />
 
             <FeedViewSelector readOnly value={list.view} />
           </View>
 
-          <View>
+          <View className="-mx-2.5">
             <Controller
               name="title"
               control={form.control}
               render={({ field: { onChange, ref, value } }) => (
                 <TextField
-                  label="Title"
-                  description="Custom title for this Feed. Leave empty to use the default."
+                  label={t("subscription_form.title")}
+                  description={t("subscription_form.title_description")}
                   onChangeText={onChange}
                   value={value}
                   ref={ref}
+                  wrapperClassName="ml-2.5"
                 />
               )}
             />
           </View>
 
-          <View>
+          <View className="-mx-1">
             <Controller
               name="isPrivate"
               control={form.control}
               render={({ field: { onChange, value } }) => (
                 <FormSwitch
                   value={value}
-                  label="Private"
-                  description="Private feeds are only visible to you."
+                  label={t("subscription_form.private_follow")}
+                  description={t("subscription_form.private_follow_description")}
                   onValueChange={onChange}
                   size="sm"
                 />

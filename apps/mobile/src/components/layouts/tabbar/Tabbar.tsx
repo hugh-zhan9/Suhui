@@ -1,6 +1,6 @@
 import { useAtom, useAtomValue } from "jotai"
 import type { FC } from "react"
-import { memo, useCallback, useContext, useEffect, useMemo } from "react"
+import { memo, use, useCallback, useEffect, useMemo } from "react"
 import type { StyleProp, TextStyle } from "react-native"
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native"
 import Animated, {
@@ -28,12 +28,12 @@ import { BottomTabBarVisibleContext } from "./contexts/BottomTabBarVisibleContex
 export const Tabbar: FC<{
   onPress?: (index: number) => void
 }> = ({ onPress: onPressProp }) => {
-  const setTabBarHeight = useContext(SetBottomTabBarHeightContext)
+  const setTabBarHeight = use(SetBottomTabBarHeightContext)
 
   const insets = useSafeAreaInsets()
-  const tabBarVisible = useContext(BottomTabBarVisibleContext)
+  const tabBarVisible = use(BottomTabBarVisibleContext)
 
-  const tabContext = useContext(BottomTabContext)
+  const tabContext = use(BottomTabContext)
   const tabScreens = useAtomValue(tabContext.tabScreensAtom)
   const [selectedIndex, setSelectedIndex] = useAtom(tabContext.currentIndexAtom)
   const translateY = useSharedValue(0)
@@ -68,7 +68,7 @@ export const Tabbar: FC<{
     <Animated.View
       pointerEvents={tabScreens.length > 0 ? "auto" : "none"}
       accessibilityRole="tablist"
-      className="absolute inset-x-0 bottom-0 z-10"
+      className="absolute inset-x-0 bottom-0"
       style={{
         paddingBottom: Math.max(insets.bottom, 8),
         transform: [{ translateY }],
@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
 })
 
 const TabBarBackground = () => {
-  const { opacity } = useContext(BottomTabBarBackgroundContext)
+  const { opacity } = use(BottomTabBarBackgroundContext)
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,

@@ -1,3 +1,4 @@
+import { FeedViewType } from "@follow/constants"
 import { useEvent } from "expo"
 import type { VideoSource } from "expo-video"
 import { useVideoPlayer, VideoView } from "expo-video"
@@ -11,11 +12,13 @@ export function VideoPlayer({
   placeholder,
   width,
   height,
+  view,
 }: {
   source: VideoSource
   placeholder?: React.ReactNode
   width?: number
   height?: number
+  view: FeedViewType
 }) {
   const [isFullScreen, setIsFullScreen] = useState(false)
   const viewViewRef = useRef<null | VideoView>(null)
@@ -35,8 +38,8 @@ export function VideoPlayer({
       <VideoView
         ref={viewViewRef}
         style={{
-          width: width ?? "100%",
-          height,
+          width: view === FeedViewType.Pictures ? width : "100%",
+          height: view === FeedViewType.Pictures ? height : undefined,
           aspectRatio: width && height ? width / height : 1,
         }}
         contentFit={isFullScreen ? "contain" : "cover"}

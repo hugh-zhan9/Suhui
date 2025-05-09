@@ -11,7 +11,7 @@ import { unreadSyncService, useUnreadStore } from "./store"
 export const usePrefetchUnread = () => {
   return useQuery({
     queryKey: ["unread"],
-    queryFn: () => unreadSyncService.fetch(),
+    queryFn: () => unreadSyncService.resetFromRemote(),
     staleTime: 5 * 1000 * 60, // 5 minutes
   })
 }
@@ -27,9 +27,14 @@ export const useAutoMarkAsRead = (entryId: string) => {
 
 export function useUnreadCountBadge() {
   const unreadCount = useUnreadCounts()
+  const { mutate, isPending } = useMutation({
+    mutationFn: (unread: number) => setBadgeCountAsyncWithPermission(unread),
+  })
   useEffect(() => {
-    setBadgeCountAsyncWithPermission(unreadCount)
-  }, [unreadCount])
+    if (!isPending) {
+      mutate(unreadCount)
+    }
+  }, [unreadCount, mutate, isPending])
 }
 
 export const useUnreadCount = (subscriptionId: string) => {

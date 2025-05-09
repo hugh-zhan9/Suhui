@@ -8,7 +8,7 @@ import Animated, { interpolate, useAnimatedStyle } from "react-native-reanimated
 import { useColor } from "react-native-uikit-colors"
 import type { MenuItemIconProps } from "zeego/lib/typescript/menu"
 
-import { getGeneralSettings, useGeneralSettingKey } from "@/src/atoms/settings/general"
+import { getActionLanguage, useGeneralSettingKey } from "@/src/atoms/settings/general"
 import { ActionBarItem } from "@/src/components/ui/action-bar/ActionBarItem"
 import { DropdownMenu } from "@/src/components/ui/context-menu"
 import { AiCuteReIcon } from "@/src/icons/ai_cute_re"
@@ -18,7 +18,6 @@ import { ShareForwardCuteReIcon } from "@/src/icons/share_forward_cute_re"
 import { StarCuteFiIcon } from "@/src/icons/star_cute_fi"
 import { StarCuteReIcon } from "@/src/icons/star_cute_re"
 import { Translate2CuteReIcon } from "@/src/icons/translate_2_cute_re"
-import type { SupportedLanguages } from "@/src/lib/language"
 import { hideIntelligenceGlowEffect, openLink, showIntelligenceGlowEffect } from "@/src/lib/native"
 import { toast } from "@/src/lib/toast"
 import { useIsEntryStarred } from "@/src/store/collection/hooks"
@@ -82,6 +81,7 @@ const HeaderRightActionsImpl = ({
   const showAISummarySetting = useGeneralSettingKey("summary") || !!entry?.settings?.summary
   const showAITranslationSetting =
     useGeneralSettingKey("translation") || !!entry?.settings?.translation
+  const showReadabilitySetting = !!entry?.settings?.readability
 
   const feed = useFeed(entry?.feedId as string, (feed) => feed && { feedId: feed.id })
   const subscription = useSubscription(feed?.feedId as string)
@@ -100,7 +100,11 @@ const HeaderRightActionsImpl = ({
 
   const handleShare = () => {
     if (!entry?.title || !entry?.url) return
-    Share.share({ title: entry.title, url: entry.url })
+    Share.share({
+      message: entry.url,
+      title: entry.title,
+      url: entry.url,
+    })
   }
 
   const toggleAISummary = () => {
@@ -128,7 +132,7 @@ const HeaderRightActionsImpl = ({
   const toggleAITranslation = () => {
     translationSyncService.generateTranslation({
       entryId,
-      language: getGeneralSettings().actionLanguage as SupportedLanguages,
+      language: getActionLanguage(),
       withContent: true,
       target: showReadability ? "readabilityContent" : "content",
     })
@@ -169,7 +173,7 @@ const HeaderRightActionsImpl = ({
       active: isStarred,
       iconColor: isStarred ? "#facc15" : undefined,
     },
-    {
+    !showReadabilitySetting && {
       key: "ShowReadability",
       title: "Show Readability",
       icon: <DocmentCuteReIcon />,
@@ -208,7 +212,7 @@ const HeaderRightActionsImpl = ({
     },
     {
       key: "CopyLink",
-      title: t("operation.copy_link"),
+      title: t("operation.copy_which", { which: t("operation.copy.link") }),
       iconIOS: { name: "link" },
       onPress: handleCopyLink,
       inMenu: true,

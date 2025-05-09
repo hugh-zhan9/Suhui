@@ -15,8 +15,11 @@ import { toast } from "@/src/lib/toast"
 import { EntryDetailScreen } from "@/src/screens/(stack)/entries/[entryId]/EntryDetailScreen"
 import { useIsEntryStarred } from "@/src/store/collection/hooks"
 import { collectionSyncService } from "@/src/store/collection/store"
+import { getFetchEntryPayload } from "@/src/store/entry/getter"
 import { useEntry } from "@/src/store/entry/hooks"
 import { unreadSyncService } from "@/src/store/unread/store"
+
+import { useSelectedFeed, useSelectedView } from "../screen/atoms"
 
 export const EntryItemContextMenu = ({
   id,
@@ -24,6 +27,8 @@ export const EntryItemContextMenu = ({
   view,
 }: PropsWithChildren<{ id: string; view: FeedViewType }>) => {
   const { t } = useTranslation()
+  const selectedView = useSelectedView()
+  const selectedFeed = useSelectedFeed()
   const entry = useEntry(id)
   const feedId = entry?.feedId
   const isEntryStarred = useIsEntryStarred(id)
@@ -60,6 +65,33 @@ export const EntryItemContextMenu = ({
         </ContextMenu.Preview>
 
         <ContextMenu.Item
+          key="MarkAsReadAbove"
+          onSelect={() => {
+            const payload = getFetchEntryPayload(selectedFeed, selectedView)
+            const { publishedAt } = entry
+            unreadSyncService.markViewAsRead({
+              view: selectedView,
+              filter: payload,
+              time: {
+                startTime: new Date(publishedAt).getTime() + 1,
+                endTime: Date.now(),
+              },
+            })
+          }}
+        >
+          <ContextMenu.ItemIcon
+            ios={{
+              name: "arrow.up",
+            }}
+          />
+          <ContextMenu.ItemTitle>
+            {t("operation.mark_all_as_read_which", {
+              which: t("operation.mark_all_as_read_which_above"),
+            })}
+          </ContextMenu.ItemTitle>
+        </ContextMenu.Item>
+
+        <ContextMenu.Item
           key="MarkAsRead"
           onSelect={() => {
             entry.read
@@ -75,6 +107,33 @@ export const EntryItemContextMenu = ({
               name: entry.read ? "circle.fill" : "checkmark.circle",
             }}
           />
+        </ContextMenu.Item>
+
+        <ContextMenu.Item
+          key="MarkAsReadBelow"
+          onSelect={() => {
+            const payload = getFetchEntryPayload(selectedFeed, selectedView)
+            const { publishedAt } = entry
+            unreadSyncService.markViewAsRead({
+              view: selectedView,
+              filter: payload,
+              time: {
+                startTime: 1,
+                endTime: new Date(publishedAt).getTime() - 1,
+              },
+            })
+          }}
+        >
+          <ContextMenu.ItemIcon
+            ios={{
+              name: "arrow.down",
+            }}
+          />
+          <ContextMenu.ItemTitle>
+            {t("operation.mark_all_as_read_which", {
+              which: t("operation.mark_all_as_read_which_below"),
+            })}
+          </ContextMenu.ItemTitle>
         </ContextMenu.Item>
 
         {feedId && view !== undefined && (

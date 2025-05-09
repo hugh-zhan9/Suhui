@@ -1,19 +1,10 @@
+import { extendConfig } from "@follow/configs/tailwindcss/web"
 import daisyui from "daisyui"
-import { merge, omit } from "es-toolkit/compat"
 import resolveConfig from "tailwindcss/resolveConfig"
 
-import { baseTwConfig } from "../../configs/tailwind.base.config"
 /** @type {import('tailwindcss').Config} */
 export default resolveConfig(
-  merge({}, baseTwConfig, {
-    ...baseTwConfig,
-    theme: {
-      extend: {
-        colors: {
-          ...omit(baseTwConfig.theme.extend.colors, "accent"),
-        },
-      },
-    },
+  extendConfig({
     content: [
       "./client/**/*.{ts,tsx}",
       "./index.html",
@@ -22,7 +13,7 @@ export default resolveConfig(
       "../../node_modules/rc-modal-sheet/**/*.{js,ts,tsx}",
       "../../packages/**/*.{ts,tsx}",
     ],
-    plugins: [...baseTwConfig.plugins, daisyui],
+    plugins: [daisyui],
     daisyui: {
       logs: false,
       darkTheme: "dark",
@@ -32,7 +23,7 @@ export default resolveConfig(
             "color-scheme": "light",
 
             primary: "#007AFF", //#0A84FF
-            accent: "#ff760a",
+            accent: "#FF5C00",
             "accent-content": "#fff",
             neutral: "#212427",
 
@@ -52,7 +43,7 @@ export default resolveConfig(
             "color-scheme": "dark",
 
             primary: "#0A84FF",
-            accent: "#ff760a",
+            accent: "#FF5C00",
             "accent-content": "#fff",
             neutral: "#2a2a2a",
             "base-100": "#121212",

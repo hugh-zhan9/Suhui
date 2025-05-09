@@ -43,6 +43,7 @@ export const EditProfileScreen = () => {
     },
     onSuccess: () => {
       toast.success("Profile updated")
+      setDirtyFields({})
     },
     onError: (error) => {
       toast.error(error.message)
@@ -64,7 +65,8 @@ export const EditProfileScreen = () => {
           headerRight={
             <HeaderSubmitTextButton
               label={t("words.save", { ns: "common" })}
-              isValid={isPending || Object.keys(dirtyFields).length === 0}
+              isValid={Object.keys(dirtyFields).length > 0}
+              isLoading={isPending}
               onPress={() => {
                 updateProfile()
               }}

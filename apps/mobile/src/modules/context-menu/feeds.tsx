@@ -14,6 +14,7 @@ import { views } from "@/src/constants/views"
 import { useNavigation } from "@/src/lib/navigation/hooks"
 import type { Navigation } from "@/src/lib/navigation/Navigation"
 import { toast } from "@/src/lib/toast"
+import { FollowScreen } from "@/src/screens/(modal)/FollowScreen"
 import { FeedScreen } from "@/src/screens/(stack)/feeds/[feedId]/FeedScreen"
 import { useEntryIdsByFeedId, usePrefetchEntries } from "@/src/store/entry/hooks"
 import { getFeed } from "@/src/store/feed/getter"
@@ -170,7 +171,18 @@ const generateSubscriptionContextMenu = (navigation: Navigation, id: string) => 
         </ContextMenu.SubContent>
       </ContextMenu.Sub>
 
-      <ContextMenu.Item key="Edit">
+      <ContextMenu.Item
+        key="Edit"
+        onSelect={() => {
+          const subscription = getSubscription(id)
+          if (!subscription || !subscription.feedId) return
+
+          navigation.presentControllerView(FollowScreen, {
+            type: "feed",
+            id: subscription.feedId,
+          })
+        }}
+      >
         <ContextMenu.ItemTitle>{t("operation.edit")}</ContextMenu.ItemTitle>
         <ContextMenu.ItemIcon
           ios={{
@@ -191,13 +203,17 @@ const generateSubscriptionContextMenu = (navigation: Navigation, id: string) => 
               const feed = getFeed(subscription.feedId)
               if (!feed) return
               setStringAsync(feed.url)
-              toast.success("Link copied to clipboard")
+              toast.success(t("operation.copy_which_success", { which: t("operation.copy.link") }))
               return
             }
           }
         }}
       >
-        <ContextMenu.ItemTitle>{t("operation.copy_link")}</ContextMenu.ItemTitle>
+        <ContextMenu.ItemTitle>
+          {t("operation.copy_which", {
+            which: t("operation.copy.link"),
+          })}
+        </ContextMenu.ItemTitle>
         <ContextMenu.ItemIcon
           ios={{
             name: "link",

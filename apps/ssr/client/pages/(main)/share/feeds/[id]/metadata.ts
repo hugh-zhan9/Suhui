@@ -1,4 +1,5 @@
 import type { GetHydrateData } from "@client/lib/helper"
+import { APPLE_APP_STORE_ID } from "@follow/constants"
 
 import { defineMetadata } from "~/meta-handler"
 
@@ -28,6 +29,11 @@ const meta = defineMetadata(async ({ params, apiClient, origin, throwError }) =>
       data: feed.data,
       path: apiClient.feeds.$url({ query: { id: feedId } }).pathname,
       key: `feeds.$get,query:id=${feedId}`,
+    },
+    {
+      type: "meta",
+      property: "apple-itunes-app",
+      content: `app-id=${APPLE_APP_STORE_ID}, app-argument=follow://add?id=${feedId}&type=feed`,
     },
   ] as const
 })

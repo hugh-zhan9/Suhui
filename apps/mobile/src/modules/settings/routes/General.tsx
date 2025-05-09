@@ -2,10 +2,11 @@ import { ACTION_LANGUAGE_KEYS } from "@follow/shared"
 import i18next from "i18next"
 import { useMemo } from "react"
 import { useTranslation } from "react-i18next"
-import { Text, View } from "react-native"
+import { View } from "react-native"
 
 import type { MobileSupportedLanguages } from "@/src/@types/constants"
 import { currentSupportedLanguages } from "@/src/@types/constants"
+import { defaultResources } from "@/src/@types/default-resource"
 import { setGeneralSetting, useGeneralSettingKey } from "@/src/atoms/settings/general"
 import {
   NavigationBlurEffectHeaderView,
@@ -13,7 +14,6 @@ import {
 } from "@/src/components/layouts/views/SafeNavigationScrollView"
 import { Select } from "@/src/components/ui/form/Select"
 import {
-  GroupedInsetListBaseCell,
   GroupedInsetListCard,
   GroupedInsetListCell,
   GroupedInsetListSectionHeader,
@@ -23,7 +23,7 @@ import { updateDayjsLocale } from "@/src/lib/i18n"
 import type { NavigationControllerView } from "@/src/lib/navigation/types"
 
 export function LanguageSelect({ settingKey }: { settingKey: "language" | "actionLanguage" }) {
-  const { t: tLang } = useTranslation("lang")
+  const { t } = useTranslation("settings")
   const languageMapWithTranslation = useMemo(() => {
     const languageKeys =
       settingKey === "language"
@@ -32,13 +32,18 @@ export function LanguageSelect({ settingKey }: { settingKey: "language" | "actio
             (a, b) => currentSupportedLanguages.indexOf(a) - currentSupportedLanguages.indexOf(b),
           )
 
-    return languageKeys.map((key) => ({
-      subLabel: settingKey === "language" ? tLang(`langs.${key}`, { lng: key }) : undefined,
-      label: tLang(`langs.${key}`),
-      value: key,
-    }))
-  }, [settingKey, tLang])
-  const language = useGeneralSettingKey(settingKey)
+    return [
+      settingKey === "actionLanguage" && {
+        label: t("general.action_language.default"),
+        value: "default",
+      },
+      ...languageKeys.map((key) => ({
+        label: defaultResources[key].lang.name,
+        value: key,
+      })),
+    ].filter((i) => typeof i !== "boolean")
+  }, [settingKey, t])
+  const language = useGeneralSettingKey(settingKey) as MobileSupportedLanguages | "default"
 
   return (
     <Select
@@ -50,7 +55,11 @@ export function LanguageSelect({ settingKey }: { settingKey: "language" | "actio
           updateDayjsLocale(value)
         }
       }}
-      displayValue={tLang(`langs.${language}` as any)}
+      displayValue={
+        language === "default"
+          ? t(`general.action_language.default`)
+          : defaultResources[language]?.lang.name
+      }
       options={languageMapWithTranslation}
     />
   )
@@ -60,15 +69,38 @@ function LanguageSetting({ settingKey }: { settingKey: "language" | "actionLangu
   const { t } = useTranslation("settings")
 
   return (
-    <GroupedInsetListBaseCell>
-      <Text className="text-label">
-        {settingKey === "language" ? t("general.language") : t("general.action_language.label")}
-      </Text>
-
+    <GroupedInsetListCell
+      label={settingKey === "language" ? t("general.language") : t("general.action_language.label")}
+    >
       <View className="w-[150px]">
         <LanguageSelect settingKey={settingKey} />
       </View>
-    </GroupedInsetListBaseCell>
+    </GroupedInsetListCell>
+  )
+}
+
+function TranslationModeSetting() {
+  const { t } = useTranslation("settings")
+  const translationMode = useGeneralSettingKey("translationMode")
+
+  return (
+    <GroupedInsetListCell
+      label={t("general.translation_mode.label")}
+      description={t("general.translation_mode.description")}
+    >
+      <View className="w-[130px]">
+        <Select
+          value={translationMode}
+          onValueChange={(value) => {
+            setGeneralSetting("translationMode", value as "bilingual" | "translation-only")
+          }}
+          options={[
+            { label: t("general.translation_mode.bilingual"), value: "bilingual" },
+            { label: t("general.translation_mode.translation-only"), value: "translation-only" },
+          ]}
+        />
+      </View>
+    </GroupedInsetListCell>
   )
 }
 
@@ -77,8 +109,7 @@ export const GeneralScreen: NavigationControllerView = () => {
 
   const translation = useGeneralSettingKey("translation")
   const summary = useGeneralSettingKey("summary")
-  // TODO: support autoGroup
-  // const autoGroup = useGeneralSettingKey("autoGroup")
+  const autoGroup = useGeneralSettingKey("autoGroup")
   const showUnreadOnLaunch = useGeneralSettingKey("unreadOnly")
   // const groupByDate = useGeneralSettingKey("groupByDate")
   const expandLongSocialMedia = useGeneralSettingKey("autoExpandLongSocialMedia")
@@ -119,12 +150,13 @@ export const GeneralScreen: NavigationControllerView = () => {
             }}
           />
         </GroupedInsetListCell>
+        <TranslationModeSetting />
         <LanguageSetting settingKey="actionLanguage" />
       </GroupedInsetListCard>
 
       {/* Subscriptions */}
 
-      {/* <GroupedInsetListSectionHeader label={t("general.subscriptions")} />
+      <GroupedInsetListSectionHeader label={t("general.subscriptions")} />
       <GroupedInsetListCard>
         <GroupedInsetListCell
           label={t("general.auto_group.label")}
@@ -138,7 +170,7 @@ export const GeneralScreen: NavigationControllerView = () => {
             }}
           />
         </GroupedInsetListCell>
-      </GroupedInsetListCard> */}
+      </GroupedInsetListCard>
 
       {/* Timeline */}
 

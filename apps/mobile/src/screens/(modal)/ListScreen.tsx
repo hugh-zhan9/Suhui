@@ -43,7 +43,7 @@ const listSchema = z.object({
     .optional()
     .transform((val) => (val === "" ? null : val)),
 
-  fee: z.number().min(0).nullable(),
+  fee: z.number().min(0).nullable().optional(),
   view: z.number().int(),
 })
 

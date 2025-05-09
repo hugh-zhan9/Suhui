@@ -1,12 +1,11 @@
-import { useWhoami } from "@client/atoms/user"
 import { MainContainer } from "@client/components/layout/main"
-import { askOpenInFollowApp } from "@client/lib/helper"
+import { FeedIcon } from "@client/components/ui/feed-icon"
+import { openInFollowApp } from "@client/lib/helper"
 import { UrlBuilder } from "@client/lib/url-builder"
 import { useUserQuery, useUserSubscriptionsQuery } from "@client/query/users"
 import { FollowIcon } from "@follow/components/icons/follow.jsx"
 import { Avatar, AvatarFallback, AvatarImage } from "@follow/components/ui/avatar/index.jsx"
 import { Button } from "@follow/components/ui/button/index.jsx"
-import { FeedIcon } from "@follow/components/ui/feed-icon/index.jsx"
 import { LoadingCircle } from "@follow/components/ui/loading/index.jsx"
 import { useTitle } from "@follow/hooks"
 import { cn } from "@follow/utils/utils"
@@ -22,10 +21,8 @@ export const Component = () => {
   const subscriptions = useUserSubscriptionsQuery(user.data?.id)
 
   useTitle(user.data?.name)
-  const me = useWhoami()
-  const isMe = user.data?.id === me?.id
 
-  const { t } = useTranslation("common")
+  const { t } = useTranslation()
 
   return (
     <MainContainer className="items-center">
@@ -43,16 +40,6 @@ export const Component = () => {
             </div>
             {user.data?.handle && (
               <div className="mb-2 text-sm text-zinc-500">@{user.data.handle}</div>
-            )}
-            {user.data?.id && (
-              <Button
-                onClick={() => {
-                  askOpenInFollowApp(`add?url=rsshub://follow/profile/${user.data?.id}`)
-                }}
-              >
-                <FollowIcon className="mr-1 size-3" />
-                {t("words.follow")}
-              </Button>
             )}
           </div>
           <div
@@ -103,19 +90,14 @@ export const Component = () => {
                               <Button
                                 onClick={(e) => {
                                   e.stopPropagation()
-                                  askOpenInFollowApp(`add?id=${subscription.feedId}`, () => {
-                                    return `/timeline/view-${subscription.view}/${subscription.feedId}/pending`
+                                  openInFollowApp({
+                                    deeplink: `feed?id=${subscription.feedId}&view=${subscription.view}`,
+                                    fallbackUrl: `/timeline/view-${subscription.view}/${subscription.feedId}/pending`,
                                   })
                                 }}
                               >
-                                {isMe ? (
-                                  t("words.edit")
-                                ) : (
-                                  <>
-                                    <FollowIcon className="mr-1 size-3" />
-                                    {APP_NAME}
-                                  </>
-                                )}
+                                <FollowIcon className="mr-1 size-3" />
+                                {t("feed.actions.open", { which: APP_NAME })}
                               </Button>
                             </span>
                           </div>
