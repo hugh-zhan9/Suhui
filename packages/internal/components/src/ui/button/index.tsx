@@ -17,11 +17,12 @@ export interface BaseButtonProps {
 const motionBaseMap = {
   pc: {
     whileFocus: { scale: 1.02 },
-    whileTap: { scale: 0.95 },
+    whileTap: { scale: 0.97 },
+    whileHover: { translateY: -1 },
   },
   mobile: {
     whileFocus: { opacity: 0.8 },
-    whileTap: { opacity: 0.2 },
+    whileTap: { opacity: 0.6 },
   },
 } as const
 export const MotionButtonBase = ({
@@ -83,7 +84,6 @@ export const Button = ({
           status: isLoading || disabled ? "disabled" : undefined,
           size,
         }),
-
         buttonClassName,
       )}
       disabled={isLoading || disabled}
@@ -93,12 +93,15 @@ export const Button = ({
       <span className="contents">
         {typeof isLoading === "boolean" && (
           <m.span
-            className="center"
+            className="center overflow-hidden"
             animate={{
-              width: isLoading ? "auto" : "0px",
+              width: isLoading ? "1.2em" : "0px",
+              marginRight: isLoading ? "0.5rem" : "0",
+              opacity: isLoading ? 1 : 0,
             }}
+            transition={{ duration: 0.2 }}
           >
-            {isLoading && <LoadingCircle size="small" className="center mr-2" />}
+            {isLoading && <LoadingCircle size="small" className="center" />}
           </m.span>
         )}
         <span className={cn("center", textClassName)}>{props.children}</span>
@@ -124,7 +127,7 @@ export const IconButton = ({
         styledButtonVariant({
           variant: "ghost",
         }),
-        "bg-accent/10 hover:bg-accent dark:bg-accent/20 dark:hover:bg-accent/60 group relative gap-2 px-4",
+        "bg-accent/10 hover:bg-accent/20 active:bg-accent/30 dark:bg-accent/20 dark:hover:bg-accent/30 dark:active:bg-accent/40 group relative gap-2 px-4 transition-all duration-300",
         rest.className,
       )}
     >
