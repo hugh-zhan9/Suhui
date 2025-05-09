@@ -27,10 +27,17 @@ export const useAuthProviders = () => {
   return useQuery({
     queryKey: ["providers", isInMASReview],
     queryFn: async () => {
+      const data = (await getProviders()).data as Record<string, AuthProvider>
       if (isInMASReview) {
-        return {}
+        if (data.credential) {
+          return {
+            credential: data.credential,
+          }
+        } else {
+          return {}
+        }
       } else {
-        return (await getProviders()).data as Record<string, AuthProvider>
+        return data
       }
     },
   })

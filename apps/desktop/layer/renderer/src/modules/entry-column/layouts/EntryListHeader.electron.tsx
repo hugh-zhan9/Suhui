@@ -1,4 +1,4 @@
-import { ActionButton } from "@follow/components/ui/button/index.js"
+import { ActionButton, MotionButtonBase } from "@follow/components/ui/button/index.js"
 import { DividerVertical } from "@follow/components/ui/divider/index.js"
 import { RotatingRefreshIcon } from "@follow/components/ui/loading/index.jsx"
 import { EllipsisHorizontalTextWithTooltip } from "@follow/components/ui/typography/index.js"
@@ -68,7 +68,7 @@ export const EntryListHeader: FC<{
   return (
     <div
       className={cn(
-        "mb-2 flex w-full flex-col pr-4 pt-2.5 transition-[padding] duration-300 ease-in-out",
+        "mb-2 flex w-full flex-col pr-4 pt-2.5",
         !feedColumnShow && "macos:mt-4 macos:pt-margin-macos-traffic-light-y",
         titleStyleBasedView[view],
         isPreview && "px-4",
@@ -157,26 +157,25 @@ const PreviewHeaderInfoWrapper: Component = ({ children }) => {
 
   const navigate = useNavigate()
   return (
-    <div className="flex w-full flex-col">
+    <div className="flex w-full flex-col pt-1.5">
       <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-2">
-        <button
-          type="button"
-          className="cursor-button text-text-secondary hover:text-accent inline-flex items-center gap-1 duration-200"
+        <MotionButtonBase
           onClick={(e) => {
             e.stopPropagation()
             navigate(previewBackPath() || "/")
           }}
+          className="no-drag-region hover:text-accent mr-1 inline-flex items-center gap-1 duration-200"
         >
-          <i className="i-mingcute-left-line size-4" />
-          {tCommon("words.back")}
-        </button>
-        <div className="relative flex justify-center">{children}</div>
+          <i className="i-mingcute-left-line" />
+          <span className="text-sm font-medium">{tCommon("words.back")}</span>
+        </MotionButtonBase>
+        {children}
         <div />
       </div>
 
       <button
         type="button"
-        className="text-accent cursor-button from-accent/10 via-accent/15 to-accent/20 hover:bg-accent animate-gradient-x -mx-4 mt-2 flex place-items-center justify-center gap-3 bg-gradient-to-r px-3 py-1 font-semibold transition-all duration-300 hover:text-white"
+        className="text-accent cursor-button from-accent/10 via-accent/15 to-accent/20 hover:bg-accent animate-gradient-x -mx-4 mt-2 flex place-items-center justify-center gap-1 bg-gradient-to-r px-3 py-2 font-semibold transition-all duration-300 hover:text-white"
         onClick={() => {
           const { feedId, listId } = getRouteParams()
           if (!feedId) return

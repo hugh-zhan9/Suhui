@@ -113,9 +113,6 @@ export function DiscoverForm({ type = "search" }: { type?: string }) {
 
       return data
     },
-    onSuccess() {
-      form.resetField("keyword")
-    },
   })
   const discoverSearchDataAtom = useState(() => atom<DiscoverSearchData>())[0]
 
