@@ -4691,23 +4691,6 @@ declare const lists: drizzle_orm_pg_core.PgTableWithColumns<{
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        timelineUpdatedAt: drizzle_orm_pg_core.PgColumn<{
-            name: "timeline_updated_at";
-            tableName: "lists";
-            dataType: "date";
-            columnType: "PgTimestamp";
-            data: Date;
-            driverParam: string;
-            notNull: true;
-            hasDefault: false;
-            isPrimaryKey: false;
-            isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: undefined;
-            baseColumn: never;
-            identity: undefined;
-            generated: undefined;
-        }, {}, {}>;
         language: drizzle_orm_pg_core.PgColumn<{
             name: "language";
             tableName: "lists";
@@ -4742,6 +4725,40 @@ declare const lists: drizzle_orm_pg_core.PgTableWithColumns<{
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
+        createdAt: drizzle_orm_pg_core.PgColumn<{
+            name: "created_at";
+            tableName: "lists";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        updatedAt: drizzle_orm_pg_core.PgColumn<{
+            name: "updated_at";
+            tableName: "lists";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
     };
     dialect: "pg";
 }>;
@@ -4753,12 +4770,15 @@ declare const listsOpenAPISchema: zod.ZodObject<{
     image: zod.ZodNullable<zod.ZodString>;
     view: zod.ZodNumber;
     fee: zod.ZodNumber;
-    timelineUpdatedAt: zod.ZodString;
     language: zod.ZodNullable<zod.ZodString>;
     ownerUserId: zod.ZodString;
+    createdAt: zod.ZodNullable<zod.ZodString>;
+    updatedAt: zod.ZodNullable<zod.ZodString>;
 }, zod.UnknownKeysParam, zod.ZodTypeAny, {
     id: string;
     image: string | null;
+    createdAt: string | null;
+    updatedAt: string | null;
     description: string | null;
     title: string;
     view: number;
@@ -4766,10 +4786,11 @@ declare const listsOpenAPISchema: zod.ZodObject<{
     language: string | null;
     feedIds: string[];
     fee: number;
-    timelineUpdatedAt: string;
 }, {
     id: string;
     image: string | null;
+    createdAt: string | null;
+    updatedAt: string | null;
     description: string | null;
     title: string;
     view: number;
@@ -4777,7 +4798,6 @@ declare const listsOpenAPISchema: zod.ZodObject<{
     language: string | null;
     feedIds: string[];
     fee: number;
-    timelineUpdatedAt: string;
 }>;
 declare const listsRelations: drizzle_orm.Relations<"lists", {
     owner: drizzle_orm.One<"user", true>;
@@ -10461,6 +10481,144 @@ declare const auth: {
             path: "/refresh-token";
         };
     } & {
+        generateOpenAPISchema: {
+            <AsResponse extends boolean = false, ReturnHeaders extends boolean = false>(inputCtx_0?: ({
+                body?: undefined;
+            } & {
+                method?: "GET" | undefined;
+            } & {
+                query?: Record<string, any> | undefined;
+            } & {
+                params?: Record<string, any>;
+            } & {
+                request?: Request;
+            } & {
+                headers?: HeadersInit;
+            } & {
+                asResponse?: boolean;
+                returnHeaders?: boolean;
+                use?: better_call.Middleware[];
+                path?: string;
+            } & {
+                asResponse?: AsResponse | undefined;
+                returnHeaders?: ReturnHeaders | undefined;
+            }) | undefined): Promise<[AsResponse] extends [true] ? Response : [ReturnHeaders] extends [true] ? {
+                headers: Headers;
+                response: {
+                    openapi: string;
+                    info: {
+                        title: string;
+                        description: string;
+                        version: string;
+                    };
+                    components: {
+                        securitySchemes: {
+                            apiKeyCookie: {
+                                type: string;
+                                in: string;
+                                name: string;
+                                description: string;
+                            };
+                            bearerAuth: {
+                                type: string;
+                                scheme: string;
+                                description: string;
+                            };
+                        };
+                        schemas: {};
+                    };
+                    security: {
+                        apiKeyCookie: never[];
+                        bearerAuth: never[];
+                    }[];
+                    servers: {
+                        url: string;
+                    }[];
+                    tags: {
+                        name: string;
+                        description: string;
+                    }[];
+                    paths: Record<string, better_auth_plugins.Path>;
+                };
+            } : {
+                openapi: string;
+                info: {
+                    title: string;
+                    description: string;
+                    version: string;
+                };
+                components: {
+                    securitySchemes: {
+                        apiKeyCookie: {
+                            type: string;
+                            in: string;
+                            name: string;
+                            description: string;
+                        };
+                        bearerAuth: {
+                            type: string;
+                            scheme: string;
+                            description: string;
+                        };
+                    };
+                    schemas: {};
+                };
+                security: {
+                    apiKeyCookie: never[];
+                    bearerAuth: never[];
+                }[];
+                servers: {
+                    url: string;
+                }[];
+                tags: {
+                    name: string;
+                    description: string;
+                }[];
+                paths: Record<string, better_auth_plugins.Path>;
+            }>;
+            options: {
+                method: "GET";
+            } & {
+                use: any[];
+            };
+            path: "/open-api/generate-schema";
+        };
+        openAPIReference: {
+            <AsResponse extends boolean = false, ReturnHeaders extends boolean = false>(inputCtx_0?: ({
+                body?: undefined;
+            } & {
+                method?: "GET" | undefined;
+            } & {
+                query?: Record<string, any> | undefined;
+            } & {
+                params?: Record<string, any>;
+            } & {
+                request?: Request;
+            } & {
+                headers?: HeadersInit;
+            } & {
+                asResponse?: boolean;
+                returnHeaders?: boolean;
+                use?: better_call.Middleware[];
+                path?: string;
+            } & {
+                asResponse?: AsResponse | undefined;
+                returnHeaders?: ReturnHeaders | undefined;
+            }) | undefined): Promise<[AsResponse] extends [true] ? Response : [ReturnHeaders] extends [true] ? {
+                headers: Headers;
+                response: Response;
+            } : Response>;
+            options: {
+                method: "GET";
+                metadata: {
+                    isAction: boolean;
+                };
+            } & {
+                use: any[];
+            };
+            path: "/reference";
+        };
+    } & {
         customGetProviders: {
             <AsResponse extends boolean = false, ReturnHeaders extends boolean = false>(inputCtx_0?: ({
                 body?: undefined;
@@ -11934,6 +12092,147 @@ declare const auth: {
             }): Promise<void>;
         };
         plugins: ({
+            id: "open-api";
+            endpoints: {
+                generateOpenAPISchema: {
+                    <AsResponse extends boolean = false, ReturnHeaders extends boolean = false>(inputCtx_0?: ({
+                        body?: undefined;
+                    } & {
+                        method?: "GET" | undefined;
+                    } & {
+                        query?: Record<string, any> | undefined;
+                    } & {
+                        params?: Record<string, any>;
+                    } & {
+                        request?: Request;
+                    } & {
+                        headers?: HeadersInit;
+                    } & {
+                        asResponse?: boolean;
+                        returnHeaders?: boolean;
+                        use?: better_call.Middleware[];
+                        path?: string;
+                    } & {
+                        asResponse?: AsResponse | undefined;
+                        returnHeaders?: ReturnHeaders | undefined;
+                    }) | undefined): Promise<[AsResponse] extends [true] ? Response : [ReturnHeaders] extends [true] ? {
+                        headers: Headers;
+                        response: {
+                            openapi: string;
+                            info: {
+                                title: string;
+                                description: string;
+                                version: string;
+                            };
+                            components: {
+                                securitySchemes: {
+                                    apiKeyCookie: {
+                                        type: string;
+                                        in: string;
+                                        name: string;
+                                        description: string;
+                                    };
+                                    bearerAuth: {
+                                        type: string;
+                                        scheme: string;
+                                        description: string;
+                                    };
+                                };
+                                schemas: {};
+                            };
+                            security: {
+                                apiKeyCookie: never[];
+                                bearerAuth: never[];
+                            }[];
+                            servers: {
+                                url: string;
+                            }[];
+                            tags: {
+                                name: string;
+                                description: string;
+                            }[];
+                            paths: Record<string, better_auth_plugins.Path>;
+                        };
+                    } : {
+                        openapi: string;
+                        info: {
+                            title: string;
+                            description: string;
+                            version: string;
+                        };
+                        components: {
+                            securitySchemes: {
+                                apiKeyCookie: {
+                                    type: string;
+                                    in: string;
+                                    name: string;
+                                    description: string;
+                                };
+                                bearerAuth: {
+                                    type: string;
+                                    scheme: string;
+                                    description: string;
+                                };
+                            };
+                            schemas: {};
+                        };
+                        security: {
+                            apiKeyCookie: never[];
+                            bearerAuth: never[];
+                        }[];
+                        servers: {
+                            url: string;
+                        }[];
+                        tags: {
+                            name: string;
+                            description: string;
+                        }[];
+                        paths: Record<string, better_auth_plugins.Path>;
+                    }>;
+                    options: {
+                        method: "GET";
+                    } & {
+                        use: any[];
+                    };
+                    path: "/open-api/generate-schema";
+                };
+                openAPIReference: {
+                    <AsResponse extends boolean = false, ReturnHeaders extends boolean = false>(inputCtx_0?: ({
+                        body?: undefined;
+                    } & {
+                        method?: "GET" | undefined;
+                    } & {
+                        query?: Record<string, any> | undefined;
+                    } & {
+                        params?: Record<string, any>;
+                    } & {
+                        request?: Request;
+                    } & {
+                        headers?: HeadersInit;
+                    } & {
+                        asResponse?: boolean;
+                        returnHeaders?: boolean;
+                        use?: better_call.Middleware[];
+                        path?: string;
+                    } & {
+                        asResponse?: AsResponse | undefined;
+                        returnHeaders?: ReturnHeaders | undefined;
+                    }) | undefined): Promise<[AsResponse] extends [true] ? Response : [ReturnHeaders] extends [true] ? {
+                        headers: Headers;
+                        response: Response;
+                    } : Response>;
+                    options: {
+                        method: "GET";
+                        metadata: {
+                            isAction: boolean;
+                        };
+                    } & {
+                        use: any[];
+                    };
+                    path: "/reference";
+                };
+            };
+        } | {
             id: "two-factor";
             endpoints: {
                 enableTwoFactor: {
@@ -13934,11 +14233,12 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                     } | undefined;
                     list?: {
                         id: string;
+                        createdAt: string | null;
+                        updatedAt: string | null;
                         type: "list";
                         view: number;
                         feedIds: string[];
                         fee: number;
-                        timelineUpdatedAt: string;
                         image?: string | null | undefined;
                         description?: string | null | undefined;
                         title?: string | null | undefined;
@@ -15133,11 +15433,12 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                     isPrivate: boolean;
                     lists: {
                         id: string;
+                        createdAt: string | null;
+                        updatedAt: string | null;
                         type: "list";
                         view: number;
                         feedIds: string[];
                         fee: number;
-                        timelineUpdatedAt: string;
                         image?: string | null | undefined;
                         description?: string | null | undefined;
                         title?: string | null | undefined;
@@ -15257,6 +15558,8 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                 list: {
                     id: string;
                     image: string | null;
+                    createdAt: string | null;
+                    updatedAt: string | null;
                     description: string | null;
                     title: string;
                     view: number;
@@ -15264,7 +15567,6 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                     language: string | null;
                     feedIds: string[];
                     fee: number;
-                    timelineUpdatedAt: string;
                 } | null;
             };
             outputFormat: "json";
@@ -15765,11 +16067,12 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                     subscriptionCount: number;
                     list: {
                         id: string;
+                        createdAt: string | null;
+                        updatedAt: string | null;
                         type: "list";
                         view: number;
                         feedIds: string[];
                         fee: number;
-                        timelineUpdatedAt: string;
                         image?: string | null | undefined;
                         description?: string | null | undefined;
                         title?: string | null | undefined;
@@ -15849,11 +16152,12 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                 code: 0;
                 data: {
                     id: string;
+                    createdAt: string | null;
+                    updatedAt: string | null;
                     type: "list";
                     view: number;
                     feedIds: string[];
                     fee: number;
-                    timelineUpdatedAt: string;
                     image?: string | null | undefined;
                     description?: string | null | undefined;
                     title?: string | null | undefined;
@@ -15949,11 +16253,12 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                 code: 0;
                 data: {
                     id: string;
+                    createdAt: string | null;
+                    updatedAt: string | null;
                     type: "list";
                     view: number;
                     feedIds: string[];
                     fee: number;
-                    timelineUpdatedAt: string;
                     image?: string | null | undefined;
                     description?: string | null | undefined;
                     title?: string | null | undefined;
