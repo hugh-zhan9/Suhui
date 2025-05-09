@@ -63,7 +63,7 @@ export function DiscoverInboxList() {
       <div className="center mt-4 flex">
         {/* New Inbox */}
         <Button
-          className="flex items-center gap-2"
+          textClassName="flex items-center gap-2"
           onClick={() =>
             preCheck() &&
             present({

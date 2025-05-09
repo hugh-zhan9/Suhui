@@ -137,7 +137,7 @@ export const FlatMarkAllReadButton: FC<
       variant="ghost"
       disabled={status === "done"}
       buttonClassName={buttonClassName}
-      className={cn(
+      textClassName={cn(
         "center relative flex h-auto gap-1",
 
         className,

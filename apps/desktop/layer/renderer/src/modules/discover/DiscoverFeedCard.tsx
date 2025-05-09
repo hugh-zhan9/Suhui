@@ -114,7 +114,7 @@ export const DiscoverFeedCard: FC<DiscoverFeedCardProps> = memo(
         {item.docs ? (
           <CardContent className="p-0">
             <a href={item.docs} target="_blank" rel="noreferrer">
-              <Button className="rounded-full bg-zinc-900 px-6 text-white transition-opacity hover:opacity-90 dark:bg-white dark:text-zinc-900">
+              <Button buttonClassName="rounded-full bg-zinc-900 px-6 text-white transition-opacity hover:opacity-90 dark:bg-white dark:text-zinc-900">
                 View Docs
               </Button>
             </a>

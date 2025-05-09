@@ -110,7 +110,7 @@ function List({ data }: { data?: RSSHubModel[] }) {
           <TableCell className="text-right">{t("rsshub.table.unlimited")}</TableCell>
           <TableCell>
             {!status?.data?.usage?.rsshubId && (
-              <Button disabled className="shrink-0">
+              <Button disabled buttonClassName="shrink-0">
                 {t("rsshub.table.inuse")}
               </Button>
             )}
@@ -192,7 +192,7 @@ function List({ data }: { data?: RSSHubModel[] }) {
                 <TableCell className="text-right">
                   <div className="flex w-max items-center gap-2">
                     <Button
-                      className="shrink-0"
+                      buttonClassName="shrink-0"
                       disabled={
                         instance.userCount && instance.userLimit
                           ? instance.userCount >= instance.userLimit

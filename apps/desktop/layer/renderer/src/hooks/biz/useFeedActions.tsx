@@ -49,7 +49,7 @@ const ConfirmDestroyModalContent = ({ onConfirm }: { onConfirm: () => void }) =>
         {t("sidebar.feed_actions.unfollow_feed_many_warning")}
       </div>
       <div className="flex justify-end">
-        <Button className="bg-red-600" onClick={onConfirm}>
+        <Button buttonClassName="bg-red-600" onClick={onConfirm}>
           {t("words.confirm")}
         </Button>
       </div>

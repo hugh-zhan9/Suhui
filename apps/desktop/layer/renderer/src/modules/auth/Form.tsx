@@ -230,7 +230,7 @@ export function RegisterForm() {
             )}
           />
           <ReCAPTCHA ref={recaptchaRef} sitekey={env.VITE_RECAPTCHA_V2_SITE_KEY} size="invisible" />
-          <Button disabled={!isValid} type="submit" className="w-full" size="lg">
+          <Button disabled={!isValid} type="submit" buttonClassName="w-full" size="lg">
             {t("register.submit")}
           </Button>
         </form>

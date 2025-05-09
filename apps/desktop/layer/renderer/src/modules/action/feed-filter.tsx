@@ -9,14 +9,6 @@ import {
   SelectValue,
 } from "@follow/components/ui/select/index.jsx"
 import { ResponsiveSelect } from "@follow/components/ui/select/responsive.js"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@follow/components/ui/table/index.jsx"
 import type { ActionFeedField, ActionOperation } from "@follow/models/types"
 import { cn } from "@follow/utils/utils"
 import { Fragment, useMemo } from "react"
@@ -111,9 +103,9 @@ export const FeedFilter = ({ index }: { index: number }) => {
 
       {condition.length > 0 && (
         <div className="pl-6">
-          <Table>
-            <FieldTableHeader />
-            <TableBody>
+          <div className="w-full">
+            <GridHeader />
+            <div className="mt-2">
               {condition.flatMap((orConditions, orConditionIdx) => {
                 return orConditions.map((condition, conditionIdx) => {
                   const change = (key: string, value: string | number) => {
@@ -129,17 +121,14 @@ export const FeedFilter = ({ index }: { index: number }) => {
                   return (
                     <Fragment key={`${orConditionIdx}${conditionIdx}`}>
                       {conditionIdx === 0 && orConditionIdx !== 0 && (
-                        <TableRow className="flex h-16 items-center">
-                          <Button disabled variant="outline">
+                        <div className="flex h-16 items-center justify-center">
+                          <span className="text-text-secondary text-sm uppercase">
                             {t("actions.action_card.or")}
-                          </Button>
-                        </TableRow>
+                          </span>
+                        </div>
                       )}
-                      <TableRow className="max-sm:flex max-sm:flex-col">
-                        <TableCell
-                          size="sm"
-                          className="max-sm:flex max-sm:items-center max-sm:justify-between max-sm:pr-0"
-                        >
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-4 sm:gap-4">
+                        <div className="flex items-center justify-between max-sm:flex-row sm:justify-start">
                           <span className="sm:hidden">{t("actions.action_card.field")}</span>
                           <ResponsiveSelect
                             placeholder="Select Field"
@@ -147,78 +136,106 @@ export const FeedFilter = ({ index }: { index: number }) => {
                             value={condition.field}
                             onValueChange={(value) => change("field", value as ActionFeedField)}
                             items={FeedOptions}
-                            triggerClassName="max-sm:w-fit"
+                            triggerClassName="max-sm:w-fit h-8"
                           />
-                        </TableCell>
-                        <OperationTableCell
-                          type={type}
-                          disabled={disabled}
-                          value={condition.operator}
-                          onValueChange={(value) => change("operator", value)}
-                        />
-                        <TableCell
-                          size="sm"
-                          className="max-sm:flex max-sm:items-center max-sm:justify-between max-sm:gap-4 max-sm:pr-0"
-                        >
+                        </div>
+                        <div className="flex items-center justify-between max-sm:flex-row sm:justify-start">
+                          <span className="sm:hidden">{t("actions.action_card.operator")}</span>
+                          <OperationSelect
+                            type={type}
+                            disabled={disabled}
+                            value={condition.operator}
+                            onValueChange={(value) => change("operator", value)}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between gap-4 max-sm:flex-row sm:justify-start">
                           <span className="sm:hidden">{t("actions.action_card.value")}</span>
-                          <ValueTableCell
+                          <ValueInput
                             type={type}
                             value={condition.value}
                             onChange={(value) => change("value", value)}
                             disabled={disabled}
                           />
-                        </TableCell>
+                        </div>
 
-                        <ActionTableCell
-                          disabled={disabled}
-                          onAnd={() => {
-                            onChange((data) => {
-                              data.condition[orConditionIdx]!.push({})
-                            })
-                          }}
-                          onDelete={() => {
-                            onChange((data) => {
-                              if (data.condition[orConditionIdx]!.length === 1) {
-                                data.condition.splice(orConditionIdx, 1)
-                              } else {
-                                data.condition[orConditionIdx]!.splice(conditionIdx, 1)
-                              }
-                            })
-                          }}
-                        />
-                      </TableRow>
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            buttonClassName="w-full sm:hidden"
+                            variant="outline"
+                            disabled={disabled}
+                            onClick={() => {
+                              onChange((data) => {
+                                data.condition[orConditionIdx]!.push({})
+                              })
+                            }}
+                          >
+                            {t("actions.action_card.and")}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            buttonClassName="w-full max-sm:hidden"
+                            disabled={disabled}
+                            onClick={() => {
+                              onChange((data) => {
+                                data.condition[orConditionIdx]!.push({})
+                              })
+                            }}
+                          >
+                            {t("actions.action_card.and")}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            disabled={disabled}
+                            onClick={() => {
+                              onChange((data) => {
+                                if (data.condition[orConditionIdx]!.length === 1) {
+                                  data.condition.splice(orConditionIdx, 1)
+                                } else {
+                                  data.condition[orConditionIdx]!.splice(conditionIdx, 1)
+                                }
+                              })
+                            }}
+                          >
+                            <i className="i-mgc-delete-2-cute-re size-5 text-zinc-600" />
+                          </Button>
+                        </div>
+                      </div>
                       {conditionIdx !== orConditions.length - 1 && (
-                        <TableRow className="relative flex items-center">
+                        <div className="relative my-4 flex w-full items-center justify-center">
                           <div className="relative">
-                            <Button disabled variant="outline">
+                            <span className="text-text-secondary text-sm uppercase">
                               {t("actions.action_card.and")}
-                            </Button>
-                            <div className="bg-theme-disabled absolute left-1/2 h-[5px] w-px" />
-                            <div className="bg-theme-disabled absolute left-1/2 top-0 h-[5px] w-px -translate-y-full" />
+                            </span>
+                            <div className="bg-border absolute left-1/2 h-[10px] w-px" />
+                            <div className="bg-border absolute left-1/2 top-0 h-[10px] w-px -translate-y-full" />
                           </div>
-                        </TableRow>
+                        </div>
                       )}
                     </Fragment>
                   )
                 })
               })}
-            </TableBody>
-          </Table>
-          <OrTableRow
-            disabled={disabled}
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            buttonClassName="mt-4 w-full gap-1 py-1"
             onClick={() => {
               onChange((data) => {
                 data.condition.push([{}])
               })
             }}
-          />
+            disabled={disabled}
+          >
+            {t("actions.action_card.or")}
+          </Button>
         </div>
       )}
     </div>
   )
 }
 
-const OperationTableCell = ({
+const OperationSelect = ({
   type,
   value,
   onValueChange,
@@ -276,24 +293,18 @@ const OperationTableCell = ({
     onValueChange?.(options[0]!.value as ActionOperation)
   }
   return (
-    <TableCell
-      size="sm"
-      className="max-sm:flex max-sm:items-center max-sm:justify-between max-sm:pr-0"
-    >
-      <span className="sm:hidden">{t("actions.action_card.operator")}</span>
-      <ResponsiveSelect
-        placeholder="Select Field"
-        disabled={disabled}
-        value={value}
-        onValueChange={(value) => onValueChange?.(value as ActionOperation)}
-        items={options}
-        triggerClassName="h-8 max-sm:w-fit"
-      />
-    </TableCell>
+    <ResponsiveSelect
+      placeholder="Select Operation"
+      disabled={disabled}
+      value={value}
+      onValueChange={(value) => onValueChange?.(value as ActionOperation)}
+      items={options}
+      triggerClassName="h-8 max-sm:w-fit"
+    />
   )
 }
 
-const ValueTableCell = ({
+const ValueInput = ({
   type,
   value,
   onChange,
@@ -360,60 +371,14 @@ const CommonSelectTrigger = ({ className }: { className?: string }) => (
   </SelectTrigger>
 )
 
-const ActionTableCell = ({
-  disabled,
-  onAnd,
-  onDelete,
-}: {
-  disabled?: boolean
-  onAnd?: () => void
-  onDelete?: () => void
-}) => {
+const GridHeader = () => {
   const { t } = useTranslation("settings")
   return (
-    <>
-      <TableCell size="sm" className="max-sm:hidden">
-        <Button variant="outline" className="w-full" disabled={disabled} onClick={onAnd}>
-          {t("actions.action_card.and")}
-        </Button>
-      </TableCell>
-      <TableCell size="sm" className="w-full max-sm:flex max-sm:space-x-2 max-sm:pr-0 lg:w-8">
-        <Button className="w-full sm:hidden" variant="outline" disabled={disabled} onClick={onAnd}>
-          {t("actions.action_card.and")}
-        </Button>
-        <Button variant="ghost" disabled={disabled} onClick={onDelete}>
-          <i className="i-mgc-delete-2-cute-re size-5 text-zinc-600" />
-        </Button>
-      </TableCell>
-    </>
-  )
-}
-
-const OrTableRow = ({ onClick, disabled }: { onClick?: () => void; disabled?: boolean }) => {
-  const { t } = useTranslation("settings")
-  return (
-    <Button
-      variant="outline"
-      className="mt-1 w-full gap-1"
-      buttonClassName="py-1"
-      onClick={onClick}
-      disabled={disabled}
-    >
-      {t("actions.action_card.or")}
-    </Button>
-  )
-}
-
-const FieldTableHeader = () => {
-  const { t } = useTranslation("settings")
-  return (
-    <TableHeader className="max-sm:hidden">
-      <TableRow>
-        <TableHead size="sm">{t("actions.action_card.field")}</TableHead>
-        <TableHead size="sm">{t("actions.action_card.operator")}</TableHead>
-        <TableHead size="sm">{t("actions.action_card.value")}</TableHead>
-        <TableHead size="sm" />
-      </TableRow>
-    </TableHeader>
+    <div className="text-text-secondary grid grid-cols-4 gap-4 pb-2 text-sm font-medium max-sm:hidden">
+      <div className="pl-1">{t("actions.action_card.field")}</div>
+      <div className="pl-1">{t("actions.action_card.operator")}</div>
+      <div className="pl-1">{t("actions.action_card.value")}</div>
+      <div />
+    </div>
   )
 }

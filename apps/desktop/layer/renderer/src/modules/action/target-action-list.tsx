@@ -36,8 +36,8 @@ const AddTableRow = ({ onClick, disabled }: { onClick?: () => void; disabled?: b
   return (
     <Button
       variant="outline"
-      className="mt-1 w-full gap-1"
-      buttonClassName="py-1"
+      textClassName="w-full"
+      buttonClassName="py-1 mt-1 gap-1 w-full"
       onClick={onClick}
       disabled={disabled}
     >

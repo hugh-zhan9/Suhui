@@ -47,19 +47,20 @@ MotionButtonBase.displayName = "MotionButtonBase"
 
 export const Button = ({
   ref,
-  className,
   buttonClassName,
   disabled,
   isLoading,
   variant,
   status,
   size,
+  textClassName,
   ...props
 }: React.PropsWithChildren<
-  Omit<HTMLMotionProps<"button">, "children"> &
+  Omit<HTMLMotionProps<"button">, "children" | "className"> &
     BaseButtonProps &
     VariantProps<typeof styledButtonVariant> & {
       buttonClassName?: string
+      textClassName?: string
     }
 > & { ref?: React.Ref<HTMLButtonElement | null> }) => {
   const handleClick: React.MouseEventHandler<HTMLButtonElement> = React.useCallback(
@@ -82,7 +83,7 @@ export const Button = ({
           status: isLoading || disabled ? "disabled" : undefined,
           size,
         }),
-        className,
+
         buttonClassName,
       )}
       disabled={isLoading || disabled}
@@ -100,7 +101,7 @@ export const Button = ({
             {isLoading && <LoadingCircle size="small" className="center mr-2" />}
           </m.span>
         )}
-        <span className={cn("center", className)}>{props.children}</span>
+        <span className={cn("center", textClassName)}>{props.children}</span>
       </span>
     </MotionButtonBase>
   )

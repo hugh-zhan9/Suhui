@@ -65,7 +65,7 @@ export const SettingDataControl = () => {
                     <p>{t("general.rebuild_database.warning.line2")}</p>
                     <div className="mt-4 flex justify-end">
                       <Button
-                        className="bg-red-500 px-3 text-white"
+                        buttonClassName="bg-red-500 px-3 text-white"
                         onClick={async () => {
                           await clearLocalPersistStoreData()
                           window.location.reload()

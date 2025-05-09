@@ -74,7 +74,7 @@ export const UserProfileModalContent: FC<SubscriptionModalContentProps> = ({ use
               </div>
               <Button
                 buttonClassName={"mt-4"}
-                className="gap-1"
+                textClassName="gap-1"
                 onClick={() => {
                   follow({
                     url: `rsshub://follow/profile/${userInfo.id}`,
