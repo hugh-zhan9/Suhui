@@ -49,13 +49,15 @@ function Switch({
       checked={isChecked}
       onChange={handleChange}
       className={cn(
-        "focus-visible:ring-border cursor-switch data-[checked]:bg-accent bg-fill relative flex h-6 w-10 shrink-0 items-center justify-start rounded-full p-[3px] transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[checked]:justify-end",
+        "focus-visible:ring-border cursor-switch data-[checked]:bg-accent bg-fill relative flex h-6 w-10 shrink-0 items-center justify-start rounded-full p-[3px] transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
         className,
       )}
       as={as}
       whileTap="tap"
       initial={false}
-      onTapStart={() => setIsTapped(true)}
+      onTapStart={() => {
+        setIsTapped(true)
+      }}
       onTapCancel={() => setIsTapped(false)}
       onTap={() => setIsTapped(false)}
       {...props}
@@ -86,19 +88,19 @@ function Switch({
         data-slot="switch-thumb"
         whileTap="tab"
         className={cn(
-          "bg-background relative z-[1] flex items-center justify-center rounded-full text-neutral-500 shadow-lg ring-0 dark:text-neutral-400 [&_svg]:size-3",
+          "bg-background z-[1] flex items-center justify-center rounded-full text-neutral-500 shadow-lg ring-0 dark:text-neutral-400 [&_svg]:size-3",
+          "absolute",
         )}
-        layout={isTapped}
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
         style={{
           width: 18,
           height: 18,
         }}
-        animate={
-          isTapped
-            ? { width: 21, transition: { duration: 0.1 } }
-            : { width: 18, transition: { duration: 0.1 } }
-        }
+        animate={Object.assign(
+          { duration: 0.1 },
+          isTapped ? { width: 21 } : { width: 18 },
+          props.checked ? { left: 3, right: "auto" } : { right: 3, left: "auto" },
+        )}
       >
         {thumbIcon && typeof thumbIcon !== "string" ? thumbIcon : null}
       </motion.span>
