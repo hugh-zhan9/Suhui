@@ -254,7 +254,10 @@ export const ContainerToc = memo(
 
     return (
       <RootPortal to={wrappedElement!}>
-        <div className="group absolute right-[-130px] top-0 h-full w-[100px]" data-hide-in-print>
+        <div
+          className="@[770px]:block group absolute right-[-130px] top-0 hidden h-full w-[100px]"
+          data-hide-in-print
+        >
           <div className="sticky top-0">
             <Toc
               ref={ref}
