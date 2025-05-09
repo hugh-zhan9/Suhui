@@ -25,7 +25,7 @@ import {
   useSelectedFeedIdsState,
 } from "./atom"
 import { DraggableContext } from "./context"
-import { FeedItem, ListItem } from "./FeedItem"
+import { FeedItem, ListItemAutoHideUnread } from "./FeedItem"
 import type { FeedListProps } from "./FeedList"
 import { EmptyFeedList, ListHeader, StarredItem } from "./FeedList.shared"
 import { useShouldFreeUpSpace } from "./hook"
@@ -232,7 +232,12 @@ const FeedListImpl = ({ ref, className, view }: FeedListProps) => {
               {t("words.lists")}
             </div>
             {isListPreview && listId && (
-              <ListItem listId={listId} view={view} className="pl-2.5 pr-0" isPreview />
+              <ListItemAutoHideUnread
+                listId={listId}
+                view={view}
+                className="pl-2.5 pr-0"
+                isPreview
+              />
             )}
             <SortByAlphabeticalList view={view} data={listsData} />
           </>

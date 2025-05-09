@@ -7,7 +7,7 @@ import { useSubscriptionStore } from "~/store/subscription"
 
 import { useFeedListSortSelector } from "../atom"
 import { FeedCategory } from "../FeedCategory"
-import { InboxItem, ListItem } from "../FeedItem"
+import { InboxItem, ListItemAutoHideUnread } from "../FeedItem"
 import type { FeedListProps, ListListProps } from "./types"
 
 export const SortByAlphabeticalFeedList = ({
@@ -97,7 +97,7 @@ export const SortByAlphabeticalListList = ({ view, data }: ListListProps) => {
   return (
     <div>
       {Object.keys(data).map((listId) => (
-        <ListItem key={listId} listId={listId} view={view} />
+        <ListItemAutoHideUnread key={listId} listId={listId} view={view} />
       ))}
     </div>
   )

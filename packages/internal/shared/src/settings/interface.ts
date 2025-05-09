@@ -16,7 +16,10 @@ export interface GeneralSettings {
   jumpOutLinkWarn: boolean
   // TTS
   voice: string
+
+  // subscription
   autoGroup: boolean
+  hideAllReadSubscriptions: boolean
   /**
    * Top timeline for mobile
    */

@@ -12,11 +12,12 @@ import type { FeedViewType } from "@follow/constants"
 import { nextFrame } from "@follow/utils/dom"
 import { cn, isKeyForMultiSelectPressed } from "@follow/utils/utils"
 import dayjs from "dayjs"
-import { memo, use, useCallback, useState } from "react"
+import { createElement, memo, use, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { MenuItemSeparator, MenuItemText, useShowContextMenu } from "~/atoms/context-menu"
 import { getMainContainerElement } from "~/atoms/dom"
+import { useGeneralSettingKey } from "~/atoms/settings/general"
 import { useFeedActions, useInboxActions, useListActions } from "~/hooks/biz/useFeedActions"
 import { useFollow } from "~/hooks/biz/useFollow"
 import { useNavigateEntry } from "~/hooks/biz/useNavigateEntry"
@@ -242,14 +243,36 @@ const FeedItemImpl = ({ view, feedId, className, isPreview }: FeedItemProps) => 
   )
 }
 
+const FilterReadFeedItem: Component<FeedItemProps> = (props) => {
+  const feedUnread = useFeedUnreadStore((state) => state.data[props.feedId] || 0)
+
+  if (!feedUnread) return null
+  return createElement(FeedItemImpl, props)
+}
+
 export const FeedItem = memo(FeedItemImpl)
 
-const ListItemImpl: Component<{
+export const FeedItemAutoHideUnread: Component<FeedItemProps> = memo((props) => {
+  const hideAllReadSubscriptions = useGeneralSettingKey("hideAllReadSubscriptions")
+
+  if (hideAllReadSubscriptions) return createElement(FilterReadFeedItem, props)
+  return createElement(FeedItemImpl, props)
+})
+
+interface ListItemProps {
   listId: string
   view: FeedViewType
   iconSize?: number
   isPreview?: boolean
-}> = ({ view, listId, className, iconSize = 22, isPreview }) => {
+}
+
+const ListItemImpl: Component<ListItemProps> = ({
+  view,
+  listId,
+  className,
+  iconSize = 22,
+  isPreview,
+}) => {
   const list = useListById(listId)
 
   const isActive = useRouteParamsSelector((routerParams) => routerParams.listId === listId)
@@ -339,11 +362,26 @@ const ListItemImpl: Component<{
 
 export const ListItem = memo(ListItemImpl)
 
-const InboxItemImpl: Component<{
+const FilterReadListItem: Component<ListItemProps> = (props) => {
+  const listUnread = useUnreadByListId(props.listId)
+
+  if (!listUnread) return null
+  return createElement(ListItem, props)
+}
+
+export const ListItemAutoHideUnread: Component<ListItemProps> = memo((props) => {
+  const hideAllReadSubscriptions = useGeneralSettingKey("hideAllReadSubscriptions")
+
+  if (hideAllReadSubscriptions) return createElement(FilterReadListItem, props)
+  return createElement(ListItemImpl, props)
+})
+
+interface InboxItemProps {
   inboxId: string
   view: FeedViewType
   iconSize?: number
-}> = ({ view, inboxId, className, iconSize = 16 }) => {
+}
+const InboxItemImpl: Component<InboxItemProps> = ({ view, inboxId, className, iconSize = 16 }) => {
   const inbox = useInboxById(inboxId)
 
   const isActive = useRouteParamsSelector((routerParams) => routerParams.inboxId === inboxId)

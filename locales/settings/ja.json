@@ -161,7 +161,6 @@
   "general.show_quick_timeline.label": "フィードリストにタイムラインを表示する",
   "general.show_unread_on_launch.description": "起動時に未読数を表示する",
   "general.show_unread_on_launch.label": "起動時に未読コンテンツを表示",
-  "general.sidebar": "サイドバー",
   "general.sidebar_title": "一般",
   "general.startup_screen.subscription": "購読",
   "general.startup_screen.timeline": "タイムライン",

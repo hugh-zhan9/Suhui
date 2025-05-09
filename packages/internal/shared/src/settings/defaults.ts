@@ -16,7 +16,9 @@ export const defaultGeneralSettings: GeneralSettings = {
   sendAnonymousData: true,
   showQuickTimeline: true,
 
+  // subscription
   autoGroup: true,
+  hideAllReadSubscriptions: false,
 
   // view
   unreadOnly: true,

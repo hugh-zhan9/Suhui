@@ -38,7 +38,7 @@ import { useModalStack } from "../../components/ui/modal/stacked/hooks"
 import { ListCreationModalContent } from "../settings/tabs/lists/modals"
 import { useFeedListSortSelector } from "./atom"
 import { CategoryRemoveDialogContent } from "./CategoryRemoveDialogContent"
-import { FeedItem } from "./FeedItem"
+import { FeedItemAutoHideUnread } from "./FeedItem"
 import { feedColumnStyles } from "./styles"
 import { UnreadNumber } from "./UnreadNumber"
 
@@ -487,7 +487,7 @@ const SortByAlphabeticalList = (props: SortListProps) => {
   return (
     <Fragment>
       {sortedFeedList.map((feedId) => (
-        <FeedItem
+        <FeedItemAutoHideUnread
           key={feedId}
           feedId={feedId}
           view={view}
@@ -512,7 +512,7 @@ const SortByUnreadList = ({ ids, showCollapse, view }: SortListProps) => {
   return (
     <Fragment>
       {sortByUnreadFeedList.map((feedId) => (
-        <FeedItem
+        <FeedItemAutoHideUnread
           key={feedId}
           feedId={feedId}
           view={view}
