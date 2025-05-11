@@ -83,7 +83,7 @@ export const navigateEntry = (options: NavigateEntryOptions) => {
 
   finalFeedId = encodeURIComponent(finalFeedId)
 
-  if (finalView !== undefined) {
+  if (finalView !== undefined && !timelineId) {
     finalTimelineId = `${ROUTE_TIMELINE_OF_VIEW}${finalView}`
   }
 
