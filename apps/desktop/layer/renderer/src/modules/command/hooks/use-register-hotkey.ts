@@ -33,6 +33,7 @@ export const useCommandHotkey = <T extends FollowCommandId>({
     shortcuts.forEach((key) => {
       keyMap[key] = (event) => {
         event.preventDefault()
+        event.stopPropagation()
 
         const command = getCommand(commandId)
         if (!command) return

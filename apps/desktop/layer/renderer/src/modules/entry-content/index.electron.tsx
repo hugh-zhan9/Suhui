@@ -100,48 +100,12 @@ export const EntryContent: Component<EntryContentProps> = ({
   })
 
   const isInPeekModal = useInPeekModal()
-  const [isUserInteraction, setIsUserInteraction] = React.useState(false)
 
-  useConditionalHotkeyScope(HotkeyScope.EntryRender, isUserInteraction, true)
-
-  const activeScope = useHotkeyScope()
-
-  useCommandHotkey({
-    shortcut: shortcuts.entry.scrollUp.key,
-    commandId: COMMAND_ID.entryRender.scrollUp,
-    when: activeScope.includes(HotkeyScope.EntryRender),
+  const { setIsUserInteraction } = useRegisterCommands({
+    entryId,
+    scrollerRef,
   })
 
-  useCommandHotkey({
-    shortcut: shortcuts.entry.scrollDown.key,
-    commandId: COMMAND_ID.entryRender.scrollDown,
-    when: activeScope.includes(HotkeyScope.EntryRender),
-  })
-
-  useEffect(() => {
-    return EventBus.subscribe(COMMAND_ID.entryRender.scrollUp, () => {
-      const currentScroll = scrollerRef.current?.scrollTop
-      const delta = window.innerHeight
-
-      if (typeof currentScroll === "number" && delta) {
-        springScrollTo(currentScroll - delta, scrollerRef.current!)
-      }
-    })
-  }, [])
-
-  useEffect(() => {
-    return EventBus.subscribe(COMMAND_ID.entryRender.scrollDown, () => {
-      const currentScroll = scrollerRef.current?.scrollTop
-      const delta = window.innerHeight
-      if (typeof currentScroll === "number" && delta) {
-        springScrollTo(currentScroll + delta, scrollerRef.current!)
-      }
-    })
-  }, [])
-
-  useEffect(() => {
-    return () => setIsUserInteraction(false)
-  }, [entryId])
   if (!entry) return null
 
   const entryContent = isInReadabilityMode
@@ -321,3 +285,71 @@ const Renderer: React.FC<{
     </EntryContentHTMLRenderer>
   )
 })
+
+const useRegisterCommands = ({
+  entryId,
+  scrollerRef,
+}: {
+  entryId: string
+  scrollerRef: React.RefObject<HTMLDivElement | null>
+}) => {
+  const [isUserInteraction, setIsUserInteraction] = React.useState(false)
+  useConditionalHotkeyScope(HotkeyScope.EntryRender, isUserInteraction, true)
+
+  const activeScope = useHotkeyScope()
+  const when = activeScope.includes(HotkeyScope.EntryRender)
+
+  useCommandHotkey({
+    shortcut: shortcuts.entry.scrollUp.key,
+    commandId: COMMAND_ID.entryRender.scrollUp,
+    when,
+  })
+
+  useCommandHotkey({
+    shortcut: shortcuts.entry.scrollDown.key,
+    commandId: COMMAND_ID.entryRender.scrollDown,
+    when,
+  })
+
+  useCommandHotkey({
+    shortcut: shortcuts.entry.nextEntry.key,
+    commandId: COMMAND_ID.timeline.switchToNext,
+
+    when,
+  })
+
+  useCommandHotkey({
+    shortcut: shortcuts.entry.previousEntry.key,
+    commandId: COMMAND_ID.timeline.switchToPrevious,
+    when,
+  })
+
+  useEffect(() => {
+    return EventBus.subscribe(COMMAND_ID.entryRender.scrollUp, () => {
+      const currentScroll = scrollerRef.current?.scrollTop
+      const delta = window.innerHeight
+
+      if (typeof currentScroll === "number" && delta) {
+        springScrollTo(currentScroll - delta, scrollerRef.current!)
+      }
+    })
+  }, [scrollerRef])
+
+  useEffect(() => {
+    return EventBus.subscribe(COMMAND_ID.entryRender.scrollDown, () => {
+      const currentScroll = scrollerRef.current?.scrollTop
+      const delta = window.innerHeight
+      if (typeof currentScroll === "number" && delta) {
+        springScrollTo(currentScroll + delta, scrollerRef.current!)
+      }
+    })
+  }, [scrollerRef])
+
+  useEffect(() => {
+    return () => setIsUserInteraction(false)
+  }, [entryId])
+
+  return {
+    setIsUserInteraction,
+  }
+}
