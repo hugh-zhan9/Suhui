@@ -47,7 +47,7 @@ export const EntryColumnShortcutHandler: FC<{
   const currentEntryIdRef = useRefValue(useRouteEntryId())
   const navigate = useNavigateEntry()
   useEffect(() => {
-    return EventBus.subscribe("timeline:switch-to-next", () => {
+    return EventBus.subscribe(COMMAND_ID.timeline.switchToNext, () => {
       const data = dataRef.current
       const currentActiveEntryIndex = data.indexOf(currentEntryIdRef.current || "")
 
@@ -63,7 +63,7 @@ export const EntryColumnShortcutHandler: FC<{
   }, [currentEntryIdRef, dataRef, handleScrollTo, navigate])
 
   useEffect(() => {
-    return EventBus.subscribe("timeline:switch-to-previous", () => {
+    return EventBus.subscribe(COMMAND_ID.timeline.switchToPrevious, () => {
       const data = dataRef.current
       const currentActiveEntryIndex = data.indexOf(currentEntryIdRef.current || "")
 
@@ -80,7 +80,7 @@ export const EntryColumnShortcutHandler: FC<{
   }, [currentEntryIdRef, dataRef, handleScrollTo, navigate])
 
   useEffect(() => {
-    return EventBus.subscribe("timeline:refetch", () => {
+    return EventBus.subscribe(COMMAND_ID.timeline.refetch, () => {
       refetch()
     })
   }, [refetch])

@@ -56,4 +56,14 @@ export const COMMAND_ID = {
     scrollDown: "entry-render:scroll-down",
     scrollUp: "entry-render:scroll-up",
   },
+  subscription: {
+    switchTabToNext: "subscription:switch-tab-to-next",
+    switchTabToPrevious: "subscription:switch-tab-to-previous",
+    switchTabToArticle: "subscription:switch-tab-to-article",
+    switchTabToSocial: "subscription:switch-tab-to-social",
+    switchTabToPicture: "subscription:switch-tab-to-picture",
+    switchTabToVideo: "subscription:switch-tab-to-video",
+    switchTabToAudio: "subscription:switch-tab-to-audio",
+    switchTabToNotification: "subscription:switch-tab-to-notification",
+  },
 } as const

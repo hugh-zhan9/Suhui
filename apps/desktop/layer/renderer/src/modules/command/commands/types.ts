@@ -6,6 +6,7 @@ import type { GlobalCommand } from "./global"
 import type { IntegrationCommand } from "./integration"
 import type { LayoutCommand } from "./layout"
 import type { SettingsCommand } from "./settings"
+import type { SubscriptionCommand } from "./subscription"
 import type { TimelineCommand } from "./timeline"
 
 export type BasicCommand =
@@ -16,3 +17,4 @@ export type BasicCommand =
   | LayoutCommand
   | TimelineCommand
   | EntryRenderCommand
+  | SubscriptionCommand

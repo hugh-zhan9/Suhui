@@ -4,13 +4,13 @@ import { Routes } from "@follow/constants"
 import { useTypeScriptHappyCallback } from "@follow/hooks"
 import { useRegisterGlobalContext } from "@follow/shared/bridge"
 import { ELECTRON_BUILD } from "@follow/shared/constants"
+import { EventBus } from "@follow/utils/event-bus"
 import { clamp, cn } from "@follow/utils/utils"
 import { useWheel } from "@use-gesture/react"
 import { Lethargy } from "lethargy"
 import { AnimatePresence, m } from "motion/react"
 import type { FC, PropsWithChildren } from "react"
 import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
-import { isHotkeyPressed, useHotkeys } from "react-hotkeys-hook"
 import { useLocation } from "react-router"
 
 import { useRootContainerElement } from "~/atoms/dom"
@@ -22,8 +22,12 @@ import { navigateEntry, useBackHome } from "~/hooks/biz/useNavigateEntry"
 import { useReduceMotion } from "~/hooks/biz/useReduceMotion"
 import { useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
 import { useTimelineList } from "~/hooks/biz/useTimelineList"
+import { useConditionalHotkeyScope } from "~/hooks/common"
+import { useHotkeyScope } from "~/providers/hotkey-provider"
 
 import { WindowUnderBlur } from "../../components/ui/background"
+import { COMMAND_ID } from "../command/commands/id"
+import { useCommandHotkey } from "../command/hooks/use-register-hotkey"
 import { getSelectedFeedIds, resetSelectedFeedIds, setSelectedFeedIds } from "./atom"
 import { useShouldFreeUpSpace } from "./hook"
 import { TimelineColumnHeader } from "./TimelineColumnHeader"
@@ -86,25 +90,6 @@ export function FeedColumn({ children, className }: PropsWithChildren<{ classNam
     { target: carouselRef },
   )
 
-  useHotkeys(
-    shortcuts.feeds.switchBetweenViews.key,
-    (e) => {
-      e.preventDefault()
-      if (isHotkeyPressed("Left")) {
-        setActive((_, i) => {
-          if (i === 0) {
-            return timelineList.at(-1)!
-          } else {
-            return timelineList[i - 1]!
-          }
-        })
-      } else {
-        setActive((_, i) => timelineList[(i + 1) % timelineList.length]!)
-      }
-    },
-    { scopes: HotkeyScope.Home },
-  )
-
   useRegisterGlobalContext("goToDiscover", () => {
     window.router.navigate(Routes.Discover)
   })
@@ -121,9 +106,17 @@ export function FeedColumn({ children, className }: PropsWithChildren<{ classNam
   const feedColumnShow = useTimelineColumnShow()
   const rootContainerElement = useRootContainerElement()
 
+  const { setIsFocus } = useRegisterCommands({ setActive, timelineList })
+
   return (
     <WindowUnderBlur
       data-hide-in-print
+      onFocus={useCallback(() => {
+        setIsFocus(true)
+      }, [setIsFocus])}
+      onBlur={useCallback(() => {
+        setIsFocus(false)
+      }, [setIsFocus])}
       className={cn(
         "relative flex h-full flex-col pt-2.5",
 
@@ -241,3 +234,45 @@ const SwipeWrapper: FC<{ active: string; children: React.JSX.Element[] }> = memo
     )
   },
 )
+
+const useRegisterCommands = ({
+  setActive,
+  timelineList,
+}: {
+  setActive: (args: string | ((prev: string | undefined, index: number) => string)) => void
+  timelineList: string[]
+}) => {
+  const activeScope = useHotkeyScope()
+  const when =
+    activeScope.includes(HotkeyScope.SubscriptionList) || activeScope.includes(HotkeyScope.Timeline)
+  useCommandHotkey({
+    commandId: COMMAND_ID.subscription.switchTabToNext,
+    shortcut: shortcuts.feeds.switchNextView.key,
+    when,
+  })
+
+  useCommandHotkey({
+    commandId: COMMAND_ID.subscription.switchTabToPrevious,
+    shortcut: shortcuts.feeds.switchPreviousView.key,
+    when,
+  })
+
+  useEffect(() => {
+    return EventBus.subscribe(COMMAND_ID.subscription.switchTabToNext, () => {
+      setActive((_, i) => timelineList[(i + 1) % timelineList.length]!)
+    })
+  }, [activeScope, setActive, timelineList])
+
+  useEffect(() => {
+    return EventBus.subscribe(COMMAND_ID.subscription.switchTabToPrevious, () => {
+      setActive((_, i) => timelineList[(i - 1 + timelineList.length) % timelineList.length]!)
+    })
+  }, [activeScope, setActive, timelineList])
+
+  const [isFocus, setIsFocus] = useState(false)
+
+  useConditionalHotkeyScope(HotkeyScope.SubscriptionList, isFocus, true)
+  return {
+    setIsFocus,
+  }
+}

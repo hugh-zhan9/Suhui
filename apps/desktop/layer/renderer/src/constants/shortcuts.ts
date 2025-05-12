@@ -17,9 +17,13 @@ const shortcutConfigs = {
       name: "keys.feeds.switchToView",
       key: "1, 2, 3, 4, 5, 6",
     },
-    switchBetweenViews: {
-      name: "keys.feeds.switchBetweenViews",
-      key: "Tab, Left, Right",
+    switchNextView: {
+      name: "keys.feeds.switchNextView",
+      key: "Tab, ArrowRight",
+    },
+    switchPreviousView: {
+      name: "keys.feeds.switchPreviousView",
+      key: "Shift+Tab, ArrowLeft",
     },
   },
   layout: {

@@ -7,4 +7,5 @@ export enum HotkeyScope {
   // Atom Scope
   Timeline = "timeline",
   EntryRender = "entry-render",
+  SubscriptionList = "subscription-list",
 }
