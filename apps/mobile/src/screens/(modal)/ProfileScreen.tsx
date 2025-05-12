@@ -151,7 +151,7 @@ function ProfileScreenImpl(props: { userId: string }) {
       <ReAnimatedScrollView
         nestedScrollEnabled
         onScroll={scrollHandler}
-        contentContainerStyle={{ paddingBottom: insets.bottom, paddingTop: headerHeight }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 24, paddingTop: headerHeight }}
       >
         <UserHeaderBanner scrollY={scrollY} userId={props.userId} />
 
