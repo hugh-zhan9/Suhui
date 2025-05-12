@@ -166,8 +166,9 @@ function ProfileScreenImpl(props: { userId: string }) {
       <Animated.View
         style={useAnimatedStyle(() => ({
           opacity: interpolate(headerOpacity.value, [0, 1], [1, 0]),
+          top: insets.top,
         }))}
-        className="absolute top-5 flex w-full flex-row items-center justify-between px-4"
+        className="absolute flex w-full flex-row items-center justify-between px-4"
       >
         <View />
         <TouchableOpacity onPress={openShareUrl}>
