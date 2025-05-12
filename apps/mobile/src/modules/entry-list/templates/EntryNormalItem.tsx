@@ -145,7 +145,6 @@ const ThumbnailImage = ({
   entry: EntryModel
 }) => {
   const feed = useFeed(entry?.feedId as string)
-
   const thumbnailRatio = useUISettingKey("thumbnailRatio")
 
   const coverImage = entry?.media?.[0]
@@ -185,6 +184,9 @@ const ThumbnailImage = ({
             width={coverImage?.width}
           />
         ))}
+
+      {/* Show feed icon if no image but audio is present */}
+      {audio && !image && <FeedIcon feed={feed} size={96} />}
 
       {audio && (
         <NativePressable
