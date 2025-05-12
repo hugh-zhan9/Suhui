@@ -18,7 +18,7 @@ import { useUISettingKey } from "~/atoms/settings/ui"
 import { setTimelineColumnShow, useTimelineColumnShow } from "~/atoms/sidebar"
 import { HotKeyScopeMap } from "~/constants"
 import { shortcuts } from "~/constants/shortcuts"
-import { navigateEntry, useNavigateEntry } from "~/hooks/biz/useNavigateEntry"
+import { navigateEntry, useBackHome } from "~/hooks/biz/useNavigateEntry"
 import { useReduceMotion } from "~/hooks/biz/useReduceMotion"
 import { useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
 import { useTimelineList } from "~/hooks/biz/useTimelineList"
@@ -31,21 +31,6 @@ import TimelineList from "./TimelineList"
 import { TimelineSwitchButton } from "./TimelineSwitchButton"
 
 const lethargy = new Lethargy()
-
-const useBackHome = (timelineId?: string) => {
-  const navigate = useNavigateEntry()
-
-  return useCallback(
-    (overvideTimelineId?: string) => {
-      navigate({
-        feedId: null,
-        entryId: null,
-        timelineId: overvideTimelineId ?? timelineId,
-      })
-    },
-    [timelineId, navigate],
-  )
-}
 
 export function FeedColumn({ children, className }: PropsWithChildren<{ className?: string }>) {
   const carouselRef = useRef<HTMLDivElement>(null)
@@ -98,9 +83,7 @@ export function FeedColumn({ children, className }: PropsWithChildren<{ classNam
         return false
       }
     },
-    {
-      target: carouselRef,
-    },
+    { target: carouselRef },
   )
 
   useHotkeys(
@@ -128,18 +111,10 @@ export function FeedColumn({ children, className }: PropsWithChildren<{ classNam
 
   const location = useLocation()
   useRegisterGlobalContext("goToFeed", ({ id, view }: { id: string; view?: number }) => {
-    navigateEntry({
-      feedId: id,
-      view: view ?? 0,
-      backPath: location.pathname,
-    })
+    navigateEntry({ feedId: id, view: view ?? 0, backPath: location.pathname })
   })
   useRegisterGlobalContext("goToList", ({ id, view }: { id: string; view?: number }) => {
-    navigateEntry({
-      listId: id,
-      view: view ?? 0,
-      backPath: location.pathname,
-    })
+    navigateEntry({ listId: id, view: view ?? 0, backPath: location.pathname })
   })
 
   const shouldFreeUpSpace = useShouldFreeUpSpace()
@@ -155,7 +130,11 @@ export function FeedColumn({ children, className }: PropsWithChildren<{ classNam
         !feedColumnShow && ELECTRON_BUILD && "bg-material-opaque",
         className,
       )}
-      onClick={useCallback(() => navigateBackHome(), [navigateBackHome])}
+      onClick={useCallback(async () => {
+        if (document.hasFocus()) {
+          navigateBackHome()
+        }
+      }, [navigateBackHome])}
     >
       <TimelineColumnHeader />
       {!feedColumnShow && (
@@ -205,69 +184,60 @@ export function FeedColumn({ children, className }: PropsWithChildren<{ classNam
   )
 }
 
-const SwipeWrapper: FC<{
-  active: string
-  children: React.JSX.Element[]
-}> = memo(({ children, active }) => {
-  const reduceMotion = useReduceMotion()
-  const timelineList = useTimelineList()
-  const index = timelineList.indexOf(active)
+const SwipeWrapper: FC<{ active: string; children: React.JSX.Element[] }> = memo(
+  ({ children, active }) => {
+    const reduceMotion = useReduceMotion()
+    const timelineList = useTimelineList()
+    const index = timelineList.indexOf(active)
 
-  const feedColumnWidth = useUISettingKey("feedColWidth")
-  const containerRef = useRef<HTMLDivElement>(null)
+    const feedColumnWidth = useUISettingKey("feedColWidth")
+    const containerRef = useRef<HTMLDivElement>(null)
 
-  const prevActiveIndexRef = useRef(-1)
-  const [isReady, setIsReady] = useState(false)
+    const prevActiveIndexRef = useRef(-1)
+    const [isReady, setIsReady] = useState(false)
 
-  const [direction, setDirection] = useState<"left" | "right">("right")
-  const [currentAnimtedActive, setCurrentAnimatedActive] = useState(index)
+    const [direction, setDirection] = useState<"left" | "right">("right")
+    const [currentAnimtedActive, setCurrentAnimatedActive] = useState(index)
 
-  useLayoutEffect(() => {
-    const prevActiveIndex = prevActiveIndexRef.current
-    if (prevActiveIndex !== index) {
-      if (prevActiveIndex < index) {
-        setDirection("right")
-      } else {
-        setDirection("left")
-      }
-    }
-    // eslint-disable-next-line @eslint-react/web-api/no-leaked-timeout
-    setTimeout(() => {
-      setCurrentAnimatedActive(index)
-    }, 0)
-    if (prevActiveIndexRef.current !== -1) {
-      setIsReady(true)
-    }
-    prevActiveIndexRef.current = index
-  }, [index])
-
-  if (reduceMotion) {
-    return <div ref={containerRef}>{children[currentAnimtedActive]}</div>
-  }
-
-  return (
-    <AnimatePresence mode="popLayout">
-      <m.div
-        className="grow"
-        key={currentAnimtedActive}
-        initial={
-          isReady
-            ? {
-                x: direction === "right" ? feedColumnWidth : -feedColumnWidth,
-              }
-            : true
+    useLayoutEffect(() => {
+      const prevActiveIndex = prevActiveIndexRef.current
+      if (prevActiveIndex !== index) {
+        if (prevActiveIndex < index) {
+          setDirection("right")
+        } else {
+          setDirection("left")
         }
-        animate={{ x: 0 }}
-        exit={{
-          x: direction === "right" ? -feedColumnWidth : feedColumnWidth,
-        }}
-        transition={{
-          x: { type: "spring", stiffness: 700, damping: 40 },
-        }}
-        ref={containerRef}
-      >
-        {children[currentAnimtedActive]}
-      </m.div>
-    </AnimatePresence>
-  )
-})
+      }
+      // eslint-disable-next-line @eslint-react/web-api/no-leaked-timeout
+      setTimeout(() => {
+        setCurrentAnimatedActive(index)
+      }, 0)
+      if (prevActiveIndexRef.current !== -1) {
+        setIsReady(true)
+      }
+      prevActiveIndexRef.current = index
+    }, [index])
+
+    if (reduceMotion) {
+      return <div ref={containerRef}>{children[currentAnimtedActive]}</div>
+    }
+
+    return (
+      <AnimatePresence mode="popLayout">
+        <m.div
+          className="grow"
+          key={currentAnimtedActive}
+          initial={
+            isReady ? { x: direction === "right" ? feedColumnWidth : -feedColumnWidth } : true
+          }
+          animate={{ x: 0 }}
+          exit={{ x: direction === "right" ? -feedColumnWidth : feedColumnWidth }}
+          transition={{ x: { type: "spring", stiffness: 700, damping: 40 } }}
+          ref={containerRef}
+        >
+          {children[currentAnimtedActive]}
+        </m.div>
+      </AnimatePresence>
+    )
+  },
+)
