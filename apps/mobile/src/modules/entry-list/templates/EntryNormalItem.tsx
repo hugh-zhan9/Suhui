@@ -164,7 +164,11 @@ export const EntryNormalItem = memo(
                   }}
                 >
                   <View className="overflow-hidden rounded-full p-2">
-                    <ThemedBlurView style={StyleSheet.absoluteFillObject} intensity={30} />
+                    <ThemedBlurView
+                      style={StyleSheet.absoluteFillObject}
+                      intensity={30}
+                      experimentalBlurMethod="none"
+                    />
                     {isPlaying ? (
                       <PauseCuteFiIcon color="white" width={24} height={24} />
                     ) : isLoading ? (
