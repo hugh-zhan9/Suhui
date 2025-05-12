@@ -4,7 +4,7 @@ import { useHotkeysContext } from "react-hotkeys-hook"
 import { HotKeyScopeMap } from "~/constants"
 
 const allScopes = Object.keys(HotKeyScopeMap).reduce((acc, key) => {
-  acc.push(...HotKeyScopeMap[key])
+  acc.push(HotKeyScopeMap[key])
   return acc
 }, [] as string[])
 export const useSwitchHotKeyScope = () => {
@@ -18,9 +18,7 @@ export const useSwitchHotKeyScope = () => {
       for (const key of allScopes) {
         disableScope(key)
       }
-      for (const key of nextScope) {
-        enableScope(key)
-      }
+      enableScope(nextScope)
     },
     [disableScope, enableScope],
   )
@@ -34,15 +32,11 @@ export const useHotkeyScopeFn = (scope: keyof typeof HotKeyScopeMap) => {
     for (const key of allScopes) {
       disableScope(key)
     }
-    for (const key of scope) {
-      enableScope(key)
-    }
+    enableScope(scope)
     return () => {
-      for (const key of scope) {
-        disableScope(key)
-      }
-      for (const scope of currentScope) {
-        enableScope(scope)
+      disableScope(scope)
+      for (const key of currentScope) {
+        enableScope(key)
       }
     }
   }, [enableScope, disableScope, scope])

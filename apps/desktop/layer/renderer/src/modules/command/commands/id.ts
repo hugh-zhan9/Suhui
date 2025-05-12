@@ -41,4 +41,10 @@ export const COMMAND_ID = {
     changeThemeToLight: "follow:change-color-mode-to-light",
     customizeToolbar: "follow:customize-toolbar",
   },
+  global: {
+    showShortcuts: "global:show-shortcuts",
+  },
+  layout: {
+    toggleTimelineColumn: "layout:toggle-timeline-column",
+  },
 } as const

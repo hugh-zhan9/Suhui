@@ -12,7 +12,7 @@ import { debounce } from "es-toolkit/compat"
 import type { PropsWithChildren } from "react"
 import * as React from "react"
 import { Suspense, useEffect, useRef, useState } from "react"
-import { useHotkeys } from "react-hotkeys-hook"
+import { useHotkeysContext } from "react-hotkeys-hook"
 import { Trans } from "react-i18next"
 import { useResizable } from "react-resizable-layout"
 import { Outlet } from "react-router"
@@ -40,8 +40,9 @@ import { useI18n } from "~/hooks/common"
 import { EnvironmentIndicator } from "~/modules/app/EnvironmentIndicator"
 import { NetworkStatusIndicator } from "~/modules/app/NetworkStatusIndicator"
 import { LoginModalContent } from "~/modules/auth/LoginModalContent"
+import { COMMAND_ID } from "~/modules/command/commands/id"
+import { useCommandHotkey } from "~/modules/command/hooks/use-register-hotkey"
 import { DebugRegistry } from "~/modules/debug/registry"
-import { useShortcutsModal } from "~/modules/modal/shortcuts"
 import { CmdF } from "~/modules/panel/cmdf"
 import { SearchCmdK } from "~/modules/panel/cmdk"
 import { CmdNTrigger } from "~/modules/panel/cmdn"
@@ -241,17 +242,12 @@ const FeedResponsiveResizerContainer = ({
     }
   }, [feedColumnShow])
 
-  useHotkeys(
-    shortcuts.layout.toggleSidebar.key,
-    () => {
-      setTimelineColumnShow(!feedColumnShow)
-    },
-    {
-      scopes: HotKeyScopeMap.Home,
-    },
-  )
-  const showShortcuts = useShortcutsModal()
-  useHotkeys(shortcuts.layout.showShortcuts.key, showShortcuts)
+  const { activeScopes } = useHotkeysContext()
+  useCommandHotkey({
+    commandId: COMMAND_ID.layout.toggleTimelineColumn,
+    shortcut: shortcuts.layout.toggleSidebar.key,
+    when: activeScopes.includes(HotKeyScopeMap.Home),
+  })
 
   const [delayShowSplitter, setDelayShowSplitter] = useState(feedColumnShow)
 
