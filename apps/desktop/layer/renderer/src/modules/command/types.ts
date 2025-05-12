@@ -8,6 +8,7 @@ export type CommandCategory =
   | "follow:updates"
   | "follow:help"
   | "follow:general"
+  | "follow:entry-render"
 
 export interface KeybindingOptions {
   binding: string

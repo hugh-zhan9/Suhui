@@ -16,7 +16,7 @@ import { useLocation } from "react-router"
 import { useRootContainerElement } from "~/atoms/dom"
 import { useUISettingKey } from "~/atoms/settings/ui"
 import { setTimelineColumnShow, useTimelineColumnShow } from "~/atoms/sidebar"
-import { HotKeyScopeMap } from "~/constants"
+import { HotkeyScope } from "~/constants"
 import { shortcuts } from "~/constants/shortcuts"
 import { navigateEntry, useBackHome } from "~/hooks/biz/useNavigateEntry"
 import { useReduceMotion } from "~/hooks/biz/useReduceMotion"
@@ -102,7 +102,7 @@ export function FeedColumn({ children, className }: PropsWithChildren<{ classNam
         setActive((_, i) => timelineList[(i + 1) % timelineList.length]!)
       }
     },
-    { scopes: HotKeyScopeMap.Home },
+    { scopes: HotkeyScope.Home },
   )
 
   useRegisterGlobalContext("goToDiscover", () => {

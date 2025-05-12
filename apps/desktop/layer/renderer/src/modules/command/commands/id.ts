@@ -47,4 +47,13 @@ export const COMMAND_ID = {
   layout: {
     toggleTimelineColumn: "layout:toggle-timeline-column",
   },
+  timeline: {
+    switchToNext: "timeline:switch-to-next",
+    switchToPrevious: "timeline:switch-to-previous",
+    refetch: "timeline:refetch",
+  },
+  entryRender: {
+    scrollDown: "entry-render:scroll-down",
+    scrollUp: "entry-render:scroll-up",
+  },
 } as const

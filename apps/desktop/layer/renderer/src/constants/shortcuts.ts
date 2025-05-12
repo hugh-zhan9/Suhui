@@ -98,11 +98,11 @@ const shortcutConfigs = {
     },
     scrollUp: {
       name: "keys.entry.scrollUp",
-      key: "PageUp",
+      key: "K",
     },
     scrollDown: {
       name: "keys.entry.scrollDown",
-      key: "PageDown",
+      key: "J",
     },
   },
   audio: {

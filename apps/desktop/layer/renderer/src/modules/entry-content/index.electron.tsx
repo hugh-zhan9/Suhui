@@ -4,6 +4,8 @@ import type { FeedViewType } from "@follow/constants"
 import { useTitle } from "@follow/hooks"
 import type { FeedModel, InboxModel } from "@follow/models/types"
 import { stopPropagation } from "@follow/utils/dom"
+import { EventBus } from "@follow/utils/event-bus"
+import { springScrollTo } from "@follow/utils/scroller"
 import { cn } from "@follow/utils/utils"
 import { ErrorBoundary } from "@sentry/react"
 import * as React from "react"
@@ -18,10 +20,13 @@ import { useUISettingKey } from "~/atoms/settings/ui"
 import { ShadowDOM } from "~/components/common/ShadowDOM"
 import type { TocRef } from "~/components/ui/markdown/components/Toc"
 import { useInPeekModal } from "~/components/ui/modal/inspire/InPeekModal"
+import { HotkeyScope } from "~/constants"
+import { shortcuts } from "~/constants/shortcuts"
 import { useRenderStyle } from "~/hooks/biz/useRenderStyle"
 import { useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
-import { useAuthQuery } from "~/hooks/common"
+import { useAuthQuery, useConditionalHotkeyScope } from "~/hooks/common"
 import { useFeedSafeUrl } from "~/hooks/common/useFeedSafeUrl"
+import { useHotkeyScope } from "~/providers/hotkey-provider"
 import { WrappedElementProvider } from "~/providers/wrapped-element-provider"
 import { Queries } from "~/queries"
 import { useEntryTranslation } from "~/store/ai/hook"
@@ -29,6 +34,8 @@ import { useEntry } from "~/store/entry"
 import { useFeedById } from "~/store/feed"
 import { useInboxById } from "~/store/inbox"
 
+import { COMMAND_ID } from "../command/commands/id"
+import { useCommandHotkey } from "../command/hooks/use-register-hotkey"
 import { EntryContentHTMLRenderer } from "../renderer/html"
 import { AISummary } from "./AISummary"
 import { EntryTimelineSidebar } from "./components/EntryTimelineSidebar"
@@ -93,7 +100,48 @@ export const EntryContent: Component<EntryContentProps> = ({
   })
 
   const isInPeekModal = useInPeekModal()
+  const [isUserInteraction, setIsUserInteraction] = React.useState(false)
 
+  useConditionalHotkeyScope(HotkeyScope.EntryRender, isUserInteraction, true)
+
+  const activeScope = useHotkeyScope()
+
+  useCommandHotkey({
+    shortcut: shortcuts.entry.scrollUp.key,
+    commandId: COMMAND_ID.entryRender.scrollUp,
+    when: activeScope.includes(HotkeyScope.EntryRender),
+  })
+
+  useCommandHotkey({
+    shortcut: shortcuts.entry.scrollDown.key,
+    commandId: COMMAND_ID.entryRender.scrollDown,
+    when: activeScope.includes(HotkeyScope.EntryRender),
+  })
+
+  useEffect(() => {
+    return EventBus.subscribe(COMMAND_ID.entryRender.scrollUp, () => {
+      const currentScroll = scrollerRef.current?.scrollTop
+      const delta = window.innerHeight
+
+      if (typeof currentScroll === "number" && delta) {
+        springScrollTo(currentScroll - delta, scrollerRef.current!)
+      }
+    })
+  }, [])
+
+  useEffect(() => {
+    return EventBus.subscribe(COMMAND_ID.entryRender.scrollDown, () => {
+      const currentScroll = scrollerRef.current?.scrollTop
+      const delta = window.innerHeight
+      if (typeof currentScroll === "number" && delta) {
+        springScrollTo(currentScroll + delta, scrollerRef.current!)
+      }
+    })
+  }, [])
+
+  useEffect(() => {
+    return () => setIsUserInteraction(false)
+  }, [entryId])
   if (!entry) return null
 
   const entryContent = isInReadabilityMode
@@ -125,6 +173,8 @@ export const EntryContent: Component<EntryContentProps> = ({
             key={entry.entries.id}
           >
             <article
+              tabIndex={-1}
+              onClick={() => setIsUserInteraction(true)}
               data-testid="entry-render"
               onContextMenu={stopPropagation}
               className="@[950px]:max-w-[70ch] @7xl:max-w-[80ch] relative m-auto min-w-0 max-w-[550px]"
