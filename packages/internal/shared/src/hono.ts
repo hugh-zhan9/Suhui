@@ -5211,6 +5211,40 @@ declare const rsshub: drizzle_orm_pg_core.PgTableWithColumns<{
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
+        errorMessage: drizzle_orm_pg_core.PgColumn<{
+            name: "error_message";
+            tableName: "rsshub";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        errorAt: drizzle_orm_pg_core.PgColumn<{
+            name: "error_at";
+            tableName: "rsshub";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
     };
     dialect: "pg";
 }>;
@@ -5222,9 +5256,13 @@ declare const rsshubOpenAPISchema: zod.ZodObject<{
     price: zod.ZodNumber;
     description: zod.ZodNullable<zod.ZodString>;
     userLimit: zod.ZodNullable<zod.ZodNumber>;
+    errorMessage: zod.ZodNullable<zod.ZodString>;
+    errorAt: zod.ZodNullable<zod.ZodString>;
 }, zod.UnknownKeysParam, zod.ZodTypeAny, {
     id: string;
     description: string | null;
+    errorMessage: string | null;
+    errorAt: string | null;
     ownerUserId: string;
     baseUrl: string;
     accessKey: string | null;
@@ -5233,6 +5271,8 @@ declare const rsshubOpenAPISchema: zod.ZodObject<{
 }, {
     id: string;
     description: string | null;
+    errorMessage: string | null;
+    errorAt: string | null;
     ownerUserId: string;
     baseUrl: string;
     accessKey: string | null;
@@ -16844,6 +16884,8 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                 data: {
                     id: string;
                     description: string | null;
+                    errorMessage: string | null;
+                    errorAt: string | null;
                     ownerUserId: string;
                     owner: {
                         id: string;
@@ -16910,6 +16952,8 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                     instance: {
                         id: string;
                         description: string | null;
+                        errorMessage: string | null;
+                        errorAt: string | null;
                         ownerUserId: string;
                         price: number;
                         userLimit: number | null;
