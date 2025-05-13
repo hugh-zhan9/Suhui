@@ -141,10 +141,7 @@ const ActionBar = ({ entryId }: { entryId: string }) => {
       <div className="flex items-center gap-1">
         {entryActions
           .filter((item) => item instanceof MenuItemText)
-          .filter(
-            (item) =>
-              item.id !== COMMAND_ID.entry.read && item.id !== COMMAND_ID.entry.openInBrowser,
-          )
+          .filter((item) => item.id !== COMMAND_ID.entry.read)
           .map((item) => (
             <CommandActionButton
               commandId={item.id}
