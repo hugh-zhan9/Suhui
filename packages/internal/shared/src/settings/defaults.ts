@@ -6,7 +6,7 @@ export const defaultGeneralSettings: GeneralSettings = {
   language: "en",
   translation: false,
   translationMode: "bilingual",
-  summary: false,
+  summary: true,
   actionLanguage: "default",
 
   // mobile app
