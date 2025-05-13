@@ -55,6 +55,8 @@ export const COMMAND_ID = {
   entryRender: {
     scrollDown: "entry-render:scroll-down",
     scrollUp: "entry-render:scroll-up",
+    nextEntry: "entry-render:next-entry",
+    previousEntry: "entry-render:previous-entry",
   },
   subscription: {
     switchTabToNext: "subscription:switch-tab-to-next",

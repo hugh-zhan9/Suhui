@@ -1,3 +1,4 @@
+import { Focusable, useFocusable } from "@follow/components/common/Focusable.js"
 import { MemoedDangerousHTMLStyle } from "@follow/components/common/MemoedDangerousHTMLStyle.js"
 import { ScrollArea } from "@follow/components/ui/scroll-area/index.js"
 import type { FeedViewType } from "@follow/constants"
@@ -6,10 +7,10 @@ import type { FeedModel, InboxModel } from "@follow/models/types"
 import { stopPropagation } from "@follow/utils/dom"
 import { EventBus } from "@follow/utils/event-bus"
 import { springScrollTo } from "@follow/utils/scroller"
-import { cn } from "@follow/utils/utils"
+import { cn, combineCleanupFunctions } from "@follow/utils/utils"
 import { ErrorBoundary } from "@sentry/react"
 import * as React from "react"
-import { useEffect, useMemo, useRef } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 import {
   useEntryIsInReadability,
@@ -21,7 +22,6 @@ import { ShadowDOM } from "~/components/common/ShadowDOM"
 import type { TocRef } from "~/components/ui/markdown/components/Toc"
 import { useInPeekModal } from "~/components/ui/modal/inspire/InPeekModal"
 import { HotkeyScope } from "~/constants"
-import { shortcuts } from "~/constants/shortcuts"
 import { useRenderStyle } from "~/hooks/biz/useRenderStyle"
 import { useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
 import { useAuthQuery, useConditionalHotkeyScope } from "~/hooks/common"
@@ -35,7 +35,7 @@ import { useFeedById } from "~/store/feed"
 import { useInboxById } from "~/store/inbox"
 
 import { COMMAND_ID } from "../command/commands/id"
-import { useCommandHotkey } from "../command/hooks/use-register-hotkey"
+import { useCommandBinding } from "../command/hooks/use-register-hotkey"
 import { EntryContentHTMLRenderer } from "../renderer/html"
 import { AISummary } from "./AISummary"
 import { EntryTimelineSidebar } from "./components/EntryTimelineSidebar"
@@ -43,7 +43,6 @@ import { EntryTitle } from "./components/EntryTitle"
 import { SourceContentPanel } from "./components/SourceContentView"
 import { SupportCreator } from "./components/SupportCreator"
 import { EntryHeader } from "./header"
-import { useFocusEntryContainerSubscriptions } from "./hooks"
 import type { EntryContentProps } from "./index.shared"
 import {
   ContainerToc,
@@ -82,13 +81,20 @@ export const EntryContent: Component<EntryContentProps> = ({
 
   const isInReadabilityMode = useEntryIsInReadability(entryId)
   const isReadabilitySuccess = useEntryIsInReadabilitySuccess(entryId)
-  const scrollerRef = useRef<HTMLDivElement | null>(null)
-  useEffect(() => {
-    scrollerRef.current?.scrollTo(0, 0)
-    scrollerRef.current?.focus()
-  }, [entryId])
 
-  useFocusEntryContainerSubscriptions(scrollerRef)
+  const scrollerRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    const scrollAndFocus = () => {
+      scrollerRef.current?.scrollTo(0, 0)
+    }
+
+    scrollAndFocus()
+    return combineCleanupFunctions(
+      EventBus.subscribe(COMMAND_ID.timeline.switchToNext, scrollAndFocus),
+      EventBus.subscribe(COMMAND_ID.timeline.switchToPrevious, scrollAndFocus),
+    )
+  }, [])
 
   const safeUrl = useFeedSafeUrl(entryId)
 
@@ -101,11 +107,7 @@ export const EntryContent: Component<EntryContentProps> = ({
 
   const isInPeekModal = useInPeekModal()
 
-  const { setIsUserInteraction } = useRegisterCommands({
-    entryId,
-    scrollerRef,
-  })
-
+  const [isUserInteraction, setIsUserInteraction] = useState(false)
   if (!entry) return null
 
   const entryContent = isInReadabilityMode
@@ -129,7 +131,15 @@ export const EntryContent: Component<EntryContentProps> = ({
         />
       )}
 
-      <div className="@container relative flex size-full flex-col overflow-hidden print:size-auto print:overflow-visible">
+      <Focusable
+        className="@container relative flex size-full flex-col overflow-hidden print:size-auto print:overflow-visible"
+        onFocus={() => setIsUserInteraction(true)}
+      >
+        <RegisterCommands
+          entryId={entry.entries.id}
+          scrollerRef={scrollerRef}
+          isUserInteraction={isUserInteraction}
+        />
         <EntryTimelineSidebar entryId={entry.entries.id} />
         <EntryScrollArea className={className} scrollerRef={scrollerRef}>
           <div
@@ -138,7 +148,7 @@ export const EntryContent: Component<EntryContentProps> = ({
           >
             <article
               tabIndex={-1}
-              onClick={() => setIsUserInteraction(true)}
+              onFocus={() => setIsUserInteraction(true)}
               data-testid="entry-render"
               onContextMenu={stopPropagation}
               className="@[950px]:max-w-[70ch] @7xl:max-w-[80ch] relative m-auto min-w-0 max-w-[550px]"
@@ -202,7 +212,7 @@ export const EntryContent: Component<EntryContentProps> = ({
           </div>
         </EntryScrollArea>
         <SourceContentPanel src={safeUrl ?? "#"} />
-      </div>
+      </Focusable>
     </>
   )
 }
@@ -286,41 +296,37 @@ const Renderer: React.FC<{
   )
 })
 
-const useRegisterCommands = ({
-  entryId,
+const RegisterCommands = ({
   scrollerRef,
+  isUserInteraction,
 }: {
   entryId: string
   scrollerRef: React.RefObject<HTMLDivElement | null>
+  isUserInteraction: boolean
 }) => {
-  const [isUserInteraction, setIsUserInteraction] = React.useState(false)
-  useConditionalHotkeyScope(HotkeyScope.EntryRender, isUserInteraction, true)
+  const containerFocused = useFocusable()
+  useConditionalHotkeyScope(HotkeyScope.EntryRender, isUserInteraction && containerFocused, true)
 
   const activeScope = useHotkeyScope()
   const when = activeScope.includes(HotkeyScope.EntryRender)
 
-  useCommandHotkey({
-    shortcut: shortcuts.entry.scrollUp.key,
+  useCommandBinding({
     commandId: COMMAND_ID.entryRender.scrollUp,
     when,
   })
 
-  useCommandHotkey({
-    shortcut: shortcuts.entry.scrollDown.key,
+  useCommandBinding({
     commandId: COMMAND_ID.entryRender.scrollDown,
     when,
   })
 
-  useCommandHotkey({
-    shortcut: shortcuts.entry.nextEntry.key,
-    commandId: COMMAND_ID.timeline.switchToNext,
-
+  useCommandBinding({
+    commandId: COMMAND_ID.entryRender.nextEntry,
     when,
   })
 
-  useCommandHotkey({
-    shortcut: shortcuts.entry.previousEntry.key,
-    commandId: COMMAND_ID.timeline.switchToPrevious,
+  useCommandBinding({
+    commandId: COMMAND_ID.entryRender.previousEntry,
     when,
   })
 
@@ -345,11 +351,5 @@ const useRegisterCommands = ({
     })
   }, [scrollerRef])
 
-  useEffect(() => {
-    return () => setIsUserInteraction(false)
-  }, [entryId])
-
-  return {
-    setIsUserInteraction,
-  }
+  return null
 }

@@ -5,14 +5,13 @@ import { memo, useEffect, useLayoutEffect, useState } from "react"
 
 import { useMainContainerElement } from "~/atoms/dom"
 import { HotkeyScope } from "~/constants"
-import { shortcuts } from "~/constants/shortcuts"
 import { useNavigateEntry } from "~/hooks/biz/useNavigateEntry"
 import { useRouteEntryId } from "~/hooks/biz/useRouteParams"
 import { useConditionalHotkeyScope } from "~/hooks/common"
 import { useHotkeyScope } from "~/providers/hotkey-provider"
 
 import { COMMAND_ID } from "../command/commands/id"
-import { useCommandHotkey } from "../command/hooks/use-register-hotkey"
+import { useCommandBinding } from "../command/hooks/use-register-hotkey"
 
 export const EntryColumnShortcutHandler: FC<{
   refetch: () => void
@@ -26,26 +25,24 @@ export const EntryColumnShortcutHandler: FC<{
   const when =
     activeScope.includes(HotkeyScope.Timeline) && !activeScope.includes(HotkeyScope.EntryRender)
 
-  useCommandHotkey({
-    shortcut: shortcuts.entries.next.key,
+  useCommandBinding({
     commandId: COMMAND_ID.timeline.switchToNext,
     when,
   })
 
-  useCommandHotkey({
-    shortcut: shortcuts.entries.previous.key,
+  useCommandBinding({
     commandId: COMMAND_ID.timeline.switchToPrevious,
     when,
   })
 
-  useCommandHotkey({
-    shortcut: shortcuts.entries.refetch.key,
+  useCommandBinding({
     commandId: COMMAND_ID.timeline.refetch,
     when,
   })
 
   const currentEntryIdRef = useRefValue(useRouteEntryId())
   const navigate = useNavigateEntry()
+
   useEffect(() => {
     return EventBus.subscribe(COMMAND_ID.timeline.switchToNext, () => {
       const data = dataRef.current
@@ -60,7 +57,7 @@ export const EntryColumnShortcutHandler: FC<{
         entryId: nextId,
       })
     })
-  }, [currentEntryIdRef, dataRef, handleScrollTo, navigate])
+  }, [currentEntryIdRef, dataRef, handleScrollTo, navigate, when])
 
   useEffect(() => {
     return EventBus.subscribe(COMMAND_ID.timeline.switchToPrevious, () => {

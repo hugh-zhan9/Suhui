@@ -1,28 +1,11 @@
 import { tracker } from "@follow/tracker"
-import { EventBus } from "@follow/utils/event-bus"
-import { createElement, useCallback, useEffect } from "react"
+import { createElement, useCallback } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
 import { useModalStack } from "~/components/ui/modal/stacked/hooks"
 
 import { ImageGalleryContent } from "./components/ImageGalleryContent"
-
-declare module "@follow/utils/event-bus" {
-  export interface CustomEvent {
-    FOCUS_ENTRY_CONTAINER: never
-  }
-}
-
-export const useFocusEntryContainerSubscriptions = (
-  ref: React.RefObject<HTMLDivElement | null>,
-) => {
-  useEffect(() => {
-    return EventBus.subscribe("FOCUS_ENTRY_CONTAINER", () => {
-      ref.current?.focus()
-    })
-  }, [ref])
-}
 
 export const useGalleryModal = () => {
   const { present } = useModalStack()

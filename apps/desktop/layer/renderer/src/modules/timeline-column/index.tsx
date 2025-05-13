@@ -17,7 +17,6 @@ import { useRootContainerElement } from "~/atoms/dom"
 import { useUISettingKey } from "~/atoms/settings/ui"
 import { setTimelineColumnShow, useTimelineColumnShow } from "~/atoms/sidebar"
 import { HotkeyScope } from "~/constants"
-import { shortcuts } from "~/constants/shortcuts"
 import { navigateEntry, useBackHome } from "~/hooks/biz/useNavigateEntry"
 import { useReduceMotion } from "~/hooks/biz/useReduceMotion"
 import { useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
@@ -27,7 +26,7 @@ import { useHotkeyScope } from "~/providers/hotkey-provider"
 
 import { WindowUnderBlur } from "../../components/ui/background"
 import { COMMAND_ID } from "../command/commands/id"
-import { useCommandHotkey } from "../command/hooks/use-register-hotkey"
+import { useCommandBinding } from "../command/hooks/use-register-hotkey"
 import { getSelectedFeedIds, resetSelectedFeedIds, setSelectedFeedIds } from "./atom"
 import { useShouldFreeUpSpace } from "./hook"
 import { TimelineColumnHeader } from "./TimelineColumnHeader"
@@ -245,15 +244,13 @@ const useRegisterCommands = ({
   const activeScope = useHotkeyScope()
   const when =
     activeScope.includes(HotkeyScope.SubscriptionList) || activeScope.includes(HotkeyScope.Timeline)
-  useCommandHotkey({
+  useCommandBinding({
     commandId: COMMAND_ID.subscription.switchTabToNext,
-    shortcut: shortcuts.feeds.switchNextView.key,
     when,
   })
 
-  useCommandHotkey({
+  useCommandBinding({
     commandId: COMMAND_ID.subscription.switchTabToPrevious,
-    shortcut: shortcuts.feeds.switchPreviousView.key,
     when,
   })
 
