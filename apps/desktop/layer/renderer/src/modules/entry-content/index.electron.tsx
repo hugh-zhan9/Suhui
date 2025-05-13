@@ -4,6 +4,7 @@ import {
   useFocusActions,
 } from "@follow/components/common/Focusable/index.js"
 import { MemoedDangerousHTMLStyle } from "@follow/components/common/MemoedDangerousHTMLStyle.js"
+import { MotionButtonBase } from "@follow/components/ui/button/index.js"
 import { ScrollArea } from "@follow/components/ui/scroll-area/index.js"
 import type { FeedViewType } from "@follow/constants"
 import { useTitle } from "@follow/hooks"
@@ -21,7 +22,7 @@ import {
   useEntryIsInReadabilitySuccess,
   useEntryReadabilityContent,
 } from "~/atoms/readability"
-import { useUISettingKey } from "~/atoms/settings/ui"
+import { useIsZenMode, useUISettingKey } from "~/atoms/settings/ui"
 import { ShadowDOM } from "~/components/common/ShadowDOM"
 import type { TocRef } from "~/components/ui/markdown/components/Toc"
 import { useInPeekModal } from "~/components/ui/modal/inspire/InPeekModal"
@@ -112,6 +113,7 @@ export const EntryContent: Component<EntryContentProps> = ({
   const isInPeekModal = useInPeekModal()
 
   const [isUserInteraction, setIsUserInteraction] = useState(false)
+  const isZenMode = useIsZenMode()
   if (!entry) return null
 
   const entryContent = isInReadabilityMode
@@ -150,6 +152,32 @@ export const EntryContent: Component<EntryContentProps> = ({
             className="animate-in fade-in slide-in-from-bottom-24 f-motion-reduce:fade-in-0 f-motion-reduce:slide-in-from-bottom-0 select-text duration-200 ease-in-out"
             key={entry.entries.id}
           >
+            {!isZenMode && (
+              <>
+                <div className="absolute inset-y-0 left-0 flex w-12 items-center justify-center opacity-0 duration-200 hover:opacity-100">
+                  <MotionButtonBase
+                    className="absolute left-0 shrink-0 cursor-pointer"
+                    onClick={() => {
+                      EventBus.dispatch(COMMAND_ID.timeline.switchToPrevious)
+                    }}
+                  >
+                    <i className="i-mgc-left-small-sharp text-text-secondary size-16" />
+                  </MotionButtonBase>
+                </div>
+
+                <div className="absolute inset-y-0 right-0 flex w-12 items-center justify-center opacity-0 duration-200 hover:opacity-100">
+                  <MotionButtonBase
+                    className="absolute right-0 shrink-0 cursor-pointer"
+                    onClick={() => {
+                      EventBus.dispatch(COMMAND_ID.timeline.switchToNext)
+                    }}
+                  >
+                    <i className="i-mgc-right-small-sharp text-text-secondary size-16" />
+                  </MotionButtonBase>
+                </div>
+              </>
+            )}
+
             <article
               tabIndex={-1}
               onFocus={() => setIsUserInteraction(true)}
