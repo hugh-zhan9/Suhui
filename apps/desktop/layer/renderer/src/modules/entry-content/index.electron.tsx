@@ -99,7 +99,7 @@ export const EntryContent: Component<EntryContentProps> = ({
       EventBus.subscribe(COMMAND_ID.timeline.switchToNext, scrollAndFocus),
       EventBus.subscribe(COMMAND_ID.timeline.switchToPrevious, scrollAndFocus),
     )
-  }, [])
+  }, [entryId])
 
   const safeUrl = useFeedSafeUrl(entryId)
 
