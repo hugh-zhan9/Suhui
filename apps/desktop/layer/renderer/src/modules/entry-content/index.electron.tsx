@@ -1,10 +1,14 @@
-import { Focusable, useFocusable } from "@follow/components/common/Focusable.js"
+import {
+  Focusable,
+  useFocusable,
+  useFocusActions,
+} from "@follow/components/common/Focusable/index.js"
 import { MemoedDangerousHTMLStyle } from "@follow/components/common/MemoedDangerousHTMLStyle.js"
 import { ScrollArea } from "@follow/components/ui/scroll-area/index.js"
 import type { FeedViewType } from "@follow/constants"
 import { useTitle } from "@follow/hooks"
 import type { FeedModel, InboxModel } from "@follow/models/types"
-import { stopPropagation } from "@follow/utils/dom"
+import { nextFrame, stopPropagation } from "@follow/utils/dom"
 import { EventBus } from "@follow/utils/event-bus"
 import { springScrollTo } from "@follow/utils/scroller"
 import { cn, combineCleanupFunctions } from "@follow/utils/utils"
@@ -35,7 +39,7 @@ import { useFeedById } from "~/store/feed"
 import { useInboxById } from "~/store/inbox"
 
 import { COMMAND_ID } from "../command/commands/id"
-import { useCommandBinding } from "../command/hooks/use-register-hotkey"
+import { useCommandBinding, useCommandHotkey } from "../command/hooks/use-register-hotkey"
 import { EntryContentHTMLRenderer } from "../renderer/html"
 import { AISummary } from "./AISummary"
 import { EntryTimelineSidebar } from "./components/EntryTimelineSidebar"
@@ -136,9 +140,9 @@ export const EntryContent: Component<EntryContentProps> = ({
         onFocus={() => setIsUserInteraction(true)}
       >
         <RegisterCommands
-          entryId={entry.entries.id}
           scrollerRef={scrollerRef}
           isUserInteraction={isUserInteraction}
+          setIsUserInteraction={setIsUserInteraction}
         />
         <EntryTimelineSidebar entryId={entry.entries.id} />
         <EntryScrollArea className={className} scrollerRef={scrollerRef}>
@@ -299,10 +303,11 @@ const Renderer: React.FC<{
 const RegisterCommands = ({
   scrollerRef,
   isUserInteraction,
+  setIsUserInteraction,
 }: {
-  entryId: string
   scrollerRef: React.RefObject<HTMLDivElement | null>
   isUserInteraction: boolean
+  setIsUserInteraction: (isUserInteraction: boolean) => void
 }) => {
   const containerFocused = useFocusable()
   useConditionalHotkeyScope(HotkeyScope.EntryRender, isUserInteraction && containerFocused, true)
@@ -330,26 +335,43 @@ const RegisterCommands = ({
     when,
   })
 
-  useEffect(() => {
-    return EventBus.subscribe(COMMAND_ID.entryRender.scrollUp, () => {
-      const currentScroll = scrollerRef.current?.scrollTop
-      const delta = window.innerHeight
+  useCommandHotkey({
+    commandId: COMMAND_ID.layout.focusToTimeline,
+    when,
+    shortcut: "Backspace",
+  })
 
-      if (typeof currentScroll === "number" && delta) {
-        springScrollTo(currentScroll - delta, scrollerRef.current!)
-      }
-    })
-  }, [scrollerRef])
+  const { highlightBoundary } = useFocusActions()
 
   useEffect(() => {
-    return EventBus.subscribe(COMMAND_ID.entryRender.scrollDown, () => {
-      const currentScroll = scrollerRef.current?.scrollTop
-      const delta = window.innerHeight
-      if (typeof currentScroll === "number" && delta) {
-        springScrollTo(currentScroll + delta, scrollerRef.current!)
-      }
-    })
-  }, [scrollerRef])
+    return combineCleanupFunctions(
+      EventBus.subscribe(COMMAND_ID.entryRender.scrollUp, () => {
+        const currentScroll = scrollerRef.current?.scrollTop
+        const delta = window.innerHeight
+
+        if (typeof currentScroll === "number" && delta) {
+          springScrollTo(currentScroll - delta, scrollerRef.current!)
+        }
+      }),
+
+      EventBus.subscribe(COMMAND_ID.entryRender.scrollDown, () => {
+        const currentScroll = scrollerRef.current?.scrollTop
+        const delta = window.innerHeight
+        if (typeof currentScroll === "number" && delta) {
+          springScrollTo(currentScroll + delta, scrollerRef.current!)
+        }
+      }),
+      EventBus.subscribe(COMMAND_ID.timeline.enter, () => {
+        const $scroller = scrollerRef.current
+        if ($scroller) {
+          springScrollTo(0, $scroller)
+          $scroller.focus()
+          nextFrame(highlightBoundary)
+          setIsUserInteraction(true)
+        }
+      }),
+    )
+  }, [highlightBoundary, scrollerRef, setIsUserInteraction])
 
   return null
 }

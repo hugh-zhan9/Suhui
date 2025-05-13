@@ -46,11 +46,13 @@ export const COMMAND_ID = {
   },
   layout: {
     toggleTimelineColumn: "layout:toggle-timeline-column",
+    focusToTimeline: "layout:focus-to-timeline",
   },
   timeline: {
     switchToNext: "timeline:switch-to-next",
     switchToPrevious: "timeline:switch-to-previous",
     refetch: "timeline:refetch",
+    enter: "timeline:enter",
   },
   entryRender: {
     scrollDown: "entry-render:scroll-down",
