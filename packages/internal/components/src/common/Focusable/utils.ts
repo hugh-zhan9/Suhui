@@ -36,28 +36,41 @@ function cubicBezier(t: number, p1x: number, p1y: number, p2x: number, p2y: numb
   return sampleCurveY(solveCurveX(t))
 }
 
-export function highlightElement(element: HTMLElement | null): void {
+// Shared canvas element for all highlight operations
+let sharedCanvas: HTMLCanvasElement | null = null
+let currentAnimationId: number | null = null
+
+export function highlightElement(element: HTMLElement | null, colorString = "255, 165, 0"): void {
   if (!element) return
+
+  // Cancel any ongoing animation
+  if (currentAnimationId !== null) {
+    cancelAnimationFrame(currentAnimationId)
+    currentAnimationId = null
+  }
 
   // Get element's bounding rectangle
   const rect: DOMRect = element.getBoundingClientRect()
   const padding = 10 // Extra space for shadow effect
 
-  // Create canvas
-  const canvas: HTMLCanvasElement = document.createElement("canvas")
-  canvas.style.position = "absolute"
-  canvas.style.top = `${rect.top + window.scrollY - padding}px`
-  canvas.style.left = `${rect.left + window.scrollX - padding}px`
-  canvas.width = rect.width + padding * 2
-  canvas.height = rect.height + padding * 2
+  // Create or reuse canvas
+  if (!sharedCanvas) {
+    sharedCanvas = document.createElement("canvas")
+    sharedCanvas.style.position = "absolute"
+    sharedCanvas.style.pointerEvents = "none"
+    sharedCanvas.style.zIndex = "999999"
+    sharedCanvas.id = "follow-highlight-canvas"
+    document.body.append(sharedCanvas)
+  }
 
-  canvas.style.pointerEvents = "none"
-  canvas.style.zIndex = "999999"
-  document.body.append(canvas)
+  // Update canvas position and size
+  sharedCanvas.style.top = `${rect.top + window.scrollY - padding}px`
+  sharedCanvas.style.left = `${rect.left + window.scrollX - padding}px`
+  sharedCanvas.width = rect.width + padding * 2
+  sharedCanvas.height = rect.height + padding * 2
 
-  const ctx: CanvasRenderingContext2D = canvas.getContext("2d")!
+  const ctx: CanvasRenderingContext2D = sharedCanvas.getContext("2d")!
   if (!ctx) {
-    canvas.remove()
     return
   }
 
@@ -105,8 +118,11 @@ export function highlightElement(element: HTMLElement | null): void {
     const segmentT: number = (t - segmentIndex * segmentDuration) / segmentDuration
 
     if (segmentIndex >= keyframes.length - 1) {
-      // Animation complete, remove canvas
-      canvas.remove()
+      // Animation complete, hide canvas
+      if (sharedCanvas) {
+        sharedCanvas.style.display = "none"
+      }
+      currentAnimationId = null
       return
     }
 
@@ -132,11 +148,11 @@ export function highlightElement(element: HTMLElement | null): void {
     )
 
     // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    ctx.clearRect(0, 0, sharedCanvas!.width, sharedCanvas!.height)
 
     // Draw shadow (approximated as thick border with rounded corners)
     if (shadowWidth > 0) {
-      ctx.strokeStyle = `rgba(255, 165, 0, ${shadowOpacity})` // Orange color
+      ctx.strokeStyle = `rgba(${colorString}, ${shadowOpacity})` // Orange color
       ctx.lineWidth = shadowWidth
       ctx.beginPath()
       ctx.roundRect(
@@ -151,7 +167,7 @@ export function highlightElement(element: HTMLElement | null): void {
 
     // Draw outline (with rounded corners)
     if (outlineWidth > 0) {
-      ctx.strokeStyle = `rgba(255, 165, 0, ${outlineOpacity})`
+      ctx.strokeStyle = `rgba(${colorString}, ${outlineOpacity})`
       ctx.lineWidth = outlineWidth
       ctx.beginPath()
       ctx.roundRect(
@@ -165,11 +181,19 @@ export function highlightElement(element: HTMLElement | null): void {
     }
 
     if (t < 1) {
-      requestAnimationFrame(animate)
+      currentAnimationId = requestAnimationFrame(animate)
     } else {
-      canvas.remove()
+      if (sharedCanvas) {
+        sharedCanvas.style.display = "none"
+      }
+      currentAnimationId = null
     }
   }
 
-  requestAnimationFrame(animate)
+  // Show canvas before starting animation
+  if (sharedCanvas) {
+    sharedCanvas.style.display = "block"
+  }
+
+  currentAnimationId = requestAnimationFrame(animate)
 }
