@@ -13,7 +13,7 @@ import { FeedForm } from "~/modules/discover/FeedForm"
 import type { ListFormDataValuesType } from "~/modules/discover/ListForm"
 import { ListForm } from "~/modules/discover/ListForm"
 import {
-  getSubscriptionByFeedId,
+  getSubscriptionByFeedIdOrUrl,
   useFeedSubscriptionCount,
   useListSubscriptionCount,
 } from "~/store/subscription"
@@ -73,10 +73,12 @@ export const useFollow = () => {
       } else {
         canFollowMoreInboxAndNotify("feed")
       }
-      let isFollowed = false
-      if (options?.id) {
-        isFollowed = !!getSubscriptionByFeedId(options.id)
-      }
+
+      const subscription = getSubscriptionByFeedIdOrUrl({
+        id: options?.id,
+        url: options?.url,
+      })
+      const isFollowed = !!subscription
 
       present({
         title: `${isFollowed ? `${t("common:words.edit")} ` : ""}${options?.isList ? t("words.lists") : t("words.feeds")}`,
