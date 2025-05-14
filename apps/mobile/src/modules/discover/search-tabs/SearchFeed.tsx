@@ -80,6 +80,11 @@ const SearchFeedItem = ({ item }: { item: SearchResultItem }) => {
             id: item.feed.id,
             type: "feed",
           })
+        } else if (item.feed?.url) {
+          navigation.presentControllerView(FollowScreen, {
+            url: item.feed.url,
+            type: "url",
+          })
         }
       }}
     >
@@ -145,7 +150,7 @@ const SearchFeedItem = ({ item }: { item: SearchResultItem }) => {
           showsHorizontalScrollIndicator={false}
           contentContainerClassName="flex flex-row gap-4 pl-4"
         >
-          {item.entries?.map((entry) => <PreviewItem entry={entry} key={entry.id} />)}
+          {item.entries?.map((entry) => <PreviewItem entry={entry} key={entry.id || entry.guid} />)}
         </ScrollView>
       </View>
       <View className="mt-4 flex-row items-center gap-6 pl-4 opacity-60">
