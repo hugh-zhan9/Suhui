@@ -71,6 +71,16 @@ export const FeedForm: Component<{
   const isInModal = useIsInModal()
   const placeholderRef = useRef<HTMLDivElement | null>(null)
 
+  useEffect(() => {
+    if (!feedQuery.isLoading) {
+      tracker.subscribeModalOpened({
+        feedId: id,
+        feedUrl: feedQuery.data?.feed.url || url,
+        isError: feedQuery.isError,
+      })
+    }
+  }, [feedQuery.isLoading])
+
   return (
     <div
       className={cn(
