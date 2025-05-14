@@ -209,7 +209,11 @@ const FeedInnerForm = ({
   }, [subscription])
 
   useEffect(() => {
-    if (analytics?.view !== undefined && !subscription && defaultValues?.view === undefined) {
+    if (
+      typeof analytics?.view === "number" &&
+      !subscription &&
+      typeof defaultValues?.view !== "number"
+    ) {
       form.setValue("view", `${analytics.view}`)
     }
   }, [analytics, subscription, defaultValues?.view])
