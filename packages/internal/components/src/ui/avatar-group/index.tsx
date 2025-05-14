@@ -1,9 +1,9 @@
-import { Spring } from "@follow/components/constants/spring"
 import { cn } from "@follow/utils/utils"
 import type { Transition } from "motion/react"
 import { m as motion } from "motion/react"
 import * as React from "react"
 
+import { Spring } from "../../constants/spring"
 import { Tooltip, TooltipTrigger } from "../tooltip"
 
 type AvatarProps = {
