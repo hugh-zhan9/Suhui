@@ -366,7 +366,7 @@ const RegisterCommands = ({
   useCommandHotkey({
     commandId: COMMAND_ID.layout.focusToTimeline,
     when,
-    shortcut: "Backspace",
+    shortcut: "Backspace, Escape",
   })
 
   const { highlightBoundary } = useFocusActions()

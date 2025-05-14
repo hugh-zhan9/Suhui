@@ -102,11 +102,11 @@ const shortcutConfigs = {
     },
     scrollUp: {
       name: tShortcuts("keys.entry.scrollUp"),
-      key: "K",
+      key: "K, ArrowUp",
     },
     scrollDown: {
       name: tShortcuts("keys.entry.scrollDown"),
-      key: "J",
+      key: "J, ArrowDown",
     },
     nextEntry: {
       name: tShortcuts("keys.entries.next"),
