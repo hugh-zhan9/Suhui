@@ -148,6 +148,7 @@ export const EntryContent: Component<EntryContentProps> = ({
         />
         <EntryTimelineSidebar entryId={entry.entries.id} />
         <EntryScrollArea className={className} scrollerRef={scrollerRef}>
+          {/* Indicator for the entry */}
           <div
             className="animate-in fade-in slide-in-from-bottom-24 f-motion-reduce:fade-in-0 f-motion-reduce:slide-in-from-bottom-0 select-text duration-200 ease-in-out"
             key={entry.entries.id}
@@ -156,7 +157,8 @@ export const EntryContent: Component<EntryContentProps> = ({
               <>
                 <div className="absolute inset-y-0 left-0 flex w-12 items-center justify-center opacity-0 duration-200 hover:opacity-100">
                   <MotionButtonBase
-                    className="absolute left-0 shrink-0 cursor-pointer"
+                    // -12： Visual center point
+                    className="absolute left-0 shrink-0 !-translate-y-12 cursor-pointer"
                     onClick={() => {
                       EventBus.dispatch(COMMAND_ID.timeline.switchToPrevious)
                     }}
@@ -167,7 +169,7 @@ export const EntryContent: Component<EntryContentProps> = ({
 
                 <div className="absolute inset-y-0 right-0 flex w-12 items-center justify-center opacity-0 duration-200 hover:opacity-100">
                   <MotionButtonBase
-                    className="absolute right-0 shrink-0 cursor-pointer"
+                    className="absolute right-0 shrink-0 !-translate-y-12 cursor-pointer"
                     onClick={() => {
                       EventBus.dispatch(COMMAND_ID.timeline.switchToNext)
                     }}
