@@ -10,9 +10,9 @@ import {
 import { useSubscriptionStore } from "./store"
 
 const get = useSubscriptionStore.getState
-export const getSubscriptionByFeedId = (feedId: FeedId) => {
-  const state = get()
-  return state.data[feedId]
+export const getSubscriptionByFeedId = (feedId?: FeedId) => {
+  if (!feedId) return
+  return get().data[feedId]
 }
 export const getSubscriptionByFeedIdOrUrl = (params: FeedQueryParams) => {
   const feed = getFeedByIdOrUrl(params)
