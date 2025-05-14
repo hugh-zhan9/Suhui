@@ -1,3 +1,7 @@
+import { highlightElement } from "@follow/components/common/Focusable/utils.js"
+import { nextFrame } from "@follow/utils/dom"
+import { useEventListener } from "usehooks-ts"
+
 import { HotkeyScope } from "~/constants/hotkeys"
 import { COMMAND_ID } from "~/modules/command/commands/id"
 import { useCommandBinding } from "~/modules/command/hooks/use-register-hotkey"
@@ -11,6 +15,14 @@ export const GlobalHotkeysProvider = () => {
     commandId: COMMAND_ID.global.showShortcuts,
     when:
       activeScopes.includes(HotkeyScope.Home) && !activeScopes.includes(HotkeyScope.EntryRender),
+  })
+
+  useEventListener("keydown", (e) => {
+    if (e.key === "Tab") {
+      nextFrame(() => {
+        highlightElement(document.activeElement as HTMLElement)
+      })
+    }
   })
 
   return null

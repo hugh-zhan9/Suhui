@@ -52,6 +52,7 @@ export function highlightElement(element: HTMLElement | null): void {
   canvas.height = rect.height + padding * 2
 
   canvas.style.pointerEvents = "none"
+  canvas.style.zIndex = "999999"
   document.body.append(canvas)
 
   const ctx: CanvasRenderingContext2D = canvas.getContext("2d")!
