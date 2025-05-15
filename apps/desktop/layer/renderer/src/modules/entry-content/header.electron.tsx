@@ -60,8 +60,8 @@ function EntryHeaderImpl({ view, entryId, className, compact }: EntryHeaderProps
                 <span className="min-w-[50%] shrink truncate font-bold">
                   {entryTitleMeta.title}
                 </span>
-                <i className="i-mgc-line-cute-re size-[10px] shrink-0 translate-y-[-3px] rotate-[-25deg]" />
-                <span className="text-text-secondary text-headline shrink truncate">
+                <i className="i-mgc-line-cute-re text-text-secondary size-[10px] shrink-0 translate-y-[-3px] rotate-[-25deg]" />
+                <span className="text-text-secondary text-headline shrink -translate-y-px truncate">
                   {entryTitleMeta.description}
                 </span>
               </m.div>
