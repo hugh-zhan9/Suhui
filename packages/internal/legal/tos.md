@@ -106,4 +106,4 @@ Folo is an open-source project, and we welcome contributions such as bug reports
 
 ## 15. Privacy and Data Use
 
-Folo takes your privacy seriously. We may collect, store, and process personal information, including usage patterns and content interactions. Our [Privacy Policy](https://app.follow.is/privacy-policy) (available soon) will detail how we collect, process, and protect your data. Until available, contact follow@rss3.io for privacy inquiries. We are committed to handling your data securely and transparently in compliance with applicable laws, including Singapore’s Personal Data Protection Act.
+Folo takes your privacy seriously. We may collect, store, and process personal information, including usage patterns and content interactions. Our [Privacy Policy](https://app.follow.is/privacy-policy) will detail how we collect, process, and protect your data. Until available, contact follow@rss3.io for privacy inquiries. We are committed to handling your data securely and transparently in compliance with applicable laws, including Singapore’s Personal Data Protection Act.
