@@ -29,7 +29,7 @@ export const LoginModalContent = (props: LoginModalContentProps) => {
   const { canClose = true, runtime } = props
 
   const { t } = useTranslation()
-  const { data: authProviders } = useAuthProviders()
+  const { data: authProviders, isLoading } = useAuthProviders()
 
   const isMobile = useMobile()
 
@@ -79,25 +79,35 @@ export const LoginModalContent = (props: LoginModalContentProps) => {
         )
       ) : (
         <div className="mb-3 flex flex-col items-center justify-center gap-4">
-          {providers.map(([key, provider]) => (
-            <MotionButtonBase
-              key={key}
-              onClick={() => {
-                if (key === "credential") {
-                  setIsEmail(true)
-                } else {
-                  loginHandler(key, "app")
-                }
-              }}
-              className="center hover:bg-material-medium relative w-full gap-2 rounded-xl border py-3 pl-5 font-semibold duration-200"
-            >
-              <img
-                className="absolute left-9 h-5 dark:brightness-[0.85] dark:hue-rotate-180 dark:invert"
-                src={provider.icon64}
-              />
-              <span>{t("login.continueWith", { provider: provider.name })}</span>
-            </MotionButtonBase>
-          ))}
+          {isLoading
+            ? // Skeleton loaders to prevent CLS
+              Array.from({ length: 4 })
+                .fill(0)
+                .map((_, index) => (
+                  <div
+                    key={index}
+                    className="bg-material-ultra-thick border-material-medium relative h-12 w-full animate-pulse rounded-xl border"
+                  />
+                ))
+            : providers.map(([key, provider]) => (
+                <MotionButtonBase
+                  key={key}
+                  onClick={() => {
+                    if (key === "credential") {
+                      setIsEmail(true)
+                    } else {
+                      loginHandler(key, "app")
+                    }
+                  }}
+                  className="center hover:bg-material-medium relative w-full gap-2 rounded-xl border py-3 pl-5 font-semibold duration-200"
+                >
+                  <img
+                    className="absolute left-9 h-5 dark:brightness-[0.85] dark:hue-rotate-180 dark:invert"
+                    src={provider.icon64}
+                  />
+                  <span>{t("login.continueWith", { provider: provider.name })}</span>
+                </MotionButtonBase>
+              ))}
         </div>
       )}
       <Divider className="mb-5 mt-6" />
