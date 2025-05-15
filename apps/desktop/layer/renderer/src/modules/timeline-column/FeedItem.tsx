@@ -230,8 +230,8 @@ export const FeedItem = memo(FeedItemImpl)
 
 export const FeedItemAutoHideUnread: Component<FeedItemProps> = memo((props) => {
   const hideAllReadSubscriptions = useGeneralSettingKey("hideAllReadSubscriptions")
-
-  if (hideAllReadSubscriptions) return createElement(FilterReadFeedItem, props)
+  const unreadOnly = useGeneralSettingKey("unreadOnly")
+  if (hideAllReadSubscriptions && unreadOnly) return createElement(FilterReadFeedItem, props)
   return createElement(FeedItemImpl, props)
 })
 

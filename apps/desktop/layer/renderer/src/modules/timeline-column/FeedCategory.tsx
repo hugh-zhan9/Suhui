@@ -18,7 +18,7 @@ import { useEventCallback, useOnClickOutside } from "usehooks-ts"
 
 import type { MenuItemInput } from "~/atoms/context-menu"
 import { MenuItemSeparator, MenuItemText, useShowContextMenu } from "~/atoms/context-menu"
-import { useGeneralSettingSelector } from "~/atoms/settings/general"
+import { useGeneralSettingKey, useGeneralSettingSelector } from "~/atoms/settings/general"
 import { ROUTE_FEED_IN_FOLDER } from "~/constants"
 import { useAddFeedToFeedList } from "~/hooks/biz/useFeedActions"
 import { useNavigateEntry } from "~/hooks/biz/useNavigateEntry"
@@ -362,7 +362,27 @@ function FeedCategoryImpl({ data: ids, view, categoryOpenStateData }: FeedCatego
   )
 }
 
+function FilterReadFeedCategory(props: FeedCategoryProps) {
+  const unread = useFeedUnreadStore(
+    useCallback(
+      (state) => props.data.reduce((acc, feedId) => (state.data[feedId] || 0) + acc, 0),
+      [props.data],
+    ),
+  )
+  if (!unread) return null
+  return <FeedCategoryImpl {...props} />
+}
+
 export const FeedCategory = memo(FeedCategoryImpl)
+
+export function FeedCategoryAutoHideUnread(props: FeedCategoryProps) {
+  const hideAllReadSubscriptions = useGeneralSettingKey("hideAllReadSubscriptions")
+  const unreadOnly = useGeneralSettingKey("unreadOnly")
+  if (hideAllReadSubscriptions && unreadOnly) {
+    return <FilterReadFeedCategory {...props} />
+  }
+  return <FeedCategoryImpl {...props} />
+}
 
 const RenameCategoryForm: FC<{
   currentCategory: string
