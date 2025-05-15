@@ -10,6 +10,7 @@ import { Logo } from "@/src/components/ui/logo"
 import { useNavigation } from "@/src/lib/navigation/hooks"
 import { NavigationLink } from "@/src/lib/navigation/NavigationLink"
 import { useScaleHeight } from "@/src/lib/responsive"
+import { PrivacyPolicyScreen } from "@/src/screens/(headless)/privacy"
 import { TermsMarkdown, TermsScreen } from "@/src/screens/(headless)/terms"
 
 import { EmailLogin, EmailSignUp } from "./email"
@@ -110,16 +111,26 @@ const TermsText = () => {
   return (
     <ContextMenu.Root>
       <ContextMenu.Trigger className="w-full overflow-hidden rounded-full">
-        <Text className="text-secondary-label text-sm">
+        <Text className="text-secondary-label text-center text-sm">
           By continuing, you agree to our{" "}
+        </Text>
+        <View className="flex-row items-center">
           <NavigationLink
             destination={TermsScreen}
             suppressHighlighting
-            className="text-primary-label"
+            className="text-secondary-label"
           >
             <Text className="font-semibold">Terms of Service</Text>
           </NavigationLink>
-        </Text>
+          <Text className="text-secondary-label">&nbsp;&&nbsp;</Text>
+          <NavigationLink
+            destination={PrivacyPolicyScreen}
+            suppressHighlighting
+            className="text-secondary-label"
+          >
+            <Text className="font-semibold">Privacy Policy</Text>
+          </NavigationLink>
+        </View>
       </ContextMenu.Trigger>
 
       <ContextMenu.Content>

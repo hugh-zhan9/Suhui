@@ -10,11 +10,12 @@ import { m } from "motion/react"
 import { useState } from "react"
 import { Trans, useTranslation } from "react-i18next"
 
-import { useCurrentModal } from "~/components/ui/modal/stacked/hooks"
+import { useCurrentModal, useModalStack } from "~/components/ui/modal/stacked/hooks"
 import { loginHandler } from "~/lib/auth"
 import { useAuthProviders } from "~/queries/users"
 
 import { LoginWithPassword, RegisterForm } from "./Form"
+import { LegalModalContent } from "./LegalModal"
 
 interface LoginModalContentProps {
   runtime: LoginRuntime
@@ -23,6 +24,7 @@ interface LoginModalContentProps {
 
 export const LoginModalContent = (props: LoginModalContentProps) => {
   const modal = useCurrentModal()
+  const { present } = useModalStack()
 
   const { canClose = true, runtime } = props
 
@@ -35,6 +37,17 @@ export const LoginModalContent = (props: LoginModalContentProps) => {
 
   const [isRegister, setIsRegister] = useState(true)
   const [isEmail, setIsEmail] = useState(false)
+
+  const handleOpenLegal = (type: "privacy" | "tos") => {
+    present({
+      id: `legal-${type}`,
+      title: type === "privacy" ? t("login.privacy") : t("login.terms"),
+      content: () => <LegalModalContent type={type} />,
+      resizeable: true,
+      clickOutsideToDismiss: true,
+      max: true,
+    })
+  }
 
   const Inner = (
     <>
@@ -103,6 +116,23 @@ export const LoginModalContent = (props: LoginModalContentProps) => {
           />
         </div>
       )}
+
+      <div className="text-text-secondary mt-3 text-center text-xs leading-5">
+        <span>{t("login.agree_to")}</span> <br />
+        <a
+          onClick={() => handleOpenLegal("tos")}
+          className="text-accent cursor-pointer hover:underline"
+        >
+          {t("login.terms")}
+        </a>{" "}
+        &{" "}
+        <a
+          onClick={() => handleOpenLegal("privacy")}
+          className="text-accent cursor-pointer hover:underline"
+        >
+          {t("login.privacy")}
+        </a>
+      </div>
     </>
   )
   if (isMobile) {

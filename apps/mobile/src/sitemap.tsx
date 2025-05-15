@@ -6,6 +6,7 @@ import { Navigation } from "./lib/navigation/Navigation"
 import { NavigationSitemapRegistry } from "./lib/navigation/sitemap/registry"
 import type { NavigationControllerView } from "./lib/navigation/types"
 import { OTPWindow } from "./modules/settings/components/OTPWindow"
+import { PrivacyPolicyScreen } from "./screens/(headless)/privacy"
 import { TermsScreen } from "./screens/(headless)/terms"
 import { ForgetPasswordScreen } from "./screens/(modal)/ForgetPasswordScreen"
 import { InvitationScreen } from "./screens/(modal)/InvitationScreen"
@@ -14,7 +15,7 @@ import { TwoFactorAuthScreen } from "./screens/(modal)/TwoFactorAuthScreen"
 import { OnboardingScreen } from "./screens/OnboardingScreen"
 
 export function registerSitemap() {
-  ;[TermsScreen].forEach((Component) => {
+  ;[TermsScreen, PrivacyPolicyScreen].forEach((Component) => {
     NavigationSitemapRegistry.registerByComponent(Component)
   })
   ;[LoginScreen, InvitationScreen, ForgetPasswordScreen, TwoFactorAuthScreen].forEach(

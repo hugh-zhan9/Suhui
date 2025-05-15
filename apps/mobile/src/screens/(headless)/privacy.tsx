@@ -7,24 +7,24 @@ import {
 import { Markdown } from "@/src/components/ui/typography/Markdown"
 import type { NavigationControllerView } from "@/src/lib/navigation/types"
 
-export const TermsMarkdown = () => {
+export const PrivacyMarkdown = () => {
   return (
     <Markdown
-      value={legalMarkdown.tos}
+      value={legalMarkdown.privacy}
       webViewProps={{ scrollEnabled: false, matchContents: true }}
       style={{ padding: 16, flex: 1 }}
     />
   )
 }
 
-export const TermsScreen: NavigationControllerView = () => {
+export const PrivacyPolicyScreen: NavigationControllerView = () => {
   return (
     <SafeNavigationScrollView
       className="bg-system-background"
       contentInsetAdjustmentBehavior="never"
-      Header={<NavigationBlurEffectHeaderView title="Terms of Service" />}
+      Header={<NavigationBlurEffectHeaderView title="Privacy Policy" />}
     >
-      <TermsMarkdown />
+      <PrivacyMarkdown />
     </SafeNavigationScrollView>
   )
 }
