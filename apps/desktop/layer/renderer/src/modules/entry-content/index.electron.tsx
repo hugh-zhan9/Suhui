@@ -17,11 +17,7 @@ import { ErrorBoundary } from "@sentry/react"
 import * as React from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
 
-import {
-  useEntryIsInReadability,
-  useEntryIsInReadabilitySuccess,
-  useEntryReadabilityContent,
-} from "~/atoms/readability"
+import { useEntryIsInReadability } from "~/atoms/readability"
 import { useIsZenMode, useUISettingKey } from "~/atoms/settings/ui"
 import { ShadowDOM } from "~/components/common/ShadowDOM"
 import type { TocRef } from "~/components/ui/markdown/components/Toc"
@@ -29,12 +25,10 @@ import { useInPeekModal } from "~/components/ui/modal/inspire/InPeekModal"
 import { HotkeyScope } from "~/constants"
 import { useRenderStyle } from "~/hooks/biz/useRenderStyle"
 import { useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
-import { useAuthQuery, useConditionalHotkeyScope } from "~/hooks/common"
+import { useConditionalHotkeyScope } from "~/hooks/common"
 import { useFeedSafeUrl } from "~/hooks/common/useFeedSafeUrl"
 import { useHotkeyScope } from "~/providers/hotkey-provider"
 import { WrappedElementProvider } from "~/providers/wrapped-element-provider"
-import { Queries } from "~/queries"
-import { useEntryTranslation } from "~/store/ai/hook"
 import { useEntry } from "~/store/entry"
 import { useFeedById } from "~/store/feed"
 import { useInboxById } from "~/store/inbox"
@@ -48,6 +42,7 @@ import { EntryTitle } from "./components/EntryTitle"
 import { SourceContentPanel } from "./components/SourceContentView"
 import { SupportCreator } from "./components/SupportCreator"
 import { EntryHeader } from "./header"
+import { useEntryContent, useEntryMediaInfo } from "./hooks"
 import type { EntryContentProps } from "./index.shared"
 import {
   ContainerToc,
@@ -73,19 +68,12 @@ export const EntryContent: Component<EntryContentProps> = ({
   const feed = useFeedById(entry?.feedId) as FeedModel | InboxModel
 
   const inbox = useInboxById(entry?.inboxId, (inbox) => inbox !== null)
+  const isInbox = !!inbox
+  const isInReadabilityMode = useEntryIsInReadability(entryId)
 
-  const { error, data, isPending } = useAuthQuery(
-    inbox ? Queries.entries.byInboxId(entryId) : Queries.entries.byId(entryId),
-    {
-      staleTime: 300_000,
-    },
-  )
-  const readabilityContent = useEntryReadabilityContent(entryId)
+  const { error, content, isPending } = useEntryContent(entryId)
 
   const view = useRouteParamsSelector((route) => route.view)
-
-  const isInReadabilityMode = useEntryIsInReadability(entryId)
-  const isReadabilitySuccess = useEntryIsInReadabilitySuccess(entryId)
 
   const scrollerRef = useRef<HTMLDivElement | null>(null)
 
@@ -105,26 +93,12 @@ export const EntryContent: Component<EntryContentProps> = ({
 
   const customCSS = useUISettingKey("customCSS")
 
-  const contentTranslated = useEntryTranslation({
-    entry,
-    extraFields: isReadabilitySuccess ? ["readabilityContent"] : ["content"],
-  })
-
   const isInPeekModal = useInPeekModal()
 
   const [isUserInteraction, setIsUserInteraction] = useState(false)
   const isZenMode = useIsZenMode()
+
   if (!entry) return null
-
-  const entryContent = isInReadabilityMode
-    ? readabilityContent?.content
-    : (entry?.entries.content ?? data?.entries.content)
-  const translatedContent = isInReadabilityMode
-    ? contentTranslated.data?.readabilityContent
-    : contentTranslated.data?.content
-  const content = translatedContent || entryContent
-
-  const isInbox = !!inbox
 
   return (
     <>
@@ -282,19 +256,7 @@ const Renderer: React.FC<{
   noMedia?: boolean
   content?: Nullable<string>
 }> = React.memo(({ entryId, view, feedId, noMedia = false, content = "" }) => {
-  const mediaInfo = useEntry(entryId, (entry) =>
-    Object.fromEntries(
-      entry?.entries.media
-        ?.filter((m) => m.type === "photo")
-        .map((cur) => [
-          cur.url,
-          {
-            width: cur.width,
-            height: cur.height,
-          },
-        ]) ?? [],
-    ),
-  )
+  const mediaInfo = useEntryMediaInfo(entryId)
 
   const readerRenderInlineStyle = useUISettingKey("readerRenderInlineStyle")
 

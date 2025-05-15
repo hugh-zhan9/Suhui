@@ -1,9 +1,19 @@
 import { tracker } from "@follow/tracker"
-import { createElement, useCallback } from "react"
+import { createElement, useCallback, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
+import {
+  useEntryIsInReadability,
+  useEntryIsInReadabilitySuccess,
+  useEntryReadabilityContent,
+} from "~/atoms/readability"
 import { useModalStack } from "~/components/ui/modal/stacked/hooks"
+import { useAuthQuery } from "~/hooks/common/useBizQuery"
+import { Queries } from "~/queries"
+import { useEntryTranslation } from "~/store/ai/hook"
+import { useEntry } from "~/store/entry/hooks"
+import { useInboxById } from "~/store/inbox/hooks"
 
 import { ImageGalleryContent } from "./components/ImageGalleryContent"
 
@@ -28,5 +38,64 @@ export const useGalleryModal = () => {
       })
     },
     [present, t],
+  )
+}
+
+export const useEntryContent = (entryId: string) => {
+  const entry = useEntry(entryId)
+  const isInbox = useInboxById(entry?.inboxId, (inbox) => inbox !== null)
+  const { error, data, isPending } = useAuthQuery(
+    isInbox ? Queries.entries.byInboxId(entryId) : Queries.entries.byId(entryId),
+    {
+      staleTime: 300_000,
+    },
+  )
+
+  const isInReadabilityMode = useEntryIsInReadability(entryId)
+  const isReadabilitySuccess = useEntryIsInReadabilitySuccess(entryId)
+  const readabilityContent = useEntryReadabilityContent(entryId)
+  const contentTranslated = useEntryTranslation({
+    entry,
+    extraFields: isReadabilitySuccess ? ["readabilityContent"] : ["content"],
+  })
+
+  return useMemo(() => {
+    const entryContent = isInReadabilityMode
+      ? readabilityContent?.content
+      : (entry?.entries.content ?? data?.entries.content)
+    const translatedContent = isInReadabilityMode
+      ? contentTranslated.data?.readabilityContent
+      : contentTranslated.data?.content
+    const content = translatedContent || entryContent
+    return {
+      content,
+      error,
+      isPending,
+    }
+  }, [
+    contentTranslated.data?.content,
+    contentTranslated.data?.readabilityContent,
+    data?.entries.content,
+    entry?.entries.content,
+    error,
+    isInReadabilityMode,
+    isPending,
+    readabilityContent?.content,
+  ])
+}
+
+export const useEntryMediaInfo = (entryId: string) => {
+  return useEntry(entryId, (entry) =>
+    Object.fromEntries(
+      entry?.entries.media
+        ?.filter((m) => m.type === "photo")
+        .map((cur) => [
+          cur.url,
+          {
+            width: cur.width,
+            height: cur.height,
+          },
+        ]) ?? [],
+    ),
   )
 }
