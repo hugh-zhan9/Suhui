@@ -48,6 +48,12 @@ export const EntryColumnShortcutHandler: FC<{
     when,
   })
 
+  useCommandHotkey({
+    commandId: COMMAND_ID.layout.focusToSubscription,
+    shortcut: "Backspace, Escape",
+    when,
+  })
+
   const currentEntryIdRef = useRefValue(useRouteEntryId())
   const navigate = useNavigateEntry()
 

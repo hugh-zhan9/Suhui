@@ -9,13 +9,11 @@ import {
 } from "@follow/components/ui/tooltip/index.jsx"
 import { EllipsisHorizontalTextWithTooltip } from "@follow/components/ui/typography/index.js"
 import type { FeedViewType } from "@follow/constants"
-import { nextFrame } from "@follow/utils/dom"
 import { cn, isKeyForMultiSelectPressed } from "@follow/utils/utils"
 import { createElement, memo, use, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { MenuItemSeparator, MenuItemText, useShowContextMenu } from "~/atoms/context-menu"
-import { getMainContainerElement } from "~/atoms/dom"
 import { useGeneralSettingKey } from "~/atoms/settings/general"
 import { ErrorTooltip } from "~/components/common/ErrorTooltip"
 import { useFeedActions, useInboxActions, useListActions } from "~/hooks/biz/useFeedActions"
@@ -106,10 +104,6 @@ const FeedItemImpl = ({ view, feedId, className, isPreview }: FeedItemProps) => 
         entryId: null,
         view,
       })
-      // focus to main container in order to let keyboard can navigate entry items by arrow keys
-      nextFrame(() => {
-        getMainContainerElement()?.focus()
-      })
     },
     [feedId, navigate, setSelectedFeedIds, view],
   )
@@ -167,6 +161,7 @@ const FeedItemImpl = ({ view, feedId, className, isPreview }: FeedItemProps) => 
     <DraggableItemWrapper
       isInMultipleSelection={isInMultipleSelection}
       data-feed-id={feedId}
+      data-sub={`feed-${feedId}`}
       data-active={
         isMultiSelectingButNotSelected
           ? false
@@ -273,10 +268,6 @@ const ListItemImpl: Component<ListItemProps> = ({
         entryId: null,
         view,
       })
-      // focus to main container in order to let keyboard can navigate entry items by arrow keys
-      nextFrame(() => {
-        getMainContainerElement()?.focus()
-      })
     },
     [listId, navigate, view],
   )
@@ -296,6 +287,7 @@ const ListItemImpl: Component<ListItemProps> = ({
   return (
     <div
       data-list-id={listId}
+      data-sub={`list-${listId}`}
       data-active={isActive || isContextMenuOpen}
       className={cn(feedColumnStyles.item, "py-1 pl-2.5", className)}
       onClick={handleNavigate}
@@ -397,6 +389,7 @@ const InboxItemImpl: Component<InboxItemProps> = ({ view, inboxId, className, ic
   return (
     <div
       data-active={isActive || isContextMenuOpen}
+      data-sub={`inbox-${inboxId}`}
       data-inbox-id={inboxId}
       className={cn(
         "cursor-menu flex w-full items-center justify-between rounded-md pr-2.5 text-base font-medium leading-loose lg:text-sm",

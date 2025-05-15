@@ -14,6 +14,9 @@ declare module "@follow/utils/event-bus" {
     "subscription:switch-tab-to-video": never
     "subscription:switch-tab-to-audio": never
     "subscription:switch-tab-to-notification": never
+
+    "subscription:next": never
+    "subscription:previous": never
   }
 }
 const LABEL_PREFIX = "Subscription"
@@ -75,6 +78,20 @@ export const useRegisterSubscriptionCommands = () => {
         EventBus.dispatch(COMMAND_ID.subscription.switchTabToNotification)
       },
     },
+    {
+      id: COMMAND_ID.subscription.nextSubscription,
+      label: `${LABEL_PREFIX}: Next Subscription`,
+      run: () => {
+        EventBus.dispatch(COMMAND_ID.subscription.nextSubscription)
+      },
+    },
+    {
+      id: COMMAND_ID.subscription.previousSubscription,
+      label: `${LABEL_PREFIX}: Previous Subscription`,
+      run: () => {
+        EventBus.dispatch(COMMAND_ID.subscription.previousSubscription)
+      },
+    },
   ])
 }
 
@@ -118,6 +135,16 @@ type SwitchTabToNotificationCommand = Command<{
   fn: () => void
 }>
 
+type NextSubscriptionCommand = Command<{
+  id: typeof COMMAND_ID.subscription.nextSubscription
+  fn: () => void
+}>
+
+type PreviousSubscriptionCommand = Command<{
+  id: typeof COMMAND_ID.subscription.previousSubscription
+  fn: () => void
+}>
+
 export type SubscriptionCommand =
   | SwitchTabToNextCommand
   | SwitchTabToPreviousCommand
@@ -127,3 +154,5 @@ export type SubscriptionCommand =
   | SwitchTabToVideoCommand
   | SwitchTabToAudioCommand
   | SwitchTabToNotificationCommand
+  | NextSubscriptionCommand
+  | PreviousSubscriptionCommand

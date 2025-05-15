@@ -1,7 +1,12 @@
-import { useCallback, useImperativeHandle, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react"
 import { useEventListener } from "usehooks-ts"
 
-import { FocusableContext, FocusActionsContext, FocusTargetRefContext } from "./context"
+import {
+  FocusableContainerRefContext,
+  FocusableContext,
+  FocusActionsContext,
+  FocusTargetRefContext,
+} from "./context"
 import { highlightElement } from "./utils"
 
 export const Focusable: Component<
@@ -15,12 +20,15 @@ export const Focusable: Component<
   useImperativeHandle(ref, () => containerRef.current!)
 
   const highlightBoundary = useCallback(() => {
-    if (!isFocusWithIn) return
+    const { activeElement } = document
+    if (!containerRef.current?.contains(activeElement as Node)) {
+      return
+    }
     const element = containerRef.current
     if (!element) return
 
     highlightElement(element)
-  }, [isFocusWithIn])
+  }, [])
 
   useEventListener("focusin", (e) => {
     if (containerRef.current?.contains(e.target as Node)) {
@@ -34,12 +42,18 @@ export const Focusable: Component<
       focusTargetRef.current = undefined
     }
   })
+  useEffect(() => {
+    if (!containerRef.current) return
+    setIsFocusWithIn(containerRef.current.contains(document.activeElement as Node))
+  }, [containerRef])
 
   return (
     <FocusableContext value={isFocusWithIn}>
       <FocusTargetRefContext value={focusTargetRef}>
         <FocusActionsContext value={useMemo(() => ({ highlightBoundary }), [highlightBoundary])}>
-          <div tabIndex={-1} role="region" ref={containerRef} {...rest} />
+          <FocusableContainerRefContext value={containerRef}>
+            <div tabIndex={-1} role="region" ref={containerRef} {...rest} />
+          </FocusableContainerRefContext>
         </FocusActionsContext>
       </FocusTargetRefContext>
     </FocusableContext>

@@ -106,6 +106,13 @@ export function FeedColumn({ children, className }: PropsWithChildren<{ classNam
   const feedColumnShow = useTimelineColumnShow()
   const rootContainerElement = useRootContainerElement()
 
+  const focusableContainerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!focusableContainerRef.current) return
+    focusableContainerRef.current.focus()
+  }, [])
+
   return (
     <WindowUnderBlur
       data-hide-in-print
@@ -115,6 +122,7 @@ export function FeedColumn({ children, className }: PropsWithChildren<{ classNam
         !feedColumnShow && ELECTRON_BUILD && "bg-material-opaque",
         className,
       )}
+      ref={focusableContainerRef}
       onClick={useCallback(async () => {
         if (document.hasFocus()) {
           navigateBackHome()

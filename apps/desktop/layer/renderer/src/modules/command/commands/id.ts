@@ -47,6 +47,7 @@ export const COMMAND_ID = {
   layout: {
     toggleTimelineColumn: "layout:toggle-timeline-column",
     focusToTimeline: "layout:focus-to-timeline",
+    focusToSubscription: "layout:focus-to-subscription",
   },
   timeline: {
     switchToNext: "timeline:switch-to-next",
@@ -69,5 +70,8 @@ export const COMMAND_ID = {
     switchTabToVideo: "subscription:switch-tab-to-video",
     switchTabToAudio: "subscription:switch-tab-to-audio",
     switchTabToNotification: "subscription:switch-tab-to-notification",
+
+    nextSubscription: "subscription:next",
+    previousSubscription: "subscription:previous",
   },
 } as const

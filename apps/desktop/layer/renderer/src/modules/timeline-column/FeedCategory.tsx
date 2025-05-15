@@ -73,15 +73,15 @@ function FeedCategoryImpl({ data: ids, view, categoryOpenStateData }: FeedCatego
   const folderName =
     subscription?.category || (autoGroup ? subscription.defaultCategory : subscription.feedId)
 
-  const showCollapse = sortByUnreadFeedList.length > 1 || !!subscription?.category
+  const isCategory = sortByUnreadFeedList.length > 1 || !!subscription?.category
 
   const open = useMemo(() => {
-    if (!showCollapse) return true
+    if (!isCategory) return true
     if (folderName && typeof categoryOpenStateData[folderName] === "boolean") {
       return categoryOpenStateData[folderName]
     }
     return false
-  }, [categoryOpenStateData, folderName, showCollapse])
+  }, [categoryOpenStateData, folderName, isCategory])
 
   const setOpen = useCallback(
     (next: boolean) => {
@@ -270,7 +270,7 @@ function FeedCategoryImpl({ data: ids, view, categoryOpenStateData }: FeedCatego
   })
   return (
     <div tabIndex={-1} onClick={stopPropagation}>
-      {!!showCollapse && (
+      {!!isCategory && (
         <div
           ref={setNodeRef}
           data-active={isActive || isContextMenuOpen}
@@ -279,6 +279,7 @@ function FeedCategoryImpl({ data: ids, view, categoryOpenStateData }: FeedCatego
             "my-px px-2.5",
             feedColumnStyles.item,
           )}
+          data-sub={`feed-category-${folderName}`}
           onClick={(e) => {
             e.stopPropagation()
             if (!isCategoryEditing) {
@@ -335,7 +336,7 @@ function FeedCategoryImpl({ data: ids, view, categoryOpenStateData }: FeedCatego
             ref={itemsRef}
             className="space-y-px"
             initial={
-              !!showCollapse && {
+              !!isCategory && {
                 height: 0,
                 opacity: 0.01,
               }
@@ -351,7 +352,7 @@ function FeedCategoryImpl({ data: ids, view, categoryOpenStateData }: FeedCatego
           >
             <SortedFeedItems
               ids={ids}
-              showCollapse={showCollapse as boolean}
+              showCollapse={isCategory as boolean}
               view={view as FeedViewType}
             />
           </m.div>

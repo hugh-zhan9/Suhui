@@ -1,6 +1,13 @@
 import { useDraggable } from "@dnd-kit/core"
+import {
+  useFocusable,
+  useFocusableContainerRef,
+  useFocusActions,
+} from "@follow/components/common/Focusable/hooks.js"
 import { ScrollArea } from "@follow/components/ui/scroll-area/index.js"
-import { cn, isKeyForMultiSelectPressed } from "@follow/utils/utils"
+import { nextFrame } from "@follow/utils/dom"
+import { EventBus } from "@follow/utils/event-bus"
+import { cn, combineCleanupFunctions, isKeyForMultiSelectPressed } from "@follow/utils/utils"
 import { memo, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import Selecto from "react-selecto"
@@ -18,6 +25,8 @@ import {
   useListsGroupedData,
 } from "~/store/subscription"
 
+import { COMMAND_ID } from "../command/commands/id"
+import { useCommandBinding, useCommandHotkey } from "../command/hooks/use-register-hotkey"
 import { useIsPreviewFeed } from "../entry-column/hooks/useIsPreviewFeed"
 import {
   resetSelectedFeedIds,
@@ -125,6 +134,8 @@ const FeedListImpl = ({ ref, className, view }: FeedListProps) => {
 
   useFeedQuery({ id: isFeedPreview ? feedId : undefined })
   useList({ id: isListPreview ? listId : undefined })
+
+  useRegisterCommand()
 
   return (
     <div className={cn(className, "font-medium")}>
@@ -285,3 +296,72 @@ const FeedListImpl = ({ ref, className, view }: FeedListProps) => {
 FeedListImpl.displayName = "FeedListImpl"
 
 export const FeedList = memo(FeedListImpl)
+
+const useRegisterCommand = () => {
+  const isFocus = useFocusable()
+  const focusableContainerRef = useFocusableContainerRef()
+  const focusActions = useFocusActions()
+
+  useCommandBinding({
+    commandId: COMMAND_ID.subscription.nextSubscription,
+    when: isFocus,
+  })
+
+  useCommandBinding({
+    commandId: COMMAND_ID.subscription.previousSubscription,
+    when: isFocus,
+  })
+
+  useCommandHotkey({
+    commandId: COMMAND_ID.layout.focusToTimeline,
+    when: isFocus,
+    shortcut: "Enter",
+  })
+
+  useEffect(() => {
+    const handleSubscriptionNavigation = (direction: "next" | "previous") => {
+      const container = focusableContainerRef.current
+      if (!container) return
+
+      const allSubscriptions = Array.from(container.querySelectorAll("[data-sub]"))
+      if (allSubscriptions.length === 0) return
+
+      const currentActive = container.querySelector("[data-active=true]")
+
+      if (!currentActive) {
+        // If no active item, select first or last based on direction
+        const defaultIndex = direction === "next" ? 0 : -1
+        ;(allSubscriptions.at(defaultIndex) as HTMLElement)?.click()
+        return
+      }
+
+      const currentIndex = allSubscriptions.indexOf(currentActive)
+      let targetIndex: number
+
+      if (direction === "next") {
+        targetIndex = (currentIndex + 1) % allSubscriptions.length
+      } else {
+        targetIndex = (currentIndex - 1 + allSubscriptions.length) % allSubscriptions.length
+      }
+
+      const targetElement = allSubscriptions[targetIndex] as HTMLElement | null
+
+      targetElement?.click()
+    }
+
+    return combineCleanupFunctions(
+      EventBus.subscribe(COMMAND_ID.subscription.nextSubscription, () => {
+        handleSubscriptionNavigation("next")
+      }),
+      EventBus.subscribe(COMMAND_ID.subscription.previousSubscription, () => {
+        handleSubscriptionNavigation("previous")
+      }),
+      EventBus.subscribe(COMMAND_ID.layout.focusToSubscription, () => {
+        focusableContainerRef.current?.focus()
+        nextFrame(() => {
+          focusActions.highlightBoundary()
+        })
+      }),
+    )
+  }, [focusableContainerRef, focusActions])
+}

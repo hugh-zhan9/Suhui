@@ -1,34 +1,14 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@follow/components/ui/avatar/index.jsx"
 import { TooltipContent, TooltipPortal } from "@follow/components/ui/tooltip/index.jsx"
-import { FeedViewType } from "@follow/constants"
 import { getNameInitials } from "@follow/utils/cjk"
 import { m } from "motion/react"
 import { memo } from "react"
 import { useTranslation } from "react-i18next"
 
-import { getRouteParams } from "~/hooks/biz/useRouteParams"
 import { replaceImgUrlIfNeed } from "~/lib/img-proxy"
 import { useUserById } from "~/store/user"
 
 import { usePresentUserProfileModal } from "../../profile/hooks"
-
-export const getLimit = (width: number): number => {
-  const routeParams = getRouteParams()
-  // social media view has four extra buttons
-  if (
-    [FeedViewType.SocialMedia, FeedViewType.Pictures, FeedViewType.Videos].includes(
-      routeParams.view,
-    )
-  ) {
-    if (width > 1100) return 15
-    if (width > 950) return 10
-    if (width > 800) return 5
-    return 3
-  }
-  if (width > 900) return 15
-  if (width > 600) return 10
-  return 5
-}
 
 export const EntryUser: Component<{
   userId: string

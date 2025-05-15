@@ -20,6 +20,12 @@ export const GlobalHotkeysProvider = () => {
   useEventListener("keydown", (e) => {
     if (e.key === "Tab") {
       nextFrame(() => {
+        if (
+          document.activeElement instanceof HTMLInputElement ||
+          document.activeElement instanceof HTMLTextAreaElement
+        ) {
+          return
+        }
         highlightElement(document.activeElement as HTMLElement)
       })
     }

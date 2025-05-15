@@ -21,8 +21,10 @@ const defaultCommandShortcuts = {
 
   [COMMAND_ID.layout.toggleTimelineColumn]: shortcuts.layout.toggleSidebar.key,
 
-  [COMMAND_ID.subscription.switchTabToNext]: shortcuts.feeds.switchNextView.key,
-  [COMMAND_ID.subscription.switchTabToPrevious]: shortcuts.feeds.switchPreviousView.key,
+  [COMMAND_ID.subscription.nextSubscription]: shortcuts.subscriptions.nextSubscription.key,
+  [COMMAND_ID.subscription.previousSubscription]: shortcuts.subscriptions.previousSubscription.key,
+  [COMMAND_ID.subscription.switchTabToNext]: shortcuts.subscriptions.switchNextView.key,
+  [COMMAND_ID.subscription.switchTabToPrevious]: shortcuts.subscriptions.switchPreviousView.key,
 
   [COMMAND_ID.global.showShortcuts]: shortcuts.layout.showShortcuts.key,
 

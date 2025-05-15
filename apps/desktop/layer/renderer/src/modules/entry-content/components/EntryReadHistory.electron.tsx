@@ -1,12 +1,32 @@
 import { AvatarGroup } from "@follow/components/ui/avatar-group/index.js"
+import { FeedViewType } from "@follow/constants"
 
 import { useWhoami } from "~/atoms/user"
+import { getRouteParams } from "~/hooks/biz/useRouteParams"
 import { useAuthQuery } from "~/hooks/common"
 import { useAppLayoutGridContainerWidth } from "~/providers/app-grid-layout-container-provider"
 import { Queries } from "~/queries"
 import { useEntryReadHistory } from "~/store/entry"
 
-import { EntryUser, getLimit } from "./EntryReadHistory.shared"
+import { EntryUser } from "./EntryReadHistory.shared"
+
+const getLimit = (width: number): number => {
+  const routeParams = getRouteParams()
+  // social media view has four extra buttons
+  if (
+    [FeedViewType.SocialMedia, FeedViewType.Pictures, FeedViewType.Videos].includes(
+      routeParams.view,
+    )
+  ) {
+    if (width > 1100) return 15
+    if (width > 950) return 10
+    if (width > 800) return 5
+    return 3
+  }
+  if (width > 900) return 15
+  if (width > 600) return 10
+  return 5
+}
 
 export const EntryReadHistory: Component<{ entryId: string }> = ({ entryId }) => {
   const me = useWhoami()

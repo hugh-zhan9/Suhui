@@ -1,6 +1,11 @@
 import { use } from "react"
 
-import { FocusableContext, FocusActionsContext, FocusTargetRefContext } from "./context"
+import {
+  FocusableContainerRefContext,
+  FocusableContext,
+  FocusActionsContext,
+  FocusTargetRefContext,
+} from "./context"
 
 export const useFocusable = () => {
   return use(FocusableContext)
@@ -12,4 +17,8 @@ export const useFocusTargetRef = () => {
 
 export const useFocusActions = () => {
   return use(FocusActionsContext)
+}
+
+export const useFocusableContainerRef = () => {
+  return use(FocusableContainerRefContext)
 }

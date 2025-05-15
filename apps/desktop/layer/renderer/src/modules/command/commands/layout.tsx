@@ -9,6 +9,7 @@ import { COMMAND_ID } from "./id"
 declare module "@follow/utils/event-bus" {
   interface EventBusMap {
     "layout:focus-to-timeline": never
+    "layout:focus-to-subscription": never
   }
 }
 
@@ -28,8 +29,20 @@ export const useRegisterLayoutCommands = () => {
         EventBus.dispatch(COMMAND_ID.layout.focusToTimeline)
       },
     },
+    {
+      id: COMMAND_ID.layout.focusToSubscription,
+      label: "Focus to subscription",
+      run: () => {
+        EventBus.dispatch(COMMAND_ID.layout.focusToSubscription)
+      },
+    },
   ])
 }
+
+export type FocusToSubscriptionCommand = Command<{
+  id: typeof COMMAND_ID.layout.focusToSubscription
+  fn: () => void
+}>
 
 export type ToggleTimelineColumnCommand = Command<{
   id: typeof COMMAND_ID.layout.toggleTimelineColumn
@@ -40,5 +53,7 @@ export type FocusToTimelineCommand = Command<{
   id: typeof COMMAND_ID.layout.focusToTimeline
   fn: () => void
 }>
-
-export type LayoutCommand = ToggleTimelineColumnCommand | FocusToTimelineCommand
+export type LayoutCommand =
+  | ToggleTimelineColumnCommand
+  | FocusToTimelineCommand
+  | FocusToSubscriptionCommand
