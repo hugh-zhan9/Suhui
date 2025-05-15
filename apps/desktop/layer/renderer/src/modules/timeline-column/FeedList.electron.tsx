@@ -31,6 +31,7 @@ import { useIsPreviewFeed } from "../entry-column/hooks/useIsPreviewFeed"
 import {
   resetSelectedFeedIds,
   setFeedAreaScrollProgressValue,
+  setSelectedFeedIds,
   useSelectedFeedIdsState,
 } from "./atom"
 import { DraggableContext } from "./context"
@@ -346,6 +347,11 @@ const useRegisterCommand = () => {
 
       const targetElement = allSubscriptions[targetIndex] as HTMLElement | null
 
+      // Cleanup selected feed
+      const targetIsCategoryOrFolder = targetElement?.dataset.sub?.startsWith("feed-category-")
+      if (targetIsCategoryOrFolder) {
+        setSelectedFeedIds([])
+      }
       targetElement?.click()
     }
 

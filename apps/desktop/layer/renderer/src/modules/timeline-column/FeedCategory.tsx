@@ -164,7 +164,6 @@ function FeedCategoryImpl({ data: ids, view, categoryOpenStateData }: FeedCatego
   })
 
   const [isCategoryEditing, setIsCategoryEditing] = useState(false)
-
   const [isContextMenuOpen, setIsContextMenuOpen] = useState(false)
   const isCategoryIsWaiting = isChangePending
 
@@ -372,8 +371,6 @@ function FilterReadFeedCategory(props: FeedCategoryProps) {
   if (!unread) return null
   return <FeedCategoryImpl {...props} />
 }
-
-export const FeedCategory = memo(FeedCategoryImpl)
 
 export function FeedCategoryAutoHideUnread(props: FeedCategoryProps) {
   const hideAllReadSubscriptions = useGeneralSettingKey("hideAllReadSubscriptions")
