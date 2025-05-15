@@ -5,13 +5,22 @@ import { useTranslation } from "react-i18next"
 import { Text, TouchableOpacity, View } from "react-native"
 
 import { Image } from "@/src/components/ui/image/Image"
+import { PlatformActivityIndicator } from "@/src/components/ui/loading/PlatformActivityIndicator"
 import { signIn, useAuthProviders } from "@/src/lib/auth"
 
 export function SocialLogin({ onPressEmail }: { onPressEmail: () => void }) {
-  const { data: authProviders } = useAuthProviders()
+  const { data: authProviders, isLoading } = useAuthProviders()
   const { colorScheme } = useColorScheme()
   const providers = Object.entries(authProviders || [])
   const { t } = useTranslation()
+
+  if (isLoading) {
+    return (
+      <View className="flex h-[240px] w-screen items-center justify-center">
+        <PlatformActivityIndicator />
+      </View>
+    )
+  }
 
   return (
     <View className="flex w-screen items-center justify-center gap-4 px-6">

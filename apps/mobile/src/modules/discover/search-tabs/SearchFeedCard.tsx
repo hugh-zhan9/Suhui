@@ -14,49 +14,48 @@ type SearchResultItem = Awaited<ReturnType<typeof apiClient.discover.$post>>["da
 
 export const SearchFeedCard = ({ item }: { item: SearchResultItem }) => {
   const isSubscribed = useSubscriptionByFeedId(item.feed?.id ?? "")
-  const iconColor = useColor("text")
+  const iconColor = useColor("secondaryLabel")
 
   return (
-    <FeedSummary item={item} className="py-8 pl-4">
-      <>
-        <View className="mt-4 flex-row items-center gap-6 opacity-60">
-          <View className="flex-row items-center gap-1.5">
-            <User3CuteReIcon width={14} height={14} color={iconColor} />
-            <Text className="text-text text-sm">{item.analytics?.subscriptionCount} followers</Text>
-          </View>
-          <View className="flex-row items-center gap-1.5">
-            {item.analytics?.updatesPerWeek ? (
-              <>
-                <SafetyCertificateCuteReIcon width={14} height={14} color={iconColor} />
-                <Text className="text-text text-sm">
-                  {item.analytics.updatesPerWeek} entries/week
-                </Text>
-              </>
-            ) : item.analytics?.latestEntryPublishedAt ? (
-              <>
-                <SafeAlertCuteReIcon width={14} height={14} color={iconColor} />
-                <Text className="text-text text-sm">Updated</Text>
-                <RelativeDateTime
-                  className="text-text text-sm"
-                  date={new Date(item.analytics.latestEntryPublishedAt)}
-                />
-              </>
-            ) : null}
-          </View>
+    <FeedSummary item={item} className="py-4 pl-4">
+      <View className="mt-4 flex-row items-center gap-6">
+        <View className="flex-row items-center gap-1.5">
+          <User3CuteReIcon width={14} height={14} color={iconColor} />
+          <Text className="text-secondary-label text-sm">
+            {item.analytics?.subscriptionCount} followers
+          </Text>
         </View>
-        {/* Subscribe */}
+        <View className="flex-row items-center gap-1.5">
+          {item.analytics?.updatesPerWeek ? (
+            <>
+              <SafetyCertificateCuteReIcon width={14} height={14} color={iconColor} />
+              <Text className="text-secondary-label text-sm">
+                {item.analytics.updatesPerWeek} entries/week
+              </Text>
+            </>
+          ) : item.analytics?.latestEntryPublishedAt ? (
+            <>
+              <SafeAlertCuteReIcon width={14} height={14} color={iconColor} />
+              <Text className="text-secondary-label text-sm">Updated</Text>
+              <RelativeDateTime
+                className="text-secondary-label text-sm"
+                date={new Date(item.analytics.latestEntryPublishedAt)}
+              />
+            </>
+          ) : null}
+        </View>
         <View className="ml-auto mr-4 mt-1">
           {isSubscribed ? (
-            <View className="bg-gray-5/60 rounded-lg px-3 py-2">
-              <Text className="text-gray-2 text-sm font-bold">Followed</Text>
+            <View className="px-5 py-2">
+              <Text className="text-tertiary-label text-sm font-bold">Followed</Text>
             </View>
           ) : (
-            <View className="bg-accent rounded-lg px-3 py-2">
+            <View className="bg-accent rounded-full px-5 py-2">
               <Text className="text-sm font-bold text-white">Follow</Text>
             </View>
           )}
         </View>
-      </>
+      </View>
     </FeedSummary>
   )
 }

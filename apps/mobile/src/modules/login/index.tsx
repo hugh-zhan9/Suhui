@@ -49,7 +49,7 @@ export function Login() {
               lineHeight,
             }}
           >
-            <Text>{`${isRegister ? t("signin.sign_up_to") : t("signin.sign_in_to")} `}</Text>
+            <Text className="font-semibold">{`${isRegister ? t("signin.sign_up_to") : t("signin.sign_in_to")} `}</Text>
             <Text className="font-bold">Folo</Text>
           </Text>
           {isEmail ? (
