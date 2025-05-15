@@ -89,6 +89,9 @@ export const defaultUISettings: UISettings = {
 
   showUnreadCountViewAndSubscriptionMobile: false,
   showUnreadCountBadgeMobile: false,
+
+  // Discover
+  discoverLanguage: "all",
 }
 
 export const defaultIntegrationSettings: IntegrationSettings = {
