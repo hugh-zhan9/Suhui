@@ -10,7 +10,6 @@ import { TermsScreen } from "./screens/(headless)/terms"
 import { ForgetPasswordScreen } from "./screens/(modal)/ForgetPasswordScreen"
 import { InvitationScreen } from "./screens/(modal)/InvitationScreen"
 import { LoginScreen } from "./screens/(modal)/LoginScreen"
-import { SignUpScreen } from "./screens/(modal)/SignUpScreen"
 import { TwoFactorAuthScreen } from "./screens/(modal)/TwoFactorAuthScreen"
 import { OnboardingScreen } from "./screens/OnboardingScreen"
 
@@ -18,7 +17,7 @@ export function registerSitemap() {
   ;[TermsScreen].forEach((Component) => {
     NavigationSitemapRegistry.registerByComponent(Component)
   })
-  ;[LoginScreen, InvitationScreen, SignUpScreen, ForgetPasswordScreen, TwoFactorAuthScreen].forEach(
+  ;[LoginScreen, InvitationScreen, ForgetPasswordScreen, TwoFactorAuthScreen].forEach(
     (Component) => {
       NavigationSitemapRegistry.registerByComponent(Component, void 0, {
         stackPresentation: "modal",

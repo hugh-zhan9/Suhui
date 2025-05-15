@@ -76,7 +76,7 @@ export const LoginModalContent = (props: LoginModalContentProps) => {
                   loginHandler(key, "app")
                 }
               }}
-              className="center hover:bg-material-medium relative w-full gap-2 rounded-xl border p-2.5 pl-5 font-semibold duration-200"
+              className="center hover:bg-material-medium relative w-full gap-2 rounded-xl border py-3 pl-5 font-semibold duration-200"
             >
               <img
                 className="absolute left-9 h-5 dark:brightness-[0.85] dark:hue-rotate-180 dark:invert"
@@ -89,11 +89,11 @@ export const LoginModalContent = (props: LoginModalContentProps) => {
       )}
       <Divider className="mb-5 mt-6" />
       {isEmail ? (
-        <div className="pb-2 text-center" onClick={() => setIsEmail(false)}>
-          Back
+        <div className="pb-2 text-center font-medium" onClick={() => setIsEmail(false)}>
+          {t("login.back")}
         </div>
       ) : (
-        <div className="pb-2 text-center" onClick={() => setIsRegister(!isRegister)}>
+        <div className="pb-2 text-center font-medium" onClick={() => setIsRegister(!isRegister)}>
           <Trans
             t={t}
             i18nKey={isRegister ? "login.have_account" : "login.no_account"}
