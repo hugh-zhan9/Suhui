@@ -1,4 +1,4 @@
-import { views } from "@follow/constants"
+import { FeedViewType, views } from "@follow/constants"
 import { cn } from "@follow/utils/utils"
 import { AnimatePresence, m } from "motion/react"
 import { memo } from "react"
@@ -69,10 +69,12 @@ function EntryHeaderImpl({ view, entryId, className, compact }: EntryHeaderProps
           </AnimatePresence>
         </div>
 
-        <div className="relative flex shrink-0 items-center justify-end gap-2">
-          <EntryHeaderActions entryId={entry.entries.id} view={view} compact={compact} />
-          <MoreActions entryId={entry.entries.id} />
-        </div>
+        {view !== FeedViewType.SocialMedia && (
+          <div className="relative flex shrink-0 items-center justify-end gap-2">
+            <EntryHeaderActions entryId={entry.entries.id} view={view} compact={compact} />
+            <MoreActions entryId={entry.entries.id} />
+          </div>
+        )}
       </div>
     </div>
   )
