@@ -19,10 +19,12 @@ export const FeedSummary = ({
   item,
   children,
   className,
+  simple,
 }: {
   item: SearchResultItem
   children?: React.ReactNode
   className?: string
+  simple?: boolean
 }) => {
   const navigation = useNavigation()
 
@@ -75,22 +77,24 @@ export const FeedSummary = ({
           <Text className="text-text text-sm leading-tight opacity-60">{item.feed?.url}</Text>
         </View>
       </View>
-      {!!item.feed?.description && (
+      {!simple && !!item.feed?.description && (
         <Text className="mt-3 pl-[39] pr-2 text-sm" ellipsizeMode="tail" numberOfLines={2}>
           {item.feed?.description}
         </Text>
       )}
-
-      {/* Preview */}
-      <View className="mt-4">
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerClassName="flex flex-row gap-4"
-        >
-          {item.entries?.map((entry) => <PreviewItem entry={entry} key={entry.id || entry.guid} />)}
-        </ScrollView>
-      </View>
+      {!simple && !!item.entries && (
+        <View className="mt-4">
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerClassName="flex flex-row gap-4"
+          >
+            {item.entries?.map((entry) => (
+              <PreviewItem entry={entry} key={entry.id || entry.guid} />
+            ))}
+          </ScrollView>
+        </View>
+      )}
       {children}
     </ItemPressable>
   )
