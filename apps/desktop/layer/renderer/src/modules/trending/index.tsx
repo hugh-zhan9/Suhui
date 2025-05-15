@@ -1,14 +1,13 @@
 import { ResponsiveSelect } from "@follow/components/ui/select/responsive.js"
 import { Skeleton } from "@follow/components/ui/skeleton/index.jsx"
 import { views } from "@follow/constants"
-import type { FeedModel } from "@follow/models"
 import { cn } from "@follow/utils/utils"
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { useGeneralSettingKey } from "~/atoms/settings/general"
-import { apiFetch } from "~/lib/api-fetch"
+import { apiClient } from "~/lib/api-fetch"
 
 import { TrendingFeedCard } from "../discover/TrendingFeedCard"
 
@@ -27,7 +26,7 @@ const LanguageOptions = [
   },
 ]
 
-type Language = (typeof LanguageOptions)[number]["value"]
+type Language = "all" | "eng" | "cmn"
 
 const viewOptions = [
   {
@@ -61,15 +60,8 @@ export function Trending({
   const { data, isLoading } = useQuery({
     queryKey: ["trending", selectedLang, selectedView],
     queryFn: async () => {
-      return await apiFetch<{
-        data: {
-          feed: FeedModel
-          view: number
-          subscriptionCount: number
-        }[]
-      }>("/trending/feeds", {
-        method: "GET",
-        params: {
+      return await apiClient.trending.feeds.$get({
+        query: {
           language: selectedLang === "all" ? undefined : selectedLang,
           view: selectedView === "all" ? undefined : Number(selectedView),
           limit,

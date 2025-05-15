@@ -17243,14 +17243,14 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                             updatedAt: string;
                             suspended: boolean | null;
                         }[] | null | undefined;
-                    } | null;
+                    };
                     analytics: {
                         view: number | null;
                         feedId: string;
                         updatesPerWeek: number | null;
                         subscriptionCount: number | null;
                         latestEntryPublishedAt: string | null;
-                    } | null;
+                    };
                 }[];
             };
             outputFormat: "json";
