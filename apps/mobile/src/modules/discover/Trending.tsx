@@ -1,5 +1,6 @@
+import { cn } from "@follow/utils"
 import { useQuery } from "@tanstack/react-query"
-import { View } from "react-native"
+import { Text, View } from "react-native"
 
 import { PlatformActivityIndicator } from "@/src/components/ui/loading/PlatformActivityIndicator"
 
@@ -22,7 +23,28 @@ export const Trending = () => {
           <PlatformActivityIndicator />
         </View>
       ) : (
-        data?.map((item) => <TrendingFeedCard key={item.feed?.id} item={item} />)
+        data?.map((item, index) => (
+          <View key={item.feed?.id} className="relative">
+            <TrendingFeedCard item={item} />
+            <View className="pointer-events-none absolute inset-0 left-2 overflow-hidden rounded-xl">
+              <Text
+                className={cn(
+                  "center absolute -left-5 -top-6 size-12 rounded-br-2xl pl-[26] pt-7 text-xs",
+                  index < 3
+                    ? cn(
+                        "bg-accent text-white",
+                        index === 0 && "bg-accent",
+                        index === 1 && "bg-accent/90",
+                        index === 2 && "bg-accent/80",
+                      )
+                    : "bg-gray-5/60",
+                )}
+              >
+                {index + 1}
+              </Text>
+            </View>
+          </View>
+        ))
       )}
     </View>
   )

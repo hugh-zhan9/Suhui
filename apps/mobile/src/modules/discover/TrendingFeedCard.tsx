@@ -14,7 +14,7 @@ export const TrendingFeedCard = ({ item }: { item: SearchResultItem }) => {
   const iconColor = useColor("text")
 
   return (
-    <FeedSummary item={item} className="px-4 py-3" simple>
+    <FeedSummary item={item} className="pb-3 pl-8 pr-4 pt-5" simple>
       <View className="flex-row items-center justify-between pl-[39]">
         <View className="flex-row items-center gap-1.5 opacity-60">
           <User3CuteReIcon width={14} height={14} color={iconColor} />
