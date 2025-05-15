@@ -33,6 +33,10 @@ const shortcutConfigs = {
       name: tShortcuts("keys.subscriptions.previousSubscription"),
       key: "K, ArrowUp",
     },
+    toggleFolderCollapse: {
+      name: tShortcuts("keys.subscriptions.toggleFolderCollapse"),
+      key: "Z",
+    },
   },
   layout: {
     toggleSidebar: {

@@ -289,6 +289,7 @@ function FeedCategoryImpl({ data: ids, view, categoryOpenStateData }: FeedCatego
         >
           <div className="flex w-full min-w-0 items-center" onDoubleClick={toggleCategoryOpenState}>
             <button
+              data-type="collapse"
               type="button"
               onClick={toggleCategoryOpenState}
               data-state={open ? "open" : "close"}

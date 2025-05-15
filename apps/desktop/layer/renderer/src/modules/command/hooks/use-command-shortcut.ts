@@ -30,6 +30,8 @@ const defaultCommandShortcuts = {
 
   [COMMAND_ID.entryRender.nextEntry]: shortcuts.entry.nextEntry.key,
   [COMMAND_ID.entryRender.previousEntry]: shortcuts.entry.previousEntry.key,
+
+  [COMMAND_ID.subscription.toggleFolderCollapse]: shortcuts.subscriptions.toggleFolderCollapse.key,
 } as const
 
 export type BindingCommandId = keyof typeof defaultCommandShortcuts

@@ -73,5 +73,7 @@ export const COMMAND_ID = {
 
     nextSubscription: "subscription:next",
     previousSubscription: "subscription:previous",
+
+    toggleFolderCollapse: "subscription:toggle-folder-collapse",
   },
 } as const

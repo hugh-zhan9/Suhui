@@ -17,6 +17,7 @@ declare module "@follow/utils/event-bus" {
 
     "subscription:next": never
     "subscription:previous": never
+    "subscription:toggle-folder-collapse": never
   }
 }
 const LABEL_PREFIX = "Subscription"
@@ -92,6 +93,13 @@ export const useRegisterSubscriptionCommands = () => {
         EventBus.dispatch(COMMAND_ID.subscription.previousSubscription)
       },
     },
+    {
+      id: COMMAND_ID.subscription.toggleFolderCollapse,
+      label: `${LABEL_PREFIX}: Toggle Folder Collapse`,
+      run: () => {
+        EventBus.dispatch(COMMAND_ID.subscription.toggleFolderCollapse)
+      },
+    },
   ])
 }
 
@@ -145,6 +153,11 @@ type PreviousSubscriptionCommand = Command<{
   fn: () => void
 }>
 
+type ToggleFolderCollapseCommand = Command<{
+  id: typeof COMMAND_ID.subscription.toggleFolderCollapse
+  fn: () => void
+}>
+
 export type SubscriptionCommand =
   | SwitchTabToNextCommand
   | SwitchTabToPreviousCommand
@@ -156,3 +169,4 @@ export type SubscriptionCommand =
   | SwitchTabToNotificationCommand
   | NextSubscriptionCommand
   | PreviousSubscriptionCommand
+  | ToggleFolderCollapseCommand

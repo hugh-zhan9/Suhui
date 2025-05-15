@@ -11,7 +11,7 @@ import { cn, combineCleanupFunctions, isKeyForMultiSelectPressed } from "@follow
 import { memo, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import Selecto from "react-selecto"
-import { useEventListener } from "usehooks-ts"
+import { useEventCallback, useEventListener } from "usehooks-ts"
 
 import { useRouteParams } from "~/hooks/biz/useRouteParams"
 import { useAuthQuery } from "~/hooks/common"
@@ -298,6 +298,8 @@ FeedListImpl.displayName = "FeedListImpl"
 
 export const FeedList = memo(FeedListImpl)
 
+const FeedCategoryPrefix = "feed-category-"
+
 const useRegisterCommand = () => {
   const isFocus = useFocusable()
   const focusableContainerRef = useFocusableContainerRef()
@@ -319,15 +321,29 @@ const useRegisterCommand = () => {
     shortcut: "Enter",
   })
 
+  useCommandBinding({
+    commandId: COMMAND_ID.subscription.toggleFolderCollapse,
+    when: isFocus,
+  })
+
+  const getCurrentActiveSubscriptionElement = useEventCallback(() => {
+    const container = focusableContainerRef.current
+    if (!container) return
+
+    const allSubscriptions = Array.from(container.querySelectorAll("[data-sub]"))
+    if (allSubscriptions.length === 0) return
+
+    const currentActive = container.querySelector("[data-active=true]")
+
+    return [currentActive as HTMLElement | null, allSubscriptions] as const
+  })
+
   useEffect(() => {
     const handleSubscriptionNavigation = (direction: "next" | "previous") => {
-      const container = focusableContainerRef.current
-      if (!container) return
+      const result = getCurrentActiveSubscriptionElement()
+      if (!result) return
 
-      const allSubscriptions = Array.from(container.querySelectorAll("[data-sub]"))
-      if (allSubscriptions.length === 0) return
-
-      const currentActive = container.querySelector("[data-active=true]")
+      const [currentActive, allSubscriptions] = result
 
       if (!currentActive) {
         // If no active item, select first or last based on direction
@@ -348,7 +364,7 @@ const useRegisterCommand = () => {
       const targetElement = allSubscriptions[targetIndex] as HTMLElement | null
 
       // Cleanup selected feed
-      const targetIsCategoryOrFolder = targetElement?.dataset.sub?.startsWith("feed-category-")
+      const targetIsCategoryOrFolder = targetElement?.dataset.sub?.startsWith(FeedCategoryPrefix)
       if (targetIsCategoryOrFolder) {
         setSelectedFeedIds([])
       }
@@ -368,6 +384,17 @@ const useRegisterCommand = () => {
           focusActions.highlightBoundary()
         })
       }),
+      EventBus.subscribe(COMMAND_ID.subscription.toggleFolderCollapse, () => {
+        const result = getCurrentActiveSubscriptionElement()
+        if (!result) return
+
+        const [currentActive] = result
+
+        if (currentActive?.dataset.sub?.startsWith(FeedCategoryPrefix)) {
+          setSelectedFeedIds([])
+          ;(currentActive.querySelector('[data-type="collapse"]') as HTMLElement | null)?.click()
+        }
+      }),
     )
-  }, [focusableContainerRef, focusActions])
+  }, [focusableContainerRef, focusActions, getCurrentActiveSubscriptionElement])
 }

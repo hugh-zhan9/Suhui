@@ -28,6 +28,7 @@
   "keys.subscriptions.switchNextView": "Switch to Next View",
   "keys.subscriptions.switchPreviousView": "Switch to Previous View",
   "keys.subscriptions.switchToView": "Switch to View",
+  "keys.subscriptions.toggleFolderCollapse": "Toggle Folder Collapse",
   "keys.type.audio": "audio",
   "keys.type.entries": "entries",
   "keys.type.entry": "entry",
