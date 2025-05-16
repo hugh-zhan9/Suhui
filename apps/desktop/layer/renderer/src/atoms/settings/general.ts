@@ -189,6 +189,12 @@ export function getActionLanguage() {
   ) as SupportedLanguages
 }
 
+export function useHideAllReadSubscriptions() {
+  const hideAllReadSubscriptions = useGeneralSettingKey("hideAllReadSubscriptions")
+  const unreadOnly = useGeneralSettingKey("unreadOnly")
+  return hideAllReadSubscriptions && unreadOnly
+}
+
 export const subscribeShouldUseIndexedDB = (callback: (value: boolean) => void) =>
   jotaiStore.sub(__generalSettingAtom, () => callback(getGeneralSettingsInternal().dataPersist))
 

@@ -7,6 +7,7 @@ on:
     paths:
       - "apps/desktop/**"
       - "pnpm-lock.yaml"
+      - ".github/workflows/build-desktop.yml"
   workflow_dispatch:
     inputs:
       tag_version:
