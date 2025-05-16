@@ -30,7 +30,7 @@ export const Trending = ({ className }: { className?: string }) => {
           <FeedSummary
             key={item.feed?.id}
             item={item}
-            className="flex flex-1 flex-row items-center bg-none px-6 py-3"
+            className="flex flex-1 flex-row items-center bg-none py-3"
             simple
             preChildren={
               <View
