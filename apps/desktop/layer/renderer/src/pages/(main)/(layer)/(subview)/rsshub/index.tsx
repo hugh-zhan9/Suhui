@@ -14,6 +14,7 @@ import { useTranslation } from "react-i18next"
 
 import RSSHubIconUrl from "~/assets/rsshub-icon.png?url"
 import { whoami } from "~/atoms/user"
+import { ErrorTooltip } from "~/components/common/ErrorTooltip"
 import { useModalStack } from "~/components/ui/modal/stacked/hooks"
 import { useAuthQuery } from "~/hooks/common"
 import { useSubViewTitle } from "~/modules/app-layout/subview/hooks"
@@ -110,7 +111,7 @@ function List({ data }: { data?: RSSHubModel[] }) {
           <TableCell className="text-right">{t("rsshub.table.unlimited")}</TableCell>
           <TableCell>
             {!status?.data?.usage?.rsshubId && (
-              <Button disabled className="shrink-0">
+              <Button disabled buttonClassName="shrink-0">
                 {t("rsshub.table.inuse")}
               </Button>
             )}
@@ -127,6 +128,13 @@ function List({ data }: { data?: RSSHubModel[] }) {
             }
             if (status?.data?.usage?.rsshubId === b.id) {
               return 1
+            }
+
+            if (a.errorMessage && !b.errorMessage) {
+              return 1
+            }
+            if (!a.errorMessage && b.errorMessage) {
+              return -1
             }
 
             const loadA = Math.min((a.userCount ?? 0) / (a.userLimit ?? Infinity), 1)
@@ -191,31 +199,7 @@ function List({ data }: { data?: RSSHubModel[] }) {
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex w-max items-center gap-2">
-                    <Button
-                      className="shrink-0"
-                      disabled={
-                        instance.userCount && instance.userLimit
-                          ? instance.userCount >= instance.userLimit
-                          : false
-                      }
-                      variant={
-                        status?.data?.usage?.rsshubId === instance.id ? "outline" : "primary"
-                      }
-                      onClick={() => {
-                        present({
-                          title: t("rsshub.useModal.title"),
-                          content: ({ dismiss }) => (
-                            <SetModalContent dismiss={dismiss} instance={instance} />
-                          ),
-                        })
-                      }}
-                    >
-                      {t(
-                        status?.data?.usage?.rsshubId === instance.id
-                          ? "rsshub.table.inuse"
-                          : "rsshub.table.use",
-                      )}
-                    </Button>
+                    <SelectInstanceButton instance={instance} />
                     {me?.id === instance.ownerUserId && (
                       <Button
                         variant="outline"
@@ -254,5 +238,41 @@ function List({ data }: { data?: RSSHubModel[] }) {
           })}
       </TableBody>
     </Table>
+  )
+}
+
+function SelectInstanceButton({ instance }: { instance: RSSHubModel }) {
+  const { t } = useTranslation("settings")
+  const { present } = useModalStack()
+  const status = useAuthQuery(Queries.rsshub.status())
+
+  const isNotAvailable = !!instance.errorMessage
+  const limitReached =
+    instance.userCount && instance.userLimit ? instance.userCount >= instance.userLimit : false
+
+  return (
+    <ErrorTooltip errorAt={instance.errorAt} errorMessage={instance.errorMessage} showWhenError>
+      <Button
+        buttonClassName="shrink-0"
+        disabled={isNotAvailable || limitReached}
+        variant={status?.data?.usage?.rsshubId === instance.id ? "outline" : "primary"}
+        onClick={() => {
+          present({
+            title: t("rsshub.useModal.title"),
+            content: ({ dismiss }) => <SetModalContent dismiss={dismiss} instance={instance} />,
+          })
+        }}
+      >
+        {t(
+          status?.data?.usage?.rsshubId === instance.id
+            ? "rsshub.table.inuse"
+            : isNotAvailable
+              ? "rsshub.table.unavailable"
+              : limitReached
+                ? "rsshub.table.limit_reached"
+                : "rsshub.table.use",
+        )}
+      </Button>
+    </ErrorTooltip>
   )
 }

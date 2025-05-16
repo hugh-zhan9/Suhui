@@ -410,6 +410,7 @@ export const useSortedEntryActions = ({
             return false
           }
           const order = orderMap.get(item.id)
+
           if (!order) return false
           return order.type === "main"
         })

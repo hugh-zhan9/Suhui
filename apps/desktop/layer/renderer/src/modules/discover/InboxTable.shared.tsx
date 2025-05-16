@@ -97,7 +97,7 @@ const ConfirmDestroyModalContent = ({ id }: { id: string }) => {
         {t("discover.inbox_destroy_warning")}
       </div>
       <div className="flex justify-end">
-        <Button className="bg-red-600" onClick={() => mutationDestroy.mutate(id)}>
+        <Button buttonClassName="bg-red-600" onClick={() => mutationDestroy.mutate(id)}>
           {t("words.confirm")}
         </Button>
       </div>

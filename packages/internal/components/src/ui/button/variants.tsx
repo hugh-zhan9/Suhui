@@ -36,9 +36,9 @@ export const styledButtonVariant = cva(
     ],
     variants: {
       size: {
-        sm: "px-2 py-1 rounded-md text-xs",
-        default: "px-3 py-1.5 rounded-lg text-sm",
-        lg: "px-4 py-2 rounded-lg text-base",
+        sm: "px-3 py-1 rounded-md text-xs",
+        default: "px-4 py-1.5 rounded-lg text-sm",
+        lg: "px-5 py-2 rounded-lg text-base",
       },
 
       status: {
@@ -47,24 +47,30 @@ export const styledButtonVariant = cva(
       variant: {
         primary: cn(
           "bg-accent",
-          "hover:contrast-[1.10] active:contrast-125",
+          "hover:contrast-[1.10] hover:shadow-md hover:shadow-accent/20 active:contrast-125 active:shadow-none",
           "font-semibold",
-          "disabled:bg-theme-disabled disabled:dark:text-zinc-50",
+          "disabled:bg-theme-disabled disabled:dark:text-zinc-50 disabled:shadow-none",
           "text-zinc-100",
           "focus:border-accent/80 focus:outline-none focus:ring-2",
+          "transition-all duration-300",
         ),
 
         outline: cn(
           "bg-theme-background font-semibold transition-colors duration-200",
-          "border border-border hover:bg-zinc-50 dark:bg-neutral-900/30 dark:hover:bg-neutral-900/80",
-          "focus:border-accent/80",
+          "border border-border hover:border-accent/50 hover:bg-zinc-50/80 dark:bg-neutral-900/30 dark:hover:bg-neutral-900/80",
+          "focus:border-accent/80 focus:ring-1 focus:ring-accent/30",
+          "hover:shadow-sm",
         ),
         text: cn(
           "font-semibold text-accent",
-          "hover:contrast-[1.10] active:contrast-125",
+          "hover:contrast-[1.10] active:contrast-125 hover:bg-accent/10",
           tw`focus:text-accent focus:outline-none p-0 inline align-baseline`,
         ),
-        ghost: cn("px-1.5 font-semibold", "hover:bg-material-ultra-thick"),
+        ghost: cn(
+          "px-2 font-semibold",
+          "hover:bg-material-ultra-thick",
+          "transition-all duration-200",
+        ),
       },
     },
 

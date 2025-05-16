@@ -1,7 +1,7 @@
 {
   "name": "Folo",
   "type": "module",
-  "version": "0.4.5",
+  "version": "0.4.6",
   "private": true,
   "description": "Follow everything in one place",
   "author": "Folo Team",
@@ -52,6 +52,7 @@
     "@follow/configs": "workspace:*",
     "@follow/constants": "workspace:*",
     "@follow/hooks": "workspace:*",
+    "@follow/legal": "workspace:*",
     "@follow/models": "workspace:*",
     "@follow/shared": "workspace:*",
     "@follow/utils": "workspace:*",

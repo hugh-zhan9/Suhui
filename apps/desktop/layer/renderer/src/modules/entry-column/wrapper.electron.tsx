@@ -1,6 +1,6 @@
 import { ScrollArea } from "@follow/components/ui/scroll-area/ScrollArea.js"
-import { views } from "@follow/constants"
-import { clsx } from "clsx"
+import { FeedViewType, views } from "@follow/constants"
+import { cn } from "@follow/utils/utils"
 
 import { useIsZenMode } from "~/atoms/settings/ui"
 import { useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
@@ -14,17 +14,17 @@ export const EntryColumnWrapper = ({ ref, children, onScroll }: EntryColumnWrapp
   const isZenMode = useIsZenMode()
 
   return (
-    <div className={clsx(styles, animationStyles, "mt-2")}>
+    <div className={cn(styles, animationStyles, view !== FeedViewType.SocialMedia && "mt-2")}>
       <ScrollArea
-        scrollbarClassName={clsx(!views[view]!.wideMode ? "w-[5px] p-0" : "", "z-[3]")}
+        scrollbarClassName={cn(!views[view]!.wideMode ? "w-[5px] p-0" : "", "z-[3]")}
         mask={false}
         ref={ref}
-        rootClassName={clsx(
+        rootClassName={cn(
           "h-full",
           views[view]!.wideMode ? "mt-2" : "",
           isZenMode ? "max-w-[80ch] mx-auto" : "",
         )}
-        viewportClassName="[&>div]:grow flex"
+        viewportClassName={"[&>div]:grow flex"}
         onScroll={onScroll}
       >
         {children}

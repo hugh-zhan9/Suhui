@@ -11,6 +11,7 @@ import { Galeria } from "@/src/components/ui/image/galeria"
 import { Image } from "@/src/components/ui/image/Image"
 import { ItemPressableStyle } from "@/src/components/ui/pressable/enum"
 import { ItemPressable } from "@/src/components/ui/pressable/ItemPressable"
+import { NativePressable } from "@/src/components/ui/pressable/NativePressable"
 import { VideoPlayer } from "@/src/components/ui/video/VideoPlayer"
 import { useNavigation } from "@/src/lib/navigation/hooks"
 import { EntryDetailScreen } from "@/src/screens/(stack)/entries/[entryId]/EntryDetailScreen"
@@ -53,6 +54,14 @@ export const EntrySocialItem = memo(({ entryId }: { entryId: string }) => {
       .filter(Boolean) || []) as string[]
   }, [entry])
 
+  const navigationToFeedEntryList = useCallback(() => {
+    if (!entry) return
+    if (!entry.feedId) return
+    navigation.pushControllerView(FeedScreen, {
+      feedId: entry.feedId,
+    })
+  }, [entry?.feedId, navigation])
+
   if (!entry) return <EntryItemSkeleton />
 
   const { description, publishedAt, media } = entry
@@ -67,26 +76,25 @@ export const EntrySocialItem = memo(({ entryId }: { entryId: string }) => {
         {!entry.read && <View className="bg-red absolute left-1.5 top-[25] size-2 rounded-full" />}
 
         <View className="flex flex-1 flex-row items-start gap-4">
-          <Pressable
-            hitSlop={10}
-            onPress={() => {
-              if (!entry.feedId) return
-              navigation.pushControllerView(FeedScreen, {
-                feedId: entry.feedId,
-              })
-            }}
-          >
+          <NativePressable hitSlop={10} onPress={navigationToFeedEntryList}>
             {entry.authorAvatar ? (
-              <UserAvatar size={28} name={entry.author ?? ""} image={entry.authorAvatar} />
+              <UserAvatar
+                preview={false}
+                size={28}
+                name={entry.author ?? ""}
+                image={entry.authorAvatar}
+              />
             ) : (
               feed && <FeedIcon feed={feed} size={28} />
             )}
-          </Pressable>
+          </NativePressable>
 
           <View className="flex-1 flex-row items-center gap-1.5">
-            <Text numberOfLines={1} className="text-label shrink text-base font-semibold">
-              {entry.author || feed?.title}
-            </Text>
+            <NativePressable hitSlop={10} onPress={navigationToFeedEntryList}>
+              <Text numberOfLines={1} className="text-label shrink text-base font-semibold">
+                {entry.author || feed?.title}
+              </Text>
+            </NativePressable>
             <Text className="text-secondary-label">·</Text>
             <RelativeDateTime date={publishedAt} className="text-secondary-label text-[14px]" />
           </View>

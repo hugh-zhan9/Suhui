@@ -6,7 +6,7 @@ export const defaultGeneralSettings: GeneralSettings = {
   language: "en",
   translation: false,
   translationMode: "bilingual",
-  summary: false,
+  summary: true,
   actionLanguage: "default",
 
   // mobile app
@@ -16,7 +16,9 @@ export const defaultGeneralSettings: GeneralSettings = {
   sendAnonymousData: true,
   showQuickTimeline: true,
 
+  // subscription
   autoGroup: true,
+  hideAllReadSubscriptions: false,
 
   // view
   unreadOnly: true,
@@ -87,6 +89,9 @@ export const defaultUISettings: UISettings = {
 
   showUnreadCountViewAndSubscriptionMobile: false,
   showUnreadCountBadgeMobile: false,
+
+  // Discover
+  discoverLanguage: "all",
 }
 
 export const defaultIntegrationSettings: IntegrationSettings = {

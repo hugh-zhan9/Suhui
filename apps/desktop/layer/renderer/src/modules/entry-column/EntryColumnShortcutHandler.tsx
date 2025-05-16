@@ -1,13 +1,19 @@
+import { useFocusable, useFocusActions } from "@follow/components/common/Focusable/hooks.js"
+import { useScrollViewElement } from "@follow/components/ui/scroll-area/hooks.js"
 import { useRefValue } from "@follow/hooks"
+import { nextFrame } from "@follow/utils/dom"
+import { EventBus } from "@follow/utils/event-bus"
 import type { FC } from "react"
-import { memo, useLayoutEffect, useState } from "react"
-import { useHotkeys } from "react-hotkeys-hook"
+import { memo, useEffect } from "react"
 
-import { useMainContainerElement } from "~/atoms/dom"
-import { HotKeyScopeMap } from "~/constants"
-import { shortcuts } from "~/constants/shortcuts"
+import { HotkeyScope } from "~/constants"
 import { useNavigateEntry } from "~/hooks/biz/useNavigateEntry"
 import { useRouteEntryId } from "~/hooks/biz/useRouteParams"
+import { useConditionalHotkeyScope } from "~/hooks/common"
+import { useHotkeyScope } from "~/providers/hotkey-provider"
+
+import { COMMAND_ID } from "../command/commands/id"
+import { useCommandBinding, useCommandHotkey } from "../command/hooks/use-register-hotkey"
 
 export const EntryColumnShortcutHandler: FC<{
   refetch: () => void
@@ -16,42 +22,43 @@ export const EntryColumnShortcutHandler: FC<{
 }> = memo(({ data, refetch, handleScrollTo }) => {
   const dataRef = useRefValue(data!)
 
-  useHotkeys(
-    shortcuts.entries.refetch.key,
-    () => {
-      refetch()
-    },
-    { scopes: HotKeyScopeMap.Home },
-  )
-  const currentEntryIdRef = useRefValue(useRouteEntryId())
+  const activeScope = useHotkeyScope()
 
+  const when =
+    activeScope.includes(HotkeyScope.Timeline) && !activeScope.includes(HotkeyScope.EntryRender)
+
+  useCommandBinding({
+    commandId: COMMAND_ID.timeline.switchToNext,
+    when,
+  })
+
+  useCommandBinding({
+    commandId: COMMAND_ID.timeline.switchToPrevious,
+    when,
+  })
+
+  useCommandBinding({
+    commandId: COMMAND_ID.timeline.refetch,
+    when,
+  })
+
+  useCommandHotkey({
+    commandId: COMMAND_ID.timeline.enter,
+    shortcut: "Enter",
+    when,
+  })
+
+  useCommandHotkey({
+    commandId: COMMAND_ID.layout.focusToSubscription,
+    shortcut: "Backspace, Escape",
+    when,
+  })
+
+  const currentEntryIdRef = useRefValue(useRouteEntryId())
   const navigate = useNavigateEntry()
 
-  const $mainContainer = useMainContainerElement()
-  const [enabledArrowKey, setEnabledArrowKey] = useState(false)
-
-  // Enable arrow key navigation shortcuts only when focus is on entryContent or entryList,
-  // entryList shortcuts should not be triggered in the feed col
-  useLayoutEffect(() => {
-    if (!$mainContainer) return
-    const handler = () => {
-      const target = document.activeElement
-      const isFocusIn = $mainContainer.contains(target) || $mainContainer === target
-
-      setEnabledArrowKey(isFocusIn)
-    }
-
-    handler()
-    // NOTE: focusin event will bubble to the document
-    document.addEventListener("focusin", handler)
-    return () => {
-      document.removeEventListener("focusin", handler)
-    }
-  }, [$mainContainer])
-
-  useHotkeys(
-    shortcuts.entries.next.key,
-    () => {
+  useEffect(() => {
+    return EventBus.subscribe(COMMAND_ID.timeline.switchToNext, () => {
       const data = dataRef.current
       const currentActiveEntryIndex = data.indexOf(currentEntryIdRef.current || "")
 
@@ -63,12 +70,11 @@ export const EntryColumnShortcutHandler: FC<{
       navigate({
         entryId: nextId,
       })
-    },
-    { scopes: HotKeyScopeMap.Home, enabled: enabledArrowKey, preventDefault: true },
-  )
-  useHotkeys(
-    shortcuts.entries.previous.key,
-    () => {
+    })
+  }, [currentEntryIdRef, dataRef, handleScrollTo, navigate, when])
+
+  useEffect(() => {
+    return EventBus.subscribe(COMMAND_ID.timeline.switchToPrevious, () => {
       const data = dataRef.current
       const currentActiveEntryIndex = data.indexOf(currentEntryIdRef.current || "")
 
@@ -81,8 +87,27 @@ export const EntryColumnShortcutHandler: FC<{
       navigate({
         entryId: nextId,
       })
-    },
-    { scopes: HotKeyScopeMap.Home, enabled: enabledArrowKey, preventDefault: true },
-  )
+    })
+  }, [currentEntryIdRef, dataRef, handleScrollTo, navigate])
+
+  useEffect(() => {
+    return EventBus.subscribe(COMMAND_ID.timeline.refetch, () => {
+      refetch()
+    })
+  }, [refetch])
+
+  const $scrollArea = useScrollViewElement()
+  const { highlightBoundary } = useFocusActions()
+  useEffect(() => {
+    return EventBus.subscribe(COMMAND_ID.layout.focusToTimeline, () => {
+      $scrollArea?.focus()
+      nextFrame(highlightBoundary)
+    })
+  }, [$scrollArea, highlightBoundary])
+
+  const isFocusIn = useFocusable()
+
+  useConditionalHotkeyScope(HotkeyScope.Timeline, isFocusIn, true)
+
   return null
 })

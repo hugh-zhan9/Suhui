@@ -16,7 +16,10 @@ export interface GeneralSettings {
   jumpOutLinkWarn: boolean
   // TTS
   voice: string
+
+  // subscription
   autoGroup: boolean
+  hideAllReadSubscriptions: boolean
   /**
    * Top timeline for mobile
    */
@@ -72,6 +75,9 @@ export interface UISettings {
   // @mobile
   showUnreadCountViewAndSubscriptionMobile: boolean
   showUnreadCountBadgeMobile: boolean
+
+  // Discover
+  discoverLanguage: "all" | "eng" | "cmn"
 }
 
 export interface IntegrationSettings {

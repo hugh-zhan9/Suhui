@@ -1,4 +1,4 @@
-import { useFocusable } from "@follow/components/common/Focusable.js"
+import { useFocusable } from "@follow/components/common/Focusable/index.js"
 import { Spring } from "@follow/components/constants/spring.js"
 import { useMobile } from "@follow/components/hooks/useMobile.js"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@follow/components/ui/tooltip/index.jsx"
@@ -20,7 +20,7 @@ import {
   useAudioPlayerAtomValue,
 } from "~/atoms/player"
 import { VolumeSlider } from "~/components/ui/media/VolumeSlider"
-import { HotKeyScopeMap } from "~/constants"
+import { HotkeyScope } from "~/constants"
 import type { NavigateEntryOptions } from "~/hooks/biz/useNavigateEntry"
 import { useNavigateEntry } from "~/hooks/biz/useNavigateEntry"
 import { FeedIcon } from "~/modules/feed/feed-icon"
@@ -118,7 +118,7 @@ const CornerPlayerImpl = ({ hideControls, rounded }: ControlButtonProps) => {
   const isFocused = useFocusable()
   useHotkeys("space", handleClickPlay, {
     preventDefault: true,
-    scopes: HotKeyScopeMap.Home,
+    scopes: HotkeyScope.Home,
     enabled: isFocused,
   })
 

@@ -186,7 +186,7 @@ function RegisterForm() {
               isLoading={isSubmitting}
               disabled={isSubmitting}
               type="submit"
-              className="w-full"
+              buttonClassName="w-full"
               size="lg"
             >
               {t("register.submit")}

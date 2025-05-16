@@ -41,4 +41,39 @@ export const COMMAND_ID = {
     changeThemeToLight: "follow:change-color-mode-to-light",
     customizeToolbar: "follow:customize-toolbar",
   },
+  global: {
+    showShortcuts: "global:show-shortcuts",
+  },
+  layout: {
+    toggleTimelineColumn: "layout:toggle-timeline-column",
+    focusToTimeline: "layout:focus-to-timeline",
+    focusToSubscription: "layout:focus-to-subscription",
+  },
+  timeline: {
+    switchToNext: "timeline:switch-to-next",
+    switchToPrevious: "timeline:switch-to-previous",
+    refetch: "timeline:refetch",
+    enter: "timeline:enter",
+  },
+  entryRender: {
+    scrollDown: "entry-render:scroll-down",
+    scrollUp: "entry-render:scroll-up",
+    nextEntry: "entry-render:next-entry",
+    previousEntry: "entry-render:previous-entry",
+  },
+  subscription: {
+    switchTabToNext: "subscription:switch-tab-to-next",
+    switchTabToPrevious: "subscription:switch-tab-to-previous",
+    switchTabToArticle: "subscription:switch-tab-to-article",
+    switchTabToSocial: "subscription:switch-tab-to-social",
+    switchTabToPicture: "subscription:switch-tab-to-picture",
+    switchTabToVideo: "subscription:switch-tab-to-video",
+    switchTabToAudio: "subscription:switch-tab-to-audio",
+    switchTabToNotification: "subscription:switch-tab-to-notification",
+
+    nextSubscription: "subscription:next",
+    previousSubscription: "subscription:previous",
+
+    toggleFolderCollapse: "subscription:toggle-folder-collapse",
+  },
 } as const

@@ -87,6 +87,7 @@ export class Navigation {
       screenOptions,
     })
   }
+
   private __pop() {
     const routes = jotaiStore.get(this.ctxValue.routesAtom)
     const lastRoute = routes.at(-1)

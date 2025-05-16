@@ -127,7 +127,7 @@ export function Login() {
             <div className="center flex flex-col gap-20 sm:flex-row">
               <Button
                 variant="text"
-                className="h-14 text-base"
+                buttonClassName="h-14 text-base"
                 onClick={() => {
                   window.location.href = "/"
                 }}
@@ -135,7 +135,11 @@ export function Login() {
                 {t("redirect.continueInBrowser")}
               </Button>
 
-              <Button className="h-14 !rounded-full px-5 text-lg" onClick={handleOpenApp}>
+              <Button
+                variant="text"
+                buttonClassName="h-14 !rounded-full px-5 text-lg"
+                onClick={handleOpenApp}
+              >
                 {t("redirect.openApp", { app_name: APP_NAME })}
               </Button>
             </div>

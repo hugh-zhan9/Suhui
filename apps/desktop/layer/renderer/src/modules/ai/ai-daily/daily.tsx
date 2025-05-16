@@ -44,7 +44,6 @@ import { apiClient } from "~/lib/api-fetch"
 import { defineQuery } from "~/lib/defineQuery"
 import { COMMAND_ID } from "~/modules/command/commands/id"
 import { hasCommand } from "~/modules/command/hooks/use-command"
-import { FlatMarkAllReadButton } from "~/modules/entry-column/components/mark-all-button"
 import { StarIcon } from "~/modules/entry-column/star-icon"
 import { EntryContent } from "~/modules/entry-content"
 import { CommandDropdownMenuItem } from "~/modules/entry-content/actions/more-actions"
@@ -92,10 +91,12 @@ export const DailyReportTitle = ({
   endDate,
   startDate,
   title,
+  containerClassName,
 }: {
   title: string
   startDate: number
   endDate: number
+  containerClassName?: string
 }) => {
   const { t } = useTranslation()
   const language = useGeneralSettingSelector((s) => s.language)
@@ -109,7 +110,7 @@ export const DailyReportTitle = ({
 
   return (
     <m.div
-      className="flex items-center justify-center gap-2 pb-6 text-base"
+      className={cn("flex items-center justify-center gap-2 pb-6 text-base", containerClassName)}
       layoutId={`daily-report-title-${title}`}
       transition={Spring.presets.smooth}
     >
@@ -268,16 +269,6 @@ export const DailyReportModalContent: Component<DailyReportContentProps> = ({
           </Markdown>
         ) : null}
       </div>
-
-      {!!content.data && (
-        <FlatMarkAllReadButton
-          className="ml-auto shrink-0"
-          filter={{
-            startTime: startDate,
-            endTime: endDate,
-          }}
-        />
-      )}
     </div>
   )
 }

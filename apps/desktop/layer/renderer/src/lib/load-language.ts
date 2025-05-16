@@ -7,14 +7,14 @@ import { toast } from "sonner"
 
 import { currentSupportedLanguages, dayjsLocaleImportMap } from "~/@types/constants"
 import { defaultResources } from "~/@types/default-resource"
-import { fallbackLanguage, i18nAtom, langChain, LocaleCache } from "~/i18n"
+import { i18nAtom, langChain, LocaleCache } from "~/i18n"
 import { jotaiStore } from "~/lib/jotai"
 
 import { tipcClient } from "./client"
 import { appLog } from "./log"
 
 const loadingLangLock = new Set<string>()
-const loadedLangs = new Set<string>([fallbackLanguage])
+const loadedLangs = new Set<string>(["en"])
 
 export const loadLanguageAndApply = async (lang: string) => {
   const dayjsImport = dayjsLocaleImportMap[lang]

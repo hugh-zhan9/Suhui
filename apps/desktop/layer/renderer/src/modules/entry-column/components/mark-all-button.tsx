@@ -8,7 +8,7 @@ import { useHotkeys } from "react-hotkeys-hook"
 import { Trans, useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
-import { HotKeyScopeMap } from "~/constants"
+import { HotkeyScope } from "~/constants"
 import { shortcuts } from "~/constants/shortcuts"
 import { useI18n } from "~/hooks/common"
 
@@ -50,7 +50,7 @@ export const MarkAllReadButton = ({
           label: (
             <span className="flex items-center gap-1">
               {t("mark_all_read_button.undo")}
-              <Kbd className="border-border inline-flex items-center border bg-transparent dark:text-white">
+              <Kbd className="border-border inline-flex items-center border bg-transparent text-white">
                 Meta+Z
               </Kbd>
             </span>
@@ -61,7 +61,7 @@ export const MarkAllReadButton = ({
     },
     {
       preventDefault: true,
-      scopes: HotKeyScopeMap.Home,
+      scopes: HotkeyScope.Home,
     },
   )
 
@@ -100,7 +100,7 @@ const ConfirmMarkAllReadInfo = ({ undo }: { undo: () => any }) => {
   const [countdown] = useCountdown({ countStart: 3 })
 
   useHotkeys("ctrl+z,meta+z", undo, {
-    scopes: HotKeyScopeMap.Home,
+    scopes: HotkeyScope.Home,
     preventDefault: true,
   })
 
@@ -137,7 +137,7 @@ export const FlatMarkAllReadButton: FC<
       variant="ghost"
       disabled={status === "done"}
       buttonClassName={buttonClassName}
-      className={cn(
+      textClassName={cn(
         "center relative flex h-auto gap-1",
 
         className,

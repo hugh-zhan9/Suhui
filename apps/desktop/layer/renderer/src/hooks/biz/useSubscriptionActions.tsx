@@ -4,7 +4,7 @@ import { useHotkeys } from "react-hotkeys-hook"
 import { Trans, useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
-import { HotKeyScopeMap } from "~/constants"
+import { HotkeyScope } from "~/constants"
 import { apiClient } from "~/lib/api-fetch"
 import { subscription as subscriptionQuery } from "~/queries/subscriptions"
 import type { SubscriptionFlatModel } from "~/store/subscription"
@@ -64,7 +64,7 @@ export const useDeleteSubscription = ({ onSuccess }: { onSuccess?: () => void } 
             label: (
               <span className="flex items-center gap-1">
                 {t("words.undo")}
-                <Kbd className="border-border inline-flex items-center border bg-transparent dark:text-white">
+                <Kbd className="border-border inline-flex items-center border bg-transparent text-white">
                   Meta+Z
                 </Kbd>
               </span>
@@ -92,7 +92,7 @@ export const useDeleteSubscription = ({ onSuccess }: { onSuccess?: () => void } 
 
 const UnfollowInfo = ({ title, undo }: { title: string; undo: () => any }) => {
   useHotkeys("ctrl+z,meta+z", undo, {
-    scopes: HotKeyScopeMap.Home,
+    scopes: HotkeyScope.Home,
     preventDefault: true,
   })
   return (
