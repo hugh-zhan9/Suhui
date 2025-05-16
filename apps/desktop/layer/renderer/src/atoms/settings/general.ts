@@ -6,7 +6,7 @@ import type { GeneralSettings } from "@follow/shared/settings/interface"
 import { useCallback, useMemo } from "react"
 
 import { jotaiStore } from "~/lib/jotai"
-import { getDefaultLanguage } from "~/lib/load-language"
+import { getDefaultLanguage } from "~/lib/language"
 
 export const DEFAULT_ACTION_LANGUAGE = "default"
 
