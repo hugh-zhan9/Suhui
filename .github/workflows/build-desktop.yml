@@ -128,7 +128,7 @@ jobs:
 
       - name: Prebuild packages (Windows)
         if: runner.os == 'windows'
-        run: turbo run build --filter={./packages/**/*}
+        run: npx turbo run build --filter={./packages/**/*}
 
       - name: Update main hash
         working-directory: apps/desktop
