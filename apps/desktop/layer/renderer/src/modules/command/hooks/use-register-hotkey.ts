@@ -6,18 +6,26 @@ import { getCommand } from "./use-command"
 import type { BindingCommandId } from "./use-command-shortcut"
 import { useCommandShortcut } from "./use-command-shortcut"
 
+export interface HotkeyOptions {
+  forceInputElement?: true
+}
 interface RegisterHotkeyOptions<T extends FollowCommandId> {
   shortcut: string
   commandId: T
   args?: Parameters<Extract<FollowCommand, { id: T }>["run"]>
   when?: boolean
+
+  options?: HotkeyOptions
 }
+
+const IGNORE_INPUT_ELEMENT = [HTMLInputElement, HTMLTextAreaElement]
 
 export const useCommandHotkey = <T extends FollowCommandId>({
   shortcut,
   commandId,
   when,
   args,
+  options,
 }: RegisterHotkeyOptions<T>) => {
   useEffect(() => {
     if (!when) {
@@ -35,6 +43,15 @@ export const useCommandHotkey = <T extends FollowCommandId>({
     // Create a handler for each shortcut
     shortcuts.forEach((key) => {
       keyMap[key] = (event) => {
+        const { target } = event
+        if (
+          !options?.forceInputElement &&
+          (IGNORE_INPUT_ELEMENT.some((el) => target instanceof el) ||
+            (target as HTMLElement).getAttribute("contenteditable") === "true")
+        ) {
+          return
+        }
+
         event.preventDefault()
         event.stopPropagation()
 
