@@ -13,7 +13,8 @@ import { useConditionalHotkeyScope } from "~/hooks/common"
 import { useHotkeyScope } from "~/providers/hotkey-provider"
 
 import { COMMAND_ID } from "../command/commands/id"
-import { useCommandBinding, useCommandHotkey } from "../command/hooks/use-register-hotkey"
+import { useCommandBinding } from "../command/hooks/use-command-binding"
+import { useCommandHotkey } from "../command/hooks/use-register-hotkey"
 
 export const EntryColumnShortcutHandler: FC<{
   refetch: () => void
@@ -43,7 +44,7 @@ export const EntryColumnShortcutHandler: FC<{
   })
 
   useCommandHotkey({
-    commandId: COMMAND_ID.timeline.enter,
+    commandId: COMMAND_ID.layout.focusToEntryRender,
     shortcut: "Enter",
     when,
   })

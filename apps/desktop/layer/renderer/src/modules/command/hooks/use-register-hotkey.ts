@@ -4,13 +4,11 @@ import { tinykeys } from "tinykeys"
 
 import type { FollowCommand, FollowCommandId } from "../types"
 import { getCommand } from "./use-command"
-import type { BindingCommandId } from "./use-command-shortcut"
-import { useCommandShortcut } from "./use-command-shortcut"
 
 export interface HotkeyOptions {
   forceInputElement?: true
 }
-interface RegisterHotkeyOptions<T extends FollowCommandId> {
+export interface RegisterHotkeyOptions<T extends FollowCommandId> {
   shortcut: string
   commandId: T
   args?: Parameters<Extract<FollowCommand, { id: T }>["run"]>
@@ -79,19 +77,4 @@ export const useCommandHotkey = <T extends FollowCommandId>({
 
     return tinykeys(document.documentElement, keyMap)
   }, [shortcut, commandId, when, argsRef, options?.forceInputElement])
-}
-
-export const useCommandBinding = <T extends BindingCommandId>({
-  commandId,
-  when = true,
-  args,
-}: Omit<RegisterHotkeyOptions<T>, "shortcut">) => {
-  const commandShortcut = useCommandShortcut(commandId)
-
-  return useCommandHotkey({
-    shortcut: commandShortcut,
-    commandId,
-    when,
-    args,
-  })
 }

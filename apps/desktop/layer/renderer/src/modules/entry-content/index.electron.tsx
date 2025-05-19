@@ -34,7 +34,8 @@ import { useFeedById } from "~/store/feed"
 import { useInboxById } from "~/store/inbox"
 
 import { COMMAND_ID } from "../command/commands/id"
-import { useCommandBinding, useCommandHotkey } from "../command/hooks/use-register-hotkey"
+import { useCommandBinding } from "../command/hooks/use-command-binding"
+import { useCommandHotkey } from "../command/hooks/use-register-hotkey"
 import { EntryContentHTMLRenderer } from "../renderer/html"
 import { AISummary } from "./AISummary"
 import { EntryTimelineSidebar } from "./components/EntryTimelineSidebar"
@@ -235,6 +236,7 @@ const EntryScrollArea: Component<{
   }
   return (
     <ScrollArea.ScrollArea
+      focusable={false}
       mask={false}
       rootClassName={cn(
         "h-0 min-w-0 grow overflow-y-auto print:h-auto print:overflow-visible",
@@ -353,7 +355,7 @@ const RegisterCommands = ({
           springScrollTo(currentScroll + delta, scrollerRef.current!)
         }
       }),
-      EventBus.subscribe(COMMAND_ID.timeline.enter, () => {
+      EventBus.subscribe(COMMAND_ID.layout.focusToEntryRender, () => {
         const $scroller = scrollerRef.current
         if ($scroller) {
           springScrollTo(0, $scroller)
