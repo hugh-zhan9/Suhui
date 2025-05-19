@@ -1,3 +1,4 @@
+import { useRefValue } from "@follow/hooks"
 import { useEffect } from "react"
 import { tinykeys } from "tinykeys"
 
@@ -27,6 +28,7 @@ export const useCommandHotkey = <T extends FollowCommandId>({
   args,
   options,
 }: RegisterHotkeyOptions<T>) => {
+  const argsRef = useRefValue(args)
   useEffect(() => {
     if (!when) {
       return
@@ -57,7 +59,7 @@ export const useCommandHotkey = <T extends FollowCommandId>({
 
         const command = getCommand(commandId)
         if (!command) return
-
+        const args = argsRef.current
         if (Array.isArray(args)) {
           // It should be safe to spread the args here because we are checking if it is an array
           // @ts-expect-error - A spread argument must either have a tuple type or be passed to a rest parameter.ts(2556)
@@ -76,7 +78,7 @@ export const useCommandHotkey = <T extends FollowCommandId>({
     })
 
     return tinykeys(document.documentElement, keyMap)
-  }, [shortcut, commandId, when, args])
+  }, [shortcut, commandId, when, argsRef, options?.forceInputElement])
 }
 
 export const useCommandBinding = <T extends BindingCommandId>({
