@@ -19,6 +19,8 @@ export interface RegisterHotkeyOptions<T extends FollowCommandId> {
 
 const IGNORE_INPUT_ELEMENT = [HTMLInputElement, HTMLTextAreaElement]
 
+const SPECIAL_KEYS_MAPPINGS = [["?", "Shift+Slash"]] as const
+
 export const useCommandHotkey = <T extends FollowCommandId>({
   shortcut,
   commandId,
@@ -42,7 +44,16 @@ export const useCommandHotkey = <T extends FollowCommandId>({
 
     // Create a handler for each shortcut
     shortcuts.forEach((key) => {
-      keyMap[key] = (event) => {
+      let nextKey = key
+
+      for (const [from, to] of SPECIAL_KEYS_MAPPINGS) {
+        if (key === from) {
+          nextKey = to
+          break
+        }
+      }
+
+      keyMap[nextKey] = (event) => {
         const { target } = event
         if (
           !options?.forceInputElement &&

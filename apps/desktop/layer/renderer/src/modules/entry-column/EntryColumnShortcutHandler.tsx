@@ -45,13 +45,13 @@ export const EntryColumnShortcutHandler: FC<{
 
   useCommandHotkey({
     commandId: COMMAND_ID.layout.focusToEntryRender,
-    shortcut: "Enter",
+    shortcut: "Enter, L, ArrowRight",
     when,
   })
 
   useCommandHotkey({
     commandId: COMMAND_ID.layout.focusToSubscription,
-    shortcut: "Backspace, Escape",
+    shortcut: "Backspace, Escape, H, ArrowLeft",
     when,
   })
 

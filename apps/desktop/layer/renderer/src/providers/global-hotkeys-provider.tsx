@@ -16,8 +16,6 @@ export const GlobalHotkeysProvider = () => {
 
   useCommandBinding({
     commandId: COMMAND_ID.global.showShortcuts,
-    when:
-      activeScopes.includes(HotkeyScope.Home) && !activeScopes.includes(HotkeyScope.EntryRender),
   })
 
   useEventListener("keydown", (e) => {

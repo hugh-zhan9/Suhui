@@ -319,7 +319,7 @@ const useRegisterCommand = () => {
   useCommandHotkey({
     commandId: COMMAND_ID.layout.focusToTimeline,
     when: isFocus,
-    shortcut: "Enter",
+    shortcut: "Enter, L, ArrowRight",
   })
 
   useCommandBinding({
