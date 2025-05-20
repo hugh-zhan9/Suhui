@@ -1,7 +1,11 @@
-import { defaultSettings } from "@follow/shared/settings/defaults"
+import { isEqual } from "es-toolkit/compat"
 
-import { getGeneralSettings, setGeneralSetting } from "~/atoms/settings/general"
-import { getUISettings } from "~/atoms/settings/ui"
+import {
+  createDefaultGeneralSettings,
+  getGeneralSettings,
+  setGeneralSetting,
+} from "~/atoms/settings/general"
+import { createDefaultUISettings, getUISettings } from "~/atoms/settings/ui"
 
 import { defineMigration } from "../helper"
 
@@ -15,7 +19,7 @@ function hasSettingsChanged(
     if (currentValue === undefined) {
       continue
     }
-    if (defaultValue !== currentValue) {
+    if (!isEqual(defaultValue, currentValue)) {
       return true
     }
   }
@@ -29,8 +33,8 @@ export const v1 = defineMigration({
     const uiSettings = getUISettings()
 
     const enabledEnhancedSettings =
-      hasSettingsChanged(uiSettings, defaultSettings.ui) ||
-      hasSettingsChanged(settings, defaultSettings.general)
+      hasSettingsChanged(uiSettings, createDefaultUISettings()) ||
+      hasSettingsChanged(settings, createDefaultGeneralSettings())
 
     setGeneralSetting("enhancedSettings", enabledEnhancedSettings)
   },
