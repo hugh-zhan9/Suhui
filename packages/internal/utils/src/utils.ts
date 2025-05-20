@@ -417,3 +417,8 @@ export function combineCleanupFunctions(...fns: Array<Nullable<(() => void) | vo
     })
   }
 }
+
+export function doesTextContainHTML(text?: string | null): boolean {
+  if (!text) return false
+  return /<([a-z][a-z0-9]*)\b[^>]*>\s*[^<>\s].*<\/\1>/i.test(text)
+}

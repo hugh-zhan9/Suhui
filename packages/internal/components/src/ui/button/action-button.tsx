@@ -73,6 +73,10 @@ export const ActionButton = ({
   React.useImperativeHandle(ref, () => buttonRef.current!)
 
   const [shouldHighlightMotion, setShouldHighlightMotion] = useState(highlightMotion)
+  React.useEffect(() => {
+    setShouldHighlightMotion(highlightMotion)
+  }, [highlightMotion])
+
   const [loading, setLoading] = useState(false)
 
   const Trigger = (
