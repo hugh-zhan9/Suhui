@@ -18,9 +18,6 @@ import { RecommendationContent } from "~/modules/discover/RecommendationContent"
 import { FeedIcon } from "~/modules/feed/feed-icon"
 import { Queries } from "~/queries"
 
-type Language = "all" | "eng" | "cmn"
-type DiscoverCategories = (typeof RSSHubCategories)[number] | string
-
 const LanguageMap = {
   all: "all",
   eng: "en",
@@ -29,13 +26,6 @@ const LanguageMap = {
 
 type RouteData = Awaited<ReturnType<typeof apiClient.discover.rsshub.$get>>["data"]
 
-const fetchRsshubPopular = (category: DiscoverCategories, lang: Language) => {
-  return Queries.discover.rsshubCategory({
-    // category: "popular",
-    categories: category === "all" ? "popular" : `${category}`,
-    lang: LanguageMap[lang],
-  })
-}
 export const Component = () => {
   const { t } = useTranslation()
   const lang = useUISettingKey("discoverLanguage")
@@ -43,10 +33,16 @@ export const Component = () => {
   const title = t(`discover.category.${category}`, { ns: "common" })
   useSubViewTitle(title)
 
-  const rsshubPopular = useAuthQuery(fetchRsshubPopular(category, lang), {
-    staleTime: 1000 * 60 * 60 * 24, // 1 day
-    placeholderData: keepPreviousData,
-  })
+  const rsshubPopular = useAuthQuery(
+    Queries.discover.rsshubCategory({
+      categories: category === "all" ? "popular" : `${category}`,
+      lang: LanguageMap[lang],
+    }),
+    {
+      staleTime: 1000 * 60 * 60 * 24, // 1 day
+      placeholderData: keepPreviousData,
+    },
+  )
 
   const data: RouteData = rsshubPopular.data as any
   const { isLoading } = rsshubPopular
@@ -171,6 +167,11 @@ const RecommendationListItem = ({
     }
   }, [data])
 
+  const rsshubAnalytics = useAuthQuery(Queries.discover.rsshubAnalytics(), {
+    staleTime: 1000 * 60 * 60 * 24, // 1 day
+    placeholderData: keepPreviousData,
+  })
+
   return (
     <Card className="shadow-background border-border overflow-hidden rounded-lg border transition-shadow duration-200 hover:shadow-md">
       <div className="border-border flex items-center gap-3 border-b p-4">
@@ -194,7 +195,7 @@ const RecommendationListItem = ({
               <Link
                 to={`/discover/category/${c}`}
                 key={c}
-                className={`bg-accent/10 cursor-pointer rounded-full px-2 py-0.5 duration-200 ${
+                className={`bg-accent/10 flex cursor-pointer items-center rounded-full px-2 py-0.5 duration-200 ${
                   !RSSHubCategories.includes(c) ? "pointer-events-none opacity-50" : ""
                 }`}
               >
@@ -213,10 +214,12 @@ const RecommendationListItem = ({
             if (Array.isArray(routeData.path)) {
               routeData.path = routeData.path.find((p) => p === route) ?? routeData.path[0]
             }
+            const subscriptionCount =
+              rsshubAnalytics.data?.[`/${routePrefix}${routeData.path}`]?.subscriptionCount
             return (
               <li
                 key={route}
-                className="hover:bg-material-opaque -mx-4 flex items-center rounded p-2 px-5 transition-colors"
+                className="hover:bg-material-opaque -mx-4 flex items-center gap-8 rounded p-2 px-5 transition-colors"
                 role="button"
                 onClick={() => {
                   present({
@@ -232,15 +235,23 @@ const RecommendationListItem = ({
                   })
                 }}
               >
-                <div className="bg-accent mr-2 size-1.5 rounded-full" />
-                <div className="relative h-5 grow">
-                  <div className="absolute inset-0 flex items-center gap-2 text-sm">
-                    <EllipsisHorizontalTextWithTooltip>
-                      {routeData.name}
-                    </EllipsisHorizontalTextWithTooltip>
-                    <div className="text-text-secondary shrink-0 text-xs">{`rsshub://${routePrefix}${routeData.path}`}</div>
+                <div className="flex flex-1 items-center gap-2">
+                  <div className="bg-accent mr-2 size-1.5 rounded-full" />
+                  <div className="relative h-5 grow">
+                    <div className="absolute inset-0 flex items-center gap-3 text-sm">
+                      <EllipsisHorizontalTextWithTooltip>
+                        {routeData.name}
+                      </EllipsisHorizontalTextWithTooltip>
+                      <EllipsisHorizontalTextWithTooltip className="text-text-secondary text-xs">{`rsshub://${routePrefix}${routeData.path}`}</EllipsisHorizontalTextWithTooltip>
+                    </div>
                   </div>
                 </div>
+                {subscriptionCount && (
+                  <div className="flex items-center gap-0.5 text-xs">
+                    <i className="i-mgc-fire-cute-re" />
+                    {subscriptionCount}
+                  </div>
+                )}
               </li>
             )
           })}

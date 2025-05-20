@@ -14574,6 +14574,21 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
             status: 200;
         };
     };
+} & {
+    "/rsshub-analytics": {
+        $get: {
+            input: {};
+            output: {
+                data: {
+                    [x: string]: {
+                        subscriptionCount: number;
+                    };
+                };
+            };
+            outputFormat: "json";
+            status: 200;
+        };
+    };
 }, "/discover"> | hono_types.MergeSchemaPath<hono_types.MergeSchemaPath<{
     "/": {
         $post: {
