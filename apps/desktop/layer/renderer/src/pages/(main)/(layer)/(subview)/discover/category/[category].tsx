@@ -1,18 +1,18 @@
-import { isMobile } from "@follow/components/hooks/useMobile.js"
 import { EmptyIcon } from "@follow/components/icons/empty.js"
 import { Card } from "@follow/components/ui/card/index.jsx"
+import { Input } from "@follow/components/ui/input/Input.js"
 import { LoadingCircle } from "@follow/components/ui/loading/index.js"
 import { EllipsisHorizontalTextWithTooltip } from "@follow/components/ui/typography/EllipsisWithTooltip.js"
 import { CategoryMap, RSSHubCategories } from "@follow/constants"
-import { isASCII } from "@follow/utils/utils"
 import { keepPreviousData } from "@tanstack/react-query"
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { useParams } from "react-router"
+import { Link, useParams } from "react-router"
 
 import { useUISettingKey } from "~/atoms/settings/ui"
 import { useModalStack } from "~/components/ui/modal/stacked/hooks"
 import { useAuthQuery } from "~/hooks/common"
+import type { apiClient } from "~/lib/api-fetch"
 import { useSubViewTitle } from "~/modules/app-layout/subview/hooks"
 import { RecommendationContent } from "~/modules/discover/RecommendationContent"
 import { FeedIcon } from "~/modules/feed/feed-icon"
@@ -26,6 +26,8 @@ const LanguageMap = {
   eng: "en",
   cmn: "zh-CN",
 } as const
+
+type RouteData = Awaited<ReturnType<typeof apiClient.discover.rsshub.$get>>["data"]
 
 const fetchRsshubPopular = (category: DiscoverCategories, lang: Language) => {
   return Queries.discover.rsshubCategory({
@@ -46,31 +48,22 @@ export const Component = () => {
     placeholderData: keepPreviousData,
   })
 
-  const { data, isLoading } = rsshubPopular
+  const data: RouteData = rsshubPopular.data as any
+  const { isLoading } = rsshubPopular
 
   const keys = useMemo(() => {
     if (!data) {
       return []
     }
     return Object.keys(data).sort((a, b) => {
-      const aname = data[a].name
-      const bname = data[b].name
+      const aname = data[a]!.name
+      const bname = data[b]!.name
 
-      const aRouteName = data[a].routes[Object.keys(data[a].routes)[0]].name
-      const bRouteName = data[b].routes[Object.keys(data[b].routes)[0]].name
-
-      const ia = isASCII(aname) && isASCII(aRouteName)
-      const ib = isASCII(bname) && isASCII(bRouteName)
-
-      if (ia && ib) {
-        return aname.toLowerCase() < bname.toLowerCase() ? -1 : 1
-      } else if (ia || ib) {
-        return ia > ib ? -1 : 1
-      } else {
-        return 0
-      }
+      return aname.toLowerCase() < bname.toLowerCase() ? -1 : 1
     })
   }, [data])
+
+  const [search, setSearch] = useState("")
 
   const items = keys.map((key) => {
     return {
@@ -80,9 +73,25 @@ export const Component = () => {
     }
   })
 
+  const filteredItems = useMemo(() => {
+    return items.filter((item) => {
+      const routes = Object.values(item.data?.routes ?? {})
+      const sources = [
+        item.data?.name,
+        item.routePrefix,
+        ...routes.map((route) => route.name),
+        ...routes.map((route) => route.path),
+      ]
+
+      return sources.some((source) => {
+        return source?.toLowerCase().includes(search.toLowerCase())
+      })
+    })
+  }, [items, search])
+
   return (
-    <div>
-      <div className="mb-10 flex items-center justify-center gap-2 text-center text-2xl font-bold">
+    <div className="w-full max-w-[800px]">
+      <div className="mb-10 flex w-full items-center justify-center gap-2 text-center text-2xl font-bold">
         <span>{CategoryMap[category]?.emoji}</span>
         <span>{title}</span>
       </div>
@@ -92,17 +101,18 @@ export const Component = () => {
         </div>
       ) : items.length > 0 ? (
         <div className="w-full px-8 pb-8 pt-4">
-          <div
-            className="animate-in fade-in duration-300"
-            style={{
-              columnCount: isMobile() ? 1 : 2,
-              columnGap: "16px",
-              width: "100%",
+          <Input
+            placeholder="Search"
+            className="mb-4"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value)
             }}
-          >
-            {items.map(
+          />
+          <div>
+            {filteredItems.map(
               (item) =>
-                item && (
+                item?.data && (
                   <div key={item.key} className="mb-4 break-inside-avoid">
                     <RecommendationListItem data={item.data} routePrefix={item.routePrefix} />
                   </div>
@@ -129,7 +139,13 @@ export const Component = () => {
   )
 }
 
-const RecommendationListItem = ({ data, routePrefix }: { data: any; routePrefix: string }) => {
+const RecommendationListItem = ({
+  data,
+  routePrefix,
+}: {
+  data: RouteData[string]
+  routePrefix: string
+}) => {
   const { t } = useTranslation()
   const { present } = useModalStack()
 
@@ -162,7 +178,7 @@ const RecommendationListItem = ({ data, routePrefix }: { data: any; routePrefix:
           <FeedIcon className="mr-0 size-8" size={32} siteUrl={`https://${data.url}`} />
         </div>
         <div className="flex w-full flex-1 justify-between">
-          <h3 className="text-title3 line-clamp-1 font-medium">
+          <h3 className="line-clamp-1 text-base font-medium">
             <a
               href={`https://${data.url}`}
               target="_blank"
@@ -175,13 +191,9 @@ const RecommendationListItem = ({ data, routePrefix }: { data: any; routePrefix:
 
           <div className="flex flex-wrap gap-1.5 text-xs">
             {categories.map((c) => (
-              <button
-                onClick={() => {
-                  // if (!RSSHubCategories.includes(c)) return
-                  // setCategory(c)
-                }}
+              <Link
+                to={`/discover/category/${c}`}
                 key={c}
-                type="button"
                 className={`bg-accent/10 cursor-pointer rounded-full px-2 py-0.5 duration-200 ${
                   !RSSHubCategories.includes(c) ? "pointer-events-none opacity-50" : ""
                 }`}
@@ -189,7 +201,7 @@ const RecommendationListItem = ({ data, routePrefix }: { data: any; routePrefix:
                 {RSSHubCategories.includes(c)
                   ? t(`discover.category.${c}`, { ns: "common" })
                   : c.charAt(0).toUpperCase() + c.slice(1)}
-              </button>
+              </Link>
             ))}
           </div>
         </div>
@@ -204,7 +216,7 @@ const RecommendationListItem = ({ data, routePrefix }: { data: any; routePrefix:
             return (
               <li
                 key={route}
-                className="hover:bg-material-opaque -mx-4 flex items-center rounded p-1 px-5 transition-colors"
+                className="hover:bg-material-opaque -mx-4 flex items-center rounded p-2 px-5 transition-colors"
                 role="button"
                 onClick={() => {
                   present({
@@ -222,10 +234,11 @@ const RecommendationListItem = ({ data, routePrefix }: { data: any; routePrefix:
               >
                 <div className="bg-accent mr-2 size-1.5 rounded-full" />
                 <div className="relative h-5 grow">
-                  <div className="absolute inset-0">
-                    <EllipsisHorizontalTextWithTooltip className="text-sm">
+                  <div className="absolute inset-0 flex items-center gap-2 text-sm">
+                    <EllipsisHorizontalTextWithTooltip>
                       {routeData.name}
                     </EllipsisHorizontalTextWithTooltip>
+                    <div className="text-text-secondary shrink-0 text-xs">{`rsshub://${routePrefix}${routeData.path}`}</div>
                   </div>
                 </div>
               </li>
