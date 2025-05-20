@@ -4,6 +4,7 @@ import {
   useFocusActions,
 } from "@follow/components/common/Focusable/index.js"
 import { MemoedDangerousHTMLStyle } from "@follow/components/common/MemoedDangerousHTMLStyle.js"
+import { Spring } from "@follow/components/constants/spring.js"
 import { MotionButtonBase } from "@follow/components/ui/button/index.js"
 import { RootPortal } from "@follow/components/ui/portal/index.js"
 import { ScrollArea } from "@follow/components/ui/scroll-area/index.js"
@@ -15,7 +16,8 @@ import { EventBus } from "@follow/utils/event-bus"
 import { springScrollTo } from "@follow/utils/scroller"
 import { cn, combineCleanupFunctions } from "@follow/utils/utils"
 import { ErrorBoundary } from "@sentry/react"
-import { AnimatePresence, m } from "motion/react"
+import type { Variants } from "motion/react"
+import { AnimatePresence, m, useAnimationControls } from "motion/react"
 import * as React from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
 
@@ -58,6 +60,12 @@ import {
 } from "./index.shared"
 import { EntryContentLoading } from "./loading"
 
+const pageMotionVariants = {
+  initial: { opacity: 0, y: 50 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: 50, transition: { duration: 0 } },
+} satisfies Variants
+
 export const EntryContent: Component<EntryContentProps> = ({
   entryId,
   noMedia,
@@ -80,18 +88,6 @@ export const EntryContent: Component<EntryContentProps> = ({
 
   const scrollerRef = useRef<HTMLDivElement | null>(null)
 
-  useEffect(() => {
-    const scrollAndFocus = () => {
-      scrollerRef.current?.scrollTo(0, 0)
-    }
-
-    scrollAndFocus()
-    return combineCleanupFunctions(
-      EventBus.subscribe(COMMAND_ID.timeline.switchToNext, scrollAndFocus),
-      EventBus.subscribe(COMMAND_ID.timeline.switchToPrevious, scrollAndFocus),
-    )
-  }, [entryId])
-
   const safeUrl = useFeedSafeUrl(entryId)
 
   const customCSS = useUISettingKey("customCSS")
@@ -102,6 +98,19 @@ export const EntryContent: Component<EntryContentProps> = ({
   const isZenMode = useIsZenMode()
 
   const [panelPortalElement, setPanelPortalElement] = useState<HTMLDivElement | null>(null)
+
+  const animationController = useAnimationControls()
+  const prevEntryId = useRef<string | undefined>(undefined)
+
+  useEffect(() => {
+    if (prevEntryId.current !== entryId) {
+      springScrollTo(0, scrollerRef.current!)
+      animationController.start(pageMotionVariants.exit).then(() => {
+        animationController.start(pageMotionVariants.animate)
+      })
+      prevEntryId.current = entryId
+    }
+  }, [animationController, entryId])
 
   if (!entry) return null
 
@@ -131,9 +140,11 @@ export const EntryContent: Component<EntryContentProps> = ({
         <EntryTimelineSidebar entryId={entry.entries.id} />
         <EntryScrollArea className={className} scrollerRef={scrollerRef}>
           {/* Indicator for the entry */}
-          <div
-            className="animate-in fade-in slide-in-from-bottom-24 f-motion-reduce:fade-in-0 f-motion-reduce:slide-in-from-bottom-0 select-text duration-200 ease-in-out"
-            key={entry.entries.id}
+          <m.div
+            initial={pageMotionVariants.initial}
+            animate={animationController}
+            transition={Spring.presets.smooth}
+            className="select-text"
           >
             {!isZenMode && (
               <>
@@ -225,7 +236,7 @@ export const EntryContent: Component<EntryContentProps> = ({
 
               <SupportCreator entryId={entryId} />
             </article>
-          </div>
+          </m.div>
         </EntryScrollArea>
         <SourceContentPanel src={safeUrl ?? "#"} />
       </Focusable>
