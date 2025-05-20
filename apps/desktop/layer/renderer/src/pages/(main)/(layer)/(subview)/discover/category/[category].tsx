@@ -11,12 +11,14 @@ import { Link, useParams } from "react-router"
 
 import { useUISettingKey } from "~/atoms/settings/ui"
 import { useModalStack } from "~/components/ui/modal/stacked/hooks"
+import { useFollow } from "~/hooks/biz/useFollow"
 import { useAuthQuery } from "~/hooks/common"
 import type { apiClient } from "~/lib/api-fetch"
 import { useSubViewTitle } from "~/modules/app-layout/subview/hooks"
 import { RecommendationContent } from "~/modules/discover/RecommendationContent"
 import { FeedIcon } from "~/modules/feed/feed-icon"
 import { Queries } from "~/queries"
+import { getPreferredTitle } from "~/store/feed"
 
 const LanguageMap = {
   all: "all",
@@ -172,6 +174,12 @@ const RecommendationListItem = ({
     placeholderData: keepPreviousData,
   })
 
+  const rsshubAnalyticsData: Awaited<
+    ReturnType<(typeof apiClient)["discover"]["rsshub-analytics"]["$get"]>
+  >["data"] = rsshubAnalytics.data as any
+
+  const follow = useFollow()
+
   return (
     <Card className="shadow-background border-border overflow-hidden rounded-lg border transition-shadow duration-200 hover:shadow-md">
       <div className="border-border flex items-center gap-3 border-b p-4">
@@ -207,19 +215,20 @@ const RecommendationListItem = ({
           </div>
         </div>
       </div>
-      <div className="p-4">
+      <div className="p-4 pt-2">
         <ul className="text-text mb-3">
           {routes.map((route) => {
             const routeData = data.routes[route]!
             if (Array.isArray(routeData.path)) {
               routeData.path = routeData.path.find((p) => p === route) ?? routeData.path[0]
             }
-            const subscriptionCount =
-              rsshubAnalytics.data?.[`/${routePrefix}${routeData.path}`]?.subscriptionCount
+
+            const analytics = rsshubAnalyticsData?.[`/${routePrefix}${routeData.path}`]
+
             return (
               <li
                 key={route}
-                className="hover:bg-material-opaque -mx-4 flex items-center gap-8 rounded p-2 px-5 transition-colors"
+                className="hover:bg-material-opaque -mx-4 rounded p-3 px-5 transition-colors"
                 role="button"
                 onClick={() => {
                   present({
@@ -235,23 +244,54 @@ const RecommendationListItem = ({
                   })
                 }}
               >
-                <div className="flex flex-1 items-center gap-2">
-                  <div className="bg-accent mr-2 size-1.5 rounded-full" />
-                  <div className="relative h-5 grow">
-                    <div className="absolute inset-0 flex items-center gap-3 text-sm">
-                      <EllipsisHorizontalTextWithTooltip>
-                        {routeData.name}
-                      </EllipsisHorizontalTextWithTooltip>
-                      <EllipsisHorizontalTextWithTooltip className="text-text-secondary text-xs">{`rsshub://${routePrefix}${routeData.path}`}</EllipsisHorizontalTextWithTooltip>
+                <div className="w-full">
+                  <div className="flex w-full items-center gap-8">
+                    <div className="flex flex-1 items-center gap-2">
+                      <div className="bg-accent mr-2 size-1.5 rounded-full" />
+                      <div className="relative h-5 grow">
+                        <div className="text-title3 absolute inset-0 flex items-center gap-3 font-medium">
+                          <EllipsisHorizontalTextWithTooltip>
+                            {routeData.name}
+                          </EllipsisHorizontalTextWithTooltip>
+                          <EllipsisHorizontalTextWithTooltip className="text-text-secondary text-xs">{`rsshub://${routePrefix}${routeData.path}`}</EllipsisHorizontalTextWithTooltip>
+                        </div>
+                      </div>
                     </div>
+                    {analytics?.subscriptionCount && (
+                      <div className="flex items-center gap-0.5 text-xs">
+                        <i className="i-mgc-fire-cute-re" />
+                        {analytics?.subscriptionCount}
+                      </div>
+                    )}
                   </div>
+                  {analytics?.topFeeds && (
+                    <div className="mt-2 flex items-center gap-10 pl-5 text-xs">
+                      {analytics.topFeeds.slice(0, 2).map((feed) => (
+                        <div key={feed.id} className="flex w-2/5 flex-1 items-center text-sm">
+                          <FeedIcon
+                            feed={feed}
+                            className="mask-squircle mask shrink-0 rounded-none"
+                            size={16}
+                          />
+                          <div
+                            className="min-w-0 leading-tight"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              follow({
+                                isList: false,
+                                id: feed.id,
+                              })
+                            }}
+                          >
+                            <EllipsisHorizontalTextWithTooltip className="truncate">
+                              {getPreferredTitle(feed) || feed?.title}
+                            </EllipsisHorizontalTextWithTooltip>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                {subscriptionCount && (
-                  <div className="flex items-center gap-0.5 text-xs">
-                    <i className="i-mgc-fire-cute-re" />
-                    {subscriptionCount}
-                  </div>
-                )}
               </li>
             )
           })}
