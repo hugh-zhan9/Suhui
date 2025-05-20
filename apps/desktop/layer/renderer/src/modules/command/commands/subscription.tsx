@@ -1,5 +1,8 @@
 import { EventBus } from "@follow/utils/event-bus"
 
+import type { BizRouteParams } from "~/hooks/biz/useRouteParams"
+import { getRouteParams } from "~/hooks/biz/useRouteParams"
+
 import { useRegisterCommandEffect } from "../hooks/use-register-command"
 import type { Command } from "../types"
 import { COMMAND_ID } from "./id"
@@ -18,6 +21,7 @@ declare module "@follow/utils/event-bus" {
     "subscription:next": never
     "subscription:previous": never
     "subscription:toggle-folder-collapse": never
+    "subscription:mark-all-as-read": BizRouteParams
   }
 }
 const LABEL_PREFIX = "Subscription"
@@ -100,6 +104,14 @@ export const useRegisterSubscriptionCommands = () => {
         EventBus.dispatch(COMMAND_ID.subscription.toggleFolderCollapse)
       },
     },
+    {
+      id: COMMAND_ID.subscription.markAllAsRead,
+      label: `${LABEL_PREFIX}: Mark All as Read`,
+      run: () => {
+        const routeParams = getRouteParams()
+        EventBus.dispatch(COMMAND_ID.subscription.markAllAsRead, routeParams)
+      },
+    },
   ])
 }
 
@@ -158,6 +170,11 @@ type ToggleFolderCollapseCommand = Command<{
   fn: () => void
 }>
 
+type MarkAllAsReadCommand = Command<{
+  id: typeof COMMAND_ID.subscription.markAllAsRead
+  fn: () => void
+}>
+
 export type SubscriptionCommand =
   | SwitchTabToNextCommand
   | SwitchTabToPreviousCommand
@@ -170,3 +187,4 @@ export type SubscriptionCommand =
   | NextSubscriptionCommand
   | PreviousSubscriptionCommand
   | ToggleFolderCollapseCommand
+  | MarkAllAsReadCommand

@@ -76,5 +76,6 @@ export const COMMAND_ID = {
     previousSubscription: "subscription:previous",
 
     toggleFolderCollapse: "subscription:toggle-folder-collapse",
+    markAllAsRead: "subscription:mark-all-as-read",
   },
 } as const

@@ -13,6 +13,7 @@ import { MenuItemSeparator, MenuItemText } from "~/atoms/context-menu"
 import { useIsInMASReview } from "~/atoms/server-configs"
 import { whoami } from "~/atoms/user"
 import { useModalStack } from "~/components/ui/modal/stacked/hooks"
+import { shortcuts } from "~/constants/shortcuts"
 import { apiClient } from "~/lib/api-fetch"
 import { UrlBuilder } from "~/lib/url-builder"
 import { useBoostModal } from "~/modules/boost/hooks"
@@ -115,7 +116,7 @@ export const useFeedActions = ({
     const items: MenuItemInput[] = [
       new MenuItemText({
         label: t("sidebar.feed_actions.mark_all_as_read"),
-        shortcut: "Meta+Shift+A",
+        shortcut: "$mod+Shift+A",
         disabled: isEntryList,
         click: () =>
           subscriptionActions.markReadByFeedIds({
@@ -269,7 +270,7 @@ export const useFeedActions = ({
           : isEntryList
             ? t("sidebar.feed_actions.unfollow_feed")
             : t("sidebar.feed_actions.unfollow"),
-        shortcut: "Meta+Backspace",
+        shortcut: "$mod+Backspace",
         disabled: isInbox,
         supportMultipleSelection: true,
         click: () => {
@@ -292,7 +293,7 @@ export const useFeedActions = ({
       }),
       new MenuItemText({
         label: t("sidebar.feed_actions.navigate_to_feed"),
-        shortcut: "Meta+G",
+        shortcut: "$mod+G",
         disabled: isInbox || !isEntryList || getRouteParams().feedId === feedId,
         click: () => {
           navigateEntry({ feedId })
@@ -311,7 +312,7 @@ export const useFeedActions = ({
         label: t("sidebar.feed_actions.open_site_in_browser", {
           which: t(IN_ELECTRON ? "words.browser" : "words.newTab"),
         }),
-        shortcut: "Meta+O",
+        shortcut: "$mod+O",
         disabled: isEntryList,
         click: () => {
           const feed = getFeedById(feedId)
@@ -324,7 +325,7 @@ export const useFeedActions = ({
       new MenuItemText({
         label: t("sidebar.feed_actions.copy_feed_url"),
         disabled: isEntryList,
-        shortcut: "Meta+C",
+        shortcut: "$mod+C",
         click: () => {
           const { url, siteUrl } = feed || {}
           const copied = url || siteUrl
@@ -334,7 +335,7 @@ export const useFeedActions = ({
       }),
       new MenuItemText({
         label: t("sidebar.feed_actions.copy_feed_id"),
-        shortcut: "Meta+Shift+C",
+        shortcut: "$mod+Shift+C",
         disabled: isEntryList,
         click: () => {
           navigator.clipboard.writeText(feedId)
@@ -419,12 +420,12 @@ export const useListActions = ({ listId, view }: { listId: string; view?: FeedVi
       }),
       new MenuItemText({
         label: t("sidebar.feed_actions.unfollow"),
-        shortcut: "Meta+Backspace",
+        shortcut: "$mod+Backspace",
         click: () => deleteSubscription({ subscription }),
       }),
       new MenuItemText({
         label: t("sidebar.feed_actions.navigate_to_list"),
-        shortcut: "Meta+G",
+        shortcut: "$mod+G",
         disabled: getRouteParams().feedId === listId,
         click: () => {
           navigateEntry({ listId })
@@ -435,20 +436,20 @@ export const useListActions = ({ listId, view }: { listId: string; view?: FeedVi
         label: t("sidebar.feed_actions.open_list_in_browser", {
           which: t(IN_ELECTRON ? "words.browser" : "words.newTab"),
         }),
-        shortcut: "O",
+        shortcut: shortcuts.subscriptions.openInBrowser.key,
         click: () => window.open(UrlBuilder.shareList(listId, view), "_blank"),
       }),
       MenuItemSeparator.default,
       new MenuItemText({
         label: t("sidebar.feed_actions.copy_list_url"),
-        shortcut: "Meta+C",
+        shortcut: "$mod+C",
         click: () => {
           navigator.clipboard.writeText(UrlBuilder.shareList(listId, view))
         },
       }),
       new MenuItemText({
         label: t("sidebar.feed_actions.copy_list_id"),
-        shortcut: "Meta+Shift+C",
+        shortcut: "$mod+Shift+C",
         click: () => {
           navigator.clipboard.writeText(listId)
         },
@@ -483,7 +484,7 @@ export const useInboxActions = ({ inboxId }: { inboxId: string }) => {
       MenuItemSeparator.default,
       new MenuItemText({
         label: t("sidebar.feed_actions.copy_email_address"),
-        shortcut: "Meta+Shift+C",
+        shortcut: "$mod+Shift+C",
         click: () => {
           navigator.clipboard.writeText(`${inboxId}${env.VITE_INBOXES_EMAIL}`)
         },

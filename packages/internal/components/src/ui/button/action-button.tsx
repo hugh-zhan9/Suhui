@@ -195,7 +195,7 @@ const HotKeyTrigger = ({
   const isFocusWithIn = useFocusable()
   const enabledInOptions = options?.enabled || true
 
-  useHotkeys(shortcut, fn, {
+  useHotkeys(replaceShortcut(shortcut), fn, {
     preventDefault: true,
     enabled: shortcutOnlyFocusWithIn
       ? isFocusWithIn
@@ -205,4 +205,10 @@ const HotKeyTrigger = ({
     ...options,
   })
   return null
+}
+
+const os = getOS()
+
+const replaceShortcut = (shortcut: string) => {
+  return shortcut.replace("$mod", os === "macOS" ? "Meta" : "Ctrl")
 }
