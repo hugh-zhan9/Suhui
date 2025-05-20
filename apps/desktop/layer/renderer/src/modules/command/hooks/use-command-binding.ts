@@ -35,15 +35,21 @@ const defaultCommandShortcuts = {
 
   [COMMAND_ID.subscription.toggleFolderCollapse]: shortcuts.subscriptions.toggleFolderCollapse.key,
   [COMMAND_ID.subscription.markAllAsRead]: shortcuts.subscriptions.markAllAsRead.key,
+  [COMMAND_ID.subscription.openInBrowser]: shortcuts.subscriptions.openInBrowser.key,
+  [COMMAND_ID.subscription.openSiteInBrowser]: shortcuts.subscriptions.openSiteInBrowser.key,
 } as const
 
 export type BindingCommandId = keyof typeof defaultCommandShortcuts
 
 // eslint-disable-next-line @eslint-react/hooks-extra/no-unnecessary-use-prefix, @eslint-react/hooks-extra/ensure-custom-hooks-using-other-hooks
-export const useCommandShortcut = (commandId: BindingCommandId): string => {
+const useCommandShortcut = (commandId: BindingCommandId): string => {
   const commandShortcut = defaultCommandShortcuts[commandId]
 
   return commandShortcut
+}
+
+export const useCommandShortcuts = () => {
+  return defaultCommandShortcuts
 }
 
 export const useCommandBinding = <T extends BindingCommandId>({

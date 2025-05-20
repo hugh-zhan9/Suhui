@@ -345,10 +345,10 @@ export const toScientificNotation = (
 }
 
 export function transformShortcut(shortcut: string, platform: OS = getOS()): string {
-  if (platform === "Windows") {
-    return shortcut.replace("Meta", "Ctrl").replace("meta", "ctrl")
+  if (platform === "macOS") {
+    return shortcut.replace("$mod", "Meta")
   }
-  return shortcut
+  return shortcut.replace("$mod", "Ctrl")
 }
 
 // time like 1:30:00

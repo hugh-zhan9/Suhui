@@ -13,11 +13,12 @@ import { MenuItemSeparator, MenuItemText } from "~/atoms/context-menu"
 import { useIsInMASReview } from "~/atoms/server-configs"
 import { whoami } from "~/atoms/user"
 import { useModalStack } from "~/components/ui/modal/stacked/hooks"
-import { shortcuts } from "~/constants/shortcuts"
 import { apiClient } from "~/lib/api-fetch"
 import { UrlBuilder } from "~/lib/url-builder"
 import { useBoostModal } from "~/modules/boost/hooks"
 import { useFeedClaimModal } from "~/modules/claim"
+import { COMMAND_ID } from "~/modules/command/commands/id"
+import { useCommandShortcuts } from "~/modules/command/hooks/use-command-binding"
 import { FeedForm } from "~/modules/discover/FeedForm"
 import { InboxForm } from "~/modules/discover/InboxForm"
 import { ListForm } from "~/modules/discover/ListForm"
@@ -46,11 +47,11 @@ const ConfirmDestroyModalContent = ({ onConfirm }: { onConfirm: () => void }) =>
   return (
     <div className="w-[540px]">
       <div className="mb-4">
-        <i className="i-mingcute-warning-fill -mb-1 mr-1 size-5 text-red-500" />
+        <i className="i-mingcute-warning-fill text-red -mb-1 mr-1 size-5" />
         {t("sidebar.feed_actions.unfollow_feed_many_warning")}
       </div>
       <div className="flex justify-end">
-        <Button buttonClassName="bg-red-600" onClick={onConfirm}>
+        <Button buttonClassName="bg-red" onClick={onConfirm}>
           {t("words.confirm")}
         </Button>
       </div>
@@ -107,6 +108,8 @@ export const useFeedActions = ({
 
   const isInMASReview = useIsInMASReview()
 
+  const shortcuts = useCommandShortcuts()
+
   const items = useMemo(() => {
     const related = feed || inbox
     if (!related) return []
@@ -116,7 +119,7 @@ export const useFeedActions = ({
     const items: MenuItemInput[] = [
       new MenuItemText({
         label: t("sidebar.feed_actions.mark_all_as_read"),
-        shortcut: "$mod+Shift+A",
+        shortcut: shortcuts[COMMAND_ID.subscription.markAllAsRead],
         disabled: isEntryList,
         click: () =>
           subscriptionActions.markReadByFeedIds({
@@ -138,8 +141,10 @@ export const useFeedActions = ({
         }),
       ...(isFeedOwner
         ? [
+            MenuItemSeparator.default,
             new MenuItemText({
               label: t("sidebar.feed_actions.feed_owned_by_you"),
+              disabled: true,
             }),
             new MenuItemText({
               label: t("sidebar.feed_actions.reset_feed"),
@@ -147,6 +152,7 @@ export const useFeedActions = ({
                 resetFeed(feedId)
               },
             }),
+            MenuItemSeparator.default,
           ]
         : []),
       ...(!isInMASReview
@@ -294,7 +300,7 @@ export const useFeedActions = ({
       new MenuItemText({
         label: t("sidebar.feed_actions.navigate_to_feed"),
         shortcut: "$mod+G",
-        disabled: isInbox || !isEntryList || getRouteParams().feedId === feedId,
+        disabled: getRouteParams().feedId === feedId,
         click: () => {
           navigateEntry({ feedId })
         },
@@ -305,14 +311,14 @@ export const useFeedActions = ({
           which: t(IN_ELECTRON ? "words.browser" : "words.newTab"),
         }),
         disabled: isEntryList,
-        shortcut: "O",
+        shortcut: shortcuts[COMMAND_ID.subscription.openInBrowser],
         click: () => window.open(UrlBuilder.shareFeed(feedId, view), "_blank"),
       }),
       new MenuItemText({
         label: t("sidebar.feed_actions.open_site_in_browser", {
           which: t(IN_ELECTRON ? "words.browser" : "words.newTab"),
         }),
-        shortcut: "$mod+O",
+        shortcut: shortcuts[COMMAND_ID.subscription.openSiteInBrowser],
         disabled: isEntryList,
         click: () => {
           const feed = getFeedById(feedId)
@@ -364,7 +370,9 @@ export const useFeedActions = ({
     feed,
     inbox,
     t,
+    shortcuts,
     isEntryList,
+    isInMASReview,
     isInbox,
     listByView,
     categories,
@@ -396,18 +404,33 @@ export const useListActions = ({ listId, view }: { listId: string; view?: FeedVi
   const { present } = useModalStack()
   const { mutateAsync: deleteSubscription } = useDeleteSubscription({})
 
+  const shortcuts = useCommandShortcuts()
   const navigateEntry = useNavigateEntry()
 
   const items = useMemo(() => {
     if (!list) return []
 
     const items: MenuItemInput[] = [
-      list.ownerUserId === whoami()?.id &&
-        new MenuItemText({
-          label: t("sidebar.feed_actions.list_owned_by_you"),
-        }),
-      list.ownerUserId !== whoami()?.id && MenuItemSeparator.default,
+      ...(list.ownerUserId === whoami()?.id
+        ? [
+            new MenuItemText({
+              label: t("sidebar.feed_actions.list_owned_by_you"),
+              disabled: true,
+            }),
+            MenuItemSeparator.default,
+          ]
+        : []),
 
+      new MenuItemText({
+        label: t("sidebar.feed_actions.mark_all_as_read"),
+        shortcut: shortcuts[COMMAND_ID.subscription.markAllAsRead],
+        click: () => {
+          subscriptionActions.markReadByFeedIds({
+            feedIds: list.feedIds,
+          })
+        },
+      }),
+      MenuItemSeparator.default,
       new MenuItemText({
         label: t("sidebar.feed_actions.edit"),
         shortcut: "E",
@@ -436,7 +459,7 @@ export const useListActions = ({ listId, view }: { listId: string; view?: FeedVi
         label: t("sidebar.feed_actions.open_list_in_browser", {
           which: t(IN_ELECTRON ? "words.browser" : "words.newTab"),
         }),
-        shortcut: shortcuts.subscriptions.openInBrowser.key,
+        shortcut: shortcuts[COMMAND_ID.subscription.openInBrowser],
         click: () => window.open(UrlBuilder.shareList(listId, view), "_blank"),
       }),
       MenuItemSeparator.default,
@@ -457,7 +480,7 @@ export const useListActions = ({ listId, view }: { listId: string; view?: FeedVi
     ]
 
     return items
-  }, [list, t, present, deleteSubscription, subscription, navigateEntry, listId, view])
+  }, [list, t, shortcuts, listId, present, deleteSubscription, subscription, navigateEntry, view])
 
   return items
 }

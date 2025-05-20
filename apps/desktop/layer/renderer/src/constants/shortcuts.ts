@@ -41,6 +41,10 @@ const shortcutConfigs = {
       name: tShortcuts("keys.subscriptions.openInBrowser"),
       key: "O",
     },
+    openSiteInBrowser: {
+      name: tShortcuts("keys.subscriptions.openSiteInBrowser"),
+      key: "$mod+O",
+    },
     markAllAsRead: {
       name: tShortcuts("keys.entries.markAllAsRead"),
       key: "Shift+$mod+A",

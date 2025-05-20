@@ -77,5 +77,7 @@ export const COMMAND_ID = {
 
     toggleFolderCollapse: "subscription:toggle-folder-collapse",
     markAllAsRead: "subscription:mark-all-as-read",
+    openInBrowser: "subscription:open-in-browser",
+    openSiteInBrowser: "subscription:open-site-in-browser",
   },
 } as const

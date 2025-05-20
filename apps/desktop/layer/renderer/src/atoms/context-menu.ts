@@ -56,7 +56,6 @@ export type FollowMenuItem = MenuItemText | MenuItemSeparator
 export type MenuItemInput = MenuItemText | MenuItemSeparator | NilValue
 
 function sortShortcutsString(shortcut: string) {
-  shortcut = shortcut.replace("$mod", "Meta")
   const order = ["Shift", "Ctrl", "Meta", "Alt"]
   const nextShortcut = transformShortcut(shortcut)
 
