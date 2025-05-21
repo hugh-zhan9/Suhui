@@ -40,6 +40,7 @@
   "actions.action_card.operator": "Operator",
   "actions.action_card.or": "Or",
   "actions.action_card.rewrite_rules": "Rewrite rules",
+  "actions.action_card.settings": "Settings",
   "actions.action_card.silence": "Silence",
   "actions.action_card.source_content": "View source content",
   "actions.action_card.star": "Star",
