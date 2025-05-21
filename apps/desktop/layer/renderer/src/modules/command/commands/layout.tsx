@@ -1,5 +1,6 @@
 import { EventBus } from "@follow/utils/event-bus"
 
+import { getIsZenMode, getUISettings, setUISetting, setZenMode } from "~/atoms/settings/ui"
 import { setTimelineColumnShow } from "~/atoms/sidebar"
 
 import { useRegisterCommandEffect } from "../hooks/use-register-command"
@@ -44,6 +45,21 @@ export const useRegisterLayoutCommands = () => {
         EventBus.dispatch(COMMAND_ID.layout.focusToEntryRender)
       },
     },
+    {
+      id: COMMAND_ID.layout.toggleWideMode,
+      label: "Toggle wide mode",
+      run: () => {
+        const { wideMode } = getUISettings()
+        setUISetting("wideMode", !wideMode)
+      },
+    },
+    {
+      id: COMMAND_ID.layout.toggleZenMode,
+      label: "Toggle zen mode",
+      run: () => {
+        setZenMode(!getIsZenMode())
+      },
+    },
   ])
 }
 
@@ -65,8 +81,21 @@ export type FocusToEntryRenderCommand = Command<{
   id: typeof COMMAND_ID.layout.focusToEntryRender
   fn: () => void
 }>
+
+export type ToggleWideModeCommand = Command<{
+  id: typeof COMMAND_ID.layout.toggleWideMode
+  fn: () => void
+}>
+
+export type ToggleZenModeCommand = Command<{
+  id: typeof COMMAND_ID.layout.toggleZenMode
+  fn: () => void
+}>
+
 export type LayoutCommand =
   | ToggleTimelineColumnCommand
   | FocusToTimelineCommand
   | FocusToSubscriptionCommand
   | FocusToEntryRenderCommand
+  | ToggleWideModeCommand
+  | ToggleZenModeCommand
