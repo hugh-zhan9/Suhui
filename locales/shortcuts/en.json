@@ -1,5 +1,5 @@
 {
-  "keys.audio.playPause": "Play/Pause (When the audio player is open)",
+  "keys.audio.playPause": "Play/Pause (When the Audio Player Is Open)",
   "keys.entries.markAllAsRead": "Mark All as Read",
   "keys.entries.next": "Next Entry",
   "keys.entries.previous": "Previous Entry",
@@ -24,7 +24,7 @@
   "keys.subscriptions.add": "Add Subscription",
   "keys.subscriptions.nextSubscription": "Next Subscription",
   "keys.subscriptions.openInBrowser": "Open in Browser",
-  "keys.subscriptions.openSiteInBrowser": "Open site in Browser",
+  "keys.subscriptions.openSiteInBrowser": "Open Site in Browser",
   "keys.subscriptions.previousSubscription": "Previous Subscription",
   "keys.subscriptions.switchBetweenViews": "Switch Between Views",
   "keys.subscriptions.switchNextView": "Switch to Next View",

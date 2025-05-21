@@ -1,5 +1,10 @@
 import { highlightElement } from "@follow/components/common/Focusable/utils.js"
-import { nextFrame, preventDefault, stopPropagation } from "@follow/utils/dom"
+import {
+  checkIsEditableElement,
+  nextFrame,
+  preventDefault,
+  stopPropagation,
+} from "@follow/utils/dom"
 import { EventBus } from "@follow/utils/event-bus"
 import { useEffect } from "react"
 import { tinykeys } from "tinykeys"
@@ -22,10 +27,7 @@ export const GlobalHotkeysProvider = () => {
   useEventListener("keydown", (e) => {
     if (e.key === "Tab") {
       nextFrame(() => {
-        if (
-          document.activeElement instanceof HTMLInputElement ||
-          document.activeElement instanceof HTMLTextAreaElement
-        ) {
+        if (checkIsEditableElement(e.target as HTMLElement)) {
           return
         }
         highlightElement(document.activeElement as HTMLElement)
