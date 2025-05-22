@@ -104,7 +104,7 @@ export const EntryContent: Component<EntryContentProps> = ({
 
   useEffect(() => {
     if (prevEntryId.current !== entryId) {
-      springScrollTo(0, scrollerRef.current!)
+      scrollerRef.current?.scrollTo({ top: 0 })
       animationController.start(pageMotionVariants.exit).then(() => {
         animationController.start(pageMotionVariants.animate)
       })
@@ -412,16 +412,21 @@ const RegisterCommands = ({
         }
         checkScrollBottom($scroller)
       }),
-      EventBus.subscribe(COMMAND_ID.layout.focusToEntryRender, () => {
-        const $scroller = scrollerRef.current
-        if (!$scroller) {
-          return
-        }
-        springScrollTo(0, $scroller)
-        $scroller.focus()
-        nextFrame(highlightBoundary)
-        setIsUserInteraction(true)
-      }),
+      EventBus.subscribe(
+        COMMAND_ID.layout.focusToEntryRender,
+        ({ highlightBoundary: highlight }) => {
+          const $scroller = scrollerRef.current
+          if (!$scroller) {
+            return
+          }
+          springScrollTo(0, $scroller)
+          $scroller.focus()
+          if (highlight) {
+            nextFrame(highlightBoundary)
+          }
+          setIsUserInteraction(true)
+        },
+      ),
     )
   }, [highlightBoundary, scrollerRef, setIsUserInteraction])
 
