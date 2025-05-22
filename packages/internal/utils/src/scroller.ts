@@ -15,9 +15,12 @@ export const springScrollTo = (
 ) => {
   const scrollTop = scrollerElement?.scrollTop
 
+  let isStop = false
   const stopSpringScrollHandler = () => {
+    isStop = true
     animation.stop()
   }
+  let raf: any
   const el = scrollerElement || window
   const animation = animateValue({
     keyframes: [scrollTop + 1, y],
@@ -33,7 +36,16 @@ export const springScrollTo = (
         animation.stop()
       }
 
-      el.scrollTo(0, latest)
+      if (raf) {
+        cancelAnimationFrame(raf)
+      }
+      raf = requestAnimationFrame(() => {
+        if (isStop) {
+          return
+        }
+
+        el.scrollTo(0, latest)
+      })
     },
   })
 
