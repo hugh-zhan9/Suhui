@@ -42,7 +42,7 @@ export const GlobalHotkeysProvider = () => {
       activeScopes[0] === HotkeyScope.Home &&
       e.target === document.body
     ) {
-      EventBus.dispatch(COMMAND_ID.layout.focusToTimeline)
+      EventBus.dispatch(COMMAND_ID.layout.focusToTimeline, { highlightBoundary: true })
     }
   })
   // Re force to sidebar focusable
@@ -53,7 +53,7 @@ export const GlobalHotkeysProvider = () => {
       activeScopes.length === 1 &&
       activeScopes[0] === HotkeyScope.Home
     ) {
-      EventBus.dispatch(COMMAND_ID.layout.focusToTimeline)
+      EventBus.dispatch(COMMAND_ID.layout.focusToTimeline, { highlightBoundary: true })
     }
   })
 

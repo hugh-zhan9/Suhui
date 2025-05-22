@@ -7,11 +7,14 @@ import { useRegisterCommandEffect } from "../hooks/use-register-command"
 import type { Command } from "../types"
 import { COMMAND_ID } from "./id"
 
+interface FocusEvent {
+  highlightBoundary: boolean
+}
 declare module "@follow/utils/event-bus" {
   interface EventBusMap {
-    "layout:focus-to-timeline": never
-    "layout:focus-to-subscription": never
-    "layout:focus-to-entry-render": never
+    "layout:focus-to-timeline": FocusEvent
+    "layout:focus-to-subscription": FocusEvent
+    "layout:focus-to-entry-render": FocusEvent
   }
 }
 
@@ -28,21 +31,21 @@ export const useRegisterLayoutCommands = () => {
       id: COMMAND_ID.layout.focusToTimeline,
       label: "Focus to timeline",
       run: () => {
-        EventBus.dispatch(COMMAND_ID.layout.focusToTimeline)
+        EventBus.dispatch(COMMAND_ID.layout.focusToTimeline, { highlightBoundary: true })
       },
     },
     {
       id: COMMAND_ID.layout.focusToSubscription,
       label: "Focus to subscription",
       run: () => {
-        EventBus.dispatch(COMMAND_ID.layout.focusToSubscription)
+        EventBus.dispatch(COMMAND_ID.layout.focusToSubscription, { highlightBoundary: true })
       },
     },
     {
       id: COMMAND_ID.layout.focusToEntryRender,
       label: "Enter Selected Entry",
       run: () => {
-        EventBus.dispatch(COMMAND_ID.layout.focusToEntryRender)
+        EventBus.dispatch(COMMAND_ID.layout.focusToEntryRender, { highlightBoundary: true })
       },
     },
     {
