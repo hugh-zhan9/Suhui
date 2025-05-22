@@ -27,10 +27,10 @@ export const updateNotificationsToken = async (newCredentials?: Credentials) => 
           channel: notificationChannel,
         },
       })
+      logger.info("updateNotificationsToken success: ", credentials.fcm.token)
     } catch (error) {
       logger.error("updateNotificationsToken error: ", error)
     }
-    logger.info("updateNotificationsToken success: ", credentials.fcm.token)
   }
 }
 
