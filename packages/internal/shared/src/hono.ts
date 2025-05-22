@@ -19638,6 +19638,10 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                     };
                     readCount: number;
                     feedCount: number;
+                    analytics?: {
+                        subscriptionCount: number | null;
+                        listId: string;
+                    } | undefined;
                     subscription?: {
                         createdAt: string;
                         userId: string;
