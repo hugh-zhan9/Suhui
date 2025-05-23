@@ -61,9 +61,9 @@ import {
 import { EntryContentLoading } from "./loading"
 
 const pageMotionVariants = {
-  initial: { opacity: 0, y: 50 },
+  initial: { opacity: 0, y: 25 },
   animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: 50, transition: { duration: 0 } },
+  exit: { opacity: 0, y: 25, transition: { duration: 0 } },
 } satisfies Variants
 
 export const EntryContent: Component<EntryContentProps> = ({
@@ -147,7 +147,7 @@ export const EntryContent: Component<EntryContentProps> = ({
           <m.div
             initial={pageMotionVariants.initial}
             animate={animationController}
-            transition={Spring.presets.smooth}
+            transition={Spring.presets.bouncy}
             className="select-text"
           >
             {!isZenMode && (

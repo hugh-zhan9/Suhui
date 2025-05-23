@@ -48,6 +48,7 @@ export const GlobalHotkeysProvider = () => {
   // Re force to sidebar focusable
   useEventListener("focusout", () => {
     const { activeElement } = document
+
     if (
       activeElement === document.body &&
       activeScopes.length === 1 &&
