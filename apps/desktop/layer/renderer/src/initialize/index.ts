@@ -31,6 +31,12 @@ const cleanup = subscribeShouldUseIndexedDB((value) => {
   setHydrated(true)
 })
 
+declare global {
+  interface Window {
+    version: string
+  }
+}
+
 export const initializeApp = async () => {
   appLog(`${APP_NAME}: Follow everything in one place`, repository.url)
 
