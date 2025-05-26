@@ -1,14 +1,15 @@
 import type { FeedViewType } from "@follow/constants"
 import type { UnreadSchema } from "@follow/database/src/schemas/types"
+import { EntryService } from "@follow/database/src/services/entry"
+import { UnreadService } from "@follow/database/src/services/unread"
 
 import { getGeneralSettings } from "@/src/atoms/settings/general"
 import { apiClient } from "@/src/lib/api-fetch"
 import { setBadgeCountAsyncWithPermission } from "@/src/lib/permission"
-import { EntryService } from "@/src/services/entry"
-import { UnreadService } from "@/src/services/unread"
 
 import { getEntry } from "../entry/getter"
 import { entryActions } from "../entry/store"
+import type { Hydratable } from "../internal/base"
 import { createTransaction, createZustandStore } from "../internal/helper"
 import { getListFeedIds } from "../list/getters"
 import { getSubscriptionByView } from "../subscription/getter"
@@ -185,7 +186,11 @@ class UnreadSyncService {
   }
 }
 
-class UnreadActions {
+class UnreadActions implements Hydratable {
+  async hydrate() {
+    const unreads = await UnreadService.getUnreadAll()
+    unreadActions.upsertManyInSession(unreads)
+  }
   upsertManyInSession(unreads: UnreadSchema[], options?: UnreadUpdateOptions) {
     const state = useUnreadStore.getState()
     const nextData = options?.reset ? {} : { ...state.data }

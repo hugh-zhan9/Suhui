@@ -1,9 +1,10 @@
 import type { FeedViewType } from "@follow/constants"
 import type { CollectionSchema } from "@follow/database/src/schemas/types"
+import { CollectionService } from "@follow/database/src/services/collection"
 
 import { apiClient } from "@/src/lib/api-fetch"
-import { CollectionService } from "@/src/services/collection"
 
+import type { Hydratable } from "../internal/base"
 import { createTransaction, createZustandStore } from "../internal/helper"
 
 interface CollectionState {
@@ -81,7 +82,12 @@ class CollectionSyncService {
   }
 }
 
-class CollectionActions {
+class CollectionActions implements Hydratable {
+  async hydrate() {
+    const collections = await CollectionService.getCollectionAll()
+    collectionActions.upsertManyInSession(collections)
+  }
+
   async upsertManyInSession(collections: CollectionSchema[]) {
     const state = useCollectionStore.getState()
     const nextCollections: CollectionState["collections"] = {

@@ -1,19 +1,16 @@
-import type { FeedViewType } from "@follow/constants/src/enums"
-import { db } from "@follow/database/src/db"
-import {
-  feedsTable,
-  inboxesTable,
-  listsTable,
-  subscriptionsTable,
-} from "@follow/database/src/schemas"
-import type { SubscriptionSchema } from "@follow/database/src/schemas/types"
+import type { FeedViewType } from "@follow/constants"
 import { and, eq, inArray, notInArray, sql } from "drizzle-orm"
 
-import { dbStoreMorph } from "../morph/db-store"
-import { subscriptionActions } from "../store/subscription/store"
-import type { Hydratable, Resetable } from "./internal/base"
+import { db } from "../db"
+import { feedsTable, inboxesTable, listsTable, subscriptionsTable } from "../schemas"
+import type { SubscriptionSchema } from "../schemas/types"
+import type { Resetable } from "./internal/base"
 
-class SubscriptionServiceStatic implements Hydratable, Resetable {
+class SubscriptionServiceStatic implements Resetable {
+  getSubscriptionAll() {
+    return db.query.subscriptionsTable.findMany()
+  }
+
   async reset() {
     await db.delete(subscriptionsTable).execute()
   }
@@ -41,12 +38,6 @@ class SubscriptionServiceStatic implements Hydratable, Resetable {
       .update(subscriptionsTable)
       .set(subscription)
       .where(eq(subscriptionsTable.id, subscription.id))
-  }
-  async hydrate() {
-    const subscriptions = await db.query.subscriptionsTable.findMany()
-    subscriptionActions.upsertManyInSession(
-      subscriptions.map((s) => dbStoreMorph.toSubscriptionModel(s)),
-    )
   }
 
   async deleteNotExists(existsIds: string[], view?: FeedViewType) {

@@ -1,11 +1,12 @@
 import type { ListSchema } from "@follow/database/src/schemas/types"
+import { ListService } from "@follow/database/src/services/list"
 
 import { apiClient } from "@/src/lib/api-fetch"
 import { honoMorph } from "@/src/morph/hono"
 import { storeDbMorph } from "@/src/morph/store-db"
-import { ListService } from "@/src/services/list"
 
 import { feedActions } from "../feed/store"
+import type { Hydratable } from "../internal/base"
 import { createImmerSetter, createTransaction, createZustandStore } from "../internal/helper"
 import { getList } from "./getters"
 import type { CreateListModel } from "./types"
@@ -29,7 +30,17 @@ export const useListStore = createZustandStore<ListState>("list")(() => defaultS
 const get = useListStore.getState
 const set = useListStore.setState
 const immerSet = createImmerSetter(useListStore)
-class ListActions {
+class ListActions implements Hydratable {
+  async hydrate() {
+    const lists = await ListService.getListAll()
+    listActions.upsertManyInSession(
+      lists.map((list) => ({
+        ...list,
+        feedIds: JSON.parse(list.feedIds || "[]") as string[],
+      })),
+    )
+  }
+
   upsertManyInSession(lists: ListModel[]) {
     const state = get()
 

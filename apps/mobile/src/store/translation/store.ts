@@ -1,11 +1,12 @@
 import type { TranslationSchema } from "@follow/database/src/schemas/types"
+import { TranslationService } from "@follow/database/src/services/translation"
 
 import { apiClient } from "@/src/lib/api-fetch"
 import type { SupportedLanguages } from "@/src/lib/language"
 import { checkLanguage } from "@/src/lib/translation"
-import { TranslationService } from "@/src/services/translation"
 
 import { getEntry } from "../entry/getter"
+import type { Hydratable } from "../internal/base"
 import { createImmerSetter, createZustandStore } from "../internal/helper"
 import type { EntryTranslation, TranslationFieldArray } from "./types"
 import { translationFields } from "./types"
@@ -24,7 +25,12 @@ export const useTranslationStore = createZustandStore<TranslationState>("transla
 const get = useTranslationStore.getState
 const immerSet = createImmerSetter(useTranslationStore)
 
-class TranslationActions {
+class TranslationActions implements Hydratable {
+  async hydrate() {
+    const translations = await TranslationService.getTranslationAll()
+    translationActions.upsertManyInSession(translations)
+  }
+
   upsertManyInSession(translations: TranslationModel[]) {
     translations.forEach((translation) => {
       immerSet((state) => {

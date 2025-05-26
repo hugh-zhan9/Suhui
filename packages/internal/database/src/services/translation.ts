@@ -1,16 +1,15 @@
-import { db } from "@follow/database/src/db"
-import { translationsTable } from "@follow/database/src/schemas"
-import type { TranslationSchema } from "@follow/database/src/schemas/types"
 import { eq } from "drizzle-orm"
 
-import { translationActions } from "../store/translation/store"
-import type { Hydratable, Resetable } from "./internal/base"
+import { db } from "../db"
+import { translationsTable } from "../schemas"
+import type { TranslationSchema } from "../schemas/types"
+import type { Resetable } from "./internal/base"
 
-class TranslationServiceStatic implements Hydratable, Resetable {
-  async hydrate() {
-    const translations = await db.query.translationsTable.findMany()
-    translationActions.upsertManyInSession(translations)
+class TranslationServiceStatic implements Resetable {
+  getTranslationAll() {
+    return db.query.translationsTable.findMany()
   }
+
   async reset() {
     await db.delete(translationsTable).execute()
   }
