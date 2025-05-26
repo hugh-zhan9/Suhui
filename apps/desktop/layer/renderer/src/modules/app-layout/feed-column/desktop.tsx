@@ -6,6 +6,7 @@ import { Kbd } from "@follow/components/ui/kbd/Kbd.js"
 import { RootPortal } from "@follow/components/ui/portal/index.jsx"
 import type { FeedViewType } from "@follow/constants"
 import { DEV, IN_ELECTRON, PROD } from "@follow/shared/constants"
+import { defaultUISettings } from "@follow/shared/settings/defaults"
 import { preventDefault } from "@follow/utils/dom"
 import { cn } from "@follow/utils/utils"
 import { Slot } from "@radix-ui/react-slot"
@@ -21,7 +22,6 @@ import { setMainContainerElement, setRootContainerElement } from "~/atoms/dom"
 import { getIsZenMode, getUISettings, setUISetting, useUISettingKey } from "~/atoms/settings/ui"
 import {
   getTimelineColumnTempShow,
-  setTimelineColumnShow,
   setTimelineColumnTempShow,
   useTimelineColumnShow,
   useTimelineColumnTempShow,
@@ -188,11 +188,11 @@ const FeedResponsiveResizerContainer = ({
 }: {
   containerRef: React.RefObject<HTMLDivElement | null>
 } & PropsWithChildren) => {
-  const { isDragging, position, separatorProps, separatorCursor } = useResizable({
+  const { isDragging, position, separatorProps, separatorCursor, setPosition } = useResizable({
     axis: "x",
     min: 256,
     max: 300,
-    initial: getUISettings().feedColWidth,
+    initial: React.useMemo(() => getUISettings().feedColWidth, []),
     containerRef: containerRef as React.RefObject<HTMLElement>,
 
     onResizeEnd({ position }) {
@@ -297,7 +297,8 @@ const FeedResponsiveResizerContainer = ({
           cursor={separatorCursor}
           {...separatorProps}
           onDoubleClick={() => {
-            setTimelineColumnShow(false)
+            setUISetting("feedColWidth", defaultUISettings.feedColWidth)
+            setPosition(defaultUISettings.feedColWidth)
           }}
           tooltip={
             !isDragging && (
