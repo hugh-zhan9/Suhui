@@ -117,7 +117,7 @@ export function SettingModalLayout(
               height: 800,
             }}
             maxHeight="90vh"
-            minHeight={600}
+            minHeight={400}
             minWidth={700}
             maxWidth="95vw"
             className="flex !select-none flex-col"
