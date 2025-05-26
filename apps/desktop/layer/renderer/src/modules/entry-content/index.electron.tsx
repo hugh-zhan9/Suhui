@@ -12,13 +12,12 @@ import { useTitle } from "@follow/hooks"
 import type { FeedModel, InboxModel } from "@follow/models/types"
 import { nextFrame, stopPropagation } from "@follow/utils/dom"
 import { EventBus } from "@follow/utils/event-bus"
-import { springScrollTo } from "@follow/utils/scroller"
 import { cn, combineCleanupFunctions } from "@follow/utils/utils"
 import { ErrorBoundary } from "@sentry/react"
 import type { JSAnimation, Variants } from "motion/react"
 import { AnimatePresence, m, useAnimationControls } from "motion/react"
 import * as React from "react"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { useEntryIsInReadability } from "~/atoms/readability"
 import { useIsZenMode, useUISettingKey } from "~/atoms/settings/ui"
@@ -348,6 +347,64 @@ const RegisterCommands = ({
 
   const { highlightBoundary } = useFocusActions()
 
+  // Smooth scroll implementation similar to Vimium
+  const smoothScrollTo = useCallback(
+    (targetScrollTop: number, element: HTMLDivElement) => {
+      // Stop any existing animation
+      if (scrollAnimationRef.current) {
+        scrollAnimationRef.current.stop()
+      }
+
+      const startScrollTop = element.scrollTop
+      const distance = targetScrollTop - startScrollTop
+
+      // If distance is very small, just set it directly
+      if (Math.abs(distance) < 1) {
+        element.scrollTop = targetScrollTop
+        scrollAnimationRef.current = null
+        return
+      }
+
+      // Adaptive duration based on distance - shorter for small distances, longer for large ones
+      const baseDuration = 150
+      const maxDuration = 300
+      const duration = Math.min(maxDuration, baseDuration + Math.abs(distance) * 0.5)
+      const startTime = performance.now()
+
+      // Easing function similar to Vimium's smooth scrolling - ease out cubic for natural feel
+      const easeOutCubic = (t: number): number => {
+        return 1 - Math.pow(1 - t, 3)
+      }
+
+      let animationId: number
+
+      const animateScroll = (currentTime: number) => {
+        const elapsed = currentTime - startTime
+        const progress = Math.min(elapsed / duration, 1)
+
+        const easedProgress = easeOutCubic(progress)
+        const currentScrollTop = startScrollTop + distance * easedProgress
+
+        element.scrollTop = currentScrollTop
+
+        if (progress < 1) {
+          animationId = requestAnimationFrame(animateScroll)
+          scrollAnimationRef.current = {
+            stop: () => {
+              cancelAnimationFrame(animationId)
+              scrollAnimationRef.current = null
+            },
+          } as any
+        } else {
+          scrollAnimationRef.current = null
+        }
+      }
+
+      animationId = requestAnimationFrame(animateScroll)
+    },
+    [scrollAnimationRef],
+  )
+
   useEffect(() => {
     const checkScrollBottom = ($scroller: HTMLDivElement) => {
       const currentScroll = $scroller.scrollTop
@@ -357,7 +414,7 @@ const RegisterCommands = ({
         EventBus.dispatch(COMMAND_ID.timeline.switchToNext)
         setShowKeepScrollingPanel(false)
         isAlreadyScrolledBottomRef.current = false
-        springScrollTo(0, $scroller)
+        smoothScrollTo(0, $scroller)
         return
       }
 
@@ -384,29 +441,37 @@ const RegisterCommands = ({
       },
       cleanupScrollAnimation,
       EventBus.subscribe(COMMAND_ID.entryRender.scrollUp, () => {
-        const currentScroll = scrollerRef.current?.scrollTop
-        const delta = window.innerHeight
+        const $scroller = scrollerRef.current
+        if (!$scroller) return
 
-        if (typeof currentScroll === "number" && delta) {
-          cleanupScrollAnimation()
-          scrollAnimationRef.current = springScrollTo(currentScroll - delta, scrollerRef.current!)
-        }
-        checkScrollBottom(scrollerRef.current!)
+        const currentScroll = $scroller.scrollTop
+        // Smart scroll distance: larger viewports get larger scroll distances
+        // But cap it at a reasonable maximum for very large screens
+        const viewportHeight = $scroller.clientHeight
+        const delta = Math.min(Math.max(120, viewportHeight * 0.25), 250)
+
+        cleanupScrollAnimation()
+        const targetScroll = Math.max(0, currentScroll - delta)
+        smoothScrollTo(targetScroll, $scroller)
+        checkScrollBottom($scroller)
       }),
 
       EventBus.subscribe(COMMAND_ID.entryRender.scrollDown, () => {
         const $scroller = scrollerRef.current
-        if (!$scroller) {
-          return
-        }
+        if (!$scroller) return
 
         const currentScroll = $scroller.scrollTop
-        const delta = window.innerHeight
+        // Smart scroll distance: larger viewports get larger scroll distances
+        // But cap it at a reasonable maximum for very large screens
+        const viewportHeight = $scroller.clientHeight
+        const delta = Math.min(Math.max(120, viewportHeight * 0.25), 250)
 
-        if (typeof currentScroll === "number" && delta) {
-          cleanupScrollAnimation()
-          scrollAnimationRef.current = springScrollTo(currentScroll + delta, $scroller)
-        }
+        cleanupScrollAnimation()
+        const targetScroll = Math.min(
+          $scroller.scrollHeight - $scroller.clientHeight,
+          currentScroll + delta,
+        )
+        smoothScrollTo(targetScroll, $scroller)
         checkScrollBottom($scroller)
       }),
       EventBus.subscribe(
@@ -424,7 +489,7 @@ const RegisterCommands = ({
         },
       ),
     )
-  }, [highlightBoundary, scrollAnimationRef, scrollerRef])
+  }, [highlightBoundary, scrollAnimationRef, scrollerRef, smoothScrollTo])
 
   return (
     <AnimatePresence>
