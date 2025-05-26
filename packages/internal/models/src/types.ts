@@ -62,6 +62,8 @@ export type EntriesResponse = Array<
   | Exclude<Awaited<ReturnType<typeof _apiClient.entries.inbox.$post>>["data"], undefined>
 >[number]
 
+export type ActionSettings = Exclude<EntriesResponse[number]["settings"], undefined>
+
 export type CombinedEntryModel = Omit<EntriesResponse[number], "feeds"> & {
   entries: {
     content?: string | null
@@ -88,6 +90,7 @@ export type DataResponse<T> = {
   data?: T
 }
 
+type Nullable<T> = T | null | undefined
 export type ActiveEntryId = Nullable<string>
 
 export type SubscriptionModel = ExtractBizResponse<
