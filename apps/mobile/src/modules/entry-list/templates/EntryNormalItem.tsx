@@ -1,10 +1,16 @@
 import { FeedViewType } from "@follow/constants"
+import { useEntry } from "@follow/store/src/entry/hooks"
+import type { EntryModel } from "@follow/store/src/entry/types"
+import { getInboxFrom } from "@follow/store/src/entry/utils"
+import { useFeed } from "@follow/store/src/feed/hooks"
+import { useEntryTranslation } from "@follow/store/src/translation/hooks"
 import { tracker } from "@follow/tracker"
 import { cn, formatEstimatedMins, formatTimeToSeconds } from "@follow/utils"
 import { useVideoPlayer, VideoView } from "expo-video"
 import { memo, useCallback, useMemo, useRef, useState } from "react"
 import { StyleSheet, Text, View } from "react-native"
 
+import { useActionLanguage } from "@/src/atoms/settings/general"
 import { useUISettingKey } from "@/src/atoms/settings/ui"
 import { ThemedBlurView } from "@/src/components/common/ThemedBlurView"
 import { preloadWebViewEntry } from "@/src/components/native/webview/EntryContentWebView"
@@ -21,11 +27,6 @@ import { useNavigation } from "@/src/lib/navigation/hooks"
 import { isIOS } from "@/src/lib/platform"
 import { getAttachmentState, player } from "@/src/lib/player"
 import { EntryDetailScreen } from "@/src/screens/(stack)/entries/[entryId]/EntryDetailScreen"
-import { useEntry } from "@/src/store/entry/hooks"
-import type { EntryModel } from "@/src/store/entry/types"
-import { getInboxFrom } from "@/src/store/entry/utils"
-import { useFeed } from "@/src/store/feed/hooks"
-import { useEntryTranslation } from "@/src/store/translation/hooks"
 
 import { EntryItemContextMenu } from "../../context-menu/entry"
 import { EntryItemSkeleton } from "../EntryListContentArticle"
@@ -43,7 +44,8 @@ export const EntryNormalItem = memo(
     view: FeedViewType
   }) => {
     const entry = useEntry(entryId)
-    const translation = useEntryTranslation(entryId)
+    const actionLanguage = useActionLanguage()
+    const translation = useEntryTranslation(entryId, actionLanguage)
     const from = getInboxFrom(entry)
     const feed = useFeed(entry?.feedId as string)
     const navigation = useNavigation()
