@@ -1,5 +1,6 @@
 {
   "about.changelog": "Changelog",
+  "about.checkForUpdates": "Check for Updates",
   "about.feedbackInfo": "{{appName}} ({{commitSha}}) is open-source and actively developed on GitHub. If you have any feedback or suggestions, please feel free to <OpenIssueLink>open an issue</OpenIssueLink> <ExternalLinkIcon /> on our GitHub.",
   "about.iconLibrary": "The icon library used is copyrighted by <IconLibraryLink /> <ExternalLinkIcon /> and cannot be redistributed.",
   "about.licenseInfo": "Copyright © {{currentYear}} {{appName}}. All rights reserved.",
