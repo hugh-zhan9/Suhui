@@ -7,7 +7,7 @@ import { getEntry } from "../entry/getter"
 import { entryActions } from "../entry/store"
 import type { Hydratable } from "../internal/base"
 import { createTransaction, createZustandStore } from "../internal/helper"
-import { getListFeedIds } from "../list/getters"
+import { getList, getListFeedIds } from "../list/getters"
 import { getSubscriptionByView } from "../subscription/getter"
 import type { PublishAtTimeRangeFilter, UnreadUpdateOptions } from "./types"
 
@@ -96,6 +96,24 @@ class UnreadSyncService {
     })
 
     this.updateUnreadStatus(feedIds, time)
+  }
+
+  async markListAsRead(listId: string, time?: PublishAtTimeRangeFilter) {
+    const list = getList(listId)
+    if (!list) return
+
+    await apiClient.reads.all.$post({
+      json: {
+        listId,
+
+        ...time,
+      },
+    })
+
+    const feedIds = getListFeedIds(listId)
+    if (feedIds) {
+      this.updateUnreadStatus(feedIds, time)
+    }
   }
 
   async markEntryAsRead(entryId: string) {
