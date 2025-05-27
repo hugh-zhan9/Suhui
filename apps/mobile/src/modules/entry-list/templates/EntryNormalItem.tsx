@@ -206,7 +206,7 @@ const ThumbnailImage = ({
 
   if (!image && !audio && !video) return null
   return (
-    <View className="relative ml-4 overflow-hidden rounded-lg">
+    <View className="relative ml-4 min-h-24 min-w-24 overflow-hidden rounded-lg">
       {image &&
         (thumbnailRatio === "square" ? (
           <SquareImage image={image} blurhash={blurhash} />
@@ -220,9 +220,8 @@ const ThumbnailImage = ({
         ))}
 
       {video && (
-        <View className="size-24 rounded-lg">
+        <View className="absolute left-0 top-0 size-full overflow-hidden rounded-lg">
           <VideoView
-            className="absolute size-full rounded-lg"
             style={{ aspectRatio: 1 }}
             contentFit="cover"
             ref={videoViewRef}
