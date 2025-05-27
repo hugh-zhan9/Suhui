@@ -7,7 +7,7 @@ import { useInbox } from "@follow/store/inbox/hooks"
 import { useList } from "@follow/store/list/hooks"
 import { getSubscriptionByCategory } from "@follow/store/subscription/getter"
 import { jotaiStore } from "@follow/utils"
-import { EventBus } from "@follow/utils/src/event-bus"
+import { EventBus } from "@follow/utils/event-bus"
 import { atom, useAtomValue } from "jotai"
 import { selectAtom } from "jotai/utils"
 import { createContext, use, useMemo, useState } from "react"
@@ -176,7 +176,7 @@ export const useSelectedFeedTitle = () => {
   }
 }
 
-declare module "@follow/utils/src/event-bus" {
+declare module "@follow/utils/event-bus" {
   export interface CustomEvent {
     SELECT_TIMELINE: {
       view: SelectedTimeline

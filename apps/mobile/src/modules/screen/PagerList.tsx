@@ -1,6 +1,6 @@
 import type { FeedViewType } from "@follow/constants"
 import { useViewWithSubscription } from "@follow/store/subscription/hooks"
-import { EventBus } from "@follow/utils/src/event-bus"
+import { EventBus } from "@follow/utils/event-bus"
 import * as Haptics from "expo-haptics"
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 import type { StyleProp, ViewStyle } from "react-native"

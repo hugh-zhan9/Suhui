@@ -1,5 +1,5 @@
 import { FeedViewType, views } from "@follow/constants"
-import { sortByAlphabet } from "@follow/utils/src/utils"
+import { sortByAlphabet } from "@follow/utils/utils"
 import { useQuery } from "@tanstack/react-query"
 import { useCallback } from "react"
 
