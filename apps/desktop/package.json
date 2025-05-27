@@ -82,6 +82,7 @@
     "nbump": "2.1.2",
     "react": "19.0.0",
     "react-dom": "19.0.0",
+    "tailwindcss-content-visibility": "1.0.2",
     "tailwindcss-multi": "0.4.6",
     "tar": "7.4.3",
     "tsup": "8.4.0",

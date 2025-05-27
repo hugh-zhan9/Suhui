@@ -14,6 +14,7 @@ import {
 } from "@follow/components/ui/table/index.jsx"
 import { EllipsisHorizontalTextWithTooltip } from "@follow/components/ui/typography/index.js"
 import { views } from "@follow/constants"
+import { sortByAlphabet } from "@follow/utils/utils"
 import clsx from "clsx"
 import { AnimatePresence, m } from "motion/react"
 import type { FC } from "react"
@@ -36,8 +37,11 @@ import { FeedIcon } from "~/modules/feed/feed-icon"
 import { useConfirmUnsubscribeSubscriptionModal } from "~/modules/modal/hooks/useConfirmUnsubscribeSubscriptionModal"
 import { Balance } from "~/modules/wallet/balance"
 import { Queries } from "~/queries"
-import { useFeedById } from "~/store/feed"
-import { useAllFeeds, useSubscriptionByFeedId } from "~/store/subscription"
+import { getFeedById, useFeedById } from "~/store/feed"
+import { getSubscriptionByFeedId, useAllFeeds, useSubscriptionByFeedId } from "~/store/subscription"
+
+type SortField = "name" | "view" | "date"
+type SortDirection = "asc" | "desc"
 
 export const SettingFeeds = () => {
   const inMas = useIsInMASReview()
@@ -53,18 +57,32 @@ const GRID_COLS_CLASSNAME = tw`grid-cols-[30px_auto_150px_100px]`
 
 const SubscriptionFeedsSection = () => {
   const { t } = useTranslation("settings")
-  const feedList = useAllFeeds()
+  const allFeeds = useAllFeeds()
   const [selectedFeeds, setSelectedFeeds] = useState<Set<string>>(() => new Set())
+  const [sortField, setSortField] = useState<SortField>("name")
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc")
+
+  const handleSort = useCallback(
+    (field: SortField) => {
+      if (sortField === field) {
+        setSortDirection(sortDirection === "asc" ? "desc" : "asc")
+      } else {
+        setSortField(field)
+        setSortDirection("asc")
+      }
+    },
+    [sortField, sortDirection],
+  )
 
   const handleSelectAll = useCallback(
     (checked: boolean) => {
       if (checked) {
-        setSelectedFeeds(new Set(feedList.map((feed) => feed.id)))
+        setSelectedFeeds(new Set(allFeeds.map((feed) => feed.id)))
       } else {
         setSelectedFeeds(new Set())
       }
     },
-    [feedList],
+    [allFeeds],
   )
 
   const handleSelectFeed = useCallback((feedId: string, checked: boolean) => {
@@ -79,7 +97,7 @@ const SubscriptionFeedsSection = () => {
     })
   }, [])
 
-  const isAllSelected = feedList.length > 0 && selectedFeeds.size === feedList.length
+  const isAllSelected = allFeeds.length > 0 && selectedFeeds.size === allFeeds.length
 
   const presentDeleteSubscription = useConfirmUnsubscribeSubscriptionModal()
   const handleBatchUnsubscribe = useCallback(() => {
@@ -91,7 +109,7 @@ const SubscriptionFeedsSection = () => {
     <section className="relative mt-4">
       <h2 className="mb-2 text-lg font-semibold">{t("feeds.subscription")}</h2>
 
-      {feedList.length > 0 && (
+      {allFeeds.length > 0 && (
         <div className="mt-8 space-y-1">
           {/* Header - Sticky */}
           <div
@@ -103,22 +121,46 @@ const SubscriptionFeedsSection = () => {
             <div className="flex items-center justify-center">
               <Checkbox checked={isAllSelected} onCheckedChange={handleSelectAll} />
             </div>
-            <div>{t("feeds.tableHeaders.name")}</div>
-            <div className="ml-4">View</div>
-            <div className="text-center">Date</div>
+            <button
+              type="button"
+              className="hover:text-text text-left transition-colors"
+              onClick={() => handleSort("name")}
+            >
+              {t("feeds.tableHeaders.name")}
+              {sortField === "name" && (
+                <span className="ml-1">{sortDirection === "asc" ? "↑" : "↓"}</span>
+              )}
+            </button>
+            <button
+              type="button"
+              className="hover:text-text ml-4 text-left transition-colors"
+              onClick={() => handleSort("view")}
+            >
+              View
+              {sortField === "view" && (
+                <span className="ml-1">{sortDirection === "asc" ? "↑" : "↓"}</span>
+              )}
+            </button>
+            <button
+              className="hover:text-text text-center transition-colors"
+              onClick={() => handleSort("date")}
+              type="button"
+            >
+              Date
+              {sortField === "date" && (
+                <span className="ml-1">{sortDirection === "asc" ? "↑" : "↓"}</span>
+              )}
+            </button>
           </div>
 
           {/* Feed List */}
-          {feedList.map((item) => {
-            return (
-              <FeedListItem
-                key={item.id}
-                id={item.id}
-                selected={selectedFeeds.has(item.id)}
-                onSelect={handleSelectFeed}
-              />
-            )
-          })}
+          <SortedFeedsList
+            feeds={allFeeds}
+            sortField={sortField}
+            sortDirection={sortDirection}
+            selectedFeeds={selectedFeeds}
+            onSelect={handleSelectFeed}
+          />
 
           {/* Sticky Action Bar at bottom when scrolled */}
           <AnimatePresence>
@@ -194,6 +236,71 @@ const SubscriptionFeedsSection = () => {
   )
 }
 
+const SortedFeedsList: FC<{
+  feeds: Array<{ id: string }>
+  sortField: SortField
+  sortDirection: SortDirection
+  selectedFeeds: Set<string>
+  onSelect: (feedId: string, checked: boolean) => void
+}> = ({ feeds, sortField, sortDirection, selectedFeeds, onSelect }) => {
+  const sortedFeedIds = useMemo(() => {
+    switch (sortField) {
+      case "date": {
+        return feeds
+          .sort((a, b) => {
+            const aSubscription = getSubscriptionByFeedId(a.id)
+            const bSubscription = getSubscriptionByFeedId(b.id)
+            if (!aSubscription || !bSubscription) return 0
+            const aDate = new Date(aSubscription.createdAt)
+            const bDate = new Date(bSubscription.createdAt)
+            return sortDirection === "asc"
+              ? aDate.getTime() - bDate.getTime()
+              : bDate.getTime() - aDate.getTime()
+          })
+          .map((f) => f.id)
+      }
+      case "view": {
+        return feeds
+          .sort((a, b) => {
+            const aSubscription = getSubscriptionByFeedId(a.id)
+            const bSubscription = getSubscriptionByFeedId(b.id)
+            if (!aSubscription || !bSubscription) return 0
+            return sortDirection === "asc"
+              ? aSubscription.view - bSubscription.view
+              : bSubscription.view - aSubscription.view
+          })
+          .map((f) => f.id)
+      }
+      case "name": {
+        return feeds
+          .sort((a, b) => {
+            const aSubscription = getSubscriptionByFeedId(a.id)
+            const bSubscription = getSubscriptionByFeedId(b.id)
+            if (!aSubscription || !bSubscription) return 0
+            const aFeed = getFeedById(a.id)
+            const bFeed = getFeedById(b.id)
+            if (!aFeed || !bFeed) return 0
+            const aCompareTitle = aSubscription.title || aFeed.title || ""
+            const bCompareTitle = bSubscription.title || bFeed.title || ""
+            return sortDirection === "asc"
+              ? sortByAlphabet(aCompareTitle, bCompareTitle)
+              : sortByAlphabet(bCompareTitle, aCompareTitle)
+          })
+          .map((f) => f.id)
+      }
+    }
+  }, [feeds, sortDirection, sortField])
+
+  return sortedFeedIds.map((feedId) => (
+    <FeedListItem
+      id={feedId}
+      key={feedId}
+      selected={selectedFeeds.has(feedId)}
+      onSelect={onSelect}
+    />
+  ))
+}
+
 const ViewSelector: FC<{ selectedFeeds: Set<string> }> = ({ selectedFeeds }) => {
   const { t: tCommon } = useTranslation("common")
   const { mutate: batchUpdateSubscription } = useBatchUpdateSubscription()
@@ -245,6 +352,7 @@ const FeedListItem = memo(
         tabIndex={-1}
         className={clsx(
           "hover:bg-material-medium grid h-10 w-full items-center gap-4 rounded px-1",
+          "content-visibility-auto contain-intrinsic-size-[auto_2.5rem]",
           GRID_COLS_CLASSNAME,
         )}
         onClick={() => onSelect(id, !selected)}
@@ -267,7 +375,7 @@ const FeedListItem = memo(
         </div>
 
         <div className="flex items-center gap-1">
-          <span className="text-text-secondary text-sm">{views[subscription.view]!.icon}</span>
+          {views[subscription.view]!.icon}
           <span>{tCommon(views[subscription.view]!.name)}</span>
         </div>
         <div className="text-center">
