@@ -13,6 +13,7 @@ import type { FeedViewType } from "@follow/constants"
 import { cn, isKeyForMultiSelectPressed } from "@follow/utils/utils"
 import { createElement, memo, use, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { useEventCallback } from "usehooks-ts"
 
 import { MenuItemSeparator, MenuItemText, useShowContextMenu } from "~/atoms/context-menu"
 import { useHideAllReadSubscriptions } from "~/atoms/settings/general"
@@ -128,7 +129,7 @@ const FeedItemImpl = ({ view, feedId, className, isPreview }: FeedItemProps) => 
   const [isContextMenuOpen, setIsContextMenuOpen] = useState(false)
   const showContextMenu = useShowContextMenu()
   const contextMenuProps = useContextMenu({
-    onContextMenu: async (e) => {
+    onContextMenu: useEventCallback(async (e) => {
       const nextItems = items.concat()
 
       if (!feed) return
@@ -156,9 +157,12 @@ const FeedItemImpl = ({ view, feedId, className, isPreview }: FeedItemProps) => 
       setIsContextMenuOpen(true)
       await showContextMenu(nextItems, e)
       setIsContextMenuOpen(false)
-    },
+    }),
   })
   const follow = useFollow()
+  const handleDoubleClick = useEventCallback(() => {
+    window.open(UrlBuilder.shareFeed(feedId, view), "_blank")
+  })
 
   if (!feed) return null
 
@@ -181,9 +185,7 @@ const FeedItemImpl = ({ view, feedId, className, isPreview }: FeedItemProps) => 
         className,
       )}
       onClick={handleClick}
-      onDoubleClick={() => {
-        window.open(UrlBuilder.shareFeed(feedId, view), "_blank")
-      }}
+      onDoubleClick={handleDoubleClick}
       {...contextMenuProps}
     >
       <div className={cn("flex min-w-0 items-center", isFeed && feed.errorAt && "text-red")}>
@@ -284,13 +286,16 @@ const ListItemImpl: Component<ListItemProps> = ({
   const { t } = useTranslation()
 
   const contextMenuProps = useContextMenu({
-    onContextMenu: async (e) => {
+    onContextMenu: useEventCallback(async (e) => {
       setIsContextMenuOpen(true)
       await showContextMenu(items, e)
       setIsContextMenuOpen(false)
-    },
+    }),
   })
   const follow = useFollow()
+  const handleDoubleClick = useEventCallback(() => {
+    window.open(UrlBuilder.shareList(listId, view), "_blank")
+  })
 
   if (!list) return null
   return (
@@ -300,9 +305,7 @@ const ListItemImpl: Component<ListItemProps> = ({
       data-active={isActive || isContextMenuOpen}
       className={cn(feedColumnStyles.item, "py-1 pl-2.5", className)}
       onClick={handleNavigate}
-      onDoubleClick={() => {
-        window.open(UrlBuilder.shareList(listId, view), "_blank")
-      }}
+      onDoubleClick={handleDoubleClick}
       {...contextMenuProps}
     >
       <div className="flex min-w-0 flex-1 items-center">

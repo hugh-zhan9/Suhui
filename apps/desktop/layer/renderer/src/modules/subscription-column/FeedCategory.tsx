@@ -354,13 +354,15 @@ function FilterReadFeedCategory(props: FeedCategoryProps) {
   return <FeedCategoryImpl {...props} />
 }
 
-export function FeedCategoryAutoHideUnread(props: FeedCategoryProps) {
+export const FeedCategoryAutoHideUnread = memo(function FeedCategoryAutoHideUnread(
+  props: FeedCategoryProps,
+) {
   const hideAllReadSubscriptions = useHideAllReadSubscriptions()
   if (hideAllReadSubscriptions) {
     return <FilterReadFeedCategory {...props} />
   }
   return <FeedCategoryImpl {...props} />
-}
+})
 
 const RenameCategoryForm: FC<{
   currentCategory: string
