@@ -28,8 +28,6 @@ import { useEntry } from "~/store/entry"
 import { useFeedById } from "~/store/feed"
 import { useInboxById } from "~/store/inbox"
 
-import { useRouteParamsSelector } from "./useRouteParams"
-
 export const toggleEntryReadability = async ({ id, url }: { id: string; url: string }) => {
   const status = getReadabilityStatus()[id]
   const isTurnOn = status !== ReadabilityStatus.INITIAL && !!status
@@ -151,8 +149,7 @@ export const useEntryActions = ({
       siteUrl: feed.siteUrl,
     }
   })
-  const listId = useRouteParamsSelector((s) => s.listId)
-  const inList = !!listId
+
   const inbox = useInboxById(entry?.inboxId)
   const isInbox = !!inbox
   const isContentContainsHTMLTags = doesTextContainHTML(entry?.entries.content)
@@ -392,7 +389,6 @@ export const useEntryActions = ({
     userRole,
     isShowAITranslationAuto,
     isShowAITranslationOnce,
-    inList,
     compact,
     isEntryInReadability,
     isContentContainsHTMLTags,
