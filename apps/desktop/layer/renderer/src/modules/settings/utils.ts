@@ -21,6 +21,7 @@ export interface SettingPageConfig {
     ctx: SettingPageContext,
     serverConfigs?: ServerConfigs | null,
   ) => [boolean, DisableWhy]
+  viewportClassName?: string
 }
 export const defineSettingPageData = (config: SettingPageConfig) => ({
   ...config,

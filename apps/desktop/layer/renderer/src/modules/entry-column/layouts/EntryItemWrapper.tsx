@@ -1,4 +1,4 @@
-import { useGlobalFocusableScope } from "@follow/components/common/Focusable/hooks.js"
+import { useGlobalFocusableScopeSelector } from "@follow/components/common/Focusable/hooks.js"
 import { useMobile } from "@follow/components/hooks/useMobile.js"
 import type { FeedViewType } from "@follow/constants"
 import { views } from "@follow/constants"
@@ -51,8 +51,8 @@ export const EntryItemWrapper: FC<
     ({ entryId }) => entryId === entry.entries.id,
     [entry.entries.id],
   )
-  const scope = useGlobalFocusableScope()
-  useContextMenuActionShortCutTrigger(actionConfigs, isActive && FocusablePresets.isTimeline(scope))
+  const when = useGlobalFocusableScopeSelector(FocusablePresets.isTimeline)
+  useContextMenuActionShortCutTrigger(actionConfigs, isActive && when)
 
   const asRead = useEntryIsRead(entry)
   const hoverMarkUnread = useGeneralSettingKey("hoverMarkUnread")

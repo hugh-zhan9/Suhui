@@ -1,6 +1,6 @@
 import type { DragEndEvent } from "@dnd-kit/core"
 import { DndContext, PointerSensor, pointerWithin, useSensor, useSensors } from "@dnd-kit/core"
-import { useGlobalFocusableScope } from "@follow/components/common/Focusable/hooks.js"
+import { useGlobalFocusableScopeSelector } from "@follow/components/common/Focusable/hooks.js"
 import { PanelSplitter } from "@follow/components/ui/divider/index.js"
 import { Kbd } from "@follow/components/ui/kbd/Kbd.js"
 import { RootPortal } from "@follow/components/ui/portal/index.jsx"
@@ -238,11 +238,14 @@ const FeedResponsiveResizerContainer = ({
     }
   }, [feedColumnShow])
 
-  const activeScopes = useGlobalFocusableScope()
+  const when = useGlobalFocusableScopeSelector(
+    // eslint-disable-next-line @eslint-react/hooks-extra/no-unnecessary-use-callback
+    React.useCallback((activeScope) => !activeScope.or(...FloatingLayerScope), []),
+  )
 
   useCommandBinding({
     commandId: COMMAND_ID.layout.toggleSubscriptionColumn,
-    when: !activeScopes.or(...FloatingLayerScope),
+    when,
   })
 
   const [delayShowSplitter, setDelayShowSplitter] = useState(feedColumnShow)

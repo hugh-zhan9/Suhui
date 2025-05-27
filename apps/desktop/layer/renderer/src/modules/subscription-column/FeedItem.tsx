@@ -1,4 +1,4 @@
-import { useGlobalFocusableScope } from "@follow/components/common/Focusable/hooks.js"
+import { useGlobalFocusableScopeSelector } from "@follow/components/common/Focusable/hooks.js"
 import { useMobile } from "@follow/components/hooks/useMobile.js"
 import { OouiUserAnonymous } from "@follow/components/icons/OouiUserAnonymous.jsx"
 import { Button } from "@follow/components/ui/button/index.js"
@@ -120,9 +120,9 @@ const FeedItemImpl = ({ view, feedId, className, isPreview }: FeedItemProps) => 
     view,
   })
 
-  const scope = useGlobalFocusableScope()
+  const when = useGlobalFocusableScopeSelector(FocusablePresets.isSubscriptionList)
 
-  const whenTrigger = FocusablePresets.isSubscriptionList(scope) && isActive
+  const whenTrigger = when && isActive
   useContextMenuActionShortCutTrigger(items, whenTrigger)
 
   const [isContextMenuOpen, setIsContextMenuOpen] = useState(false)
@@ -260,8 +260,8 @@ const ListItemImpl: Component<ListItemProps> = ({
   const isActive = useRouteParamsSelector((routerParams) => routerParams.listId === listId)
   const items = useListActions({ listId, view })
 
-  const scope = useGlobalFocusableScope()
-  useContextMenuActionShortCutTrigger(items, FocusablePresets.isSubscriptionList(scope) && isActive)
+  const when = useGlobalFocusableScopeSelector(FocusablePresets.isSubscriptionList)
+  useContextMenuActionShortCutTrigger(items, when && isActive)
 
   const listUnread = useUnreadByListId(listId)
 
@@ -369,8 +369,8 @@ const InboxItemImpl: Component<InboxItemProps> = ({ view, inboxId, className, ic
   const isActive = useRouteParamsSelector((routerParams) => routerParams.inboxId === inboxId)
   const { items } = useInboxActions({ inboxId })
 
-  const scope = useGlobalFocusableScope()
-  useContextMenuActionShortCutTrigger(items, FocusablePresets.isSubscriptionList(scope) && isActive)
+  const when = useGlobalFocusableScopeSelector(FocusablePresets.isSubscriptionList)
+  useContextMenuActionShortCutTrigger(items, when && isActive)
 
   const inboxUnread = useUnreadById(inboxId)
 

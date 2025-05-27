@@ -1,5 +1,5 @@
 import { getReadonlyRoute } from "@follow/components/atoms/route.js"
-import { useGlobalFocusableScope } from "@follow/components/common/Focusable/hooks.js"
+import { useGlobalFocusableHasScope } from "@follow/components/common/Focusable/hooks.js"
 import { MotionButtonBase } from "@follow/components/ui/button/index.js"
 import { ScrollArea } from "@follow/components/ui/scroll-area/index.js"
 import { Routes } from "@follow/constants"
@@ -71,9 +71,9 @@ function SubviewLayoutInner() {
       navigate(-1)
     }
   }
-  const activeScope = useGlobalFocusableScope()
+
   useHotkeys("Escape", backHandler, {
-    enabled: activeScope.has(HotkeyScope.SubLayer),
+    enabled: useGlobalFocusableHasScope(HotkeyScope.SubLayer),
   })
   return (
     <div className="relative flex size-full">
