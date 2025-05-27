@@ -36,9 +36,7 @@ export const MarkAllReadButton = ({
   const activeScope = useGlobalFocusableScope()
   useCommandBinding({
     commandId: COMMAND_ID.subscription.markAllAsRead,
-    when: [HotkeyScope.Timeline, HotkeyScope.SubscriptionList].some((scope) =>
-      activeScope.has(scope),
-    ),
+    when: activeScope.or(HotkeyScope.Timeline, HotkeyScope.SubscriptionList),
   })
 
   useEffect(() => {

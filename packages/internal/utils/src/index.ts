@@ -1,5 +1,6 @@
 export * from "./cjk"
 export * from "./color"
+export * from "./data-structure/set"
 export * from "./dom"
 export * from "./duration"
 export * from "./jotai"

@@ -1,3 +1,4 @@
+import { EnhanceSet } from "@follow/utils"
 import { jotaiStore } from "@follow/utils/jotai"
 import { useAtomValue, useSetAtom } from "jotai"
 import { selectAtom } from "jotai/utils"
@@ -51,11 +52,11 @@ export const useSetGlobalFocusableScope = () => {
           if (v.has(scope)) {
             return v
           }
-          const newSet = new Set(v)
+          const newSet = v.clone()
           newSet.add(scope)
           return newSet
         } else if (mode === "switch") {
-          const newSet = new Set(v)
+          const newSet = v.clone()
 
           if (newSet.has(scope)) {
             newSet.delete(scope)
@@ -65,7 +66,7 @@ export const useSetGlobalFocusableScope = () => {
           return newSet
         } else {
           if (!v.has(scope)) return v
-          const newSet = new Set(v)
+          const newSet = v.clone()
           newSet.delete(scope)
           return newSet
         }
@@ -87,7 +88,7 @@ export const useReplaceGlobalFocusableScope = () => {
     (...scopes: string[]) => {
       const snapshot = jotaiStore.get(ctx)
       setter(() => {
-        const newSet = new Set<string>()
+        const newSet = EnhanceSet.of<string>()
         for (const scope of scopes) {
           newSet.add(scope)
         }

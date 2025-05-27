@@ -242,7 +242,7 @@ const FeedResponsiveResizerContainer = ({
 
   useCommandBinding({
     commandId: COMMAND_ID.layout.toggleSubscriptionColumn,
-    when: !FloatingLayerScope.some((scope) => activeScopes.has(scope)),
+    when: !activeScopes.or(...FloatingLayerScope),
   })
 
   const [delayShowSplitter, setDelayShowSplitter] = useState(feedColumnShow)

@@ -1,3 +1,4 @@
+import { useGlobalFocusableScope } from "@follow/components/common/Focusable/hooks.js"
 import { useMobile } from "@follow/components/hooks/useMobile.js"
 import type { FeedViewType } from "@follow/constants"
 import { views } from "@follow/constants"
@@ -15,7 +16,9 @@ import {
   useShowContextMenu,
 } from "~/atoms/context-menu"
 import { useGeneralSettingKey } from "~/atoms/settings/general"
+import { FocusablePresets } from "~/components/common/Focusable"
 import { useEntryIsRead } from "~/hooks/biz/useAsRead"
+import { useContextMenuActionShortCutTrigger } from "~/hooks/biz/useContextMenuActionShortCutTrigger"
 import { useEntryActions } from "~/hooks/biz/useEntryActions"
 import { useFeedActions } from "~/hooks/biz/useFeedActions"
 import { useNavigateEntry } from "~/hooks/biz/useNavigateEntry"
@@ -34,6 +37,7 @@ export const EntryItemWrapper: FC<
   } & PropsWithChildren
 > = ({ entry, view, children, itemClassName, style }) => {
   const actionConfigs = useEntryActions({ entryId: entry.entries.id })
+
   const feedItems = useFeedActions({
     feedId: entry.feedId || entry.inboxId,
     view,
@@ -47,6 +51,8 @@ export const EntryItemWrapper: FC<
     ({ entryId }) => entryId === entry.entries.id,
     [entry.entries.id],
   )
+  const scope = useGlobalFocusableScope()
+  useContextMenuActionShortCutTrigger(actionConfigs, isActive && FocusablePresets.isTimeline(scope))
 
   const asRead = useEntryIsRead(entry)
   const hoverMarkUnread = useGeneralSettingKey("hoverMarkUnread")

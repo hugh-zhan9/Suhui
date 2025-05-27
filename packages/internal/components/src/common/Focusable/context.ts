@@ -1,3 +1,4 @@
+import type { EnhanceSet } from "@follow/utils"
 import type { PrimitiveAtom } from "jotai"
 import { createContext } from "react"
 
@@ -10,4 +11,4 @@ export const FocusActionsContext = createContext<{
   highlightBoundary: () => void
 }>(null!)
 
-export const GlobalFocusableContext = createContext<PrimitiveAtom<Set<string>>>(null!)
+export const GlobalFocusableContext = createContext<PrimitiveAtom<EnhanceSet<string>>>(null!)

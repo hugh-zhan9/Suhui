@@ -1,3 +1,4 @@
+import { useGlobalFocusableScope } from "@follow/components/common/Focusable/hooks.js"
 import { useMobile } from "@follow/components/hooks/useMobile.js"
 import { OouiUserAnonymous } from "@follow/components/icons/OouiUserAnonymous.jsx"
 import { Button } from "@follow/components/ui/button/index.js"
@@ -16,6 +17,8 @@ import { useTranslation } from "react-i18next"
 import { MenuItemSeparator, MenuItemText, useShowContextMenu } from "~/atoms/context-menu"
 import { useHideAllReadSubscriptions } from "~/atoms/settings/general"
 import { ErrorTooltip } from "~/components/common/ErrorTooltip"
+import { FocusablePresets } from "~/components/common/Focusable"
+import { useContextMenuActionShortCutTrigger } from "~/hooks/biz/useContextMenuActionShortCutTrigger"
 import { useFeedActions, useInboxActions, useListActions } from "~/hooks/biz/useFeedActions"
 import { useFollow } from "~/hooks/biz/useFollow"
 import { useNavigateEntry } from "~/hooks/biz/useNavigateEntry"
@@ -116,6 +119,11 @@ const FeedItemImpl = ({ view, feedId, className, isPreview }: FeedItemProps) => 
     feedId,
     view,
   })
+
+  const scope = useGlobalFocusableScope()
+
+  const whenTrigger = FocusablePresets.isSubscriptionList(scope) && isActive
+  useContextMenuActionShortCutTrigger(items, whenTrigger)
 
   const [isContextMenuOpen, setIsContextMenuOpen] = useState(false)
   const showContextMenu = useShowContextMenu()
@@ -252,6 +260,9 @@ const ListItemImpl: Component<ListItemProps> = ({
   const isActive = useRouteParamsSelector((routerParams) => routerParams.listId === listId)
   const items = useListActions({ listId, view })
 
+  const scope = useGlobalFocusableScope()
+  useContextMenuActionShortCutTrigger(items, FocusablePresets.isSubscriptionList(scope) && isActive)
+
   const listUnread = useUnreadByListId(listId)
 
   const [isContextMenuOpen, setIsContextMenuOpen] = useState(false)
@@ -357,6 +368,9 @@ const InboxItemImpl: Component<InboxItemProps> = ({ view, inboxId, className, ic
 
   const isActive = useRouteParamsSelector((routerParams) => routerParams.inboxId === inboxId)
   const { items } = useInboxActions({ inboxId })
+
+  const scope = useGlobalFocusableScope()
+  useContextMenuActionShortCutTrigger(items, FocusablePresets.isSubscriptionList(scope) && isActive)
 
   const inboxUnread = useUnreadById(inboxId)
 

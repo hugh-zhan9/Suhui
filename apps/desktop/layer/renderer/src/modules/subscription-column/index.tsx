@@ -245,9 +245,7 @@ const CommandsHandler = ({
 }) => {
   const activeScope = useGlobalFocusableScope()
   const when =
-    activeScope.has(HotkeyScope.SubscriptionList) ||
-    activeScope.has(HotkeyScope.Timeline) ||
-    activeScope.size === 0
+    activeScope.or(HotkeyScope.SubscriptionList, HotkeyScope.Timeline) || activeScope.size === 0
 
   useCommandBinding({
     commandId: COMMAND_ID.subscription.switchTabToNext,

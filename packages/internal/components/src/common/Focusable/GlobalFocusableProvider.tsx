@@ -1,3 +1,4 @@
+import { EnhanceSet } from "@follow/utils"
 import { jotaiStore } from "@follow/utils/jotai"
 import { atom } from "jotai"
 import type { PropsWithChildren } from "react"
@@ -7,7 +8,7 @@ import { GlobalFocusableContext } from "./context"
 
 export const GlobalFocusableProvider = ({ children }: PropsWithChildren) => {
   const ctxValue = useMemo(() => {
-    return atom(new Set<string>())
+    return atom(EnhanceSet.of<string>())
   }, [])
 
   if (import.meta.env.DEV) {

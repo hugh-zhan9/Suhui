@@ -1,6 +1,6 @@
 import {
   useFocusActions,
-  useGlobalFocusableScope,
+  useGlobalFocusableScopeSelector,
 } from "@follow/components/common/Focusable/index.js"
 import { MemoedDangerousHTMLStyle } from "@follow/components/common/MemoedDangerousHTMLStyle.js"
 import { Spring } from "@follow/components/constants/spring.js"
@@ -21,7 +21,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 
 import { useEntryIsInReadability } from "~/atoms/readability"
 import { useIsZenMode, useUISettingKey } from "~/atoms/settings/ui"
-import { Focusable } from "~/components/common/Focusable"
+import { Focusable, FocusablePresets } from "~/components/common/Focusable"
 import { ShadowDOM } from "~/components/common/ShadowDOM"
 import type { TocRef } from "~/components/ui/markdown/components/Toc"
 import { useInPeekModal } from "~/components/ui/modal/inspire/InPeekModal"
@@ -316,8 +316,7 @@ const RegisterCommands = ({
   const isAlreadyScrolledBottomRef = useRef(false)
   const [showKeepScrollingPanel, setShowKeepScrollingPanel] = useState(false)
 
-  const activeScope = useGlobalFocusableScope()
-  const when = activeScope.has(HotkeyScope.EntryRender)
+  const when = useGlobalFocusableScopeSelector(FocusablePresets.isEntryRender)
 
   useCommandBinding({
     commandId: COMMAND_ID.entryRender.scrollUp,

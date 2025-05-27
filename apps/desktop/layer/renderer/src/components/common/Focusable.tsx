@@ -24,4 +24,6 @@ export const FocusablePresets = {
   isSubscriptionOrTimeline: (v: Set<string>) => {
     return v.has(HotkeyScope.SubscriptionList) || v.has(HotkeyScope.Timeline) || v.size === 0
   },
-}
+  isTimeline: (v) => v.has(HotkeyScope.Timeline) && !v.has(HotkeyScope.EntryRender),
+  isEntryRender: (v) => v.has(HotkeyScope.EntryRender),
+} satisfies Record<string, (v: Set<string>) => boolean>
