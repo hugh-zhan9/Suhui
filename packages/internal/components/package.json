@@ -17,7 +17,6 @@
     "./ui/*": "./src/ui/*",
     "./utils/*": "./src/utils/*"
   },
-  "main": "./exports.ts",
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
