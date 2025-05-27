@@ -356,7 +356,7 @@
   "sidebar.feed_actions.resetting_feed": "Resetting feed...",
   "sidebar.feed_actions.unfollow": "Unfollow",
   "sidebar.feed_actions.unfollow_feed": "Unfollow Feed",
-  "sidebar.feed_actions.unfollow_feed_many": "Unfollow all selected feeds",
+  "sidebar.feed_actions.unfollow_feed_many": "Unfollow All Selected Feeds",
   "sidebar.feed_actions.unfollow_feed_many_confirm": "Confirm unfollow all selected feeds?",
   "sidebar.feed_actions.unfollow_feed_many_warning": "Warning: This operation will unfollow all selected feeds, and cannot be undone.",
   "sidebar.feed_column.context_menu.add_feeds_to_category": "Move to Category",
