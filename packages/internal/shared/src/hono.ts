@@ -19246,6 +19246,27 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
             status: 200;
         };
     };
+} & {
+    "/parse-opml": {
+        $post: {
+            input: {};
+            output: {
+                code: 0;
+                data: {
+                    subscriptions: {
+                        userId: string;
+                        title: string | null;
+                        view: number;
+                        category: string | null;
+                        url: string;
+                    }[];
+                    remaining: number;
+                };
+            };
+            outputFormat: "json";
+            status: 200;
+        };
+    };
 }, "/subscriptions"> | hono_types.MergeSchemaPath<hono_types.MergeSchemaPath<{
     "/": {
         $post: {
