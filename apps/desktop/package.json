@@ -68,7 +68,7 @@
     "code-inspector-plugin": "0.20.10",
     "cssnano": "7.0.6",
     "dotenv": "16.5.0",
-    "drizzle-orm": "0.42.0",
+    "drizzle-orm": "0.43.1",
     "electron": "35.1.5",
     "electron-devtools-installer": "4.0.0",
     "electron-packager-languages": "0.6.0",
