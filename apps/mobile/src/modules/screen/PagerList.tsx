@@ -84,6 +84,8 @@ export function PagerList({
       style={[styles.PagerView, style]}
       initialPage={activeViewIndex}
       layoutDirection="ltr"
+      pageMargin={50}
+      offscreenPageLimit={3}
       overdrag
       onPageScroll={pageScrollHandler}
       onPageScrollStateChanged={(e) => {
