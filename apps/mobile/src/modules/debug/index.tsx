@@ -13,7 +13,7 @@ import { BugCuteReIcon } from "@/src/icons/bug_cute_re"
 import { JotaiPersistSyncStorage } from "@/src/lib/jotai"
 import { Navigation } from "@/src/lib/navigation/Navigation"
 import { setEnvProfile, useEnvProfile } from "@/src/lib/proxy-env"
-import { DebugScreen } from "@/src/screens/(headless)/debug"
+import { DebugScreen } from "@/src/screens/(headless)/DebugScreen"
 
 export const DebugButton = () => {
   const cachedPositionAtom = useMemo(

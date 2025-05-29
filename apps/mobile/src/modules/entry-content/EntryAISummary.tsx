@@ -3,12 +3,13 @@ import { SummaryGeneratingStatus } from "@follow/store/summary/enum"
 import { usePrefetchSummary, useSummary } from "@follow/store/summary/hooks"
 import { useSummaryStore } from "@follow/store/summary/store"
 import { useAtomValue } from "jotai"
-import { fromMarkdown } from "mdast-util-from-markdown"
-import { toString } from "mdast-util-to-string"
 import type { FC } from "react"
 import { useMemo } from "react"
+import { Text } from "react-native"
 
 import { useActionLanguage, useGeneralSettingKey } from "@/src/atoms/settings/general"
+import { ErrorBoundary } from "@/src/components/common/ErrorBoundary"
+import { renderMarkdown } from "@/src/lib/markdown"
 
 import { AISummary } from "../ai/summary"
 import { useEntryContentContext } from "./ctx"
@@ -33,20 +34,28 @@ export const EntryAISummary: FC<{
     const maybeMarkdown = showReadability
       ? summary?.readabilitySummary || summary?.summary
       : summary?.summary
-    if (!maybeMarkdown) return ""
-    const tree = fromMarkdown(maybeMarkdown)
-    return toString(tree)
+    if (!maybeMarkdown) return null
+
+    return renderMarkdown(maybeMarkdown)
   }, [showReadability, summary?.readabilitySummary, summary?.summary])
 
   const status = useSummaryStore((state) => state.generatingStatus[entryId])
   if (!showAISummary) return null
 
   return (
-    <AISummary
-      className="my-3"
-      summary={summaryToShow}
-      pending={status === SummaryGeneratingStatus.Pending}
-      error={status === SummaryGeneratingStatus.Error ? "Failed to generate summary" : undefined}
-    />
+    <ErrorBoundary
+      fallbackRender={() => (
+        <Text className="text-label text-[16px] leading-[24px]">
+          Failed to generate summary. Rendering error.
+        </Text>
+      )}
+    >
+      <AISummary
+        className="my-3"
+        summary={summaryToShow}
+        pending={status === SummaryGeneratingStatus.Pending}
+        error={status === SummaryGeneratingStatus.Error ? "Failed to generate summary" : undefined}
+      />
+    </ErrorBoundary>
   )
 }

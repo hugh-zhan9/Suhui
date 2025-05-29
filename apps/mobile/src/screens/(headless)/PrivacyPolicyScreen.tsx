@@ -1,20 +1,15 @@
 import { legalMarkdown } from "@follow/legal"
+import { useMemo } from "react"
 
 import {
   NavigationBlurEffectHeaderView,
   SafeNavigationScrollView,
 } from "@/src/components/layouts/views/SafeNavigationScrollView"
-import { Markdown } from "@/src/components/ui/typography/Markdown"
+import { renderMarkdown } from "@/src/lib/markdown"
 import type { NavigationControllerView } from "@/src/lib/navigation/types"
 
-export const PrivacyMarkdown = () => {
-  return (
-    <Markdown
-      value={legalMarkdown.privacy}
-      webViewProps={{ scrollEnabled: false, matchContents: true }}
-      style={{ padding: 16, flex: 1 }}
-    />
-  )
+const PrivacyMarkdown = () => {
+  return useMemo(() => renderMarkdown(legalMarkdown.privacy), [])
 }
 
 export const PrivacyPolicyScreen: NavigationControllerView = () => {
@@ -22,6 +17,7 @@ export const PrivacyPolicyScreen: NavigationControllerView = () => {
     <SafeNavigationScrollView
       className="bg-system-background"
       contentInsetAdjustmentBehavior="never"
+      contentContainerClassName="px-4"
       Header={<NavigationBlurEffectHeaderView title="Privacy Policy" />}
     >
       <PrivacyMarkdown />

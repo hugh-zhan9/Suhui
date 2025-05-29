@@ -31,6 +31,8 @@ import type { NavigationControllerView } from "@/src/lib/navigation/types"
 import { setEnvProfile, useEnvProfile } from "@/src/lib/proxy-env"
 import { toast } from "@/src/lib/toast"
 
+import { MarkdownScreen } from "./(debug)/markdown"
+
 interface MenuSection {
   title: string
   items: (MenuItem | FC)[]
@@ -149,6 +151,12 @@ export const DebugScreen: NavigationControllerView = () => {
           title: "Test navigation",
           onPress: () => {
             navigation.pushControllerView(DebugButtonGroup)
+          },
+        },
+        {
+          title: "Markdown",
+          onPress: () => {
+            navigation.pushControllerView(MarkdownScreen)
           },
         },
       ],
