@@ -89,7 +89,7 @@ const usePlayerTracker = () => {
 
     window.addEventListener("beforeunload", handler)
     return () => window.removeEventListener("beforeunload", handler)
-  }, [])
+  }, [playerOpenAt])
 
   useEffect(() => {
     if (!show) {
@@ -100,7 +100,7 @@ const usePlayerTracker = () => {
         trigger: "manual",
       })
     }
-  }, [show])
+  }, [playerOpenAt, show])
 }
 const CornerPlayerImpl = ({ hideControls, rounded }: ControlButtonProps) => {
   const isMobile = useMobile()
@@ -130,11 +130,21 @@ const CornerPlayerImpl = ({ hideControls, rounded }: ControlButtonProps) => {
   }, [])
 
   useEffect(() => {
+    const coverImage =
+      entry?.entries.media?.[0]?.preview_image_url ||
+      entry?.entries.media?.[0]?.url ||
+      entry?.entries.authorAvatar ||
+      feed?.image
+
     setNowPlaying({
       title: entry?.entries.title || undefined,
       artist: feed?.title || undefined,
-      album: feed?.image || undefined,
-      artwork: [{ src: entry?.entries.authorAvatar || feed?.image || "" }],
+      album: coverImage || undefined,
+      artwork: [
+        {
+          src: coverImage || "",
+        },
+      ],
     })
   }, [entry, feed])
 
@@ -194,6 +204,7 @@ const CornerPlayerImpl = ({ hideControls, rounded }: ControlButtonProps) => {
             size={isMobile ? 65.25 : 58}
             fallback={false}
             noMargin
+            useMedia
           />
           <div
             className={cn(
