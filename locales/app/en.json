@@ -248,6 +248,7 @@
   "login.confirm_password.label": "Confirm Password",
   "login.continueWith": "Continue with {{provider}}",
   "login.email": "Email",
+  "login.enter_token": "Enter authorization token to continue",
   "login.forget_password.note": "Forgot your password?",
   "login.have_account": "Already have an account? <strong>Sign in</strong>",
   "login.no_account": "Don't have an account? <strong>Sign up</strong>",

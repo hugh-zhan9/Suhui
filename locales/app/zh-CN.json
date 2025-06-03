@@ -247,6 +247,7 @@
   "login.confirm_password.label": "确认密码",
   "login.continueWith": "使用 {{provider}} 继续",
   "login.email": "邮件地址",
+  "login.enter_token": "输入授权令牌以继续",
   "login.forget_password.note": "忘记了密码？",
   "login.have_account": "已有账户？<strong>登录</strong>",
   "login.no_account": "没有账户？<strong>注册</strong>",
