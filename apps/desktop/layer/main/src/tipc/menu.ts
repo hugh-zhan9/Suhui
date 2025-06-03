@@ -1,6 +1,8 @@
+import { platform } from "node:os"
+
 import type { ActionContext } from "@egoist/tipc/main"
 import type { MenuItemConstructorOptions, MessageBoxOptions } from "electron"
-import { dialog, Menu, ShareMenu } from "electron"
+import { dialog, Menu, ShareMenu, shell } from "electron"
 
 import { t } from "./_instance"
 
@@ -64,14 +66,42 @@ export const menuRoute = {
     }),
 
   showShareMenu: t.procedure.input<string>().action(async ({ input, context }) => {
-    const menu = new ShareMenu({
-      urls: [input],
-    })
+    // Check if ShareMenu is supported (macOS only)
+    if (platform() === "darwin" && ShareMenu) {
+      const menu = new ShareMenu({
+        urls: [input],
+      })
 
-    menu.popup({
-      callback: () => {
-        context.sender.send("menu-closed")
-      },
-    })
+      menu.popup({
+        callback: () => {
+          context.sender.send("menu-closed")
+        },
+      })
+    } else {
+      // Fallback for Windows and Linux - create a context menu with share options
+      const shareItems: MenuItemConstructorOptions[] = [
+        {
+          label: "Copy Link",
+          click: () => {
+            require("electron").clipboard.writeText(input)
+            context.sender.send("menu-closed")
+          },
+        },
+        {
+          label: "Open in Browser",
+          click: () => {
+            shell.openExternal(input)
+            context.sender.send("menu-closed")
+          },
+        },
+      ]
+
+      const menu = Menu.buildFromTemplate(shareItems)
+      menu.popup({
+        callback: () => {
+          context.sender.send("menu-closed")
+        },
+      })
+    }
   }),
 }
