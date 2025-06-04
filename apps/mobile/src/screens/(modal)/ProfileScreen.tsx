@@ -43,7 +43,6 @@ import { ShareForwardCuteReIcon } from "@/src/icons/share_forward_cute_re"
 import type { apiClient } from "@/src/lib/api-fetch"
 import { Navigation } from "@/src/lib/navigation/Navigation"
 import type { NavigationControllerView } from "@/src/lib/navigation/types"
-import { isIOS } from "@/src/lib/platform"
 import { toast } from "@/src/lib/toast"
 import { useShareSubscription } from "@/src/modules/settings/hooks/useShareSubscription"
 import { UserHeaderBanner } from "@/src/modules/settings/UserHeaderBanner"
@@ -167,7 +166,7 @@ function ProfileScreenImpl(props: { userId: string }) {
       <Animated.View
         style={useAnimatedStyle(() => ({
           opacity: interpolate(headerOpacity.value, [0, 1], [1, 0]),
-          top: isIOS ? 17 : insets.top,
+          top: insets.top + 17,
         }))}
         className="absolute flex w-full flex-row items-center justify-between px-4"
       >
