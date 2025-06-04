@@ -7,6 +7,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native"
 import { useColor } from "react-native-uikit-colors"
 
 import { Grid } from "@/src/components/ui/grid"
+import { ItemPressableStyle } from "@/src/components/ui/pressable/enum"
 import { ItemPressable } from "@/src/components/ui/pressable/ItemPressable"
 import { FilterCuteReIcon } from "@/src/icons/filter_cute_re"
 import { Grid2CuteReIcon } from "@/src/icons/grid_2_cute_re"
@@ -28,11 +29,12 @@ export const Category = () => {
         </View>
         <ItemPressable
           className="rounded-lg p-1"
+          itemStyle={ItemPressableStyle.UnStyled}
           onPress={() => {
             navigation.presentControllerView(DiscoverSettingsScreen)
           }}
         >
-          <FilterCuteReIcon width={20} height={20} />
+          <FilterCuteReIcon width={20} height={20} color={label} />
         </ItemPressable>
       </View>
 
