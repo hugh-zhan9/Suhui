@@ -30,8 +30,8 @@ class TranslationActions implements Hydratable {
   }
 
   upsertManyInSession(translations: TranslationModel[]) {
-    translations.forEach((translation) => {
-      immerSet((state) => {
+    immerSet((state) => {
+      translations.forEach((translation) => {
         if (!state.data[translation.entryId]) {
           state.data[translation.entryId] = {}
         }

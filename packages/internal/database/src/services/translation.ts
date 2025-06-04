@@ -15,7 +15,7 @@ class TranslationServiceStatic implements Resetable {
     // Remove translations created before the last 7 days
     const translationsToClean = translations.filter(
       (translation) =>
-        new Date(translation.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+        new Date(translation.createdAt) < new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
     )
     await db.delete(translationsTable).where(
       inArray(
