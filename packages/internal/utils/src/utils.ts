@@ -350,13 +350,13 @@ export function transformShortcut(shortcut: string, platform: OS = getOS()): str
   if (platform === "macOS") {
     return shortcut.replace("$mod", "Meta")
   }
-  return shortcut.replace("$mod", "Ctrl")
+  return shortcut.replace("$mod", "Control")
 }
 
 const F_KEY_REGEX = /^F(?:[1-9]|1[0-2])$/
 
 function getKeySortValue(key: string): number {
-  const order = ["Shift", "Ctrl", "Meta", "Alt"]
+  const order = ["Shift", "Control", "Meta", "Alt"]
 
   if (order.includes(key)) {
     return order.indexOf(key)
