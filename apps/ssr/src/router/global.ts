@@ -163,6 +163,13 @@ async function injectMetaToTemplate(document: Document, req: FastifyRequest, res
         }
         break
       }
+      case "description": {
+        const $meta = document.createElement("meta")
+        $meta.setAttribute("name", "description")
+        $meta.setAttribute("content", xss(meta.description))
+        document.head.append($meta)
+        break
+      }
       case "hydrate": {
         // Insert hydrate script
         const script = document.createElement("script")
