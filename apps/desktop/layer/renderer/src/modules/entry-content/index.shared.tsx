@@ -23,7 +23,7 @@ import {
 import { enableShowSourceContent } from "~/atoms/source-content"
 import type { TocRef } from "~/components/ui/markdown/components/Toc"
 import { Toc } from "~/components/ui/markdown/components/Toc"
-import { toggleEntryReadability } from "~/hooks/biz/useEntryActions"
+import { enableEntryReadability } from "~/hooks/biz/useEntryActions"
 import { getNewIssueUrl } from "~/lib/issues"
 import {
   useIsSoFWrappedElement,
@@ -164,16 +164,8 @@ export const ViewSourceContentAutoToggleEffect = () => {
 }
 
 export const ReadabilityAutoToggleEffect = ({ url, id }: { url: string; id: string }) => {
-  const onceRef = useRef(false)
-
   useEffect(() => {
-    if (!onceRef.current) {
-      onceRef.current = true
-      setReadabilityStatus({
-        [id]: ReadabilityStatus.INITIAL,
-      })
-      toggleEntryReadability({ id, url })
-    }
+    enableEntryReadability({ id, url })
   }, [id, url])
 
   return null

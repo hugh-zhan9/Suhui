@@ -29,6 +29,13 @@ import { useEntry } from "~/store/entry"
 import { useFeedById } from "~/store/feed"
 import { useInboxById } from "~/store/inbox"
 
+export const enableEntryReadability = async ({ id, url }: { id: string; url: string }) => {
+  const status = getReadabilityStatus()[id]
+  const isTurnOn = status !== ReadabilityStatus.INITIAL && !!status
+  if (isTurnOn) return
+  toggleEntryReadability({ id, url })
+}
+
 export const toggleEntryReadability = async ({ id, url }: { id: string; url: string }) => {
   const status = getReadabilityStatus()[id]
   const isTurnOn = status !== ReadabilityStatus.INITIAL && !!status
