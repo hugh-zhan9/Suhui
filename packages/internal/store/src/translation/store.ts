@@ -25,7 +25,7 @@ const immerSet = createImmerSetter(useTranslationStore)
 
 class TranslationActions implements Hydratable {
   async hydrate() {
-    const translations = await TranslationService.getTranslationAll()
+    const translations = await TranslationService.getTranslationToHydrate()
     translationActions.upsertManyInSession(translations)
   }
 
