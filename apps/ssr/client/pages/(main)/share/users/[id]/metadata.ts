@@ -1,74 +1,71 @@
 import { isBizId } from "@follow/utils/utils"
 
+import { callNotFound } from "~/lib/not-found"
 import type { MetaTag } from "~/meta-handler"
 import { defineMetadata } from "~/meta-handler"
 
-export default defineMetadata(
-  async ({ params, apiClient, origin, throwError }): Promise<MetaTag[]> => {
-    const mayBeUserId = params.id
+export default defineMetadata(async ({ params, apiClient, origin }): Promise<MetaTag[]> => {
+  const mayBeUserId = params.id
 
-    const handle = isBizId(mayBeUserId || "")
-      ? mayBeUserId
-      : `${mayBeUserId}`.startsWith("@")
-        ? `${mayBeUserId}`.slice(1)
-        : mayBeUserId
+  const handle = isBizId(mayBeUserId || "")
+    ? mayBeUserId
+    : `${mayBeUserId}`.startsWith("@")
+      ? `${mayBeUserId}`.slice(1)
+      : mayBeUserId
 
-    const [profileRes] = await Promise.allSettled([
-      apiClient.profiles
-        .$get({
-          query: {
-            handle,
-            id: isBizId(handle || "") ? handle : undefined,
-          },
+  const profileRes = await apiClient.profiles
+    .$get({
+      query: {
+        handle,
+        id: isBizId(handle || "") ? handle : undefined,
+      },
+    })
+    .catch((e) => callNotFound(e.message))
+
+  const realUserId = profileRes.data.id
+  const [subscriptionsRes] = await Promise.allSettled([
+    profileRes.data.id
+      ? apiClient.subscriptions.$get({
+          query: { userId: realUserId },
         })
-        .catch((e) => throwError(e.response?.status || 404, "User not found")),
-    ])
-    const isProfileResolved = profileRes.status === "fulfilled"
-    const realUserId = isProfileResolved ? profileRes.value.data.id : ""
-    const [subscriptionsRes] = await Promise.allSettled([
-      isProfileResolved
-        ? apiClient.subscriptions.$get({
-            query: { userId: realUserId },
-          })
-        : Promise.reject(),
-    ])
+      : Promise.reject(),
+  ])
 
-    const isSubscriptionsResolved = subscriptionsRes.status === "fulfilled"
+  const isSubscriptionsResolved = subscriptionsRes.status === "fulfilled"
 
-    const { name } = isProfileResolved ? profileRes.value.data : {}
-    const subscriptions = isSubscriptionsResolved ? subscriptionsRes.value.data : []
+  const { name } = profileRes.data
+  const subscriptions = isSubscriptionsResolved ? subscriptionsRes.value.data : []
 
-    return [
-      {
-        type: "title",
-        title: name || "",
-      },
-      {
-        type: "description",
-        description:
-          subscriptions.length > 0
-            ? `${name} followed ${subscriptions.length} public subscription${
-                subscriptions.length > 1 ? "s" : ""
-              }. Follow them to get their latest updates on ${APP_NAME}`
-            : "",
-      },
-      {
-        type: "openGraph",
-        title: `${name} on ${APP_NAME}`,
-        image: `${origin}/og/user/${mayBeUserId}`,
-      },
-      isProfileResolved && {
-        type: "hydrate",
-        data: profileRes.value.data,
-        path: apiClient.profiles.$url({ query: { id: mayBeUserId } }).pathname,
-        key: `profiles.$get,query:id=${mayBeUserId}`,
-      },
-      isSubscriptionsResolved && {
-        type: "hydrate",
-        data: subscriptionsRes.value.data,
-        path: apiClient.subscriptions.$url({ query: { userId: realUserId } }).pathname,
-        key: `subscriptions.$get,query:userId=${realUserId}`,
-      },
-    ].filter((v) => !!v) as MetaTag[]
-  },
-)
+  return [
+    {
+      type: "title",
+      title: name || "",
+    },
+    {
+      type: "description",
+      description:
+        subscriptions.length > 0
+          ? `${name} followed ${subscriptions.length} public subscription${
+              subscriptions.length > 1 ? "s" : ""
+            }. Follow them to get their latest updates on ${APP_NAME}`
+          : "",
+    },
+    {
+      type: "openGraph",
+      title: `${name} on ${APP_NAME}`,
+      image: `${origin}/og/user/${mayBeUserId}`,
+    },
+    {
+      type: "hydrate",
+      data: profileRes.data,
+      path: apiClient.profiles.$url({ query: { id: mayBeUserId } }).pathname,
+      key: `profiles.$get,query:id=${mayBeUserId}`,
+    },
+    isSubscriptionsResolved && {
+      type: "hydrate",
+      data: subscriptionsRes.value.data,
+      path: apiClient.subscriptions.$url({ query: { userId: realUserId } }).pathname,
+      key: `subscriptions.$get,query:userId=${realUserId}`,
+    },
+  ].filter((v) => !!v) as MetaTag[]
+})
