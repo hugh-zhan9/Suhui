@@ -41,7 +41,9 @@ const formSchema = z.object({
 export function FollowFeed(props: { id: string }) {
   const { id } = props
   const feed = useFeed(id as string)
-  usePrefetchFeed(id as string)
+  usePrefetchFeed(id as string, {
+    enabled: !feed?.subscriptionCount,
+  })
 
   if (!feed) {
     return (

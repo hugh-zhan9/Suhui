@@ -135,7 +135,7 @@ export const RecommendationTab: TabComponent<{
     staleTime: 1000 * 60 * 60 * 24, // 1 day
   })
 
-  const { data: analysisData } = useQuery({
+  const { data: analysisData, isLoading: isAnalysisLoading } = useQuery({
     queryKey: ["rsshub-analysis", "cache", discoverLanguage],
     queryFn: () => fetchRsshubAnalysis(LanguageMap[discoverLanguage]).then((res) => res.data),
     staleTime: 1000 * 60 * 60 * 24, // 1 day
@@ -228,7 +228,7 @@ export const RecommendationTab: TabComponent<{
 
   const insets = useSafeAreaInsets()
 
-  if (isLoading) {
+  if (isLoading || isAnalysisLoading) {
     return <PlatformActivityIndicator className="flex-1 items-center justify-center" />
   }
 
