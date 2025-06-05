@@ -10,72 +10,21 @@ import {
 } from "@follow/components/ui/select/index.jsx"
 import { ResponsiveSelect } from "@follow/components/ui/select/responsive.js"
 import type { ActionFeedField, ActionOperation } from "@follow/models/types"
+import { filterFieldOptions, filterOperatorOptions } from "@follow/store/action/constant"
+import { useActionRule } from "@follow/store/action/hooks"
+import { actionActions } from "@follow/store/action/store"
 import { cn } from "@follow/utils/utils"
-import { Fragment, useMemo } from "react"
+import { Fragment } from "react"
 import { useTranslation } from "react-i18next"
 
 import { ViewSelectContent } from "~/modules/feed/view-select-content"
-import { actionActions, useActionByIndex } from "~/store/action"
 
 export const FeedFilter = ({ index }: { index: number }) => {
   const { t } = useTranslation("settings")
 
-  const FeedOptions = useMemo(() => {
-    return [
-      {
-        label: t("actions.action_card.feed_options.status"),
-        value: "status",
-        type: "status",
-      },
-      {
-        label: t("actions.action_card.feed_options.subscription_view"),
-        value: "view",
-        type: "view",
-      },
-      {
-        label: t("actions.action_card.feed_options.feed_title"),
-        value: "title",
-      },
-      {
-        label: t("actions.action_card.feed_options.feed_category"),
-        value: "category",
-      },
-      {
-        label: t("actions.action_card.feed_options.site_url"),
-        value: "site_url",
-      },
-      {
-        label: t("actions.action_card.feed_options.feed_url"),
-        value: "feed_url",
-      },
-      {
-        label: t("actions.action_card.feed_options.entry_title"),
-        value: "entry_title",
-      },
-      {
-        label: t("actions.action_card.feed_options.entry_content"),
-        value: "entry_content",
-      },
-      {
-        label: t("actions.action_card.feed_options.entry_url"),
-        value: "entry_url",
-      },
-      {
-        label: t("actions.action_card.feed_options.entry_author"),
-        value: "entry_author",
-      },
-      {
-        label: t("actions.action_card.feed_options.entry_media_length"),
-        value: "entry_media_length",
-        type: "number",
-      },
-    ]
-  }, [t])
+  const disabled = useActionRule(index, (a) => a.result.disabled)
+  const condition = useActionRule(index, (a) => a.condition)
 
-  const disabled = useActionByIndex(index, (a) => a.result.disabled)
-  const condition = useActionByIndex(index, (a) => a.condition)
-
-  const onChange = actionActions.updateByIndex.bind(null, index)
   return (
     <div className="w-full shrink space-y-3 overflow-auto">
       <p className="font-medium text-zinc-500">{t("actions.action_card.when_feeds_match")}</p>
@@ -83,12 +32,8 @@ export const FeedFilter = ({ index }: { index: number }) => {
         <RadioGroup
           value={condition.length > 0 ? "filter" : "all"}
           onValueChange={(value) => {
-            onChange((data) => {
-              if (value === "all") {
-                data.condition = []
-              } else {
-                data.condition = [[{}]]
-              }
+            actionActions.patchRule(index, {
+              condition: value === "all" ? [] : [[{}]],
             })
           }}
         >
@@ -108,16 +53,20 @@ export const FeedFilter = ({ index }: { index: number }) => {
             <div className="mt-2">
               {condition.flatMap((orConditions, orConditionIdx) => {
                 return orConditions.map((condition, conditionIdx) => {
+                  const actionConditionIndex = {
+                    ruleIndex: index,
+                    groupIndex: orConditionIdx,
+                    conditionIndex: conditionIdx,
+                  }
+
                   const change = (key: string, value: string | number) => {
-                    onChange((data) => {
-                      if (!data.condition[orConditionIdx]) {
-                        data.condition[orConditionIdx] = [{}]
-                      }
-                      data.condition[orConditionIdx][conditionIdx]![key] = value
+                    actionActions.pathCondition(actionConditionIndex, {
+                      [key]: value,
                     })
                   }
                   const type =
-                    FeedOptions.find((option) => option.value === condition.field)?.type || "text"
+                    filterFieldOptions.find((option) => option.value === condition.field)?.type ||
+                    "text"
                   return (
                     <Fragment key={`${orConditionIdx}${conditionIdx}`}>
                       {conditionIdx === 0 && orConditionIdx !== 0 && (
@@ -135,7 +84,10 @@ export const FeedFilter = ({ index }: { index: number }) => {
                             disabled={disabled}
                             value={condition.field}
                             onValueChange={(value) => change("field", value as ActionFeedField)}
-                            items={FeedOptions}
+                            items={filterFieldOptions.map((option) => ({
+                              ...option,
+                              label: t(option.label),
+                            }))}
                             triggerClassName="max-sm:w-fit h-8"
                           />
                         </div>
@@ -164,9 +116,7 @@ export const FeedFilter = ({ index }: { index: number }) => {
                             variant="outline"
                             disabled={disabled}
                             onClick={() => {
-                              onChange((data) => {
-                                data.condition[orConditionIdx]!.push({})
-                              })
+                              actionActions.addConditionItem(actionConditionIndex)
                             }}
                           >
                             {t("actions.action_card.and")}
@@ -176,9 +126,7 @@ export const FeedFilter = ({ index }: { index: number }) => {
                             buttonClassName="w-full max-sm:hidden"
                             disabled={disabled}
                             onClick={() => {
-                              onChange((data) => {
-                                data.condition[orConditionIdx]!.push({})
-                              })
+                              actionActions.addConditionItem(actionConditionIndex)
                             }}
                           >
                             {t("actions.action_card.and")}
@@ -187,13 +135,7 @@ export const FeedFilter = ({ index }: { index: number }) => {
                             variant="ghost"
                             disabled={disabled}
                             onClick={() => {
-                              onChange((data) => {
-                                if (data.condition[orConditionIdx]!.length === 1) {
-                                  data.condition.splice(orConditionIdx, 1)
-                                } else {
-                                  data.condition[orConditionIdx]!.splice(conditionIdx, 1)
-                                }
-                              })
+                              actionActions.deleteConditionItem(actionConditionIndex)
                             }}
                           >
                             <i className="i-mgc-delete-2-cute-re size-5 text-zinc-600" />
@@ -221,9 +163,7 @@ export const FeedFilter = ({ index }: { index: number }) => {
             variant="outline"
             buttonClassName="mt-4 w-full gap-1 py-1"
             onClick={() => {
-              onChange((data) => {
-                data.condition.push([{}])
-              })
+              actionActions.addConditionGroup({ ruleIndex: index })
             }}
             disabled={disabled}
           >
@@ -241,54 +181,19 @@ const OperationSelect = ({
   onValueChange,
   disabled,
 }: {
-  type: string
+  type: "text" | "number" | "view" | "status"
   value?: ActionOperation
   onValueChange?: (value: ActionOperation) => void
   disabled?: boolean
 }) => {
   const { t } = useTranslation("settings")
 
-  const OperationOptions = useMemo(() => {
-    return [
-      {
-        label: t("actions.action_card.operation_options.contains"),
-        value: "contains",
-        types: ["text"],
-      },
-      {
-        label: t("actions.action_card.operation_options.does_not_contain"),
-        value: "not_contains",
-        types: ["text"],
-      },
-      {
-        label: t("actions.action_card.operation_options.is_equal_to"),
-        value: "eq",
-        types: ["number", "text", "view", "status"],
-      },
-      {
-        label: t("actions.action_card.operation_options.is_not_equal_to"),
-        value: "not_eq",
-        types: ["number", "text", "view"],
-      },
-      {
-        label: t("actions.action_card.operation_options.is_greater_than"),
-        value: "gt",
-        types: ["number"],
-      },
-      {
-        label: t("actions.action_card.operation_options.is_less_than"),
-        value: "lt",
-        types: ["number"],
-      },
-      {
-        label: t("actions.action_card.operation_options.matches_regex"),
-        value: "regex",
-        types: ["text"],
-      },
-    ]
-  }, [t])
-
-  const options = OperationOptions.filter((option) => option.types.includes(type))
+  const options = filterOperatorOptions
+    .filter((option) => option.types.includes(type))
+    .map((option) => ({
+      ...option,
+      label: t(option.label),
+    }))
   if (options.length === 1 && value === undefined) {
     onValueChange?.(options[0]!.value as ActionOperation)
   }
