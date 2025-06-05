@@ -114,6 +114,7 @@ export const CodeToTrackerName = (code: number) => {
 export class TrackerPoints {
   // App
   identify(props: IdentifyPayload) {
+    this.manager.identify(props)
     this.track(TrackerMapper.Identify, props)
   }
 
@@ -236,6 +237,10 @@ export class TrackerPoints {
 
   private track(code: TrackerMapper, properties?: Record<string, unknown>) {
     trackManager.getTrackFn()(code, properties)
+  }
+
+  get manager() {
+    return trackManager
   }
 }
 

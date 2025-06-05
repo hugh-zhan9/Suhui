@@ -122,13 +122,27 @@ export class TrackerManager {
       }
     })
 
-    await Promise.allSettled(promises)
+    await Promise.allSettled([
+      ...promises,
+      this.appendUserProperties({
+        email: payload.email ?? null,
+        name: payload.name ?? null,
+        image: payload.image ?? null,
+        handle: payload.handle ?? null,
+      }),
+    ])
   }
 
+  private managedUserProperties: Record<string, unknown> = {}
+  private getUserProperties(): Record<string, unknown> {
+    return this.managedUserProperties
+  }
   /**
    * Set user properties across all enabled adapters
    */
   async setUserProperties(properties: Record<string, unknown>): Promise<void> {
+    this.managedUserProperties = properties
+
     const enabledAdapters = this.getEnabledAdapters()
 
     if (enabledAdapters.length === 0) {
@@ -157,6 +171,14 @@ export class TrackerManager {
     await Promise.allSettled(promises)
   }
 
+  async appendUserProperties(properties: Record<string, unknown>): Promise<void> {
+    const newProperties = {
+      ...this.managedUserProperties,
+      ...properties,
+    }
+    await this.setUserProperties(newProperties)
+  }
+
   /**
    * Clear user data across all enabled adapters
    */
@@ -174,7 +196,7 @@ export class TrackerManager {
       }
     })
 
-    await Promise.allSettled(promises)
+    await Promise.allSettled([...promises, this.setUserProperties({})])
   }
 
   /**
