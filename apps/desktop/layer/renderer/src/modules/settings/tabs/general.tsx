@@ -20,6 +20,7 @@ import {
   useGeneralSettingSelector,
   useGeneralSettingValue,
 } from "~/atoms/settings/general"
+import { useDialog } from "~/components/ui/modal/stacked/hooks"
 import { useProxyValue, useSetProxy } from "~/hooks/biz/useProxySetting"
 import { useMinimizeToTrayValue, useSetMinimizeToTray } from "~/hooks/biz/useTraySetting"
 import { fallbackLanguage } from "~/i18n"
@@ -65,6 +66,7 @@ export const SettingGeneral = () => {
 
   const isMobile = useMobile()
 
+  const { ask } = useDialog()
   const reRenderKey = useGeneralSettingKey("enhancedSettings")
 
   return (
@@ -167,9 +169,25 @@ export const SettingGeneral = () => {
           IN_ELECTRON && NettingSetting,
 
           { type: "title", value: t("general.advanced") },
+
           defineSettingItem("enhancedSettings", {
             label: t("general.enhanced.label"),
             description: t("general.enhanced.description"),
+            onChangeGuard(value) {
+              if (value) {
+                ask({
+                  variant: "danger",
+                  title: t("general.enhanced.enable.modal.title"),
+                  message: t("general.enhanced.enable.modal.description"),
+                  confirmText: t("general.enhanced.enable.modal.confirm"),
+                  cancelText: t("general.enhanced.enable.modal.cancel"),
+                  onConfirm: () => {
+                    setGeneralSetting("enhancedSettings", value)
+                  },
+                })
+                return "handled"
+              }
+            },
           }),
         ]}
       />

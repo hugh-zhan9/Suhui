@@ -34,10 +34,13 @@ export const SettingSwitch: Component<{
   onCheckedChange: (checked: boolean) => void
 }> = ({ checked, label, onCheckedChange, className }) => {
   const id = useId()
+  const handleCheckedChange = (checked: boolean) => {
+    onCheckedChange(checked)
+  }
   return (
     <div className={cn("mb-3 flex items-center justify-between gap-4", className)}>
       <Label htmlFor={id}>{titleCase(label)}</Label>
-      <Switch id={id} checked={checked} onCheckedChange={onCheckedChange} />
+      <Switch id={id} checked={checked} onCheckedChange={handleCheckedChange} />
     </div>
   )
 }
