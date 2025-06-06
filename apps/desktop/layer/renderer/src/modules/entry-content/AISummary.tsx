@@ -8,12 +8,21 @@ import { useActionLanguage } from "~/atoms/settings/general"
 import { CopyButton } from "~/components/ui/button/CopyButton"
 import { Markdown } from "~/components/ui/markdown/Markdown"
 import { useAuthQuery } from "~/hooks/common"
+import { parseHtml } from "~/lib/parse-html"
 import { Queries } from "~/queries"
+import type { FlatEntryModel } from "~/store/entry"
 import { useEntry } from "~/store/entry"
+
+const entryTextContentLengthSelector = (state: FlatEntryModel) => {
+  const { content } = state.entries
+  if (!content) return 0
+  const text = parseHtml(content).toText()
+  return text.length
+}
 
 export function AISummary({ entryId }: { entryId: string }) {
   const { t } = useTranslation()
-  const entryContentLength = useEntry(entryId, (state) => state.entries.content?.length) || 0
+  const entryContentLength = useEntry(entryId, entryTextContentLengthSelector) || 0
   const summarySetting = useEntry(entryId, (state) => state.settings?.summary)
   const isInReadabilitySuccess = useEntryIsInReadabilitySuccess(entryId)
   const showAISummary = useShowAISummary(summarySetting)
