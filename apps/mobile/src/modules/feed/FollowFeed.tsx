@@ -3,6 +3,7 @@ import { useFeed, usePrefetchFeed, usePrefetchFeedByUrl } from "@follow/store/fe
 import { useSubscriptionByFeedId } from "@follow/store/subscription/hooks"
 import { subscriptionSyncService } from "@follow/store/subscription/store"
 import type { SubscriptionForm } from "@follow/store/subscription/types"
+import { formatNumber } from "@follow/utils"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useEffect, useState } from "react"
 import { Controller, useForm } from "react-hook-form"
@@ -184,7 +185,7 @@ function FollowImpl(props: { feedId: string }) {
               <View className="flex-row items-center gap-1">
                 <User3CuteReIcon width={12} height={12} />
                 <Text className="text-text text-sm">
-                  {feed.subscriptionCount}{" "}
+                  {formatNumber(feed.subscriptionCount || 0)}{" "}
                   {tCommon("feed.follower", { count: feed.subscriptionCount })}
                 </Text>
               </View>

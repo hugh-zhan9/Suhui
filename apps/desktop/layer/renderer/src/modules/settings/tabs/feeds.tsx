@@ -23,7 +23,7 @@ import { EllipsisHorizontalTextWithTooltip } from "@follow/components/ui/typogra
 import { views } from "@follow/constants"
 import type { ExtractBizResponse } from "@follow/models"
 import { jotaiStore } from "@follow/utils"
-import { sortByAlphabet } from "@follow/utils/utils"
+import { formatNumber, sortByAlphabet } from "@follow/utils/utils"
 import clsx from "clsx"
 import { useSingleton } from "foxact/use-singleton"
 import type { PrimitiveAtom } from "jotai"
@@ -140,7 +140,7 @@ const SubscriptionFeedsSection = () => {
         return nextSet
       })
     })
-    scrollContainerElement.querySelectorAll("button[data-id]").forEach((el) => {
+    scrollContainerElement.querySelectorAll("[data-id]").forEach((el) => {
       observer.observe(el)
     })
     return () => {
@@ -506,13 +506,13 @@ const FeedListItem = memo(
         <div className="text-center text-xs">
           {analytics ? (
             <div className="flex flex-col gap-1">
-              <div className="flex items-center justify-center gap-3">
+              <div className="grid grid-cols-2 gap-1">
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div className="text-text-secondary flex items-center gap-1">
                       <i className="i-mgc-user-3-cute-re" />
                       <span className="tabular-nums">
-                        {analytics.subscriptionCount?.toLocaleString() || "0"}
+                        {formatNumber(analytics.subscriptionCount || 0)}
                       </span>
                     </div>
                   </TooltipTrigger>
@@ -525,8 +525,8 @@ const FeedListItem = memo(
                     <div className="text-text-secondary flex items-center gap-1">
                       <i className="i-mgc-safety-certificate-cute-re" />
                       <span className="tabular-nums">
-                        {analytics.updatesPerWeek?.toFixed(1) || "0"}
-                        {"/week"}
+                        {Math.round(analytics.updatesPerWeek || 0) || "0"}
+                        {"/w"}
                       </span>
                     </div>
                   </TooltipTrigger>
