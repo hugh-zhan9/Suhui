@@ -76,37 +76,41 @@ export const SettingTabbedSegment: Component<{
   value: string
   onValueChanged?: (value: string) => void
   values: { value: string; label: string; icon?: ReactNode }[]
-}> = ({ label, className, value, values, onValueChanged }) => {
+  description?: string
+}> = ({ label, className, value, values, onValueChanged, description }) => {
   const [currentValue, setCurrentValue] = useState(value)
 
   return (
-    <div className={cn("mb-3 flex items-center justify-between gap-4", className)}>
-      <label className="text-sm font-medium leading-none">
-        {typeof label === "string" ? titleCase(label) : label}
-      </label>
+    <>
+      <div className={cn("mb-3 flex items-center justify-between gap-4", className)}>
+        <label className="text-sm font-medium leading-none">
+          {typeof label === "string" ? titleCase(label) : label}
+        </label>
 
-      <SegmentGroup
-        className="h-8"
-        value={currentValue}
-        onValueChanged={(v) => {
-          setCurrentValue(v)
-          onValueChanged?.(v)
-        }}
-      >
-        {values.map((v) => (
-          <SegmentItem
-            key={v.value}
-            value={v.value}
-            label={
-              <div className="flex items-center gap-1">
-                {v.icon}
-                <span>{v.label}</span>
-              </div>
-            }
-          />
-        ))}
-      </SegmentGroup>
-    </div>
+        <SegmentGroup
+          className="h-8"
+          value={currentValue}
+          onValueChanged={(v) => {
+            setCurrentValue(v)
+            onValueChanged?.(v)
+          }}
+        >
+          {values.map((v) => (
+            <SegmentItem
+              key={v.value}
+              value={v.value}
+              label={
+                <div className="flex items-center gap-1">
+                  {v.icon}
+                  <span>{v.label}</span>
+                </div>
+              }
+            />
+          ))}
+        </SegmentGroup>
+      </div>
+      {description && <SettingDescription className="-mt-3">{description}</SettingDescription>}
+    </>
   )
 }
 
