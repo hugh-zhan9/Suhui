@@ -103,7 +103,7 @@ export const SharePanel = ({ entryId }: SharePanelProps) => {
         return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text
       }
 
-      const shareTitle = `${title || t("share.default_title")} - Follow`
+      const shareTitle = `${title || t("share.default_title")} - Folo`
       const baseText = description || title || t("share.default_description")
       const truncatedText = truncateText(baseText)
       const shareText = `${truncatedText} | ${t("share.discover_more")}`
@@ -114,7 +114,7 @@ export const SharePanel = ({ entryId }: SharePanelProps) => {
         url: shareUrl,
       }
     },
-    [t],
+    [entryId, t],
   )
 
   const handleNativeShare = useCallback(async () => {
