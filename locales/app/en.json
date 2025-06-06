@@ -320,7 +320,7 @@
   "register.login": "Login",
   "register.password": "Password",
   "register.submit": "Create account",
-  "resize.tooltip.double_click_to_collapse": "<b>Double click</b> to collapse",
+  "resize.tooltip.double_click_to_collapse": "<b>Double click</b> to reset to default size",
   "resize.tooltip.drag_to_resize": "<b>Drag</b> to resize",
   "search.empty.no_results": "No results found.",
   "search.group.entries": "Entries",
