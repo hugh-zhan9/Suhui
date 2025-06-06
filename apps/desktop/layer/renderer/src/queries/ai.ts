@@ -39,12 +39,12 @@ export const ai = {
           ? getReadabilityContent()[entryId]?.content
           : getEntry(entryId)?.entries.content
       if (!content) {
-        return
+        return null
       }
 
       const text = parseHtml(content).toText()
       if (text.length < 100) {
-        return
+        return null
       }
 
       const res = await apiClient.ai.summary.$get({
