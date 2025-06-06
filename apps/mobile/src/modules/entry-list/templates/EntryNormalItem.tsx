@@ -224,8 +224,9 @@ const ThumbnailImage = ({
   }, [audio, entry?.title, feed?.title, image, isLoading, isPlaying, video, videoPlayer])
 
   if (!image && !audio && !video) return null
+  const isSquare = thumbnailRatio === "square"
   return (
-    <View className="relative ml-4 min-h-24 min-w-24 overflow-hidden rounded-lg">
+    <View className={cn("relative ml-4 h-24 overflow-hidden rounded-lg", isSquare ? "h-24" : "")}>
       {image &&
         (thumbnailRatio === "square" ? (
           <SquareImage image={image} blurhash={blurhash} />
@@ -317,32 +318,29 @@ const AspectRatioImage = ({
   }
 
   return (
-    <View className="size-24 items-center justify-center">
-      <View
+    <View
+      style={{
+        width: scaledWidth,
+        height: scaledHeight,
+      }}
+      className="ml-auto overflow-hidden rounded-lg"
+    >
+      <Image
+        proxy={{
+          width: 96,
+        }}
+        source={{
+          uri: image,
+        }}
         style={{
           width: scaledWidth,
           height: scaledHeight,
         }}
-        className="overflow-hidden rounded-md"
-      >
-        <Image
-          proxy={{
-            width: 96,
-          }}
-          source={{
-            uri: image,
-          }}
-          style={{
-            width: scaledWidth,
-            height: scaledHeight,
-          }}
-          transition={100}
-          blurhash={blurhash}
-          className="rounded-md"
-          contentFit="cover"
-          hideOnError
-        />
-      </View>
+        transition={100}
+        blurhash={blurhash}
+        contentFit="cover"
+        hideOnError
+      />
     </View>
   )
 }
