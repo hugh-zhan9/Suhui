@@ -1,4 +1,5 @@
 import { IN_ELECTRON } from "@follow/shared/constants"
+import { env } from "@follow/shared/env.desktop"
 import { cn } from "@follow/utils/utils"
 import { useCallback } from "react"
 import { useTranslation } from "react-i18next"
@@ -72,7 +73,8 @@ export const SharePanel = ({ entryId }: SharePanelProps) => {
       if (!entry) return null
 
       const { title, description } = entry.entries
-      const shareUrl = globalThis.location.href
+      const url = new URL(globalThis.location.href, env.VITE_WEB_URL)
+      const shareUrl = url.toString()
 
       // Limit text to 50 characters with ellipsis
       const truncateText = (text: string, maxLength = 50) => {
@@ -127,7 +129,8 @@ export const SharePanel = ({ entryId }: SharePanelProps) => {
   }, [entryId, generateShareContent, t])
 
   const handleCopyLink = useCallback(async () => {
-    const shareUrl = globalThis.location.href
+    const url = new URL(globalThis.location.href, env.VITE_WEB_URL)
+    const shareUrl = url.toString()
     try {
       await navigator.clipboard.writeText(shareUrl)
       toast.success(t("share.link_copied"))
