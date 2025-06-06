@@ -1,11 +1,11 @@
 import { IN_ELECTRON } from "@follow/shared/constants"
-import { env } from "@follow/shared/env.desktop"
 import { cn } from "@follow/utils/utils"
 import { useCallback } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
 import { ipcServices } from "~/lib/client"
+import { UrlBuilder } from "~/lib/url-builder"
 import { getEntry } from "~/store/entry"
 
 interface SharePanelProps {
@@ -65,6 +65,10 @@ const socialOptions: SocialShareOption[] = [
   },
 ]
 
+const getShareUrl = (entryId: string) => {
+  return UrlBuilder.shareEntry(entryId)
+}
+
 export const SharePanel = ({ entryId }: SharePanelProps) => {
   const { t } = useTranslation()
 
@@ -73,8 +77,7 @@ export const SharePanel = ({ entryId }: SharePanelProps) => {
       if (!entry) return null
 
       const { title, description } = entry.entries
-      const url = new URL(globalThis.location.href, env.VITE_WEB_URL)
-      const shareUrl = url.toString()
+      const shareUrl = getShareUrl(entryId)
 
       // Limit text to 50 characters with ellipsis
       const truncateText = (text: string, maxLength = 50) => {
@@ -129,15 +132,14 @@ export const SharePanel = ({ entryId }: SharePanelProps) => {
   }, [entryId, generateShareContent, t])
 
   const handleCopyLink = useCallback(async () => {
-    const url = new URL(globalThis.location.href, env.VITE_WEB_URL)
-    const shareUrl = url.toString()
+    const shareUrl = getShareUrl(entryId)
     try {
       await navigator.clipboard.writeText(shareUrl)
       toast.success(t("share.link_copied"))
     } catch {
       toast.error(t("share.copy_failed"))
     }
-  }, [t])
+  }, [entryId, t])
 
   const handleSocialShare = useCallback(
     (shareUrlTemplate: string) => {

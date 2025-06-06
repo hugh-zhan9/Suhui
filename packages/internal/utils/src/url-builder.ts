@@ -17,6 +17,10 @@ export class UrlBuilder {
     return this.join(`share/lists/${id}`, view ? { view: view.toString() } : undefined)
   }
 
+  shareEntry(id: string) {
+    return this.join(`timeline/view-0/all/${id}`, { share: "1" })
+  }
+
   profile(id: string) {
     return this.join(`share/users/${id}`)
   }
