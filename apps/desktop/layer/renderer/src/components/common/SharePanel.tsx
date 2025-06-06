@@ -5,7 +5,6 @@ import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
 import { ipcServices } from "~/lib/client"
-import { UrlBuilder } from "~/lib/url-builder"
 import { getEntry } from "~/store/entry"
 
 interface SharePanelProps {
@@ -66,7 +65,27 @@ const socialOptions: SocialShareOption[] = [
 ]
 
 const getShareUrl = (entryId: string) => {
-  return UrlBuilder.shareEntry(entryId)
+  const entry = getEntry(entryId)
+  if (!entry) return ""
+
+  // Temporarily use the original link
+  return entry.entries.url!
+  // const params = getRouteParams()
+
+  // let subscriptionId = "all"
+
+  // if (params.feedId) {
+  //   subscriptionId = params.feedId
+  // } else if (params.inboxId) {
+  //   subscriptionId = params.inboxId
+  // } else if (params.listId) {
+  //   subscriptionId = params.listId
+  // }
+
+  // return UrlBuilder.shareEntry(entryId, {
+  //   view: params.view,
+  //   subscriptionId,
+  // })
 }
 
 export const SharePanel = ({ entryId }: SharePanelProps) => {

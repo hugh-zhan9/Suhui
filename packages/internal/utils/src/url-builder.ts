@@ -1,6 +1,6 @@
 export class UrlBuilder {
   constructor(private readonly webUrl: string) {}
-  private join(path: string, query?: Record<string, string>) {
+  protected join(path: string, query?: Record<string, string>) {
     const nextUrl = new URL(this.webUrl)
     nextUrl.pathname = path
     if (query) {
@@ -15,10 +15,6 @@ export class UrlBuilder {
   }
   shareList(id: string, view?: number) {
     return this.join(`share/lists/${id}`, view ? { view: view.toString() } : undefined)
-  }
-
-  shareEntry(id: string) {
-    return this.join(`timeline/view-0/all/${id}`, { share: "1" })
   }
 
   profile(id: string) {
