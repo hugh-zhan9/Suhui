@@ -7,6 +7,7 @@ import { Switch } from "@follow/components/ui/switch/index.jsx"
 import { cn } from "@follow/utils/utils"
 import type { ChangeEventHandler, ReactNode } from "react"
 import { useId, useState } from "react"
+import { titleCase } from "title-case"
 
 export const SettingCheckbox: Component<{
   label: string
@@ -22,7 +23,7 @@ export const SettingCheckbox: Component<{
         onCheckedChange={onCheckedChange}
         className="cursor-auto"
       />
-      <Label htmlFor={id}>{label}</Label>
+      <Label htmlFor={id}>{titleCase(label)}</Label>
     </div>
   )
 }
@@ -35,7 +36,7 @@ export const SettingSwitch: Component<{
   const id = useId()
   return (
     <div className={cn("mb-3 flex items-center justify-between gap-4", className)}>
-      <Label htmlFor={id}>{label}</Label>
+      <Label htmlFor={id}>{titleCase(label)}</Label>
       <Switch id={id} checked={checked} onCheckedChange={onCheckedChange} />
     </div>
   )
@@ -60,7 +61,7 @@ export const SettingInput: Component<{
       )}
     >
       <Label className={cn("shrink-0", labelClassName)} htmlFor={id}>
-        {label}
+        {titleCase(label)}
       </Label>
       <Input type={type} id={id} value={value} onChange={onChange} className="text-xs" />
     </div>
@@ -77,7 +78,9 @@ export const SettingTabbedSegment: Component<{
 
   return (
     <div className={cn("mb-3 flex items-center justify-between gap-4", className)}>
-      <label className="text-sm font-medium leading-none">{label}</label>
+      <label className="text-sm font-medium leading-none">
+        {typeof label === "string" ? titleCase(label) : label}
+      </label>
 
       <SegmentGroup
         className="h-8"
@@ -120,7 +123,9 @@ export const SettingActionItem = ({
   buttonText: string
 }) => (
   <div className={cn("relative mb-3 mt-4 flex items-center justify-between gap-4")}>
-    <div className="text-sm font-medium">{label}</div>
+    <div className="text-sm font-medium">
+      {typeof label === "string" ? titleCase(label) : label}
+    </div>
     <Button variant="outline" size="sm" onClick={action}>
       {buttonText}
     </Button>
