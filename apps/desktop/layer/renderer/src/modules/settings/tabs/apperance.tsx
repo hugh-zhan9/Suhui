@@ -59,6 +59,7 @@ export const SettingAppearance = () => {
 
           defineItem("opaqueSidebar", {
             label: t("appearance.opaque_sidebars.label"),
+            description: t("appearance.opaque_sidebars.description"),
             hide: !window.api?.canWindowBlur || isMobile,
           }),
 
@@ -69,11 +70,13 @@ export const SettingAppearance = () => {
 
           defineItem("showDockBadge", {
             label: t("appearance.unread_count.badge.label"),
+            description: t("appearance.unread_count.badge.description"),
             hide: !IN_ELECTRON || !["macOS", "Linux"].includes(getOS()) || isMobile,
           }),
 
           defineItem("sidebarShowUnreadCount", {
             label: t("appearance.unread_count.view_and_subscription.label"),
+            description: t("appearance.unread_count.view_and_subscription.description"),
           }),
 
           {

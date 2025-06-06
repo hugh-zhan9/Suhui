@@ -79,7 +79,7 @@ function LanguageSetting({ settingKey }: { settingKey: "language" | "actionLangu
           : t("general.action_language.description")
       }
     >
-      <View className="w-[150px]">
+      <View className="w-[100px]">
         <LanguageSelect settingKey={settingKey} />
       </View>
     </GroupedInsetListCell>
@@ -95,7 +95,7 @@ function TranslationModeSetting() {
       label={t("general.translation_mode.label")}
       description={t("general.translation_mode.description")}
     >
-      <View className="w-[130px]">
+      <View className="w-[120px]">
         <Select
           value={translationMode}
           onValueChange={(value) => {
@@ -219,7 +219,10 @@ export const GeneralScreen: NavigationControllerView = () => {
 
       <GroupedInsetListSectionHeader label={t("general.timeline")} />
       <GroupedInsetListCard>
-        <GroupedInsetListCell label={t("general.show_unread_on_launch.label")}>
+        <GroupedInsetListCell
+          label={t("general.show_unread_on_launch.label")}
+          description={t("general.show_unread_on_launch.description")}
+        >
           <Switch
             size="sm"
             value={showUnreadOnLaunch}

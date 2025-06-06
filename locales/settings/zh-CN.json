@@ -225,8 +225,6 @@
   "general.send_anonymous_data.label": "发送匿名数据",
   "general.show_quick_timeline.description": "在时间线顶部显示列表和分类的时间线快递导航。",
   "general.show_quick_timeline.label": "显示时间线快速导航",
-  "general.show_unread_on_launch.description": "启动时显示未读内容。",
-  "general.show_unread_on_launch.label": "启动时显示未读内容",
   "general.sidebar_title": "通用",
   "general.startup_screen.subscription": "订阅",
   "general.startup_screen.timeline": "时间线",

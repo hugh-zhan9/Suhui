@@ -225,8 +225,6 @@
   "general.send_anonymous_data.label": "傳送匿名資料",
   "general.show_quick_timeline.description": "在 RSS 摘要列表頂部顯示快速時間軸。",
   "general.show_quick_timeline.label": "顯示 RSS 摘要列表時間軸",
-  "general.show_unread_on_launch.description": "啟動時顯示未讀內容",
-  "general.show_unread_on_launch.label": "啟動時顯示未讀內容",
   "general.sidebar_title": "一般",
   "general.startup_screen.subscription": "訂閱",
   "general.startup_screen.timeline": "時間軸",

@@ -43,7 +43,10 @@ export const AppearanceScreen = () => {
         marginSize="small"
       />
       <GroupedInsetListCard>
-        <GroupedInsetListCell label={t("appearance.unread_count.badge.label")}>
+        <GroupedInsetListCell
+          label={t("appearance.unread_count.badge.label")}
+          description={t("appearance.unread_count.badge.description")}
+        >
           <Switch
             size="sm"
             value={showUnreadCountBadgeMobile}
@@ -53,7 +56,10 @@ export const AppearanceScreen = () => {
             }}
           />
         </GroupedInsetListCell>
-        <GroupedInsetListCell label={t("appearance.unread_count.view_and_subscription.label")}>
+        <GroupedInsetListCell
+          label={t("appearance.unread_count.view_and_subscription.label")}
+          description={t("appearance.unread_count.view_and_subscription.description")}
+        >
           <Switch
             size="sm"
             value={showUnreadCountViewAndSubscriptionMobile}

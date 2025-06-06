@@ -119,6 +119,7 @@ export const createSettingBuilder =
       } else if ("action" in assertSetting) {
         ControlElement = <SettingActionItem {...assertSetting} key={index} />
       }
+
       return (
         <SettingItemGroup key={index}>
           {ControlElement}
