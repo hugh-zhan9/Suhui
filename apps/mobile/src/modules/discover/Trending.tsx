@@ -40,7 +40,7 @@ export const Trending = ({
       <View className={cn("flex-row items-center justify-between pb-1 pt-4", itemClassName)}>
         <View className="flex-row items-center gap-2">
           <TrendingUpCuteReIcon width={24} height={24} color={label} />
-          <Text className="text-label text-2xl font-bold leading-[1.1]">Trending</Text>
+          <Text className="text-label pb-2 text-2xl font-bold leading-[1.1]">Trending</Text>
         </View>
         <ItemPressable
           className="rounded-lg p-1"
