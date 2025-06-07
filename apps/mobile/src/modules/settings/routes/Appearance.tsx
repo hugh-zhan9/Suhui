@@ -106,17 +106,18 @@ export const AppearanceScreen = () => {
       <GroupedInsetListSectionHeader label="Content" />
       <GroupedInsetListCard>
         <GroupedInsetListCell label={t("appearance.code_highlight_theme.label")}>
-          <Select
-            wrapperClassName="w-[120px]"
-            options={themeNames.map((theme) => ({
-              label: theme,
-              value: theme,
-            }))}
-            value={colorScheme === "dark" ? codeThemeDark : codeThemeLight}
-            onValueChange={(val) => {
-              setUISetting(`codeHighlightTheme${colorScheme === "dark" ? "Dark" : "Light"}`, val)
-            }}
-          />
+          <View className="w-[120px]">
+            <Select
+              options={themeNames.map((theme) => ({
+                label: theme,
+                value: theme,
+              }))}
+              value={colorScheme === "dark" ? codeThemeDark : codeThemeLight}
+              onValueChange={(val) => {
+                setUISetting(`codeHighlightTheme${colorScheme === "dark" ? "Dark" : "Light"}`, val)
+              }}
+            />
+          </View>
         </GroupedInsetListCell>
 
         <GroupedInsetListCell
