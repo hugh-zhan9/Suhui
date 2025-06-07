@@ -175,7 +175,7 @@
   "general.action.translation.label": "AI 翻译",
   "general.action_language.default": "默认（界面语言）",
   "general.action_language.description": "选择 AI 操作的语言，例如 AI 摘要、AI 翻译。",
-  "general.action_language.label": "自动化语言",
+  "general.action_language.label": "AI 输出语言",
   "general.advanced": "高级",
   "general.app": "应用程序",
   "general.auto_expand_long_social_media.description": "自动展开包含长文本的社交媒体条目。",
