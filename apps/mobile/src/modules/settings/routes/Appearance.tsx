@@ -105,7 +105,7 @@ export const AppearanceScreen = () => {
 
       <GroupedInsetListSectionHeader label="Content" />
       <GroupedInsetListCard>
-        <GroupedInsetListCell label={t("appearance.code_highlight_theme")}>
+        <GroupedInsetListCell label={t("appearance.code_highlight_theme.label")}>
           <Select
             wrapperClassName="w-[120px]"
             options={themeNames.map((theme) => ({
