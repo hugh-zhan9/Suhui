@@ -1,5 +1,6 @@
 import { UserAvatar } from "@client/components/ui/user-avatar"
-import { loginHandler, oneTimeToken, twoFactor } from "@client/lib/auth"
+import { loginHandler, oneTimeToken, signOut, twoFactor } from "@client/lib/auth"
+import { openInFollowApp } from "@client/lib/helper"
 import { queryClient } from "@client/lib/query-client"
 import { useSession } from "@client/query/auth"
 import { useAuthProviders } from "@client/query/users"
@@ -18,38 +19,14 @@ import { Input } from "@follow/components/ui/input/index.js"
 import { LoadingCircle } from "@follow/components/ui/loading/index.jsx"
 import { DEEPLINK_SCHEME } from "@follow/shared/constants"
 import { env } from "@follow/shared/env.ssr"
+import HCaptcha from "@hcaptcha/react-hcaptcha"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import ReCAPTCHA from "react-google-recaptcha"
 import { useForm } from "react-hook-form"
 import { Trans, useTranslation } from "react-i18next"
 import { Link, useLocation, useNavigate } from "react-router"
 import { toast } from "sonner"
 import { z } from "zod"
-
-function closeRecaptcha(
-  recaptchaRef: React.RefObject<ReCAPTCHA | null>,
-  resetLoadingState: () => void,
-) {
-  const handleClick = (e: MouseEvent) => {
-    const recaptchaIframeSelector =
-      'iframe[src*="recaptcha/api2"], iframe[src*="www.recaptcha.net"], iframe[src*="google.com/recaptcha"]'
-    const recaptchaChallengeIframe = document.querySelector(recaptchaIframeSelector)
-
-    if (
-      e.target instanceof Element &&
-      recaptchaChallengeIframe &&
-      !recaptchaChallengeIframe.contains(e.target) &&
-      !e.target.closest(".g-recaptcha")
-    ) {
-      recaptchaRef.current?.reset()
-      resetLoadingState()
-    }
-  }
-
-  document.addEventListener("click", handleClick)
-  return () => document.removeEventListener("click", handleClick)
-}
 
 export function Login() {
   const { status, refetch } = useSession()
@@ -82,10 +59,18 @@ export function Login() {
     }
   }, [])
 
+  const [openFailed, setOpenFailed] = useState(false)
+  const [callbackUrl, setCallbackUrl] = useState<string>()
   const handleOpenApp = useCallback(async () => {
     const callbackUrl = await getCallbackUrl()
     if (!callbackUrl) return
-    window.open(callbackUrl.url, "_top")
+    setCallbackUrl(callbackUrl.url)
+    openInFollowApp({
+      deeplink: callbackUrl.url,
+      fallback: () => {
+        setOpenFailed(true)
+      },
+    })
   }, [getCallbackUrl])
 
   const onceRef = useRef(false)
@@ -105,8 +90,19 @@ export function Login() {
       case isAuthenticated: {
         return (
           <div className="mt-4 flex w-full flex-col items-center justify-center px-4">
-            <div className="relative flex items-center justify-center">
+            <div className="relative flex items-center justify-center gap-10">
               <UserAvatar className="gap-4 px-10 py-4 text-2xl" />
+              <div className="absolute right-0">
+                <Button
+                  variant="ghost"
+                  onClick={async () => {
+                    await signOut()
+                    await refetch()
+                  }}
+                >
+                  <i className="i-mingcute-exit-line text-xl" />
+                </Button>
+              </div>
             </div>
             <p className="mt-4 text-center">
               {t("redirect.successMessage", { app_name: APP_NAME })}
@@ -133,6 +129,20 @@ export function Login() {
                 {t("redirect.openApp", { app_name: APP_NAME })}
               </Button>
             </div>
+            {openFailed && callbackUrl && (
+              <div className="text-text mt-8 w-[31rem] space-y-2 text-center text-sm">
+                <p>{t("login.enter_token")}</p>
+                <p className="bg-fill-tertiary flex items-center justify-center gap-4 rounded-lg p-3">
+                  <span className="blur-sm hover:blur-none">{callbackUrl}</span>
+                  <i
+                    className="i-mgc-copy-2-cute-re size-4 cursor-pointer"
+                    onClick={() => {
+                      navigator.clipboard.writeText(callbackUrl)
+                    }}
+                  />
+                </p>
+              </div>
+            )}
           </div>
         )
       }
@@ -192,7 +202,17 @@ export function Login() {
         )
       }
     }
-  }, [authProviders, handleOpenApp, isAuthenticated, refetch, t, isEmail, navigate])
+  }, [
+    authProviders,
+    handleOpenApp,
+    isAuthenticated,
+    refetch,
+    t,
+    isEmail,
+    navigate,
+    openFailed,
+    callbackUrl,
+  ])
   const Content = useMemo(() => {
     switch (true) {
       case redirecting: {
@@ -237,17 +257,7 @@ function LoginWithPassword() {
   const [needTwoFactor, setNeedTwoFactor] = useState(false)
   const [isButtonLoading, setIsButtonLoading] = useState(false)
 
-  const recaptchaRef = useRef<ReCAPTCHA>(null)
-
-  const resetLoadingState = useCallback(() => {
-    setIsButtonLoading(false)
-  }, [])
-
-  useEffect(() => {
-    if (isButtonLoading) {
-      return closeRecaptcha(recaptchaRef, resetLoadingState)
-    }
-  }, [isButtonLoading, resetLoadingState])
+  const captchaRef = useRef<HCaptcha>(null)
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsButtonLoading(true)
@@ -263,8 +273,8 @@ function LoginWithPassword() {
         return
       }
 
-      const token = await recaptchaRef.current?.executeAsync()
-      if (!token) {
+      const response = await captchaRef.current?.execute({ async: true })
+      if (!response?.response) {
         setIsButtonLoading(false)
         return
       }
@@ -272,7 +282,7 @@ function LoginWithPassword() {
       const res = await loginHandler("credential", "app", {
         ...values,
         headers: {
-          "x-token": `r2:${token}`,
+          "x-token": `hc:${response?.response}`,
         },
       })
 
@@ -350,7 +360,7 @@ function LoginWithPassword() {
             )}
           />
         )}
-        <ReCAPTCHA ref={recaptchaRef} sitekey={env.VITE_RECAPTCHA_V2_SITE_KEY} size="invisible" />
+        <HCaptcha ref={captchaRef} sitekey={env.VITE_HCAPTCHA_SITE_KEY} size="invisible" />
         <Button
           type="submit"
           buttonClassName="!mt-3 w-full"

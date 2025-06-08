@@ -18,17 +18,23 @@ import {
 import { useShowSourceContent } from "~/atoms/source-content"
 import { useUserRole, whoami } from "~/atoms/user"
 import { apiClient } from "~/lib/api-fetch"
-import { tipcClient } from "~/lib/client"
+import { ipcServices } from "~/lib/client"
 import { COMMAND_ID } from "~/modules/command/commands/id"
 import { getCommand, useRunCommandFn } from "~/modules/command/hooks/use-command"
 import { useCommandShortcuts } from "~/modules/command/hooks/use-command-binding"
 import type { FollowCommandId } from "~/modules/command/types"
 import { useToolbarOrderMap } from "~/modules/customize-toolbar/hooks"
+import type { FlatEntryModel } from "~/store/entry"
 import { useEntry } from "~/store/entry"
 import { useFeedById } from "~/store/feed"
 import { useInboxById } from "~/store/inbox"
 
-import { useRouteParamsSelector } from "./useRouteParams"
+export const enableEntryReadability = async ({ id, url }: { id: string; url: string }) => {
+  const status = getReadabilityStatus()[id]
+  const isTurnOn = status !== ReadabilityStatus.INITIAL && !!status
+  if (isTurnOn) return
+  toggleEntryReadability({ id, url })
+}
 
 export const toggleEntryReadability = async ({ id, url }: { id: string; url: string }) => {
   const status = getReadabilityStatus()[id]
@@ -59,7 +65,7 @@ export const toggleEntryReadability = async ({ id, url }: { id: string; url: str
         })
       }
     } catch {
-      const result = await tipcClient?.readability({ url })
+      const result = await ipcServices?.reader.readability({ url })
       if (result) {
         setReadabilityContent({
           [id]: result,
@@ -131,6 +137,34 @@ export class EntryActionMenuItem extends MenuItemText {
 }
 export type EntryActionItem = EntryActionMenuItem | MenuItemSeparator
 
+const entrySelector = (state: FlatEntryModel) => {
+  const content = state.entries.content || ""
+  const hasContent = !!content
+  const doesContentContainsHTMLTags = doesTextContainHTML(content)
+
+  const { summary, translation, readability } = state.settings || {}
+
+  const media = state.entries.media || []
+  const images = media.filter((a) => a.type === "photo")
+  const imagesLength = images.length
+
+  return {
+    feedId: state.feedId,
+    inboxId: state.inboxId,
+    url: state.entries.url,
+    publishedAt: state.entries.publishedAt,
+    view: state.view,
+    read: state.read,
+    summary,
+    translation,
+    readability,
+    isInCollection: !!state.collections,
+    hasContent,
+    doesContentContainsHTMLTags,
+    imagesLength,
+  }
+}
+
 export const useEntryActions = ({
   entryId,
   view,
@@ -140,9 +174,9 @@ export const useEntryActions = ({
   view?: FeedViewType
   compact?: boolean
 }) => {
-  const entry = useEntry(entryId)
-  const isEntryInReadability = useEntryIsInReadability(entry?.entries.id)
-  const imageLength = entry?.entries.media?.filter((a) => a.type === "photo").length || 0
+  const entry = useEntry(entryId, entrySelector)
+  const isEntryInReadability = useEntryIsInReadability(entryId)
+
   const feed = useFeedById(entry?.feedId, (feed) => {
     return {
       type: feed.type,
@@ -151,16 +185,13 @@ export const useEntryActions = ({
       siteUrl: feed.siteUrl,
     }
   })
-  const listId = useRouteParamsSelector((s) => s.listId)
-  const inList = !!listId
+
   const inbox = useInboxById(entry?.inboxId)
   const isInbox = !!inbox
-  const isContentContainsHTMLTags = doesTextContainHTML(entry?.entries.content)
-
   const isShowSourceContent = useShowSourceContent()
-  const isShowAISummaryAuto = useShowAISummaryAuto(entry)
+  const isShowAISummaryAuto = useShowAISummaryAuto(entry?.summary)
   const isShowAISummaryOnce = useShowAISummaryOnce()
-  const isShowAITranslationAuto = useShowAITranslationAuto(entry)
+  const isShowAITranslationAuto = useShowAITranslationAuto(!!entry?.translation)
   const isShowAITranslationOnce = useShowAITranslationOnce()
 
   const runCmdFn = useRunCommandFn()
@@ -227,7 +258,7 @@ export const useEntryActions = ({
       new EntryActionMenuItem({
         id: COMMAND_ID.entry.star,
         onClick: runCmdFn(COMMAND_ID.entry.star, [{ entryId, view }]),
-        active: !!entry?.collections,
+        active: entry.isInCollection,
         shortcut: shortcuts[COMMAND_ID.entry.star],
         entryId,
       }),
@@ -240,7 +271,7 @@ export const useEntryActions = ({
       new EntryActionMenuItem({
         id: COMMAND_ID.entry.copyLink,
         onClick: runCmdFn(COMMAND_ID.entry.copyLink, [{ entryId }]),
-        hide: !entry?.entries.url,
+        hide: !entry.url,
         shortcut: shortcuts[COMMAND_ID.entry.copyLink],
         entryId,
       }),
@@ -251,13 +282,13 @@ export const useEntryActions = ({
       }),
       new EntryActionMenuItem({
         id: COMMAND_ID.entry.imageGallery,
-        hide: imageLength <= 5,
+        hide: entry.imagesLength <= 5,
         onClick: runCmdFn(COMMAND_ID.entry.imageGallery, [{ entryId }]),
         entryId,
       }),
       new EntryActionMenuItem({
         id: COMMAND_ID.entry.openInBrowser,
-        hide: !entry?.entries.url,
+        hide: !entry.url,
         onClick: runCmdFn(COMMAND_ID.entry.openInBrowser, [{ entryId }]),
         entryId,
       }),
@@ -266,7 +297,7 @@ export const useEntryActions = ({
         onClick: runCmdFn(COMMAND_ID.entry.viewSourceContent, [
           { entryId, siteUrl: feed?.siteUrl },
         ]),
-        hide: isMobile() || !entry?.entries.url,
+        hide: isMobile() || !entry.url,
         active: isShowSourceContent,
         entryId,
       }),
@@ -276,7 +307,7 @@ export const useEntryActions = ({
         hide:
           isShowAISummaryAuto ||
           ([FeedViewType.SocialMedia, FeedViewType.Videos] as (number | undefined)[]).includes(
-            entry?.view,
+            entry.view,
           ),
         active: isShowAISummaryOnce,
         disabled: userRole === UserRole.Trial,
@@ -288,7 +319,7 @@ export const useEntryActions = ({
         hide:
           isShowAITranslationAuto ||
           ([FeedViewType.SocialMedia, FeedViewType.Videos] as (number | undefined)[]).includes(
-            entry?.view,
+            entry.view,
           ),
         active: isShowAITranslationOnce,
         disabled: userRole === UserRole.Trial,
@@ -297,28 +328,28 @@ export const useEntryActions = ({
       new EntryActionMenuItem({
         id: COMMAND_ID.entry.share,
         onClick: runCmdFn(COMMAND_ID.entry.share, [{ entryId }]),
-        hide: !entry?.entries.url || !("share" in navigator || IN_ELECTRON),
+        hide: !entry.url,
         shortcut: shortcuts[COMMAND_ID.entry.share],
         entryId,
       }),
       new EntryActionMenuItem({
         id: COMMAND_ID.entry.readAbove,
-        onClick: runCmdFn(COMMAND_ID.entry.readAbove, [{ publishedAt: entry.entries.publishedAt }]),
-        hide: !hasEntry || !!entry.collections,
+        onClick: runCmdFn(COMMAND_ID.entry.readAbove, [{ publishedAt: entry.publishedAt }]),
+        hide: !!entry.isInCollection,
         entryId,
       }),
       new EntryActionMenuItem({
         id: COMMAND_ID.entry.read,
         onClick: runCmdFn(COMMAND_ID.entry.read, [{ entryId }]),
-        hide: !hasEntry || !!entry.collections,
-        active: !!entry?.read,
+        hide: !!entry.isInCollection,
+        active: !!entry.read,
         shortcut: shortcuts[COMMAND_ID.entry.read],
         entryId,
       }),
       new EntryActionMenuItem({
         id: COMMAND_ID.entry.readBelow,
-        onClick: runCmdFn(COMMAND_ID.entry.readBelow, [{ publishedAt: entry.entries.publishedAt }]),
-        hide: !hasEntry || !!entry.collections,
+        onClick: runCmdFn(COMMAND_ID.entry.readBelow, [{ publishedAt: entry.publishedAt }]),
+        hide: !!entry.isInCollection,
         entryId,
       }),
       MENU_ITEM_SEPARATOR,
@@ -331,27 +362,17 @@ export const useEntryActions = ({
 
       new EntryActionMenuItem({
         id: COMMAND_ID.entry.tts,
-        onClick: runCmdFn(COMMAND_ID.entry.tts, [
-          // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
-          { entryId, entryContent: entry?.entries.content! },
-        ]),
-        hide: !IN_ELECTRON || compact || !entry?.entries.content,
+        onClick: runCmdFn(COMMAND_ID.entry.tts, [{ entryId }]),
+        hide: !IN_ELECTRON || compact || !entry.hasContent,
         shortcut: shortcuts[COMMAND_ID.entry.tts],
         entryId,
       }),
       new EntryActionMenuItem({
         id: COMMAND_ID.entry.readability,
-        onClick: runCmdFn(COMMAND_ID.entry.readability, [
-          // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
-          { entryId, entryUrl: entry?.entries.url! },
-        ]),
-        hide:
-          !!entry.settings?.readability ||
-          compact ||
-          (view && views[view]!.wideMode) ||
-          !entry?.entries.url,
+        onClick: runCmdFn(COMMAND_ID.entry.readability, [{ entryId, entryUrl: entry.url! }]),
+        hide: !!entry.readability || compact || (view && views[view]!.wideMode) || !entry.url,
         active: isEntryInReadability,
-        notice: !isContentContainsHTMLTags && !isEntryInReadability,
+        notice: !entry.doesContentContainsHTMLTags && !isEntryInReadability,
         entryId,
       }),
       new EntryActionMenuItem({
@@ -378,24 +399,23 @@ export const useEntryActions = ({
     isInbox,
     shortcuts,
     view,
-    entry?.collections,
-    entry?.entries.url,
-    entry?.entries.publishedAt,
-    entry?.entries.content,
+    entry?.isInCollection,
+    entry?.url,
+    entry?.publishedAt,
+    entry?.hasContent,
     entry?.view,
     entry?.read,
-    entry?.settings?.readability,
-    imageLength,
+    entry?.readability,
+    entry?.imagesLength,
     isShowSourceContent,
     isShowAISummaryAuto,
     isShowAISummaryOnce,
     userRole,
     isShowAITranslationAuto,
     isShowAITranslationOnce,
-    inList,
     compact,
     isEntryInReadability,
-    isContentContainsHTMLTags,
+    entry?.doesContentContainsHTMLTags,
   ])
 
   return actionConfigs

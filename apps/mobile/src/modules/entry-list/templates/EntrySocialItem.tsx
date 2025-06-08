@@ -1,9 +1,13 @@
 import { FeedViewType } from "@follow/constants"
+import { useEntry } from "@follow/store/entry/hooks"
+import { useFeed } from "@follow/store/feed/hooks"
+import { useEntryTranslation } from "@follow/store/translation/hooks"
+import { unreadSyncService } from "@follow/store/unread/store"
 import { tracker } from "@follow/tracker"
 import { memo, useCallback, useMemo } from "react"
 import { Pressable, Text, View } from "react-native"
 
-import { useGeneralSettingKey } from "@/src/atoms/settings/general"
+import { useActionLanguage, useGeneralSettingKey } from "@/src/atoms/settings/general"
 import { UserAvatar } from "@/src/components/ui/avatar/UserAvatar"
 import { RelativeDateTime } from "@/src/components/ui/datetime/RelativeDateTime"
 import { FeedIcon } from "@/src/components/ui/icon/feed-icon"
@@ -16,10 +20,6 @@ import { VideoPlayer } from "@/src/components/ui/video/VideoPlayer"
 import { useNavigation } from "@/src/lib/navigation/hooks"
 import { EntryDetailScreen } from "@/src/screens/(stack)/entries/[entryId]/EntryDetailScreen"
 import { FeedScreen } from "@/src/screens/(stack)/feeds/[feedId]/FeedScreen"
-import { useEntry } from "@/src/store/entry/hooks"
-import { useFeed } from "@/src/store/feed/hooks"
-import { useEntryTranslation } from "@/src/store/translation/hooks"
-import { unreadSyncService } from "@/src/store/unread/store"
 
 import { EntryItemContextMenu } from "../../context-menu/entry"
 import { EntryItemSkeleton } from "../EntryListContentSocial"
@@ -28,8 +28,18 @@ import { EntryTranslation } from "./EntryTranslation"
 
 export const EntrySocialItem = memo(
   ({ entryId, extraData }: { entryId: string; extraData: EntryExtraData }) => {
-    const entry = useEntry(entryId)
-    const translation = useEntryTranslation(entryId)
+    const entry = useEntry(entryId, (state) => ({
+      feedId: state.feedId,
+      media: state.media,
+      description: state.description,
+      publishedAt: state.publishedAt,
+      read: state.read,
+      authorAvatar: state.authorAvatar,
+      author: state.author,
+      translation: state.settings?.translation,
+    }))
+    const actionLanguage = useActionLanguage()
+    const translation = useEntryTranslation(entryId, actionLanguage)
 
     const feed = useFeed(entry?.feedId || "")
 
@@ -111,7 +121,7 @@ export const EntrySocialItem = memo(
               className="text-label ml-12 text-base"
               source={description}
               target={translation?.description}
-              showTranslation={!!entry.settings?.translation}
+              showTranslation={!!entry?.translation}
             />
           </View>
 

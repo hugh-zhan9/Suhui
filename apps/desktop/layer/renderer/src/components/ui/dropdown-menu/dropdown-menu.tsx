@@ -1,3 +1,4 @@
+import { useSetGlobalFocusableScope } from "@follow/components/common/Focusable/hooks.js"
 import { Divider } from "@follow/components/ui/divider/Divider.js"
 import { Kbd } from "@follow/components/ui/kbd/Kbd.js"
 import { RootPortal } from "@follow/components/ui/portal/index.js"
@@ -6,15 +7,21 @@ import { cn } from "@follow/utils/utils"
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu"
 import * as React from "react"
 
-import { Focusable } from "~/components/common/Focusable"
 import { HotkeyScope } from "~/constants"
 
 const DropdownMenu: typeof DropdownMenuPrimitive.Root = (props) => {
+  const setGlobalFocusableScope = useSetGlobalFocusableScope()
   return (
     <DropdownMenuPrimitive.Root
       {...props}
       onOpenChange={useTypeScriptHappyCallback(
         (open) => {
+          if (open) {
+            setGlobalFocusableScope(HotkeyScope.DropdownMenu, "append")
+          } else {
+            setGlobalFocusableScope(HotkeyScope.DropdownMenu, "remove")
+          }
+
           props.onOpenChange?.(open)
         },
         [props.onOpenChange],
@@ -91,18 +98,16 @@ const DropdownMenuContent = ({
 }) => {
   return (
     <RootPortal>
-      <Focusable scope={HotkeyScope.DropdownMenu} className="contents">
-        <DropdownMenuPrimitive.Content
-          ref={ref}
-          sideOffset={sideOffset}
-          className={cn(
-            "bg-material-medium backdrop-blur-background text-text shadow-context-menu z-[60] min-w-32 overflow-hidden rounded-[6px] border p-1",
-            "motion-scale-in-75 motion-duration-150 text-body lg:animate-none",
-            className,
-          )}
-          {...props}
-        />
-      </Focusable>
+      <DropdownMenuPrimitive.Content
+        ref={ref}
+        sideOffset={sideOffset}
+        className={cn(
+          "bg-material-medium backdrop-blur-background text-text shadow-context-menu z-[60] min-w-32 overflow-hidden rounded-[6px] border p-1",
+          "motion-scale-in-75 motion-duration-150 text-body lg:animate-none",
+          className,
+        )}
+        {...props}
+      />
     </RootPortal>
   )
 }

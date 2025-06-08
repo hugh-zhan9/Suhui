@@ -1,26 +1,28 @@
 import type { SupportedLanguages } from "@follow/models/types"
 
+import { getReadabilityContent } from "~/atoms/readability"
 import { apiClient } from "~/lib/api-fetch"
 import { defineQuery } from "~/lib/defineQuery"
+import { parseHtml } from "~/lib/parse-html"
 import { translate } from "~/lib/translate"
-import type { FlatEntryModel } from "~/store/entry"
+import { getEntry } from "~/store/entry"
 
 export const ai = {
   translation: ({
-    entry,
+    entryId,
     view,
     language,
     extraFields,
     part,
   }: {
-    entry?: FlatEntryModel | null
-    view?: number
+    entryId?: string | null
+    view?: number | null
     language?: SupportedLanguages
     extraFields?: string[]
     part?: string
   }) =>
-    defineQuery(["translation", entry?.entries.id, view, language, extraFields, part], () =>
-      translate({ entry, view, language, extraFields, part }),
+    defineQuery(["translation", entryId, view, language, extraFields, part], () =>
+      translate({ entryId, view, language, extraFields, part }),
     ),
   summary: ({
     entryId,
@@ -32,6 +34,19 @@ export const ai = {
     target?: "content" | "readabilityContent"
   }) =>
     defineQuery(["summary", entryId, language, target], async () => {
+      const content =
+        target === "readabilityContent"
+          ? getReadabilityContent()[entryId]?.content
+          : getEntry(entryId)?.entries.content
+      if (!content) {
+        return null
+      }
+
+      const text = parseHtml(content).toText()
+      if (text.length < 100) {
+        return null
+      }
+
       const res = await apiClient.ai.summary.$get({
         query: {
           id: entryId,

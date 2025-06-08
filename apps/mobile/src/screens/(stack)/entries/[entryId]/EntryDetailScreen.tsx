@@ -1,4 +1,9 @@
 import { FeedViewType } from "@follow/constants"
+import { useEntry, usePrefetchEntryDetail } from "@follow/store/entry/hooks"
+import { entrySyncServices } from "@follow/store/entry/store"
+import { useFeed } from "@follow/store/feed/hooks"
+import { usePrefetchEntryTranslation } from "@follow/store/translation/hooks"
+import { useAutoMarkAsRead } from "@follow/store/unread/hooks"
 import { PortalProvider } from "@gorhom/portal"
 import { atom, useAtomValue, useSetAtom } from "jotai"
 import { useCallback, useEffect, useMemo } from "react"
@@ -6,7 +11,7 @@ import { Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useColor } from "react-native-uikit-colors"
 
-import { useGeneralSettingKey } from "@/src/atoms/settings/general"
+import { useActionLanguage, useGeneralSettingKey } from "@/src/atoms/settings/general"
 import { BottomTabBarHeightContext } from "@/src/components/layouts/tabbar/contexts/BottomTabBarHeightContext"
 import { SafeNavigationScrollView } from "@/src/components/layouts/views/SafeNavigationScrollView"
 import { EntryContentWebView } from "@/src/components/native/webview/EntryContentWebView"
@@ -18,16 +23,11 @@ import { CalendarTimeAddCuteReIcon } from "@/src/icons/calendar_time_add_cute_re
 import { openLink } from "@/src/lib/native"
 import { useNavigation } from "@/src/lib/navigation/hooks"
 import type { NavigationControllerView } from "@/src/lib/navigation/types"
+import { checkLanguage } from "@/src/lib/translation"
 import { EntryContentContext, useEntryContentContext } from "@/src/modules/entry-content/ctx"
 import { EntryAISummary } from "@/src/modules/entry-content/EntryAISummary"
 import { EntryNavigationHeader } from "@/src/modules/entry-content/EntryNavigationHeader"
 import { usePullUpToNext } from "@/src/modules/entry-content/use-pull-up-to-next"
-import { useEntry, usePrefetchEntryDetail } from "@/src/store/entry/hooks"
-import { entrySyncServices } from "@/src/store/entry/store"
-import type { EntryWithTranslation } from "@/src/store/entry/types"
-import { useFeed } from "@/src/store/feed/hooks"
-import { useEntryTranslation, usePrefetchEntryTranslation } from "@/src/store/translation/hooks"
-import { useAutoMarkAsRead } from "@/src/store/unread/hooks"
 
 import { EntrySocialTitle, EntryTitle } from "../../../../modules/entry-content/EntryTitle"
 
@@ -37,26 +37,24 @@ export const EntryDetailScreen: NavigationControllerView<{
   view: FeedViewType
 }> = ({ entryId, entryIds, view: viewType }) => {
   useAutoMarkAsRead(entryId)
-  const entry = useEntry(entryId)
-  const translation = useEntryTranslation(entryId)
-  const entryWithTranslation = useMemo(() => {
-    if (!entry) return entry
-    return {
-      ...entry,
-      translation,
-    } as EntryWithTranslation
-  }, [entry, translation])
+  const entry = useEntry(entryId, (state) => ({
+    title: state.title,
+    url: state.url,
+    summary: state.settings?.summary,
+    translation: state.settings?.translation,
+    readability: state.settings?.readability,
+  }))
 
   const insets = useSafeAreaInsets()
   const ctxValue = useMemo(
     () => ({
-      showAISummaryAtom: atom(entry?.settings?.summary || false),
-      showAITranslationAtom: atom(!!entry?.settings?.translation || false),
-      showReadabilityAtom: atom(entry?.settings?.readability || false),
+      showAISummaryAtom: atom(entry?.summary || false),
+      showAITranslationAtom: atom(!!entry?.translation || false),
+      showReadabilityAtom: atom(entry?.readability || false),
 
       titleHeightAtom: atom(0),
     }),
-    [entry?.settings?.readability, entry?.settings?.summary, entry?.settings?.translation],
+    [entry?.readability, entry?.summary, entry?.translation],
   )
 
   const navigation = useNavigation()
@@ -70,12 +68,19 @@ export const EntryDetailScreen: NavigationControllerView<{
     enabled: !!nextEntryId,
     onRefresh: useCallback(() => {
       if (!nextEntryId) return
-      navigation.back()
-      navigation.pushControllerView(EntryDetailScreen, {
-        entryId: nextEntryId,
-        entryIds,
-        view: viewType,
-      })
+      navigation.replaceControllerView(
+        EntryDetailScreen,
+        {
+          entryId: nextEntryId,
+          entryIds,
+          view: viewType,
+        },
+        {
+          // Ensure that the replace animation is used
+          stackAnimation: "fade_from_bottom",
+          transitionDuration: 150,
+        },
+      )
     }, [entryIds, navigation, nextEntryId, viewType]),
   })
 
@@ -105,9 +110,9 @@ export const EntryDetailScreen: NavigationControllerView<{
               )}
             </ItemPressable>
             <EntryAISummary entryId={entryId} />
-            {entryWithTranslation && (
+            {entry && (
               <View className="mt-3">
-                <EntryContentWebViewWithContext entry={entryWithTranslation} />
+                <EntryContentWebViewWithContext entryId={entryId} />
               </View>
             )}
             {viewType === FeedViewType.SocialMedia && (
@@ -122,26 +127,36 @@ export const EntryDetailScreen: NavigationControllerView<{
   )
 }
 
-const EntryContentWebViewWithContext = ({ entry }: { entry: EntryWithTranslation }) => {
+const EntryContentWebViewWithContext = ({ entryId }: { entryId: string }) => {
   const { showReadabilityAtom, showAITranslationAtom } = useEntryContentContext()
   const showReadability = useAtomValue(showReadabilityAtom)
   const translationSetting = useGeneralSettingKey("translation")
   const showTranslation = useAtomValue(showAITranslationAtom)
-  const entryId = entry.id
+  const actionLanguage = useActionLanguage()
+  const translation = useGeneralSettingKey("translation")
+
+  const entry = useEntry(entryId, (state) => ({
+    content: state.content,
+    readabilityContent: state.readabilityContent,
+  }))
+
   usePrefetchEntryTranslation({
     entryIds: [entryId],
     withContent: true,
-    target: showReadability && entry.readabilityContent ? "readabilityContent" : "content",
+    target: showReadability && entry?.readabilityContent ? "readabilityContent" : "content",
+    language: actionLanguage,
+    checkLanguage,
+    translation,
   })
 
   // Auto toggle readability when content is empty
   const setShowReadability = useSetAtom(showReadabilityAtom)
   const { isPending } = usePrefetchEntryDetail(entryId)
   useEffect(() => {
-    if (!isPending && !entry.content) {
+    if (!isPending && !entry?.content) {
       setShowReadability(true)
     }
-  }, [isPending, entry.content, setShowReadability])
+  }, [isPending, entry?.content, setShowReadability])
 
   useEffect(() => {
     if (showReadability) {
@@ -151,7 +166,7 @@ const EntryContentWebViewWithContext = ({ entry }: { entry: EntryWithTranslation
 
   return (
     <EntryContentWebView
-      entry={entry}
+      entryId={entryId}
       showReadability={showReadability}
       showTranslation={translationSetting || showTranslation}
     />
@@ -159,7 +174,10 @@ const EntryContentWebViewWithContext = ({ entry }: { entry: EntryWithTranslation
 }
 
 const EntryInfo = ({ entryId }: { entryId: string }) => {
-  const entry = useEntry(entryId)
+  const entry = useEntry(entryId, (state) => ({
+    publishedAt: state.publishedAt,
+    feedId: state.feedId,
+  }))
   const feed = useFeed(entry?.feedId)
   const secondaryLabelColor = useColor("secondaryLabel")
 
@@ -189,14 +207,15 @@ const EntryInfo = ({ entryId }: { entryId: string }) => {
 }
 
 const EntryInfoSocial = ({ entryId }: { entryId: string }) => {
-  const entry = useEntry(entryId)
+  const entry = useEntry(entryId, (state) => ({
+    publishedAt: state.publishedAt,
+  }))
 
   if (!entry) return null
-  const { publishedAt } = entry
   return (
     <View className="mt-3 px-4">
       <Text className="text-secondary-label">
-        {publishedAt.toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}
+        {entry.publishedAt.toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}
       </Text>
     </View>
   )

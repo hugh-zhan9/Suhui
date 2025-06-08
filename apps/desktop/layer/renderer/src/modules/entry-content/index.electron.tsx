@@ -1,6 +1,6 @@
 import {
   useFocusActions,
-  useGlobalFocusableScope,
+  useGlobalFocusableScopeSelector,
 } from "@follow/components/common/Focusable/index.js"
 import { MemoedDangerousHTMLStyle } from "@follow/components/common/MemoedDangerousHTMLStyle.js"
 import { Spring } from "@follow/components/constants/spring.js"
@@ -8,11 +8,10 @@ import { MotionButtonBase } from "@follow/components/ui/button/index.js"
 import { RootPortal } from "@follow/components/ui/portal/index.js"
 import { ScrollArea } from "@follow/components/ui/scroll-area/index.js"
 import type { FeedViewType } from "@follow/constants"
-import { useTitle } from "@follow/hooks"
+import { useSmoothScroll, useTitle } from "@follow/hooks"
 import type { FeedModel, InboxModel } from "@follow/models/types"
 import { nextFrame, stopPropagation } from "@follow/utils/dom"
 import { EventBus } from "@follow/utils/event-bus"
-import { springScrollTo } from "@follow/utils/scroller"
 import { cn, combineCleanupFunctions } from "@follow/utils/utils"
 import { ErrorBoundary } from "@sentry/react"
 import type { JSAnimation, Variants } from "motion/react"
@@ -22,7 +21,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 
 import { useEntryIsInReadability } from "~/atoms/readability"
 import { useIsZenMode, useUISettingKey } from "~/atoms/settings/ui"
-import { Focusable } from "~/components/common/Focusable"
+import { Focusable, FocusablePresets } from "~/components/common/Focusable"
 import { ShadowDOM } from "~/components/common/ShadowDOM"
 import type { TocRef } from "~/components/ui/markdown/components/Toc"
 import { useInPeekModal } from "~/components/ui/modal/inspire/InPeekModal"
@@ -71,8 +70,14 @@ export const EntryContent: Component<EntryContentProps> = ({
   compact,
   classNames,
 }) => {
-  const entry = useEntry(entryId)
-  useTitle(entry?.entries.title)
+  const entry = useEntry(entryId, (state) => {
+    const { feedId, inboxId } = state
+    const { readability, sourceContent } = state.settings || {}
+    const { title, url } = state.entries
+
+    return { feedId, inboxId, readability, sourceContent, title, url }
+  })
+  useTitle(entry?.title)
 
   const feed = useFeedById(entry?.feedId) as FeedModel | InboxModel
 
@@ -118,7 +123,7 @@ export const EntryContent: Component<EntryContentProps> = ({
     <>
       {!isInPeekModal && (
         <EntryHeader
-          entryId={entry.entries.id}
+          entryId={entryId}
           view={view}
           className={cn("@container h-[55px] shrink-0 px-3", classNames?.header)}
           compact={compact}
@@ -133,7 +138,7 @@ export const EntryContent: Component<EntryContentProps> = ({
         <RootPortal to={panelPortalElement}>
           <RegisterCommands scrollAnimationRef={scrollAnimationRef} scrollerRef={scrollerRef} />
         </RootPortal>
-        <EntryTimelineSidebar entryId={entry.entries.id} />
+        <EntryTimelineSidebar entryId={entryId} />
         <EntryScrollArea className={className} scrollerRef={scrollerRef}>
           {/* Indicator for the entry */}
           <m.div
@@ -178,8 +183,8 @@ export const EntryContent: Component<EntryContentProps> = ({
 
               <WrappedElementProvider boundingDetection>
                 <div className="mx-auto mb-32 mt-8 max-w-full cursor-auto text-[0.94rem]">
-                  <TitleMetaHandler entryId={entry.entries.id} />
-                  <AISummary entryId={entry.entries.id} />
+                  <TitleMetaHandler entryId={entryId} />
+                  <AISummary entryId={entryId} />
                   <ErrorBoundary fallback={RenderError}>
                     <ReadabilityNotice entryId={entryId} />
                     <ShadowDOM injectHostStyles={!isInbox}>
@@ -199,10 +204,10 @@ export const EntryContent: Component<EntryContentProps> = ({
                 </div>
               </WrappedElementProvider>
 
-              {entry.settings?.readability && (
-                <ReadabilityAutoToggleEffect id={entry.entries.id} url={entry.entries.url ?? ""} />
+              {entry.readability && (
+                <ReadabilityAutoToggleEffect id={entryId} url={entry.url ?? ""} />
               )}
-              {entry.settings?.sourceContent && <ViewSourceContentAutoToggleEffect />}
+              {entry.sourceContent && <ViewSourceContentAutoToggleEffect />}
 
               {!content && !isInReadabilityMode && (
                 <div className="center mt-16 min-w-0">
@@ -220,9 +225,9 @@ export const EntryContent: Component<EntryContentProps> = ({
                     </div>
                   ) : (
                     <NoContent
-                      id={entry.entries.id}
-                      url={entry.entries.url ?? ""}
-                      sourceContent={entry.settings?.sourceContent}
+                      id={entryId}
+                      url={entry.url ?? ""}
+                      sourceContent={entry.sourceContent}
                     />
                   )}
                 </div>
@@ -248,7 +253,7 @@ const EntryScrollArea: Component<{
   }
   return (
     <ScrollArea.ScrollArea
-      focusable={false}
+      focusable
       mask={false}
       rootClassName={cn(
         "h-0 min-w-0 grow overflow-y-auto print:h-auto print:overflow-visible",
@@ -317,8 +322,7 @@ const RegisterCommands = ({
   const isAlreadyScrolledBottomRef = useRef(false)
   const [showKeepScrollingPanel, setShowKeepScrollingPanel] = useState(false)
 
-  const activeScope = useGlobalFocusableScope()
-  const when = activeScope.has(HotkeyScope.EntryRender)
+  const when = useGlobalFocusableScopeSelector(FocusablePresets.isEntryRender)
 
   useCommandBinding({
     commandId: COMMAND_ID.entryRender.scrollUp,
@@ -347,7 +351,7 @@ const RegisterCommands = ({
   })
 
   const { highlightBoundary } = useFocusActions()
-
+  const smoothScrollTo = useSmoothScroll()
   useEffect(() => {
     const checkScrollBottom = ($scroller: HTMLDivElement) => {
       const currentScroll = $scroller.scrollTop
@@ -357,7 +361,7 @@ const RegisterCommands = ({
         EventBus.dispatch(COMMAND_ID.timeline.switchToNext)
         setShowKeepScrollingPanel(false)
         isAlreadyScrolledBottomRef.current = false
-        springScrollTo(0, $scroller)
+        smoothScrollTo(0, $scroller)
         return
       }
 
@@ -384,29 +388,37 @@ const RegisterCommands = ({
       },
       cleanupScrollAnimation,
       EventBus.subscribe(COMMAND_ID.entryRender.scrollUp, () => {
-        const currentScroll = scrollerRef.current?.scrollTop
-        const delta = window.innerHeight
+        const $scroller = scrollerRef.current
+        if (!$scroller) return
 
-        if (typeof currentScroll === "number" && delta) {
-          cleanupScrollAnimation()
-          scrollAnimationRef.current = springScrollTo(currentScroll - delta, scrollerRef.current!)
-        }
-        checkScrollBottom(scrollerRef.current!)
+        const currentScroll = $scroller.scrollTop
+        // Smart scroll distance: larger viewports get larger scroll distances
+        // But cap it at a reasonable maximum for very large screens
+        const viewportHeight = $scroller.clientHeight
+        const delta = Math.min(Math.max(120, viewportHeight * 0.25), 250)
+
+        cleanupScrollAnimation()
+        const targetScroll = Math.max(0, currentScroll - delta)
+        smoothScrollTo(targetScroll, $scroller)
+        checkScrollBottom($scroller)
       }),
 
       EventBus.subscribe(COMMAND_ID.entryRender.scrollDown, () => {
         const $scroller = scrollerRef.current
-        if (!$scroller) {
-          return
-        }
+        if (!$scroller) return
 
         const currentScroll = $scroller.scrollTop
-        const delta = window.innerHeight
+        // Smart scroll distance: larger viewports get larger scroll distances
+        // But cap it at a reasonable maximum for very large screens
+        const viewportHeight = $scroller.clientHeight
+        const delta = Math.min(Math.max(120, viewportHeight * 0.25), 250)
 
-        if (typeof currentScroll === "number" && delta) {
-          cleanupScrollAnimation()
-          scrollAnimationRef.current = springScrollTo(currentScroll + delta, $scroller)
-        }
+        cleanupScrollAnimation()
+        const targetScroll = Math.min(
+          $scroller.scrollHeight - $scroller.clientHeight,
+          currentScroll + delta,
+        )
+        smoothScrollTo(targetScroll, $scroller)
         checkScrollBottom($scroller)
       }),
       EventBus.subscribe(
@@ -424,7 +436,7 @@ const RegisterCommands = ({
         },
       ),
     )
-  }, [highlightBoundary, scrollAnimationRef, scrollerRef])
+  }, [highlightBoundary, scrollAnimationRef, scrollerRef, smoothScrollTo])
 
   return (
     <AnimatePresence>

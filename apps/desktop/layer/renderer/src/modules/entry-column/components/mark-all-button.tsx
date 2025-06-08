@@ -1,11 +1,11 @@
-import { useGlobalFocusableScope } from "@follow/components/common/Focusable/hooks.js"
+import { useGlobalFocusableScopeSelector } from "@follow/components/common/Focusable/hooks.js"
 import { ActionButton, Button } from "@follow/components/ui/button/index.js"
 import { Kbd, KbdCombined } from "@follow/components/ui/kbd/Kbd.js"
 import { useCountdown } from "@follow/hooks"
 import { EventBus } from "@follow/utils/event-bus"
 import { cn } from "@follow/utils/utils"
 import type { FC, ReactNode } from "react"
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useHotkeys } from "react-hotkeys-hook"
 import { Trans, useTranslation } from "react-i18next"
 import { toast } from "sonner"
@@ -33,12 +33,17 @@ export const MarkAllReadButton = ({
   const { t } = useTranslation()
   const { t: commonT } = useTranslation("common")
 
-  const activeScope = useGlobalFocusableScope()
+  // const activeScope = useGlobalFocusableScope()
+  const when = useGlobalFocusableScopeSelector(
+    // eslint-disable-next-line @eslint-react/hooks-extra/no-unnecessary-use-callback
+    useCallback(
+      (activeScope) => activeScope.or(HotkeyScope.Timeline, HotkeyScope.SubscriptionList),
+      [],
+    ),
+  )
   useCommandBinding({
     commandId: COMMAND_ID.subscription.markAllAsRead,
-    when: [HotkeyScope.Timeline, HotkeyScope.SubscriptionList].some((scope) =>
-      activeScope.has(scope),
-    ),
+    when,
   })
 
   useEffect(() => {

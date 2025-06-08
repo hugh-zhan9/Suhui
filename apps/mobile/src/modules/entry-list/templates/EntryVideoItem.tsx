@@ -1,4 +1,6 @@
 import { FeedViewType } from "@follow/constants"
+import { useEntry } from "@follow/store/entry/hooks"
+import { unreadSyncService } from "@follow/store/unread/store"
 import { tracker } from "@follow/tracker"
 import { formatDuration, transformVideoUrl } from "@follow/utils"
 import { memo, useMemo } from "react"
@@ -10,14 +12,17 @@ import { ItemPressableStyle } from "@/src/components/ui/pressable/enum"
 import { ItemPressable } from "@/src/components/ui/pressable/ItemPressable"
 import { openLink } from "@/src/lib/native"
 import { toast } from "@/src/lib/toast"
-import { useEntry } from "@/src/store/entry/hooks"
-import { unreadSyncService } from "@/src/store/unread/store"
 
 import { VideoContextMenu } from "../../context-menu/video"
 import { EntryGridFooter } from "../../entry-content/EntryGridFooter"
 
 export const EntryVideoItem = memo(({ id }: { id: string }) => {
-  const item = useEntry(id)
+  const item = useEntry(id, (state) => ({
+    attachments: state.attachments,
+    media: state.media,
+    feedId: state.feedId,
+    url: state.url,
+  }))
 
   const duration = useMemo(() => {
     const seconds = item?.attachments?.find(

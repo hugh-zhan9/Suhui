@@ -1,4 +1,9 @@
 import { FeedViewType } from "@follow/constants"
+import type { MediaModel } from "@follow/database/schemas/types"
+import { getEntry } from "@follow/store/entry/getter"
+import { useEntry } from "@follow/store/entry/hooks"
+import { getFeed } from "@follow/store/feed/getter"
+import { unreadSyncService } from "@follow/store/unread/store"
 import { tracker } from "@follow/tracker"
 import { uniqBy } from "es-toolkit/compat"
 import { useMemo } from "react"
@@ -7,14 +12,15 @@ import { Text, View } from "react-native"
 import { showEntryGaleriaAccessory } from "@/src/components/native/GaleriaAccessory/EntryGaleriaAccessory"
 import { preloadWebViewEntry } from "@/src/components/native/webview/EntryContentWebView"
 import { MediaCarousel } from "@/src/components/ui/carousel/MediaCarousel"
-import type { MediaModel } from "@/src/database/schemas/types"
 import { getFeedIconSource } from "@/src/lib/image"
-import { useEntry } from "@/src/store/entry/hooks"
-import { getFeed } from "@/src/store/feed/getter"
-import { unreadSyncService } from "@/src/store/unread/store"
 
 export function EntryPictureItem({ id }: { id: string }) {
-  const item = useEntry(id)
+  const item = useEntry(id, (state) => ({
+    media: state.media,
+    feedId: state.feedId,
+    publishedAt: state.publishedAt,
+    author: state.author,
+  }))
 
   if (!item || !item.media) {
     return null
@@ -47,10 +53,11 @@ export function EntryPictureItem({ id }: { id: string }) {
 
           showEntryGaleriaAccessory({
             author: item.author || "",
-            avatarUrl: getFeedIconSource(feed, "", true) ?? "",
+            avatarUrl: getFeedIconSource(feed, "") ?? "",
             publishedAt: item.publishedAt.toISOString(),
           })
-          preloadWebViewEntry(item)
+          const fullEntry = getEntry(id)
+          preloadWebViewEntry(fullEntry)
           unreadSyncService.markEntryAsRead(id)
         }}
       />

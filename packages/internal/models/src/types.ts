@@ -62,6 +62,8 @@ export type EntriesResponse = Array<
   | Exclude<Awaited<ReturnType<typeof _apiClient.entries.inbox.$post>>["data"], undefined>
 >[number]
 
+export type ActionSettings = Exclude<EntriesResponse[number]["settings"], undefined>
+
 export type CombinedEntryModel = Omit<EntriesResponse[number], "feeds"> & {
   entries: {
     content?: string | null
@@ -88,6 +90,7 @@ export type DataResponse<T> = {
   data?: T
 }
 
+type Nullable<T> = T | null | undefined
 export type ActiveEntryId = Nullable<string>
 
 export type SubscriptionModel = ExtractBizResponse<
@@ -139,7 +142,7 @@ export type ActionModel = Omit<ActionRulesRes, "condition"> & {
   condition: ActionFilter
   index: number
 }
-export type ActionId = Exclude<keyof ActionModel["result"], "disabled">
+export type ActionId = Exclude<keyof ActionModel["result"], "disabled" | "blockRules">
 export type ActionRules = ActionModel[]
 
 export type ActionConditionIndex = {
@@ -173,4 +176,9 @@ export type EntryReadHistoriesModel = Optional<
   >["data"]["entryReadHistories"]
 > & {
   entryId: string
+}
+
+export type BizRespose<T> = {
+  data: T
+  code: 0
 }

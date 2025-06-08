@@ -117,7 +117,7 @@ export function SettingModalLayout(
               height: 800,
             }}
             maxHeight="90vh"
-            minHeight={600}
+            minHeight={400}
             minWidth={700}
             maxWidth="95vw"
             className="flex !select-none flex-col"
@@ -155,14 +155,13 @@ export function SettingModalLayout(
 }
 
 const SettingItemButtonImpl = (props: {
-  tab: string
   setTab: (tab: string) => void
   item: SettingPageConfig
   path: string
-
+  isActive: boolean
   onChange?: (tab: string) => void
 }) => {
-  const { tab, setTab, item, path, onChange } = props
+  const { setTab, item, path, onChange, isActive } = props
   const { disableIf } = item
 
   const ctx = useSettingPageContext()
@@ -174,7 +173,7 @@ const SettingItemButtonImpl = (props: {
     <button
       className={cn(
         "text-text my-0.5 flex w-full items-center rounded-lg px-2.5 py-0.5 leading-loose",
-        tab === path && "!bg-theme-item-active !text-text",
+        isActive && "!bg-theme-item-active !text-text",
         !IN_ELECTRON && "hover:bg-theme-item-hover duration-200",
         disabled && "cursor-not-allowed opacity-50",
       )}
@@ -202,22 +201,22 @@ const SettingItemButtonImpl = (props: {
 
 const SettingItemButton = memo(SettingItemButtonImpl)
 
-export const SidebarItems = memo(
-  (props: { onChange?: (tab: string) => void }) => {
-    const { onChange } = props
-    const setTab = useSetSettingTab()
-    const tab = useSettingTab()
-    const availableSettings = useAvailableSettings()
-    return availableSettings.map((t) => (
+export const SidebarItems = memo((props: { onChange?: (tab: string) => void }) => {
+  const { onChange } = props
+  const setTab = useSetSettingTab()
+  const tab = useSettingTab()
+  const availableSettings = useAvailableSettings()
+  return availableSettings.map((t) => {
+    const isActive = tab === t.path
+    return (
       <SettingItemButton
         key={t.path}
-        tab={tab}
+        isActive={isActive}
         setTab={setTab}
         item={t}
         path={t.path}
         onChange={onChange}
       />
-    ))
-  },
-  () => true,
-)
+    )
+  })
+})

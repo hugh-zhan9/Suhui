@@ -121,7 +121,7 @@ export const SettingActionItem = ({
 }) => (
   <div className={cn("relative mb-3 mt-4 flex items-center justify-between gap-4")}>
     <div className="text-sm font-medium">{label}</div>
-    <Button buttonClassName="text-xs absolute right-0" variant="outline" onClick={action}>
+    <Button variant="outline" size="sm" onClick={action}>
       {buttonText}
     </Button>
   </div>

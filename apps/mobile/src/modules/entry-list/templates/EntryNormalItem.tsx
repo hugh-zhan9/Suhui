@@ -1,9 +1,16 @@
 import { FeedViewType } from "@follow/constants"
+import { getEntry } from "@follow/store/entry/getter"
+import { useEntry } from "@follow/store/entry/hooks"
+import { getInboxFrom } from "@follow/store/entry/utils"
+import { useFeed } from "@follow/store/feed/hooks"
+import { useEntryTranslation } from "@follow/store/translation/hooks"
 import { tracker } from "@follow/tracker"
 import { cn, formatEstimatedMins, formatTimeToSeconds } from "@follow/utils"
-import { memo, useCallback, useMemo } from "react"
+import { useVideoPlayer, VideoView } from "expo-video"
+import { memo, useCallback, useMemo, useRef, useState } from "react"
 import { StyleSheet, Text, View } from "react-native"
 
+import { useActionLanguage } from "@/src/atoms/settings/general"
 import { useUISettingKey } from "@/src/atoms/settings/ui"
 import { ThemedBlurView } from "@/src/components/common/ThemedBlurView"
 import { preloadWebViewEntry } from "@/src/components/native/webview/EntryContentWebView"
@@ -17,13 +24,9 @@ import { NativePressable } from "@/src/components/ui/pressable/NativePressable"
 import { PauseCuteFiIcon } from "@/src/icons/pause_cute_fi"
 import { PlayCuteFiIcon } from "@/src/icons/play_cute_fi"
 import { useNavigation } from "@/src/lib/navigation/hooks"
+import { isIOS } from "@/src/lib/platform"
 import { getAttachmentState, player } from "@/src/lib/player"
 import { EntryDetailScreen } from "@/src/screens/(stack)/entries/[entryId]/EntryDetailScreen"
-import { useEntry } from "@/src/store/entry/hooks"
-import type { EntryModel } from "@/src/store/entry/types"
-import { getInboxFrom } from "@/src/store/entry/utils"
-import { useFeed } from "@/src/store/feed/hooks"
-import { useEntryTranslation } from "@/src/store/translation/hooks"
 
 import { EntryItemContextMenu } from "../../context-menu/entry"
 import { EntryItemSkeleton } from "../EntryListContentArticle"
@@ -40,14 +43,27 @@ export const EntryNormalItem = memo(
     extraData: EntryExtraData
     view: FeedViewType
   }) => {
-    const entry = useEntry(entryId)
-    const translation = useEntryTranslation(entryId)
+    const entry = useEntry(entryId, (state) => ({
+      id: state.id,
+      feedId: state.feedId,
+      inboxHandle: state.inboxHandle,
+      authorUrl: state.authorUrl,
+      attachments: state.attachments,
+      read: state.read,
+      publishedAt: state.publishedAt,
+      translation: state.settings?.translation,
+      title: state.title,
+      description: state.description,
+    }))
+    const actionLanguage = useActionLanguage()
+    const translation = useEntryTranslation(entryId, actionLanguage)
     const from = getInboxFrom(entry)
     const feed = useFeed(entry?.feedId as string)
     const navigation = useNavigation()
     const handlePress = useCallback(() => {
       if (entry) {
-        preloadWebViewEntry(entry)
+        const fullEntry = getEntry(entryId)
+        preloadWebViewEntry(fullEntry)
         tracker.navigateEntry({
           feedId: entry.feedId!,
           entryId: entry.id,
@@ -61,14 +77,15 @@ export const EntryNormalItem = memo(
       }
     }, [entry, navigation, entryId, extraData.entryIds, view])
 
-    const audio = entry?.attachments?.find((attachment) =>
-      attachment.mime_type?.startsWith("audio/"),
+    const audioOrVideo = entry?.attachments?.find(
+      (attachment) =>
+        attachment.mime_type?.startsWith("audio/") || attachment.mime_type?.startsWith("video/"),
     )
 
     const estimatedMins = useMemo(() => {
-      const durationInSeconds = formatTimeToSeconds(audio?.duration_in_seconds)
+      const durationInSeconds = formatTimeToSeconds(audioOrVideo?.duration_in_seconds)
       return durationInSeconds && Math.floor(durationInSeconds / 60)
-    }, [audio?.duration_in_seconds])
+    }, [audioOrVideo?.duration_in_seconds])
 
     if (!entry) return <EntryItemSkeleton />
 
@@ -119,7 +136,7 @@ export const EntryNormalItem = memo(
                 )}
                 source={entry.title}
                 target={translation?.title}
-                showTranslation={!!entry.settings?.translation}
+                showTranslation={!!entry.translation}
                 inline
               />
             )}
@@ -129,13 +146,13 @@ export const EntryNormalItem = memo(
                 className="text-secondary-label my-0 text-sm"
                 source={entry.description}
                 target={translation?.description}
-                showTranslation={!!entry.settings?.translation}
+                showTranslation={!!entry.translation}
                 inline
               />
             )}
           </View>
           {view !== FeedViewType.Notifications && (
-            <ThumbnailImage entry={entry} view={view} playingAudioUrl={extraData.playingAudioUrl} />
+            <ThumbnailImage entryId={entryId} playingAudioUrl={extraData.playingAudioUrl} />
           )}
         </ItemPressable>
       </EntryItemContextMenu>
@@ -146,27 +163,52 @@ export const EntryNormalItem = memo(
 EntryNormalItem.displayName = "EntryNormalItem"
 
 const ThumbnailImage = ({
-  view,
   playingAudioUrl,
-  entry,
+  entryId,
 }: {
-  view: FeedViewType
   playingAudioUrl: string | null
-  entry: EntryModel
+  entryId: string
 }) => {
+  const entry = useEntry(entryId, (state) => ({
+    feedId: state.feedId,
+    media: state.media,
+    attachments: state.attachments,
+    title: state.title,
+  }))
+
   const feed = useFeed(entry?.feedId as string)
   const thumbnailRatio = useUISettingKey("thumbnailRatio")
 
-  const coverImage = entry?.media?.[0]
-  const image = coverImage?.url || (view === FeedViewType.Audios ? feed?.image : null)
-  const blurhash = coverImage?.blurhash
+  const mediaModel = entry?.media?.find(
+    (media) => media.type === "photo" || (media.type === "video" && media.preview_image_url),
+  )
+  const image = mediaModel?.type === "photo" ? mediaModel?.url : null // mediaModel?.preview_image_url
+  const blurhash = mediaModel?.blurhash
 
   const audio = entry?.attachments?.find((attachment) => attachment.mime_type?.startsWith("audio/"))
   const audioState = getAttachmentState(playingAudioUrl ?? undefined, audio)
   const isPlaying = audioState === "playing"
   const isLoading = audioState === "loading"
 
-  const handlePressPlayAudio = useCallback(() => {
+  const video = mediaModel?.type === "video" ? mediaModel : null
+  const videoViewRef = useRef<null | VideoView>(null)
+  const videoPlayer = useVideoPlayer(video?.url ?? "")
+  const [showVideoNativeControlsForAndroid, setShowVideoNativeControlsForAndroid] = useState(false)
+
+  const handlePressPlay = useCallback(() => {
+    if (video) {
+      setShowVideoNativeControlsForAndroid(true)
+      // Ensure the nativeControls is ready before entering fullscreen for Android
+      setTimeout(() => {
+        videoViewRef.current?.enterFullscreen()
+      }, 0)
+      if (videoPlayer.playing) {
+        videoPlayer.pause()
+      } else {
+        videoPlayer.play()
+      }
+      return
+    }
     if (!audio) return
     if (isLoading) return
     if (isPlaying) {
@@ -179,10 +221,11 @@ const ThumbnailImage = ({
       artist: feed?.title,
       artwork: image,
     })
-  }, [audio, entry?.title, feed?.title, image, isLoading, isPlaying])
+  }, [audio, entry?.title, feed?.title, image, isLoading, isPlaying, video, videoPlayer])
 
+  if (!image && !audio && !video) return null
   return (
-    <View className="relative ml-4">
+    <View className="relative ml-4 min-h-24 min-w-24 overflow-hidden rounded-lg">
       {image &&
         (thumbnailRatio === "square" ? (
           <SquareImage image={image} blurhash={blurhash} />
@@ -190,18 +233,38 @@ const ThumbnailImage = ({
           <AspectRatioImage
             blurhash={blurhash}
             image={image}
-            height={coverImage?.height}
-            width={coverImage?.width}
+            height={mediaModel?.height}
+            width={mediaModel?.width}
           />
         ))}
+
+      {video && (
+        <View className="absolute left-0 top-0 size-full overflow-hidden rounded-lg">
+          <VideoView
+            style={{ aspectRatio: 1 }}
+            contentFit="cover"
+            ref={videoViewRef}
+            player={videoPlayer}
+            // The Android native controls will be shown when the video is paused
+            nativeControls={isIOS || showVideoNativeControlsForAndroid}
+            accessible={false}
+            allowsFullscreen={false}
+            allowsVideoFrameAnalysis={false}
+            onFullscreenExit={() => {
+              videoPlayer.pause()
+              setShowVideoNativeControlsForAndroid(false)
+            }}
+          />
+        </View>
+      )}
 
       {/* Show feed icon if no image but audio is present */}
       {audio && !image && <FeedIcon feed={feed} size={96} />}
 
-      {audio && (
+      {(video || audio) && (
         <NativePressable
           className="absolute inset-0 flex items-center justify-center"
-          onPress={handlePressPlayAudio}
+          onPress={handlePressPlay}
         >
           <View className="overflow-hidden rounded-full p-2">
             <ThemedBlurView

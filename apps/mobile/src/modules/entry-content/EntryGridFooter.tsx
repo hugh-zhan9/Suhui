@@ -1,12 +1,13 @@
 import { FeedViewType } from "@follow/constants"
+import { useEntry } from "@follow/store/entry/hooks"
+import { useFeed } from "@follow/store/feed/hooks"
+import { useEntryTranslation } from "@follow/store/translation/hooks"
 import { cn } from "@follow/utils"
 import { Text, View } from "react-native"
 
+import { useActionLanguage } from "@/src/atoms/settings/general"
 import { RelativeDateTime } from "@/src/components/ui/datetime/RelativeDateTime"
 import { FeedIcon } from "@/src/components/ui/icon/feed-icon"
-import { useEntry } from "@/src/store/entry/hooks"
-import { useFeed } from "@/src/store/feed/hooks"
-import { useEntryTranslation } from "@/src/store/translation/hooks"
 
 import { EntryTranslation } from "../entry-list/templates/EntryTranslation"
 
@@ -19,9 +20,15 @@ export const EntryGridFooter = ({
   descriptionClassName?: string
   view: FeedViewType
 }) => {
-  const entry = useEntry(entryId)
-
-  const translation = useEntryTranslation(entryId)
+  const entry = useEntry(entryId, (state) => ({
+    title: state.title,
+    feedId: state.feedId,
+    publishedAt: state.publishedAt,
+    read: state.read,
+    translation: state.settings?.translation,
+  }))
+  const actionLanguage = useActionLanguage()
+  const translation = useEntryTranslation(entryId, actionLanguage)
   const feed = useFeed(entry?.feedId || "")
 
   if (!entry) return null
@@ -40,7 +47,7 @@ export const EntryGridFooter = ({
             )}
             source={entry.title}
             target={translation?.title}
-            showTranslation={!!entry.settings?.translation}
+            showTranslation={!!entry.translation}
             inline
           />
         )}

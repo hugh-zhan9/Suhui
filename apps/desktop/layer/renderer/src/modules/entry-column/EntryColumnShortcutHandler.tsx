@@ -1,6 +1,6 @@
 import {
   useFocusActions,
-  useGlobalFocusableScope,
+  useGlobalFocusableScopeSelector,
 } from "@follow/components/common/Focusable/hooks.js"
 import { useScrollViewElement } from "@follow/components/ui/scroll-area/hooks.js"
 import { useRefValue } from "@follow/hooks"
@@ -9,7 +9,7 @@ import { EventBus } from "@follow/utils/event-bus"
 import type { FC } from "react"
 import { memo, useEffect } from "react"
 
-import { HotkeyScope } from "~/constants"
+import { FocusablePresets } from "~/components/common/Focusable"
 import { useNavigateEntry } from "~/hooks/biz/useNavigateEntry"
 import { useRouteEntryId } from "~/hooks/biz/useRouteParams"
 
@@ -24,9 +24,7 @@ export const EntryColumnShortcutHandler: FC<{
 }> = memo(({ data, refetch, handleScrollTo }) => {
   const dataRef = useRefValue(data!)
 
-  const activeScope = useGlobalFocusableScope()
-
-  const when = activeScope.has(HotkeyScope.Timeline) && !activeScope.has(HotkeyScope.EntryRender)
+  const when = useGlobalFocusableScopeSelector(FocusablePresets.isTimeline)
 
   useCommandBinding({
     commandId: COMMAND_ID.timeline.switchToNext,

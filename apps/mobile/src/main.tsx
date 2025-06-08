@@ -1,5 +1,6 @@
 import "./global.css"
 
+import { apiClientSimpleContext, authClientSimpleContext } from "@follow/store/context"
 import { registerRootComponent } from "expo"
 import { Image } from "expo-image"
 import { LinearGradient } from "expo-linear-gradient"
@@ -11,6 +12,8 @@ import { App } from "./App"
 import { BottomTabProvider } from "./components/layouts/tabbar/BottomTabProvider"
 import { BottomTabs } from "./components/layouts/tabbar/BottomTabs"
 import { initializeApp } from "./initialize"
+import { apiClient } from "./lib/api-fetch"
+import { authClient } from "./lib/auth"
 import { initializeI18n } from "./lib/i18n"
 import { TabBarPortal } from "./lib/navigation/bottom-tab/TabBarPortal"
 import { TabRoot } from "./lib/navigation/bottom-tab/TabRoot"
@@ -22,6 +25,13 @@ import { DiscoverTabScreen } from "./screens/(stack)/(tabs)/discover"
 import { SettingsTabScreen } from "./screens/(stack)/(tabs)/settings"
 import { SubscriptionsTabScreen } from "./screens/(stack)/(tabs)/subscriptions"
 import { registerSitemap } from "./sitemap"
+
+// @ts-expect-error
+global.APP_NAME = "Folo"
+// @ts-expect-error
+global.ELECTRON = false
+apiClientSimpleContext.provide(apiClient)
+authClientSimpleContext.provide(authClient)
 
 enableFreeze(true)
 ;[Image, LinearGradient].forEach((Component) => {

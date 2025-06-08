@@ -1,5 +1,6 @@
 import { FeedViewType } from "@follow/constants"
 import { useMemo } from "react"
+import type { JSX } from "react/jsx-runtime"
 
 import {
   MarkdownImageRecordContext,
@@ -26,11 +27,9 @@ export function EntryContentHTMLRenderer<AS extends keyof JSX.IntrinsicElements 
   entryId: string
   children: Nullable<string>
 } & HTMLProps<AS>) {
-  const entry = useEntry(entryId)
-
-  const images: Record<string, MarkdownImage> = useMemo(() => {
-    return (
-      entry?.entries.media?.reduce(
+  const entry = useEntry(entryId, (state) => {
+    const images =
+      state.entries.media?.reduce(
         (acc, media) => {
           if (media.height && media.width) {
             acc[media.url] = media
@@ -39,8 +38,13 @@ export function EntryContentHTMLRenderer<AS extends keyof JSX.IntrinsicElements 
         },
         {} as Record<string, MarkdownImage>,
       ) ?? {}
-    )
-  }, [entry])
+
+    return {
+      images,
+    }
+  })
+
+  const images: Record<string, MarkdownImage> = useMemo(() => entry?.images ?? {}, [entry])
   const actions: MarkdownRenderActions = useMemo(() => {
     return {
       isAudio() {

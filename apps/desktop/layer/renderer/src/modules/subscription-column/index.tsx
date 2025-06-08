@@ -1,4 +1,4 @@
-import { useGlobalFocusableScope } from "@follow/components/common/Focusable/hooks.js"
+import { useGlobalFocusableScopeSelector } from "@follow/components/common/Focusable/hooks.js"
 import { ActionButton } from "@follow/components/ui/button/index.js"
 import { RootPortal } from "@follow/components/ui/portal/index.js"
 import { Routes } from "@follow/constants"
@@ -243,11 +243,15 @@ const CommandsHandler = ({
   setActive: (args: string | ((prev: string | undefined, index: number) => string)) => void
   timelineList: string[]
 }) => {
-  const activeScope = useGlobalFocusableScope()
-  const when =
-    activeScope.has(HotkeyScope.SubscriptionList) ||
-    activeScope.has(HotkeyScope.Timeline) ||
-    activeScope.size === 0
+  const when = useGlobalFocusableScopeSelector(
+    // eslint-disable-next-line @eslint-react/hooks-extra/no-unnecessary-use-callback
+    useCallback(
+      (activeScope) =>
+        activeScope.or(HotkeyScope.SubscriptionList, HotkeyScope.Timeline) ||
+        activeScope.size === 0,
+      [],
+    ),
+  )
 
   useCommandBinding({
     commandId: COMMAND_ID.subscription.switchTabToNext,
@@ -263,13 +267,13 @@ const CommandsHandler = ({
     return EventBus.subscribe(COMMAND_ID.subscription.switchTabToNext, () => {
       setActive((_, i) => timelineList[(i + 1) % timelineList.length]!)
     })
-  }, [activeScope, setActive, timelineList])
+  }, [setActive, timelineList])
 
   useEffect(() => {
     return EventBus.subscribe(COMMAND_ID.subscription.switchTabToPrevious, () => {
       setActive((_, i) => timelineList[(i - 1 + timelineList.length) % timelineList.length]!)
     })
-  }, [activeScope, setActive, timelineList])
+  }, [setActive, timelineList])
 
   return null
 }

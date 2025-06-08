@@ -13,9 +13,9 @@ import { useEntry } from "~/store/entry"
 
 export function AISummary({ entryId }: { entryId: string }) {
   const { t } = useTranslation()
-  const entry = useEntry(entryId)
+  const summarySetting = useEntry(entryId, (state) => state.settings?.summary)
   const isInReadabilitySuccess = useEntryIsInReadabilitySuccess(entryId)
-  const showAISummary = useShowAISummary(entry)
+  const showAISummary = useShowAISummary(summarySetting)
   const actionLanguage = useActionLanguage()
   const summary = useAuthQuery(
     Queries.ai.summary({

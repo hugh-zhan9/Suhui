@@ -1,3 +1,4 @@
+import { useGlobalFocusableScopeSelector } from "@follow/components/common/Focusable/hooks.js"
 import { useMobile } from "@follow/components/hooks/useMobile.js"
 import { OouiUserAnonymous } from "@follow/components/icons/OouiUserAnonymous.jsx"
 import { Button } from "@follow/components/ui/button/index.js"
@@ -12,10 +13,13 @@ import type { FeedViewType } from "@follow/constants"
 import { cn, isKeyForMultiSelectPressed } from "@follow/utils/utils"
 import { createElement, memo, use, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { useEventCallback } from "usehooks-ts"
 
 import { MenuItemSeparator, MenuItemText, useShowContextMenu } from "~/atoms/context-menu"
 import { useHideAllReadSubscriptions } from "~/atoms/settings/general"
 import { ErrorTooltip } from "~/components/common/ErrorTooltip"
+import { FocusablePresets } from "~/components/common/Focusable"
+import { useContextMenuActionShortCutTrigger } from "~/hooks/biz/useContextMenuActionShortCutTrigger"
 import { useFeedActions, useInboxActions, useListActions } from "~/hooks/biz/useFeedActions"
 import { useFollow } from "~/hooks/biz/useFollow"
 import { useNavigateEntry } from "~/hooks/biz/useNavigateEntry"
@@ -117,10 +121,15 @@ const FeedItemImpl = ({ view, feedId, className, isPreview }: FeedItemProps) => 
     view,
   })
 
+  const when = useGlobalFocusableScopeSelector(FocusablePresets.isSubscriptionList)
+
+  const whenTrigger = when && isActive
+  useContextMenuActionShortCutTrigger(items, whenTrigger)
+
   const [isContextMenuOpen, setIsContextMenuOpen] = useState(false)
   const showContextMenu = useShowContextMenu()
   const contextMenuProps = useContextMenu({
-    onContextMenu: async (e) => {
+    onContextMenu: useEventCallback(async (e) => {
       const nextItems = items.concat()
 
       if (!feed) return
@@ -148,9 +157,12 @@ const FeedItemImpl = ({ view, feedId, className, isPreview }: FeedItemProps) => 
       setIsContextMenuOpen(true)
       await showContextMenu(nextItems, e)
       setIsContextMenuOpen(false)
-    },
+    }),
   })
   const follow = useFollow()
+  const handleDoubleClick = useEventCallback(() => {
+    window.open(UrlBuilder.shareFeed(feedId, view), "_blank")
+  })
 
   if (!feed) return null
 
@@ -173,9 +185,7 @@ const FeedItemImpl = ({ view, feedId, className, isPreview }: FeedItemProps) => 
         className,
       )}
       onClick={handleClick}
-      onDoubleClick={() => {
-        window.open(UrlBuilder.shareFeed(feedId, view), "_blank")
-      }}
+      onDoubleClick={handleDoubleClick}
       {...contextMenuProps}
     >
       <div className={cn("flex min-w-0 items-center", isFeed && feed.errorAt && "text-red")}>
@@ -252,6 +262,9 @@ const ListItemImpl: Component<ListItemProps> = ({
   const isActive = useRouteParamsSelector((routerParams) => routerParams.listId === listId)
   const items = useListActions({ listId, view })
 
+  const when = useGlobalFocusableScopeSelector(FocusablePresets.isSubscriptionList)
+  useContextMenuActionShortCutTrigger(items, when && isActive)
+
   const listUnread = useUnreadByListId(listId)
 
   const [isContextMenuOpen, setIsContextMenuOpen] = useState(false)
@@ -273,13 +286,16 @@ const ListItemImpl: Component<ListItemProps> = ({
   const { t } = useTranslation()
 
   const contextMenuProps = useContextMenu({
-    onContextMenu: async (e) => {
+    onContextMenu: useEventCallback(async (e) => {
       setIsContextMenuOpen(true)
       await showContextMenu(items, e)
       setIsContextMenuOpen(false)
-    },
+    }),
   })
   const follow = useFollow()
+  const handleDoubleClick = useEventCallback(() => {
+    window.open(UrlBuilder.shareList(listId, view), "_blank")
+  })
 
   if (!list) return null
   return (
@@ -289,9 +305,7 @@ const ListItemImpl: Component<ListItemProps> = ({
       data-active={isActive || isContextMenuOpen}
       className={cn(feedColumnStyles.item, "py-1 pl-2.5", className)}
       onClick={handleNavigate}
-      onDoubleClick={() => {
-        window.open(UrlBuilder.shareList(listId, view), "_blank")
-      }}
+      onDoubleClick={handleDoubleClick}
       {...contextMenuProps}
     >
       <div className="flex min-w-0 flex-1 items-center">
@@ -357,6 +371,9 @@ const InboxItemImpl: Component<InboxItemProps> = ({ view, inboxId, className, ic
 
   const isActive = useRouteParamsSelector((routerParams) => routerParams.inboxId === inboxId)
   const { items } = useInboxActions({ inboxId })
+
+  const when = useGlobalFocusableScopeSelector(FocusablePresets.isSubscriptionList)
+  useContextMenuActionShortCutTrigger(items, when && isActive)
 
   const inboxUnread = useUnreadById(inboxId)
 

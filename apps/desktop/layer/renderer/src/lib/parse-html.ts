@@ -108,7 +108,6 @@ export const parseHtml = (
         markInlineImage(node)
         return createElement("i", props, props.children)
       },
-      // @ts-expect-error
       math: Math,
       hr: ({ node, ...props }) =>
         createElement("hr", {
@@ -117,12 +116,11 @@ export const parseHtml = (
         }),
       input: ({ node, ...props }) => {
         if (props.type === "checkbox") {
-          // @ts-expect-error
           return createElement(Checkbox, {
             ...props,
             disabled: false,
             className: tw`pointer-events-none mr-2`,
-          })
+          } as any)
         }
         return createElement("input", props)
       },

@@ -1,7 +1,7 @@
 import { cn } from "@follow/utils"
 import MaskedView from "@react-native-masked-view/masked-view"
 import { LinearGradient } from "expo-linear-gradient"
-import type { FC } from "react"
+import type { FC, ReactNode } from "react"
 import * as React from "react"
 import type { LayoutChangeEvent } from "react-native"
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native"
@@ -20,7 +20,7 @@ import { isAndroid } from "@/src/lib/platform"
 
 export const AISummary: FC<{
   className?: string
-  summary?: string
+  summary?: string | ReactNode
   pending?: boolean
   error?: string
   onRetry?: () => void
@@ -59,11 +59,16 @@ export const AISummary: FC<{
 
   const purpleColor = useColor("purple")
 
+  // Check if summary is a React element or string
+  const isReactElement = React.isValidElement(summary)
+  const summaryText = typeof summary === "string" ? summary : ""
+
   if (pending || (!summary && !error)) return null
   return (
     <Animated.View
       className={cn(
-        "border-opaque-separator/50 mx-4 my-2 rounded-xl p-4",
+        "border-opaque-separator/50 mx-4 my-2 rounded-xl",
+        isReactElement ? "px-4 pt-4" : "p-4",
         // Opacity modifier style incorrectly applied in Android
         isAndroid ? "bg-secondary-system-background" : "bg-secondary-system-background/30",
         className,
@@ -100,18 +105,20 @@ export const AISummary: FC<{
                 </Pressable>
               )}
             </View>
+          ) : isReactElement ? (
+            <View className="mt-2">{summary}</View>
           ) : (
             <TextInput
               readOnly
               multiline
               className="text-label text-[14px] leading-[22px]"
-              value={summary?.trim()}
+              value={summaryText?.trim()}
             />
           )}
         </View>
       </Animated.View>
 
-      <View className="absolute opacity-0">
+      <View className="absolute w-full opacity-0">
         <View onLayout={measureContent}>
           {error ? (
             <View className="mt-3">
@@ -124,9 +131,11 @@ export const AISummary: FC<{
                 </View>
               )}
             </View>
+          ) : isReactElement ? (
+            <View className="mt-2">{summary}</View>
           ) : (
             <Text className="text-label mt-2 text-[14px] leading-[22px]" selectable>
-              {summary?.trim()}
+              {summaryText?.trim()}
             </Text>
           )}
         </View>
