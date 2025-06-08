@@ -298,6 +298,8 @@ const AspectRatioImage = ({
   height?: number
   width?: number
 }) => {
+  const [isLoading, setIsLoading] = useState(true)
+
   if (height === width || !height || !width) {
     return <SquareImage image={image} blurhash={blurhash} />
   }
@@ -325,6 +327,15 @@ const AspectRatioImage = ({
       }}
       className="ml-auto overflow-hidden rounded-lg"
     >
+      {isLoading && (
+        <View
+          style={{
+            width: scaledWidth,
+            height: scaledHeight,
+          }}
+          className="bg-system-fill absolute animate-pulse rounded-lg"
+        />
+      )}
       <Image
         proxy={{
           width: 96,
@@ -340,26 +351,32 @@ const AspectRatioImage = ({
         blurhash={blurhash}
         contentFit="cover"
         hideOnError
+        onLoad={() => setIsLoading(false)}
       />
     </View>
   )
 }
 
 const SquareImage = ({ image, blurhash }: { image: string; blurhash?: string }) => {
+  const [isLoading, setIsLoading] = useState(true)
   return (
-    <Image
-      proxy={{
-        width: 96,
-        height: 96,
-      }}
-      transition={100}
-      source={{
-        uri: image,
-      }}
-      blurhash={blurhash}
-      className="size-24 overflow-hidden rounded-lg"
-      contentFit="cover"
-      hideOnError
-    />
+    <View className="size-24 overflow-hidden rounded-lg">
+      {isLoading && <View className="bg-system-fill absolute inset-0 animate-pulse rounded-lg" />}
+      <Image
+        proxy={{
+          width: 96,
+          height: 96,
+        }}
+        transition={100}
+        source={{
+          uri: image,
+        }}
+        blurhash={blurhash}
+        className="size-24 overflow-hidden rounded-lg"
+        contentFit="cover"
+        hideOnError
+        onLoad={() => setIsLoading(false)}
+      />
+    </View>
   )
 }
