@@ -319,7 +319,7 @@
   "register.login": "登入",
   "register.password": "密碼",
   "register.submit": "創建帳號",
-  "resize.tooltip.double_click_to_collapse": "<b>雙擊</b>以摺疊",
+  "resize.tooltip.double_click_to_collapse": "<b>雙擊</b>重置為預設大小",
   "resize.tooltip.drag_to_resize": "<b>拖動</b>以調整大小",
   "search.empty.no_results": "搜尋結果為空",
   "search.group.entries": "條目",

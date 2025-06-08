@@ -18,7 +18,7 @@ import {
   TooltipTrigger,
 } from "@follow/components/ui/tooltip/index.jsx"
 import { views } from "@follow/constants"
-import { cn } from "@follow/utils/utils"
+import { cn, formatNumber } from "@follow/utils/utils"
 import { useMutation } from "@tanstack/react-query"
 import { useMemo } from "react"
 import { toast } from "sonner"
@@ -175,7 +175,7 @@ export const SettingLists = () => {
                           </div>
                         </TableCell>
                         <TableCell size="sm" className="tabular-nums">
-                          {listDataMap[row.id]?.subscriptionCount}
+                          {formatNumber(listDataMap[row.id]?.subscriptionCount || 0)}
                         </TableCell>
                         <TableCell size="sm" className="tabular-nums">
                           <Balance>{BigInt(listDataMap[row.id]?.purchaseAmount || 0n)}</Balance>

@@ -1,4 +1,4 @@
-import { cn } from "@follow/utils"
+import { cn, formatNumber } from "@follow/utils"
 import { useQuery } from "@tanstack/react-query"
 import { Text, View } from "react-native"
 import { useColor } from "react-native-uikit-colors"
@@ -87,7 +87,9 @@ export const Trending = ({
             >
               <View className="flex flex-row items-center gap-1 opacity-60">
                 <User3CuteReIcon width={13} height={13} />
-                <Text className="text-text text-sm">{item.analytics.subscriptionCount}</Text>
+                <Text className="text-text text-sm">
+                  {formatNumber(item.analytics.subscriptionCount || 0)}
+                </Text>
               </View>
             </FeedSummary>
           ))

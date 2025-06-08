@@ -278,7 +278,7 @@
   "register.login": "ログイン",
   "register.password": "パスワード",
   "register.submit": "作成",
-  "resize.tooltip.double_click_to_collapse": "<b>ダブルクリック</b> してたたみます",
+  "resize.tooltip.double_click_to_collapse": "<b>ダブルクリック</b> してデフォルトサイズにリセットします",
   "resize.tooltip.drag_to_resize": "<b>ドラッグ</b> してリサイズできます",
   "search.empty.no_results": "結果が見つかりませんでした。",
   "search.group.entries": "エントリー",
