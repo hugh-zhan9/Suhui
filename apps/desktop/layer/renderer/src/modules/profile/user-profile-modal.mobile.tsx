@@ -14,48 +14,39 @@ import { useUserSubscriptionsQuery } from "~/modules/profile/hooks"
 import { users } from "~/queries/users"
 import { useUserById } from "~/store/user"
 
+import { getSocialLink, socialCopyMap, socialIconClassNames } from "./user-profile-modal.constants"
 import type { SubscriptionModalContentProps } from "./user-profile-modal.shared"
 import { SubscriptionGroup } from "./user-profile-modal.shared"
 
-// Social platform icons mapping
-const socialIconClassNames = {
-  twitter: "i-mgc-twitter-cute-fi",
-  github: "i-mgc-github-cute-fi",
-  instagram: "i-mingcute-ins-fill",
-  facebook: "i-mingcute-facebook-fill",
-  youtube: "i-mgc-youtube-cute-fi",
-  discord: "i-mingcute-discord-fill",
+const pickUserData = <
+  T extends {
+    avatar?: string
+    name?: string | null
+    handle?: string | null
+    id: string
+    bio?: string | null
+    website?: string | null
+    socialLinks?: Record<string, string> | null
+  },
+>(
+  user: T,
+) => {
+  return {
+    avatar: user.avatar,
+    name: user.name,
+    handle: user.handle,
+    id: user.id,
+    bio: user.bio,
+    website: user.website,
+    socialLinks: user.socialLinks,
+  }
 }
-
-const socialCopyMap = {
-  twitter: "Twitter",
-  github: "GitHub",
-  instagram: "Instagram",
-  facebook: "Facebook",
-  youtube: "YouTube",
-  discord: "Discord",
-}
-
 export const UserProfileModalContent: FC<SubscriptionModalContentProps> = ({ userId }) => {
   const { t } = useTranslation()
   const user = useAuthQuery(users.profile({ userId }))
   const storeUser = useUserById(userId)
 
-  const userInfo = user.data
-    ? {
-        avatar: user.data.image,
-        name: user.data.name,
-        handle: user.data.handle,
-        id: user.data.id,
-      }
-    : storeUser
-      ? {
-          avatar: storeUser.image,
-          name: storeUser.name,
-          handle: storeUser.handle,
-          id: storeUser.id,
-        }
-      : null
+  const userInfo = user.data ? pickUserData(user.data) : storeUser ? pickUserData(storeUser) : null
 
   const follow = useFollow()
   const subscriptions = useUserSubscriptionsQuery(user.data?.id)
@@ -117,13 +108,13 @@ export const UserProfileModalContent: FC<SubscriptionModalContentProps> = ({ use
               {/* Social Links */}
               {user.data?.socialLinks && (
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {Object.entries(user.data.socialLinks).map(([platform, url]) => {
-                    if (!url || !(platform in socialIconClassNames)) return null
+                  {Object.entries(user.data.socialLinks).map(([platform, id]) => {
+                    if (!id || !(platform in socialIconClassNames)) return null
 
                     return (
                       <a
                         key={platform}
-                        href={url}
+                        href={getSocialLink(platform as keyof typeof socialIconClassNames, id)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="hover:text-accent flex items-center justify-center rounded-full bg-zinc-100 p-2 text-zinc-500 transition-colors dark:bg-zinc-800"
