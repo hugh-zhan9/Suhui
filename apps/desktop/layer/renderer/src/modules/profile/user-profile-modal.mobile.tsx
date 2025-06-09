@@ -17,6 +17,25 @@ import { useUserById } from "~/store/user"
 import type { SubscriptionModalContentProps } from "./user-profile-modal.shared"
 import { SubscriptionGroup } from "./user-profile-modal.shared"
 
+// Social platform icons mapping
+const socialIconClassNames = {
+  twitter: "i-mgc-twitter-cute-fi",
+  github: "i-mgc-github-cute-fi",
+  instagram: "i-mingcute-ins-fill",
+  facebook: "i-mingcute-facebook-fill",
+  youtube: "i-mgc-youtube-cute-fi",
+  discord: "i-mingcute-discord-fill",
+}
+
+const socialCopyMap = {
+  twitter: "Twitter",
+  github: "GitHub",
+  instagram: "Instagram",
+  facebook: "Facebook",
+  youtube: "YouTube",
+  discord: "Discord",
+}
+
 export const UserProfileModalContent: FC<SubscriptionModalContentProps> = ({ userId }) => {
   const { t } = useTranslation()
   const user = useAuthQuery(users.profile({ userId }))
@@ -72,6 +91,56 @@ export const UserProfileModalContent: FC<SubscriptionModalContentProps> = ({ use
               >
                 @{userInfo.handle}
               </div>
+
+              {/* Bio */}
+              {user.data?.bio && (
+                <div className="mt-3 max-w-xs text-center text-sm text-zinc-600">
+                  {user.data.bio}
+                </div>
+              )}
+
+              {/* Website */}
+              {user.data?.website && (
+                <div className="mt-2">
+                  <a
+                    href={user.data.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-accent hover:text-accent/80 flex items-center gap-1 text-sm transition-colors"
+                  >
+                    <i className="i-mgc-link-cute-re text-base" />
+                    {user.data.website.replace(/^https?:\/\//, "")}
+                  </a>
+                </div>
+              )}
+
+              {/* Social Links */}
+              {user.data?.socialLinks && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {Object.entries(user.data.socialLinks).map(([platform, url]) => {
+                    if (!url || !(platform in socialIconClassNames)) return null
+
+                    return (
+                      <a
+                        key={platform}
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:text-accent flex items-center justify-center rounded-full bg-zinc-100 p-2 text-zinc-500 transition-colors dark:bg-zinc-800"
+                        title={socialCopyMap[platform as keyof typeof socialCopyMap]}
+                      >
+                        <i
+                          className={cn(
+                            socialIconClassNames[platform as keyof typeof socialIconClassNames],
+                            "text-base",
+                          )}
+                        />
+                      </a>
+                    )
+                  })}
+                </div>
+              )}
+
               <Button
                 buttonClassName={"mt-4"}
                 textClassName="gap-1"

@@ -3,6 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@follow/components/ui/avata
 import { ActionButton, Button } from "@follow/components/ui/button/index.js"
 import { LoadingCircle } from "@follow/components/ui/loading/index.jsx"
 import { ScrollArea } from "@follow/components/ui/scroll-area/index.js"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@follow/components/ui/tooltip/index.js"
 import { nextFrame, stopPropagation } from "@follow/utils/dom"
 import { getStorageNS } from "@follow/utils/ns"
 import { clsx, cn } from "@follow/utils/utils"
@@ -28,6 +29,48 @@ import { useUserById } from "~/store/user"
 import type { SubscriptionModalContentProps } from "./user-profile-modal.shared"
 import { SubscriptionItems } from "./user-profile-modal.shared"
 
+// Social platform icons mapping
+const socialIconClassNames = {
+  twitter: "i-mgc-twitter-cute-fi duration-200 group-hover:text-[#1DA1F2]",
+  github: "i-mgc-github-cute-fi duration-200 group-hover:text-[#181717] group-hover:dark:invert",
+  instagram: "i-mingcute-ins-fill duration-200 group-hover:text-[#C13584]",
+  facebook: "i-mingcute-facebook-fill duration-200 group-hover:text-[#1877F2]",
+  youtube: "i-mgc-youtube-cute-fi duration-200 group-hover:text-[#FF0000]",
+  discord: "i-mingcute-discord-fill duration-200 group-hover:text-[#5865F2]",
+}
+
+const socialCopyMap = {
+  twitter: "Twitter",
+  github: "GitHub",
+  instagram: "Instagram",
+  facebook: "Facebook",
+  youtube: "YouTube",
+  discord: "Discord",
+}
+
+const getSocialLink = (platform: keyof typeof socialIconClassNames, id: string) => {
+  switch (platform) {
+    case "twitter": {
+      return `https://twitter.com/${id}`
+    }
+    case "github": {
+      return `https://github.com/${id}`
+    }
+    case "instagram": {
+      return `https://instagram.com/${id}`
+    }
+    case "facebook": {
+      return `https://facebook.com/${id}`
+    }
+    case "youtube": {
+      return `https://youtube.com/${id}`
+    }
+    case "discord": {
+      return `https://discord.com/${id}`
+    }
+  }
+}
+
 type ItemVariant = "loose" | "compact"
 const itemVariantAtom = atomWithStorage(
   getStorageNS("item-variant"),
@@ -37,6 +80,30 @@ const itemVariantAtom = atomWithStorage(
     getOnInit: true,
   },
 )
+
+const pickUserData = <
+  T extends {
+    avatar?: string
+    name?: string | null
+    handle?: string | null
+    id: string
+    bio?: string | null
+    website?: string | null
+    socialLinks?: Record<string, string> | null
+  },
+>(
+  user: T,
+) => {
+  return {
+    avatar: user.avatar,
+    name: user.name,
+    handle: user.handle,
+    id: user.id,
+    bio: user.bio,
+    website: user.website,
+    socialLinks: user.socialLinks,
+  }
+}
 export const UserProfileModalContent: FC<SubscriptionModalContentProps> = ({ userId, variant }) => {
   const { t } = useTranslation()
   const user = useAuthQuery(
@@ -49,21 +116,7 @@ export const UserProfileModalContent: FC<SubscriptionModalContentProps> = ({ use
   )
   const storeUser = useUserById(userId)
 
-  const userInfo = user.data
-    ? {
-        avatar: user.data.image,
-        name: user.data.name,
-        handle: user.data.handle,
-        id: user.data.id,
-      }
-    : storeUser
-      ? {
-          avatar: storeUser.image,
-          name: storeUser.name,
-          handle: storeUser.handle,
-          id: storeUser.id,
-        }
-      : null
+  const userInfo = user.data ? pickUserData(user.data) : storeUser ? pickUserData(storeUser) : null
 
   const follow = useFollow()
   const subscriptions = useUserSubscriptionsQuery(user.data?.id)
@@ -269,13 +322,81 @@ export const UserProfileModalContent: FC<SubscriptionModalContentProps> = ({ use
                 </m.div>
                 <m.div
                   className={cn(
-                    "text-sm text-zinc-500",
+                    "text-text-secondary text-sm",
                     userInfo.handle ? "visible" : "hidden select-none",
                   )}
                   layout
                 >
                   @{userInfo.handle}
                 </m.div>
+
+                {/* Bio */}
+                {user.data?.bio && !isHeaderSimple && (
+                  <m.div
+                    layout
+                    transition={{ duration: 0.35 }}
+                    className="text-text-secondary/80 mt-2 max-w-md text-center text-sm"
+                  >
+                    {user.data.bio}
+                  </m.div>
+                )}
+
+                {/* Website */}
+                {user.data?.website && !isHeaderSimple && (
+                  <m.div layout transition={{ duration: 0.35 }} className="mt-2">
+                    <a
+                      href={user.data.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-accent hover:text-accent/80 flex items-center gap-1 text-sm transition-colors"
+                    >
+                      <i className="i-mgc-link-cute-re text-base" />
+                      {user.data.website.replace(/^https?:\/\//, "")}
+                    </a>
+                  </m.div>
+                )}
+
+                {/* Social Links */}
+                {user.data?.socialLinks && !isHeaderSimple && (
+                  <m.div
+                    layout
+                    transition={{ duration: 0.35 }}
+                    className="mt-3 flex flex-wrap gap-2"
+                  >
+                    {Object.entries(user.data.socialLinks).map(([platform, id]) => {
+                      if (!id || !(platform in socialIconClassNames)) return null
+
+                      return (
+                        <Tooltip key={platform}>
+                          <TooltipTrigger asChild>
+                            <a
+                              href={getSocialLink(
+                                platform as keyof typeof socialIconClassNames,
+                                id,
+                              )}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-text-secondary bg-material-opaque group flex items-center justify-center rounded-full p-2 transition-colors"
+                            >
+                              <i
+                                className={cn(
+                                  socialIconClassNames[
+                                    platform as keyof typeof socialIconClassNames
+                                  ],
+                                  "text-base",
+                                )}
+                              />
+                            </a>
+                          </TooltipTrigger>
+                          <TooltipContent className="text-sm">
+                            {socialCopyMap[platform as keyof typeof socialCopyMap]}
+                          </TooltipContent>
+                        </Tooltip>
+                      )
+                    })}
+                  </m.div>
+                )}
+
                 <Button
                   buttonClassName={cn(
                     isHeaderSimple ? "absolute -right-full top-4 rounded-full p-2" : "mt-4",
