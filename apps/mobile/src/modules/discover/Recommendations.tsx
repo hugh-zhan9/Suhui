@@ -129,7 +129,7 @@ export const RecommendationTab: TabComponent<{
   const discoverLanguage = useUISettingKey("discoverLanguage")
 
   const { data, isLoading } = useQuery({
-    queryKey: ["rsshub-popular", "cache", tab.value],
+    queryKey: ["rsshub-popular", "cache", tab.value, discoverLanguage],
     queryFn: () =>
       fetchRsshubPopular(tab.value, LanguageMap[discoverLanguage]).then((res) => res.data),
     staleTime: 1000 * 60 * 60 * 24, // 1 day
