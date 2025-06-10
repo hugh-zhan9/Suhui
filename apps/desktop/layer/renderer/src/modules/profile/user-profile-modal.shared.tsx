@@ -9,7 +9,7 @@ import type { SubscriptionModel } from "@follow/models/types"
 import { cn } from "@follow/utils/utils"
 import { AnimatePresence } from "motion/react"
 import type { FC } from "react"
-import { Fragment, memo, useState } from "react"
+import { memo, useState } from "react"
 import { useEventCallback } from "usehooks-ts"
 
 import { m } from "~/components/common/Motion"
@@ -87,7 +87,7 @@ export const SubscriptionGroup: FC<{
     <div>
       <button
         onClick={() => setIsOpened(!isOpened)}
-        className="mb-2 mt-8 flex w-full items-center justify-between text-2xl font-bold"
+        className="mb-2 mt-8 flex w-full items-center justify-between font-bold"
         type="button"
       >
         <h3 className="min-w-0 pr-1">
@@ -105,7 +105,7 @@ export const SubscriptionGroup: FC<{
       <AutoResizeHeight>
         <AnimatePresence mode="popLayout">
           {isOpened && (
-            <Fragment>
+            <div>
               {subscriptions.map((subscription) => (
                 <SubscriptionItem
                   variant={itemStyle}
@@ -113,7 +113,7 @@ export const SubscriptionGroup: FC<{
                   subscription={subscription}
                 />
               ))}
-            </Fragment>
+            </div>
           )}
         </AnimatePresence>
       </AutoResizeHeight>
@@ -153,7 +153,7 @@ const SubscriptionItem: FC<{
   return (
     <m.div
       exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.2 } }}
-      className={cn("group relative", isLoose ? "border-b py-5 last:border-b-0" : "py-2")}
+      className={cn("group relative pl-1", isLoose ? "border-b py-5 last:border-b-0" : "py-2")}
       data-feed-id={subscription.feedId}
     >
       <a
