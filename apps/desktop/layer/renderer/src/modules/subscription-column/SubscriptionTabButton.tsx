@@ -8,6 +8,7 @@ import { startTransition, useCallback } from "react"
 import { useTranslation } from "react-i18next"
 
 import { useUISettingKey } from "~/atoms/settings/ui"
+import { FocusablePresets } from "~/components/common/Focusable"
 import { ROUTE_TIMELINE_OF_VIEW } from "~/constants"
 import { useNavigateEntry } from "~/hooks/biz/useNavigateEntry"
 import { useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
@@ -15,7 +16,7 @@ import { useUnreadByView } from "~/store/unread/hooks"
 
 import { resetSelectedFeedIds } from "./atom"
 
-export function TimelineSwitchButton({ timelineId }: { timelineId: string }) {
+export function SubscriptionTabButton({ timelineId }: { timelineId: string }) {
   const activeTimelineId = useRouteParamsSelector((s) => s.timelineId)
   const isActive = activeTimelineId === timelineId
   const navigate = useNavigateEntry()
@@ -54,6 +55,7 @@ const ViewSwitchButton: FC<{
 
   return (
     <ActionButton
+      shortcutScope={FocusablePresets.isNotFloatingLayerScope}
       ref={setNodeRef}
       key={item.name}
       tooltip={t(item.name, { ns: "common" })}
