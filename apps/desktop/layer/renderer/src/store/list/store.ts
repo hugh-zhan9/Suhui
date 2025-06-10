@@ -5,7 +5,6 @@ import type {
   ListModel,
   ListModelPoplutedFeeds,
 } from "@follow/models/types"
-import { sleep } from "@follow/utils/utils"
 
 import { runTransactionInScope } from "~/database"
 import { apiClient } from "~/lib/api-fetch"
@@ -97,8 +96,7 @@ class ListActionStatic {
       })
     })
     tx.execute(async () => {
-      await sleep(1000)
-
+      await subscriptionActions.unfollow([listId])
       await apiClient.lists.$delete({
         json: {
           listId,

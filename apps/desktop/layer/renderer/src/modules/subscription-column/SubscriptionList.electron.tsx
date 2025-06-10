@@ -58,8 +58,8 @@ const SubscriptionImpl = ({ ref, className, view }: SubscriptionProps) => {
   // Data prefetch
   useAuthQuery(Queries.lists.list())
 
-  const hasListData = Object.keys(listSubIds).length > 0
-  const hasInboxData = Object.keys(inboxSubIds).length > 0
+  const hasListData = listSubIds.length > 0
+  const hasInboxData = inboxSubIds.length > 0
 
   const scrollerRef = useRef<HTMLDivElement | null>(null)
   const selectoRef = useRef<Selecto>(null)
