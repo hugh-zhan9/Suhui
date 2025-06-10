@@ -149,40 +149,36 @@ export const useFeedsGroupedData = (view: FeedViewType) => {
   }, [autoGroup, data])
 }
 
-export const useListsGroupedData = (view: FeedViewType) => {
+export const useSubscriptionListIds = (view: FeedViewType) => {
   const data = useSubscriptionByView(view)
 
   return useMemo(() => {
-    if (!data || data.length === 0) return {}
-
-    const lists = data.filter((s) => s && "listId" in s)
-
-    const groupFolder = {} as Record<string, string[]>
-
-    for (const subscription of lists.filter((s) => !!s)) {
-      groupFolder[subscription.feedId] = [subscription.feedId]
+    if (!data || data.length === 0) return []
+    const ids: string[] = []
+    for (const subscription of data) {
+      if (!subscription) continue
+      if ("listId" in subscription) {
+        ids.push(subscription.listId!)
+      }
     }
-
-    return groupFolder
+    return ids
   }, [data])
 }
 
-export const useInboxesGroupedData = (view: FeedViewType) => {
+export const useSubscriptionInboxIds = (view: FeedViewType) => {
   const data = useSubscriptionByView(view)
 
   return useMemo(() => {
-    if (!data || data.length === 0) return {}
-
-    const inboxes = data.filter((s) => s && "inboxId" in s)
-
-    const groupFolder = {} as Record<string, string[]>
-
-    for (const subscription of inboxes.filter((s) => !!s)) {
-      if (!subscription.inboxId) continue
-      groupFolder[subscription.inboxId] = [subscription.inboxId]
+    if (!data || data.length === 0) return []
+    // return data.filter((s) => s && "inboxId" in s). as unknown[] as string[]
+    const ids: string[] = []
+    for (const subscription of data) {
+      if (!subscription) continue
+      if ("inboxId" in subscription) {
+        ids.push(subscription.inboxId!)
+      }
     }
-
-    return groupFolder
+    return ids
   }, [data])
 }
 

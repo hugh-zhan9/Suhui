@@ -10,8 +10,8 @@ import { Queries } from "~/queries"
 import {
   useCategoryOpenStateByView,
   useFeedsGroupedData,
-  useInboxesGroupedData,
-  useListsGroupedData,
+  useSubscriptionInboxIds,
+  useSubscriptionListIds,
 } from "~/store/subscription"
 
 import { SortableFeedList, SortByAlphabeticalInbox, SortByAlphabeticalList } from "./sort-by"
@@ -21,8 +21,8 @@ import { EmptyFeedList, ListHeader, StarredItem } from "./SubscriptionList.share
 
 const FeedListImpl = ({ className, view }: SubscriptionProps) => {
   const feedsData = useFeedsGroupedData(view)
-  const listsData = useListsGroupedData(view)
-  const inboxesData = useInboxesGroupedData(view)
+  const listsData = useSubscriptionListIds(view)
+  const inboxesData = useSubscriptionInboxIds(view)
   const categoryOpenStateData = useCategoryOpenStateByView(view)
 
   const hasData =

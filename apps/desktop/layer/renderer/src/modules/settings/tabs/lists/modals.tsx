@@ -35,16 +35,14 @@ import type { Suggestion } from "~/components/ui/auto-completion"
 import { Autocomplete } from "~/components/ui/auto-completion"
 import { useCurrentModal } from "~/components/ui/modal/stacked/hooks"
 import { useAddFeedToFeedList, useRemoveFeedFromFeedList } from "~/hooks/biz/useFeedActions"
-import { apiClient } from "~/lib/api-fetch"
 import { createErrorToaster } from "~/lib/error-parser"
 import { UrlBuilder } from "~/lib/url-builder"
 import { FeedCertification } from "~/modules/feed/feed-certification"
 import { FeedIcon } from "~/modules/feed/feed-icon"
 import { ViewSelectorRadioGroup } from "~/modules/shared/ViewSelectorRadioGroup"
-import { Queries } from "~/queries"
 import { useFeedById } from "~/store/feed"
-import { useListById } from "~/store/list"
-import { subscriptionActions, useAllFeeds } from "~/store/subscription"
+import { listActions, useListById } from "~/store/list"
+import { useAllFeeds } from "~/store/subscription"
 
 const formSchema = z.object({
   view: z.string(),
@@ -74,30 +72,23 @@ export const ListCreationModalContent = ({ id }: { id?: string }) => {
   const createMutation = useMutation({
     mutationFn: async (values: z.infer<typeof formSchema>) => {
       if (id) {
-        await apiClient.lists.$patch({
-          json: {
-            listId: id,
-            ...values,
-            view: Number.parseInt(values.view),
-          },
+        listActions.updateList({
+          listId: id,
+          ...values,
+          view: Number.parseInt(values.view),
         })
       } else {
-        await apiClient.lists.$post({
-          json: {
-            ...values,
-            view: Number.parseInt(values.view),
-          },
+        listActions.createList({
+          ...values,
+          view: Number.parseInt(values.view),
         })
       }
     },
-    onSuccess: (_, values) => {
-      toast.success(t(id ? "lists.edit.success" : "lists.created.success"))
-      Queries.lists.list().invalidate()
-      dismiss()
+    onSuccess: (_) => {
+      const isCreate = !id
+      toast.success(t(isCreate ? "lists.created.success" : "lists.edit.success"))
 
-      if (!list) return
-      if (id)
-        subscriptionActions.changeListView(id, views[list.view]!.view, views[values.view].view)
+      dismiss()
     },
     onError: createErrorToaster(id ? t("lists.edit.error") : t("lists.created.error")),
   })

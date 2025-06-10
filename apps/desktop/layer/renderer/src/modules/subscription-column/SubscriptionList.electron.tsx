@@ -22,8 +22,8 @@ import { useList } from "~/queries/lists"
 import {
   useCategoryOpenStateByView,
   useFeedsGroupedData,
-  useInboxesGroupedData,
-  useListsGroupedData,
+  useSubscriptionInboxIds,
+  useSubscriptionListIds,
 } from "~/store/subscription"
 
 import { COMMAND_ID } from "../command/commands/id"
@@ -45,23 +45,21 @@ import { EmptyFeedList, ListHeader, StarredItem } from "./SubscriptionList.share
 
 const SubscriptionImpl = ({ ref, className, view }: SubscriptionProps) => {
   const feedsData = useFeedsGroupedData(view)
-  const listsData = useListsGroupedData(view)
-  const inboxesData = useInboxesGroupedData(view)
+  const listSubIds = useSubscriptionListIds(view)
+  const inboxSubIds = useSubscriptionInboxIds(view)
 
   const categoryOpenStateData = useCategoryOpenStateByView(view)
 
   const hasData =
-    Object.keys(feedsData).length > 0 ||
-    Object.keys(listsData).length > 0 ||
-    Object.keys(inboxesData).length > 0
+    Object.keys(feedsData).length > 0 || listSubIds.length > 0 || inboxSubIds.length > 0
 
   const { t } = useTranslation()
 
   // Data prefetch
   useAuthQuery(Queries.lists.list())
 
-  const hasListData = Object.keys(listsData).length > 0
-  const hasInboxData = Object.keys(inboxesData).length > 0
+  const hasListData = Object.keys(listSubIds).length > 0
+  const hasInboxData = Object.keys(inboxSubIds).length > 0
 
   const scrollerRef = useRef<HTMLDivElement | null>(null)
   const selectoRef = useRef<Selecto>(null)
@@ -254,7 +252,7 @@ const SubscriptionImpl = ({ ref, className, view }: SubscriptionProps) => {
                 isPreview
               />
             )}
-            <SortByAlphabeticalList view={view} data={listsData} />
+            <SortByAlphabeticalList view={view} data={listSubIds} />
           </>
         )}
         {hasInboxData && (
@@ -262,7 +260,7 @@ const SubscriptionImpl = ({ ref, className, view }: SubscriptionProps) => {
             <div className="text-text-secondary mt-1 flex h-6 w-full shrink-0 items-center rounded-md px-2.5 text-xs font-semibold transition-colors">
               {t("words.inbox")}
             </div>
-            <SortByAlphabeticalInbox view={view} data={inboxesData} />
+            <SortByAlphabeticalInbox view={view} data={inboxSubIds} />
           </>
         )}
 

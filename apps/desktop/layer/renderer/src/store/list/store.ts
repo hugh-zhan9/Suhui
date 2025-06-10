@@ -1,4 +1,10 @@
-import type { FeedModel, ListModel, ListModelPoplutedFeeds } from "@follow/models/types"
+import { views } from "@follow/constants"
+import type {
+  ExtractHonoParams,
+  FeedModel,
+  ListModel,
+  ListModelPoplutedFeeds,
+} from "@follow/models/types"
 import { sleep } from "@follow/utils/utils"
 
 import { runTransactionInScope } from "~/database"
@@ -6,6 +12,7 @@ import { apiClient } from "~/lib/api-fetch"
 import { ListService } from "~/services/list"
 
 import { feedActions } from "../feed"
+import { subscriptionActions } from "../subscription"
 import { createImmerSetter, createTransaction, createZustandStore } from "../utils/helper"
 import type { ListState } from "./types"
 
@@ -15,26 +22,25 @@ export const useListStore = createZustandStore<ListState>("list")(() => ({
 
 const immerSet = createImmerSetter(useListStore)
 const get = useListStore.getState
-const set = useListStore.setState
+
 class ListActionStatic {
   upsertMany(lists: ListModelPoplutedFeeds[]) {
     if (lists.length === 0) return
     const feeds = [] as FeedModel[]
-    set((state) => {
+
+    immerSet((state) => {
       for (const list of lists) {
         state.lists[list.id] = list
-
-        if (!list.feeds) continue
-        for (const feed of list.feeds) {
-          feeds.push(feed)
-        }
       }
-
-      return {
-        ...state,
-        lists: { ...state.lists },
-      }
+      return state
     })
+
+    for (const list of lists) {
+      if (!list.feeds) continue
+      for (const feed of list.feeds) {
+        feeds.push(feed)
+      }
+    }
 
     feedActions.upsertMany(feeds)
 
@@ -42,7 +48,7 @@ class ListActionStatic {
   }
 
   async fetchOwnedLists() {
-    const res = await apiClient.lists.list.$get()
+    const res = await apiClient.lists.list.$get({ query: {} })
     this.upsertMany(res.data)
 
     return res.data
@@ -119,6 +125,106 @@ class ListActionStatic {
     return res.data
   }
 
+  async createList(data: Omit<InsertListModel, "listId">) {
+    const tx = createTransaction<never, FeedModel>()
+    tx.execute(async (_, ctx) => {
+      const res = await apiClient.lists.$post({
+        json: data,
+      })
+
+      Object.assign(ctx, res.data)
+    })
+    tx.persist(async (_, ctx) => {
+      if (!ctx.id) return
+      ListService.upsert({
+        ...data,
+        id: ctx.id,
+        type: "list",
+        feedIds: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: null,
+      })
+
+      const userId = ctx.ownerUserId
+      if (!userId) return
+      subscriptionActions.upsertMany([
+        {
+          listId: ctx.id,
+          view: views[data.view]!.view,
+          createdAt: new Date().toISOString(),
+          title: data.title,
+          userId,
+          feedId: ctx.id,
+          isPrivate: false,
+        },
+      ])
+      this.upsertMany([
+        {
+          ...data,
+          ...ctx,
+          id: ctx.id,
+          createdAt: new Date().toISOString(),
+          updatedAt: null,
+          type: "list",
+          feedIds: [],
+        },
+      ])
+    })
+    tx.rollback(async (_, ctx) => {
+      if (!ctx.id) return
+      ListService.bulkDelete([ctx.id])
+    })
+
+    await tx.run()
+  }
+  async updateList(data: InsertListModel) {
+    const tx = createTransaction()
+    const snapshot = get().lists[data.listId]
+
+    tx.execute(
+      async () =>
+        void (await apiClient.lists.$patch({
+          json: {
+            ...data,
+          },
+        })),
+    )
+    tx.optimistic(async () => {
+      if (!snapshot) return
+
+      this.upsertMany([
+        {
+          ...snapshot,
+          ...data,
+          id: data.listId,
+          createdAt: snapshot?.createdAt,
+          updatedAt: new Date().toISOString(),
+          type: "list",
+          view: data.view,
+          feedIds: [],
+          fee: data.fee,
+        },
+      ])
+    })
+    tx.persist(async () => {
+      ListService.findAndUpdate(data.listId, data)
+
+      if (!snapshot) return
+
+      subscriptionActions.changeListView(
+        data.listId,
+        views[snapshot.view]!.view,
+        views[data.view]!.view,
+      )
+    })
+    tx.rollback(async () => {
+      if (!snapshot) return
+      this.upsertMany([snapshot])
+    })
+
+    await tx.run()
+  }
+
   clear() {
     immerSet((state) => {
       state.lists = {}
@@ -130,3 +236,5 @@ export const listActions = new ListActionStatic()
 
 export const getListById = (listId: string): Nullable<ListModel> =>
   useListStore.getState().lists[listId]
+
+type InsertListModel = ExtractHonoParams<typeof apiClient.lists.$patch>
