@@ -1,7 +1,6 @@
 import { views } from "@follow/constants"
 import { getEntryCollections } from "@follow/store/collection/getter"
 import { useCollectionEntryList } from "@follow/store/collection/hooks"
-import { getEntry } from "@follow/store/entry/getter"
 import {
   useEntryIdsByFeedId,
   useEntryIdsByFeedIds,
@@ -9,7 +8,7 @@ import {
   useEntryIdsByListId,
   useEntryIdsByView,
 } from "@follow/store/entry/hooks"
-import { entryActions, useEntryStore } from "@follow/store/entry/store"
+import { entryActions, entrySyncServices, useEntryStore } from "@follow/store/entry/store"
 import type { UseEntriesReturn } from "@follow/store/entry/types"
 import { fallbackReturn } from "@follow/store/entry/utils"
 import { useFolderFeedsByFeedId } from "@follow/store/subscription/hooks"
@@ -23,7 +22,6 @@ import { useGeneralSettingKey } from "~/atoms/settings/general"
 import { ROUTE_FEED_PENDING } from "~/constants/app"
 import { useRouteParams } from "~/hooks/biz/useRouteParams"
 import { useAuthQuery } from "~/hooks/common"
-import { apiClient, apiFetch } from "~/lib/api-fetch"
 import { entries, useEntries } from "~/queries/entries"
 
 import { useIsPreviewFeed } from "./useIsPreviewFeed"
@@ -359,80 +357,8 @@ function sortEntriesIdByStarAt(entries: string[]) {
 const useFetchEntryContentByStream = (remoteEntryIds?: string[]) => {
   const { mutate: updateEntryContent } = useMutation({
     mutationKey: ["stream-entry-content", remoteEntryIds],
-    mutationFn: async (remoteEntryIds: string[]) => {
-      const onlyNoStored = true
-
-      const nextIds = [] as string[]
-      if (onlyNoStored) {
-        for (const id of remoteEntryIds) {
-          const entry = getEntry(id)
-          if (entry?.content) {
-            continue
-          }
-
-          nextIds.push(id)
-        }
-      }
-
-      if (nextIds.length === 0) return
-
-      const readStream = async () => {
-        const response = await apiFetch(apiClient.entries.stream.$url().toString(), {
-          method: "post",
-          body: JSON.stringify({
-            ids: nextIds,
-          }),
-          responseType: "stream",
-        })
-
-        const reader = response.getReader()
-        if (!reader) return
-
-        const decoder = new TextDecoder()
-        let buffer = ""
-
-        try {
-          while (true) {
-            const { done, value } = await reader.read()
-            if (done) break
-
-            buffer += decoder.decode(value, { stream: true })
-            const lines = buffer.split("\n")
-
-            // Process all complete lines
-            for (let i = 0; i < lines.length - 1; i++) {
-              if (lines[i]!.trim()) {
-                const json = JSON.parse(lines[i]!)
-                // Handle each JSON line here
-                entryActions.updateEntryContent({
-                  entryId: json.id,
-                  content: json.content,
-                })
-              }
-            }
-
-            // Keep the last incomplete line in the buffer
-            buffer = lines.at(-1) || ""
-          }
-
-          // Process any remaining data
-          if (buffer.trim()) {
-            const json = JSON.parse(buffer)
-
-            entryActions.updateEntryContent({
-              entryId: json.id,
-              content: json.content,
-            })
-          }
-        } catch (error) {
-          console.error("Error reading stream:", error)
-        } finally {
-          reader.releaseLock()
-        }
-      }
-
-      readStream()
-    },
+    mutationFn: (remoteEntryIds: string[]) =>
+      entrySyncServices.fetchEntryContentByStream(remoteEntryIds),
   })
 
   useEffect(() => {
