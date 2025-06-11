@@ -1,4 +1,4 @@
-import type { FeedViewType } from "@follow/constants"
+import { FeedViewType } from "@follow/constants"
 import { useEntry } from "@follow/store/entry/hooks"
 import { useEntryTranslation, usePrefetchEntryTranslation } from "@follow/store/translation/hooks"
 import type { FC } from "react"
@@ -30,6 +30,7 @@ const EntryItemImpl = memo(function EntryItemImpl({
     checkLanguage,
     translation: enableTranslation,
     language: actionLanguage,
+    withContent: view === FeedViewType.SocialMedia,
   })
 
   const Item: EntryListItemFC = getItemComponentByView(view)
