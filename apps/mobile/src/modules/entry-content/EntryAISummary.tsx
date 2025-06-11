@@ -47,14 +47,14 @@ export const EntryAISummary: FC<{
     actionLanguage,
     enabled: showAISummary && !entry?.isShortContent,
   })
+  const maybeMarkdown = showReadability
+    ? summary?.readabilitySummary || summary?.summary
+    : summary?.summary
   const summaryToShow = useMemo(() => {
-    const maybeMarkdown = showReadability
-      ? summary?.readabilitySummary || summary?.summary
-      : summary?.summary
     if (!maybeMarkdown) return null
 
     return renderMarkdown(maybeMarkdown)
-  }, [showReadability, summary?.readabilitySummary, summary?.summary])
+  }, [maybeMarkdown])
 
   const status = useSummaryStore((state) => state.generatingStatus[entryId])
   if (!showAISummary) return null
@@ -69,6 +69,7 @@ export const EntryAISummary: FC<{
     >
       <AISummary
         className="my-3"
+        rawSummaryForCopy={maybeMarkdown}
         summary={summaryToShow}
         pending={status === SummaryGeneratingStatus.Pending}
         error={status === SummaryGeneratingStatus.Error ? "Failed to generate summary" : undefined}

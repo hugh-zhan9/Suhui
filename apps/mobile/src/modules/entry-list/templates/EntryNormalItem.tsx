@@ -328,7 +328,7 @@ const AspectRatioImage = ({
 
   return (
     <View
-      className="bg-red ml-auto flex h-full justify-center overflow-hidden rounded-lg"
+      className="bg-tertiary-system-background ml-auto flex h-full justify-center overflow-hidden rounded-lg"
       style={{
         width: scaledWidth,
         height: scaledHeight,
