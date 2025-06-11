@@ -22,6 +22,13 @@ import {
 import { EllipsisHorizontalTextWithTooltip } from "@follow/components/ui/typography/index.js"
 import { views } from "@follow/constants"
 import type { ExtractBizResponse } from "@follow/models"
+import { getFeedById } from "@follow/store/feed/getter"
+import { useFeedById } from "@follow/store/feed/hooks"
+import { getSubscriptionByFeedId } from "@follow/store/subscription/getter"
+import {
+  useAllFeedSubscriptionIds,
+  useSubscriptionByFeedId,
+} from "@follow/store/subscription/hooks"
 import { jotaiStore } from "@follow/utils/jotai"
 import { clsx, formatNumber, sortByAlphabet } from "@follow/utils/utils"
 import { useSingleton } from "foxact/use-singleton"
@@ -50,8 +57,6 @@ import { FeedIcon } from "~/modules/feed/feed-icon"
 import { useConfirmUnsubscribeSubscriptionModal } from "~/modules/modal/hooks/useConfirmUnsubscribeSubscriptionModal"
 import { Balance } from "~/modules/wallet/balance"
 import { Queries } from "~/queries"
-import { getFeedById, useFeedById } from "~/store/feed"
-import { getSubscriptionByFeedId, useAllFeeds, useSubscriptionByFeedId } from "~/store/subscription"
 
 type Analytics = ExtractBizResponse<typeof apiClient.feeds.analytics.$post>["data"]["analytics"]
 type SortField = "name" | "view" | "date"
@@ -71,7 +76,7 @@ const GRID_COLS_CLASSNAME = tw`grid-cols-[30px_auto_150px_150px_100px]`
 
 const SubscriptionFeedsSection = () => {
   const { t } = useTranslation("settings")
-  const allFeeds = useAllFeeds()
+  const allFeeds = useAllFeedSubscriptionIds()
   const [selectedFeeds, setSelectedFeeds] = useState<Set<string>>(() => new Set())
   const [sortField, setSortField] = useState<SortField>("name")
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc")
@@ -91,7 +96,7 @@ const SubscriptionFeedsSection = () => {
   const handleSelectAll = useCallback(
     (checked: boolean) => {
       if (checked) {
-        setSelectedFeeds(new Set(allFeeds.map((feed) => feed.id)))
+        setSelectedFeeds(new Set(allFeeds))
       } else {
         setSelectedFeeds(new Set())
       }
@@ -335,7 +340,7 @@ const SubscriptionFeedsSection = () => {
 }
 
 const SortedFeedsList: FC<{
-  feeds: Array<{ id: string }>
+  feeds: string[]
   analyticsAtom: PrimitiveAtom<Analytics>
   sortField: SortField
   sortDirection: SortDirection
@@ -345,47 +350,42 @@ const SortedFeedsList: FC<{
   const sortedFeedIds = useMemo(() => {
     switch (sortField) {
       case "date": {
-        return feeds
-          .sort((a, b) => {
-            const aSubscription = getSubscriptionByFeedId(a.id)
-            const bSubscription = getSubscriptionByFeedId(b.id)
-            if (!aSubscription || !bSubscription) return 0
-            const aDate = new Date(aSubscription.createdAt)
-            const bDate = new Date(bSubscription.createdAt)
-            return sortDirection === "asc"
-              ? aDate.getTime() - bDate.getTime()
-              : bDate.getTime() - aDate.getTime()
-          })
-          .map((f) => f.id)
+        return feeds.sort((a, b) => {
+          const aSubscription = getSubscriptionByFeedId(a)
+          const bSubscription = getSubscriptionByFeedId(b)
+          if (!aSubscription || !bSubscription) return 0
+          if (!aSubscription.createdAt || !bSubscription.createdAt) return 0
+          const aDate = new Date(aSubscription.createdAt)
+          const bDate = new Date(bSubscription.createdAt)
+          return sortDirection === "asc"
+            ? aDate.getTime() - bDate.getTime()
+            : bDate.getTime() - aDate.getTime()
+        })
       }
       case "view": {
-        return feeds
-          .sort((a, b) => {
-            const aSubscription = getSubscriptionByFeedId(a.id)
-            const bSubscription = getSubscriptionByFeedId(b.id)
-            if (!aSubscription || !bSubscription) return 0
-            return sortDirection === "asc"
-              ? aSubscription.view - bSubscription.view
-              : bSubscription.view - aSubscription.view
-          })
-          .map((f) => f.id)
+        return feeds.sort((a, b) => {
+          const aSubscription = getSubscriptionByFeedId(a)
+          const bSubscription = getSubscriptionByFeedId(b)
+          if (!aSubscription || !bSubscription) return 0
+          return sortDirection === "asc"
+            ? aSubscription.view - bSubscription.view
+            : bSubscription.view - aSubscription.view
+        })
       }
       case "name": {
-        return feeds
-          .sort((a, b) => {
-            const aSubscription = getSubscriptionByFeedId(a.id)
-            const bSubscription = getSubscriptionByFeedId(b.id)
-            if (!aSubscription || !bSubscription) return 0
-            const aFeed = getFeedById(a.id)
-            const bFeed = getFeedById(b.id)
-            if (!aFeed || !bFeed) return 0
-            const aCompareTitle = aSubscription.title || aFeed.title || ""
-            const bCompareTitle = bSubscription.title || bFeed.title || ""
-            return sortDirection === "asc"
-              ? sortByAlphabet(aCompareTitle, bCompareTitle)
-              : sortByAlphabet(bCompareTitle, aCompareTitle)
-          })
-          .map((f) => f.id)
+        return feeds.sort((a, b) => {
+          const aSubscription = getSubscriptionByFeedId(a)
+          const bSubscription = getSubscriptionByFeedId(b)
+          if (!aSubscription || !bSubscription) return 0
+          const aFeed = getFeedById(a)
+          const bFeed = getFeedById(b)
+          if (!aFeed || !bFeed) return 0
+          const aCompareTitle = aSubscription.title || aFeed.title || ""
+          const bCompareTitle = bSubscription.title || bFeed.title || ""
+          return sortDirection === "asc"
+            ? sortByAlphabet(aCompareTitle, bCompareTitle)
+            : sortByAlphabet(bCompareTitle, aCompareTitle)
+        })
       }
     }
   }, [feeds, sortDirection, sortField])
@@ -499,9 +499,11 @@ const FeedListItem = memo(
           {views[subscription.view]!.icon}
           <span>{tCommon(views[subscription.view]!.name)}</span>
         </div>
-        <div className="whitespace-nowrap pr-1 text-center">
-          <RelativeDay date={new Date(subscription.createdAt)} />
-        </div>
+        {!!subscription.createdAt && (
+          <div className="whitespace-nowrap pr-1 text-center">
+            <RelativeDay date={new Date(subscription.createdAt)} />
+          </div>
+        )}
         <div className="text-center text-xs">
           {analytics ? (
             <div className="flex flex-col gap-1">

@@ -1,11 +1,9 @@
 import type { FeedViewType } from "@follow/constants"
 import type { FeedModel } from "@follow/store/feed/types"
-import type { ListModel } from "@follow/store/list/store"
-import { getSubscription } from "@follow/store/subscription/getter"
+import type { ListModel } from "@follow/store/list/types"
+import { getSubscriptionById } from "@follow/store/subscription/getter"
 import { subscriptionSyncService } from "@follow/store/subscription/store"
-import { useUser, useWhoami } from "@follow/store/user/hooks"
-import { userSyncService } from "@follow/store/user/store"
-import { useQuery } from "@tanstack/react-query"
+import { usePrefetchUser, useUserById, useWhoami } from "@follow/store/user/hooks"
 import { createContext, Fragment, use, useCallback, useEffect, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { Alert, FlatList, Image, Share, Text, TouchableOpacity, View } from "react-native"
@@ -72,15 +70,7 @@ const ActionContext = createContext<{
 }>({
   removeItemById: () => {},
 })
-const usePrefetchUser = (userId: string) => {
-  const { data } = useQuery({
-    queryKey: ["user", userId],
-    queryFn: () => userSyncService.fetchUser(userId),
-    enabled: !!userId,
-    staleTime: 1000 * 60 * 5,
-  })
-  return data
-}
+
 function ProfileScreenImpl(props: { userId: string }) {
   const { t } = useTranslation()
   const scrollY = useSharedValue(0)
@@ -101,7 +91,7 @@ function ProfileScreenImpl(props: { userId: string }) {
   })
 
   usePrefetchUser(props.userId)
-  const user = useUser(props.userId)
+  const user = useUserById(props.userId)
   useEffect(() => {
     if (isError) {
       toast.error("Failed to fetch subscriptions")
@@ -292,7 +282,7 @@ const renderListItems = ({ item }: { item: PickedListModel }) => (
     className="bg-secondary-system-grouped-background flex h-12 flex-row items-center"
     style={{ paddingHorizontal: GROUPED_LIST_ITEM_PADDING }}
     onPress={() => {
-      if (getSubscription(item.id))
+      if (getSubscriptionById(item.id))
         Navigation.rootNavigation.pushControllerView(FeedScreen, {
           feedId: item.id,
         })
@@ -327,7 +317,7 @@ const renderFeedItems = ({ item }: { item: PickedFeedModel }) => (
       className="bg-secondary-system-grouped-background flex h-12 flex-row items-center"
       style={{ paddingHorizontal: GROUPED_LIST_ITEM_PADDING }}
       onPress={() => {
-        if (getSubscription(item.id))
+        if (getSubscriptionById(item.id))
           Navigation.rootNavigation.pushControllerView(FeedScreen, {
             feedId: item.id,
           })

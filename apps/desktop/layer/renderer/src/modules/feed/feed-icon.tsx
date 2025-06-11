@@ -1,9 +1,11 @@
+import { Avatar, AvatarFallback, AvatarImage } from "@follow/components/ui/avatar/index.jsx"
 import { PlatformIcon } from "@follow/components/ui/platform-icon/index.jsx"
-import type { FeedModel, FeedOrListRespModel } from "@follow/models/types"
+import type { FeedOrListRespModel } from "@follow/models/types"
+import type { FeedModel } from "@follow/store/feed/types"
+import type { ListModel } from "@follow/store/list/types"
 import { getBackgroundGradient } from "@follow/utils/color"
 import { getImageProxyUrl } from "@follow/utils/img-proxy"
 import { cn, getUrlIcon } from "@follow/utils/utils"
-import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar"
 import { m } from "motion/react"
 import type { ReactNode } from "react"
 import { useMemo } from "react"
@@ -50,6 +52,7 @@ const FallbackableImage = function FallbackableImage({
   }) {
   return (
     <img
+      crossOrigin="anonymous"
       onError={(e) => {
         if (fallbackUrl && e.currentTarget.src !== fallbackUrl) {
           e.currentTarget.src = fallbackUrl
@@ -67,10 +70,8 @@ const FallbackableImage = function FallbackableImage({
 }
 
 type FeedIconFeed =
-  | (Pick<FeedModel, "ownerUserId" | "id" | "title" | "url" | "image"> & {
-      type: FeedOrListRespModel["type"]
-      siteUrl?: string
-    })
+  | Pick<FeedModel, "ownerUserId" | "id" | "title" | "url" | "image" | "siteUrl" | "type">
+  | ListModel
   | FeedOrListRespModel
 
 export type FeedIconEntry = { authorAvatar?: string | null; firstPhotoUrl?: string | null }

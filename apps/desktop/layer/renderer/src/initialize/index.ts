@@ -1,6 +1,7 @@
 import { initializeDayjs } from "@follow/components/dayjs"
 import { registerGlobalContext } from "@follow/shared/bridge"
 import { DEV, ELECTRON_BUILD, IN_ELECTRON } from "@follow/shared/constants"
+import { hydrateDatabaseToStore } from "@follow/store/hydrate"
 import { tracker } from "@follow/tracker"
 import { repository } from "@pkg"
 import { enableMapSet } from "immer"
@@ -16,7 +17,7 @@ import { getGeneralSettings, subscribeShouldUseIndexedDB } from "../atoms/settin
 import { appLog } from "../lib/log"
 import { initAnalytics } from "./analytics"
 import { registerHistoryStack } from "./history"
-import { hydrateDatabaseToStore, hydrateSettings, setHydrated } from "./hydrate"
+import { hydrateSettings, setHydrated } from "./hydrate"
 import { doMigration } from "./migrates"
 import { initSentry } from "./sentry"
 
@@ -103,7 +104,12 @@ export const initializeApp = async () => {
   let dataHydratedTime: undefined | number
   // Initialize the database
   if (enabledDataPersist) {
-    dataHydratedTime = await apm("hydrateDatabaseToStore", hydrateDatabaseToStore)
+    dataHydratedTime = await apm("hydrateDatabaseToStore", () => {
+      return hydrateDatabaseToStore({
+        migrateDatabase: true,
+      })
+    })
+
     CleanerService.cleanOutdatedData()
   }
 

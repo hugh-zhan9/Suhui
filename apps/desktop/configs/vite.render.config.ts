@@ -33,6 +33,12 @@ const getChangelogFileContent = () => {
 
 const changelogFile = getChangelogFileContent()
 export const viteRenderBaseConfig = {
+  worker: {
+    format: "es",
+  },
+  optimizeDeps: {
+    exclude: ["sqlocal"],
+  },
   resolve: {
     alias: {
       "~": resolve("layer/renderer/src"),
@@ -44,6 +50,30 @@ export const viteRenderBaseConfig = {
   base: "/",
 
   plugins: [
+    {
+      name: "import-sql",
+      transform(code, id) {
+        if (id.endsWith(".sql")) {
+          const json = JSON.stringify(code)
+            .replaceAll("\u2028", "\\u2028")
+            .replaceAll("\u2029", "\\u2029")
+
+          return {
+            code: `export default ${json}`,
+          }
+        }
+      },
+    },
+    {
+      name: "configure-response-headers",
+      configureServer: (server) => {
+        server.middlewares.use((_req, res, next) => {
+          res.setHeader("Cross-Origin-Embedder-Policy", "require-corp")
+          res.setHeader("Cross-Origin-Opener-Policy", "same-origin")
+          next()
+        })
+      },
+    },
     react({
       // jsxImportSource: "@welldone-software/why-did-you-render", // <-----
     }),

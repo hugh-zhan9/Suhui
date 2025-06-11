@@ -19,6 +19,8 @@ export const feedsTable = sqliteTable("feeds", {
   subscriptionCount: integer("subscription_count"),
   updatesPerWeek: integer("updates_per_week"),
   latestEntryPublishedAt: text("latest_entry_published_at"),
+  tipUserIds: text("tip_users", { mode: "json" }).$type<string[]>(),
+  updatedAt: integer("published_at", { mode: "timestamp" }),
 })
 
 export const subscriptionsTable = sqliteTable("subscriptions", {
@@ -38,11 +40,12 @@ export const subscriptionsTable = sqliteTable("subscriptions", {
 export const inboxesTable = sqliteTable("inboxes", {
   id: text("id").primaryKey(),
   title: text("title"),
+  secret: text("secret").notNull(),
 })
 
 export const listsTable = sqliteTable("lists", {
   id: text("id").primaryKey(),
-  userId: text("user_id").notNull(),
+  userId: text("user_id"),
   title: text("title").notNull(),
   feedIds: text("feed_ids", { mode: "json" }).$type<string>(),
   description: text("description"),
@@ -55,7 +58,7 @@ export const listsTable = sqliteTable("lists", {
 })
 
 export const unreadTable = sqliteTable("unread", {
-  subscriptionId: text("subscription_id").notNull().primaryKey(),
+  id: text("subscription_id").notNull().primaryKey(),
   count: integer("count").notNull(),
 })
 
@@ -65,7 +68,7 @@ export const usersTable = sqliteTable("users", {
   handle: text("handle"),
   name: text("name"),
   image: text("image"),
-  isMe: integer("is_me", { mode: "boolean" }).notNull(),
+  isMe: integer("is_me", { mode: "boolean" }),
   emailVerified: integer("email_verified", { mode: "boolean" }),
 })
 

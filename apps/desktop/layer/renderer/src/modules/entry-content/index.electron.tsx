@@ -9,7 +9,10 @@ import { RootPortal } from "@follow/components/ui/portal/index.js"
 import { ScrollArea } from "@follow/components/ui/scroll-area/index.js"
 import type { FeedViewType } from "@follow/constants"
 import { useSmoothScroll, useTitle } from "@follow/hooks"
-import type { FeedModel, InboxModel } from "@follow/models/types"
+import type { FeedModel } from "@follow/models/types"
+import { useEntry } from "@follow/store/entry/hooks"
+import { useFeedById } from "@follow/store/feed/hooks"
+import { useIsInbox } from "@follow/store/inbox/hooks"
 import { nextFrame, stopPropagation } from "@follow/utils/dom"
 import { EventBus } from "@follow/utils/event-bus"
 import { cn, combineCleanupFunctions } from "@follow/utils/utils"
@@ -30,9 +33,6 @@ import { useRenderStyle } from "~/hooks/biz/useRenderStyle"
 import { useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
 import { useFeedSafeUrl } from "~/hooks/common/useFeedSafeUrl"
 import { WrappedElementProvider } from "~/providers/wrapped-element-provider"
-import { useEntry } from "~/store/entry"
-import { useFeedById } from "~/store/feed"
-import { useInboxById } from "~/store/inbox"
 
 import { COMMAND_ID } from "../command/commands/id"
 import { useCommandBinding } from "../command/hooks/use-command-binding"
@@ -71,18 +71,17 @@ export const EntryContent: Component<EntryContentProps> = ({
   classNames,
 }) => {
   const entry = useEntry(entryId, (state) => {
-    const { feedId, inboxId } = state
+    const { feedId, inboxHandle } = state
     const { readability, sourceContent } = state.settings || {}
-    const { title, url } = state.entries
+    const { title, url } = state
 
-    return { feedId, inboxId, readability, sourceContent, title, url }
+    return { feedId, inboxId: inboxHandle, readability, sourceContent, title, url }
   })
   useTitle(entry?.title)
 
-  const feed = useFeedById(entry?.feedId) as FeedModel | InboxModel
+  const feed = useFeedById(entry?.feedId)
 
-  const inbox = useInboxById(entry?.inboxId, (inbox) => inbox !== null)
-  const isInbox = !!inbox
+  const isInbox = useIsInbox(entry?.inboxId)
   const isInReadabilityMode = useEntryIsInReadability(entryId)
 
   const { error, content, isPending } = useEntryContent(entryId)
@@ -195,7 +194,7 @@ export const EntryContent: Component<EntryContentProps> = ({
                       <Renderer
                         entryId={entryId}
                         view={view}
-                        feedId={feed?.id}
+                        feedId={feed?.id || ""}
                         noMedia={noMedia}
                         content={content}
                       />
