@@ -9718,7 +9718,9 @@ declare const auth: {
                     appName: string;
                     database: (options: BetterAuthOptions) => better_auth.Adapter;
                     advanced: {
-                        generateId: false;
+                        database: {
+                            generateId: false;
+                        };
                         defaultCookieAttributes: {
                             sameSite: "none";
                             secure: true;
@@ -11025,6 +11027,9 @@ declare const auth: {
                                             image: string | null;
                                             handle: string | null;
                                             twoFactorEnabled: boolean | null;
+                                            socialLinks: Record<string, string> | null;
+                                            bio: string | null;
+                                            website: string | null;
                                         };
                                         session: {
                                             id: string;
@@ -11058,6 +11063,9 @@ declare const auth: {
                                         image: string | null;
                                         handle: string | null;
                                         twoFactorEnabled: boolean | null;
+                                        socialLinks: Record<string, string> | null;
+                                        bio: string | null;
+                                        website: string | null;
                                     };
                                     session: {
                                         id: string;
@@ -11458,7 +11466,9 @@ declare const auth: {
                             appName: string;
                             database: (options: BetterAuthOptions) => better_auth.Adapter;
                             advanced: {
-                                generateId: false;
+                                database: {
+                                    generateId: false;
+                                };
                                 defaultCookieAttributes: {
                                     sameSite: "none";
                                     secure: true;
@@ -12765,6 +12775,9 @@ declare const auth: {
                                                     image: string | null;
                                                     handle: string | null;
                                                     twoFactorEnabled: boolean | null;
+                                                    socialLinks: Record<string, string> | null;
+                                                    bio: string | null;
+                                                    website: string | null;
                                                 };
                                                 session: {
                                                     id: string;
@@ -12798,6 +12811,9 @@ declare const auth: {
                                                 image: string | null;
                                                 handle: string | null;
                                                 twoFactorEnabled: boolean | null;
+                                                socialLinks: Record<string, string> | null;
+                                                bio: string | null;
+                                                website: string | null;
                                             };
                                             session: {
                                                 id: string;
@@ -15727,6 +15743,9 @@ declare const auth: {
                         image: string | null;
                         handle: string | null;
                         twoFactorEnabled: boolean | null;
+                        socialLinks: Record<string, string> | null;
+                        bio: string | null;
+                        website: string | null;
                     };
                     session: {
                         id: string;
@@ -15760,6 +15779,9 @@ declare const auth: {
                     image: string | null;
                     handle: string | null;
                     twoFactorEnabled: boolean | null;
+                    socialLinks: Record<string, string> | null;
+                    bio: string | null;
+                    website: string | null;
                 };
                 session: {
                     id: string;
@@ -15825,7 +15847,9 @@ declare const auth: {
         appName: string;
         database: (options: BetterAuthOptions) => better_auth.Adapter;
         advanced: {
-            generateId: false;
+            database: {
+                generateId: false;
+            };
             defaultCookieAttributes: {
                 sameSite: "none";
                 secure: true;
@@ -17132,6 +17156,9 @@ declare const auth: {
                                 image: string | null;
                                 handle: string | null;
                                 twoFactorEnabled: boolean | null;
+                                socialLinks: Record<string, string> | null;
+                                bio: string | null;
+                                website: string | null;
                             };
                             session: {
                                 id: string;
@@ -17165,6 +17192,9 @@ declare const auth: {
                             image: string | null;
                             handle: string | null;
                             twoFactorEnabled: boolean | null;
+                            socialLinks: Record<string, string> | null;
+                            bio: string | null;
+                            website: string | null;
                         };
                         session: {
                             id: string;

@@ -70,6 +70,16 @@ export const usersTable = sqliteTable("users", {
   image: text("image"),
   isMe: integer("is_me", { mode: "boolean" }),
   emailVerified: integer("email_verified", { mode: "boolean" }),
+  bio: text("bio"),
+  website: text("website"),
+  socialLinks: text("social_links", { mode: "json" }).$type<{
+    twitter?: string
+    github?: string
+    instagram?: string
+    facebook?: string
+    youtube?: string
+    discord?: string
+  }>(),
 })
 
 export const entriesTable = sqliteTable("entries", {

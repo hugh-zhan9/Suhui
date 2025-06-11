@@ -176,6 +176,7 @@ export const DebugScreen: NavigationControllerView = () => {
             { label: "Dev", value: "dev" },
             { label: "Prod", value: "prod" },
             { label: "Staging", value: "staging" },
+            { label: "Local", value: "local" },
           ]}
           value={envProfile}
           onValueChange={(value) => {

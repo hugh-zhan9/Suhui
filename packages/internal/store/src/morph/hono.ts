@@ -224,6 +224,9 @@ class Morph {
       isMe: isMe ?? false,
       emailVerified: data.emailVerified,
       twoFactorEnabled: data.twoFactorEnabled,
+      bio: data.bio,
+      website: data.website,
+      socialLinks: data.socialLinks,
     }
   }
 }
