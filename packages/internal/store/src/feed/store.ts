@@ -85,7 +85,7 @@ type FeedQueryParams = {
 class FeedSyncServices {
   async fetchFeedById({ id, url }: FeedQueryParams) {
     const isFeedId = isBizId(id)
-    if (!isFeedId) {
+    if (!url && !isFeedId) {
       return null
     }
 
