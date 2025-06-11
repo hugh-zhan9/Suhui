@@ -6,7 +6,7 @@ import { useMutation } from "@tanstack/react-query"
 import type { FC } from "react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
-import { Text, TouchableOpacity, TouchableWithoutFeedback, View } from "react-native"
+import { Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from "react-native"
 import { KeyboardController } from "react-native-keyboard-controller"
 
 import { HeaderSubmitTextButton } from "@/src/components/layouts/header/HeaderElements"
@@ -206,9 +206,9 @@ const ProfileForm: FC<{
 
           <GroupedInsetListSectionHeader label={t("profile.bio.label", "Bio")} />
           <GroupedInsetListCard>
-            <View className="flex-1 px-4 py-3">
-              <PlainTextField
-                className="text-text h-[100px] w-full flex-1"
+            <View className="flex-1">
+              <TextInput
+                className="text-label h-[100px] w-full flex-1 px-4 py-3"
                 value={dirtyFields.bio ?? whoami?.bio ?? ""}
                 hitSlop={10}
                 multiline

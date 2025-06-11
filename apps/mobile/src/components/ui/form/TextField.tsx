@@ -2,7 +2,7 @@ import { composeEventHandlers } from "@follow/utils"
 import { cn } from "@follow/utils/utils"
 import { useEffect, useImperativeHandle, useRef, useState } from "react"
 import type { StyleProp, TextInputProps, ViewStyle } from "react-native"
-import { StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from "react-native"
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native"
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated"
 
 import { gentleSpringPreset } from "@/src/constants/spring"
@@ -144,14 +144,14 @@ export const PlainTextField = ({
         }}
       />
       <Animated.View style={animatedStyle}>
-        <TouchableWithoutFeedback
+        <TouchableOpacity
           onPress={() => {
             textInputRef.current?.clear()
             props.onChangeText?.("")
           }}
         >
           <CloseCircleFillIcon height={16} width={16} color={secondaryLabelColor} />
-        </TouchableWithoutFeedback>
+        </TouchableOpacity>
       </Animated.View>
     </View>
   )
