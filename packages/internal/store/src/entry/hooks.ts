@@ -8,7 +8,7 @@ import { entrySyncServices, useEntryStore } from "./store"
 import type { EntryModel, FetchEntriesProps, FetchEntriesPropsSettings } from "./types"
 
 export const useEntriesQuery = (
-  props: Omit<FetchEntriesProps, "pageParam" | "read"> & FetchEntriesPropsSettings,
+  props?: Omit<FetchEntriesProps, "pageParam" | "read"> & FetchEntriesPropsSettings,
 ) => {
   const {
     feedId,

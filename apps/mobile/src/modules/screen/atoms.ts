@@ -10,7 +10,11 @@ import {
   useEntryIdsByView,
 } from "@follow/store/entry/hooks"
 import { useEntryStore } from "@follow/store/entry/store"
-import type { FetchEntriesProps, UseEntriesReturn } from "@follow/store/entry/types"
+import type {
+  FetchEntriesProps,
+  UseEntriesProps,
+  UseEntriesReturn,
+} from "@follow/store/entry/types"
 import { fallbackReturn } from "@follow/store/entry/utils"
 import { useFeedById } from "@follow/store/feed/hooks"
 import { useInboxById } from "@follow/store/inbox/hooks"
@@ -144,13 +148,22 @@ export const getFetchEntryPayload = (
   return payload
 }
 
-function useRemoteEntries(): UseEntriesReturn {
+function useRemoteEntries(props?: UseEntriesProps): UseEntriesReturn {
   const selectedFeed = useSelectedFeed()
-  const view = useSelectedView()
-  const payload = getFetchEntryPayload(selectedFeed, view)
+  const selectedView = useSelectedView()
+  const view = props?.viewId ?? selectedView
+  const payload = getFetchEntryPayload(
+    selectedFeed?.type === "view"
+      ? {
+          type: "view",
+          viewId: view,
+        }
+      : selectedFeed,
+    view,
+  )
   const options = useFetchEntriesSettings()
 
-  const query = useEntriesQuery({ ...payload, ...options })
+  const query = useEntriesQuery(props?.active ? { ...payload, ...options } : undefined)
 
   const refetch = useCallback(async () => void query.refetch(), [query])
   const fetchNextPage = useCallback(async () => void query.fetchNextPage(), [query])
@@ -186,10 +199,19 @@ function useRemoteEntries(): UseEntriesReturn {
   }
 }
 
-function useLocalEntries(): UseEntriesReturn {
+function useLocalEntries(props?: UseEntriesProps): UseEntriesReturn {
   const selectedFeed = useSelectedFeed()
-  const view = useSelectedView()
-  const payload = getFetchEntryPayload(selectedFeed, view)
+  const selectedView = useSelectedView()
+  const view = props?.viewId ?? selectedView
+  const payload = getFetchEntryPayload(
+    selectedFeed?.type === "view"
+      ? {
+          type: "view",
+          viewId: view,
+        }
+      : selectedFeed,
+    view,
+  )
   const options = useFetchEntriesSettings()
 
   const { feedId, feedIdList, listId, inboxId, isCollection } = payload || {}
@@ -236,7 +258,6 @@ function useLocalEntries(): UseEntriesReturn {
         entryIdsByInboxId,
         entryIdsByListId,
         entryIdsByView,
-        hidePrivateSubscriptionsInTimeline,
         showEntriesByView,
         unreadOnly,
       ],
@@ -293,9 +314,10 @@ function getEntryIdsFromMultiplePlace(...entryIds: Array<string[] | undefined | 
   return entryIds.find((ids) => ids?.length) ?? []
 }
 
-export function useEntries(): UseEntriesReturn {
-  const remoteQuery = useRemoteEntries()
-  const localQuery = useLocalEntries()
+export function useEntries(props?: UseEntriesProps): UseEntriesReturn {
+  const { viewId, active = true } = props || {}
+  const remoteQuery = useRemoteEntries({ viewId, active })
+  const localQuery = useLocalEntries({ viewId, active })
   const query = remoteQuery.isReady ? remoteQuery : localQuery
   return query
 }

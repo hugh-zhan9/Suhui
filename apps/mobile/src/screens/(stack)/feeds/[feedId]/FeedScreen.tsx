@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { BottomTabBarHeightContext } from "@/src/components/layouts/tabbar/contexts/BottomTabBarHeightContext"
 import type { NavigationControllerView } from "@/src/lib/navigation/types"
 import { EntryListSelector } from "@/src/modules/entry-list/EntryListSelector"
-import { EntryListContext, useSelectedView } from "@/src/modules/screen/atoms"
+import { EntryListContext, useEntries, useSelectedView } from "@/src/modules/screen/atoms"
 import { TimelineHeader } from "@/src/modules/screen/TimelineSelectorProvider"
 
 export const FeedScreen: NavigationControllerView<{
@@ -15,16 +15,21 @@ export const FeedScreen: NavigationControllerView<{
 }> = ({ feedId: feedIdentifier }) => {
   const insets = useSafeAreaInsets()
   const feed = useFeedById(feedIdentifier)
-  const view = useSelectedView() ?? FeedViewType.Articles
 
   return (
     <EntryListContext value={useMemo(() => ({ type: "feed" }), [])}>
       <RootSiblingParent>
         <BottomTabBarHeightContext value={insets.bottom}>
           <TimelineHeader feedId={feed?.id} />
-          <EntryListSelector viewId={view} />
+          <FeedScreenEntryList />
         </BottomTabBarHeightContext>
       </RootSiblingParent>
     </EntryListContext>
   )
+}
+
+function FeedScreenEntryList() {
+  const { entriesIds } = useEntries()
+  const view = useSelectedView() ?? FeedViewType.Articles
+  return <EntryListSelector viewId={view} entryIds={entriesIds} />
 }

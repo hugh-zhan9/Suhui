@@ -1,14 +1,14 @@
 import { FeedViewType } from "@follow/constants"
-import { useMemo } from "react"
+import { memo, useMemo } from "react"
 
-import { useSelectedFeed, useSelectedView } from "@/src/modules/screen/atoms"
+import { useEntries, useSelectedFeed, useSelectedView } from "@/src/modules/screen/atoms"
 import { PagerList } from "@/src/modules/screen/PagerList"
 import { TimelineHeader } from "@/src/modules/screen/TimelineSelectorProvider"
 
 import { EntryListSelector } from "./EntryListSelector"
 
 const renderViewItem = (view: FeedViewType, active: boolean) => (
-  <EntryListSelector key={view} viewId={view} active={active} />
+  <ViewEntryList key={view} viewId={view} active={active} />
 )
 export function EntryList() {
   const selectedFeed = useSelectedFeed()
@@ -20,7 +20,7 @@ export function EntryList() {
         return <PagerList renderItem={renderViewItem} />
       }
       default: {
-        return <EntryListSelector viewId={view} />
+        return <NormalEntryList viewId={view} />
       }
     }
   }, [selectedFeed, view])
@@ -33,3 +33,13 @@ export function EntryList() {
     </>
   )
 }
+
+const ViewEntryList = memo(({ viewId, active }: { viewId: FeedViewType; active: boolean }) => {
+  const { entriesIds } = useEntries({ viewId, active })
+  return <EntryListSelector entryIds={entriesIds} viewId={viewId} active={active} />
+})
+
+const NormalEntryList = memo(({ viewId }: { viewId: FeedViewType }) => {
+  const { entriesIds } = useEntries()
+  return <EntryListSelector entryIds={entriesIds} viewId={viewId} />
+})

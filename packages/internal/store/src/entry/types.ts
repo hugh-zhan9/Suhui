@@ -1,3 +1,4 @@
+import type { FeedViewType } from "@follow/constants"
 import type { EntrySchema } from "@follow/database/schemas/types"
 
 export type EntryModel = EntrySchema
@@ -17,6 +18,11 @@ export type FetchEntriesProps = {
 export type FetchEntriesPropsSettings = {
   hidePrivateSubscriptionsInTimeline: boolean
   unreadOnly: boolean
+}
+
+export type UseEntriesProps = {
+  viewId?: FeedViewType
+  active?: boolean
 }
 
 export type UseEntriesReturn = {
