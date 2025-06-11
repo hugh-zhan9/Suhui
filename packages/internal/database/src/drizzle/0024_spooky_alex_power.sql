@@ -32,4 +32,4 @@ DROP TABLE `users`;--> statement-breakpoint
 ALTER TABLE `__new_users` RENAME TO `users`;--> statement-breakpoint
 ALTER TABLE `feeds` ADD `tip_users` text;--> statement-breakpoint
 ALTER TABLE `feeds` ADD `published_at` integer;--> statement-breakpoint
-ALTER TABLE `inboxes` ADD `secret` text NOT NULL;
+ALTER TABLE `inboxes` ADD `secret` text DEFAULT '' NOT NULL;
