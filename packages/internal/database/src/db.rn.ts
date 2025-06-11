@@ -26,7 +26,11 @@ export async function migrateDb(): Promise<void> {
     await migrate(db, migrations)
   } catch (error) {
     console.error("Failed to migrate database:", error)
-    await sqlite.closeAsync()
+    try {
+      await sqlite.closeAsync()
+    } catch {
+      /* empty */
+    }
     await SQLite.deleteDatabaseAsync(SQLITE_DB_NAME)
     sqlite = SQLite.openDatabaseSync(SQLITE_DB_NAME)
     initializeDb()
