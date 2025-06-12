@@ -158,7 +158,7 @@ class Transaction<S, Ctx, Result = void> {
   }
 }
 
-export const createTransaction = <S, Ctx, Result>(
+export const createTransaction = <S, Ctx, Result = void>(
   snapshot?: S,
   ctx?: Ctx,
 ): Transaction<S, Ctx, Result> => {

@@ -7,7 +7,7 @@ import type { Hydratable, Resetable } from "../internal/base"
 import { createImmerSetter, createTransaction, createZustandStore } from "../internal/helper"
 import { honoMorph } from "../morph/hono"
 import { storeDbMorph } from "../morph/store-db"
-import { getListById } from "./getters"
+import { subscriptionActions, subscriptionSyncService } from "../subscription/store"
 import type { CreateListModel, ListModel } from "./types"
 
 type ListId = string
@@ -47,7 +47,8 @@ class ListActions implements Hydratable, Resetable {
       listIds: [...state.listIds, ...lists.map((list) => list.id)],
     })
   }
-  upsertMany(lists: ListModel[]) {
+
+  async upsertMany(lists: ListModel[]) {
     const tx = createTransaction()
     tx.store(() => {
       this.upsertManyInSession(lists)
@@ -56,7 +57,7 @@ class ListActions implements Hydratable, Resetable {
     tx.persist(() => {
       return ListService.upsertMany(lists.map((list) => storeDbMorph.toListSchema(list)))
     })
-    tx.run()
+    await tx.run()
   }
 
   async reset() {
@@ -80,14 +81,14 @@ class ListSyncServices {
     if (!params.id) return null
     const list = await apiClient().lists.$get({ query: { listId: params.id } })
 
-    listActions.upsertMany([honoMorph.toList(list.data.list)])
+    await listActions.upsertMany([honoMorph.toList(list.data.list)])
 
     return list.data
   }
 
   async fetchOwnedLists() {
     const res = await apiClient().lists.list.$get({ query: {} })
-    listActions.upsertMany(res.data.map((list) => honoMorph.toList(list)))
+    await listActions.upsertMany(res.data.map((list) => honoMorph.toList(list)))
 
     return res.data.map((list) => honoMorph.toList(list))
   }
@@ -102,12 +103,26 @@ class ListSyncServices {
         fee: params.list.fee || 0,
       },
     })
-    listActions.upsertMany([honoMorph.toList(res.data)])
+    await listActions.upsertMany([honoMorph.toList(res.data)])
+    await subscriptionActions.upsertMany([
+      {
+        isPrivate: false,
+        listId: res.data.id,
+        type: "list",
+        userId: res.data.ownerUserId || "",
+        view: res.data.view,
+        createdAt: new Date().toISOString(),
+      },
+    ])
 
     return res.data
   }
 
   async updateList(params: { listId: string; list: CreateListModel }) {
+    const tx = createTransaction()
+    const snapshot = get().lists[params.listId]
+    if (!snapshot) return
+
     const nextModel = {
       title: params.list.title,
       description: params.list.description,
@@ -116,19 +131,35 @@ class ListSyncServices {
       fee: params.list.fee || 0,
       listId: params.listId,
     }
-    await apiClient().lists.$patch({
-      json: nextModel,
+
+    tx.store(async () => {
+      await listActions.upsertMany([
+        {
+          ...snapshot,
+          ...nextModel,
+        },
+      ])
     })
 
-    const list = getListById(params.listId)
-    if (!list) return
+    tx.request(async () => {
+      await apiClient().lists.$patch({
+        json: nextModel,
+      })
+    })
 
-    listActions.upsertMany([
-      {
-        ...list,
-        ...nextModel,
-      },
-    ])
+    tx.persist(async () => {
+      if (params.list.view === snapshot.view) return
+      await subscriptionSyncService.changeListView({
+        listId: params.listId,
+        view: params.list.view,
+      })
+    })
+
+    tx.rollback(async () => {
+      await listActions.upsertMany([snapshot])
+    })
+
+    await tx.run()
   }
 
   async deleteList(listId: string) {
@@ -145,6 +176,7 @@ class ListSyncServices {
     })
 
     tx.request(async () => {
+      await subscriptionSyncService.unsubscribe([listId])
       await apiClient().lists.$delete({ json: { listId } })
     })
 
@@ -174,7 +206,7 @@ class ListSyncServices {
     feeds.data.forEach((feed) => {
       feedActions.upsertMany([honoMorph.toFeed(feed)])
     })
-    listActions.upsertMany([
+    await listActions.upsertMany([
       { ...list, feedIds: [...list.feedIds, ...feeds.data.map((feed) => feed.id)] },
     ])
   }
@@ -187,7 +219,7 @@ class ListSyncServices {
     if (!list) return
 
     const feedIds = list.feedIds.filter((id) => id !== params.feedId)
-    listActions.upsertMany([{ ...list, feedIds }])
+    await listActions.upsertMany([{ ...list, feedIds }])
   }
 }
 

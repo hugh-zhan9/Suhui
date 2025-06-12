@@ -25,7 +25,6 @@ import { useFeedById } from "@follow/store/feed/hooks"
 import { useListById } from "@follow/store/list/hooks"
 import { listSyncServices } from "@follow/store/list/store"
 import { useAllFeedSubscription } from "@follow/store/subscription/hooks"
-import { subscriptionSyncService } from "@follow/store/subscription/store"
 import { isBizId } from "@follow/utils/utils"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation } from "@tanstack/react-query"
@@ -89,17 +88,11 @@ export const ListCreationModalContent = ({ id }: { id?: string }) => {
         })
       }
     },
-    onSuccess: (_, values) => {
-      toast.success(t(id ? "lists.edit.success" : "lists.created.success"))
-      // Queries.lists.list().invalidate()
-      dismiss()
+    onSuccess: (_) => {
+      const isCreate = !id
+      toast.success(t(isCreate ? "lists.created.success" : "lists.edit.success"))
 
-      if (!list) return
-      if (id)
-        subscriptionSyncService.changeListView({
-          listId: id,
-          view: views[values.view].view,
-        })
+      dismiss()
     },
     onError: createErrorToaster(id ? t("lists.edit.error") : t("lists.created.error")),
   })
