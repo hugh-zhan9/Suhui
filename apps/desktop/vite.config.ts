@@ -16,6 +16,7 @@ import { VitePWA } from "vite-plugin-pwa"
 import { viteRenderBaseConfig } from "./configs/vite.render.config"
 import { createDependencyChunksPlugin } from "./plugins/vite/deps"
 import { htmlInjectPlugin } from "./plugins/vite/html-inject"
+import { localesPlugin } from "./plugins/vite/locales"
 import manifestPlugin from "./plugins/vite/manifest"
 import { createPlatformSpecificImportPlugin } from "./plugins/vite/specific-import"
 
@@ -136,6 +137,7 @@ export default ({ mode }) => {
     },
     plugins: [
       ...((viteRenderBaseConfig.plugins ?? []) as any),
+      localesPlugin(),
       isWebBuild &&
         VitePWA({
           strategies: "injectManifest",

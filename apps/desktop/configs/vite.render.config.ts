@@ -12,7 +12,6 @@ import { getGitHash } from "../../../scripts/lib"
 import { astPlugin } from "../plugins/vite/ast"
 import { circularImportRefreshPlugin } from "../plugins/vite/hmr"
 import { customI18nHmrPlugin } from "../plugins/vite/i18n-hmr"
-import { localesPlugin } from "../plugins/vite/locales"
 import i18nCompleteness from "../plugins/vite/utils/i18n-completeness"
 
 const pkgDir = resolve(dirname(fileURLToPath(import.meta.url)), "..")
@@ -112,7 +111,6 @@ export const viteRenderBaseConfig = {
       },
     }),
 
-    localesPlugin(),
     astPlugin,
     customI18nHmrPlugin(),
   ],
