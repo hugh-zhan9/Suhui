@@ -12,7 +12,6 @@ import type { Event } from "electron/main"
 import { START_IN_TRAY_ARGS } from "./constants/app"
 import { isMacOS, isWindows, isWindows11 } from "./env"
 import { filePathToAppUrl, getIconPath } from "./helper"
-import { services } from "./ipc"
 import { t } from "./lib/i18n"
 import { store } from "./lib/store"
 import { getTrayConfig } from "./lib/tray"
@@ -309,23 +308,6 @@ export const createMainWindow = () => {
       caller.onWindowClose()
     } else {
       windows.mainWindow = null
-    }
-  })
-
-  window.on("show", () => {
-    services.dock.pollingUpdateUnreadCount()
-
-    const caller = callWindowExpose(window)
-
-    caller.onWindowShow()
-  })
-
-  window.on("hide", async () => {
-    const caller = callWindowExpose(window)
-    const settings = await caller.getUISettings()
-
-    if (settings?.showDockBadge) {
-      services.dock.pollingUpdateUnreadCount()
     }
   })
 

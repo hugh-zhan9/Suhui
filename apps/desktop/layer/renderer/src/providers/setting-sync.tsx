@@ -1,5 +1,4 @@
 import { isMobile } from "@follow/components/hooks/useMobile.js"
-import { unreadActions } from "@follow/store/unread/store"
 import i18next from "i18next"
 import { useEffect, useInsertionEffect, useLayoutEffect } from "react"
 
@@ -38,12 +37,11 @@ const useUISettingSync = () => {
 
   useEffect(() => {
     if (setting.showDockBadge) {
-      return unreadActions.subscribeUnreadCount(
-        (count) => ipcServices?.setting.setDockBadge(count),
-        true,
-      )
+      ipcServices?.dock.pollingUpdateUnreadCount()
     } else {
-      ipcServices?.setting.setDockBadge(0)
+      ipcServices?.dock.cancelPollingUpdateUnreadCount().then(() => {
+        ipcServices?.dock.setDockBadge(0)
+      })
     }
     return
   }, [setting.showDockBadge])
