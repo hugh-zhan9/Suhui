@@ -137,6 +137,7 @@ export default ({ mode }) => {
     },
     plugins: [
       ...((viteRenderBaseConfig.plugins ?? []) as any),
+
       localesPlugin(),
       isWebBuild &&
         VitePWA({

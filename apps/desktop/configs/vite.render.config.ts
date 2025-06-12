@@ -12,6 +12,7 @@ import { getGitHash } from "../../../scripts/lib"
 import { astPlugin } from "../plugins/vite/ast"
 import { circularImportRefreshPlugin } from "../plugins/vite/hmr"
 import { customI18nHmrPlugin } from "../plugins/vite/i18n-hmr"
+import { localesJsonPlugin } from "../plugins/vite/locales-json"
 import i18nCompleteness from "../plugins/vite/utils/i18n-completeness"
 
 const pkgDir = resolve(dirname(fileURLToPath(import.meta.url)), "..")
@@ -73,6 +74,7 @@ export const viteRenderBaseConfig = {
         })
       },
     },
+    localesJsonPlugin(),
     react({
       // jsxImportSource: "@welldone-software/why-did-you-render", // <-----
     }),
