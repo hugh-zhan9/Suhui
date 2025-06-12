@@ -7,9 +7,17 @@ import migrations from "./drizzle/migrations"
 import { migrate } from "./migrator"
 import * as schema from "./schemas"
 
-const isDev = process.env.NODE_ENV === "development"
+declare const globalThis: {
+  electron?: any
+}
 
-export const sqlite = new SQLocalDrizzle(isDev ? ":localStorage:" : SQLITE_DB_NAME)
+const isDev = process.env.NODE_ENV === "development"
+const isElectron = !!globalThis["electron"]
+const dbName = isDev && !isElectron ? ":localStorage:" : SQLITE_DB_NAME
+// eslint-disable-next-line no-console
+console.log("Using database:", dbName)
+
+export const sqlite = new SQLocalDrizzle(dbName)
 
 let db: SqliteRemoteDatabase<typeof schema>
 
