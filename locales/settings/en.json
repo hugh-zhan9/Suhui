@@ -214,7 +214,7 @@
   "general.export_data.title": "Export Data",
   "general.export_database.button": "Export",
   "general.export_database.description": "Export all your data, including articles (Full Backup).",
-  "general.export_database.label": "Export Database (JSON)",
+  "general.export_database.label": "Export Database",
   "general.group_by_date.description": "Group entries by date.",
   "general.group_by_date.label": "Group by date",
   "general.hide_all_read_subscriptions.description": "Hide subscriptions without unread entries in the subscription list.",

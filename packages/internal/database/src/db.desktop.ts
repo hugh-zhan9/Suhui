@@ -21,7 +21,7 @@ export const sqlite = new SQLocalDrizzle(dbName)
 
 let db: SqliteRemoteDatabase<typeof schema>
 
-export function initializeDb() {
+export function initializeDB() {
   db = drizzle(sqlite.driver, sqlite.batchDriver, {
     schema,
     logger: false,
@@ -29,7 +29,7 @@ export function initializeDb() {
 }
 export { db }
 
-export async function migrateDb() {
+export async function migrateDB() {
   try {
     await migrate(db, migrations)
   } catch (error) {
@@ -38,4 +38,17 @@ export async function migrateDb() {
     await sqlite.deleteDatabaseFile()
     await migrate(db, migrations)
   }
+}
+
+export async function exportDB() {
+  const databaseFile = await sqlite.getDatabaseFile()
+  const fileUrl = URL.createObjectURL(databaseFile)
+
+  const a = document.createElement("a")
+  a.href = fileUrl
+  a.download = "database.sqlite3"
+  a.click()
+  a.remove()
+
+  URL.revokeObjectURL(fileUrl)
 }

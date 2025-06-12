@@ -451,6 +451,9 @@ importers:
       '@electron-toolkit/preload':
         specifier: 3.0.2
         version: 3.0.2(electron@35.1.5)
+      '@follow/database':
+        specifier: workspace:*
+        version: link:../../../../packages/internal/database
       '@follow/electron-main':
         specifier: workspace:*
         version: link:../main
@@ -550,9 +553,6 @@ importers:
       dexie:
         specifier: 4.0.11
         version: 4.0.11
-      dexie-export-import:
-        specifier: 4.1.4
-        version: 4.1.4(dexie@4.0.11)
       dnum:
         specifier: 2.15.0
         version: 2.15.0
@@ -8071,11 +8071,6 @@ packages:
 
   devlop@1.1.0:
     resolution: {integrity: sha512-RWmIqhcFf1lRYBvNmr7qTNuyCt/7/ns2jbpp1+PalgE/rDQcBT0fioSMUpJ93irlUhC5hrg4cYqe6U+0ImW0rA==}
-
-  dexie-export-import@4.1.4:
-    resolution: {integrity: sha512-3bw171qUuOTWSYLXI7C/0M6p1X65Rho3tu1IvD9By8jn0+3t3dLSkDlZ1BC6MbABl3kRlhtGigzC+SF+qcS5Og==}
-    peerDependencies:
-      dexie: ^2.0.4 || ^3.0.0 || ^4.0.1
 
   dexie@4.0.11:
     resolution: {integrity: sha512-SOKO002EqlvBYYKQSew3iymBoN2EQ4BDw/3yprjh7kAfFzjBYkaMNa/pZvcA7HSWlcKSQb9XhPe3wKyQ0x4A8A==}
@@ -24212,10 +24207,6 @@ snapshots:
   devlop@1.1.0:
     dependencies:
       dequal: 2.0.3
-
-  dexie-export-import@4.1.4(dexie@4.0.11):
-    dependencies:
-      dexie: 4.0.11
 
   dexie@4.0.11: {}
 

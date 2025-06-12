@@ -1,4 +1,4 @@
-import { initializeDb, migrateDb } from "@follow/database/db"
+import { initializeDB, migrateDB } from "@follow/database/db"
 
 import { collectionActions } from "./collection/store"
 import { entryActions } from "./entry/store"
@@ -25,8 +25,8 @@ const hydrates: Hydratable[] = [
 
 export const hydrateDatabaseToStore = async (options?: { migrateDatabase?: boolean }) => {
   if (options?.migrateDatabase) {
-    initializeDb()
-    await migrateDb()
+    initializeDB()
+    await migrateDB()
   }
   await Promise.all(hydrates.map((h) => h.hydrate()))
 }

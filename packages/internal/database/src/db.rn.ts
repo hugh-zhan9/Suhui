@@ -13,7 +13,7 @@ let db: ExpoSQLiteDatabase<typeof schema> & {
   $client: SQLite.SQLiteDatabase
 }
 
-export function initializeDb() {
+export function initializeDB() {
   db = drizzle(sqlite, {
     schema,
     logger: false,
@@ -21,7 +21,7 @@ export function initializeDb() {
 }
 export { db }
 
-export async function migrateDb(): Promise<void> {
+export async function migrateDB(): Promise<void> {
   try {
     await migrate(db, migrations)
   } catch (error) {
@@ -33,7 +33,9 @@ export async function migrateDb(): Promise<void> {
     }
     await SQLite.deleteDatabaseAsync(SQLITE_DB_NAME)
     sqlite = SQLite.openDatabaseSync(SQLITE_DB_NAME)
-    initializeDb()
+    initializeDB()
     await migrate(db, migrations)
   }
 }
+
+export async function exportDB() {}

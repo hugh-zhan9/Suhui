@@ -206,7 +206,7 @@
   "general.export_data.title": "导出数据",
   "general.export_database.button": "导出",
   "general.export_database.description": "导出你的所有数据，包括文章（完整备份）。",
-  "general.export_database.label": "导出数据库 (JSON)",
+  "general.export_database.label": "导出数据库",
   "general.group_by_date.description": "按日期对条目进行分组。",
   "general.group_by_date.label": "按日期分组",
   "general.hide_all_read_subscriptions.description": "在订阅列表中隐藏没有未读条目的订阅。",

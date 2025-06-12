@@ -1,4 +1,4 @@
-import { initializeDb } from "@follow/database/db"
+import { initializeDB } from "@follow/database/db"
 import { hydrateDatabaseToStore } from "@follow/store/hydrate"
 import { tracker } from "@follow/tracker"
 import { nativeApplicationVersion } from "expo-application"
@@ -21,7 +21,7 @@ export const initializeApp = async () => {
   const now = Date.now()
 
   await initDeviceType()
-  initializeDb()
+  initializeDB()
 
   await apm("migrateDatabase", migrateDatabase)
   initializeDayjs()
