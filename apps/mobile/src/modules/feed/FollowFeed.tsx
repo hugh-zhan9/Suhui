@@ -31,6 +31,7 @@ import { useCanDismiss, useNavigation } from "@/src/lib/navigation/hooks"
 import { useSetModalScreenOptions } from "@/src/lib/navigation/ScreenOptionsContext"
 import { FeedSummary } from "@/src/modules/discover/FeedSummary"
 import { FeedViewSelector } from "@/src/modules/feed/view-selector"
+import { useColor } from "@/src/theme/colors"
 
 const formSchema = z.object({
   view: z.coerce.number(),
@@ -80,6 +81,7 @@ export function FollowUrl(props: { url: string }) {
 function FollowImpl(props: { feedId: string }) {
   const { t } = useTranslation()
   const { t: tCommon } = useTranslation("common")
+  const textLabelColor = useColor("label")
   const { feedId: id } = props
 
   const feed = useFeedById(id)
@@ -182,7 +184,7 @@ function FollowImpl(props: { feedId: string }) {
         >
           <View className="ml-11 mt-2 flex-row items-center gap-3 opacity-60">
             <View className="flex-row items-center gap-1">
-              <User3CuteReIcon width={12} height={12} />
+              <User3CuteReIcon color={textLabelColor} width={12} height={12} />
               <Text className="text-text text-sm">
                 {typeof feed.subscriptionCount === "number" ? (
                   formatNumber(feed.subscriptionCount || 0)
@@ -196,14 +198,14 @@ function FollowImpl(props: { feedId: string }) {
             </View>
             {feed.updatesPerWeek ? (
               <View className="flex-row items-center gap-1">
-                <SafetyCertificateCuteReIcon width={12} height={12} />
+                <SafetyCertificateCuteReIcon color={textLabelColor} width={12} height={12} />
                 <Text className="text-text text-sm">
                   {tCommon("feed.entry_week", { count: feed.updatesPerWeek })}
                 </Text>
               </View>
             ) : feed.latestEntryPublishedAt ? (
               <View className="flex-row items-center gap-1">
-                <SafeAlertCuteReIcon width={12} height={12} />
+                <SafeAlertCuteReIcon color={textLabelColor} width={12} height={12} />
                 <Text className="text-text text-sm">
                   {tCommon("feed.updated_at")}
                   <RelativeDateTime date={feed.latestEntryPublishedAt} />
