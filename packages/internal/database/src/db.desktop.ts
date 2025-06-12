@@ -7,7 +7,9 @@ import migrations from "./drizzle/migrations"
 import { migrate } from "./migrator"
 import * as schema from "./schemas"
 
-export const sqlite = new SQLocalDrizzle(SQLITE_DB_NAME)
+const isDev = process.env.NODE_ENV === "development"
+
+export const sqlite = new SQLocalDrizzle(isDev ? ":localStorage:" : SQLITE_DB_NAME)
 
 let db: SqliteRemoteDatabase<typeof schema>
 
