@@ -132,7 +132,7 @@
   "appearance.title": "外观",
   "appearance.typography.title": "排版",
   "appearance.ui_font": "界面字体",
-  "appearance.unread_count.badge.label": "在应用图标上显示",
+  "appearance.unread_count.badge.label": "Dock 图标显示未读数",
   "appearance.unread_count.label": "未读数",
   "appearance.unread_count.sidebra.description": "在订阅源和分组旁显示未读数",
   "appearance.unread_count.sidebra.title": "显示未读数",

@@ -72,7 +72,11 @@ export const SettingAppearance = () => {
             label: t("appearance.unread_count.sidebra.title"),
             description: t("appearance.unread_count.sidebra.description"),
           }),
-
+          defineItem("hideExtraBadge", {
+            label: t("appearance.hide_extra_badge.label"),
+            description: t("appearance.hide_extra_badge.description"),
+            hide: isMobile,
+          }),
           {
             type: "title",
             value: t("appearance.reading_view.title"),
@@ -117,12 +121,6 @@ export const SettingAppearance = () => {
             label: t("appearance.unread_count.badge.label"),
             description: t("appearance.unread_count.badge.description"),
             hide: !IN_ELECTRON || !["macOS", "Linux"].includes(getOS()) || isMobile,
-          }),
-
-          defineItem("hideExtraBadge", {
-            label: t("appearance.hide_extra_badge.label"),
-            description: t("appearance.hide_extra_badge.description"),
-            hide: isMobile,
           }),
 
           {
