@@ -46,7 +46,7 @@ export async function exportDB() {
 
   const a = document.createElement("a")
   a.href = fileUrl
-  a.download = "database.sqlite3"
+  a.download = SQLITE_DB_NAME
   a.click()
   a.remove()
 
