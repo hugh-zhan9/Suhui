@@ -181,15 +181,19 @@ function FollowImpl(props: { feedId: string }) {
           }}
         >
           <View className="ml-11 mt-2 flex-row items-center gap-3 opacity-60">
-            {!!feed.subscriptionCount && (
-              <View className="flex-row items-center gap-1">
-                <User3CuteReIcon width={12} height={12} />
-                <Text className="text-text text-sm">
-                  {formatNumber(feed.subscriptionCount || 0)}{" "}
-                  {tCommon("feed.follower", { count: feed.subscriptionCount })}
-                </Text>
-              </View>
-            )}
+            <View className="flex-row items-center gap-1">
+              <User3CuteReIcon width={12} height={12} />
+              <Text className="text-text text-sm">
+                {typeof feed.subscriptionCount === "number" ? (
+                  formatNumber(feed.subscriptionCount || 0)
+                ) : (
+                  <>?</>
+                )}{" "}
+                {tCommon("feed.follower", {
+                  count: feed.subscriptionCount ?? 0,
+                })}
+              </Text>
+            </View>
             {feed.updatesPerWeek ? (
               <View className="flex-row items-center gap-1">
                 <SafetyCertificateCuteReIcon width={12} height={12} />
