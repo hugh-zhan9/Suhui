@@ -247,7 +247,7 @@ const ThumbnailImage = ({
         ))}
 
       {video && (
-        <View className="absolute left-0 top-0 size-full overflow-hidden rounded-lg">
+        <View className="absolute left-0 top-0 flex size-full justify-center overflow-hidden rounded-lg">
           <VideoView
             style={{ aspectRatio: 1 }}
             contentFit="cover"
@@ -328,7 +328,7 @@ const AspectRatioImage = ({
 
   return (
     <View
-      className="bg-tertiary-system-background ml-auto flex h-full justify-center overflow-hidden rounded-lg"
+      className="bg-tertiary-system-background my-auto ml-auto flex overflow-hidden rounded-lg"
       style={{
         width: scaledWidth,
         height: scaledHeight,
@@ -341,7 +341,6 @@ const AspectRatioImage = ({
         source={{
           uri: image,
         }}
-        className="rounded-lg"
         style={{
           width: scaledWidth,
           height: scaledHeight,
