@@ -4,6 +4,7 @@ import { Folo } from "@follow/components/icons/folo.js"
 import { Logo } from "@follow/components/icons/logo.js"
 import { MotionButtonBase } from "@follow/components/ui/button/index.js"
 import { Divider } from "@follow/components/ui/divider/Divider.js"
+import { useIsDark } from "@follow/hooks"
 import type { LoginRuntime } from "@follow/shared/auth"
 import { stopPropagation } from "@follow/utils/dom"
 import { m } from "motion/react"
@@ -58,6 +59,8 @@ export const LoginModalContent = (props: LoginModalContentProps) => {
     })
   }
 
+  const isDark = useIsDark()
+
   const Inner = (
     <>
       <div className="-mt-9 mb-4 flex items-center justify-center">
@@ -70,16 +73,6 @@ export const LoginModalContent = (props: LoginModalContentProps) => {
         <Folo className="ml-2 size-14" />
       </div>
 
-      {/* {isRegister ? <RegisterForm /> : <LoginWithPassword runtime={runtime} />} */}
-      {/* {providers.length > 0 && (
-        <div className="my-3 w-full space-y-2">
-          <div className="flex items-center justify-center">
-            <Divider className="flex-1" />
-            <p className="text-text-tertiary px-4 text-center text-sm">{t("login.or")}</p>
-            <Divider className="flex-1" />
-          </div>
-        </div>
-      )} */}
       {isEmail ? (
         isRegister ? (
           <RegisterForm />
@@ -113,7 +106,7 @@ export const LoginModalContent = (props: LoginModalContentProps) => {
                   <img
                     crossOrigin="anonymous"
                     className="absolute left-9 h-5 dark:brightness-[0.85] dark:hue-rotate-180 dark:invert"
-                    src={provider.icon64}
+                    src={isDark ? provider.iconDark64 || provider.icon64 : provider.icon64}
                   />
                   <span>{t("login.continueWith", { provider: provider.name })}</span>
                 </MotionButtonBase>

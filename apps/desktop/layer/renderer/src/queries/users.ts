@@ -9,6 +9,7 @@ export interface AuthProvider {
   color: string
   icon: string
   icon64: string
+  iconDark64?: string
 }
 export const useAuthProviders = () => {
   const isInMASReview = useIsInMASReview()

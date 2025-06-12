@@ -80,6 +80,7 @@ export interface AuthProvider {
   color: string
   icon: string
   icon64: string
+  iconDark64?: string
 }
 const getTypedProviders = async () => {
   const providers = await getProviders()

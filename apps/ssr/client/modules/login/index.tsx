@@ -17,6 +17,7 @@ import {
 } from "@follow/components/ui/form/index.jsx"
 import { Input } from "@follow/components/ui/input/index.js"
 import { LoadingCircle } from "@follow/components/ui/loading/index.jsx"
+import { useIsDark } from "@follow/hooks"
 import { DEEPLINK_SCHEME } from "@follow/shared/constants"
 import { env } from "@follow/shared/env.ssr"
 import HCaptcha from "@hcaptcha/react-hcaptcha"
@@ -84,6 +85,7 @@ export function Login() {
   const navigate = useNavigate()
 
   const [isEmail, setIsEmail] = useState(false)
+  const isDark = useIsDark()
 
   const LoginOrStatusContent = useMemo(() => {
     switch (true) {
@@ -171,7 +173,7 @@ export function Login() {
                       style={{
                         color: provider.color,
                       }}
-                      src={provider.icon64}
+                      src={isDark ? provider.iconDark64 || provider.icon64 : provider.icon64}
                     />
                     <span>{t("login.continueWith", { provider: provider.name })}</span>
                   </MotionButtonBase>
