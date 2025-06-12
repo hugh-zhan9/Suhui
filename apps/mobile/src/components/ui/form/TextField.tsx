@@ -49,7 +49,7 @@ const BaseField = ({
         <TextInput
           selectionColor={accentColor}
           ref={ref}
-          className={cn("text-label placeholder:text-secondary-label w-full flex-1", className)}
+          className={cn("text-label placeholder:text-secondary-label w-full flex-1 p-0", className)}
           style={StyleSheet.flatten([styles.textField, style])}
           {...rest}
         />
