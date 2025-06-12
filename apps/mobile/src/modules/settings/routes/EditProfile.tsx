@@ -6,7 +6,14 @@ import { useMutation } from "@tanstack/react-query"
 import type { FC } from "react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
-import { Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from "react-native"
+import {
+  KeyboardAvoidingView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
+} from "react-native"
 import { KeyboardController } from "react-native-keyboard-controller"
 
 import { HeaderSubmitTextButton } from "@/src/components/layouts/header/HeaderElements"
@@ -61,27 +68,30 @@ export const EditProfileScreen = () => {
   }
 
   return (
-    <SafeNavigationScrollView
-      Header={
-        <NavigationBlurEffectHeaderView
-          headerRight={
-            <HeaderSubmitTextButton
-              label={t("words.save", { ns: "common" })}
-              isValid={Object.keys(dirtyFields).length > 0}
-              isLoading={isPending}
-              onPress={() => {
-                updateProfile()
-              }}
-            />
-          }
-          title={t("profile.edit_profile")}
-        />
-      }
-      className="bg-system-grouped-background"
-    >
-      <AvatarSection whoami={whoami} />
-      <ProfileForm whoami={whoami} dirtyFields={dirtyFields} setDirtyFields={setDirtyFields} />
-    </SafeNavigationScrollView>
+    <KeyboardAvoidingView behavior="padding" className="flex-1">
+      <SafeNavigationScrollView
+        keyboardShouldPersistTaps="handled"
+        Header={
+          <NavigationBlurEffectHeaderView
+            headerRight={
+              <HeaderSubmitTextButton
+                label={t("words.save", { ns: "common" })}
+                isValid={Object.keys(dirtyFields).length > 0}
+                isLoading={isPending}
+                onPress={() => {
+                  updateProfile()
+                }}
+              />
+            }
+            title={t("profile.edit_profile")}
+          />
+        }
+        className="bg-system-grouped-background"
+      >
+        <AvatarSection whoami={whoami} />
+        <ProfileForm whoami={whoami} dirtyFields={dirtyFields} setDirtyFields={setDirtyFields} />
+      </SafeNavigationScrollView>
+    </KeyboardAvoidingView>
   )
 }
 
@@ -208,6 +218,7 @@ const ProfileForm: FC<{
           <GroupedInsetListCard>
             <View className="flex-1">
               <TextInput
+                clearButtonMode="always"
                 className="text-label h-[100px] w-full flex-1 px-4 py-3"
                 value={dirtyFields.bio ?? whoami?.bio ?? ""}
                 hitSlop={10}

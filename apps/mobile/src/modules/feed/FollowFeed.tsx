@@ -212,7 +212,7 @@ function FollowImpl(props: { feedId: string }) {
       {/* Group 2 */}
       <GroupedInsetListCard className="gap-y-4 p-4">
         <FormProvider form={form}>
-          <View className="-mx-2.5">
+          <View>
             <Controller
               name="title"
               control={form.control}
@@ -223,13 +223,12 @@ function FollowImpl(props: { feedId: string }) {
                   onChangeText={onChange}
                   value={value}
                   ref={ref}
-                  wrapperClassName="ml-2.5"
                 />
               )}
             />
           </View>
 
-          <View className="-mx-2.5">
+          <View>
             <Controller
               name="category"
               control={form.control}
@@ -240,13 +239,12 @@ function FollowImpl(props: { feedId: string }) {
                   onChangeText={onChange}
                   value={value || ""}
                   ref={ref}
-                  wrapperClassName="ml-2.5"
                 />
               )}
             />
           </View>
 
-          <View className="-mx-1">
+          <View>
             <Controller
               name="isPrivate"
               control={form.control}
@@ -262,7 +260,7 @@ function FollowImpl(props: { feedId: string }) {
             />
           </View>
 
-          <View className="-mx-4">
+          <View className="-mx-3">
             <FormLabel className="mb-4 pl-4" label={t("subscription_form.view")} optional />
 
             <Controller
