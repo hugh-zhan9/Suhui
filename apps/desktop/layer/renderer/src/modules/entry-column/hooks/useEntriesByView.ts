@@ -1,5 +1,4 @@
 import { views } from "@follow/constants"
-import { getEntryCollections } from "@follow/store/collection/getter"
 import { useCollectionEntryList } from "@follow/store/collection/hooks"
 import {
   useEntryIdsByFeedId,
@@ -237,7 +236,7 @@ const useLocalEntries = (): UseEntriesReturn => {
 }
 
 export const useEntriesByView = ({ onReset }: { onReset?: () => void }) => {
-  const { feedId, view, isCollection, listId } = useRouteParams()
+  const { feedId, view, listId } = useRouteParams()
 
   const remoteQuery = useRemoteEntries()
   const localQuery = useLocalEntries()
@@ -284,12 +283,6 @@ export const useEntriesByView = ({ onReset }: { onReset?: () => void }) => {
     prevEntryIdsRef.current = nextIds
   }, [entryIdsAsDeps])
 
-  const sortEntries = useMemo(
-    () =>
-      isCollection ? sortEntriesIdByStarAt(entryIds) : sortEntriesIdByEntryPublishedAt(entryIds),
-    [entryIds, isCollection],
-  )
-
   const groupByDate = useGeneralSettingKey("groupByDate")
   const groupedCounts: number[] | undefined = useMemo(() => {
     if (views[view]!.gridMode) {
@@ -301,7 +294,7 @@ export const useEntriesByView = ({ onReset }: { onReset?: () => void }) => {
     const entriesId2Map = entryActions.getFlattenMapEntries()
     const counts = [] as number[]
     let lastDate = ""
-    for (const id of sortEntries) {
+    for (const id of entryIds) {
       const entry = entriesId2Map[id]
       if (!entry) {
         continue
@@ -317,7 +310,7 @@ export const useEntriesByView = ({ onReset }: { onReset?: () => void }) => {
     }
 
     return counts
-  }, [groupByDate, listId, sortEntries, view])
+  }, [groupByDate, listId, entryIds, view])
 
   return {
     ...query,
@@ -328,30 +321,9 @@ export const useEntriesByView = ({ onReset }: { onReset?: () => void }) => {
       unreadSyncService.resetFromRemote()
       return promise
     }, [query]),
-    entriesIds: sortEntries,
+    entriesIds: entryIds,
     groupedCounts,
   }
-}
-
-function sortEntriesIdByEntryPublishedAt(entries: string[]) {
-  const entriesId2Map = entryActions.getFlattenMapEntries()
-  return entries
-    .slice()
-    .sort(
-      (a, b) =>
-        entriesId2Map[b]?.publishedAt
-          .toISOString()
-          .localeCompare(entriesId2Map[a]?.publishedAt.toISOString()!) || 0,
-    )
-}
-
-function sortEntriesIdByStarAt(entries: string[]) {
-  return entries.slice().sort((a, b) => {
-    const aStar = getEntryCollections(a)?.createdAt
-    const bStar = getEntryCollections(b)?.createdAt
-    if (!aStar || !bStar) return 0
-    return bStar.localeCompare(aStar)
-  })
 }
 
 const useFetchEntryContentByStream = (remoteEntryIds?: string[]) => {
