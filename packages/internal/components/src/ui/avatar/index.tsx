@@ -27,7 +27,6 @@ export const AvatarImage = ({
 }) => (
   <AvatarPrimitive.Image
     ref={ref}
-    crossOrigin="anonymous"
     className={cn("aspect-square size-full", className)}
     src={replaceImgUrlIfNeed({ url: props.src })}
     {...props}

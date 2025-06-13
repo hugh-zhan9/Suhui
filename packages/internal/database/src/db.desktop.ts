@@ -11,9 +11,8 @@ declare const globalThis: {
   electron?: any
 }
 
-const isDev = process.env.NODE_ENV === "development"
 const isElectron = !!globalThis["electron"]
-const dbName = isDev && !isElectron ? ":localStorage:" : SQLITE_DB_NAME
+const dbName = isElectron ? SQLITE_DB_NAME : ":localStorage:"
 // eslint-disable-next-line no-console
 console.log("Using database:", dbName)
 

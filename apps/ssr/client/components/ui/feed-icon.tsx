@@ -50,7 +50,6 @@ const FallbackableImage = function FallbackableImage({
   }) {
   return (
     <img
-      crossOrigin="anonymous"
       onError={(e) => {
         if (fallbackUrl && e.currentTarget.src !== fallbackUrl) {
           e.currentTarget.src = fallbackUrl
@@ -188,7 +187,6 @@ export function FeedIcon({
       ImageElement = (
         <PlatformIcon url={image} style={sizeStyle} className={cn("center", className)}>
           <m.img
-            crossOrigin="anonymous"
             className={cn(marginClassName, className)}
             style={sizeStyle}
             {...(disableFadeIn || isIconLoaded ? {} : fadeInVariant)}

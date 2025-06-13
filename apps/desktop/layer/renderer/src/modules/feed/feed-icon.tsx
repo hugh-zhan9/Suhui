@@ -123,7 +123,6 @@ const FallbackableImage = function FallbackableImage({
   }) {
   return (
     <img
-      crossOrigin="anonymous"
       onError={(e) => {
         if (fallbackUrl && e.currentTarget.src !== fallbackUrl) {
           e.currentTarget.src = fallbackUrl
