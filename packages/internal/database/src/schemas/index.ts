@@ -20,7 +20,7 @@ export const feedsTable = sqliteTable("feeds", {
   updatesPerWeek: integer("updates_per_week"),
   latestEntryPublishedAt: text("latest_entry_published_at"),
   tipUserIds: text("tip_users", { mode: "json" }).$type<string[]>(),
-  updatedAt: integer("published_at", { mode: "timestamp" }),
+  updatedAt: integer("published_at", { mode: "timestamp_ms" }),
 })
 
 export const subscriptionsTable = sqliteTable("subscriptions", {
@@ -148,5 +148,8 @@ export const translationsTable = sqliteTable(
 export const imagesTable = sqliteTable("images", (t) => ({
   url: t.text("url").notNull().primaryKey(),
   colors: t.text("colors", { mode: "json" }).$type<ImageColorsResult>().notNull(),
-  createdAt: t.integer("created_at", { mode: "timestamp" }).default(sql`(CURRENT_TIMESTAMP)`),
+  createdAt: t
+    .integer("created_at", { mode: "timestamp_ms" })
+    .notNull()
+    .default(sql`(unixepoch() * 1000)`),
 }))
