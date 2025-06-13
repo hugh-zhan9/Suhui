@@ -2,7 +2,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@follow/components/ui/avata
 import { PlatformIcon } from "@follow/components/ui/platform-icon/index.jsx"
 import type { CombinedEntryModel, FeedModel, FeedOrListRespModel } from "@follow/models/types"
 import { getBackgroundGradient } from "@follow/utils/color"
-import { getImageProxyUrl } from "@follow/utils/img-proxy"
+import { getImageProxyUrl, replaceImgUrlIfNeed } from "@follow/utils/img-proxy"
 import { cn, getUrlIcon } from "@follow/utils/utils"
 import { m } from "motion/react"
 import type { ReactNode } from "react"
@@ -188,6 +188,7 @@ export function FeedIcon({
       ImageElement = (
         <PlatformIcon url={image} style={sizeStyle} className={cn("center", className)}>
           <m.img
+            crossOrigin="anonymous"
             className={cn(marginClassName, className)}
             style={sizeStyle}
             {...(disableFadeIn || isIconLoaded ? {} : fadeInVariant)}
@@ -248,7 +249,11 @@ export function FeedIcon({
   if (fallback && !!finalSrc) {
     return (
       <Avatar className={cn("shrink-0", marginClassName)} style={sizeStyle}>
-        <AvatarImage className="rounded-sm object-cover" asChild src={finalSrc}>
+        <AvatarImage
+          className="rounded-sm object-cover"
+          asChild
+          src={replaceImgUrlIfNeed({ url: finalSrc, inBrowser: true })}
+        >
           {ImageElement}
         </AvatarImage>
         <AvatarFallback delayMs={200} asChild>
@@ -263,7 +268,7 @@ export function FeedIcon({
   // Else
   return (
     <Avatar className={cn("shrink-0", marginClassName)} style={sizeStyle}>
-      <AvatarImage asChild src={finalSrc}>
+      <AvatarImage asChild src={replaceImgUrlIfNeed({ url: finalSrc, inBrowser: true })}>
         {ImageElement}
       </AvatarImage>
       <AvatarFallback delayMs={200}>
