@@ -89,10 +89,7 @@ function sortEntryIdsByPublishDate(a: string, b: string) {
   const entryA = getEntry(a)
   const entryB = getEntry(b)
   if (!entryA || !entryB) return 0
-  return (
-    entryB.publishedAt.getTime() - entryA.publishedAt.getTime() ||
-    entryB.insertedAt.getTime() - entryA.insertedAt.getTime()
-  )
+  return entryB.publishedAt.getTime() - entryA.publishedAt.getTime()
 }
 
 export const useEntryIdsByView = (view: FeedViewType, excludePrivate: boolean) => {
