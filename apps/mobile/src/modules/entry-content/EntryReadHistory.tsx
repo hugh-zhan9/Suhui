@@ -6,7 +6,7 @@ import { useNavigation } from "@/src/lib/navigation/hooks"
 import { ProfileScreen } from "@/src/screens/(modal)/ProfileScreen"
 
 export const EntryReadHistory = ({ entryId }: { entryId: string }) => {
-  const data = useEntryReadHistory(entryId)
+  const data = useEntryReadHistory(entryId, 6)
   const navigation = useNavigation()
   if (!data?.entryReadHistories) return null
   return (

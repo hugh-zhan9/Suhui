@@ -659,13 +659,13 @@ class EntrySyncServices {
     readStream()
   }
 
-  async fetchEntryReadHistory(entryId: EntryId) {
+  async fetchEntryReadHistory(entryId: EntryId, size: number) {
     const res = await apiClient().entries["read-histories"][":id"].$get({
       param: {
         id: entryId,
       },
       query: {
-        size: 6,
+        size,
       },
     })
 

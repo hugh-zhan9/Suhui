@@ -197,12 +197,12 @@ export const useEntryIsInbox = (entryId: string) => {
   )
 }
 
-export const useEntryReadHistory = (entryId: string) => {
+export const useEntryReadHistory = (entryId: string, size = 20) => {
   const isInboxEntry = useEntryIsInbox(entryId)
   const { data } = useQuery({
     queryKey: ["entry-read-history", entryId],
     queryFn: () => {
-      return entrySyncServices.fetchEntryReadHistory(entryId)
+      return entrySyncServices.fetchEntryReadHistory(entryId, size)
     },
     staleTime: 1000 * 60 * 5,
     enabled: !isInboxEntry,
