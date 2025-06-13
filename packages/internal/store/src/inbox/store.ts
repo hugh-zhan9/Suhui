@@ -1,6 +1,5 @@
 import type { InboxSchema } from "@follow/database/schemas/types"
 import { InboxService } from "@follow/database/services/inbox"
-import { UnreadService } from "@follow/database/services/unread"
 
 import { apiClient } from "../context"
 import type { Hydratable, Resetable } from "../internal/base"
@@ -66,7 +65,7 @@ class InboxActions implements Hydratable, Resetable {
     })
 
     tx.persist(() => {
-      return UnreadService.reset()
+      return InboxService.reset()
     })
 
     await tx.run()

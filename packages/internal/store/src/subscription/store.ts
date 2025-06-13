@@ -1,6 +1,5 @@
 import { FeedViewType } from "@follow/constants"
 import { SubscriptionService } from "@follow/database/services/subscription"
-import { UnreadService } from "@follow/database/services/unread"
 import { tracker } from "@follow/tracker"
 
 import { apiClient } from "../context"
@@ -176,7 +175,7 @@ class SubscriptionActions implements Hydratable, Resetable {
     })
 
     tx.persist(() => {
-      return UnreadService.reset()
+      return SubscriptionService.reset()
     })
 
     await tx.run()
