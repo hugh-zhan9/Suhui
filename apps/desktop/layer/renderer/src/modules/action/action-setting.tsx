@@ -75,7 +75,13 @@ export const ActionSetting = () => {
   const actionQuery = usePrefetchActions()
 
   if (actionQuery.isPending) {
-    return <LoadingWithIcon icon={<i className="i-mgc-magic-2-cute-re" />} size="large" />
+    return (
+      <LoadingWithIcon
+        className="flex h-64 items-center justify-center"
+        icon={<i className="i-mgc-magic-2-cute-re" />}
+        size="large"
+      />
+    )
   }
 
   const hasActions = actions.length > 0
