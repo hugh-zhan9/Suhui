@@ -9,6 +9,7 @@ import {
 import { actionActions } from "@follow/store/action/store"
 import { JsonObfuscatedCodec } from "@follow/utils/json-codec"
 import { useQueryClient } from "@tanstack/react-query"
+import { m } from "motion/react"
 import { useTranslation } from "react-i18next"
 import { unstable_usePrompt } from "react-router"
 import { toast } from "sonner"
@@ -26,6 +27,55 @@ import { RuleCard } from "~/modules/action/rule-card"
 
 import { generateExportFilename } from "./utils"
 
+const EmptyActionPlaceholder = () => {
+  const { t } = useTranslation("settings")
+
+  return (
+    <div className="relative flex size-full items-center justify-center">
+      <m.div
+        className="center mt-36 flex-col gap-6 text-center lg:mt-0"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        {/* Magic wand icon for actions */}
+        <div className="center bg-text-quaternary size-20 rounded-2xl">
+          <i className="i-mgc-magic-2-cute-re text-text-secondary size-10" />
+        </div>
+
+        <div className="space-y-2">
+          <h2 className="text-text text-xl font-semibold">
+            {t("actions.action_card.empty.title")}
+          </h2>
+          <p className="text-text-secondary max-w-sm">
+            {t("actions.action_card.empty.description")}
+          </p>
+        </div>
+      </m.div>
+
+      {/* Animated arrow pointing to the New Action button */}
+      <m.div
+        className="absolute right-20 top-12"
+        animate={{
+          x: [0, 8, 0],
+          y: [0, -4, 0],
+          opacity: [0.5, 1, 0.5],
+        }}
+        transition={{
+          duration: 2.5,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+      >
+        <div className="text-text-tertiary flex items-center gap-2">
+          <span className="text-sm font-medium">{t("actions.action_card.empty.start")}</span>
+          <i className="i-mgc-arrow-right-up-cute-re size-6" />
+        </div>
+      </m.div>
+    </div>
+  )
+}
+
 export const ActionSetting = () => {
   const actions = useActionRules()
 
@@ -35,14 +85,20 @@ export const ActionSetting = () => {
     return <LoadingWithIcon icon={<i className="i-mgc-magic-2-cute-re" />} size="large" />
   }
 
+  const hasActions = actions.length > 0
+
   return (
     <div className="flex w-full max-w-5xl flex-col gap-4 p-2">
       <ActionButtonGroup />
-      <div className="@container flex flex-col gap-8">
-        {actions.map((_, actionIdx) => {
-          return <RuleCard key={actionIdx} index={actionIdx} />
-        })}
-      </div>
+      {hasActions ? (
+        <div className="@container flex flex-col gap-8">
+          {actions.map((_, actionIdx) => {
+            return <RuleCard key={actionIdx} index={actionIdx} />
+          })}
+        </div>
+      ) : (
+        <EmptyActionPlaceholder />
+      )}
     </div>
   )
 }
@@ -143,36 +199,39 @@ const ActionButtonGroup = () => {
     }
   }
 
+  const hasActions = actionLength > 0
+
   return (
     <div className="flex w-full items-center justify-end gap-2">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline">
-            <i className="i-mgc-share-forward-cute-re mr-2" />
-            Share
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={handleExport}>
-            <i className="i-mgc-download-2-cute-re mr-2" />
-            Export to File
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleImport}>
-            <i className="i-mgc-file-upload-cute-re mr-2" />
-            Import from File
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleCopyToClipboard}>
-            <i className="i-mgc-copy-2-cute-re mr-2" />
-            Copy to Clipboard
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleImportFromClipboard}>
-            <i className="i-mgc-paste-cute-re mr-2" />
-            Import from Clipboard
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
+      {hasActions && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline">
+              <i className="i-mgc-share-forward-cute-re mr-2" />
+              Share
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={handleExport}>
+              <i className="i-mgc-download-2-cute-re mr-2" />
+              Export to File
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleImport}>
+              <i className="i-mgc-file-upload-cute-re mr-2" />
+              Import from File
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleCopyToClipboard}>
+              <i className="i-mgc-copy-2-cute-re mr-2" />
+              Copy to Clipboard
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleImportFromClipboard}>
+              <i className="i-mgc-paste-cute-re mr-2" />
+              Import from Clipboard
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
       <Button
         variant={actionLength === 0 ? "primary" : "outline"}
         onClick={() => actionActions.addRule((number) => t("actions.actionName", { number }))}
@@ -181,10 +240,12 @@ const ActionButtonGroup = () => {
         {t("actions.newRule")}
       </Button>
 
-      <Button onClick={() => mutation.mutate()}>
-        <i className="i-mgc-check-circle-cute-re mr-2" />
-        {t("actions.save")}
-      </Button>
+      {hasActions && (
+        <Button onClick={() => mutation.mutate()}>
+          <i className="i-mgc-check-circle-cute-re mr-2" />
+          {t("actions.save")}
+        </Button>
+      )}
     </div>
   )
 }
