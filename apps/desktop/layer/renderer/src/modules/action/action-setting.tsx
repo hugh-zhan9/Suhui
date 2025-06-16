@@ -203,35 +203,38 @@ const ActionButtonGroup = () => {
 
   return (
     <div className="flex w-full items-center justify-end gap-2">
-      {hasActions && (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline">
+            {hasActions ? (
               <i className="i-mgc-share-forward-cute-re mr-2" />
-              Share
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={handleExport}>
-              <i className="i-mgc-download-2-cute-re mr-2" />
-              Export to File
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleImport}>
-              <i className="i-mgc-file-upload-cute-re mr-2" />
-              Import from File
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleCopyToClipboard}>
-              <i className="i-mgc-copy-2-cute-re mr-2" />
-              Copy to Clipboard
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleImportFromClipboard}>
-              <i className="i-mgc-paste-cute-re mr-2" />
-              Import from Clipboard
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )}
+            ) : (
+              <i className="i-mgc-file-import-cute-re mr-2" />
+            )}
+            {hasActions ? "Share" : "Import"}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={handleExport} disabled={!hasActions}>
+            <i className="i-mgc-download-2-cute-re mr-2" />
+            Export to File
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={handleImport}>
+            <i className="i-mgc-file-upload-cute-re mr-2" />
+            Import from File
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={handleCopyToClipboard} disabled={!hasActions}>
+            <i className="i-mgc-copy-2-cute-re mr-2" />
+            Copy to Clipboard
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={handleImportFromClipboard}>
+            <i className="i-mgc-paste-cute-re mr-2" />
+            Import from Clipboard
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
       <Button
         variant={actionLength === 0 ? "primary" : "outline"}
         onClick={() => actionActions.addRule((number) => t("actions.actionName", { number }))}
