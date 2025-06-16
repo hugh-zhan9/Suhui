@@ -1,9 +1,8 @@
 import { isMobile } from "@follow/components/hooks/useMobile.js"
 import type { UISettings } from "@follow/shared/settings/interface"
 import { useUnreadAll } from "@follow/store/unread/hooks"
-import { useMutation } from "@tanstack/react-query"
 import i18next from "i18next"
-import { useEffect, useInsertionEffect, useLayoutEffect } from "react"
+import { useEffect, useInsertionEffect, useLayoutEffect, useRef } from "react"
 
 import { useGeneralSettingKey } from "~/atoms/settings/general"
 import { useUISettingValue } from "~/atoms/settings/ui"
@@ -16,9 +15,6 @@ import { loadLanguageAndApply } from "~/lib/load-language"
 
 const useUpdateDockBadge = (setting: UISettings) => {
   const unreadCount = useUnreadAll()
-  const { mutate, isPending } = useMutation({
-    mutationFn: async (unread: number) => ipcServices?.dock.setDockBadge(unread),
-  })
 
   useEffect(() => {
     if (setting.showDockBadge) {
@@ -31,14 +27,19 @@ const useUpdateDockBadge = (setting: UISettings) => {
     return
   }, [setting.showDockBadge])
 
+  const prevCount = useRef<null | number>(null)
   useEffect(() => {
     if (!setting.showDockBadge) {
       return
     }
-    if (!isPending) {
-      mutate(unreadCount)
+    if (prevCount.current === unreadCount) {
+      return
     }
-  }, [unreadCount, mutate, isPending, setting.showDockBadge])
+
+    ipcServices?.dock.setDockBadge(unreadCount).then(() => {
+      prevCount.current = unreadCount
+    })
+  }, [unreadCount, setting.showDockBadge])
 }
 
 const useUISettingSync = () => {
