@@ -7,36 +7,39 @@ import {
   useUpdateActionsMutation,
 } from "@follow/store/action/hooks"
 import { actionActions } from "@follow/store/action/store"
+import { useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { unstable_usePrompt } from "react-router"
 import { toast } from "sonner"
 
-import { queryClient } from "~/lib/query-client"
-import { ActionCard } from "~/modules/action/action-card"
+import { RuleCard } from "~/modules/action/rule-card"
 
 export const ActionSetting = () => {
+  const actions = useActionRules()
+
   const actionQuery = usePrefetchActions()
-  const actionLength = useActionRules((actions) => actions.length)
 
   if (actionQuery.isPending) {
     return <LoadingWithIcon icon={<i className="i-mgc-magic-2-cute-re" />} size="large" />
   }
 
   return (
-    <div className="w-full max-w-4xl space-y-4">
-      {Array.from({ length: actionLength }).map((_action, actionIdx) => (
-        <ActionCard key={actionIdx} index={actionIdx} />
-      ))}
-      <ActionSettingOperations />
+    <div className="flex w-full max-w-5xl flex-col gap-4 p-2">
+      <ActionButtonGroup />
+      <div className="@container flex flex-col gap-8">
+        {actions.map((_, actionIdx) => {
+          return <RuleCard key={actionIdx} index={actionIdx} />
+        })}
+      </div>
     </div>
   )
 }
 
-function ActionSettingOperations() {
-  const { t } = useTranslation("settings")
-
+const ActionButtonGroup = () => {
+  const queryClient = useQueryClient()
   const actionLength = useActionRules((actions) => actions.length)
   const isDirty = useIsActionDataDirty()
+  const { t } = useTranslation("settings")
   unstable_usePrompt({
     message: t("actions.navigate.prompt"),
     when: ({ currentLocation, nextLocation }) =>
@@ -57,23 +60,17 @@ function ActionSettingOperations() {
   })
 
   return (
-    <div className="flex justify-end gap-x-2">
+    <div className="flex w-full items-center justify-end gap-2">
       <Button
-        variant={actionLength > 0 ? "outline" : "primary"}
-        onClick={() => {
-          actionActions.addRule((number) => t("actions.actionName", { number }))
-        }}
+        variant={actionLength === 0 ? "primary" : "outline"}
+        onClick={() => actionActions.addRule((number) => t("actions.actionName", { number }))}
       >
-        <i className="i-mgc-add-cute-re mr-1" />
-        <span>{t("actions.newRule")}</span>
+        <i className="i-mingcute-add-line mr-2" />
+        {t("actions.newRule")}
       </Button>
-      <Button
-        variant="primary"
-        disabled={!isDirty}
-        isLoading={mutation.isPending}
-        onClick={() => mutation.mutate()}
-      >
-        <i className="i-mgc-check-circle-cute-re mr-1" />
+
+      <Button onClick={() => mutation.mutate()}>
+        <i className="i-mgc-check-circle-cute-re mr-2" />
         {t("actions.save")}
       </Button>
     </div>
