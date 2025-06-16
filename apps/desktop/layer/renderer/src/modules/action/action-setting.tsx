@@ -10,10 +10,12 @@ import { actionActions } from "@follow/store/action/store"
 import { JsonObfuscatedCodec } from "@follow/utils/json-codec"
 import { useQueryClient } from "@tanstack/react-query"
 import { m } from "motion/react"
+import { useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import { unstable_usePrompt } from "react-router"
 import { toast } from "sonner"
 
+import { HeaderActionButton, HeaderActionGroup } from "~/components/ui/button/header-action-button"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,6 +27,7 @@ import { copyToClipboard, readFromClipboard } from "~/lib/clipboard"
 import { downloadJsonFile, selectJsonFile } from "~/lib/export"
 import { RuleCard } from "~/modules/action/rule-card"
 
+import { useSetSubViewRightView } from "../app-layout/subview/hooks"
 import { generateExportFilename } from "./utils"
 
 const EmptyActionPlaceholder = () => {
@@ -199,6 +202,36 @@ const ActionButtonGroup = () => {
   }
 
   const hasActions = actionLength > 0
+
+  const setRightView = useSetSubViewRightView()
+  useEffect(() => {
+    setRightView(
+      <HeaderActionGroup>
+        <HeaderActionButton
+          variant="primary"
+          icon="i-mingcute-add-line"
+          onClick={() => actionActions.addRule((number) => t("actions.actionName", { number }))}
+        >
+          {t("actions.newRule")}
+        </HeaderActionButton>
+
+        {hasActions && (
+          <HeaderActionButton
+            variant="accent"
+            icon="i-mgc-check-circle-cute-re"
+            disabled={!isDirty}
+            loading={mutation.isPending}
+            onClick={() => mutation.mutate()}
+          >
+            {mutation.isPending ? "Saving..." : t("actions.save")}
+          </HeaderActionButton>
+        )}
+      </HeaderActionGroup>,
+    )
+    return () => {
+      setRightView(null)
+    }
+  }, [setRightView, actionLength, hasActions, isDirty, mutation, t])
 
   return (
     <div className="mb-6 flex w-full items-center justify-end p-4 lg:justify-between">

@@ -2,15 +2,16 @@ import { Logo } from "@follow/components/icons/logo.jsx"
 import { Button } from "@follow/components/ui/button/index.js"
 import type { RSSHubModel } from "@follow/models"
 import { cn, formatNumber } from "@follow/utils/utils"
-import { memo } from "react"
+import { memo, useCallback, useEffect } from "react"
 import { useTranslation } from "react-i18next"
 
 import RSSHubIconUrl from "~/assets/rsshub-icon.png?url"
 import { whoami } from "~/atoms/user"
 import { ErrorTooltip } from "~/components/common/ErrorTooltip"
+import { HeaderActionButton, HeaderActionGroup } from "~/components/ui/button/header-action-button"
 import { useModalStack } from "~/components/ui/modal/stacked/hooks"
 import { useAuthQuery } from "~/hooks/common"
-import { useSubViewTitle } from "~/modules/app-layout/subview/hooks"
+import { useSetSubViewRightView, useSubViewTitle } from "~/modules/app-layout/subview/hooks"
 import { useTOTPModalWrapper } from "~/modules/profile/hooks"
 import { AddModalContent } from "~/modules/rsshub/add-modal-content"
 import { ConfirmDeleteModalContent } from "~/modules/rsshub/delete-modal-content"
@@ -26,7 +27,25 @@ export function Component() {
   const { present } = useModalStack()
 
   useSubViewTitle("words.rsshub")
-
+  const setRightView = useSetSubViewRightView()
+  const handleAddInstance = useCallback(() => {
+    present({
+      title: t("rsshub.add_new_instance"),
+      content: ({ dismiss }) => <AddModalContent dismiss={dismiss} />,
+    })
+  }, [present, t])
+  useEffect(() => {
+    setRightView(
+      <HeaderActionGroup>
+        <HeaderActionButton variant="accent" icon="i-mingcute-add-line" onClick={handleAddInstance}>
+          {t("rsshub.add_new_instance")}
+        </HeaderActionButton>
+      </HeaderActionGroup>,
+    )
+    return () => {
+      setRightView(null)
+    }
+  }, [setRightView, handleAddInstance, t])
   const list = useAuthQuery(Queries.rsshub.list())
 
   return (
@@ -45,14 +64,7 @@ export function Component() {
       <div className="mx-auto w-full max-w-6xl">
         {/* Add Instance Section */}
         <div className="mb-8 flex justify-center">
-          <Button
-            onClick={() =>
-              present({
-                title: t("rsshub.add_new_instance"),
-                content: ({ dismiss }) => <AddModalContent dismiss={dismiss} />,
-              })
-            }
-          >
+          <Button onClick={handleAddInstance}>
             <i className="i-mgc-add-cute-re mr-2 size-4" />
             <span>{t("rsshub.add_new_instance")}</span>
           </Button>
