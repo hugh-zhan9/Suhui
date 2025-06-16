@@ -15,7 +15,7 @@ import { useTranslation } from "react-i18next"
 import { unstable_usePrompt } from "react-router"
 import { toast } from "sonner"
 
-import { HeaderActionButton, HeaderActionGroup } from "~/components/ui/button/header-action-button"
+import { HeaderActionButton, HeaderActionGroup } from "~/components/ui/button/HeaderActionButton"
 import {
   DropdownMenu,
   DropdownMenuContent,
