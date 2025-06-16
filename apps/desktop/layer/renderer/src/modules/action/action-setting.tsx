@@ -31,31 +31,24 @@ const EmptyActionPlaceholder = () => {
   const { t } = useTranslation("settings")
 
   return (
-    <div className="relative flex size-full items-center justify-center">
-      <m.div
-        className="center mt-36 flex-col gap-6 text-center lg:mt-0"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        {/* Magic wand icon for actions */}
-        <div className="center bg-text-quaternary size-20 rounded-2xl">
-          <i className="i-mgc-magic-2-cute-re text-text-secondary size-10" />
+    <div className="relative flex min-h-96 w-full items-center justify-center">
+      <div className="flex flex-col items-center gap-6 text-center">
+        {/* Simple icon */}
+        <div className="bg-fill-quaternary flex size-16 items-center justify-center rounded-2xl">
+          <i className="i-mgc-magic-2-cute-re text-text-secondary size-8" />
         </div>
 
         <div className="space-y-2">
           <h2 className="text-text text-xl font-semibold">
             {t("actions.action_card.empty.title")}
           </h2>
-          <p className="text-text-secondary max-w-sm">
+          <p className="text-text-secondary max-w-sm text-sm">
             {t("actions.action_card.empty.description")}
           </p>
         </div>
-      </m.div>
-
-      {/* Animated arrow pointing to the New Action button */}
+      </div>
       <m.div
-        className="absolute right-20 top-12"
+        className="absolute -top-6 right-20"
         animate={{
           x: [0, 8, 0],
           y: [0, -4, 0],
@@ -88,10 +81,10 @@ export const ActionSetting = () => {
   const hasActions = actions.length > 0
 
   return (
-    <div className="flex w-full max-w-5xl flex-col gap-4 p-2">
+    <div className="flex w-full flex-col gap-6">
       <ActionButtonGroup />
       {hasActions ? (
-        <div className="@container flex flex-col gap-8">
+        <div className="@container flex flex-col gap-6">
           {actions.map((_, actionIdx) => {
             return <RuleCard key={actionIdx} index={actionIdx} />
           })}
@@ -202,53 +195,67 @@ const ActionButtonGroup = () => {
   const hasActions = actionLength > 0
 
   return (
-    <div className="flex w-full items-center justify-end gap-2">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline">
-            {hasActions ? (
-              <i className="i-mgc-share-forward-cute-re mr-2" />
-            ) : (
-              <i className="i-mgc-file-import-cute-re mr-2" />
-            )}
-            {hasActions ? "Share" : "Import"}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={handleExport} disabled={!hasActions}>
-            <i className="i-mgc-download-2-cute-re mr-2" />
-            Export to File
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleImport}>
-            <i className="i-mgc-file-upload-cute-re mr-2" />
-            Import from File
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleCopyToClipboard} disabled={!hasActions}>
-            <i className="i-mgc-copy-2-cute-re mr-2" />
-            Copy to Clipboard
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleImportFromClipboard}>
-            <i className="i-mgc-paste-cute-re mr-2" />
-            Import from Clipboard
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+    <div className="mb-6 flex w-full items-center justify-end p-4 lg:justify-between">
+      {/* Left side - Simple status */}
+      <div className="hidden lg:block">
+        <h3 className="text-text text-lg font-medium">
+          {hasActions ? `${actionLength} Rules` : "No Rules"}
+        </h3>
+        <p className="text-text-secondary text-sm">
+          {hasActions ? "Active automation rules" : "Create your first automation rule"}
+        </p>
+      </div>
 
-      <Button
-        variant={actionLength === 0 ? "primary" : "outline"}
-        onClick={() => actionActions.addRule((number) => t("actions.actionName", { number }))}
-      >
-        <i className="i-mingcute-add-line mr-2" />
-        {t("actions.newRule")}
-      </Button>
+      {/* Right side - Action buttons */}
+      <div className="flex items-center gap-2">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm">
+              {hasActions ? (
+                <i className="i-mgc-share-forward-cute-re mr-2 size-4" />
+              ) : (
+                <i className="i-mgc-file-import-cute-re mr-2 size-4" />
+              )}
+              {hasActions ? "Share" : "Import"}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuItem onClick={handleExport} disabled={!hasActions}>
+              <i className="i-mgc-download-2-cute-re mr-3 size-4" />
+              Export to File
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleImport}>
+              <i className="i-mgc-file-upload-cute-re mr-3 size-4" />
+              Import from File
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleCopyToClipboard} disabled={!hasActions}>
+              <i className="i-mgc-copy-2-cute-re mr-3 size-4" />
+              Copy to Clipboard
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleImportFromClipboard}>
+              <i className="i-mgc-paste-cute-re mr-3 size-4" />
+              Import from Clipboard
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
-      {hasActions && (
-        <Button onClick={() => mutation.mutate()}>
-          <i className="i-mgc-check-circle-cute-re mr-2" />
-          {t("actions.save")}
+        <Button
+          variant={actionLength === 0 ? "primary" : "outline"}
+          size="sm"
+          onClick={() => actionActions.addRule((number) => t("actions.actionName", { number }))}
+        >
+          <i className="i-mingcute-add-line mr-2 size-4" />
+          {t("actions.newRule")}
         </Button>
-      )}
+
+        {hasActions && (
+          <Button onClick={() => mutation.mutate()} size="sm" disabled={!isDirty}>
+            <i className="i-mgc-check-circle-cute-re mr-2 size-4" />
+            {t("actions.save")}
+          </Button>
+        )}
+      </div>
     </div>
   )
 }
