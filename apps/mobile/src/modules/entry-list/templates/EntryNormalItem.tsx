@@ -236,6 +236,7 @@ const ThumbnailImage = ({
       className={cn("relative ml-4 flex h-full w-24 justify-center overflow-hidden rounded-lg")}
     >
       {image &&
+        !imageError &&
         (isSquare ? (
           <SquareImage image={image} blurhash={blurhash} onError={handleImageError} />
         ) : (
