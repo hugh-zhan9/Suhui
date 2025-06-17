@@ -3,7 +3,7 @@ import { useCallback, useRef } from "react"
 import { m } from "~/components/common/Motion"
 import { copyToClipboard } from "~/lib/clipboard"
 
-import { AnimatedCommandButton } from "./base"
+import { AnimatedCommandButton } from "./AnimatedCommandButton"
 
 export const CopyButton: Component<{
   value: string

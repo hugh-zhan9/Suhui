@@ -1,5 +1,6 @@
+import { cn } from "@follow/utils/utils"
 import type { DragEvent, ReactNode } from "react"
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useId, useRef, useState } from "react"
 
 // Ported from https://github.com/react-dropzone/react-dropzone/issues/753#issuecomment-774782919
 const useDragAndDrop = ({ callback }: { callback: (file: FileList) => void | Promise<void> }) => {
@@ -51,21 +52,34 @@ const useDragAndDrop = ({ callback }: { callback: (file: FileList) => void | Pro
 export const DropZone = ({
   onDrop,
   children,
+  className,
 }: {
   onDrop: (file: FileList) => void | Promise<void>
+  className?: string
   children?: ReactNode
 }) => {
   const { isDragging, dragHandlers } = useDragAndDrop({ callback: onDrop })
 
+  const id = useId()
   return (
     <label
-      className={`center cursor-button flex h-[100px] w-full rounded-md border border-dashed ${
-        isDragging ? "border-accent bg-accent/10" : ""
-      }`}
-      htmlFor="upload-file"
+      className={cn(
+        "center flex h-[100px] w-full cursor-pointer rounded-md border border-dashed",
+        isDragging ? "border-accent bg-accent/10" : "",
+        "hover:border-accent/50 duration-200",
+        className,
+      )}
+      htmlFor={id}
       {...dragHandlers}
     >
       {children}
+      <input
+        id={id}
+        type="file"
+        accept="image/*"
+        onChange={(e) => e.target.files && onDrop(e.target.files)}
+        className="hidden"
+      />
     </label>
   )
 }

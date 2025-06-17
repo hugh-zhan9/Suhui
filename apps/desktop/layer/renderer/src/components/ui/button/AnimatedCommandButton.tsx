@@ -1,15 +1,35 @@
 import { MotionButtonBase } from "@follow/components/ui/button/index.js"
 import { useTypeScriptHappyCallback } from "@follow/hooks"
 import { cn } from "@follow/utils/utils"
+import type { VariantProps } from "class-variance-authority"
+import { cva } from "class-variance-authority"
 import type { HTMLMotionProps, Variants } from "motion/react"
 import { AnimatePresence, m } from "motion/react"
 import type { FC } from "react"
 import * as React from "react"
 import { cloneElement, useRef, useState } from "react"
 
-interface AnimatedCommandButtonProps {
+const animatedCommandButtonVariants = cva(
+  ["center pointer-events-auto flex text-xs", "rounded-md p-1.5 duration-200"],
+  {
+    variants: {
+      variant: {
+        solid: ["border-accent/5 bg-accent/80 text-white border backdrop-blur"],
+        outline: ["text-accent hover:bg-material-ultra-thick"],
+        ghost: [
+          "border-accent/5 bg-accent/80 text-accent border backdrop-blur",
+          "bg-theme-item-active hover:bg-theme-item-hover",
+        ],
+      },
+    },
+    defaultVariants: {
+      variant: "solid",
+    },
+  },
+)
+
+interface AnimatedCommandButtonProps extends VariantProps<typeof animatedCommandButtonVariants> {
   icon: React.JSX.Element
-  variant?: "solid" | "outline" | "ghost"
 }
 
 const iconVariants: Variants = {
@@ -31,7 +51,7 @@ export const AnimatedCommandButton: FC<AnimatedCommandButtonProps & HTMLMotionPr
   icon,
   className,
   style,
-  variant = "solid",
+  variant,
   ...props
 }) => {
   const [pressed, setPressed] = useState(false)
@@ -40,15 +60,7 @@ export const AnimatedCommandButton: FC<AnimatedCommandButtonProps & HTMLMotionPr
   return (
     <MotionButtonBase
       type="button"
-      className={cn(
-        "center pointer-events-auto flex text-xs",
-        "rounded-md p-1.5 duration-200",
-        variant === "solid" || variant === "ghost"
-          ? "border-accent/5 bg-accent/80 text-accent border backdrop-blur"
-          : "text-accent hover:bg-material-ultra-thick",
-        variant === "ghost" && "bg-theme-item-active hover:bg-theme-item-hover",
-        className,
-      )}
+      className={cn(animatedCommandButtonVariants({ variant }), className)}
       onClick={useTypeScriptHappyCallback(
         (e) => {
           setPressed(true)
