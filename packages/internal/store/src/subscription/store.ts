@@ -1,6 +1,7 @@
 import { FeedViewType } from "@follow/constants"
 import { SubscriptionService } from "@follow/database/services/subscription"
 import { tracker } from "@follow/tracker"
+import { omit } from "es-toolkit"
 
 import { apiClient } from "../context"
 import { getFeedById } from "../feed/getter"
@@ -103,11 +104,6 @@ class SubscriptionActions implements Hydratable, Resetable {
           draft.data[getInboxStoreId(subscription.inboxId)] = subscription
           draft.subscriptionIdSet.add(`${subscription.type}/${subscription.inboxId}`)
         }
-
-        const folderName = subscription.category || getDefaultCategory(subscription)
-        if (!folderName) continue
-        draft.categoryOpenStateByView[subscription.view][folderName] =
-          draft.categoryOpenStateByView[subscription.view][folderName] || false
       }
     })
   }
@@ -170,7 +166,7 @@ class SubscriptionActions implements Hydratable, Resetable {
     tx.store(() => {
       // set(defaultState)
       immerSet((draft) => {
-        Object.assign(draft, defaultState)
+        Object.assign(draft, omit(defaultState, ["categoryOpenStateByView"]))
       })
     })
 
