@@ -108,7 +108,6 @@ export const AvatarUploadModal = ({
         width: size,
         height: size,
       }
-
       // Use the helper function to ensure the data is valid
       const constrainedData = constrainCropData(
         initialCropData,
@@ -279,6 +278,42 @@ export const AvatarUploadModal = ({
     })
   }, [cropData])
 
+  // Preset functions
+  const handleFullImageCrop = useCallback(() => {
+    if (!imageRef.current) return
+
+    const img = imageRef.current
+    const size = Math.min(img.naturalWidth, img.naturalHeight)
+
+    const newCropData = {
+      x: (img.naturalWidth - size) / 2,
+      y: (img.naturalHeight - size) / 2,
+      width: size,
+      height: size,
+    }
+
+    const constrainedData = constrainCropData(newCropData, img.naturalWidth, img.naturalHeight)
+    setCropData(constrainedData)
+  }, [constrainCropData])
+
+  const handleCenterCrop = useCallback(() => {
+    if (!imageRef.current) return
+
+    const img = imageRef.current
+    const maxSize = Math.min(img.naturalWidth, img.naturalHeight)
+    const size = maxSize * 0.8
+
+    const newCropData = {
+      x: (img.naturalWidth - size) / 2,
+      y: (img.naturalHeight - size) / 2,
+      width: size,
+      height: size,
+    }
+
+    const constrainedData = constrainCropData(newCropData, img.naturalWidth, img.naturalHeight)
+    setCropData(constrainedData)
+  }, [constrainCropData])
+
   const handleConfirm = useCallback(async () => {
     if (!selectedImage) return
 
@@ -421,13 +456,29 @@ export const AvatarUploadModal = ({
 
       <canvas ref={canvasRef} className="hidden" />
 
-      <div className="flex justify-end gap-2">
-        <Button variant="outline" onClick={onCancel}>
-          {t("words.cancel", { ns: "common" })}
-        </Button>
-        <Button onClick={handleConfirm} disabled={!selectedImage} isLoading={isProcessing}>
-          {t("words.confirm", { ns: "common" })}
-        </Button>
+      <div className="flex justify-between gap-2">
+        {selectedImage ? (
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleFullImageCrop} size="sm">
+              <i className="i-mgc-fullscreen-cute-re mr-1 text-sm" />
+              Full Image
+            </Button>
+            <Button variant="outline" onClick={handleCenterCrop} size="sm">
+              <i className="i-mgc-round-cute-re mr-1 text-sm" />
+              Center Crop
+            </Button>
+          </div>
+        ) : (
+          <div className="flex-1" />
+        )}
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={onCancel}>
+            {t("words.cancel", { ns: "common" })}
+          </Button>
+          <Button onClick={handleConfirm} disabled={!selectedImage} isLoading={isProcessing}>
+            {t("words.confirm", { ns: "common" })}
+          </Button>
+        </div>
       </div>
     </div>
   )
