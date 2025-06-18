@@ -501,31 +501,77 @@ class SubscriptionSyncService {
     await tx.run()
   }
 
-  async changeCategoryView(
-    category: string,
-    currentView: FeedViewType,
-    changeToView: FeedViewType,
-  ) {
-    // TODO: handle local state update
-    const state = get()
-    const folderFeedIds = [] as string[]
-    for (const feedId of state.feedIdByView[currentView]) {
-      const subscription = state.data[feedId]
-      if (!subscription) continue
-      if (subscription.category === category || getDefaultCategory(subscription) === category) {
-        folderFeedIds.push(feedId)
-      }
-    }
-    await Promise.all(
-      folderFeedIds.map((feedId) =>
-        apiClient().subscriptions.$patch({
-          json: {
-            feedId,
-            view: changeToView,
-          },
-        }),
-      ),
-    )
+  async changeCategoryView({
+    category,
+    currentView,
+    newView,
+  }: {
+    category: string
+    currentView: FeedViewType
+    newView: FeedViewType
+  }) {
+    const folderFeedIds = getCategoryFeedIds(category, currentView)
+
+    const tx = createTransaction()
+    tx.store(() => {
+      immerSet((draft) => {
+        for (const feedId of folderFeedIds) {
+          const subscription = draft.data[feedId]
+          if (!subscription) continue
+          subscription.view = newView
+
+          draft.feedIdByView[currentView].delete(feedId)
+          draft.feedIdByView[newView].add(feedId)
+
+          if (subscription.category) {
+            draft.categories[newView].add(subscription.category)
+            draft.categories[currentView].delete(subscription.category)
+          }
+        }
+      })
+    })
+
+    tx.rollback(() => {
+      immerSet((draft) => {
+        for (const feedId of folderFeedIds) {
+          const subscription = draft.data[feedId]
+          if (!subscription) continue
+          subscription.view = currentView
+
+          draft.feedIdByView[newView].delete(feedId)
+          draft.feedIdByView[currentView].add(feedId)
+
+          if (subscription.category) {
+            draft.categories[currentView].add(subscription.category)
+            draft.categories[newView].delete(subscription.category)
+          }
+        }
+      })
+    })
+
+    tx.request(async () => {
+      await Promise.all(
+        folderFeedIds.map((feedId) =>
+          apiClient().subscriptions.$patch({
+            json: {
+              feedId,
+              view: newView,
+            },
+          }),
+        ),
+      )
+    })
+
+    tx.persist(() => {
+      return SubscriptionService.patchMany({
+        feedIds: folderFeedIds,
+        data: {
+          view: newView,
+        },
+      })
+    })
+
+    await tx.run()
   }
 
   async renameCategory({

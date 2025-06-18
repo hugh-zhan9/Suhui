@@ -1,5 +1,9 @@
 import { FeedViewType } from "@follow/constants"
-import { useEntriesQuery, useEntryIdsByFeedId } from "@follow/store/entry/hooks"
+import {
+  getInvalidateEntriesQueryPredicate,
+  useEntriesQuery,
+  useEntryIdsByFeedId,
+} from "@follow/store/entry/hooks"
 import { getFeedById } from "@follow/store/feed/getter"
 import { getSubscriptionById } from "@follow/store/subscription/getter"
 import { getSubscriptionCategory } from "@follow/store/subscription/hooks"
@@ -20,6 +24,7 @@ import { PlatformActivityIndicator } from "@/src/components/ui/loading/PlatformA
 import { views } from "@/src/constants/views"
 import { useNavigation } from "@/src/lib/navigation/hooks"
 import type { Navigation } from "@/src/lib/navigation/Navigation"
+import { queryClient } from "@/src/lib/query-client"
 import { toast } from "@/src/lib/toast"
 import { FollowScreen } from "@/src/screens/(modal)/FollowScreen"
 import { FeedScreen } from "@/src/screens/(stack)/feeds/[feedId]/FeedScreen"
@@ -309,7 +314,19 @@ export const SubscriptionFeedCategoryContextMenu = ({
                 <ContextMenu.CheckboxItem
                   key={`SubContent/${view.name}`}
                   value={isSelected}
-                  // onSelect={onSelect}
+                  onSelect={() => {
+                    subscriptionSyncService
+                      .changeCategoryView({
+                        category,
+                        currentView,
+                        newView: view.view,
+                      })
+                      .then(() => {
+                        queryClient.invalidateQueries({
+                          predicate: getInvalidateEntriesQueryPredicate([view.view, currentView]),
+                        })
+                      })
+                  }}
                 >
                   <ContextMenu.ItemTitle>{t(view.name, { ns: "common" })}</ContextMenu.ItemTitle>
                 </ContextMenu.CheckboxItem>

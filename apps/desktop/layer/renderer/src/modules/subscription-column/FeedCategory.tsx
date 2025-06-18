@@ -35,6 +35,7 @@ import { useNavigateEntry } from "~/hooks/biz/useNavigateEntry"
 import { getRouteParams, useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
 import { useContextMenu } from "~/hooks/common/useContextMenu"
 import { createErrorToaster } from "~/lib/error-parser"
+import { invalidateEntriesQuery } from "~/queries/entries"
 import { getPreferredTitle } from "~/store/feed/hooks"
 
 import { useModalStack } from "../../components/ui/modal/stacked/hooks"
@@ -155,7 +156,17 @@ function FeedCategoryImpl({ data: ids, view, categoryOpenStateData }: FeedCatego
     mutationFn: async (nextView: FeedViewType) => {
       if (!folderName) return
       if (typeof view !== "number") return
-      return subscriptionSyncService.changeCategoryView(folderName, view, nextView)
+      return subscriptionSyncService.changeCategoryView({
+        category: folderName,
+        currentView: view,
+        newView: nextView,
+      })
+    },
+
+    onSuccess(_data, variables) {
+      invalidateEntriesQuery({
+        views: [view, variables],
+      })
     },
   })
 
