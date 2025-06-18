@@ -48,7 +48,7 @@ import { UnreadNumber } from "./UnreadNumber"
 type FeedId = string
 interface FeedCategoryProps {
   data: FeedId[]
-  view?: number
+  view: FeedViewType
   categoryOpenStateData: Record<string, boolean>
 }
 
@@ -251,7 +251,7 @@ function FeedCategoryImpl({ data: ids, view, categoryOpenStateData }: FeedCatego
                 title: t("sidebar.feed_column.context_menu.delete_category_confirmation", {
                   folderName,
                 }),
-                content: () => <CategoryRemoveDialogContent feedIdList={ids} />,
+                content: () => <CategoryRemoveDialogContent category={folderName!} view={view} />,
               })
             },
           }),
@@ -313,6 +313,7 @@ function FeedCategoryImpl({ data: ids, view, categoryOpenStateData }: FeedCatego
             {isCategoryEditing ? (
               <RenameCategoryForm
                 currentCategory={folderName!}
+                view={view}
                 onFinished={() => setIsCategoryEditing(false)}
               />
             ) : (
@@ -375,8 +376,9 @@ export const FeedCategoryAutoHideUnread = memo(function FeedCategoryAutoHideUnre
 
 const RenameCategoryForm: FC<{
   currentCategory: string
+  view: FeedViewType
   onFinished: () => void
-}> = ({ currentCategory, onFinished }) => {
+}> = ({ currentCategory, view, onFinished }) => {
   const navigate = useNavigateEntry()
   const { t } = useTranslation()
   const renameMutation = useMutation({
@@ -386,7 +388,7 @@ const RenameCategoryForm: FC<{
     }: {
       lastCategory: string
       newCategory: string
-    }) => subscriptionSyncService.renameCategory(lastCategory, newCategory),
+    }) => subscriptionSyncService.renameCategory({ lastCategory, newCategory, view }),
     onMutate({ lastCategory, newCategory }) {
       const routeParams = getRouteParams()
 

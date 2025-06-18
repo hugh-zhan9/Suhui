@@ -67,3 +67,19 @@ export const getSubscriptionByCategory = ({
 
 export const getFolderFeedsByFeedId = ({ feedId, view }: { feedId?: string; view: FeedViewType }) =>
   folderFeedsByFeedIdSelector({ feedId, view })(useSubscriptionStore.getState())
+
+export const getCategoryFeedIds = (category: string, view: FeedViewType): string[] => {
+  const feedIds = [] as string[]
+  const state = useSubscriptionStore.getState()
+  for (const id of state.feedIdByView[view].keys()) {
+    const subscription = state.data[id]
+    if (!subscription) continue
+    if (
+      subscription.view === view &&
+      (subscription.category === category || getDefaultCategory(subscription) === category)
+    ) {
+      feedIds.push(id)
+    }
+  }
+  return feedIds
+}
