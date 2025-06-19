@@ -550,16 +550,12 @@ class SubscriptionSyncService {
     })
 
     tx.request(async () => {
-      await Promise.all(
-        folderFeedIds.map((feedId) =>
-          apiClient().subscriptions.$patch({
-            json: {
-              feedId,
-              view: newView,
-            },
-          }),
-        ),
-      )
+      await apiClient().subscriptions.batch.$patch({
+        json: {
+          feedIds: folderFeedIds,
+          view: newView,
+        },
+      })
     })
 
     tx.persist(() => {
