@@ -158,7 +158,7 @@ const Wrapper: FC<{
         animate={controls}
         exit="exit"
         custom={dragOffset}
-        className="bg-material-medium-dark flex size-full backdrop-blur"
+        className="bg-material-medium-dark flex size-full pt-[var(--fo-window-padding-top)] backdrop-blur"
         drag={enableDragClose}
         dragConstraints={{ top: 0, bottom: 300, left: -200, right: 200 }}
         dragElastic={{ top: 0, bottom: 0.3, left: 0.2, right: 0.2 }}
