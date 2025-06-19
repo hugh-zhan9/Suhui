@@ -9,7 +9,7 @@ import { app, dialog } from "electron"
 
 import { getIconPath } from "~/helper"
 import { logger } from "~/logger"
-import { WindowManager } from "~/window"
+import { WindowManager } from "~/manager/window"
 
 import { t } from "./i18n"
 import { store, StoreKey } from "./store"

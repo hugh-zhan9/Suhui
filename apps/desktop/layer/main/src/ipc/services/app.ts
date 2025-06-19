@@ -5,12 +5,12 @@ import { callWindowExpose } from "@follow/shared/bridge"
 import { DEV } from "@follow/shared/constants"
 import { app, BrowserWindow, clipboard, dialog } from "electron"
 
-import { registerMenuAndContextMenu } from "~/init"
 import { i18n } from "~/lib/i18n"
 import { registerAppTray } from "~/lib/tray"
 import { logger } from "~/logger"
+import { AppManager } from "~/manager/app"
+import { WindowManager } from "~/manager/window"
 import { cleanupOldRender, loadDynamicRenderEntry } from "~/updater/hot-updater"
-import { WindowManager } from "~/window"
 
 import { downloadFile } from "../../lib/download"
 import { checkForAppUpdates, quitAndInstall } from "../../updater"
@@ -48,7 +48,7 @@ export class AppService extends IpcService {
   @IpcMethod()
   switchAppLocale(context: IpcContext, input: string): void {
     i18n.changeLanguage(input)
-    registerMenuAndContextMenu()
+    AppManager.registerMenuAndContextMenu()
     registerAppTray()
 
     app.commandLine.appendSwitch("lang", input)

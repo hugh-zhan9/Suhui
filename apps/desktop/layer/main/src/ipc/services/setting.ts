@@ -2,7 +2,7 @@ import { createRequire } from "node:module"
 
 import { app, nativeTheme } from "electron"
 
-import { WindowManager } from "~/window"
+import { WindowManager } from "~/manager/window"
 
 import { setProxyConfig, updateProxy } from "../../lib/proxy"
 import { store } from "../../lib/store"

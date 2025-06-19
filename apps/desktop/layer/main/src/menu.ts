@@ -9,8 +9,8 @@ import { isMacOS, isMAS } from "./env"
 import { clearAllDataAndConfirm } from "./lib/cleaner"
 import { t } from "./lib/i18n"
 import { revealLogFile } from "./logger"
+import { WindowManager } from "./manager/window"
 import { checkForAppUpdates, quitAndInstall } from "./updater"
-import { WindowManager } from "./window"
 
 export const registerAppMenu = () => {
   const menus: Array<MenuItemConstructorOptions | MenuItem> = [

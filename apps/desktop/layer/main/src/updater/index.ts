@@ -3,8 +3,8 @@ import { DEV } from "@follow/shared/constants"
 import { autoUpdater as defaultAutoUpdater } from "electron-updater"
 
 import { GITHUB_OWNER, GITHUB_REPO } from "~/constants/app"
+import { WindowManager } from "~/manager/window"
 import { canUpdateRender, CanUpdateRenderState, hotUpdateRender } from "~/updater/hot-updater"
-import { WindowManager } from "~/window"
 
 import { channel, isWindows } from "../env"
 import { logger } from "../logger"

@@ -14,7 +14,7 @@ import { load } from "js-yaml"
 import { x } from "tar"
 
 import { GITHUB_OWNER, GITHUB_REPO, HOTUPDATE_RENDER_ENTRY_DIR } from "~/constants/app"
-import { WindowManager } from "~/window"
+import { WindowManager } from "~/manager/window"
 
 import { appUpdaterConfig } from "./configs"
 

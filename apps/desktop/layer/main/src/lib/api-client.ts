@@ -5,7 +5,7 @@ import { hc } from "hono/client"
 import { ofetch } from "ofetch"
 
 import { BETTER_AUTH_COOKIE_NAME_SESSION_TOKEN } from "~/constants/app"
-import { WindowManager } from "~/window"
+import { WindowManager } from "~/manager/window"
 
 import { logger } from "../logger"
 

@@ -3,7 +3,7 @@ import { extractElectronWindowOptions } from "@follow/shared/electron"
 import type { BrowserWindow } from "electron/main"
 
 import { logger } from "~/logger"
-import { WindowManager } from "~/window"
+import { WindowManager } from "~/manager/window"
 
 export const handleUrlRouting = (url: string) => {
   const options = extractElectronWindowOptions(url)
