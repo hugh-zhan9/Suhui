@@ -10,10 +10,10 @@ import { i18n } from "~/lib/i18n"
 import { registerAppTray } from "~/lib/tray"
 import { logger } from "~/logger"
 import { cleanupOldRender, loadDynamicRenderEntry } from "~/updater/hot-updater"
+import { WindowManager } from "~/window"
 
 import { downloadFile } from "../../lib/download"
 import { checkForAppUpdates, quitAndInstall } from "../../updater"
-import { getMainWindow } from "../../window"
 import type { IpcContext } from "../base"
 import { IpcMethod, IpcService } from "../base"
 
@@ -62,7 +62,7 @@ export class AppService extends IpcService {
 
     const appLoadEntry = dynamicRenderEntry || path.resolve(__dirname, "../renderer/index.html")
     logger.info("appLoadEntry", appLoadEntry)
-    const mainWindow = getMainWindow()
+    const mainWindow = WindowManager.getMainWindow()
 
     for (const window of allWindows) {
       if (window === mainWindow) {

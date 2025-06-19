@@ -17,7 +17,7 @@ import { updateNotificationsToken } from "./lib/user"
 import { logger } from "./logger"
 import { registerAppMenu } from "./menu"
 import { initializeSentry } from "./sentry"
-import { getMainWindowOrCreate } from "./window"
+import { WindowManager } from "./window"
 
 if (process.argv.length === 3 && process.argv[2]!.startsWith("follow-dev:")) {
   process.env.NODE_ENV = "development"
@@ -190,7 +190,7 @@ const registerPushNotifications = async () => {
           body: data.description,
         })
         notification.on("click", () => {
-          const mainWindow = getMainWindowOrCreate()
+          const mainWindow = WindowManager.getMainWindowOrCreate()
           mainWindow.restore()
           mainWindow.focus()
           const handlers = callWindowExpose(mainWindow)

@@ -21,12 +21,7 @@ import { updateNotificationsToken } from "./lib/user"
 import { logger } from "./logger"
 import { registerUpdater } from "./updater"
 import { cleanupOldRender } from "./updater/hot-updater"
-import {
-  createMainWindow,
-  getMainWindow,
-  getMainWindowOrCreate,
-  windowStateStoreKey,
-} from "./window"
+import { WindowManager } from "./window"
 
 if (DEV) console.info("[main] env loaded:", env)
 
@@ -75,7 +70,7 @@ function bootstrap() {
   app.on("activate", () => {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
-    mainWindow = getMainWindowOrCreate()
+    mainWindow = WindowManager.getMainWindowOrCreate()
     mainWindow.show()
   })
 
@@ -112,7 +107,7 @@ function bootstrap() {
       callback({ cancel: false, requestHeaders: details.requestHeaders })
     })
 
-    mainWindow = createMainWindow()
+    mainWindow = WindowManager.createMainWindow()
 
     updateProxy()
     registerUpdater()
@@ -124,7 +119,7 @@ function bootstrap() {
         if (mainWindow.isMinimized()) mainWindow.restore()
         mainWindow.focus()
       } else {
-        mainWindow = createMainWindow()
+        mainWindow = WindowManager.createMainWindow()
       }
       url && handleOpen(url)
     })
@@ -152,11 +147,11 @@ function bootstrap() {
 
   app.on("before-quit", async () => {
     // store window pos when before app quit
-    const window = getMainWindow()
+    const window = WindowManager.getMainWindow()
     if (!window || window.isDestroyed()) return
     const bounds = window.getBounds()
 
-    store.set(windowStateStoreKey, {
+    store.set(WindowManager.windowStateStoreKey, {
       width: bounds.width,
       height: bounds.height,
       x: bounds.x,

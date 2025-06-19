@@ -71,6 +71,10 @@ class WindowManagerStatic {
     mainWindow: null as BrowserWindow | null,
   }
 
+  constructor() {
+    globalThis["windows"] = this.windows
+  }
+
   private bindEvents(window: BrowserWindow) {
     window.on("leave-html-full-screen", () => {
       // To solve the vibrancy losing issue when leaving full screen mode
