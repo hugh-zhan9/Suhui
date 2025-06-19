@@ -51,6 +51,7 @@
     "@follow/shared": "workspace:*",
     "@follow/types": "workspace:*",
     "@follow/utils": "workspace:*",
+    "@follow/vite-plugin-route-builder": "workspace:*",
     "@types/html-minifier-terser": "7.0.2",
     "chokidar": "4.0.3",
     "code-inspector-plugin": "0.20.11",
