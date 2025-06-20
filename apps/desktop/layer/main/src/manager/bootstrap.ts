@@ -124,11 +124,15 @@ export class BootstrapManager {
   private static installDevTools() {
     import("electron-devtools-installer").then(
       ({ default: installExtension, REDUX_DEVTOOLS, REACT_DEVELOPER_TOOLS }) => {
-        ;[REDUX_DEVTOOLS, REACT_DEVELOPER_TOOLS].forEach((extension) => {
+        ;[
+          REDUX_DEVTOOLS,
+          REACT_DEVELOPER_TOOLS,
+          { id: "acndjpgkpaclldomagafnognkcgjignd" },
+        ].forEach((extension) => {
           installExtension(extension, {
             loadExtensionOptions: { allowFileAccess: true },
           })
-            .then((name) => console.info(`Added Extension:  ${name}`))
+            .then((extension) => console.info(`Added Extension:  ${extension.name}`))
             .catch((err) => console.info("An error occurred:", err))
         })
 
