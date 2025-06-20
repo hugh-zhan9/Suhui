@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from "electron"
+import { app } from "electron"
 
 import { WindowManager } from "~/manager/window"
 
@@ -28,9 +28,9 @@ class LifecycleManagerStatic {
   }
 
   private onActivate() {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      WindowManager.getMainWindowOrCreate()
-    }
+    const mainWindow = WindowManager.getMainWindowOrCreate()
+    mainWindow.show()
+    mainWindow.focus()
   }
 
   public onReady(callback: () => void) {
