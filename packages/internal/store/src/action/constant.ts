@@ -9,14 +9,13 @@ import type { SFSymbol } from "sf-symbols-typescript"
 
 import { actionActions } from "./store"
 
-const filterFieldOptionsMap: Record<
-  ActionFeedField,
-  {
+const filterFieldOptionsMap: {
+  [K in ActionFeedField]: {
     label: Extract<ParseKeys<"settings">, `actions.action_card.feed_options.${string}`>
-    value: ActionFeedField
+    value: K
     type?: "text" | "number" | "view" | "status"
   }
-> = {
+} = {
   status: {
     label: "actions.action_card.feed_options.status",
     value: "status",
@@ -73,14 +72,13 @@ const filterFieldOptionsMap: Record<
 
 export const filterFieldOptions = Object.values(filterFieldOptionsMap)
 
-const filterOperatorOptionsMap: Record<
-  ActionOperation,
-  {
+const filterOperatorOptionsMap: {
+  [K in ActionOperation]: {
     label: Extract<ParseKeys<"settings">, `actions.action_card.operation_options.${string}`>
-    value: ActionOperation
+    value: K
     types: Array<"text" | "number" | "view" | "status">
   }
-> = {
+} = {
   contains: {
     label: "actions.action_card.operation_options.contains",
     value: "contains",
