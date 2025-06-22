@@ -39,8 +39,11 @@ export function EntryContentHTMLRenderer<AS extends keyof JSX.IntrinsicElements 
         {} as Record<string, MarkdownImage>,
       ) ?? {}
 
+    const { url } = state
+
     return {
       images,
+      url,
     }
   })
 
@@ -52,16 +55,21 @@ export function EntryContentHTMLRenderer<AS extends keyof JSX.IntrinsicElements 
       },
       transformUrl(url) {
         if (!url || url.startsWith("http")) return url
+
         const feed = getFeedById(feedId)
         if (!feed) return url
-        const feedSiteUrl = "siteUrl" in feed ? feed.siteUrl : undefined
 
+        const feedSiteUrl = "siteUrl" in feed ? feed.siteUrl : undefined
         if (url.startsWith("/") && feedSiteUrl) return safeUrl(url, feedSiteUrl)
+
+        const entryUrl = entry?.url
+        if (url?.startsWith(".") && entryUrl) return safeUrl(url, entryUrl)
+
         return url
       },
       ensureAndRenderTimeStamp,
     }
-  }, [feedId, view])
+  }, [entry, feedId, view])
   return (
     // eslint-disable-next-line @eslint-react/no-context-provider
     <MarkdownImageRecordContext.Provider value={images}>
