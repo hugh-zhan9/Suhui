@@ -57,13 +57,9 @@ export function EntryContentHTMLRenderer<AS extends keyof JSX.IntrinsicElements 
         if (!url || url.startsWith("http")) return url
 
         const feed = getFeedById(feedId)
-        if (!feed) return url
+        if (url.startsWith("/") && feed?.siteUrl) return safeUrl(url, feed.siteUrl)
 
-        const feedSiteUrl = "siteUrl" in feed ? feed.siteUrl : undefined
-        if (url.startsWith("/") && feedSiteUrl) return safeUrl(url, feedSiteUrl)
-
-        const entryUrl = entry?.url
-        if (url?.startsWith(".") && entryUrl) return safeUrl(url, entryUrl)
+        if (url?.startsWith(".") && entry?.url) return safeUrl(url, entry?.url)
 
         return url
       },
