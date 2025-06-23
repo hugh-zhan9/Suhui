@@ -1,7 +1,7 @@
 import { FeedViewType } from "@follow/constants"
 import { useEntry, usePrefetchEntryDetail } from "@follow/store/entry/hooks"
 import { entrySyncServices } from "@follow/store/entry/store"
-import { useFeed } from "@follow/store/feed/hooks"
+import { useFeedById } from "@follow/store/feed/hooks"
 import { usePrefetchEntryTranslation } from "@follow/store/translation/hooks"
 import { useAutoMarkAsRead } from "@follow/store/unread/hooks"
 import { PortalProvider } from "@gorhom/portal"
@@ -78,7 +78,7 @@ export const EntryDetailScreen: NavigationControllerView<{
         {
           // Ensure that the replace animation is used
           stackAnimation: "fade_from_bottom",
-          transitionDuration: 150,
+          transitionDuration: 300,
         },
       )
     }, [entryIds, navigation, nextEntryId, viewType]),
@@ -178,7 +178,7 @@ const EntryInfo = ({ entryId }: { entryId: string }) => {
     publishedAt: state.publishedAt,
     feedId: state.feedId,
   }))
-  const feed = useFeed(entry?.feedId)
+  const feed = useFeedById(entry?.feedId)
   const secondaryLabelColor = useColor("secondaryLabel")
 
   if (!entry) return null

@@ -4,6 +4,8 @@ import { RotatingRefreshIcon } from "@follow/components/ui/loading/index.jsx"
 import { EllipsisHorizontalTextWithTooltip } from "@follow/components/ui/typography/index.js"
 import { FeedViewType, views } from "@follow/constants"
 import { useIsOnline } from "@follow/hooks"
+import { getFeedById } from "@follow/store/feed/getter"
+import { useFeedById } from "@follow/store/feed/hooks"
 import { stopPropagation } from "@follow/utils/dom"
 import { cn, isBizId } from "@follow/utils/utils"
 import type { FC } from "react"
@@ -22,7 +24,7 @@ import { useRunCommandFn } from "~/modules/command/hooks/use-command"
 import { useCommandShortcuts } from "~/modules/command/hooks/use-command-binding"
 import { EntryHeader } from "~/modules/entry-content/header"
 import { useRefreshFeedMutation } from "~/queries/feed"
-import { getFeedById, useFeedById, useFeedHeaderTitle } from "~/store/feed"
+import { useFeedHeaderTitle } from "~/store/feed/hooks"
 
 import { MarkAllReadButton } from "../components/mark-all-button"
 import { useIsPreviewFeed } from "../hooks/useIsPreviewFeed"
@@ -167,7 +169,7 @@ const PreviewHeaderInfoWrapper: Component = ({ children }) => {
             e.stopPropagation()
             navigate(previewBackPath() || "/")
           }}
-          className="no-drag-region hover:text-accent mr-1 inline-flex items-center gap-1 duration-200"
+          className="no-drag-region hover:text-accent mr-1 inline-flex items-center gap-1 whitespace-nowrap duration-200"
         >
           <i className="i-mingcute-left-line" />
           <span className="text-sm font-medium">{tCommon("words.back")}</span>
@@ -181,13 +183,11 @@ const PreviewHeaderInfoWrapper: Component = ({ children }) => {
         className="text-accent cursor-button from-accent/10 via-accent/15 to-accent/20 hover:bg-accent animate-gradient-x -mx-4 mt-3.5 flex place-items-center justify-center gap-1 bg-gradient-to-r px-3 py-2 font-semibold transition-all duration-300 hover:text-white"
         onClick={() => {
           const { feedId, listId } = getRouteParams()
-          if (!feedId) return
           const feed = getFeedById(feedId)
-          if (!feed) return
           follow({
             isList: !!listId,
             id: listId ?? feedId,
-            url: feed.type === "feed" ? feed.url : undefined,
+            url: feed?.type === "feed" ? feed.url : undefined,
           })
         }}
       >
