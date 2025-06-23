@@ -131,6 +131,7 @@ export const GeneralScreen: NavigationControllerView = () => {
   return (
     <SafeNavigationScrollView
       className="bg-system-grouped-background"
+      contentViewClassName="flex-1"
       Header={<NavigationBlurEffectHeaderView title={t("titles.general")} />}
     >
       {/* Language */}
