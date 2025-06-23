@@ -234,15 +234,16 @@ const SelectableTextSheet: FC<{
   }
 
   return (
-    <Modal
-      transparent
-      visible={isRendered}
-      onRequestClose={handleClose}
-      animationType="fade"
-      statusBarTranslucent
-      navigationBarTranslucent
-    >
-      <View className="relative max-h-screen min-h-screen w-screen">
+    // Wrap in a View to avoid rendering issues with Modal on Android
+    <View>
+      <Modal
+        transparent
+        visible={isRendered}
+        onRequestClose={handleClose}
+        animationType="fade"
+        statusBarTranslucent
+        navigationBarTranslucent
+      >
         <Pressable onPress={handleClose} style={StyleSheet.absoluteFill}>
           <View className="bg-black/40" style={StyleSheet.absoluteFill} />
         </Pressable>
@@ -269,8 +270,8 @@ const SelectableTextSheet: FC<{
             <SelectableText className="text-label text-base leading-6">{text}</SelectableText>
           </ScrollView>
         </Animated.View>
-      </View>
-    </Modal>
+      </Modal>
+    </View>
   )
 }
 
