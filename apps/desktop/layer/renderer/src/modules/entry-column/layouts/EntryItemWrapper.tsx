@@ -88,14 +88,14 @@ export const EntryItemWrapper: FC<
       e.stopPropagation()
 
       const shouldNavigate = getRouteParams().entryId !== entry?.id
-      console.info(
-        "handleClick",
-        e,
-        getRouteParams().entryId,
-        entry?.id,
-        shouldNavigate,
-        entry?.feedId,
-      )
+      // console.info(
+      //   "handleClick",
+      //   e,
+      //   getRouteParams().entryId,
+      //   entry?.id,
+      //   shouldNavigate,
+      //   entry?.feedId,
+      // )
       if (!shouldNavigate) return
       if (!entry?.feedId) return
       if (!asRead) {
