@@ -1,30 +1,26 @@
-import {
-  useFocusActions,
-  useGlobalFocusableScopeSelector,
-} from "@follow/components/common/Focusable/index.js"
 import { MemoedDangerousHTMLStyle } from "@follow/components/common/MemoedDangerousHTMLStyle.js"
 import { Spring } from "@follow/components/constants/spring.js"
 import { MotionButtonBase } from "@follow/components/ui/button/index.js"
 import { RootPortal } from "@follow/components/ui/portal/index.js"
 import { ScrollArea } from "@follow/components/ui/scroll-area/index.js"
 import { FeedViewType } from "@follow/constants"
-import { useSmoothScroll, useTitle } from "@follow/hooks"
+import { useTitle } from "@follow/hooks"
 import type { FeedModel } from "@follow/models/types"
 import { useEntry } from "@follow/store/entry/hooks"
 import { useFeedById } from "@follow/store/feed/hooks"
 import { useIsInbox } from "@follow/store/inbox/hooks"
 import { nextFrame, stopPropagation } from "@follow/utils/dom"
 import { EventBus } from "@follow/utils/event-bus"
-import { cn, combineCleanupFunctions } from "@follow/utils/utils"
+import { cn } from "@follow/utils/utils"
 import { ErrorBoundary } from "@sentry/react"
 import type { JSAnimation, Variants } from "motion/react"
-import { AnimatePresence, m, useAnimationControls } from "motion/react"
+import { m, useAnimationControls } from "motion/react"
 import * as React from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
 
 import { useEntryIsInReadability } from "~/atoms/readability"
 import { useIsZenMode, useUISettingKey } from "~/atoms/settings/ui"
-import { Focusable, FocusablePresets } from "~/components/common/Focusable"
+import { Focusable } from "~/components/common/Focusable"
 import { ShadowDOM } from "~/components/common/ShadowDOM"
 import type { TocRef } from "~/components/ui/markdown/components/Toc"
 import { useInPeekModal } from "~/components/ui/modal/inspire/InPeekModal"
@@ -33,8 +29,6 @@ import { useRenderStyle } from "~/hooks/biz/useRenderStyle"
 import { useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
 import { useFeedSafeUrl } from "~/hooks/common/useFeedSafeUrl"
 import { COMMAND_ID } from "~/modules/command/commands/id"
-import { useCommandBinding } from "~/modules/command/hooks/use-command-binding"
-import { useCommandHotkey } from "~/modules/command/hooks/use-register-hotkey"
 import { EntryContentHTMLRenderer } from "~/modules/renderer/html"
 import { WrappedElementProvider } from "~/providers/wrapped-element-provider"
 
@@ -46,15 +40,15 @@ import { EntryTimelineSidebar } from "../EntryTimelineSidebar"
 import { EntryTitle } from "../EntryTitle"
 import { SourceContentPanel } from "../SourceContentView"
 import { SupportCreator } from "../SupportCreator"
-import type { EntryContentProps } from "./components"
-import {
-  ContainerToc,
-  NoContent,
-  ReadabilityNotice,
-  RenderError,
-  TitleMetaHandler,
-} from "./components"
+import { ContainerToc } from "./ContainerToc"
+import { EntryCommandShortcutRegister } from "./EntryCommandShortcutRegister"
 import { EntryContentLoading } from "./EntryContentLoading"
+import { EntryNoContent } from "./EntryNoContent"
+import { EntryRenderError } from "./EntryRenderError"
+import { EntryScrollingAndNavigationHandler } from "./EntryScrollingAndNavigationHandler.js"
+import { EntryTitleMetaHandler } from "./EntryTitleMetaHandler"
+import { ReadabilityNotice } from "./ReadabilityNotice"
+import type { EntryContentProps } from "./types"
 
 const pageMotionVariants = {
   initial: { opacity: 0, y: 25 },
@@ -123,6 +117,7 @@ export const EntryContent: Component<EntryContentProps> = ({
 
   return (
     <>
+      <EntryCommandShortcutRegister entryId={entryId} />
       {!isInPeekModal && (
         <EntryHeader
           entryId={entryId}
@@ -138,7 +133,10 @@ export const EntryContent: Component<EntryContentProps> = ({
         className="@container relative flex size-full flex-col overflow-hidden print:size-auto print:overflow-visible"
       >
         <RootPortal to={panelPortalElement}>
-          <RegisterCommands scrollAnimationRef={scrollAnimationRef} scrollerRef={scrollerRef} />
+          <EntryScrollingAndNavigationHandler
+            scrollAnimationRef={scrollAnimationRef}
+            scrollerRef={scrollerRef}
+          />
         </RootPortal>
         <EntryTimelineSidebar entryId={entryId} />
         <EntryScrollArea className={className} scrollerRef={scrollerRef}>
@@ -185,9 +183,9 @@ export const EntryContent: Component<EntryContentProps> = ({
 
               <WrappedElementProvider boundingDetection>
                 <div className="mx-auto mb-32 mt-8 max-w-full cursor-auto text-[0.94rem]">
-                  <TitleMetaHandler entryId={entryId} />
+                  <EntryTitleMetaHandler entryId={entryId} />
                   <AISummary entryId={entryId} />
-                  <ErrorBoundary fallback={RenderError}>
+                  <ErrorBoundary fallback={EntryRenderError}>
                     <ReadabilityNotice entryId={entryId} />
                     <ShadowDOM injectHostStyles={!isInbox}>
                       {!!customCSS && (
@@ -223,7 +221,7 @@ export const EntryContent: Component<EntryContentProps> = ({
                       </pre>
                     </div>
                   ) : (
-                    <NoContent id={entryId} url={entry.url ?? ""} />
+                    <EntryNoContent id={entryId} url={entry.url ?? ""} />
                   )}
                 </div>
               )}
@@ -305,168 +303,3 @@ const Renderer: React.FC<{
     </EntryContentHTMLRenderer>
   )
 })
-
-const RegisterCommands = ({
-  scrollerRef,
-  scrollAnimationRef,
-}: {
-  scrollerRef: React.RefObject<HTMLDivElement | null>
-
-  scrollAnimationRef: React.RefObject<JSAnimation<any> | null>
-}) => {
-  const isAlreadyScrolledBottomRef = useRef(false)
-  const [showKeepScrollingPanel, setShowKeepScrollingPanel] = useState(false)
-
-  const when = useGlobalFocusableScopeSelector(FocusablePresets.isEntryRender)
-
-  useCommandBinding({
-    commandId: COMMAND_ID.entryRender.scrollUp,
-    when,
-  })
-
-  useCommandBinding({
-    commandId: COMMAND_ID.entryRender.scrollDown,
-    when,
-  })
-
-  useCommandBinding({
-    commandId: COMMAND_ID.entryRender.nextEntry,
-    when,
-  })
-
-  useCommandBinding({
-    commandId: COMMAND_ID.entryRender.previousEntry,
-    when,
-  })
-
-  useCommandHotkey({
-    commandId: COMMAND_ID.layout.focusToTimeline,
-    when,
-    shortcut: "Backspace, Escape",
-  })
-
-  const { highlightBoundary } = useFocusActions()
-  const smoothScrollTo = useSmoothScroll()
-  useEffect(() => {
-    const checkScrollBottom = ($scroller: HTMLDivElement) => {
-      const currentScroll = $scroller.scrollTop
-      const { scrollHeight, clientHeight } = $scroller
-
-      if (isAlreadyScrolledBottomRef.current) {
-        EventBus.dispatch(COMMAND_ID.timeline.switchToNext)
-        setShowKeepScrollingPanel(false)
-        isAlreadyScrolledBottomRef.current = false
-        smoothScrollTo(0, $scroller)
-        return
-      }
-
-      if (scrollHeight && clientHeight) {
-        isAlreadyScrolledBottomRef.current =
-          Math.abs(currentScroll + clientHeight - scrollHeight) < 2
-        setShowKeepScrollingPanel(isAlreadyScrolledBottomRef.current)
-      }
-    }
-
-    const checkScrollBottomByWheel = () => {
-      isAlreadyScrolledBottomRef.current = false
-      setShowKeepScrollingPanel(false)
-    }
-    scrollerRef.current?.addEventListener("wheel", checkScrollBottomByWheel)
-
-    const cleanupScrollAnimation = () => {
-      scrollAnimationRef.current?.stop()
-      scrollAnimationRef.current = null
-    }
-    return combineCleanupFunctions(
-      () => {
-        scrollerRef.current?.removeEventListener("wheel", checkScrollBottomByWheel)
-      },
-      cleanupScrollAnimation,
-      EventBus.subscribe(COMMAND_ID.entryRender.scrollUp, () => {
-        const $scroller = scrollerRef.current
-        if (!$scroller) return
-
-        const currentScroll = $scroller.scrollTop
-        // Smart scroll distance: larger viewports get larger scroll distances
-        // But cap it at a reasonable maximum for very large screens
-        const viewportHeight = $scroller.clientHeight
-        const delta = Math.min(Math.max(120, viewportHeight * 0.25), 250)
-
-        cleanupScrollAnimation()
-        const targetScroll = Math.max(0, currentScroll - delta)
-        smoothScrollTo(targetScroll, $scroller)
-        checkScrollBottom($scroller)
-      }),
-
-      EventBus.subscribe(COMMAND_ID.entryRender.scrollDown, () => {
-        const $scroller = scrollerRef.current
-        if (!$scroller) return
-
-        const currentScroll = $scroller.scrollTop
-        // Smart scroll distance: larger viewports get larger scroll distances
-        // But cap it at a reasonable maximum for very large screens
-        const viewportHeight = $scroller.clientHeight
-        const delta = Math.min(Math.max(120, viewportHeight * 0.25), 250)
-
-        cleanupScrollAnimation()
-        const targetScroll = Math.min(
-          $scroller.scrollHeight - $scroller.clientHeight,
-          currentScroll + delta,
-        )
-        smoothScrollTo(targetScroll, $scroller)
-        checkScrollBottom($scroller)
-      }),
-      EventBus.subscribe(
-        COMMAND_ID.layout.focusToEntryRender,
-        ({ highlightBoundary: highlight }) => {
-          const $scroller = scrollerRef.current
-          if (!$scroller) {
-            return
-          }
-
-          $scroller.focus()
-          if (highlight) {
-            nextFrame(highlightBoundary)
-          }
-        },
-      ),
-    )
-  }, [highlightBoundary, scrollAnimationRef, scrollerRef, smoothScrollTo])
-
-  return (
-    <AnimatePresence>
-      {showKeepScrollingPanel && (
-        <FloatPanel side="bottom">
-          Already scrolled to the bottom.
-          <br />
-          Keep pressing to jump to the next article
-        </FloatPanel>
-      )}
-    </AnimatePresence>
-  )
-}
-
-const FloatPanel: React.FC<{ children: React.ReactNode; side: "bottom" | "top" }> = ({
-  children,
-  side,
-}) => (
-  <m.div
-    initial={{ opacity: 0, y: 32 }}
-    animate={{ opacity: 1, y: 0 }}
-    exit={{ opacity: 0, y: 32 }}
-    transition={{ duration: 0.2 }}
-    className={cn(
-      "bg-material-ultra-thick text-text backdrop-blur-background absolute left-1/2 z-50 -translate-x-1/2 select-none rounded-2xl px-6 py-3 text-center text-[15px] font-medium shadow-xl",
-      side === "bottom" ? "bottom-8" : "top-8",
-    )}
-    style={{
-      boxShadow: "0 4px 24px 0 rgba(0,0,0,0.10), 0 1.5px 4px 0 rgba(0,0,0,0.08)",
-      WebkitBackdropFilter: "blur(16px)",
-      backdropFilter: "blur(16px)",
-      maxWidth: 360,
-      width: "calc(100vw - 32px)",
-    }}
-  >
-    {children}
-  </m.div>
-)
