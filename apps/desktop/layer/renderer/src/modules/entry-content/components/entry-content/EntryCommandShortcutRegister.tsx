@@ -1,4 +1,5 @@
 import { useGlobalFocusableScopeSelector } from "@follow/components/common/Focusable/hooks.js"
+import type { FeedViewType } from "@follow/constants"
 import { useEntry } from "@follow/store/entry/hooks"
 
 import { FocusablePresets } from "~/components/common/Focusable"
@@ -8,7 +9,13 @@ import { useCommandBinding } from "~/modules/command/hooks/use-command-binding"
 /**
  * Centralized management of entry command shortcut key
  */
-export const EntryCommandShortcutRegister = ({ entryId }: { entryId: string }) => {
+export const EntryCommandShortcutRegister = ({
+  entryId,
+  view,
+}: {
+  entryId: string
+  view: FeedViewType
+}) => {
   const hasModal = useHasModal()
   const entry = useEntry(entryId, (state) => ({ url: state.url }))
 
@@ -36,7 +43,7 @@ export const EntryCommandShortcutRegister = ({ entryId }: { entryId: string }) =
   useCommandBinding({
     when: baseCondition,
     commandId: COMMAND_ID.entry.star,
-    args: [{ entryId }],
+    args: [{ entryId, view }],
   })
 
   useCommandBinding({

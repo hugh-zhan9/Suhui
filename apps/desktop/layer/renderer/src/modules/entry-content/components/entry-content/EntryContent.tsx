@@ -117,7 +117,7 @@ export const EntryContent: Component<EntryContentProps> = ({
 
   return (
     <>
-      <EntryCommandShortcutRegister entryId={entryId} />
+      <EntryCommandShortcutRegister entryId={entryId} view={view} />
       {!isInPeekModal && (
         <EntryHeader
           entryId={entryId}
