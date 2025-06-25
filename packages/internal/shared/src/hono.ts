@@ -12,7 +12,6 @@ import { InferInsertModel, SQL } from 'drizzle-orm';
 import * as better_auth_plugins from 'better-auth/plugins';
 import * as better_auth from 'better-auth';
 import { BetterAuthOptions } from 'better-auth';
-import Stripe from 'stripe';
 
 type Env = {
     Bindings: HttpBindings;
@@ -4353,10 +4352,10 @@ declare const invitations: drizzle_orm_pg_core.PgTableWithColumns<{
             data: string;
             driverParam: string;
             notNull: true;
-            hasDefault: true;
+            hasDefault: false;
             isPrimaryKey: true;
             isAutoincrement: false;
-            hasRuntimeDefault: true;
+            hasRuntimeDefault: false;
             enumValues: [string, ...string[]];
             baseColumn: never;
             identity: undefined;
@@ -4452,7 +4451,6 @@ declare const invitationsOpenAPISchema: zod.ZodObject<{
     fromUserId: string;
     toUserId: string | null;
 }>;
-type InvitationDB = typeof invitations.$inferSelect;
 declare const invitationsRelations: drizzle_orm.Relations<"invitations", {
     users: drizzle_orm.One<"user", false>;
 }>;
@@ -6366,57 +6364,6 @@ declare const user: drizzle_orm_pg_core.PgTableWithColumns<{
                 youtube: string;
             };
         }>;
-        stripeCustomerId: drizzle_orm_pg_core.PgColumn<{
-            name: "stripe_customer_id";
-            tableName: "user";
-            dataType: "string";
-            columnType: "PgText";
-            data: string;
-            driverParam: string;
-            notNull: false;
-            hasDefault: false;
-            isPrimaryKey: false;
-            isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: [string, ...string[]];
-            baseColumn: never;
-            identity: undefined;
-            generated: undefined;
-        }, {}, {}>;
-        role: drizzle_orm_pg_core.PgColumn<{
-            name: "role";
-            tableName: "user";
-            dataType: "string";
-            columnType: "PgText";
-            data: string;
-            driverParam: string;
-            notNull: false;
-            hasDefault: false;
-            isPrimaryKey: false;
-            isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: [string, ...string[]];
-            baseColumn: never;
-            identity: undefined;
-            generated: undefined;
-        }, {}, {}>;
-        roleEndAt: drizzle_orm_pg_core.PgColumn<{
-            name: "role_end_at";
-            tableName: "user";
-            dataType: "date";
-            columnType: "PgTimestamp";
-            data: Date;
-            driverParam: string;
-            notNull: false;
-            hasDefault: false;
-            isPrimaryKey: false;
-            isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: undefined;
-            baseColumn: never;
-            identity: undefined;
-            generated: undefined;
-        }, {}, {}>;
     };
     dialect: "pg";
 }>;
@@ -6688,57 +6635,6 @@ declare const users: drizzle_orm_pg_core.PgTableWithColumns<{
                 youtube: string;
             };
         }>;
-        stripeCustomerId: drizzle_orm_pg_core.PgColumn<{
-            name: "stripe_customer_id";
-            tableName: "user";
-            dataType: "string";
-            columnType: "PgText";
-            data: string;
-            driverParam: string;
-            notNull: false;
-            hasDefault: false;
-            isPrimaryKey: false;
-            isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: [string, ...string[]];
-            baseColumn: never;
-            identity: undefined;
-            generated: undefined;
-        }, {}, {}>;
-        role: drizzle_orm_pg_core.PgColumn<{
-            name: "role";
-            tableName: "user";
-            dataType: "string";
-            columnType: "PgText";
-            data: string;
-            driverParam: string;
-            notNull: false;
-            hasDefault: false;
-            isPrimaryKey: false;
-            isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: [string, ...string[]];
-            baseColumn: never;
-            identity: undefined;
-            generated: undefined;
-        }, {}, {}>;
-        roleEndAt: drizzle_orm_pg_core.PgColumn<{
-            name: "role_end_at";
-            tableName: "user";
-            dataType: "date";
-            columnType: "PgTimestamp";
-            data: Date;
-            driverParam: string;
-            notNull: false;
-            hasDefault: false;
-            isPrimaryKey: false;
-            isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: undefined;
-            baseColumn: never;
-            identity: undefined;
-            generated: undefined;
-        }, {}, {}>;
     };
     dialect: "pg";
 }>;
@@ -6770,9 +6666,6 @@ declare const usersOpenApiSchema: zod.ZodObject<Omit<{
         facebook: string;
         youtube: string;
     }>>;
-    stripeCustomerId: zod.ZodNullable<zod.ZodString>;
-    role: zod.ZodNullable<zod.ZodString>;
-    roleEndAt: zod.ZodNullable<zod.ZodDate>;
 }, "email">, "strip", zod.ZodTypeAny, {
     id: string;
     name: string | null;
@@ -6793,9 +6686,6 @@ declare const usersOpenApiSchema: zod.ZodObject<Omit<{
         facebook: string;
         youtube: string;
     } | null;
-    stripeCustomerId: string | null;
-    role: string | null;
-    roleEndAt: Date | null;
 }, {
     id: string;
     name: string | null;
@@ -6816,9 +6706,6 @@ declare const usersOpenApiSchema: zod.ZodObject<Omit<{
         facebook: string;
         youtube: string;
     } | null;
-    stripeCustomerId: string | null;
-    role: string | null;
-    roleEndAt: Date | null;
 }>;
 declare const account: drizzle_orm_pg_core.PgTableWithColumns<{
     name: "account";
@@ -7368,217 +7255,6 @@ declare const twoFactor: drizzle_orm_pg_core.PgTableWithColumns<{
             isAutoincrement: false;
             hasRuntimeDefault: false;
             enumValues: [string, ...string[]];
-            baseColumn: never;
-            identity: undefined;
-            generated: undefined;
-        }, {}, {}>;
-    };
-    dialect: "pg";
-}>;
-declare const stripeSubscriptions: drizzle_orm_pg_core.PgTableWithColumns<{
-    name: "stripe_subscriptions";
-    schema: undefined;
-    columns: {
-        id: drizzle_orm_pg_core.PgColumn<{
-            name: "id";
-            tableName: "stripe_subscriptions";
-            dataType: "string";
-            columnType: "PgText";
-            data: string;
-            driverParam: string;
-            notNull: true;
-            hasDefault: true;
-            isPrimaryKey: true;
-            isAutoincrement: false;
-            hasRuntimeDefault: true;
-            enumValues: [string, ...string[]];
-            baseColumn: never;
-            identity: undefined;
-            generated: undefined;
-        }, {}, {}>;
-        plan: drizzle_orm_pg_core.PgColumn<{
-            name: "plan";
-            tableName: "stripe_subscriptions";
-            dataType: "string";
-            columnType: "PgText";
-            data: string;
-            driverParam: string;
-            notNull: true;
-            hasDefault: false;
-            isPrimaryKey: false;
-            isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: [string, ...string[]];
-            baseColumn: never;
-            identity: undefined;
-            generated: undefined;
-        }, {}, {}>;
-        referenceId: drizzle_orm_pg_core.PgColumn<{
-            name: "reference_id";
-            tableName: "stripe_subscriptions";
-            dataType: "string";
-            columnType: "PgText";
-            data: string;
-            driverParam: string;
-            notNull: true;
-            hasDefault: false;
-            isPrimaryKey: false;
-            isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: [string, ...string[]];
-            baseColumn: never;
-            identity: undefined;
-            generated: undefined;
-        }, {}, {}>;
-        stripeCustomerId: drizzle_orm_pg_core.PgColumn<{
-            name: "stripe_customer_id";
-            tableName: "stripe_subscriptions";
-            dataType: "string";
-            columnType: "PgText";
-            data: string;
-            driverParam: string;
-            notNull: false;
-            hasDefault: false;
-            isPrimaryKey: false;
-            isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: [string, ...string[]];
-            baseColumn: never;
-            identity: undefined;
-            generated: undefined;
-        }, {}, {}>;
-        stripeSubscriptionId: drizzle_orm_pg_core.PgColumn<{
-            name: "stripe_subscription_id";
-            tableName: "stripe_subscriptions";
-            dataType: "string";
-            columnType: "PgText";
-            data: string;
-            driverParam: string;
-            notNull: false;
-            hasDefault: false;
-            isPrimaryKey: false;
-            isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: [string, ...string[]];
-            baseColumn: never;
-            identity: undefined;
-            generated: undefined;
-        }, {}, {}>;
-        status: drizzle_orm_pg_core.PgColumn<{
-            name: "status";
-            tableName: "stripe_subscriptions";
-            dataType: "string";
-            columnType: "PgText";
-            data: string;
-            driverParam: string;
-            notNull: true;
-            hasDefault: false;
-            isPrimaryKey: false;
-            isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: [string, ...string[]];
-            baseColumn: never;
-            identity: undefined;
-            generated: undefined;
-        }, {}, {}>;
-        periodStart: drizzle_orm_pg_core.PgColumn<{
-            name: "period_start";
-            tableName: "stripe_subscriptions";
-            dataType: "date";
-            columnType: "PgTimestamp";
-            data: Date;
-            driverParam: string;
-            notNull: false;
-            hasDefault: false;
-            isPrimaryKey: false;
-            isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: undefined;
-            baseColumn: never;
-            identity: undefined;
-            generated: undefined;
-        }, {}, {}>;
-        periodEnd: drizzle_orm_pg_core.PgColumn<{
-            name: "period_end";
-            tableName: "stripe_subscriptions";
-            dataType: "date";
-            columnType: "PgTimestamp";
-            data: Date;
-            driverParam: string;
-            notNull: false;
-            hasDefault: false;
-            isPrimaryKey: false;
-            isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: undefined;
-            baseColumn: never;
-            identity: undefined;
-            generated: undefined;
-        }, {}, {}>;
-        cancelAtPeriodEnd: drizzle_orm_pg_core.PgColumn<{
-            name: "cancel_at_period_end";
-            tableName: "stripe_subscriptions";
-            dataType: "boolean";
-            columnType: "PgBoolean";
-            data: boolean;
-            driverParam: boolean;
-            notNull: false;
-            hasDefault: false;
-            isPrimaryKey: false;
-            isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: undefined;
-            baseColumn: never;
-            identity: undefined;
-            generated: undefined;
-        }, {}, {}>;
-        seats: drizzle_orm_pg_core.PgColumn<{
-            name: "seats";
-            tableName: "stripe_subscriptions";
-            dataType: "number";
-            columnType: "PgInteger";
-            data: number;
-            driverParam: string | number;
-            notNull: false;
-            hasDefault: false;
-            isPrimaryKey: false;
-            isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: undefined;
-            baseColumn: never;
-            identity: undefined;
-            generated: undefined;
-        }, {}, {}>;
-        trialStart: drizzle_orm_pg_core.PgColumn<{
-            name: "trial_start";
-            tableName: "stripe_subscriptions";
-            dataType: "date";
-            columnType: "PgTimestamp";
-            data: Date;
-            driverParam: string;
-            notNull: false;
-            hasDefault: false;
-            isPrimaryKey: false;
-            isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: undefined;
-            baseColumn: never;
-            identity: undefined;
-            generated: undefined;
-        }, {}, {}>;
-        trialEnd: drizzle_orm_pg_core.PgColumn<{
-            name: "trial_end";
-            tableName: "stripe_subscriptions";
-            dataType: "date";
-            columnType: "PgTimestamp";
-            data: Date;
-            driverParam: string;
-            notNull: false;
-            hasDefault: false;
-            isPrimaryKey: false;
-            isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: undefined;
             baseColumn: never;
             identity: undefined;
             generated: undefined;
@@ -8305,18 +7981,6 @@ declare const rsshubPurchase: drizzle_orm_pg_core.PgTableWithColumns<{
     dialect: "pg";
 }>;
 
-declare enum UserRole {
-    Admin = "admin",
-    PreProTrial = "pre_pro_trial",
-    PrePro = "pre_pro",
-    Free = "free",
-    /**
-     * @deprecated use `UserRole.Free` instead
-     *
-     */
-    Trial = "trial"
-}
-
 declare const auth: {
     handler: (request: Request) => Promise<Response>;
     api: better_auth.InferAPI<{
@@ -8782,23 +8446,6 @@ declare const auth: {
                         bio: string;
                         website: string;
                         socialLinks: string;
-                        role: string;
-                        roleEndAt: Date;
-                    } & {
-                        id: string;
-                        name: string;
-                        email: string;
-                        emailVerified: boolean;
-                        createdAt: Date;
-                        updatedAt: Date;
-                        image?: string | null | undefined | undefined;
-                        stripeCustomerId?: string | null | undefined;
-                        handle: string;
-                        bio: string;
-                        website: string;
-                        socialLinks: string;
-                        role: string;
-                        roleEndAt: Date;
                     } & {
                         id: string;
                         name: string;
@@ -8812,8 +8459,6 @@ declare const auth: {
                         bio: string;
                         website: string;
                         socialLinks: string;
-                        role: string;
-                        roleEndAt: Date;
                     };
                 } | null;
             } : {
@@ -8839,23 +8484,6 @@ declare const auth: {
                     bio: string;
                     website: string;
                     socialLinks: string;
-                    role: string;
-                    roleEndAt: Date;
-                } & {
-                    id: string;
-                    name: string;
-                    email: string;
-                    emailVerified: boolean;
-                    createdAt: Date;
-                    updatedAt: Date;
-                    image?: string | null | undefined | undefined;
-                    stripeCustomerId?: string | null | undefined;
-                    handle: string;
-                    bio: string;
-                    website: string;
-                    socialLinks: string;
-                    role: string;
-                    roleEndAt: Date;
                 } & {
                     id: string;
                     name: string;
@@ -8869,8 +8497,6 @@ declare const auth: {
                     bio: string;
                     website: string;
                     socialLinks: string;
-                    role: string;
-                    roleEndAt: Date;
                 };
             } | null>;
             options: {
@@ -8983,22 +8609,21 @@ declare const auth: {
                     email: string;
                     password: string;
                     callbackURL?: string;
-                } & ({} | ({} & {
-                    stripeCustomerId?: string | null | undefined;
-                }) | ({} & {}))) & {
+                } | ({
+                    name: string;
+                    email: string;
+                    password: string;
+                    callbackURL?: string;
+                } & {} & {})) & {
                     handle: string;
                     bio: string;
                     website: string;
                     socialLinks: string;
-                    role: string;
-                    roleEndAt: Date;
                 } & {
                     handle?: string | null | undefined;
                     bio?: string | null | undefined;
                     website?: string | null | undefined;
                     socialLinks?: string | null | undefined;
-                    role?: string | null | undefined;
-                    roleEndAt?: Date | null | undefined;
                 };
             } & {
                 method?: "POST" | undefined;
@@ -9076,22 +8701,21 @@ declare const auth: {
                             email: string;
                             password: string;
                             callbackURL?: string;
-                        } & ({} | ({} & {
-                            stripeCustomerId?: string | null | undefined;
-                        }) | ({} & {}))) & {
+                        } | ({
+                            name: string;
+                            email: string;
+                            password: string;
+                            callbackURL?: string;
+                        } & {} & {})) & {
                             handle: string;
                             bio: string;
                             website: string;
                             socialLinks: string;
-                            role: string;
-                            roleEndAt: Date;
                         } & {
                             handle?: string | null | undefined;
                             bio?: string | null | undefined;
                             website?: string | null | undefined;
                             socialLinks?: string | null | undefined;
-                            role?: string | null | undefined;
-                            roleEndAt?: Date | null | undefined;
                         };
                     };
                     openapi: {
@@ -10081,21 +9705,6 @@ declare const auth: {
                 body: Partial<better_auth.AdditionalUserFieldsInput<{
                     appName: string;
                     database: (options: BetterAuthOptions) => better_auth.Adapter;
-                    databaseHooks: {
-                        user: {
-                            create: {
-                                after: (newUser: {
-                                    id: string;
-                                    name: string;
-                                    email: string;
-                                    emailVerified: boolean;
-                                    createdAt: Date;
-                                    updatedAt: Date;
-                                    image?: string | null | undefined;
-                                }, context: better_auth.GenericEndpointContext | undefined) => Promise<void>;
-                            };
-                        };
-                    };
                     advanced: {
                         database: {
                             generateId: false;
@@ -10128,12 +9737,6 @@ declare const auth: {
                             };
                             website: {
                                 type: "string";
-                            };
-                            role: {
-                                type: "string";
-                            };
-                            roleEndAt: {
-                                type: "date";
                             };
                         };
                         changeEmail: {
@@ -10186,13 +9789,13 @@ declare const auth: {
                         }): Promise<void>;
                     };
                     plugins: ({
-                        id: "stripe";
+                        id: "open-api";
                         endpoints: {
-                            stripeWebhook: {
+                            generateOpenAPISchema: {
                                 <AsResponse_1 extends boolean = false, ReturnHeaders_1 extends boolean = false>(inputCtx_0?: ({
                                     body?: undefined;
                                 } & {
-                                    method?: "POST" | undefined;
+                                    method?: "GET" | undefined;
                                 } & {
                                     query?: Record<string, any> | undefined;
                                 } & {
@@ -10210,681 +9813,6 @@ declare const auth: {
                                     asResponse?: AsResponse_1 | undefined;
                                     returnHeaders?: ReturnHeaders_1 | undefined;
                                 }) | undefined): Promise<[AsResponse_1] extends [true] ? Response : [ReturnHeaders_1] extends [true] ? {
-                                    headers: Headers;
-                                    response: {
-                                        success: boolean;
-                                    };
-                                } : {
-                                    success: boolean;
-                                }>;
-                                options: {
-                                    method: "POST";
-                                    metadata: {
-                                        isAction: boolean;
-                                    };
-                                    cloneRequest: true;
-                                } & {
-                                    use: any[];
-                                };
-                                path: "/stripe/webhook";
-                            };
-                        } & {
-                            readonly upgradeSubscription: {
-                                <AsResponse_1 extends boolean = false, ReturnHeaders_2 extends boolean = false>(inputCtx_0: {
-                                    body: {
-                                        plan: string;
-                                        metadata?: Record<string, any> | undefined;
-                                        annual?: boolean | undefined;
-                                        referenceId?: string | undefined;
-                                        subscriptionId?: string | undefined;
-                                        seats?: number | undefined;
-                                        successUrl?: string | undefined;
-                                        cancelUrl?: string | undefined;
-                                        returnUrl?: string | undefined;
-                                        disableRedirect?: boolean | undefined;
-                                    };
-                                } & {
-                                    method?: "POST" | undefined;
-                                } & {
-                                    query?: Record<string, any> | undefined;
-                                } & {
-                                    params?: Record<string, any>;
-                                } & {
-                                    request?: Request;
-                                } & {
-                                    headers?: HeadersInit;
-                                } & {
-                                    asResponse?: boolean;
-                                    returnHeaders?: boolean;
-                                    use?: better_call.Middleware[];
-                                    path?: string;
-                                } & {
-                                    asResponse?: AsResponse_1 | undefined;
-                                    returnHeaders?: ReturnHeaders_2 | undefined;
-                                }): Promise<[AsResponse_1] extends [true] ? Response : [ReturnHeaders_2] extends [true] ? {
-                                    headers: Headers;
-                                    response: {
-                                        url: string;
-                                        redirect: boolean;
-                                    } | {
-                                        redirect: boolean;
-                                        id: string;
-                                        object: "checkout.session";
-                                        adaptive_pricing: Stripe.Checkout.Session.AdaptivePricing | null;
-                                        after_expiration: Stripe.Checkout.Session.AfterExpiration | null;
-                                        allow_promotion_codes: boolean | null;
-                                        amount_subtotal: number | null;
-                                        amount_total: number | null;
-                                        automatic_tax: Stripe.Checkout.Session.AutomaticTax;
-                                        billing_address_collection: Stripe.Checkout.Session.BillingAddressCollection | null;
-                                        cancel_url: string | null;
-                                        client_reference_id: string | null;
-                                        client_secret: string | null;
-                                        collected_information: Stripe.Checkout.Session.CollectedInformation | null;
-                                        consent: Stripe.Checkout.Session.Consent | null;
-                                        consent_collection: Stripe.Checkout.Session.ConsentCollection | null;
-                                        created: number;
-                                        currency: string | null;
-                                        currency_conversion: Stripe.Checkout.Session.CurrencyConversion | null;
-                                        custom_fields: Array<Stripe.Checkout.Session.CustomField>;
-                                        custom_text: Stripe.Checkout.Session.CustomText;
-                                        customer: string | Stripe.Customer | Stripe.DeletedCustomer | null;
-                                        customer_creation: Stripe.Checkout.Session.CustomerCreation | null;
-                                        customer_details: Stripe.Checkout.Session.CustomerDetails | null;
-                                        customer_email: string | null;
-                                        discounts: Array<Stripe.Checkout.Session.Discount> | null;
-                                        expires_at: number;
-                                        invoice: string | Stripe.Invoice | null;
-                                        invoice_creation: Stripe.Checkout.Session.InvoiceCreation | null;
-                                        line_items?: Stripe.ApiList<Stripe.LineItem>;
-                                        livemode: boolean;
-                                        locale: Stripe.Checkout.Session.Locale | null;
-                                        metadata: Stripe.Metadata | null;
-                                        mode: Stripe.Checkout.Session.Mode;
-                                        optional_items?: Array<Stripe.Checkout.Session.OptionalItem> | null;
-                                        payment_intent: string | Stripe.PaymentIntent | null;
-                                        payment_link: string | Stripe.PaymentLink | null;
-                                        payment_method_collection: Stripe.Checkout.Session.PaymentMethodCollection | null;
-                                        payment_method_configuration_details: Stripe.Checkout.Session.PaymentMethodConfigurationDetails | null;
-                                        payment_method_options: Stripe.Checkout.Session.PaymentMethodOptions | null;
-                                        payment_method_types: Array<string>;
-                                        payment_status: Stripe.Checkout.Session.PaymentStatus;
-                                        permissions: Stripe.Checkout.Session.Permissions | null;
-                                        phone_number_collection?: Stripe.Checkout.Session.PhoneNumberCollection;
-                                        presentment_details?: Stripe.Checkout.Session.PresentmentDetails;
-                                        recovered_from: string | null;
-                                        redirect_on_completion?: Stripe.Checkout.Session.RedirectOnCompletion;
-                                        return_url?: string;
-                                        saved_payment_method_options: Stripe.Checkout.Session.SavedPaymentMethodOptions | null;
-                                        setup_intent: string | Stripe.SetupIntent | null;
-                                        shipping_address_collection: Stripe.Checkout.Session.ShippingAddressCollection | null;
-                                        shipping_cost: Stripe.Checkout.Session.ShippingCost | null;
-                                        shipping_options: Array<Stripe.Checkout.Session.ShippingOption>;
-                                        status: Stripe.Checkout.Session.Status | null;
-                                        submit_type: Stripe.Checkout.Session.SubmitType | null;
-                                        subscription: string | Stripe.Subscription | null;
-                                        success_url: string | null;
-                                        tax_id_collection?: Stripe.Checkout.Session.TaxIdCollection;
-                                        total_details: Stripe.Checkout.Session.TotalDetails | null;
-                                        ui_mode: Stripe.Checkout.Session.UiMode | null;
-                                        url: string | null;
-                                        lastResponse: {
-                                            headers: {
-                                                [key: string]: string;
-                                            };
-                                            requestId: string;
-                                            statusCode: number;
-                                            apiVersion?: string;
-                                            idempotencyKey?: string;
-                                            stripeAccount?: string;
-                                        };
-                                    };
-                                } : {
-                                    url: string;
-                                    redirect: boolean;
-                                } | {
-                                    redirect: boolean;
-                                    id: string;
-                                    object: "checkout.session";
-                                    adaptive_pricing: Stripe.Checkout.Session.AdaptivePricing | null;
-                                    after_expiration: Stripe.Checkout.Session.AfterExpiration | null;
-                                    allow_promotion_codes: boolean | null;
-                                    amount_subtotal: number | null;
-                                    amount_total: number | null;
-                                    automatic_tax: Stripe.Checkout.Session.AutomaticTax;
-                                    billing_address_collection: Stripe.Checkout.Session.BillingAddressCollection | null;
-                                    cancel_url: string | null;
-                                    client_reference_id: string | null;
-                                    client_secret: string | null;
-                                    collected_information: Stripe.Checkout.Session.CollectedInformation | null;
-                                    consent: Stripe.Checkout.Session.Consent | null;
-                                    consent_collection: Stripe.Checkout.Session.ConsentCollection | null;
-                                    created: number;
-                                    currency: string | null;
-                                    currency_conversion: Stripe.Checkout.Session.CurrencyConversion | null;
-                                    custom_fields: Array<Stripe.Checkout.Session.CustomField>;
-                                    custom_text: Stripe.Checkout.Session.CustomText;
-                                    customer: string | Stripe.Customer | Stripe.DeletedCustomer | null;
-                                    customer_creation: Stripe.Checkout.Session.CustomerCreation | null;
-                                    customer_details: Stripe.Checkout.Session.CustomerDetails | null;
-                                    customer_email: string | null;
-                                    discounts: Array<Stripe.Checkout.Session.Discount> | null;
-                                    expires_at: number;
-                                    invoice: string | Stripe.Invoice | null;
-                                    invoice_creation: Stripe.Checkout.Session.InvoiceCreation | null;
-                                    line_items?: Stripe.ApiList<Stripe.LineItem>;
-                                    livemode: boolean;
-                                    locale: Stripe.Checkout.Session.Locale | null;
-                                    metadata: Stripe.Metadata | null;
-                                    mode: Stripe.Checkout.Session.Mode;
-                                    optional_items?: Array<Stripe.Checkout.Session.OptionalItem> | null;
-                                    payment_intent: string | Stripe.PaymentIntent | null;
-                                    payment_link: string | Stripe.PaymentLink | null;
-                                    payment_method_collection: Stripe.Checkout.Session.PaymentMethodCollection | null;
-                                    payment_method_configuration_details: Stripe.Checkout.Session.PaymentMethodConfigurationDetails | null;
-                                    payment_method_options: Stripe.Checkout.Session.PaymentMethodOptions | null;
-                                    payment_method_types: Array<string>;
-                                    payment_status: Stripe.Checkout.Session.PaymentStatus;
-                                    permissions: Stripe.Checkout.Session.Permissions | null;
-                                    phone_number_collection?: Stripe.Checkout.Session.PhoneNumberCollection;
-                                    presentment_details?: Stripe.Checkout.Session.PresentmentDetails;
-                                    recovered_from: string | null;
-                                    redirect_on_completion?: Stripe.Checkout.Session.RedirectOnCompletion;
-                                    return_url?: string;
-                                    saved_payment_method_options: Stripe.Checkout.Session.SavedPaymentMethodOptions | null;
-                                    setup_intent: string | Stripe.SetupIntent | null;
-                                    shipping_address_collection: Stripe.Checkout.Session.ShippingAddressCollection | null;
-                                    shipping_cost: Stripe.Checkout.Session.ShippingCost | null;
-                                    shipping_options: Array<Stripe.Checkout.Session.ShippingOption>;
-                                    status: Stripe.Checkout.Session.Status | null;
-                                    submit_type: Stripe.Checkout.Session.SubmitType | null;
-                                    subscription: string | Stripe.Subscription | null;
-                                    success_url: string | null;
-                                    tax_id_collection?: Stripe.Checkout.Session.TaxIdCollection;
-                                    total_details: Stripe.Checkout.Session.TotalDetails | null;
-                                    ui_mode: Stripe.Checkout.Session.UiMode | null;
-                                    url: string | null;
-                                    lastResponse: {
-                                        headers: {
-                                            [key: string]: string;
-                                        };
-                                        requestId: string;
-                                        statusCode: number;
-                                        apiVersion?: string;
-                                        idempotencyKey?: string;
-                                        stripeAccount?: string;
-                                    };
-                                }>;
-                                options: {
-                                    method: "POST";
-                                    body: zod.ZodObject<{
-                                        plan: zod.ZodString;
-                                        annual: zod.ZodOptional<zod.ZodBoolean>;
-                                        referenceId: zod.ZodOptional<zod.ZodString>;
-                                        subscriptionId: zod.ZodOptional<zod.ZodString>;
-                                        metadata: zod.ZodOptional<zod.ZodRecord<zod.ZodString, zod.ZodAny>>;
-                                        seats: zod.ZodOptional<zod.ZodNumber>;
-                                        successUrl: zod.ZodDefault<zod.ZodString>;
-                                        cancelUrl: zod.ZodDefault<zod.ZodString>;
-                                        returnUrl: zod.ZodOptional<zod.ZodString>;
-                                        disableRedirect: zod.ZodDefault<zod.ZodBoolean>;
-                                    }, "strip", zod.ZodTypeAny, {
-                                        plan: string;
-                                        successUrl: string;
-                                        cancelUrl: string;
-                                        disableRedirect: boolean;
-                                        metadata?: Record<string, any> | undefined;
-                                        annual?: boolean | undefined;
-                                        referenceId?: string | undefined;
-                                        subscriptionId?: string | undefined;
-                                        seats?: number | undefined;
-                                        returnUrl?: string | undefined;
-                                    }, {
-                                        plan: string;
-                                        metadata?: Record<string, any> | undefined;
-                                        annual?: boolean | undefined;
-                                        referenceId?: string | undefined;
-                                        subscriptionId?: string | undefined;
-                                        seats?: number | undefined;
-                                        successUrl?: string | undefined;
-                                        cancelUrl?: string | undefined;
-                                        returnUrl?: string | undefined;
-                                        disableRedirect?: boolean | undefined;
-                                    }>;
-                                    use: (((inputContext: better_call.MiddlewareInputContext<better_call.MiddlewareOptions>) => Promise<{
-                                        session: {
-                                            session: Record<string, any> & {
-                                                id: string;
-                                                createdAt: Date;
-                                                updatedAt: Date;
-                                                userId: string;
-                                                expiresAt: Date;
-                                                token: string;
-                                                ipAddress?: string | null | undefined;
-                                                userAgent?: string | null | undefined;
-                                            };
-                                            user: Record<string, any> & {
-                                                id: string;
-                                                name: string;
-                                                email: string;
-                                                emailVerified: boolean;
-                                                createdAt: Date;
-                                                updatedAt: Date;
-                                                image?: string | null | undefined;
-                                            };
-                                        };
-                                    }>) | ((inputContext: better_call.MiddlewareInputContext<better_call.MiddlewareOptions>) => Promise<void>))[];
-                                } & {
-                                    use: any[];
-                                };
-                                path: "/subscription/upgrade";
-                            };
-                            readonly cancelSubscriptionCallback: {
-                                <AsResponse_1 extends boolean = false, ReturnHeaders_3 extends boolean = false>(inputCtx_0?: ({
-                                    body?: undefined;
-                                } & {
-                                    method?: "GET" | undefined;
-                                } & {
-                                    query?: Record<string, any> | undefined;
-                                } & {
-                                    params?: Record<string, any>;
-                                } & {
-                                    request?: Request;
-                                } & {
-                                    headers?: HeadersInit;
-                                } & {
-                                    asResponse?: boolean;
-                                    returnHeaders?: boolean;
-                                    use?: better_call.Middleware[];
-                                    path?: string;
-                                } & {
-                                    asResponse?: AsResponse_1 | undefined;
-                                    returnHeaders?: ReturnHeaders_3 | undefined;
-                                }) | undefined): Promise<[AsResponse_1] extends [true] ? Response : [ReturnHeaders_3] extends [true] ? {
-                                    headers: Headers;
-                                    response: never;
-                                } : never>;
-                                options: {
-                                    method: "GET";
-                                    query: zod.ZodOptional<zod.ZodRecord<zod.ZodString, zod.ZodAny>>;
-                                    use: ((inputContext: better_call.MiddlewareInputContext<better_call.MiddlewareOptions>) => Promise<void>)[];
-                                } & {
-                                    use: any[];
-                                };
-                                path: "/subscription/cancel/callback";
-                            };
-                            readonly cancelSubscription: {
-                                <AsResponse_1 extends boolean = false, ReturnHeaders_4 extends boolean = false>(inputCtx_0: {
-                                    body: {
-                                        returnUrl: string;
-                                        referenceId?: string | undefined;
-                                        subscriptionId?: string | undefined;
-                                    };
-                                } & {
-                                    method?: "POST" | undefined;
-                                } & {
-                                    query?: Record<string, any> | undefined;
-                                } & {
-                                    params?: Record<string, any>;
-                                } & {
-                                    request?: Request;
-                                } & {
-                                    headers?: HeadersInit;
-                                } & {
-                                    asResponse?: boolean;
-                                    returnHeaders?: boolean;
-                                    use?: better_call.Middleware[];
-                                    path?: string;
-                                } & {
-                                    asResponse?: AsResponse_1 | undefined;
-                                    returnHeaders?: ReturnHeaders_4 | undefined;
-                                }): Promise<[AsResponse_1] extends [true] ? Response : [ReturnHeaders_4] extends [true] ? {
-                                    headers: Headers;
-                                    response: {
-                                        url: string;
-                                        redirect: boolean;
-                                    };
-                                } : {
-                                    url: string;
-                                    redirect: boolean;
-                                }>;
-                                options: {
-                                    method: "POST";
-                                    body: zod.ZodObject<{
-                                        referenceId: zod.ZodOptional<zod.ZodString>;
-                                        subscriptionId: zod.ZodOptional<zod.ZodString>;
-                                        returnUrl: zod.ZodString;
-                                    }, "strip", zod.ZodTypeAny, {
-                                        returnUrl: string;
-                                        referenceId?: string | undefined;
-                                        subscriptionId?: string | undefined;
-                                    }, {
-                                        returnUrl: string;
-                                        referenceId?: string | undefined;
-                                        subscriptionId?: string | undefined;
-                                    }>;
-                                    use: (((inputContext: better_call.MiddlewareInputContext<better_call.MiddlewareOptions>) => Promise<{
-                                        session: {
-                                            session: Record<string, any> & {
-                                                id: string;
-                                                createdAt: Date;
-                                                updatedAt: Date;
-                                                userId: string;
-                                                expiresAt: Date;
-                                                token: string;
-                                                ipAddress?: string | null | undefined;
-                                                userAgent?: string | null | undefined;
-                                            };
-                                            user: Record<string, any> & {
-                                                id: string;
-                                                name: string;
-                                                email: string;
-                                                emailVerified: boolean;
-                                                createdAt: Date;
-                                                updatedAt: Date;
-                                                image?: string | null | undefined;
-                                            };
-                                        };
-                                    }>) | ((inputContext: better_call.MiddlewareInputContext<better_call.MiddlewareOptions>) => Promise<void>))[];
-                                } & {
-                                    use: any[];
-                                };
-                                path: "/subscription/cancel";
-                            };
-                            readonly restoreSubscription: {
-                                <AsResponse_1 extends boolean = false, ReturnHeaders_5 extends boolean = false>(inputCtx_0: {
-                                    body: {
-                                        referenceId?: string | undefined;
-                                        subscriptionId?: string | undefined;
-                                    };
-                                } & {
-                                    method?: "POST" | undefined;
-                                } & {
-                                    query?: Record<string, any> | undefined;
-                                } & {
-                                    params?: Record<string, any>;
-                                } & {
-                                    request?: Request;
-                                } & {
-                                    headers?: HeadersInit;
-                                } & {
-                                    asResponse?: boolean;
-                                    returnHeaders?: boolean;
-                                    use?: better_call.Middleware[];
-                                    path?: string;
-                                } & {
-                                    asResponse?: AsResponse_1 | undefined;
-                                    returnHeaders?: ReturnHeaders_5 | undefined;
-                                }): Promise<[AsResponse_1] extends [true] ? Response : [ReturnHeaders_5] extends [true] ? {
-                                    headers: Headers;
-                                    response: Stripe.Response<Stripe.Subscription>;
-                                } : Stripe.Response<Stripe.Subscription>>;
-                                options: {
-                                    method: "POST";
-                                    body: zod.ZodObject<{
-                                        referenceId: zod.ZodOptional<zod.ZodString>;
-                                        subscriptionId: zod.ZodOptional<zod.ZodString>;
-                                    }, "strip", zod.ZodTypeAny, {
-                                        referenceId?: string | undefined;
-                                        subscriptionId?: string | undefined;
-                                    }, {
-                                        referenceId?: string | undefined;
-                                        subscriptionId?: string | undefined;
-                                    }>;
-                                    use: (((inputContext: better_call.MiddlewareInputContext<better_call.MiddlewareOptions>) => Promise<{
-                                        session: {
-                                            session: Record<string, any> & {
-                                                id: string;
-                                                createdAt: Date;
-                                                updatedAt: Date;
-                                                userId: string;
-                                                expiresAt: Date;
-                                                token: string;
-                                                ipAddress?: string | null | undefined;
-                                                userAgent?: string | null | undefined;
-                                            };
-                                            user: Record<string, any> & {
-                                                id: string;
-                                                name: string;
-                                                email: string;
-                                                emailVerified: boolean;
-                                                createdAt: Date;
-                                                updatedAt: Date;
-                                                image?: string | null | undefined;
-                                            };
-                                        };
-                                    }>) | ((inputContext: better_call.MiddlewareInputContext<better_call.MiddlewareOptions>) => Promise<void>))[];
-                                } & {
-                                    use: any[];
-                                };
-                                path: "/subscription/restore";
-                            };
-                            readonly listActiveSubscriptions: {
-                                <AsResponse_1 extends boolean = false, ReturnHeaders_6 extends boolean = false>(inputCtx_0?: ({
-                                    body?: undefined;
-                                } & {
-                                    method?: "GET" | undefined;
-                                } & {
-                                    query?: {
-                                        referenceId?: string | undefined;
-                                    } | undefined;
-                                } & {
-                                    params?: Record<string, any>;
-                                } & {
-                                    request?: Request;
-                                } & {
-                                    headers?: HeadersInit;
-                                } & {
-                                    asResponse?: boolean;
-                                    returnHeaders?: boolean;
-                                    use?: better_call.Middleware[];
-                                    path?: string;
-                                } & {
-                                    asResponse?: AsResponse_1 | undefined;
-                                    returnHeaders?: ReturnHeaders_6 | undefined;
-                                }) | undefined): Promise<[AsResponse_1] extends [true] ? Response : [ReturnHeaders_6] extends [true] ? {
-                                    headers: Headers;
-                                    response: {
-                                        limits: Record<string, number> | undefined;
-                                        priceId: string | undefined;
-                                        id: string;
-                                        plan: string;
-                                        stripeCustomerId?: string;
-                                        stripeSubscriptionId?: string;
-                                        trialStart?: Date;
-                                        trialEnd?: Date;
-                                        referenceId: string;
-                                        status: "active" | "canceled" | "incomplete" | "incomplete_expired" | "past_due" | "paused" | "trialing" | "unpaid";
-                                        periodStart?: Date;
-                                        periodEnd?: Date;
-                                        cancelAtPeriodEnd?: boolean;
-                                        groupId?: string;
-                                        seats?: number;
-                                    }[];
-                                } : {
-                                    limits: Record<string, number> | undefined;
-                                    priceId: string | undefined;
-                                    id: string;
-                                    plan: string;
-                                    stripeCustomerId?: string;
-                                    stripeSubscriptionId?: string;
-                                    trialStart?: Date;
-                                    trialEnd?: Date;
-                                    referenceId: string;
-                                    status: "active" | "canceled" | "incomplete" | "incomplete_expired" | "past_due" | "paused" | "trialing" | "unpaid";
-                                    periodStart?: Date;
-                                    periodEnd?: Date;
-                                    cancelAtPeriodEnd?: boolean;
-                                    groupId?: string;
-                                    seats?: number;
-                                }[]>;
-                                options: {
-                                    method: "GET";
-                                    query: zod.ZodOptional<zod.ZodObject<{
-                                        referenceId: zod.ZodOptional<zod.ZodString>;
-                                    }, "strip", zod.ZodTypeAny, {
-                                        referenceId?: string | undefined;
-                                    }, {
-                                        referenceId?: string | undefined;
-                                    }>>;
-                                    use: (((inputContext: better_call.MiddlewareInputContext<better_call.MiddlewareOptions>) => Promise<{
-                                        session: {
-                                            session: Record<string, any> & {
-                                                id: string;
-                                                createdAt: Date;
-                                                updatedAt: Date;
-                                                userId: string;
-                                                expiresAt: Date;
-                                                token: string;
-                                                ipAddress?: string | null | undefined;
-                                                userAgent?: string | null | undefined;
-                                            };
-                                            user: Record<string, any> & {
-                                                id: string;
-                                                name: string;
-                                                email: string;
-                                                emailVerified: boolean;
-                                                createdAt: Date;
-                                                updatedAt: Date;
-                                                image?: string | null | undefined;
-                                            };
-                                        };
-                                    }>) | ((inputContext: better_call.MiddlewareInputContext<better_call.MiddlewareOptions>) => Promise<void>))[];
-                                } & {
-                                    use: any[];
-                                };
-                                path: "/subscription/list";
-                            };
-                            readonly subscriptionSuccess: {
-                                <AsResponse_1 extends boolean = false, ReturnHeaders_7 extends boolean = false>(inputCtx_0?: ({
-                                    body?: undefined;
-                                } & {
-                                    method?: "GET" | undefined;
-                                } & {
-                                    query?: Record<string, any> | undefined;
-                                } & {
-                                    params?: Record<string, any>;
-                                } & {
-                                    request?: Request;
-                                } & {
-                                    headers?: HeadersInit;
-                                } & {
-                                    asResponse?: boolean;
-                                    returnHeaders?: boolean;
-                                    use?: better_call.Middleware[];
-                                    path?: string;
-                                } & {
-                                    asResponse?: AsResponse_1 | undefined;
-                                    returnHeaders?: ReturnHeaders_7 | undefined;
-                                }) | undefined): Promise<[AsResponse_1] extends [true] ? Response : [ReturnHeaders_7] extends [true] ? {
-                                    headers: Headers;
-                                    response: better_call.APIError;
-                                } : better_call.APIError>;
-                                options: {
-                                    method: "GET";
-                                    query: zod.ZodOptional<zod.ZodRecord<zod.ZodString, zod.ZodAny>>;
-                                    use: ((inputContext: better_call.MiddlewareInputContext<better_call.MiddlewareOptions>) => Promise<void>)[];
-                                } & {
-                                    use: any[];
-                                };
-                                path: "/subscription/success";
-                            };
-                        };
-                        init(ctx: better_auth.AuthContext): {
-                            options: {
-                                databaseHooks: {
-                                    user: {
-                                        create: {
-                                            after(user: {
-                                                id: string;
-                                                name: string;
-                                                email: string;
-                                                emailVerified: boolean;
-                                                createdAt: Date;
-                                                updatedAt: Date;
-                                                image?: string | null | undefined;
-                                            }, ctx: better_auth.GenericEndpointContext | undefined): Promise<void>;
-                                        };
-                                    };
-                                };
-                            };
-                        };
-                        schema: {
-                            user: {
-                                fields: {
-                                    stripeCustomerId: {
-                                        type: "string";
-                                        required: false;
-                                    };
-                                };
-                            };
-                            subscription?: {
-                                fields: {
-                                    plan: {
-                                        type: "string";
-                                        required: true;
-                                    };
-                                    referenceId: {
-                                        type: "string";
-                                        required: true;
-                                    };
-                                    stripeCustomerId: {
-                                        type: "string";
-                                        required: false;
-                                    };
-                                    stripeSubscriptionId: {
-                                        type: "string";
-                                        required: false;
-                                    };
-                                    status: {
-                                        type: "string";
-                                        defaultValue: string;
-                                    };
-                                    periodStart: {
-                                        type: "date";
-                                        required: false;
-                                    };
-                                    periodEnd: {
-                                        type: "date";
-                                        required: false;
-                                    };
-                                    cancelAtPeriodEnd: {
-                                        type: "boolean";
-                                        required: false;
-                                        defaultValue: false;
-                                    };
-                                    seats: {
-                                        type: "number";
-                                        required: false;
-                                    };
-                                };
-                            } | undefined;
-                        };
-                    } | {
-                        id: "open-api";
-                        endpoints: {
-                            generateOpenAPISchema: {
-                                <AsResponse_1 extends boolean = false, ReturnHeaders_8 extends boolean = false>(inputCtx_0?: ({
-                                    body?: undefined;
-                                } & {
-                                    method?: "GET" | undefined;
-                                } & {
-                                    query?: Record<string, any> | undefined;
-                                } & {
-                                    params?: Record<string, any>;
-                                } & {
-                                    request?: Request;
-                                } & {
-                                    headers?: HeadersInit;
-                                } & {
-                                    asResponse?: boolean;
-                                    returnHeaders?: boolean;
-                                    use?: better_call.Middleware[];
-                                    path?: string;
-                                } & {
-                                    asResponse?: AsResponse_1 | undefined;
-                                    returnHeaders?: ReturnHeaders_8 | undefined;
-                                }) | undefined): Promise<[AsResponse_1] extends [true] ? Response : [ReturnHeaders_8] extends [true] ? {
                                     headers: Headers;
                                     response: {
                                         openapi: string;
@@ -10966,7 +9894,7 @@ declare const auth: {
                                 path: "/open-api/generate-schema";
                             };
                             openAPIReference: {
-                                <AsResponse_1 extends boolean = false, ReturnHeaders_9 extends boolean = false>(inputCtx_0?: ({
+                                <AsResponse_1 extends boolean = false, ReturnHeaders_2 extends boolean = false>(inputCtx_0?: ({
                                     body?: undefined;
                                 } & {
                                     method?: "GET" | undefined;
@@ -10985,8 +9913,8 @@ declare const auth: {
                                     path?: string;
                                 } & {
                                     asResponse?: AsResponse_1 | undefined;
-                                    returnHeaders?: ReturnHeaders_9 | undefined;
-                                }) | undefined): Promise<[AsResponse_1] extends [true] ? Response : [ReturnHeaders_9] extends [true] ? {
+                                    returnHeaders?: ReturnHeaders_2 | undefined;
+                                }) | undefined): Promise<[AsResponse_1] extends [true] ? Response : [ReturnHeaders_2] extends [true] ? {
                                     headers: Headers;
                                     response: Response;
                                 } : Response>;
@@ -11005,7 +9933,7 @@ declare const auth: {
                         id: "two-factor";
                         endpoints: {
                             enableTwoFactor: {
-                                <AsResponse_1 extends boolean = false, ReturnHeaders_10 extends boolean = false>(inputCtx_0: {
+                                <AsResponse_1 extends boolean = false, ReturnHeaders_3 extends boolean = false>(inputCtx_0: {
                                     body: {
                                         password: string;
                                         issuer?: string | undefined;
@@ -11027,8 +9955,8 @@ declare const auth: {
                                     path?: string;
                                 } & {
                                     asResponse?: AsResponse_1 | undefined;
-                                    returnHeaders?: ReturnHeaders_10 | undefined;
-                                }): Promise<[AsResponse_1] extends [true] ? Response : [ReturnHeaders_10] extends [true] ? {
+                                    returnHeaders?: ReturnHeaders_3 | undefined;
+                                }): Promise<[AsResponse_1] extends [true] ? Response : [ReturnHeaders_3] extends [true] ? {
                                     headers: Headers;
                                     response: {
                                         totpURI: string;
@@ -11110,7 +10038,7 @@ declare const auth: {
                                 path: "/two-factor/enable";
                             };
                             disableTwoFactor: {
-                                <AsResponse_1 extends boolean = false, ReturnHeaders_11 extends boolean = false>(inputCtx_0: {
+                                <AsResponse_1 extends boolean = false, ReturnHeaders_4 extends boolean = false>(inputCtx_0: {
                                     body: {
                                         password: string;
                                     };
@@ -11131,8 +10059,8 @@ declare const auth: {
                                     path?: string;
                                 } & {
                                     asResponse?: AsResponse_1 | undefined;
-                                    returnHeaders?: ReturnHeaders_11 | undefined;
-                                }): Promise<[AsResponse_1] extends [true] ? Response : [ReturnHeaders_11] extends [true] ? {
+                                    returnHeaders?: ReturnHeaders_4 | undefined;
+                                }): Promise<[AsResponse_1] extends [true] ? Response : [ReturnHeaders_4] extends [true] ? {
                                     headers: Headers;
                                     response: {
                                         status: boolean;
@@ -11201,7 +10129,7 @@ declare const auth: {
                                 path: "/two-factor/disable";
                             };
                             verifyBackupCode: {
-                                <AsResponse_1 extends boolean = false, ReturnHeaders_12 extends boolean = false>(inputCtx_0: {
+                                <AsResponse_1 extends boolean = false, ReturnHeaders_5 extends boolean = false>(inputCtx_0: {
                                     body: {
                                         code: string;
                                         trustDevice?: boolean | undefined;
@@ -11224,8 +10152,8 @@ declare const auth: {
                                     path?: string;
                                 } & {
                                     asResponse?: AsResponse_1 | undefined;
-                                    returnHeaders?: ReturnHeaders_12 | undefined;
-                                }): Promise<[AsResponse_1] extends [true] ? Response : [ReturnHeaders_12] extends [true] ? {
+                                    returnHeaders?: ReturnHeaders_5 | undefined;
+                                }): Promise<[AsResponse_1] extends [true] ? Response : [ReturnHeaders_5] extends [true] ? {
                                     headers: Headers;
                                     response: {
                                         token: string | undefined;
@@ -11364,7 +10292,7 @@ declare const auth: {
                                 path: "/two-factor/verify-backup-code";
                             };
                             generateBackupCodes: {
-                                <AsResponse_1 extends boolean = false, ReturnHeaders_13 extends boolean = false>(inputCtx_0: {
+                                <AsResponse_1 extends boolean = false, ReturnHeaders_6 extends boolean = false>(inputCtx_0: {
                                     body: {
                                         password: string;
                                     };
@@ -11385,8 +10313,8 @@ declare const auth: {
                                     path?: string;
                                 } & {
                                     asResponse?: AsResponse_1 | undefined;
-                                    returnHeaders?: ReturnHeaders_13 | undefined;
-                                }): Promise<[AsResponse_1] extends [true] ? Response : [ReturnHeaders_13] extends [true] ? {
+                                    returnHeaders?: ReturnHeaders_6 | undefined;
+                                }): Promise<[AsResponse_1] extends [true] ? Response : [ReturnHeaders_6] extends [true] ? {
                                     headers: Headers;
                                     response: {
                                         status: boolean;
@@ -11466,7 +10394,7 @@ declare const auth: {
                                 path: "/two-factor/generate-backup-codes";
                             };
                             viewBackupCodes: {
-                                <AsResponse_1 extends boolean = false, ReturnHeaders_14 extends boolean = false>(inputCtx_0: {
+                                <AsResponse_1 extends boolean = false, ReturnHeaders_7 extends boolean = false>(inputCtx_0: {
                                     body: {
                                         userId: string;
                                     };
@@ -11487,8 +10415,8 @@ declare const auth: {
                                     path?: string;
                                 } & {
                                     asResponse?: AsResponse_1 | undefined;
-                                    returnHeaders?: ReturnHeaders_14 | undefined;
-                                }): Promise<[AsResponse_1] extends [true] ? Response : [ReturnHeaders_14] extends [true] ? {
+                                    returnHeaders?: ReturnHeaders_7 | undefined;
+                                }): Promise<[AsResponse_1] extends [true] ? Response : [ReturnHeaders_7] extends [true] ? {
                                     headers: Headers;
                                     response: {
                                         status: boolean;
@@ -11516,7 +10444,7 @@ declare const auth: {
                                 path: "/two-factor/view-backup-codes";
                             };
                             sendTwoFactorOTP: {
-                                <AsResponse_1 extends boolean = false, ReturnHeaders_15 extends boolean = false>(inputCtx_0?: ({
+                                <AsResponse_1 extends boolean = false, ReturnHeaders_8 extends boolean = false>(inputCtx_0?: ({
                                     body?: {
                                         trustDevice?: boolean | undefined;
                                     } | undefined;
@@ -11537,8 +10465,8 @@ declare const auth: {
                                     path?: string;
                                 } & {
                                     asResponse?: AsResponse_1 | undefined;
-                                    returnHeaders?: ReturnHeaders_15 | undefined;
-                                }) | undefined): Promise<[AsResponse_1] extends [true] ? Response : [ReturnHeaders_15] extends [true] ? {
+                                    returnHeaders?: ReturnHeaders_8 | undefined;
+                                }) | undefined): Promise<[AsResponse_1] extends [true] ? Response : [ReturnHeaders_8] extends [true] ? {
                                     headers: Headers;
                                     response: {
                                         status: boolean;
@@ -11584,7 +10512,7 @@ declare const auth: {
                                 path: "/two-factor/send-otp";
                             };
                             verifyTwoFactorOTP: {
-                                <AsResponse_1 extends boolean = false, ReturnHeaders_16 extends boolean = false>(inputCtx_0: {
+                                <AsResponse_1 extends boolean = false, ReturnHeaders_9 extends boolean = false>(inputCtx_0: {
                                     body: {
                                         code: string;
                                         trustDevice?: boolean | undefined;
@@ -11606,8 +10534,8 @@ declare const auth: {
                                     path?: string;
                                 } & {
                                     asResponse?: AsResponse_1 | undefined;
-                                    returnHeaders?: ReturnHeaders_16 | undefined;
-                                }): Promise<[AsResponse_1] extends [true] ? Response : [ReturnHeaders_16] extends [true] ? {
+                                    returnHeaders?: ReturnHeaders_9 | undefined;
+                                }): Promise<[AsResponse_1] extends [true] ? Response : [ReturnHeaders_9] extends [true] ? {
                                     headers: Headers;
                                     response: {
                                         token: string;
@@ -11719,7 +10647,7 @@ declare const auth: {
                                 path: "/two-factor/verify-otp";
                             };
                             generateTOTP: {
-                                <AsResponse_1 extends boolean = false, ReturnHeaders_17 extends boolean = false>(inputCtx_0: {
+                                <AsResponse_1 extends boolean = false, ReturnHeaders_10 extends boolean = false>(inputCtx_0: {
                                     body: {
                                         secret: string;
                                     };
@@ -11740,8 +10668,8 @@ declare const auth: {
                                     path?: string;
                                 } & {
                                     asResponse?: AsResponse_1 | undefined;
-                                    returnHeaders?: ReturnHeaders_17 | undefined;
-                                }): Promise<[AsResponse_1] extends [true] ? Response : [ReturnHeaders_17] extends [true] ? {
+                                    returnHeaders?: ReturnHeaders_10 | undefined;
+                                }): Promise<[AsResponse_1] extends [true] ? Response : [ReturnHeaders_10] extends [true] ? {
                                     headers: Headers;
                                     response: {
                                         code: string;
@@ -11788,7 +10716,7 @@ declare const auth: {
                                 path: "/totp/generate";
                             };
                             getTOTPURI: {
-                                <AsResponse_1 extends boolean = false, ReturnHeaders_18 extends boolean = false>(inputCtx_0: {
+                                <AsResponse_1 extends boolean = false, ReturnHeaders_11 extends boolean = false>(inputCtx_0: {
                                     body: {
                                         password: string;
                                     };
@@ -11809,8 +10737,8 @@ declare const auth: {
                                     path?: string;
                                 } & {
                                     asResponse?: AsResponse_1 | undefined;
-                                    returnHeaders?: ReturnHeaders_18 | undefined;
-                                }): Promise<[AsResponse_1] extends [true] ? Response : [ReturnHeaders_18] extends [true] ? {
+                                    returnHeaders?: ReturnHeaders_11 | undefined;
+                                }): Promise<[AsResponse_1] extends [true] ? Response : [ReturnHeaders_11] extends [true] ? {
                                     headers: Headers;
                                     response: {
                                         totpURI: string;
@@ -11879,7 +10807,7 @@ declare const auth: {
                                 path: "/two-factor/get-totp-uri";
                             };
                             verifyTOTP: {
-                                <AsResponse_1 extends boolean = false, ReturnHeaders_19 extends boolean = false>(inputCtx_0: {
+                                <AsResponse_1 extends boolean = false, ReturnHeaders_12 extends boolean = false>(inputCtx_0: {
                                     body: {
                                         code: string;
                                         trustDevice?: boolean | undefined;
@@ -11901,8 +10829,8 @@ declare const auth: {
                                     path?: string;
                                 } & {
                                     asResponse?: AsResponse_1 | undefined;
-                                    returnHeaders?: ReturnHeaders_19 | undefined;
-                                }): Promise<[AsResponse_1] extends [true] ? Response : [ReturnHeaders_19] extends [true] ? {
+                                    returnHeaders?: ReturnHeaders_12 | undefined;
+                                }): Promise<[AsResponse_1] extends [true] ? Response : [ReturnHeaders_12] extends [true] ? {
                                     headers: Headers;
                                     response: {
                                         token: string;
@@ -12049,7 +10977,7 @@ declare const auth: {
                         id: "custom-session";
                         endpoints: {
                             getSession: {
-                                <AsResponse_1 extends boolean = false, ReturnHeaders_20 extends boolean = false>(inputCtx_0: {
+                                <AsResponse_1 extends boolean = false, ReturnHeaders_13 extends boolean = false>(inputCtx_0: {
                                     body?: undefined;
                                 } & {
                                     method?: "GET" | undefined;
@@ -12071,8 +10999,8 @@ declare const auth: {
                                     path?: string;
                                 } & {
                                     asResponse?: AsResponse_1 | undefined;
-                                    returnHeaders?: ReturnHeaders_20 | undefined;
-                                }): Promise<[AsResponse_1] extends [true] ? Response : [ReturnHeaders_20] extends [true] ? {
+                                    returnHeaders?: ReturnHeaders_13 | undefined;
+                                }): Promise<[AsResponse_1] extends [true] ? Response : [ReturnHeaders_13] extends [true] ? {
                                     headers: Headers;
                                     response: {
                                         user: {
@@ -12090,8 +11018,6 @@ declare const auth: {
                                             socialLinks: Record<string, string> | null;
                                             bio: string | null;
                                             website: string | null;
-                                            role: string | null;
-                                            roleEndAt: Date | null;
                                         };
                                         session: {
                                             id: string;
@@ -12103,8 +11029,14 @@ declare const auth: {
                                             ipAddress?: string | null | undefined | undefined;
                                             userAgent?: string | null | undefined | undefined;
                                         };
-                                        role: UserRole.PreProTrial | UserRole.PrePro | UserRole.Free | UserRole.Trial;
-                                        roleEndAt: Date | null | undefined;
+                                        invitation: boolean | {
+                                            code: string;
+                                            createdAt: Date | null;
+                                            usedAt: Date | null;
+                                            fromUserId: string;
+                                            toUserId: string | null;
+                                        } | undefined;
+                                        role: "user" | "trial";
                                     } | null;
                                 } : {
                                     user: {
@@ -12122,8 +11054,6 @@ declare const auth: {
                                         socialLinks: Record<string, string> | null;
                                         bio: string | null;
                                         website: string | null;
-                                        role: string | null;
-                                        roleEndAt: Date | null;
                                     };
                                     session: {
                                         id: string;
@@ -12135,8 +11065,14 @@ declare const auth: {
                                         ipAddress?: string | null | undefined | undefined;
                                         userAgent?: string | null | undefined | undefined;
                                     };
-                                    role: UserRole.PreProTrial | UserRole.PrePro | UserRole.Free | UserRole.Trial;
-                                    roleEndAt: Date | null | undefined;
+                                    invitation: boolean | {
+                                        code: string;
+                                        createdAt: Date | null;
+                                        usedAt: Date | null;
+                                        fromUserId: string;
+                                        toUserId: string | null;
+                                    } | undefined;
+                                    role: "user" | "trial";
                                 } | null>;
                                 options: {
                                     method: "GET";
@@ -12183,7 +11119,7 @@ declare const auth: {
                         id: "customGetProviders";
                         endpoints: {
                             customGetProviders: {
-                                <AsResponse_1 extends boolean = false, ReturnHeaders_21 extends boolean = false>(inputCtx_0?: ({
+                                <AsResponse_1 extends boolean = false, ReturnHeaders_14 extends boolean = false>(inputCtx_0?: ({
                                     body?: undefined;
                                 } & {
                                     method?: "GET" | undefined;
@@ -12202,8 +11138,8 @@ declare const auth: {
                                     path?: string;
                                 } & {
                                     asResponse?: AsResponse_1 | undefined;
-                                    returnHeaders?: ReturnHeaders_21 | undefined;
-                                }) | undefined): Promise<[AsResponse_1] extends [true] ? Response : [ReturnHeaders_21] extends [true] ? {
+                                    returnHeaders?: ReturnHeaders_14 | undefined;
+                                }) | undefined): Promise<[AsResponse_1] extends [true] ? Response : [ReturnHeaders_14] extends [true] ? {
                                     headers: Headers;
                                     response: any;
                                 } : any>;
@@ -12219,7 +11155,7 @@ declare const auth: {
                         id: "getAccountInfo";
                         endpoints: {
                             getAccountInfo: {
-                                <AsResponse_1 extends boolean = false, ReturnHeaders_21 extends boolean = false>(inputCtx_0?: ({
+                                <AsResponse_1 extends boolean = false, ReturnHeaders_14 extends boolean = false>(inputCtx_0?: ({
                                     body?: undefined;
                                 } & {
                                     method?: "GET" | undefined;
@@ -12238,8 +11174,8 @@ declare const auth: {
                                     path?: string;
                                 } & {
                                     asResponse?: AsResponse_1 | undefined;
-                                    returnHeaders?: ReturnHeaders_21 | undefined;
-                                }) | undefined): Promise<[AsResponse_1] extends [true] ? Response : [ReturnHeaders_21] extends [true] ? {
+                                    returnHeaders?: ReturnHeaders_14 | undefined;
+                                }) | undefined): Promise<[AsResponse_1] extends [true] ? Response : [ReturnHeaders_14] extends [true] ? {
                                     headers: Headers;
                                     response: ({
                                         id: string;
@@ -12299,7 +11235,7 @@ declare const auth: {
                         id: "oneTimeToken";
                         endpoints: {
                             generateOneTimeToken: {
-                                <AsResponse_1 extends boolean = false, ReturnHeaders_21 extends boolean = false>(inputCtx_0?: ({
+                                <AsResponse_1 extends boolean = false, ReturnHeaders_14 extends boolean = false>(inputCtx_0?: ({
                                     body?: undefined;
                                 } & {
                                     method?: "GET" | undefined;
@@ -12318,8 +11254,8 @@ declare const auth: {
                                     path?: string;
                                 } & {
                                     asResponse?: AsResponse_1 | undefined;
-                                    returnHeaders?: ReturnHeaders_21 | undefined;
-                                }) | undefined): Promise<[AsResponse_1] extends [true] ? Response : [ReturnHeaders_21] extends [true] ? {
+                                    returnHeaders?: ReturnHeaders_14 | undefined;
+                                }) | undefined): Promise<[AsResponse_1] extends [true] ? Response : [ReturnHeaders_14] extends [true] ? {
                                     headers: Headers;
                                     response: {
                                         token: string;
@@ -12358,7 +11294,7 @@ declare const auth: {
                                 path: "/one-time-token/generate";
                             };
                             applyOneTimeToken: {
-                                <AsResponse_1 extends boolean = false, ReturnHeaders_21 extends boolean = false>(inputCtx_0: {
+                                <AsResponse_1 extends boolean = false, ReturnHeaders_14 extends boolean = false>(inputCtx_0: {
                                     body: {
                                         token: string;
                                     };
@@ -12379,8 +11315,8 @@ declare const auth: {
                                     path?: string;
                                 } & {
                                     asResponse?: AsResponse_1 | undefined;
-                                    returnHeaders?: ReturnHeaders_21 | undefined;
-                                }): Promise<[AsResponse_1] extends [true] ? Response : [ReturnHeaders_21] extends [true] ? {
+                                    returnHeaders?: ReturnHeaders_14 | undefined;
+                                }): Promise<[AsResponse_1] extends [true] ? Response : [ReturnHeaders_14] extends [true] ? {
                                     headers: Headers;
                                     response: {
                                         user: {
@@ -12481,21 +11417,6 @@ declare const auth: {
                         body: Partial<better_auth.AdditionalUserFieldsInput<{
                             appName: string;
                             database: (options: BetterAuthOptions) => better_auth.Adapter;
-                            databaseHooks: {
-                                user: {
-                                    create: {
-                                        after: (newUser: {
-                                            id: string;
-                                            name: string;
-                                            email: string;
-                                            emailVerified: boolean;
-                                            createdAt: Date;
-                                            updatedAt: Date;
-                                            image?: string | null | undefined;
-                                        }, context: better_auth.GenericEndpointContext | undefined) => Promise<void>;
-                                    };
-                                };
-                            };
                             advanced: {
                                 database: {
                                     generateId: false;
@@ -12528,12 +11449,6 @@ declare const auth: {
                                     };
                                     website: {
                                         type: "string";
-                                    };
-                                    role: {
-                                        type: "string";
-                                    };
-                                    roleEndAt: {
-                                        type: "date";
                                     };
                                 };
                                 changeEmail: {
@@ -12586,681 +11501,6 @@ declare const auth: {
                                 }): Promise<void>;
                             };
                             plugins: ({
-                                id: "stripe";
-                                endpoints: {
-                                    stripeWebhook: {
-                                        <AsResponse extends boolean = false, ReturnHeaders extends boolean = false>(inputCtx_0?: ({
-                                            body?: undefined;
-                                        } & {
-                                            method?: "POST" | undefined;
-                                        } & {
-                                            query?: Record<string, any> | undefined;
-                                        } & {
-                                            params?: Record<string, any>;
-                                        } & {
-                                            request?: Request;
-                                        } & {
-                                            headers?: HeadersInit;
-                                        } & {
-                                            asResponse?: boolean;
-                                            returnHeaders?: boolean;
-                                            use?: better_call.Middleware[];
-                                            path?: string;
-                                        } & {
-                                            asResponse?: AsResponse | undefined;
-                                            returnHeaders?: ReturnHeaders | undefined;
-                                        }) | undefined): Promise<[AsResponse] extends [true] ? Response : [ReturnHeaders] extends [true] ? {
-                                            headers: Headers;
-                                            response: {
-                                                success: boolean;
-                                            };
-                                        } : {
-                                            success: boolean;
-                                        }>;
-                                        options: {
-                                            method: "POST";
-                                            metadata: {
-                                                isAction: boolean;
-                                            };
-                                            cloneRequest: true;
-                                        } & {
-                                            use: any[];
-                                        };
-                                        path: "/stripe/webhook";
-                                    };
-                                } & {
-                                    readonly upgradeSubscription: {
-                                        <AsResponse extends boolean = false, ReturnHeaders extends boolean = false>(inputCtx_0: {
-                                            body: {
-                                                plan: string;
-                                                metadata?: Record<string, any> | undefined;
-                                                annual?: boolean | undefined;
-                                                referenceId?: string | undefined;
-                                                subscriptionId?: string | undefined;
-                                                seats?: number | undefined;
-                                                successUrl?: string | undefined;
-                                                cancelUrl?: string | undefined;
-                                                returnUrl?: string | undefined;
-                                                disableRedirect?: boolean | undefined;
-                                            };
-                                        } & {
-                                            method?: "POST" | undefined;
-                                        } & {
-                                            query?: Record<string, any> | undefined;
-                                        } & {
-                                            params?: Record<string, any>;
-                                        } & {
-                                            request?: Request;
-                                        } & {
-                                            headers?: HeadersInit;
-                                        } & {
-                                            asResponse?: boolean;
-                                            returnHeaders?: boolean;
-                                            use?: better_call.Middleware[];
-                                            path?: string;
-                                        } & {
-                                            asResponse?: AsResponse | undefined;
-                                            returnHeaders?: ReturnHeaders | undefined;
-                                        }): Promise<[AsResponse] extends [true] ? Response : [ReturnHeaders] extends [true] ? {
-                                            headers: Headers;
-                                            response: {
-                                                url: string;
-                                                redirect: boolean;
-                                            } | {
-                                                redirect: boolean;
-                                                id: string;
-                                                object: "checkout.session";
-                                                adaptive_pricing: Stripe.Checkout.Session.AdaptivePricing | null;
-                                                after_expiration: Stripe.Checkout.Session.AfterExpiration | null;
-                                                allow_promotion_codes: boolean | null;
-                                                amount_subtotal: number | null;
-                                                amount_total: number | null;
-                                                automatic_tax: Stripe.Checkout.Session.AutomaticTax;
-                                                billing_address_collection: Stripe.Checkout.Session.BillingAddressCollection | null;
-                                                cancel_url: string | null;
-                                                client_reference_id: string | null;
-                                                client_secret: string | null;
-                                                collected_information: Stripe.Checkout.Session.CollectedInformation | null;
-                                                consent: Stripe.Checkout.Session.Consent | null;
-                                                consent_collection: Stripe.Checkout.Session.ConsentCollection | null;
-                                                created: number;
-                                                currency: string | null;
-                                                currency_conversion: Stripe.Checkout.Session.CurrencyConversion | null;
-                                                custom_fields: Array<Stripe.Checkout.Session.CustomField>;
-                                                custom_text: Stripe.Checkout.Session.CustomText;
-                                                customer: string | Stripe.Customer | Stripe.DeletedCustomer | null;
-                                                customer_creation: Stripe.Checkout.Session.CustomerCreation | null;
-                                                customer_details: Stripe.Checkout.Session.CustomerDetails | null;
-                                                customer_email: string | null;
-                                                discounts: Array<Stripe.Checkout.Session.Discount> | null;
-                                                expires_at: number;
-                                                invoice: string | Stripe.Invoice | null;
-                                                invoice_creation: Stripe.Checkout.Session.InvoiceCreation | null;
-                                                line_items?: Stripe.ApiList<Stripe.LineItem>;
-                                                livemode: boolean;
-                                                locale: Stripe.Checkout.Session.Locale | null;
-                                                metadata: Stripe.Metadata | null;
-                                                mode: Stripe.Checkout.Session.Mode;
-                                                optional_items?: Array<Stripe.Checkout.Session.OptionalItem> | null;
-                                                payment_intent: string | Stripe.PaymentIntent | null;
-                                                payment_link: string | Stripe.PaymentLink | null;
-                                                payment_method_collection: Stripe.Checkout.Session.PaymentMethodCollection | null;
-                                                payment_method_configuration_details: Stripe.Checkout.Session.PaymentMethodConfigurationDetails | null;
-                                                payment_method_options: Stripe.Checkout.Session.PaymentMethodOptions | null;
-                                                payment_method_types: Array<string>;
-                                                payment_status: Stripe.Checkout.Session.PaymentStatus;
-                                                permissions: Stripe.Checkout.Session.Permissions | null;
-                                                phone_number_collection?: Stripe.Checkout.Session.PhoneNumberCollection;
-                                                presentment_details?: Stripe.Checkout.Session.PresentmentDetails;
-                                                recovered_from: string | null;
-                                                redirect_on_completion?: Stripe.Checkout.Session.RedirectOnCompletion;
-                                                return_url?: string;
-                                                saved_payment_method_options: Stripe.Checkout.Session.SavedPaymentMethodOptions | null;
-                                                setup_intent: string | Stripe.SetupIntent | null;
-                                                shipping_address_collection: Stripe.Checkout.Session.ShippingAddressCollection | null;
-                                                shipping_cost: Stripe.Checkout.Session.ShippingCost | null;
-                                                shipping_options: Array<Stripe.Checkout.Session.ShippingOption>;
-                                                status: Stripe.Checkout.Session.Status | null;
-                                                submit_type: Stripe.Checkout.Session.SubmitType | null;
-                                                subscription: string | Stripe.Subscription | null;
-                                                success_url: string | null;
-                                                tax_id_collection?: Stripe.Checkout.Session.TaxIdCollection;
-                                                total_details: Stripe.Checkout.Session.TotalDetails | null;
-                                                ui_mode: Stripe.Checkout.Session.UiMode | null;
-                                                url: string | null;
-                                                lastResponse: {
-                                                    headers: {
-                                                        [key: string]: string;
-                                                    };
-                                                    requestId: string;
-                                                    statusCode: number;
-                                                    apiVersion?: string;
-                                                    idempotencyKey?: string;
-                                                    stripeAccount?: string;
-                                                };
-                                            };
-                                        } : {
-                                            url: string;
-                                            redirect: boolean;
-                                        } | {
-                                            redirect: boolean;
-                                            id: string;
-                                            object: "checkout.session";
-                                            adaptive_pricing: Stripe.Checkout.Session.AdaptivePricing | null;
-                                            after_expiration: Stripe.Checkout.Session.AfterExpiration | null;
-                                            allow_promotion_codes: boolean | null;
-                                            amount_subtotal: number | null;
-                                            amount_total: number | null;
-                                            automatic_tax: Stripe.Checkout.Session.AutomaticTax;
-                                            billing_address_collection: Stripe.Checkout.Session.BillingAddressCollection | null;
-                                            cancel_url: string | null;
-                                            client_reference_id: string | null;
-                                            client_secret: string | null;
-                                            collected_information: Stripe.Checkout.Session.CollectedInformation | null;
-                                            consent: Stripe.Checkout.Session.Consent | null;
-                                            consent_collection: Stripe.Checkout.Session.ConsentCollection | null;
-                                            created: number;
-                                            currency: string | null;
-                                            currency_conversion: Stripe.Checkout.Session.CurrencyConversion | null;
-                                            custom_fields: Array<Stripe.Checkout.Session.CustomField>;
-                                            custom_text: Stripe.Checkout.Session.CustomText;
-                                            customer: string | Stripe.Customer | Stripe.DeletedCustomer | null;
-                                            customer_creation: Stripe.Checkout.Session.CustomerCreation | null;
-                                            customer_details: Stripe.Checkout.Session.CustomerDetails | null;
-                                            customer_email: string | null;
-                                            discounts: Array<Stripe.Checkout.Session.Discount> | null;
-                                            expires_at: number;
-                                            invoice: string | Stripe.Invoice | null;
-                                            invoice_creation: Stripe.Checkout.Session.InvoiceCreation | null;
-                                            line_items?: Stripe.ApiList<Stripe.LineItem>;
-                                            livemode: boolean;
-                                            locale: Stripe.Checkout.Session.Locale | null;
-                                            metadata: Stripe.Metadata | null;
-                                            mode: Stripe.Checkout.Session.Mode;
-                                            optional_items?: Array<Stripe.Checkout.Session.OptionalItem> | null;
-                                            payment_intent: string | Stripe.PaymentIntent | null;
-                                            payment_link: string | Stripe.PaymentLink | null;
-                                            payment_method_collection: Stripe.Checkout.Session.PaymentMethodCollection | null;
-                                            payment_method_configuration_details: Stripe.Checkout.Session.PaymentMethodConfigurationDetails | null;
-                                            payment_method_options: Stripe.Checkout.Session.PaymentMethodOptions | null;
-                                            payment_method_types: Array<string>;
-                                            payment_status: Stripe.Checkout.Session.PaymentStatus;
-                                            permissions: Stripe.Checkout.Session.Permissions | null;
-                                            phone_number_collection?: Stripe.Checkout.Session.PhoneNumberCollection;
-                                            presentment_details?: Stripe.Checkout.Session.PresentmentDetails;
-                                            recovered_from: string | null;
-                                            redirect_on_completion?: Stripe.Checkout.Session.RedirectOnCompletion;
-                                            return_url?: string;
-                                            saved_payment_method_options: Stripe.Checkout.Session.SavedPaymentMethodOptions | null;
-                                            setup_intent: string | Stripe.SetupIntent | null;
-                                            shipping_address_collection: Stripe.Checkout.Session.ShippingAddressCollection | null;
-                                            shipping_cost: Stripe.Checkout.Session.ShippingCost | null;
-                                            shipping_options: Array<Stripe.Checkout.Session.ShippingOption>;
-                                            status: Stripe.Checkout.Session.Status | null;
-                                            submit_type: Stripe.Checkout.Session.SubmitType | null;
-                                            subscription: string | Stripe.Subscription | null;
-                                            success_url: string | null;
-                                            tax_id_collection?: Stripe.Checkout.Session.TaxIdCollection;
-                                            total_details: Stripe.Checkout.Session.TotalDetails | null;
-                                            ui_mode: Stripe.Checkout.Session.UiMode | null;
-                                            url: string | null;
-                                            lastResponse: {
-                                                headers: {
-                                                    [key: string]: string;
-                                                };
-                                                requestId: string;
-                                                statusCode: number;
-                                                apiVersion?: string;
-                                                idempotencyKey?: string;
-                                                stripeAccount?: string;
-                                            };
-                                        }>;
-                                        options: {
-                                            method: "POST";
-                                            body: zod.ZodObject<{
-                                                plan: zod.ZodString;
-                                                annual: zod.ZodOptional<zod.ZodBoolean>;
-                                                referenceId: zod.ZodOptional<zod.ZodString>;
-                                                subscriptionId: zod.ZodOptional<zod.ZodString>;
-                                                metadata: zod.ZodOptional<zod.ZodRecord<zod.ZodString, zod.ZodAny>>;
-                                                seats: zod.ZodOptional<zod.ZodNumber>;
-                                                successUrl: zod.ZodDefault<zod.ZodString>;
-                                                cancelUrl: zod.ZodDefault<zod.ZodString>;
-                                                returnUrl: zod.ZodOptional<zod.ZodString>;
-                                                disableRedirect: zod.ZodDefault<zod.ZodBoolean>;
-                                            }, "strip", zod.ZodTypeAny, {
-                                                plan: string;
-                                                successUrl: string;
-                                                cancelUrl: string;
-                                                disableRedirect: boolean;
-                                                metadata?: Record<string, any> | undefined;
-                                                annual?: boolean | undefined;
-                                                referenceId?: string | undefined;
-                                                subscriptionId?: string | undefined;
-                                                seats?: number | undefined;
-                                                returnUrl?: string | undefined;
-                                            }, {
-                                                plan: string;
-                                                metadata?: Record<string, any> | undefined;
-                                                annual?: boolean | undefined;
-                                                referenceId?: string | undefined;
-                                                subscriptionId?: string | undefined;
-                                                seats?: number | undefined;
-                                                successUrl?: string | undefined;
-                                                cancelUrl?: string | undefined;
-                                                returnUrl?: string | undefined;
-                                                disableRedirect?: boolean | undefined;
-                                            }>;
-                                            use: (((inputContext: better_call.MiddlewareInputContext<better_call.MiddlewareOptions>) => Promise<{
-                                                session: {
-                                                    session: Record<string, any> & {
-                                                        id: string;
-                                                        createdAt: Date;
-                                                        updatedAt: Date;
-                                                        userId: string;
-                                                        expiresAt: Date;
-                                                        token: string;
-                                                        ipAddress?: string | null | undefined;
-                                                        userAgent?: string | null | undefined;
-                                                    };
-                                                    user: Record<string, any> & {
-                                                        id: string;
-                                                        name: string;
-                                                        email: string;
-                                                        emailVerified: boolean;
-                                                        createdAt: Date;
-                                                        updatedAt: Date;
-                                                        image?: string | null | undefined;
-                                                    };
-                                                };
-                                            }>) | ((inputContext: better_call.MiddlewareInputContext<better_call.MiddlewareOptions>) => Promise<void>))[];
-                                        } & {
-                                            use: any[];
-                                        };
-                                        path: "/subscription/upgrade";
-                                    };
-                                    readonly cancelSubscriptionCallback: {
-                                        <AsResponse extends boolean = false, ReturnHeaders extends boolean = false>(inputCtx_0?: ({
-                                            body?: undefined;
-                                        } & {
-                                            method?: "GET" | undefined;
-                                        } & {
-                                            query?: Record<string, any> | undefined;
-                                        } & {
-                                            params?: Record<string, any>;
-                                        } & {
-                                            request?: Request;
-                                        } & {
-                                            headers?: HeadersInit;
-                                        } & {
-                                            asResponse?: boolean;
-                                            returnHeaders?: boolean;
-                                            use?: better_call.Middleware[];
-                                            path?: string;
-                                        } & {
-                                            asResponse?: AsResponse | undefined;
-                                            returnHeaders?: ReturnHeaders | undefined;
-                                        }) | undefined): Promise<[AsResponse] extends [true] ? Response : [ReturnHeaders] extends [true] ? {
-                                            headers: Headers;
-                                            response: never;
-                                        } : never>;
-                                        options: {
-                                            method: "GET";
-                                            query: zod.ZodOptional<zod.ZodRecord<zod.ZodString, zod.ZodAny>>;
-                                            use: ((inputContext: better_call.MiddlewareInputContext<better_call.MiddlewareOptions>) => Promise<void>)[];
-                                        } & {
-                                            use: any[];
-                                        };
-                                        path: "/subscription/cancel/callback";
-                                    };
-                                    readonly cancelSubscription: {
-                                        <AsResponse extends boolean = false, ReturnHeaders extends boolean = false>(inputCtx_0: {
-                                            body: {
-                                                returnUrl: string;
-                                                referenceId?: string | undefined;
-                                                subscriptionId?: string | undefined;
-                                            };
-                                        } & {
-                                            method?: "POST" | undefined;
-                                        } & {
-                                            query?: Record<string, any> | undefined;
-                                        } & {
-                                            params?: Record<string, any>;
-                                        } & {
-                                            request?: Request;
-                                        } & {
-                                            headers?: HeadersInit;
-                                        } & {
-                                            asResponse?: boolean;
-                                            returnHeaders?: boolean;
-                                            use?: better_call.Middleware[];
-                                            path?: string;
-                                        } & {
-                                            asResponse?: AsResponse | undefined;
-                                            returnHeaders?: ReturnHeaders | undefined;
-                                        }): Promise<[AsResponse] extends [true] ? Response : [ReturnHeaders] extends [true] ? {
-                                            headers: Headers;
-                                            response: {
-                                                url: string;
-                                                redirect: boolean;
-                                            };
-                                        } : {
-                                            url: string;
-                                            redirect: boolean;
-                                        }>;
-                                        options: {
-                                            method: "POST";
-                                            body: zod.ZodObject<{
-                                                referenceId: zod.ZodOptional<zod.ZodString>;
-                                                subscriptionId: zod.ZodOptional<zod.ZodString>;
-                                                returnUrl: zod.ZodString;
-                                            }, "strip", zod.ZodTypeAny, {
-                                                returnUrl: string;
-                                                referenceId?: string | undefined;
-                                                subscriptionId?: string | undefined;
-                                            }, {
-                                                returnUrl: string;
-                                                referenceId?: string | undefined;
-                                                subscriptionId?: string | undefined;
-                                            }>;
-                                            use: (((inputContext: better_call.MiddlewareInputContext<better_call.MiddlewareOptions>) => Promise<{
-                                                session: {
-                                                    session: Record<string, any> & {
-                                                        id: string;
-                                                        createdAt: Date;
-                                                        updatedAt: Date;
-                                                        userId: string;
-                                                        expiresAt: Date;
-                                                        token: string;
-                                                        ipAddress?: string | null | undefined;
-                                                        userAgent?: string | null | undefined;
-                                                    };
-                                                    user: Record<string, any> & {
-                                                        id: string;
-                                                        name: string;
-                                                        email: string;
-                                                        emailVerified: boolean;
-                                                        createdAt: Date;
-                                                        updatedAt: Date;
-                                                        image?: string | null | undefined;
-                                                    };
-                                                };
-                                            }>) | ((inputContext: better_call.MiddlewareInputContext<better_call.MiddlewareOptions>) => Promise<void>))[];
-                                        } & {
-                                            use: any[];
-                                        };
-                                        path: "/subscription/cancel";
-                                    };
-                                    readonly restoreSubscription: {
-                                        <AsResponse extends boolean = false, ReturnHeaders extends boolean = false>(inputCtx_0: {
-                                            body: {
-                                                referenceId?: string | undefined;
-                                                subscriptionId?: string | undefined;
-                                            };
-                                        } & {
-                                            method?: "POST" | undefined;
-                                        } & {
-                                            query?: Record<string, any> | undefined;
-                                        } & {
-                                            params?: Record<string, any>;
-                                        } & {
-                                            request?: Request;
-                                        } & {
-                                            headers?: HeadersInit;
-                                        } & {
-                                            asResponse?: boolean;
-                                            returnHeaders?: boolean;
-                                            use?: better_call.Middleware[];
-                                            path?: string;
-                                        } & {
-                                            asResponse?: AsResponse | undefined;
-                                            returnHeaders?: ReturnHeaders | undefined;
-                                        }): Promise<[AsResponse] extends [true] ? Response : [ReturnHeaders] extends [true] ? {
-                                            headers: Headers;
-                                            response: Stripe.Response<Stripe.Subscription>;
-                                        } : Stripe.Response<Stripe.Subscription>>;
-                                        options: {
-                                            method: "POST";
-                                            body: zod.ZodObject<{
-                                                referenceId: zod.ZodOptional<zod.ZodString>;
-                                                subscriptionId: zod.ZodOptional<zod.ZodString>;
-                                            }, "strip", zod.ZodTypeAny, {
-                                                referenceId?: string | undefined;
-                                                subscriptionId?: string | undefined;
-                                            }, {
-                                                referenceId?: string | undefined;
-                                                subscriptionId?: string | undefined;
-                                            }>;
-                                            use: (((inputContext: better_call.MiddlewareInputContext<better_call.MiddlewareOptions>) => Promise<{
-                                                session: {
-                                                    session: Record<string, any> & {
-                                                        id: string;
-                                                        createdAt: Date;
-                                                        updatedAt: Date;
-                                                        userId: string;
-                                                        expiresAt: Date;
-                                                        token: string;
-                                                        ipAddress?: string | null | undefined;
-                                                        userAgent?: string | null | undefined;
-                                                    };
-                                                    user: Record<string, any> & {
-                                                        id: string;
-                                                        name: string;
-                                                        email: string;
-                                                        emailVerified: boolean;
-                                                        createdAt: Date;
-                                                        updatedAt: Date;
-                                                        image?: string | null | undefined;
-                                                    };
-                                                };
-                                            }>) | ((inputContext: better_call.MiddlewareInputContext<better_call.MiddlewareOptions>) => Promise<void>))[];
-                                        } & {
-                                            use: any[];
-                                        };
-                                        path: "/subscription/restore";
-                                    };
-                                    readonly listActiveSubscriptions: {
-                                        <AsResponse extends boolean = false, ReturnHeaders extends boolean = false>(inputCtx_0?: ({
-                                            body?: undefined;
-                                        } & {
-                                            method?: "GET" | undefined;
-                                        } & {
-                                            query?: {
-                                                referenceId?: string | undefined;
-                                            } | undefined;
-                                        } & {
-                                            params?: Record<string, any>;
-                                        } & {
-                                            request?: Request;
-                                        } & {
-                                            headers?: HeadersInit;
-                                        } & {
-                                            asResponse?: boolean;
-                                            returnHeaders?: boolean;
-                                            use?: better_call.Middleware[];
-                                            path?: string;
-                                        } & {
-                                            asResponse?: AsResponse | undefined;
-                                            returnHeaders?: ReturnHeaders | undefined;
-                                        }) | undefined): Promise<[AsResponse] extends [true] ? Response : [ReturnHeaders] extends [true] ? {
-                                            headers: Headers;
-                                            response: {
-                                                limits: Record<string, number> | undefined;
-                                                priceId: string | undefined;
-                                                id: string;
-                                                plan: string;
-                                                stripeCustomerId?: string;
-                                                stripeSubscriptionId?: string;
-                                                trialStart?: Date;
-                                                trialEnd?: Date;
-                                                referenceId: string;
-                                                status: "active" | "canceled" | "incomplete" | "incomplete_expired" | "past_due" | "paused" | "trialing" | "unpaid";
-                                                periodStart?: Date;
-                                                periodEnd?: Date;
-                                                cancelAtPeriodEnd?: boolean;
-                                                groupId?: string;
-                                                seats?: number;
-                                            }[];
-                                        } : {
-                                            limits: Record<string, number> | undefined;
-                                            priceId: string | undefined;
-                                            id: string;
-                                            plan: string;
-                                            stripeCustomerId?: string;
-                                            stripeSubscriptionId?: string;
-                                            trialStart?: Date;
-                                            trialEnd?: Date;
-                                            referenceId: string;
-                                            status: "active" | "canceled" | "incomplete" | "incomplete_expired" | "past_due" | "paused" | "trialing" | "unpaid";
-                                            periodStart?: Date;
-                                            periodEnd?: Date;
-                                            cancelAtPeriodEnd?: boolean;
-                                            groupId?: string;
-                                            seats?: number;
-                                        }[]>;
-                                        options: {
-                                            method: "GET";
-                                            query: zod.ZodOptional<zod.ZodObject<{
-                                                referenceId: zod.ZodOptional<zod.ZodString>;
-                                            }, "strip", zod.ZodTypeAny, {
-                                                referenceId?: string | undefined;
-                                            }, {
-                                                referenceId?: string | undefined;
-                                            }>>;
-                                            use: (((inputContext: better_call.MiddlewareInputContext<better_call.MiddlewareOptions>) => Promise<{
-                                                session: {
-                                                    session: Record<string, any> & {
-                                                        id: string;
-                                                        createdAt: Date;
-                                                        updatedAt: Date;
-                                                        userId: string;
-                                                        expiresAt: Date;
-                                                        token: string;
-                                                        ipAddress?: string | null | undefined;
-                                                        userAgent?: string | null | undefined;
-                                                    };
-                                                    user: Record<string, any> & {
-                                                        id: string;
-                                                        name: string;
-                                                        email: string;
-                                                        emailVerified: boolean;
-                                                        createdAt: Date;
-                                                        updatedAt: Date;
-                                                        image?: string | null | undefined;
-                                                    };
-                                                };
-                                            }>) | ((inputContext: better_call.MiddlewareInputContext<better_call.MiddlewareOptions>) => Promise<void>))[];
-                                        } & {
-                                            use: any[];
-                                        };
-                                        path: "/subscription/list";
-                                    };
-                                    readonly subscriptionSuccess: {
-                                        <AsResponse extends boolean = false, ReturnHeaders extends boolean = false>(inputCtx_0?: ({
-                                            body?: undefined;
-                                        } & {
-                                            method?: "GET" | undefined;
-                                        } & {
-                                            query?: Record<string, any> | undefined;
-                                        } & {
-                                            params?: Record<string, any>;
-                                        } & {
-                                            request?: Request;
-                                        } & {
-                                            headers?: HeadersInit;
-                                        } & {
-                                            asResponse?: boolean;
-                                            returnHeaders?: boolean;
-                                            use?: better_call.Middleware[];
-                                            path?: string;
-                                        } & {
-                                            asResponse?: AsResponse | undefined;
-                                            returnHeaders?: ReturnHeaders | undefined;
-                                        }) | undefined): Promise<[AsResponse] extends [true] ? Response : [ReturnHeaders] extends [true] ? {
-                                            headers: Headers;
-                                            response: better_call.APIError;
-                                        } : better_call.APIError>;
-                                        options: {
-                                            method: "GET";
-                                            query: zod.ZodOptional<zod.ZodRecord<zod.ZodString, zod.ZodAny>>;
-                                            use: ((inputContext: better_call.MiddlewareInputContext<better_call.MiddlewareOptions>) => Promise<void>)[];
-                                        } & {
-                                            use: any[];
-                                        };
-                                        path: "/subscription/success";
-                                    };
-                                };
-                                init(ctx: better_auth.AuthContext): {
-                                    options: {
-                                        databaseHooks: {
-                                            user: {
-                                                create: {
-                                                    after(user: {
-                                                        id: string;
-                                                        name: string;
-                                                        email: string;
-                                                        emailVerified: boolean;
-                                                        createdAt: Date;
-                                                        updatedAt: Date;
-                                                        image?: string | null | undefined;
-                                                    }, ctx: better_auth.GenericEndpointContext | undefined): Promise<void>;
-                                                };
-                                            };
-                                        };
-                                    };
-                                };
-                                schema: {
-                                    user: {
-                                        fields: {
-                                            stripeCustomerId: {
-                                                type: "string";
-                                                required: false;
-                                            };
-                                        };
-                                    };
-                                    subscription?: {
-                                        fields: {
-                                            plan: {
-                                                type: "string";
-                                                required: true;
-                                            };
-                                            referenceId: {
-                                                type: "string";
-                                                required: true;
-                                            };
-                                            stripeCustomerId: {
-                                                type: "string";
-                                                required: false;
-                                            };
-                                            stripeSubscriptionId: {
-                                                type: "string";
-                                                required: false;
-                                            };
-                                            status: {
-                                                type: "string";
-                                                defaultValue: string;
-                                            };
-                                            periodStart: {
-                                                type: "date";
-                                                required: false;
-                                            };
-                                            periodEnd: {
-                                                type: "date";
-                                                required: false;
-                                            };
-                                            cancelAtPeriodEnd: {
-                                                type: "boolean";
-                                                required: false;
-                                                defaultValue: false;
-                                            };
-                                            seats: {
-                                                type: "number";
-                                                required: false;
-                                            };
-                                        };
-                                    } | undefined;
-                                };
-                            } | {
                                 id: "open-api";
                                 endpoints: {
                                     generateOpenAPISchema: {
@@ -14490,8 +12730,6 @@ declare const auth: {
                                                     socialLinks: Record<string, string> | null;
                                                     bio: string | null;
                                                     website: string | null;
-                                                    role: string | null;
-                                                    roleEndAt: Date | null;
                                                 };
                                                 session: {
                                                     id: string;
@@ -14503,8 +12741,14 @@ declare const auth: {
                                                     ipAddress?: string | null | undefined | undefined;
                                                     userAgent?: string | null | undefined | undefined;
                                                 };
-                                                role: UserRole.PreProTrial | UserRole.PrePro | UserRole.Free | UserRole.Trial;
-                                                roleEndAt: Date | null | undefined;
+                                                invitation: boolean | {
+                                                    code: string;
+                                                    createdAt: Date | null;
+                                                    usedAt: Date | null;
+                                                    fromUserId: string;
+                                                    toUserId: string | null;
+                                                } | undefined;
+                                                role: "user" | "trial";
                                             } | null;
                                         } : {
                                             user: {
@@ -14522,8 +12766,6 @@ declare const auth: {
                                                 socialLinks: Record<string, string> | null;
                                                 bio: string | null;
                                                 website: string | null;
-                                                role: string | null;
-                                                roleEndAt: Date | null;
                                             };
                                             session: {
                                                 id: string;
@@ -14535,8 +12777,14 @@ declare const auth: {
                                                 ipAddress?: string | null | undefined | undefined;
                                                 userAgent?: string | null | undefined | undefined;
                                             };
-                                            role: UserRole.PreProTrial | UserRole.PrePro | UserRole.Free | UserRole.Trial;
-                                            roleEndAt: Date | null | undefined;
+                                            invitation: boolean | {
+                                                code: string;
+                                                createdAt: Date | null;
+                                                usedAt: Date | null;
+                                                fromUserId: string;
+                                                toUserId: string | null;
+                                            } | undefined;
+                                            role: "user" | "trial";
                                         } | null>;
                                         options: {
                                             method: "GET";
@@ -16374,608 +14622,6 @@ declare const auth: {
             path: "/one-time-token/apply";
         };
     } & {
-        stripeWebhook: {
-            <AsResponse extends boolean = false, ReturnHeaders extends boolean = false>(inputCtx_0?: ({
-                body?: undefined;
-            } & {
-                method?: "POST" | undefined;
-            } & {
-                query?: Record<string, any> | undefined;
-            } & {
-                params?: Record<string, any>;
-            } & {
-                request?: Request;
-            } & {
-                headers?: HeadersInit;
-            } & {
-                asResponse?: boolean;
-                returnHeaders?: boolean;
-                use?: better_call.Middleware[];
-                path?: string;
-            } & {
-                asResponse?: AsResponse | undefined;
-                returnHeaders?: ReturnHeaders | undefined;
-            }) | undefined): Promise<[AsResponse] extends [true] ? Response : [ReturnHeaders] extends [true] ? {
-                headers: Headers;
-                response: {
-                    success: boolean;
-                };
-            } : {
-                success: boolean;
-            }>;
-            options: {
-                method: "POST";
-                metadata: {
-                    isAction: boolean;
-                };
-                cloneRequest: true;
-            } & {
-                use: any[];
-            };
-            path: "/stripe/webhook";
-        };
-    } & {
-        readonly upgradeSubscription: {
-            <AsResponse extends boolean = false, ReturnHeaders extends boolean = false>(inputCtx_0: {
-                body: {
-                    plan: string;
-                    metadata?: Record<string, any> | undefined;
-                    annual?: boolean | undefined;
-                    referenceId?: string | undefined;
-                    subscriptionId?: string | undefined;
-                    seats?: number | undefined;
-                    successUrl?: string | undefined;
-                    cancelUrl?: string | undefined;
-                    returnUrl?: string | undefined;
-                    disableRedirect?: boolean | undefined;
-                };
-            } & {
-                method?: "POST" | undefined;
-            } & {
-                query?: Record<string, any> | undefined;
-            } & {
-                params?: Record<string, any>;
-            } & {
-                request?: Request;
-            } & {
-                headers?: HeadersInit;
-            } & {
-                asResponse?: boolean;
-                returnHeaders?: boolean;
-                use?: better_call.Middleware[];
-                path?: string;
-            } & {
-                asResponse?: AsResponse | undefined;
-                returnHeaders?: ReturnHeaders | undefined;
-            }): Promise<[AsResponse] extends [true] ? Response : [ReturnHeaders] extends [true] ? {
-                headers: Headers;
-                response: {
-                    url: string;
-                    redirect: boolean;
-                } | {
-                    redirect: boolean;
-                    id: string;
-                    object: "checkout.session";
-                    adaptive_pricing: Stripe.Checkout.Session.AdaptivePricing | null;
-                    after_expiration: Stripe.Checkout.Session.AfterExpiration | null;
-                    allow_promotion_codes: boolean | null;
-                    amount_subtotal: number | null;
-                    amount_total: number | null;
-                    automatic_tax: Stripe.Checkout.Session.AutomaticTax;
-                    billing_address_collection: Stripe.Checkout.Session.BillingAddressCollection | null;
-                    cancel_url: string | null;
-                    client_reference_id: string | null;
-                    client_secret: string | null;
-                    collected_information: Stripe.Checkout.Session.CollectedInformation | null;
-                    consent: Stripe.Checkout.Session.Consent | null;
-                    consent_collection: Stripe.Checkout.Session.ConsentCollection | null;
-                    created: number;
-                    currency: string | null;
-                    currency_conversion: Stripe.Checkout.Session.CurrencyConversion | null;
-                    custom_fields: Array<Stripe.Checkout.Session.CustomField>;
-                    custom_text: Stripe.Checkout.Session.CustomText;
-                    customer: string | Stripe.Customer | Stripe.DeletedCustomer | null;
-                    customer_creation: Stripe.Checkout.Session.CustomerCreation | null;
-                    customer_details: Stripe.Checkout.Session.CustomerDetails | null;
-                    customer_email: string | null;
-                    discounts: Array<Stripe.Checkout.Session.Discount> | null;
-                    expires_at: number;
-                    invoice: string | Stripe.Invoice | null;
-                    invoice_creation: Stripe.Checkout.Session.InvoiceCreation | null;
-                    line_items?: Stripe.ApiList<Stripe.LineItem>;
-                    livemode: boolean;
-                    locale: Stripe.Checkout.Session.Locale | null;
-                    metadata: Stripe.Metadata | null;
-                    mode: Stripe.Checkout.Session.Mode;
-                    optional_items?: Array<Stripe.Checkout.Session.OptionalItem> | null;
-                    payment_intent: string | Stripe.PaymentIntent | null;
-                    payment_link: string | Stripe.PaymentLink | null;
-                    payment_method_collection: Stripe.Checkout.Session.PaymentMethodCollection | null;
-                    payment_method_configuration_details: Stripe.Checkout.Session.PaymentMethodConfigurationDetails | null;
-                    payment_method_options: Stripe.Checkout.Session.PaymentMethodOptions | null;
-                    payment_method_types: Array<string>;
-                    payment_status: Stripe.Checkout.Session.PaymentStatus;
-                    permissions: Stripe.Checkout.Session.Permissions | null;
-                    phone_number_collection?: Stripe.Checkout.Session.PhoneNumberCollection;
-                    presentment_details?: Stripe.Checkout.Session.PresentmentDetails;
-                    recovered_from: string | null;
-                    redirect_on_completion?: Stripe.Checkout.Session.RedirectOnCompletion;
-                    return_url?: string;
-                    saved_payment_method_options: Stripe.Checkout.Session.SavedPaymentMethodOptions | null;
-                    setup_intent: string | Stripe.SetupIntent | null;
-                    shipping_address_collection: Stripe.Checkout.Session.ShippingAddressCollection | null;
-                    shipping_cost: Stripe.Checkout.Session.ShippingCost | null;
-                    shipping_options: Array<Stripe.Checkout.Session.ShippingOption>;
-                    status: Stripe.Checkout.Session.Status | null;
-                    submit_type: Stripe.Checkout.Session.SubmitType | null;
-                    subscription: string | Stripe.Subscription | null;
-                    success_url: string | null;
-                    tax_id_collection?: Stripe.Checkout.Session.TaxIdCollection;
-                    total_details: Stripe.Checkout.Session.TotalDetails | null;
-                    ui_mode: Stripe.Checkout.Session.UiMode | null;
-                    url: string | null;
-                    lastResponse: {
-                        headers: {
-                            [key: string]: string;
-                        };
-                        requestId: string;
-                        statusCode: number;
-                        apiVersion?: string;
-                        idempotencyKey?: string;
-                        stripeAccount?: string;
-                    };
-                };
-            } : {
-                url: string;
-                redirect: boolean;
-            } | {
-                redirect: boolean;
-                id: string;
-                object: "checkout.session";
-                adaptive_pricing: Stripe.Checkout.Session.AdaptivePricing | null;
-                after_expiration: Stripe.Checkout.Session.AfterExpiration | null;
-                allow_promotion_codes: boolean | null;
-                amount_subtotal: number | null;
-                amount_total: number | null;
-                automatic_tax: Stripe.Checkout.Session.AutomaticTax;
-                billing_address_collection: Stripe.Checkout.Session.BillingAddressCollection | null;
-                cancel_url: string | null;
-                client_reference_id: string | null;
-                client_secret: string | null;
-                collected_information: Stripe.Checkout.Session.CollectedInformation | null;
-                consent: Stripe.Checkout.Session.Consent | null;
-                consent_collection: Stripe.Checkout.Session.ConsentCollection | null;
-                created: number;
-                currency: string | null;
-                currency_conversion: Stripe.Checkout.Session.CurrencyConversion | null;
-                custom_fields: Array<Stripe.Checkout.Session.CustomField>;
-                custom_text: Stripe.Checkout.Session.CustomText;
-                customer: string | Stripe.Customer | Stripe.DeletedCustomer | null;
-                customer_creation: Stripe.Checkout.Session.CustomerCreation | null;
-                customer_details: Stripe.Checkout.Session.CustomerDetails | null;
-                customer_email: string | null;
-                discounts: Array<Stripe.Checkout.Session.Discount> | null;
-                expires_at: number;
-                invoice: string | Stripe.Invoice | null;
-                invoice_creation: Stripe.Checkout.Session.InvoiceCreation | null;
-                line_items?: Stripe.ApiList<Stripe.LineItem>;
-                livemode: boolean;
-                locale: Stripe.Checkout.Session.Locale | null;
-                metadata: Stripe.Metadata | null;
-                mode: Stripe.Checkout.Session.Mode;
-                optional_items?: Array<Stripe.Checkout.Session.OptionalItem> | null;
-                payment_intent: string | Stripe.PaymentIntent | null;
-                payment_link: string | Stripe.PaymentLink | null;
-                payment_method_collection: Stripe.Checkout.Session.PaymentMethodCollection | null;
-                payment_method_configuration_details: Stripe.Checkout.Session.PaymentMethodConfigurationDetails | null;
-                payment_method_options: Stripe.Checkout.Session.PaymentMethodOptions | null;
-                payment_method_types: Array<string>;
-                payment_status: Stripe.Checkout.Session.PaymentStatus;
-                permissions: Stripe.Checkout.Session.Permissions | null;
-                phone_number_collection?: Stripe.Checkout.Session.PhoneNumberCollection;
-                presentment_details?: Stripe.Checkout.Session.PresentmentDetails;
-                recovered_from: string | null;
-                redirect_on_completion?: Stripe.Checkout.Session.RedirectOnCompletion;
-                return_url?: string;
-                saved_payment_method_options: Stripe.Checkout.Session.SavedPaymentMethodOptions | null;
-                setup_intent: string | Stripe.SetupIntent | null;
-                shipping_address_collection: Stripe.Checkout.Session.ShippingAddressCollection | null;
-                shipping_cost: Stripe.Checkout.Session.ShippingCost | null;
-                shipping_options: Array<Stripe.Checkout.Session.ShippingOption>;
-                status: Stripe.Checkout.Session.Status | null;
-                submit_type: Stripe.Checkout.Session.SubmitType | null;
-                subscription: string | Stripe.Subscription | null;
-                success_url: string | null;
-                tax_id_collection?: Stripe.Checkout.Session.TaxIdCollection;
-                total_details: Stripe.Checkout.Session.TotalDetails | null;
-                ui_mode: Stripe.Checkout.Session.UiMode | null;
-                url: string | null;
-                lastResponse: {
-                    headers: {
-                        [key: string]: string;
-                    };
-                    requestId: string;
-                    statusCode: number;
-                    apiVersion?: string;
-                    idempotencyKey?: string;
-                    stripeAccount?: string;
-                };
-            }>;
-            options: {
-                method: "POST";
-                body: zod.ZodObject<{
-                    plan: zod.ZodString;
-                    annual: zod.ZodOptional<zod.ZodBoolean>;
-                    referenceId: zod.ZodOptional<zod.ZodString>;
-                    subscriptionId: zod.ZodOptional<zod.ZodString>;
-                    metadata: zod.ZodOptional<zod.ZodRecord<zod.ZodString, zod.ZodAny>>;
-                    seats: zod.ZodOptional<zod.ZodNumber>;
-                    successUrl: zod.ZodDefault<zod.ZodString>;
-                    cancelUrl: zod.ZodDefault<zod.ZodString>;
-                    returnUrl: zod.ZodOptional<zod.ZodString>;
-                    disableRedirect: zod.ZodDefault<zod.ZodBoolean>;
-                }, "strip", zod.ZodTypeAny, {
-                    plan: string;
-                    successUrl: string;
-                    cancelUrl: string;
-                    disableRedirect: boolean;
-                    metadata?: Record<string, any> | undefined;
-                    annual?: boolean | undefined;
-                    referenceId?: string | undefined;
-                    subscriptionId?: string | undefined;
-                    seats?: number | undefined;
-                    returnUrl?: string | undefined;
-                }, {
-                    plan: string;
-                    metadata?: Record<string, any> | undefined;
-                    annual?: boolean | undefined;
-                    referenceId?: string | undefined;
-                    subscriptionId?: string | undefined;
-                    seats?: number | undefined;
-                    successUrl?: string | undefined;
-                    cancelUrl?: string | undefined;
-                    returnUrl?: string | undefined;
-                    disableRedirect?: boolean | undefined;
-                }>;
-                use: (((inputContext: better_call.MiddlewareInputContext<better_call.MiddlewareOptions>) => Promise<{
-                    session: {
-                        session: Record<string, any> & {
-                            id: string;
-                            createdAt: Date;
-                            updatedAt: Date;
-                            userId: string;
-                            expiresAt: Date;
-                            token: string;
-                            ipAddress?: string | null | undefined;
-                            userAgent?: string | null | undefined;
-                        };
-                        user: Record<string, any> & {
-                            id: string;
-                            name: string;
-                            email: string;
-                            emailVerified: boolean;
-                            createdAt: Date;
-                            updatedAt: Date;
-                            image?: string | null | undefined;
-                        };
-                    };
-                }>) | ((inputContext: better_call.MiddlewareInputContext<better_call.MiddlewareOptions>) => Promise<void>))[];
-            } & {
-                use: any[];
-            };
-            path: "/subscription/upgrade";
-        };
-        readonly cancelSubscriptionCallback: {
-            <AsResponse extends boolean = false, ReturnHeaders extends boolean = false>(inputCtx_0?: ({
-                body?: undefined;
-            } & {
-                method?: "GET" | undefined;
-            } & {
-                query?: Record<string, any> | undefined;
-            } & {
-                params?: Record<string, any>;
-            } & {
-                request?: Request;
-            } & {
-                headers?: HeadersInit;
-            } & {
-                asResponse?: boolean;
-                returnHeaders?: boolean;
-                use?: better_call.Middleware[];
-                path?: string;
-            } & {
-                asResponse?: AsResponse | undefined;
-                returnHeaders?: ReturnHeaders | undefined;
-            }) | undefined): Promise<[AsResponse] extends [true] ? Response : [ReturnHeaders] extends [true] ? {
-                headers: Headers;
-                response: never;
-            } : never>;
-            options: {
-                method: "GET";
-                query: zod.ZodOptional<zod.ZodRecord<zod.ZodString, zod.ZodAny>>;
-                use: ((inputContext: better_call.MiddlewareInputContext<better_call.MiddlewareOptions>) => Promise<void>)[];
-            } & {
-                use: any[];
-            };
-            path: "/subscription/cancel/callback";
-        };
-        readonly cancelSubscription: {
-            <AsResponse extends boolean = false, ReturnHeaders extends boolean = false>(inputCtx_0: {
-                body: {
-                    returnUrl: string;
-                    referenceId?: string | undefined;
-                    subscriptionId?: string | undefined;
-                };
-            } & {
-                method?: "POST" | undefined;
-            } & {
-                query?: Record<string, any> | undefined;
-            } & {
-                params?: Record<string, any>;
-            } & {
-                request?: Request;
-            } & {
-                headers?: HeadersInit;
-            } & {
-                asResponse?: boolean;
-                returnHeaders?: boolean;
-                use?: better_call.Middleware[];
-                path?: string;
-            } & {
-                asResponse?: AsResponse | undefined;
-                returnHeaders?: ReturnHeaders | undefined;
-            }): Promise<[AsResponse] extends [true] ? Response : [ReturnHeaders] extends [true] ? {
-                headers: Headers;
-                response: {
-                    url: string;
-                    redirect: boolean;
-                };
-            } : {
-                url: string;
-                redirect: boolean;
-            }>;
-            options: {
-                method: "POST";
-                body: zod.ZodObject<{
-                    referenceId: zod.ZodOptional<zod.ZodString>;
-                    subscriptionId: zod.ZodOptional<zod.ZodString>;
-                    returnUrl: zod.ZodString;
-                }, "strip", zod.ZodTypeAny, {
-                    returnUrl: string;
-                    referenceId?: string | undefined;
-                    subscriptionId?: string | undefined;
-                }, {
-                    returnUrl: string;
-                    referenceId?: string | undefined;
-                    subscriptionId?: string | undefined;
-                }>;
-                use: (((inputContext: better_call.MiddlewareInputContext<better_call.MiddlewareOptions>) => Promise<{
-                    session: {
-                        session: Record<string, any> & {
-                            id: string;
-                            createdAt: Date;
-                            updatedAt: Date;
-                            userId: string;
-                            expiresAt: Date;
-                            token: string;
-                            ipAddress?: string | null | undefined;
-                            userAgent?: string | null | undefined;
-                        };
-                        user: Record<string, any> & {
-                            id: string;
-                            name: string;
-                            email: string;
-                            emailVerified: boolean;
-                            createdAt: Date;
-                            updatedAt: Date;
-                            image?: string | null | undefined;
-                        };
-                    };
-                }>) | ((inputContext: better_call.MiddlewareInputContext<better_call.MiddlewareOptions>) => Promise<void>))[];
-            } & {
-                use: any[];
-            };
-            path: "/subscription/cancel";
-        };
-        readonly restoreSubscription: {
-            <AsResponse extends boolean = false, ReturnHeaders extends boolean = false>(inputCtx_0: {
-                body: {
-                    referenceId?: string | undefined;
-                    subscriptionId?: string | undefined;
-                };
-            } & {
-                method?: "POST" | undefined;
-            } & {
-                query?: Record<string, any> | undefined;
-            } & {
-                params?: Record<string, any>;
-            } & {
-                request?: Request;
-            } & {
-                headers?: HeadersInit;
-            } & {
-                asResponse?: boolean;
-                returnHeaders?: boolean;
-                use?: better_call.Middleware[];
-                path?: string;
-            } & {
-                asResponse?: AsResponse | undefined;
-                returnHeaders?: ReturnHeaders | undefined;
-            }): Promise<[AsResponse] extends [true] ? Response : [ReturnHeaders] extends [true] ? {
-                headers: Headers;
-                response: Stripe.Response<Stripe.Subscription>;
-            } : Stripe.Response<Stripe.Subscription>>;
-            options: {
-                method: "POST";
-                body: zod.ZodObject<{
-                    referenceId: zod.ZodOptional<zod.ZodString>;
-                    subscriptionId: zod.ZodOptional<zod.ZodString>;
-                }, "strip", zod.ZodTypeAny, {
-                    referenceId?: string | undefined;
-                    subscriptionId?: string | undefined;
-                }, {
-                    referenceId?: string | undefined;
-                    subscriptionId?: string | undefined;
-                }>;
-                use: (((inputContext: better_call.MiddlewareInputContext<better_call.MiddlewareOptions>) => Promise<{
-                    session: {
-                        session: Record<string, any> & {
-                            id: string;
-                            createdAt: Date;
-                            updatedAt: Date;
-                            userId: string;
-                            expiresAt: Date;
-                            token: string;
-                            ipAddress?: string | null | undefined;
-                            userAgent?: string | null | undefined;
-                        };
-                        user: Record<string, any> & {
-                            id: string;
-                            name: string;
-                            email: string;
-                            emailVerified: boolean;
-                            createdAt: Date;
-                            updatedAt: Date;
-                            image?: string | null | undefined;
-                        };
-                    };
-                }>) | ((inputContext: better_call.MiddlewareInputContext<better_call.MiddlewareOptions>) => Promise<void>))[];
-            } & {
-                use: any[];
-            };
-            path: "/subscription/restore";
-        };
-        readonly listActiveSubscriptions: {
-            <AsResponse extends boolean = false, ReturnHeaders extends boolean = false>(inputCtx_0?: ({
-                body?: undefined;
-            } & {
-                method?: "GET" | undefined;
-            } & {
-                query?: {
-                    referenceId?: string | undefined;
-                } | undefined;
-            } & {
-                params?: Record<string, any>;
-            } & {
-                request?: Request;
-            } & {
-                headers?: HeadersInit;
-            } & {
-                asResponse?: boolean;
-                returnHeaders?: boolean;
-                use?: better_call.Middleware[];
-                path?: string;
-            } & {
-                asResponse?: AsResponse | undefined;
-                returnHeaders?: ReturnHeaders | undefined;
-            }) | undefined): Promise<[AsResponse] extends [true] ? Response : [ReturnHeaders] extends [true] ? {
-                headers: Headers;
-                response: {
-                    limits: Record<string, number> | undefined;
-                    priceId: string | undefined;
-                    id: string;
-                    plan: string;
-                    stripeCustomerId?: string;
-                    stripeSubscriptionId?: string;
-                    trialStart?: Date;
-                    trialEnd?: Date;
-                    referenceId: string;
-                    status: "active" | "canceled" | "incomplete" | "incomplete_expired" | "past_due" | "paused" | "trialing" | "unpaid";
-                    periodStart?: Date;
-                    periodEnd?: Date;
-                    cancelAtPeriodEnd?: boolean;
-                    groupId?: string;
-                    seats?: number;
-                }[];
-            } : {
-                limits: Record<string, number> | undefined;
-                priceId: string | undefined;
-                id: string;
-                plan: string;
-                stripeCustomerId?: string;
-                stripeSubscriptionId?: string;
-                trialStart?: Date;
-                trialEnd?: Date;
-                referenceId: string;
-                status: "active" | "canceled" | "incomplete" | "incomplete_expired" | "past_due" | "paused" | "trialing" | "unpaid";
-                periodStart?: Date;
-                periodEnd?: Date;
-                cancelAtPeriodEnd?: boolean;
-                groupId?: string;
-                seats?: number;
-            }[]>;
-            options: {
-                method: "GET";
-                query: zod.ZodOptional<zod.ZodObject<{
-                    referenceId: zod.ZodOptional<zod.ZodString>;
-                }, "strip", zod.ZodTypeAny, {
-                    referenceId?: string | undefined;
-                }, {
-                    referenceId?: string | undefined;
-                }>>;
-                use: (((inputContext: better_call.MiddlewareInputContext<better_call.MiddlewareOptions>) => Promise<{
-                    session: {
-                        session: Record<string, any> & {
-                            id: string;
-                            createdAt: Date;
-                            updatedAt: Date;
-                            userId: string;
-                            expiresAt: Date;
-                            token: string;
-                            ipAddress?: string | null | undefined;
-                            userAgent?: string | null | undefined;
-                        };
-                        user: Record<string, any> & {
-                            id: string;
-                            name: string;
-                            email: string;
-                            emailVerified: boolean;
-                            createdAt: Date;
-                            updatedAt: Date;
-                            image?: string | null | undefined;
-                        };
-                    };
-                }>) | ((inputContext: better_call.MiddlewareInputContext<better_call.MiddlewareOptions>) => Promise<void>))[];
-            } & {
-                use: any[];
-            };
-            path: "/subscription/list";
-        };
-        readonly subscriptionSuccess: {
-            <AsResponse extends boolean = false, ReturnHeaders extends boolean = false>(inputCtx_0?: ({
-                body?: undefined;
-            } & {
-                method?: "GET" | undefined;
-            } & {
-                query?: Record<string, any> | undefined;
-            } & {
-                params?: Record<string, any>;
-            } & {
-                request?: Request;
-            } & {
-                headers?: HeadersInit;
-            } & {
-                asResponse?: boolean;
-                returnHeaders?: boolean;
-                use?: better_call.Middleware[];
-                path?: string;
-            } & {
-                asResponse?: AsResponse | undefined;
-                returnHeaders?: ReturnHeaders | undefined;
-            }) | undefined): Promise<[AsResponse] extends [true] ? Response : [ReturnHeaders] extends [true] ? {
-                headers: Headers;
-                response: better_call.APIError;
-            } : better_call.APIError>;
-            options: {
-                method: "GET";
-                query: zod.ZodOptional<zod.ZodRecord<zod.ZodString, zod.ZodAny>>;
-                use: ((inputContext: better_call.MiddlewareInputContext<better_call.MiddlewareOptions>) => Promise<void>)[];
-            } & {
-                use: any[];
-            };
-            path: "/subscription/success";
-        };
-    } & {
         enableTwoFactor: {
             <AsResponse extends boolean = false, ReturnHeaders extends boolean = false>(inputCtx_0: {
                 body: {
@@ -17983,8 +15629,6 @@ declare const auth: {
                         socialLinks: Record<string, string> | null;
                         bio: string | null;
                         website: string | null;
-                        role: string | null;
-                        roleEndAt: Date | null;
                     };
                     session: {
                         id: string;
@@ -17996,8 +15640,14 @@ declare const auth: {
                         ipAddress?: string | null | undefined | undefined;
                         userAgent?: string | null | undefined | undefined;
                     };
-                    role: UserRole.PreProTrial | UserRole.PrePro | UserRole.Free | UserRole.Trial;
-                    roleEndAt: Date | null | undefined;
+                    invitation: boolean | {
+                        code: string;
+                        createdAt: Date | null;
+                        usedAt: Date | null;
+                        fromUserId: string;
+                        toUserId: string | null;
+                    } | undefined;
+                    role: "user" | "trial";
                 } | null;
             } : {
                 user: {
@@ -18015,8 +15665,6 @@ declare const auth: {
                     socialLinks: Record<string, string> | null;
                     bio: string | null;
                     website: string | null;
-                    role: string | null;
-                    roleEndAt: Date | null;
                 };
                 session: {
                     id: string;
@@ -18028,8 +15676,14 @@ declare const auth: {
                     ipAddress?: string | null | undefined | undefined;
                     userAgent?: string | null | undefined | undefined;
                 };
-                role: UserRole.PreProTrial | UserRole.PrePro | UserRole.Free | UserRole.Trial;
-                roleEndAt: Date | null | undefined;
+                invitation: boolean | {
+                    code: string;
+                    createdAt: Date | null;
+                    usedAt: Date | null;
+                    fromUserId: string;
+                    toUserId: string | null;
+                } | undefined;
+                role: "user" | "trial";
             } | null>;
             options: {
                 method: "GET";
@@ -18075,21 +15729,6 @@ declare const auth: {
     options: {
         appName: string;
         database: (options: BetterAuthOptions) => better_auth.Adapter;
-        databaseHooks: {
-            user: {
-                create: {
-                    after: (newUser: {
-                        id: string;
-                        name: string;
-                        email: string;
-                        emailVerified: boolean;
-                        createdAt: Date;
-                        updatedAt: Date;
-                        image?: string | null | undefined;
-                    }, context: better_auth.GenericEndpointContext | undefined) => Promise<void>;
-                };
-            };
-        };
         advanced: {
             database: {
                 generateId: false;
@@ -18122,12 +15761,6 @@ declare const auth: {
                 };
                 website: {
                     type: "string";
-                };
-                role: {
-                    type: "string";
-                };
-                roleEndAt: {
-                    type: "date";
                 };
             };
             changeEmail: {
@@ -18180,681 +15813,6 @@ declare const auth: {
             }): Promise<void>;
         };
         plugins: ({
-            id: "stripe";
-            endpoints: {
-                stripeWebhook: {
-                    <AsResponse extends boolean = false, ReturnHeaders extends boolean = false>(inputCtx_0?: ({
-                        body?: undefined;
-                    } & {
-                        method?: "POST" | undefined;
-                    } & {
-                        query?: Record<string, any> | undefined;
-                    } & {
-                        params?: Record<string, any>;
-                    } & {
-                        request?: Request;
-                    } & {
-                        headers?: HeadersInit;
-                    } & {
-                        asResponse?: boolean;
-                        returnHeaders?: boolean;
-                        use?: better_call.Middleware[];
-                        path?: string;
-                    } & {
-                        asResponse?: AsResponse | undefined;
-                        returnHeaders?: ReturnHeaders | undefined;
-                    }) | undefined): Promise<[AsResponse] extends [true] ? Response : [ReturnHeaders] extends [true] ? {
-                        headers: Headers;
-                        response: {
-                            success: boolean;
-                        };
-                    } : {
-                        success: boolean;
-                    }>;
-                    options: {
-                        method: "POST";
-                        metadata: {
-                            isAction: boolean;
-                        };
-                        cloneRequest: true;
-                    } & {
-                        use: any[];
-                    };
-                    path: "/stripe/webhook";
-                };
-            } & {
-                readonly upgradeSubscription: {
-                    <AsResponse extends boolean = false, ReturnHeaders extends boolean = false>(inputCtx_0: {
-                        body: {
-                            plan: string;
-                            metadata?: Record<string, any> | undefined;
-                            annual?: boolean | undefined;
-                            referenceId?: string | undefined;
-                            subscriptionId?: string | undefined;
-                            seats?: number | undefined;
-                            successUrl?: string | undefined;
-                            cancelUrl?: string | undefined;
-                            returnUrl?: string | undefined;
-                            disableRedirect?: boolean | undefined;
-                        };
-                    } & {
-                        method?: "POST" | undefined;
-                    } & {
-                        query?: Record<string, any> | undefined;
-                    } & {
-                        params?: Record<string, any>;
-                    } & {
-                        request?: Request;
-                    } & {
-                        headers?: HeadersInit;
-                    } & {
-                        asResponse?: boolean;
-                        returnHeaders?: boolean;
-                        use?: better_call.Middleware[];
-                        path?: string;
-                    } & {
-                        asResponse?: AsResponse | undefined;
-                        returnHeaders?: ReturnHeaders | undefined;
-                    }): Promise<[AsResponse] extends [true] ? Response : [ReturnHeaders] extends [true] ? {
-                        headers: Headers;
-                        response: {
-                            url: string;
-                            redirect: boolean;
-                        } | {
-                            redirect: boolean;
-                            id: string;
-                            object: "checkout.session";
-                            adaptive_pricing: Stripe.Checkout.Session.AdaptivePricing | null;
-                            after_expiration: Stripe.Checkout.Session.AfterExpiration | null;
-                            allow_promotion_codes: boolean | null;
-                            amount_subtotal: number | null;
-                            amount_total: number | null;
-                            automatic_tax: Stripe.Checkout.Session.AutomaticTax;
-                            billing_address_collection: Stripe.Checkout.Session.BillingAddressCollection | null;
-                            cancel_url: string | null;
-                            client_reference_id: string | null;
-                            client_secret: string | null;
-                            collected_information: Stripe.Checkout.Session.CollectedInformation | null;
-                            consent: Stripe.Checkout.Session.Consent | null;
-                            consent_collection: Stripe.Checkout.Session.ConsentCollection | null;
-                            created: number;
-                            currency: string | null;
-                            currency_conversion: Stripe.Checkout.Session.CurrencyConversion | null;
-                            custom_fields: Array<Stripe.Checkout.Session.CustomField>;
-                            custom_text: Stripe.Checkout.Session.CustomText;
-                            customer: string | Stripe.Customer | Stripe.DeletedCustomer | null;
-                            customer_creation: Stripe.Checkout.Session.CustomerCreation | null;
-                            customer_details: Stripe.Checkout.Session.CustomerDetails | null;
-                            customer_email: string | null;
-                            discounts: Array<Stripe.Checkout.Session.Discount> | null;
-                            expires_at: number;
-                            invoice: string | Stripe.Invoice | null;
-                            invoice_creation: Stripe.Checkout.Session.InvoiceCreation | null;
-                            line_items?: Stripe.ApiList<Stripe.LineItem>;
-                            livemode: boolean;
-                            locale: Stripe.Checkout.Session.Locale | null;
-                            metadata: Stripe.Metadata | null;
-                            mode: Stripe.Checkout.Session.Mode;
-                            optional_items?: Array<Stripe.Checkout.Session.OptionalItem> | null;
-                            payment_intent: string | Stripe.PaymentIntent | null;
-                            payment_link: string | Stripe.PaymentLink | null;
-                            payment_method_collection: Stripe.Checkout.Session.PaymentMethodCollection | null;
-                            payment_method_configuration_details: Stripe.Checkout.Session.PaymentMethodConfigurationDetails | null;
-                            payment_method_options: Stripe.Checkout.Session.PaymentMethodOptions | null;
-                            payment_method_types: Array<string>;
-                            payment_status: Stripe.Checkout.Session.PaymentStatus;
-                            permissions: Stripe.Checkout.Session.Permissions | null;
-                            phone_number_collection?: Stripe.Checkout.Session.PhoneNumberCollection;
-                            presentment_details?: Stripe.Checkout.Session.PresentmentDetails;
-                            recovered_from: string | null;
-                            redirect_on_completion?: Stripe.Checkout.Session.RedirectOnCompletion;
-                            return_url?: string;
-                            saved_payment_method_options: Stripe.Checkout.Session.SavedPaymentMethodOptions | null;
-                            setup_intent: string | Stripe.SetupIntent | null;
-                            shipping_address_collection: Stripe.Checkout.Session.ShippingAddressCollection | null;
-                            shipping_cost: Stripe.Checkout.Session.ShippingCost | null;
-                            shipping_options: Array<Stripe.Checkout.Session.ShippingOption>;
-                            status: Stripe.Checkout.Session.Status | null;
-                            submit_type: Stripe.Checkout.Session.SubmitType | null;
-                            subscription: string | Stripe.Subscription | null;
-                            success_url: string | null;
-                            tax_id_collection?: Stripe.Checkout.Session.TaxIdCollection;
-                            total_details: Stripe.Checkout.Session.TotalDetails | null;
-                            ui_mode: Stripe.Checkout.Session.UiMode | null;
-                            url: string | null;
-                            lastResponse: {
-                                headers: {
-                                    [key: string]: string;
-                                };
-                                requestId: string;
-                                statusCode: number;
-                                apiVersion?: string;
-                                idempotencyKey?: string;
-                                stripeAccount?: string;
-                            };
-                        };
-                    } : {
-                        url: string;
-                        redirect: boolean;
-                    } | {
-                        redirect: boolean;
-                        id: string;
-                        object: "checkout.session";
-                        adaptive_pricing: Stripe.Checkout.Session.AdaptivePricing | null;
-                        after_expiration: Stripe.Checkout.Session.AfterExpiration | null;
-                        allow_promotion_codes: boolean | null;
-                        amount_subtotal: number | null;
-                        amount_total: number | null;
-                        automatic_tax: Stripe.Checkout.Session.AutomaticTax;
-                        billing_address_collection: Stripe.Checkout.Session.BillingAddressCollection | null;
-                        cancel_url: string | null;
-                        client_reference_id: string | null;
-                        client_secret: string | null;
-                        collected_information: Stripe.Checkout.Session.CollectedInformation | null;
-                        consent: Stripe.Checkout.Session.Consent | null;
-                        consent_collection: Stripe.Checkout.Session.ConsentCollection | null;
-                        created: number;
-                        currency: string | null;
-                        currency_conversion: Stripe.Checkout.Session.CurrencyConversion | null;
-                        custom_fields: Array<Stripe.Checkout.Session.CustomField>;
-                        custom_text: Stripe.Checkout.Session.CustomText;
-                        customer: string | Stripe.Customer | Stripe.DeletedCustomer | null;
-                        customer_creation: Stripe.Checkout.Session.CustomerCreation | null;
-                        customer_details: Stripe.Checkout.Session.CustomerDetails | null;
-                        customer_email: string | null;
-                        discounts: Array<Stripe.Checkout.Session.Discount> | null;
-                        expires_at: number;
-                        invoice: string | Stripe.Invoice | null;
-                        invoice_creation: Stripe.Checkout.Session.InvoiceCreation | null;
-                        line_items?: Stripe.ApiList<Stripe.LineItem>;
-                        livemode: boolean;
-                        locale: Stripe.Checkout.Session.Locale | null;
-                        metadata: Stripe.Metadata | null;
-                        mode: Stripe.Checkout.Session.Mode;
-                        optional_items?: Array<Stripe.Checkout.Session.OptionalItem> | null;
-                        payment_intent: string | Stripe.PaymentIntent | null;
-                        payment_link: string | Stripe.PaymentLink | null;
-                        payment_method_collection: Stripe.Checkout.Session.PaymentMethodCollection | null;
-                        payment_method_configuration_details: Stripe.Checkout.Session.PaymentMethodConfigurationDetails | null;
-                        payment_method_options: Stripe.Checkout.Session.PaymentMethodOptions | null;
-                        payment_method_types: Array<string>;
-                        payment_status: Stripe.Checkout.Session.PaymentStatus;
-                        permissions: Stripe.Checkout.Session.Permissions | null;
-                        phone_number_collection?: Stripe.Checkout.Session.PhoneNumberCollection;
-                        presentment_details?: Stripe.Checkout.Session.PresentmentDetails;
-                        recovered_from: string | null;
-                        redirect_on_completion?: Stripe.Checkout.Session.RedirectOnCompletion;
-                        return_url?: string;
-                        saved_payment_method_options: Stripe.Checkout.Session.SavedPaymentMethodOptions | null;
-                        setup_intent: string | Stripe.SetupIntent | null;
-                        shipping_address_collection: Stripe.Checkout.Session.ShippingAddressCollection | null;
-                        shipping_cost: Stripe.Checkout.Session.ShippingCost | null;
-                        shipping_options: Array<Stripe.Checkout.Session.ShippingOption>;
-                        status: Stripe.Checkout.Session.Status | null;
-                        submit_type: Stripe.Checkout.Session.SubmitType | null;
-                        subscription: string | Stripe.Subscription | null;
-                        success_url: string | null;
-                        tax_id_collection?: Stripe.Checkout.Session.TaxIdCollection;
-                        total_details: Stripe.Checkout.Session.TotalDetails | null;
-                        ui_mode: Stripe.Checkout.Session.UiMode | null;
-                        url: string | null;
-                        lastResponse: {
-                            headers: {
-                                [key: string]: string;
-                            };
-                            requestId: string;
-                            statusCode: number;
-                            apiVersion?: string;
-                            idempotencyKey?: string;
-                            stripeAccount?: string;
-                        };
-                    }>;
-                    options: {
-                        method: "POST";
-                        body: zod.ZodObject<{
-                            plan: zod.ZodString;
-                            annual: zod.ZodOptional<zod.ZodBoolean>;
-                            referenceId: zod.ZodOptional<zod.ZodString>;
-                            subscriptionId: zod.ZodOptional<zod.ZodString>;
-                            metadata: zod.ZodOptional<zod.ZodRecord<zod.ZodString, zod.ZodAny>>;
-                            seats: zod.ZodOptional<zod.ZodNumber>;
-                            successUrl: zod.ZodDefault<zod.ZodString>;
-                            cancelUrl: zod.ZodDefault<zod.ZodString>;
-                            returnUrl: zod.ZodOptional<zod.ZodString>;
-                            disableRedirect: zod.ZodDefault<zod.ZodBoolean>;
-                        }, "strip", zod.ZodTypeAny, {
-                            plan: string;
-                            successUrl: string;
-                            cancelUrl: string;
-                            disableRedirect: boolean;
-                            metadata?: Record<string, any> | undefined;
-                            annual?: boolean | undefined;
-                            referenceId?: string | undefined;
-                            subscriptionId?: string | undefined;
-                            seats?: number | undefined;
-                            returnUrl?: string | undefined;
-                        }, {
-                            plan: string;
-                            metadata?: Record<string, any> | undefined;
-                            annual?: boolean | undefined;
-                            referenceId?: string | undefined;
-                            subscriptionId?: string | undefined;
-                            seats?: number | undefined;
-                            successUrl?: string | undefined;
-                            cancelUrl?: string | undefined;
-                            returnUrl?: string | undefined;
-                            disableRedirect?: boolean | undefined;
-                        }>;
-                        use: (((inputContext: better_call.MiddlewareInputContext<better_call.MiddlewareOptions>) => Promise<{
-                            session: {
-                                session: Record<string, any> & {
-                                    id: string;
-                                    createdAt: Date;
-                                    updatedAt: Date;
-                                    userId: string;
-                                    expiresAt: Date;
-                                    token: string;
-                                    ipAddress?: string | null | undefined;
-                                    userAgent?: string | null | undefined;
-                                };
-                                user: Record<string, any> & {
-                                    id: string;
-                                    name: string;
-                                    email: string;
-                                    emailVerified: boolean;
-                                    createdAt: Date;
-                                    updatedAt: Date;
-                                    image?: string | null | undefined;
-                                };
-                            };
-                        }>) | ((inputContext: better_call.MiddlewareInputContext<better_call.MiddlewareOptions>) => Promise<void>))[];
-                    } & {
-                        use: any[];
-                    };
-                    path: "/subscription/upgrade";
-                };
-                readonly cancelSubscriptionCallback: {
-                    <AsResponse extends boolean = false, ReturnHeaders extends boolean = false>(inputCtx_0?: ({
-                        body?: undefined;
-                    } & {
-                        method?: "GET" | undefined;
-                    } & {
-                        query?: Record<string, any> | undefined;
-                    } & {
-                        params?: Record<string, any>;
-                    } & {
-                        request?: Request;
-                    } & {
-                        headers?: HeadersInit;
-                    } & {
-                        asResponse?: boolean;
-                        returnHeaders?: boolean;
-                        use?: better_call.Middleware[];
-                        path?: string;
-                    } & {
-                        asResponse?: AsResponse | undefined;
-                        returnHeaders?: ReturnHeaders | undefined;
-                    }) | undefined): Promise<[AsResponse] extends [true] ? Response : [ReturnHeaders] extends [true] ? {
-                        headers: Headers;
-                        response: never;
-                    } : never>;
-                    options: {
-                        method: "GET";
-                        query: zod.ZodOptional<zod.ZodRecord<zod.ZodString, zod.ZodAny>>;
-                        use: ((inputContext: better_call.MiddlewareInputContext<better_call.MiddlewareOptions>) => Promise<void>)[];
-                    } & {
-                        use: any[];
-                    };
-                    path: "/subscription/cancel/callback";
-                };
-                readonly cancelSubscription: {
-                    <AsResponse extends boolean = false, ReturnHeaders extends boolean = false>(inputCtx_0: {
-                        body: {
-                            returnUrl: string;
-                            referenceId?: string | undefined;
-                            subscriptionId?: string | undefined;
-                        };
-                    } & {
-                        method?: "POST" | undefined;
-                    } & {
-                        query?: Record<string, any> | undefined;
-                    } & {
-                        params?: Record<string, any>;
-                    } & {
-                        request?: Request;
-                    } & {
-                        headers?: HeadersInit;
-                    } & {
-                        asResponse?: boolean;
-                        returnHeaders?: boolean;
-                        use?: better_call.Middleware[];
-                        path?: string;
-                    } & {
-                        asResponse?: AsResponse | undefined;
-                        returnHeaders?: ReturnHeaders | undefined;
-                    }): Promise<[AsResponse] extends [true] ? Response : [ReturnHeaders] extends [true] ? {
-                        headers: Headers;
-                        response: {
-                            url: string;
-                            redirect: boolean;
-                        };
-                    } : {
-                        url: string;
-                        redirect: boolean;
-                    }>;
-                    options: {
-                        method: "POST";
-                        body: zod.ZodObject<{
-                            referenceId: zod.ZodOptional<zod.ZodString>;
-                            subscriptionId: zod.ZodOptional<zod.ZodString>;
-                            returnUrl: zod.ZodString;
-                        }, "strip", zod.ZodTypeAny, {
-                            returnUrl: string;
-                            referenceId?: string | undefined;
-                            subscriptionId?: string | undefined;
-                        }, {
-                            returnUrl: string;
-                            referenceId?: string | undefined;
-                            subscriptionId?: string | undefined;
-                        }>;
-                        use: (((inputContext: better_call.MiddlewareInputContext<better_call.MiddlewareOptions>) => Promise<{
-                            session: {
-                                session: Record<string, any> & {
-                                    id: string;
-                                    createdAt: Date;
-                                    updatedAt: Date;
-                                    userId: string;
-                                    expiresAt: Date;
-                                    token: string;
-                                    ipAddress?: string | null | undefined;
-                                    userAgent?: string | null | undefined;
-                                };
-                                user: Record<string, any> & {
-                                    id: string;
-                                    name: string;
-                                    email: string;
-                                    emailVerified: boolean;
-                                    createdAt: Date;
-                                    updatedAt: Date;
-                                    image?: string | null | undefined;
-                                };
-                            };
-                        }>) | ((inputContext: better_call.MiddlewareInputContext<better_call.MiddlewareOptions>) => Promise<void>))[];
-                    } & {
-                        use: any[];
-                    };
-                    path: "/subscription/cancel";
-                };
-                readonly restoreSubscription: {
-                    <AsResponse extends boolean = false, ReturnHeaders extends boolean = false>(inputCtx_0: {
-                        body: {
-                            referenceId?: string | undefined;
-                            subscriptionId?: string | undefined;
-                        };
-                    } & {
-                        method?: "POST" | undefined;
-                    } & {
-                        query?: Record<string, any> | undefined;
-                    } & {
-                        params?: Record<string, any>;
-                    } & {
-                        request?: Request;
-                    } & {
-                        headers?: HeadersInit;
-                    } & {
-                        asResponse?: boolean;
-                        returnHeaders?: boolean;
-                        use?: better_call.Middleware[];
-                        path?: string;
-                    } & {
-                        asResponse?: AsResponse | undefined;
-                        returnHeaders?: ReturnHeaders | undefined;
-                    }): Promise<[AsResponse] extends [true] ? Response : [ReturnHeaders] extends [true] ? {
-                        headers: Headers;
-                        response: Stripe.Response<Stripe.Subscription>;
-                    } : Stripe.Response<Stripe.Subscription>>;
-                    options: {
-                        method: "POST";
-                        body: zod.ZodObject<{
-                            referenceId: zod.ZodOptional<zod.ZodString>;
-                            subscriptionId: zod.ZodOptional<zod.ZodString>;
-                        }, "strip", zod.ZodTypeAny, {
-                            referenceId?: string | undefined;
-                            subscriptionId?: string | undefined;
-                        }, {
-                            referenceId?: string | undefined;
-                            subscriptionId?: string | undefined;
-                        }>;
-                        use: (((inputContext: better_call.MiddlewareInputContext<better_call.MiddlewareOptions>) => Promise<{
-                            session: {
-                                session: Record<string, any> & {
-                                    id: string;
-                                    createdAt: Date;
-                                    updatedAt: Date;
-                                    userId: string;
-                                    expiresAt: Date;
-                                    token: string;
-                                    ipAddress?: string | null | undefined;
-                                    userAgent?: string | null | undefined;
-                                };
-                                user: Record<string, any> & {
-                                    id: string;
-                                    name: string;
-                                    email: string;
-                                    emailVerified: boolean;
-                                    createdAt: Date;
-                                    updatedAt: Date;
-                                    image?: string | null | undefined;
-                                };
-                            };
-                        }>) | ((inputContext: better_call.MiddlewareInputContext<better_call.MiddlewareOptions>) => Promise<void>))[];
-                    } & {
-                        use: any[];
-                    };
-                    path: "/subscription/restore";
-                };
-                readonly listActiveSubscriptions: {
-                    <AsResponse extends boolean = false, ReturnHeaders extends boolean = false>(inputCtx_0?: ({
-                        body?: undefined;
-                    } & {
-                        method?: "GET" | undefined;
-                    } & {
-                        query?: {
-                            referenceId?: string | undefined;
-                        } | undefined;
-                    } & {
-                        params?: Record<string, any>;
-                    } & {
-                        request?: Request;
-                    } & {
-                        headers?: HeadersInit;
-                    } & {
-                        asResponse?: boolean;
-                        returnHeaders?: boolean;
-                        use?: better_call.Middleware[];
-                        path?: string;
-                    } & {
-                        asResponse?: AsResponse | undefined;
-                        returnHeaders?: ReturnHeaders | undefined;
-                    }) | undefined): Promise<[AsResponse] extends [true] ? Response : [ReturnHeaders] extends [true] ? {
-                        headers: Headers;
-                        response: {
-                            limits: Record<string, number> | undefined;
-                            priceId: string | undefined;
-                            id: string;
-                            plan: string;
-                            stripeCustomerId?: string;
-                            stripeSubscriptionId?: string;
-                            trialStart?: Date;
-                            trialEnd?: Date;
-                            referenceId: string;
-                            status: "active" | "canceled" | "incomplete" | "incomplete_expired" | "past_due" | "paused" | "trialing" | "unpaid";
-                            periodStart?: Date;
-                            periodEnd?: Date;
-                            cancelAtPeriodEnd?: boolean;
-                            groupId?: string;
-                            seats?: number;
-                        }[];
-                    } : {
-                        limits: Record<string, number> | undefined;
-                        priceId: string | undefined;
-                        id: string;
-                        plan: string;
-                        stripeCustomerId?: string;
-                        stripeSubscriptionId?: string;
-                        trialStart?: Date;
-                        trialEnd?: Date;
-                        referenceId: string;
-                        status: "active" | "canceled" | "incomplete" | "incomplete_expired" | "past_due" | "paused" | "trialing" | "unpaid";
-                        periodStart?: Date;
-                        periodEnd?: Date;
-                        cancelAtPeriodEnd?: boolean;
-                        groupId?: string;
-                        seats?: number;
-                    }[]>;
-                    options: {
-                        method: "GET";
-                        query: zod.ZodOptional<zod.ZodObject<{
-                            referenceId: zod.ZodOptional<zod.ZodString>;
-                        }, "strip", zod.ZodTypeAny, {
-                            referenceId?: string | undefined;
-                        }, {
-                            referenceId?: string | undefined;
-                        }>>;
-                        use: (((inputContext: better_call.MiddlewareInputContext<better_call.MiddlewareOptions>) => Promise<{
-                            session: {
-                                session: Record<string, any> & {
-                                    id: string;
-                                    createdAt: Date;
-                                    updatedAt: Date;
-                                    userId: string;
-                                    expiresAt: Date;
-                                    token: string;
-                                    ipAddress?: string | null | undefined;
-                                    userAgent?: string | null | undefined;
-                                };
-                                user: Record<string, any> & {
-                                    id: string;
-                                    name: string;
-                                    email: string;
-                                    emailVerified: boolean;
-                                    createdAt: Date;
-                                    updatedAt: Date;
-                                    image?: string | null | undefined;
-                                };
-                            };
-                        }>) | ((inputContext: better_call.MiddlewareInputContext<better_call.MiddlewareOptions>) => Promise<void>))[];
-                    } & {
-                        use: any[];
-                    };
-                    path: "/subscription/list";
-                };
-                readonly subscriptionSuccess: {
-                    <AsResponse extends boolean = false, ReturnHeaders extends boolean = false>(inputCtx_0?: ({
-                        body?: undefined;
-                    } & {
-                        method?: "GET" | undefined;
-                    } & {
-                        query?: Record<string, any> | undefined;
-                    } & {
-                        params?: Record<string, any>;
-                    } & {
-                        request?: Request;
-                    } & {
-                        headers?: HeadersInit;
-                    } & {
-                        asResponse?: boolean;
-                        returnHeaders?: boolean;
-                        use?: better_call.Middleware[];
-                        path?: string;
-                    } & {
-                        asResponse?: AsResponse | undefined;
-                        returnHeaders?: ReturnHeaders | undefined;
-                    }) | undefined): Promise<[AsResponse] extends [true] ? Response : [ReturnHeaders] extends [true] ? {
-                        headers: Headers;
-                        response: better_call.APIError;
-                    } : better_call.APIError>;
-                    options: {
-                        method: "GET";
-                        query: zod.ZodOptional<zod.ZodRecord<zod.ZodString, zod.ZodAny>>;
-                        use: ((inputContext: better_call.MiddlewareInputContext<better_call.MiddlewareOptions>) => Promise<void>)[];
-                    } & {
-                        use: any[];
-                    };
-                    path: "/subscription/success";
-                };
-            };
-            init(ctx: better_auth.AuthContext): {
-                options: {
-                    databaseHooks: {
-                        user: {
-                            create: {
-                                after(user: {
-                                    id: string;
-                                    name: string;
-                                    email: string;
-                                    emailVerified: boolean;
-                                    createdAt: Date;
-                                    updatedAt: Date;
-                                    image?: string | null | undefined;
-                                }, ctx: better_auth.GenericEndpointContext | undefined): Promise<void>;
-                            };
-                        };
-                    };
-                };
-            };
-            schema: {
-                user: {
-                    fields: {
-                        stripeCustomerId: {
-                            type: "string";
-                            required: false;
-                        };
-                    };
-                };
-                subscription?: {
-                    fields: {
-                        plan: {
-                            type: "string";
-                            required: true;
-                        };
-                        referenceId: {
-                            type: "string";
-                            required: true;
-                        };
-                        stripeCustomerId: {
-                            type: "string";
-                            required: false;
-                        };
-                        stripeSubscriptionId: {
-                            type: "string";
-                            required: false;
-                        };
-                        status: {
-                            type: "string";
-                            defaultValue: string;
-                        };
-                        periodStart: {
-                            type: "date";
-                            required: false;
-                        };
-                        periodEnd: {
-                            type: "date";
-                            required: false;
-                        };
-                        cancelAtPeriodEnd: {
-                            type: "boolean";
-                            required: false;
-                            defaultValue: false;
-                        };
-                        seats: {
-                            type: "number";
-                            required: false;
-                        };
-                    };
-                } | undefined;
-            };
-        } | {
             id: "open-api";
             endpoints: {
                 generateOpenAPISchema: {
@@ -20084,8 +17042,6 @@ declare const auth: {
                                 socialLinks: Record<string, string> | null;
                                 bio: string | null;
                                 website: string | null;
-                                role: string | null;
-                                roleEndAt: Date | null;
                             };
                             session: {
                                 id: string;
@@ -20097,8 +17053,14 @@ declare const auth: {
                                 ipAddress?: string | null | undefined | undefined;
                                 userAgent?: string | null | undefined | undefined;
                             };
-                            role: UserRole.PreProTrial | UserRole.PrePro | UserRole.Free | UserRole.Trial;
-                            roleEndAt: Date | null | undefined;
+                            invitation: boolean | {
+                                code: string;
+                                createdAt: Date | null;
+                                usedAt: Date | null;
+                                fromUserId: string;
+                                toUserId: string | null;
+                            } | undefined;
+                            role: "user" | "trial";
                         } | null;
                     } : {
                         user: {
@@ -20116,8 +17078,6 @@ declare const auth: {
                             socialLinks: Record<string, string> | null;
                             bio: string | null;
                             website: string | null;
-                            role: string | null;
-                            roleEndAt: Date | null;
                         };
                         session: {
                             id: string;
@@ -20129,8 +17089,14 @@ declare const auth: {
                             ipAddress?: string | null | undefined | undefined;
                             userAgent?: string | null | undefined | undefined;
                         };
-                        role: UserRole.PreProTrial | UserRole.PrePro | UserRole.Free | UserRole.Trial;
-                        roleEndAt: Date | null | undefined;
+                        invitation: boolean | {
+                            code: string;
+                            createdAt: Date | null;
+                            usedAt: Date | null;
+                            fromUserId: string;
+                            toUserId: string | null;
+                        } | undefined;
+                        role: "user" | "trial";
                     } | null>;
                     options: {
                         method: "GET";
@@ -20440,9 +17406,6 @@ declare const auth: {
                 bio: string;
                 website: string;
                 socialLinks: string;
-                role: string;
-                roleEndAt: Date;
-                stripeCustomerId?: string | null | undefined;
                 twoFactorEnabled: boolean | null | undefined;
             };
         };
@@ -20749,8 +17712,8 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
             input: {
                 json: {
                     messages: {
-                        role: "user" | "assistant";
                         content: string;
+                        role: "user" | "assistant";
                     }[];
                 };
             };
@@ -21375,8 +18338,8 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                     feedId?: string | undefined;
                     read?: boolean | undefined;
                     listId?: string | undefined;
-                    feedIdList?: string[] | undefined;
                     limit?: number | undefined;
+                    feedIdList?: string[] | undefined;
                     publishedAfter?: string | undefined;
                     publishedBefore?: string | undefined;
                     collected?: boolean | undefined;
@@ -21819,6 +18782,13 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                         }[] | null | undefined;
                     };
                     readCount: number;
+                    analytics?: {
+                        view: number | null;
+                        feedId: string;
+                        updatesPerWeek: number | null;
+                        subscriptionCount: number | null;
+                        latestEntryPublishedAt: string | null;
+                    } | undefined;
                     subscription?: {
                         createdAt: string;
                         userId: string;
@@ -21827,13 +18797,6 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                         category: string | null;
                         feedId: string;
                         isPrivate: boolean;
-                    } | undefined;
-                    analytics?: {
-                        view: number | null;
-                        feedId: string;
-                        updatesPerWeek: number | null;
-                        subscriptionCount: number | null;
-                        latestEntryPublishedAt: string | null;
                     } | undefined;
                 };
             };
@@ -21993,9 +18956,6 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                         facebook: string;
                         youtube: string;
                     } | null;
-                    stripeCustomerId: string | null;
-                    role: string | null;
-                    roleEndAt: string | null;
                 };
             };
             outputFormat: "json";
@@ -22033,9 +18993,6 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                             facebook: string;
                             youtube: string;
                         } | null;
-                        stripeCustomerId: string | null;
-                        role: string | null;
-                        roleEndAt: string | null;
                     };
                 };
             };
@@ -22245,9 +19202,6 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                                 facebook: string;
                                 youtube: string;
                             } | null;
-                            stripeCustomerId: string | null;
-                            role: string | null;
-                            roleEndAt: string | null;
                         }[];
                     };
                 } | {
@@ -22653,9 +19607,6 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                             facebook: string;
                             youtube: string;
                         } | null;
-                        stripeCustomerId: string | null;
-                        role: string | null;
-                        roleEndAt: string | null;
                     } | null | undefined;
                     toUser?: {
                         id: string;
@@ -22677,9 +19628,6 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                             facebook: string;
                             youtube: string;
                         } | null;
-                        stripeCustomerId: string | null;
-                        role: string | null;
-                        roleEndAt: string | null;
                     } | null | undefined;
                     toFeed?: {
                         id: string;
@@ -22840,9 +19788,6 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                             facebook: string;
                             youtube: string;
                         } | null;
-                        stripeCustomerId: string | null;
-                        role: string | null;
-                        roleEndAt: string | null;
                     };
                     userId: string;
                     rank: number | null;
@@ -23011,16 +19956,16 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                     };
                     readCount: number;
                     feedCount: number;
+                    analytics?: {
+                        subscriptionCount: number | null;
+                        listId: string;
+                    } | undefined;
                     subscription?: {
                         createdAt: string;
                         userId: string;
                         title: string | null;
                         view: number;
                         isPrivate: boolean;
-                        listId: string;
-                    } | undefined;
-                    analytics?: {
-                        subscriptionCount: number | null;
                         listId: string;
                     } | undefined;
                 };
@@ -23591,32 +20536,28 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
             output: {
                 code: 0;
                 data: {
-                    ANNOUNCEMENT: string;
+                    MAX_SUBSCRIPTIONS: number;
+                    MAX_LISTS: number;
+                    MAX_ACTIONS: number;
+                    MAX_WEBHOOKS_PER_ACTION: number;
+                    MAX_INBOXES: number;
+                    IMPORTING_TITLE: string;
+                    DAILY_POWER_PERCENTAGES: number[];
+                    LEVEL_PERCENTAGES: number[];
                     DAILY_CLAIM_AMOUNT: {
                         trial: number;
                         normal: number;
                     };
-                    DAILY_POWER_PERCENTAGES: number[];
-                    DAILY_POWER_SUPPLY: number;
-                    IMPORTING_TITLE: string;
-                    INVITATION_ENABLED: boolean;
+                    TAX_POINT: string;
                     INVITATION_INTERVAL_DAYS: number;
                     INVITATION_PRICE: number;
+                    INVITATION_ENABLED: boolean;
+                    DAILY_POWER_SUPPLY: number;
                     IS_RSS3_TESTNET: boolean;
-                    LEVEL_PERCENTAGES: number[];
-                    MAX_ACTIONS: number;
-                    MAX_INBOXES: number;
-                    MAX_LISTS: number;
-                    MAX_SUBSCRIPTIONS: number;
+                    PRODUCT_HUNT_VOTE_URL: string;
+                    ANNOUNCEMENT: string;
                     MAX_TRIAL_USER_FEED_SUBSCRIPTION: number;
                     MAX_TRIAL_USER_LIST_SUBSCRIPTION: number;
-                    MAX_WEBHOOKS_PER_ACTION: number;
-                    PRODUCT_HUNT_VOTE_URL: string;
-                    REFERRAL_ENABLED: boolean;
-                    REFERRAL_PRO_PREVIEW_STRIPE_PRICE_IN_DOLLAR: number;
-                    REFERRAL_REQUIRED_INVITATIONS: number;
-                    REFERRAL_RULE_LINK: string;
-                    TAX_POINT: string;
                     MAS_IN_REVIEW_VERSION?: string | undefined;
                 };
             };
@@ -23679,9 +20620,6 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
                         facebook: string;
                         youtube: string;
                     } | null;
-                    stripeCustomerId: string | null;
-                    role: string | null;
-                    roleEndAt: string | null;
                 }[];
             };
             outputFormat: "json";
@@ -23990,50 +20928,7 @@ declare const _routes: hono_hono_base.HonoBase<Env, ({
             status: 200;
         };
     };
-}, "/trending"> | hono_types.MergeSchemaPath<{
-    "/": {
-        $get: {
-            input: {};
-            output: {
-                code: 0;
-                data: {
-                    invitations: {
-                        code: string;
-                        user: {
-                            id: string;
-                            name: string | null;
-                            image: string | null;
-                        } | null;
-                        createdAt: string | null;
-                        usedAt: string | null;
-                        toUserId: string | null;
-                    }[];
-                    referralCycleDays: number;
-                };
-            };
-            outputFormat: "json";
-            status: 200;
-        };
-    };
-} & {
-    "/days": {
-        $get: {
-            input: {
-                query: {
-                    code: string;
-                };
-            };
-            output: {
-                code: 0;
-                data: {
-                    referralCycleDays: number;
-                };
-            };
-            outputFormat: "json";
-            status: 200;
-        };
-    };
-}, "/referrals">, "/">;
+}, "/trending">, "/">;
 type AppType = typeof _routes;
 
-export { type ActionItem, type ActionsModel, type AirdropActivity, type AppType, type AttachmentsModel, type AuthSession, type AuthUser, CommonEntryFields, type ConditionItem, type DetailModel, type EntriesModel, type ExtraModel, type FeedModel, type InvitationDB, type ListModel, type MediaModel, type MessagingData, MessagingType, type SettingsModel, type UrlReadsModel, account, achievements, achievementsOpenAPISchema, actions, actionsItemOpenAPISchema, actionsOpenAPISchema, actionsRelations, activityEnum, airdrops, airdropsOpenAPISchema, attachmentsZodSchema, authPlugins, boosts, captcha, collections, collectionsOpenAPISchema, collectionsRelations, detailModelSchema, entries, entriesOpenAPISchema, entriesRelations, extraZodSchema, feedAnalytics, feedAnalyticsOpenAPISchema, feedAnalyticsRelations, feedPowerTokens, feedPowerTokensOpenAPISchema, feedPowerTokensRelations, feeds, feedsOpenAPISchema, feedsRelations, inboxHandleSchema, inboxes, inboxesEntries, inboxesEntriesInsertOpenAPISchema, type inboxesEntriesModel, inboxesEntriesOpenAPISchema, inboxesEntriesRelations, inboxesOpenAPISchema, inboxesRelations, invitations, invitationsOpenAPISchema, invitationsRelations, languageSchema, levels, levelsOpenAPISchema, levelsRelations, listAnalytics, listAnalyticsOpenAPISchema, listAnalyticsRelations, lists, listsOpenAPISchema, listsRelations, listsSubscriptions, listsSubscriptionsOpenAPISchema, listsSubscriptionsRelations, lower, mediaZodSchema, messaging, messagingOpenAPISchema, messagingRelations, readabilities, rsshub, rsshubAnalytics, rsshubAnalyticsOpenAPISchema, rsshubOpenAPISchema, rsshubPurchase, rsshubUsage, rsshubUsageOpenAPISchema, rsshubUsageRelations, session, settings, stripeSubscriptions, subscriptions, subscriptionsOpenAPISchema, subscriptionsRelations, timeline, timelineOpenAPISchema, timelineRelations, transactionType, transactions, transactionsOpenAPISchema, transactionsRelations, trendingFeeds, trendingFeedsOpenAPISchema, trendingFeedsRelations, twoFactor, uploads, urlReads, urlReadsOpenAPISchema, user, users, usersOpenApiSchema, usersRelations, verification, wallets, walletsOpenAPISchema, walletsRelations };
+export { type ActionItem, type ActionsModel, type AirdropActivity, type AppType, type AttachmentsModel, type AuthSession, type AuthUser, CommonEntryFields, type ConditionItem, type DetailModel, type EntriesModel, type ExtraModel, type FeedModel, type ListModel, type MediaModel, type MessagingData, MessagingType, type SettingsModel, type UrlReadsModel, account, achievements, achievementsOpenAPISchema, actions, actionsItemOpenAPISchema, actionsOpenAPISchema, actionsRelations, activityEnum, airdrops, airdropsOpenAPISchema, attachmentsZodSchema, authPlugins, boosts, captcha, collections, collectionsOpenAPISchema, collectionsRelations, detailModelSchema, entries, entriesOpenAPISchema, entriesRelations, extraZodSchema, feedAnalytics, feedAnalyticsOpenAPISchema, feedAnalyticsRelations, feedPowerTokens, feedPowerTokensOpenAPISchema, feedPowerTokensRelations, feeds, feedsOpenAPISchema, feedsRelations, inboxHandleSchema, inboxes, inboxesEntries, inboxesEntriesInsertOpenAPISchema, type inboxesEntriesModel, inboxesEntriesOpenAPISchema, inboxesEntriesRelations, inboxesOpenAPISchema, inboxesRelations, invitations, invitationsOpenAPISchema, invitationsRelations, languageSchema, levels, levelsOpenAPISchema, levelsRelations, listAnalytics, listAnalyticsOpenAPISchema, listAnalyticsRelations, lists, listsOpenAPISchema, listsRelations, listsSubscriptions, listsSubscriptionsOpenAPISchema, listsSubscriptionsRelations, lower, mediaZodSchema, messaging, messagingOpenAPISchema, messagingRelations, readabilities, rsshub, rsshubAnalytics, rsshubAnalyticsOpenAPISchema, rsshubOpenAPISchema, rsshubPurchase, rsshubUsage, rsshubUsageOpenAPISchema, rsshubUsageRelations, session, settings, subscriptions, subscriptionsOpenAPISchema, subscriptionsRelations, timeline, timelineOpenAPISchema, timelineRelations, transactionType, transactions, transactionsOpenAPISchema, transactionsRelations, trendingFeeds, trendingFeedsOpenAPISchema, trendingFeedsRelations, twoFactor, uploads, urlReads, urlReadsOpenAPISchema, user, users, usersOpenApiSchema, usersRelations, verification, wallets, walletsOpenAPISchema, walletsRelations };
