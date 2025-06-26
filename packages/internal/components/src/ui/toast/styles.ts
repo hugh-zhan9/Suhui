@@ -2,14 +2,12 @@ export const toastStyles = {
   toast: tw`
     group relative flex w-full items-center justify-between gap-3 rounded-2xl p-4 shadow-lg
     backdrop-blur-background border border-border/50
-    bg-material-ultra-thick
-    transition-all duration-300 ease-out
-    hover:shadow-xl
-    data-[type=success]:border-green/30 data-[type=success]:bg-green/5
-    data-[type=error]:border-red/30 data-[type=error]:bg-red/5
-    data-[type=warning]:border-orange/30 data-[type=warning]:bg-orange/5
-    data-[type=info]:border-blue/30 data-[type=info]:bg-blue/5
-    data-[type=loading]:border-gray/30 data-[type=loading]:bg-gray/5
+    bg-material-ultra-thick duration-300 ease-out
+    data-[type=success]:border-green/30 data-[type=success]:bg-green/20
+    data-[type=error]:border-red/30 data-[type=error]:bg-red/20
+    data-[type=warning]:border-orange/30 data-[type=warning]:bg-orange/20
+    data-[type=info]:border-blue/30 data-[type=info]:bg-blue/20
+    data-[type=loading]:border-gray/30 data-[type=loading]:bg-gray/20
     max-w-md min-w-[320px]
     font-theme
   `,
