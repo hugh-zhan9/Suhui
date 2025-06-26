@@ -490,10 +490,11 @@ class EntrySyncServices {
     await entryActions.upsertMany(entries)
 
     if (typeof view === "number") {
-      const collections = honoMorph.toCollections(res.data, view)
+      const { collections, entryIdsNotInCollections } = honoMorph.toCollections(res.data, view)
       await collectionActions.upsertMany(collections, {
         reset: params.isCollection && !pageParam,
       })
+      await collectionActions.delete(entryIdsNotInCollections)
     }
 
     const dataFeeds = res.data?.map((e) => e.feeds).filter((f) => f.type === "feed")

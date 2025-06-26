@@ -117,25 +117,37 @@ class CollectionActions implements Hydratable, Resetable {
     await tx.run()
   }
 
-  deleteInSession(entryId: string) {
+  deleteInSession(entryId: string | string[]) {
+    const normalizedEntryId = Array.isArray(entryId) ? entryId : [entryId]
+
     const state = useCollectionStore.getState()
     const nextCollections: CollectionState["collections"] = {
       ...state.collections,
     }
-    delete nextCollections[entryId]
+
+    normalizedEntryId.forEach((id) => {
+      delete nextCollections[id]
+    })
     set({
       ...state,
       collections: nextCollections,
     })
   }
 
-  async delete(entryId: string) {
+  async delete(entryId: string | string[]) {
+    const entryIdsInCollection = new Set(Object.keys(get().collections))
+    const normalizedEntryId = (Array.isArray(entryId) ? entryId : [entryId]).filter((id) =>
+      entryIdsInCollection.has(id),
+    )
+
+    if (normalizedEntryId.length === 0) return
+
     const tx = createTransaction()
     tx.store(() => {
       this.deleteInSession(entryId)
     })
     tx.persist(() => {
-      return CollectionService.delete(entryId)
+      return CollectionService.deleteMany(normalizedEntryId)
     })
     tx.run()
   }
