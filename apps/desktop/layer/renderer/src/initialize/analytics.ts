@@ -1,16 +1,10 @@
-import { IN_ELECTRON } from "@follow/shared/constants"
-import { env } from "@follow/shared/env.desktop"
 import type { AuthSession } from "@follow/shared/hono"
 import { setFirebaseTracker, setOpenPanelTracker, tracker } from "@follow/tracker"
-import { getAnalytics, logEvent, setUserId, setUserProperties } from "firebase/analytics"
-import { initializeApp } from "firebase/app"
 
 import { QUERY_PERSIST_KEY } from "~/constants/app"
-import { ipcServices } from "~/lib/client"
 
+import { ga4 } from "./ga4"
 import { op } from "./op"
-
-const firebaseConfig = env.VITE_FIREBASE_CONFIG ? JSON.parse(env.VITE_FIREBASE_CONFIG) : null
 
 export const initAnalytics = async () => {
   tracker.manager.appendUserProperties({
@@ -20,35 +14,7 @@ export const initAnalytics = async () => {
     language: navigator.language,
   })
 
-  if (IN_ELECTRON) {
-    const firebaseTracker = {
-      logEvent: async (name: string, params: Record<string, any>) => {
-        return ipcServices?.ga4.logEvent({ name, params })
-      },
-      setUserId: async (id: string) => {
-        return ipcServices?.ga4.setUserId({ id })
-      },
-      setUserProperties: async (properties: Record<string, any>) => {
-        return ipcServices?.ga4.setUserProperties({ properties })
-      },
-    }
-    setFirebaseTracker(firebaseTracker)
-  } else {
-    const app = initializeApp(firebaseConfig)
-    const analytics = getAnalytics(app)
-    const firebaseTracker = {
-      logEvent: async (name: string, params: Record<string, any>) => {
-        return logEvent(analytics, name, params)
-      },
-      setUserId: async (id: string) => {
-        return setUserId(analytics, id)
-      },
-      setUserProperties: async (properties: Record<string, any>) => {
-        return setUserProperties(analytics, properties)
-      },
-    }
-    setFirebaseTracker(firebaseTracker)
-  }
+  setFirebaseTracker(ga4)
 
   setOpenPanelTracker(op)
 
