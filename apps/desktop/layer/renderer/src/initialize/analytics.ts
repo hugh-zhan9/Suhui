@@ -1,15 +1,9 @@
 import { IN_ELECTRON } from "@follow/shared/constants"
 import { env } from "@follow/shared/env.desktop"
 import type { AuthSession } from "@follow/shared/hono"
-import {
-  setFirebaseTracker,
-  setOpenPanelTracker,
-  setPostHogTracker,
-  tracker,
-} from "@follow/tracker"
+import { setFirebaseTracker, setOpenPanelTracker, tracker } from "@follow/tracker"
 import { getAnalytics, logEvent, setUserId, setUserProperties } from "firebase/analytics"
 import { initializeApp } from "firebase/app"
-import posthog from "posthog-js"
 
 import { QUERY_PERSIST_KEY } from "~/constants/app"
 import { ipcServices } from "~/lib/client"
@@ -57,13 +51,6 @@ export const initAnalytics = async () => {
   }
 
   setOpenPanelTracker(op)
-  setPostHogTracker(
-    posthog.init(env.VITE_POSTHOG_KEY, {
-      api_host: env.VITE_POSTHOG_HOST,
-      person_profiles: "always",
-      defaults: "2025-05-24",
-    }),
-  )
 
   let session: AuthSession | undefined
   try {
