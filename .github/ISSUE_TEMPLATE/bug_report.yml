@@ -39,7 +39,6 @@ body:
     attributes:
       label: Entry ID
       description: Please provide the entry id of the entry that is causing the issue. If you are not sure, please provide the entry url. Fill `N/A` if not relevant.
-      placeholder: ""
     validations:
       required: true
 
