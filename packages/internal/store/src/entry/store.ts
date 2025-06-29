@@ -606,7 +606,7 @@ class EntrySyncServices {
                 cookie: options.cookie,
               }
             : undefined,
-          credentials: options?.cookie ? undefined : "include",
+          credentials: options?.cookie ? "omit" : "include",
           body: JSON.stringify({
             ids: nextIds,
           }),
