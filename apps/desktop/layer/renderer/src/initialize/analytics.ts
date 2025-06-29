@@ -1,10 +1,9 @@
 import type { AuthSession } from "@follow/shared/hono"
-import { setFirebaseTracker, setOpenPanelTracker, tracker } from "@follow/tracker"
+import { setFirebaseTracker, tracker } from "@follow/tracker"
 
 import { QUERY_PERSIST_KEY } from "~/constants/app"
 
 import { ga4 } from "./ga4"
-import { op } from "./op"
 
 export const initAnalytics = async () => {
   tracker.manager.appendUserProperties({
@@ -15,8 +14,6 @@ export const initAnalytics = async () => {
   })
 
   setFirebaseTracker(ga4)
-
-  setOpenPanelTracker(op)
 
   let session: AuthSession | undefined
   try {
