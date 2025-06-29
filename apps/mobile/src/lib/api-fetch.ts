@@ -12,7 +12,7 @@ import { proxyEnv } from "./proxy-env"
 
 export const apiFetch = ofetch.create({
   retry: false,
-
+  credentials: "omit",
   baseURL: proxyEnv.API_URL,
   onRequest: async (ctx) => {
     const { options, request } = ctx
