@@ -61,6 +61,7 @@ export const apiFetch = ofetch.create({
             {
               closeButton: true,
               duration: 10e4,
+
               classNames: {
                 content: tw`w-full`,
               },

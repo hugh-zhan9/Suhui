@@ -2,11 +2,11 @@ import { createRequire } from "node:module"
 
 import { app, nativeTheme } from "electron"
 
-import { setDockCount } from "../../lib/dock"
+import { WindowManager } from "~/manager/window"
+
 import { setProxyConfig, updateProxy } from "../../lib/proxy"
 import { store } from "../../lib/store"
 import { getTrayConfig, setTrayConfig } from "../../lib/tray"
-import { showSetting } from "../../window"
 import type { IpcContext } from "../base"
 import { IpcMethod, IpcService } from "../base"
 
@@ -36,7 +36,7 @@ export class SettingService extends IpcService {
 
   @IpcMethod()
   openSettingWindow(_context: IpcContext): void {
-    showSetting()
+    WindowManager.showSetting()
   }
 
   @IpcMethod()
@@ -63,11 +63,6 @@ export class SettingService extends IpcService {
   @IpcMethod()
   setMinimizeToTray(_context: IpcContext, minimize: boolean): void {
     setTrayConfig(minimize)
-  }
-
-  @IpcMethod()
-  setDockBadge(_context: IpcContext, count: number): void {
-    setDockCount(count)
   }
 
   @IpcMethod()

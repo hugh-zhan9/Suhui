@@ -1,14 +1,16 @@
 import { TitleMarquee } from "@follow/components/ui/marquee/index.jsx"
+import { useIsEntryStarred } from "@follow/store/collection/hooks"
+import { useEntry } from "@follow/store/entry/hooks"
+import { useFeedById } from "@follow/store/feed/hooks"
 import { cn } from "@follow/utils/utils"
 import dayjs from "dayjs"
+import { useTranslation } from "react-i18next"
 
 import { useEntryIsRead } from "~/hooks/biz/useAsRead"
 import { EntryTranslation } from "~/modules/entry-column/translation"
 import type { FeedIconEntry } from "~/modules/feed/feed-icon"
 import { FeedIcon } from "~/modules/feed/feed-icon"
 import { FeedTitle } from "~/modules/feed/feed-title"
-import { useEntry } from "~/store/entry/hooks"
-import { useFeedById } from "~/store/feed"
 
 import { StarIcon } from "../star-icon"
 import type { UniversalItemProps } from "../types"
@@ -43,11 +45,10 @@ export const GridItemFooter = ({
 }) => {
   const entry = useEntry(entryId, (state) => {
     /// keep-sorted
-    const { collections, feedId, read } = state
-    const { authorAvatar, publishedAt, title } = state.entries
-    const isInCollection = !!collections
+    const { feedId, read } = state
+    const { authorAvatar, publishedAt, title } = state
 
-    const media = state.entries.media || []
+    const media = state.media || []
     const photo = media.find((a) => a.type === "photo")
     const firstPhotoUrl = photo?.url
     const iconEntry: FeedIconEntry = {
@@ -59,16 +60,19 @@ export const GridItemFooter = ({
     return {
       feedId,
       iconEntry,
-      isInCollection,
       publishedAt,
       read,
       title,
     }
   })
 
+  const isInCollection = useIsEntryStarred(entryId)
+
   const feeds = useFeedById(entry?.feedId)
 
   const asRead = useEntryIsRead(entry)
+
+  const { t } = useTranslation("common")
 
   if (!entry) return null
   return (
@@ -89,7 +93,7 @@ export const GridItemFooter = ({
           <TitleMarquee className="min-w-0 grow">
             <EntryTranslation source={entry?.title} target={translation?.title} />
           </TitleMarquee>
-          {entry?.isInCollection && (
+          {isInCollection && (
             <div className="h-0 shrink-0 -translate-y-2">
               <StarIcon />
             </div>
@@ -99,17 +103,20 @@ export const GridItemFooter = ({
       <div className="flex items-center gap-1 truncate text-[13px]">
         <FeedIcon
           fallback
-          className="mr-0.5 flex"
+          noMargin
+          className="flex"
           feed={feeds!}
           entry={entry?.iconEntry}
           size={18}
         />
-        <span className={cn("min-w-0 truncate", descriptionClassName)}>
+        <span className={cn("min-w-0 truncate pl-1", descriptionClassName)}>
           <FeedTitle feed={feeds} />
         </span>
         <span className={cn("text-zinc-500", timeClassName)}>·</span>
         <span className={cn("text-zinc-500", timeClassName)}>
           {dayjs.duration(dayjs(entry?.publishedAt).diff(dayjs(), "minute"), "minute").humanize()}
+          {t("space")}
+          {t("words.ago")}
         </span>
       </div>
     </div>
