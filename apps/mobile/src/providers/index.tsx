@@ -4,6 +4,7 @@ import { jotaiStore } from "@follow/utils"
 import { PortalProvider } from "@gorhom/portal"
 import { QueryClientProvider } from "@tanstack/react-query"
 import { useDrizzleStudio } from "expo-drizzle-studio-plugin"
+import { ComposeContextProvider } from "foxact/compose-context-provider"
 import { Provider } from "jotai"
 import type { ReactNode } from "react"
 import { StyleSheet, View } from "react-native"
@@ -19,7 +20,24 @@ import { LightboxStateProvider } from "../components/lightbox/lightboxState"
 import { queryClient } from "../lib/query-client"
 import { TimelineSelectorDragProgressProvider } from "../modules/screen/atoms"
 import { MigrationProvider } from "./migration"
-import { ServerConfigsProvider } from "./ServerConfigsProvider"
+import { ServerConfigsLoader } from "./ServerConfigsLoader"
+
+/* eslint-disable @eslint-react/no-missing-key */
+const contexts = [
+  <MigrationProvider children={null} />,
+  <Provider store={jotaiStore} />,
+  <ErrorBoundary fallbackRender={GlobalErrorScreen} children={null} />,
+  <KeyboardProvider children={null} />,
+  <QueryClientProvider client={queryClient} />,
+  <GestureHandlerRootView />,
+  <SheetProvider children={null} />,
+  <ActionSheetProvider children={null} />,
+  <LightboxStateProvider children={null} />,
+  <TimelineSelectorDragProgressProvider children={null} />,
+  <PortalProvider children={null} />,
+  <SafeAreaProvider />,
+]
+/* eslint-enable @eslint-react/no-missing-key */
 
 export const RootProviders = ({ children }: { children: ReactNode }) => {
   useDrizzleStudio(sqlite as any)
@@ -28,30 +46,11 @@ export const RootProviders = ({ children }: { children: ReactNode }) => {
 
   return (
     <View style={[styles.flex, currentThemeColors]}>
-      <MigrationProvider>
-        <Provider store={jotaiStore}>
-          <ErrorBoundary fallbackRender={GlobalErrorScreen}>
-            <KeyboardProvider>
-              <QueryClientProvider client={queryClient}>
-                <GestureHandlerRootView>
-                  <SheetProvider>
-                    <ActionSheetProvider>
-                      <LightboxStateProvider>
-                        <TimelineSelectorDragProgressProvider>
-                          <PortalProvider>
-                            <SafeAreaProvider>{children}</SafeAreaProvider>
-                          </PortalProvider>
-                        </TimelineSelectorDragProgressProvider>
-                      </LightboxStateProvider>
-                    </ActionSheetProvider>
-                    <ServerConfigsProvider />
-                  </SheetProvider>
-                </GestureHandlerRootView>
-              </QueryClientProvider>
-            </KeyboardProvider>
-          </ErrorBoundary>
-        </Provider>
-      </MigrationProvider>
+      {/* Learn more https://foxact.skk.moe/compose-context-provider/ */}
+      <ComposeContextProvider contexts={contexts}>
+        {children}
+        <ServerConfigsLoader />
+      </ComposeContextProvider>
     </View>
   )
 }
