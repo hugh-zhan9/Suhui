@@ -1,13 +1,13 @@
 import { whoami } from "@follow/store/user/getters"
 import { setFirebaseTracker, setPostHogTracker, tracker } from "@follow/tracker"
+import { getAnalytics } from "@react-native-firebase/analytics"
 import { nativeApplicationVersion, nativeBuildVersion } from "expo-application"
 import PostHog from "posthog-react-native"
 
-import { ga4 } from "../lib/ga4"
 import { proxyEnv } from "../lib/proxy-env"
 
 export const initAnalytics = async () => {
-  setFirebaseTracker(ga4)
+  setFirebaseTracker(getAnalytics())
 
   const user = whoami()
   if (user) {
