@@ -136,7 +136,7 @@
     "@types/react": "19.1.6",
     "babel-plugin-inline-import": "3.0.0",
     "eas-cli": "16.12.0",
-    "expo-sqlite-devtools": "0.0.2",
+    "expo-drizzle-studio-plugin": "0.2.0",
     "nbump": "2.1.2",
     "postcss": "8.5.6",
     "sf-symbols-typescript": "2.1.0",

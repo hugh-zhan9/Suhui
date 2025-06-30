@@ -3,7 +3,7 @@ import { sqlite } from "@follow/database/db"
 import { jotaiStore } from "@follow/utils"
 import { PortalProvider } from "@gorhom/portal"
 import { QueryClientProvider } from "@tanstack/react-query"
-import { useSQLiteDevTools } from "expo-sqlite-devtools"
+import { useDrizzleStudio } from "expo-drizzle-studio-plugin"
 import { Provider } from "jotai"
 import type { ReactNode } from "react"
 import { StyleSheet, View } from "react-native"
@@ -22,7 +22,7 @@ import { MigrationProvider } from "./migration"
 import { ServerConfigsProvider } from "./ServerConfigsProvider"
 
 export const RootProviders = ({ children }: { children: ReactNode }) => {
-  useSQLiteDevTools(sqlite)
+  useDrizzleStudio(sqlite as any)
 
   const currentThemeColors = useCurrentColorsVariants()
 
