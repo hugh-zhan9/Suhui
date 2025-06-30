@@ -1,6 +1,5 @@
-import { v4 as uuidv4 } from "uuid"
-
 import { apiClient } from "~/lib/api-fetch"
+import { getClientId, getSessionId } from "~/lib/client-session"
 
 class Analytics4 {
   private clientID: string
@@ -8,7 +7,7 @@ class Analytics4 {
   private userID: string | null = null
   private userProperties: Record<string, { value: unknown }> | null = null
 
-  constructor(clientID: string = uuidv4(), sessionID = uuidv4()) {
+  constructor(clientID: string = getClientId(), sessionID = getSessionId()) {
     this.clientID = clientID
     this.sessionID = sessionID
   }
