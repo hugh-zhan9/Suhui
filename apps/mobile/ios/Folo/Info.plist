@@ -41,6 +41,7 @@
         <key>CFBundleURLSchemes</key>
         <array>
           <string>follow</string>
+          <string>folo</string>
           <string>is.follow</string>
         </array>
       </dict>
@@ -52,7 +53,7 @@
       </dict>
     </array>
     <key>CFBundleVersion</key>
-    <string>110</string>
+    <string>1</string>
     <key>ITSAppUsesNonExemptEncryption</key>
     <false/>
     <key>LSApplicationCategoryType</key>
