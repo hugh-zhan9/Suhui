@@ -1,4 +1,4 @@
-import { resetStore } from "@follow/store/reset"
+import { deleteDB } from "@follow/database/db"
 import { getStorageNS } from "@follow/utils/ns"
 
 import { clearUISettings } from "~/atoms/settings/ui"
@@ -6,7 +6,7 @@ import { clearUISettings } from "~/atoms/settings/ui"
 import { clearImageDimensionsDb } from "../image/db"
 
 export const clearLocalPersistStoreData = async () => {
-  await Promise.all([resetStore(), clearImageDimensionsDb()])
+  await Promise.all([deleteDB(), clearImageDimensionsDb()])
 
   clearUISettings()
 }
