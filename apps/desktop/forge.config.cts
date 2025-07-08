@@ -1,5 +1,3 @@
-import "dotenv/config"
-
 import crypto from "node:crypto"
 import fs, { readdirSync } from "node:fs"
 import { cp, readdir } from "node:fs/promises"
