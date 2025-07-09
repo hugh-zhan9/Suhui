@@ -216,7 +216,7 @@ const config: ForgeConfig = {
       publisherDisplayName: "Natural Selection Labs",
       identityName: "NaturalSelectionLabs.Follow-Yourfavoritesinoneinbo",
       packageBackgroundColor: "#FF5C00",
-      protocol: "follow", // TODO: use custom appx manifest to support both follow and folo
+      protocol: "folo",
     }),
   ],
   plugins: [
