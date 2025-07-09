@@ -259,36 +259,40 @@ const config: ForgeConfig = {
       }
       let basePath = ""
       makeResults = makeResults.map((result) => {
-        result.artifacts = result.artifacts.map((artifact) => {
-          if (artifactRegex.test(artifact)) {
-            if (!basePath) {
-              basePath = path.dirname(artifact)
-            }
-            const newArtifact = `${path.dirname(artifact)}/${
-              result.packageJSON.productName
-            }-${result.packageJSON.version}-${
-              platformNamesMap[result.platform]
-            }-${result.arch}${path.extname(artifact)}`
-            fs.renameSync(artifact, newArtifact)
+        result.artifacts = result.artifacts
+          .map((artifact) => {
+            if (artifactRegex.test(artifact)) {
+              if (!basePath) {
+                basePath = path.dirname(artifact)
+              }
+              const newArtifact = `${path.dirname(artifact)}/${
+                result.packageJSON.productName
+              }-${result.packageJSON.version}-${
+                platformNamesMap[result.platform]
+              }-${result.arch}${path.extname(artifact)}`
+              fs.renameSync(artifact, newArtifact)
 
-            try {
-              const fileData = fs.readFileSync(newArtifact)
-              const hash = crypto.createHash("sha512").update(fileData).digest("base64")
-              const { size } = fs.statSync(newArtifact)
+              try {
+                const fileData = fs.readFileSync(newArtifact)
+                const hash = crypto.createHash("sha512").update(fileData).digest("base64")
+                const { size } = fs.statSync(newArtifact)
 
-              yml.files.push({
-                url: path.basename(newArtifact),
-                sha512: hash,
-                size,
-              })
-            } catch {
-              console.error(`Failed to hash ${newArtifact}`)
+                yml.files.push({
+                  url: path.basename(newArtifact),
+                  sha512: hash,
+                  size,
+                })
+              } catch {
+                console.error(`Failed to hash ${newArtifact}`)
+              }
+              return newArtifact
+            } else if (!artifact.endsWith(".tmp")) {
+              return artifact
+            } else {
+              return null
             }
-            return newArtifact
-          } else {
-            return artifact
-          }
-        })
+          })
+          .filter((artifact) => artifact !== null)
         return result
       })
       yml.releaseDate = new Date().toISOString()
