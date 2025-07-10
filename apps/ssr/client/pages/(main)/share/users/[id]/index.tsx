@@ -1,4 +1,3 @@
-import { MainContainer } from "@client/components/layout/main"
 import { FeedIcon } from "@client/components/ui/feed-icon"
 import { openInFollowApp } from "@client/lib/helper"
 import { UrlBuilder } from "@client/lib/url-builder"
@@ -82,7 +81,7 @@ export const Component = () => {
   useTitle(user.data?.name)
 
   return (
-    <MainContainer className="bg-background min-h-screen">
+    <>
       {user.isLoading ? (
         <LoadingCircle size="large" className="center fixed inset-0" />
       ) : (
@@ -93,7 +92,7 @@ export const Component = () => {
           <Subscriptions userId={user.data?.id} />
         </Fragment>
       )}
-    </MainContainer>
+    </>
   )
 }
 
