@@ -105,7 +105,7 @@ const UserHero = ({ user }: { user: User }) => {
   )
 
   return (
-    <div className="mx-auto max-w-4xl px-6 py-16 text-center sm:px-8 sm:py-20">
+    <div className="mx-auto max-w-4xl px-6 py-8 text-center sm:px-8 sm:py-12">
       {/* Avatar */}
       <div className="mb-6">
         <Avatar className="border-border mx-auto size-20 border">

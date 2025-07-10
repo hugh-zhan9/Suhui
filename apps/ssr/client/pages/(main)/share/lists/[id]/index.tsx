@@ -92,7 +92,7 @@ export function Component() {
     <Fragment>
       {/* Hero Section */}
       <div>
-        <div className="mx-auto max-w-4xl px-6 py-16 text-center sm:px-8 sm:py-20">
+        <div className="mx-auto max-w-4xl px-6 py-8 text-center sm:px-8 sm:py-12">
           {/* List Icon */}
           <div className="mb-6">
             <div className="relative mx-auto inline-block">

@@ -4,7 +4,6 @@ import { openInFollowApp } from "@client/lib/helper"
 import { queryClient } from "@client/lib/query-client"
 import { useSession } from "@client/query/auth"
 import { useAuthProviders } from "@client/query/users"
-import { Logo } from "@follow/components/icons/logo.jsx"
 import { Button, MotionButtonBase } from "@follow/components/ui/button/index.js"
 import { Divider } from "@follow/components/ui/divider/index.js"
 import {
@@ -233,10 +232,8 @@ export function Login() {
 
   return (
     <div className="flex w-full flex-col items-center justify-center">
-      <Logo className="size-16" />
-
       {!isAuthenticated && !isLoading && (
-        <h1 className="mb-6 mt-8 text-2xl">
+        <h1 className="mb-8 text-3xl">
           {t("login.logInTo")} <b>{` ${APP_NAME}`}</b>
         </h1>
       )}
