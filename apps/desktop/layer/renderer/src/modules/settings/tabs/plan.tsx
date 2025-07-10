@@ -137,7 +137,7 @@ export function SettingPlan() {
         onUpgrade={async () => {
           const res = await subscription.upgrade({
             plan: "folo pro preview",
-            successUrl: env.VITE_WEB_URL,
+            successUrl: IN_ELECTRON ? `${DEEPLINK_SCHEME}refresh` : env.VITE_WEB_URL,
             cancelUrl: env.VITE_WEB_URL,
             disableRedirect: IN_ELECTRON,
           })

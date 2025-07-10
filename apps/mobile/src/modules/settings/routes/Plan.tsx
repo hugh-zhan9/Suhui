@@ -246,7 +246,7 @@ export const PlanScreen: NavigationControllerView = () => {
                 } else {
                   const res = await authClient.subscription.upgrade({
                     plan: "folo pro preview",
-                    successUrl: proxyEnv.WEB_URL,
+                    successUrl: "folo://refresh",
                     cancelUrl: proxyEnv.WEB_URL,
                     disableRedirect: true,
                   })
