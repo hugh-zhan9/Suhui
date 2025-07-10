@@ -117,16 +117,6 @@ export function Login() {
             </p>
             <div className="center mt-8 flex flex-col gap-4 sm:flex-row">
               <Button
-                variant="text"
-                buttonClassName="h-14 text-base px-10 rounded-full"
-                onClick={() => {
-                  window.location.href = "/"
-                }}
-              >
-                {t("redirect.continueInBrowser")}
-              </Button>
-
-              <Button
                 variant="primary"
                 buttonClassName="h-12 !rounded-full px-10 text-lg"
                 onClick={handleOpenApp}
@@ -136,6 +126,15 @@ export function Login() {
             </div>
             {openFailed && callbackUrlWithScheme && (
               <div className="text-text mt-8 w-[31rem] space-y-2 text-center text-sm">
+                <p className="text-base">
+                  <Trans
+                    t={t}
+                    i18nKey="login.no_client"
+                    components={{
+                      weblink: <Link to="/" className="text-accent" />,
+                    }}
+                  />
+                </p>
                 <p>{t("login.enter_token")}</p>
                 <p className="bg-fill-tertiary flex items-center justify-center gap-4 rounded-lg p-3">
                   <span className="blur-sm hover:blur-none">{callbackUrlWithScheme}</span>
