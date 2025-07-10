@@ -5,6 +5,7 @@ import { DEEPLINK_SCHEME, IN_ELECTRON } from "@follow/shared"
 import { env } from "@follow/shared/env.desktop"
 import { useRoleEndAt, useUserRole } from "@follow/store/user/hooks"
 import { cn } from "@follow/utils/utils"
+import { useMutation } from "@tanstack/react-query"
 import dayjs from "dayjs"
 import { Trans } from "react-i18next"
 
@@ -72,6 +73,22 @@ const PLAN_CONFIGS: Plan[] = [
   },
 ]
 
+const useUpgradePlan = () => {
+  return useMutation({
+    mutationFn: async () => {
+      const res = await subscription.upgrade({
+        plan: "folo pro preview",
+        successUrl: IN_ELECTRON ? `${DEEPLINK_SCHEME}refresh` : env.VITE_WEB_URL,
+        cancelUrl: env.VITE_WEB_URL,
+        disableRedirect: IN_ELECTRON,
+      })
+      if (IN_ELECTRON && res.data?.url) {
+        window.open(res.data.url, "_blank")
+      }
+    },
+  })
+}
+
 export function SettingPlan() {
   const serverConfigs = useServerConfigs()
   const requiredInvitationsAmount = serverConfigs?.REFERRAL_REQUIRED_INVITATIONS || 3
@@ -84,6 +101,8 @@ export function SettingPlan() {
   const daysLeft = roleEndDate
     ? Math.ceil((roleEndDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
     : null
+
+  const upgradePlanMutation = useUpgradePlan()
 
   return (
     <section className="mt-4 space-y-8">
@@ -134,17 +153,10 @@ export function SettingPlan() {
         validInvitationsAmount={validInvitationsAmount}
         requiredInvitationsAmount={requiredInvitationsAmount}
         skipPrice={skipPrice}
-        onUpgrade={async () => {
-          const res = await subscription.upgrade({
-            plan: "folo pro preview",
-            successUrl: IN_ELECTRON ? `${DEEPLINK_SCHEME}refresh` : env.VITE_WEB_URL,
-            cancelUrl: env.VITE_WEB_URL,
-            disableRedirect: IN_ELECTRON,
-          })
-          if (IN_ELECTRON && res.data?.url) {
-            window.open(res.data.url, "_blank")
-          }
+        onUpgrade={() => {
+          upgradePlanMutation.mutate()
         }}
+        isLoading={upgradePlanMutation.isPending}
       />
     </section>
   )
@@ -159,6 +171,7 @@ interface StatusCardProps {
   requiredInvitationsAmount: number
   skipPrice: number
   onUpgrade: () => void
+  isLoading?: boolean
 }
 
 const StatusCard = ({
@@ -169,6 +182,7 @@ const StatusCard = ({
   requiredInvitationsAmount,
   skipPrice,
   onUpgrade,
+  isLoading,
 }: StatusCardProps) => {
   const getStatusInfo = () => {
     if (role === UserRole.PrePro) {
@@ -210,7 +224,9 @@ const StatusCard = ({
           requiredInvitationsAmount={requiredInvitationsAmount}
         />
 
-        {role !== UserRole.PrePro && <UpgradeSection skipPrice={skipPrice} onUpgrade={onUpgrade} />}
+        {role !== UserRole.PrePro && (
+          <UpgradeSection skipPrice={skipPrice} onUpgrade={onUpgrade} isLoading={isLoading} />
+        )}
       </div>
     </div>
   )
@@ -279,9 +295,10 @@ const CompletionBadge = () => (
 interface UpgradeSectionProps {
   skipPrice: number
   onUpgrade: () => void
+  isLoading?: boolean
 }
 
-const UpgradeSection = ({ skipPrice, onUpgrade }: UpgradeSectionProps) => {
+const UpgradeSection = ({ skipPrice, onUpgrade, isLoading }: UpgradeSectionProps) => {
   const setTab = useSetSettingTab()
 
   return (
@@ -301,6 +318,7 @@ const UpgradeSection = ({ skipPrice, onUpgrade }: UpgradeSectionProps) => {
           size="sm"
           buttonClassName="bg-gradient-to-r from-accent to-accent/80 hover:from-accent/90 hover:to-accent/70"
           onClick={onUpgrade}
+          isLoading={isLoading}
         >
           Pay ${skipPrice}
         </Button>
@@ -340,6 +358,7 @@ const PlanCard = ({ plan, currentUserRole, isCurrentPlan, daysLeft }: PlanCardPr
   }
 
   const actionType = getPlanActionType()
+  const upgradePlanMutation = useUpgradePlan()
 
   return (
     <div
@@ -366,22 +385,15 @@ const PlanCard = ({ plan, currentUserRole, isCurrentPlan, daysLeft }: PlanCardPr
           isPopular={plan.isPopular || false}
           actionType={actionType}
           daysLeft={daysLeft}
-          onSelect={async () => {
+          isLoading={upgradePlanMutation.isPending}
+          onSelect={() => {
             if (
               !plan.isComingSoon &&
               !isCurrentPlan && // Handle plan selection logic
               plan.role === UserRole.PrePro
             ) {
               // Trigger upgrade to Pro Preview
-              const res = await subscription.upgrade({
-                plan: "folo pro preview",
-                successUrl: IN_ELECTRON ? `${DEEPLINK_SCHEME}refresh` : env.VITE_WEB_URL,
-                cancelUrl: env.VITE_WEB_URL,
-                disableRedirect: IN_ELECTRON,
-              })
-              if (IN_ELECTRON && res.data?.url) {
-                window.open(res.data.url, "_blank")
-              }
+              upgradePlanMutation.mutate()
             }
             // Add other plan selection logic as needed
           }}
@@ -434,11 +446,13 @@ const PlanAction = ({
   isPopular,
   actionType,
   onSelect,
+  isLoading,
   daysLeft,
 }: {
   isPopular: boolean
   actionType: "current" | "upgrade" | "coming-soon" | "in-trial" | null
   onSelect?: () => void
+  isLoading?: boolean
   daysLeft: number | null
 }) => {
   const getButtonConfig = () => {
@@ -496,6 +510,7 @@ const PlanAction = ({
         buttonClassName={buttonConfig.className}
         disabled={buttonConfig.disabled}
         onClick={buttonConfig.disabled ? undefined : onSelect}
+        isLoading={isLoading}
       >
         {buttonConfig.text}
       </Button>
