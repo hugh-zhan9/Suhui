@@ -86,28 +86,26 @@ export function SettingPlan() {
     : null
 
   return (
-    <div className="space-y-8">
+    <section className="mt-4 space-y-8">
       {/* Description Section */}
-      <div className="space-y-4">
-        <p className="text-text-secondary text-sm leading-relaxed">
-          <Trans
-            ns="settings"
-            i18nKey="plan.description"
-            values={{
-              day: referralInfo?.referralCycleDays || 45,
-            }}
-            components={{
-              Link: (
-                <a
-                  href={ruleLink}
-                  className="text-accent hover:text-accent/80 underline underline-offset-2 transition-colors"
-                  target="_blank"
-                />
-              ),
-            }}
-          />
-        </p>
-      </div>
+      <p className="mb-4 space-y-2 text-sm">
+        <Trans
+          ns="settings"
+          i18nKey="plan.description"
+          values={{
+            day: referralInfo?.referralCycleDays || 45,
+          }}
+          components={{
+            Link: (
+              <a
+                href={ruleLink}
+                className="text-accent hover:text-accent/80 underline underline-offset-2 transition-colors"
+                target="_blank"
+              />
+            ),
+          }}
+        />
+      </p>
 
       {/* Plans Grid */}
       <div className="@container">
@@ -148,7 +146,7 @@ export function SettingPlan() {
           }
         }}
       />
-    </div>
+    </section>
   )
 }
 
