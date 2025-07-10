@@ -2,6 +2,7 @@ import { useServerConfigs } from "@client/atoms/server-configs"
 import { loginHandler, signUp } from "@client/lib/auth"
 import { ReferralForm } from "@client/modules/referral"
 import { useAuthProviders } from "@client/query/users"
+import { Logo } from "@follow/components/icons/logo.jsx"
 import { Button, MotionButtonBase } from "@follow/components/ui/button/index.jsx"
 import { Divider } from "@follow/components/ui/divider/index.js"
 import {
@@ -29,6 +30,7 @@ import { z } from "zod"
 export function Component() {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-8">
+      <Logo className="size-16" />
       <RegisterForm />
     </div>
   )
