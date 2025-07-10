@@ -187,7 +187,7 @@ export const PlanScreen: NavigationControllerView = () => {
             key={plan.id}
             plan={plan}
             currentUserRole={role || null}
-            daysLeft={daysLeft}
+            daysLeft={plan.id === "pro-preview" ? daysLeft : null}
             isCurrentPlan={
               role === plan.role || (plan.role === UserRole.PrePro && role === UserRole.PreProTrial)
             }
@@ -218,7 +218,7 @@ export const PlanScreen: NavigationControllerView = () => {
             {validInvitationsAmount} / {requiredInvitationsAmount}
           </Text>
         </View>
-        <View className="bg-label h-2 w-full rounded-full">
+        <View className="bg-system-grouped-background h-2 w-full rounded-full">
           <View
             className="bg-accent h-2 rounded-full"
             style={{

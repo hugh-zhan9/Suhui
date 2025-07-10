@@ -212,9 +212,7 @@ const StatusCard = ({
           requiredInvitationsAmount={requiredInvitationsAmount}
         />
 
-        {role === UserRole.PreProTrial && (
-          <UpgradeSection skipPrice={skipPrice} onUpgrade={onUpgrade} />
-        )}
+        {role !== UserRole.PrePro && <UpgradeSection skipPrice={skipPrice} onUpgrade={onUpgrade} />}
       </div>
     </div>
   )
