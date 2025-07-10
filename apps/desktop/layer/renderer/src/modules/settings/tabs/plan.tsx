@@ -1,7 +1,7 @@
 import { Button } from "@follow/components/ui/button/index.js"
 import { Divider } from "@follow/components/ui/divider/Divider.js"
 import { UserRole, UserRoleName } from "@follow/constants"
-import { IN_ELECTRON } from "@follow/shared"
+import { DEEPLINK_SCHEME, IN_ELECTRON } from "@follow/shared"
 import { env } from "@follow/shared/env.desktop"
 import { useRoleEndAt, useUserRole } from "@follow/store/user/hooks"
 import { cn } from "@follow/utils/utils"
@@ -375,7 +375,7 @@ const PlanCard = ({ plan, currentUserRole, isCurrentPlan, daysLeft }: PlanCardPr
               // Trigger upgrade to Pro Preview
               const res = await subscription.upgrade({
                 plan: "folo pro preview",
-                successUrl: env.VITE_WEB_URL,
+                successUrl: IN_ELECTRON ? `${DEEPLINK_SCHEME}refresh` : env.VITE_WEB_URL,
                 cancelUrl: env.VITE_WEB_URL,
                 disableRedirect: IN_ELECTRON,
               })
