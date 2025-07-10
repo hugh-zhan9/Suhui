@@ -18,6 +18,7 @@ import {
 import { Input } from "@follow/components/ui/input/index.js"
 import { LoadingCircle } from "@follow/components/ui/loading/index.jsx"
 import { useIsDark } from "@follow/hooks"
+import { DEEPLINK_SCHEME } from "@follow/shared/constants"
 import { env } from "@follow/shared/env.ssr"
 import { cn } from "@follow/utils/utils"
 import HCaptcha from "@hcaptcha/react-hcaptcha"
@@ -62,6 +63,8 @@ export function Login() {
 
   const [openFailed, setOpenFailed] = useState(false)
   const [callbackUrl, setCallbackUrl] = useState<string>()
+  const callbackUrlWithScheme = callbackUrl ? `${DEEPLINK_SCHEME}${callbackUrl}` : undefined
+
   const handleOpenApp = useCallback(async () => {
     const callbackUrl = await getCallbackUrl()
     if (!callbackUrl) return
@@ -131,15 +134,15 @@ export function Login() {
                 {t("redirect.openApp", { app_name: APP_NAME })}
               </Button>
             </div>
-            {openFailed && callbackUrl && (
+            {openFailed && callbackUrlWithScheme && (
               <div className="text-text mt-8 w-[31rem] space-y-2 text-center text-sm">
                 <p>{t("login.enter_token")}</p>
                 <p className="bg-fill-tertiary flex items-center justify-center gap-4 rounded-lg p-3">
-                  <span className="blur-sm hover:blur-none">{callbackUrl}</span>
+                  <span className="blur-sm hover:blur-none">{callbackUrlWithScheme}</span>
                   <i
                     className="i-mgc-copy-2-cute-re size-4 cursor-pointer"
                     onClick={() => {
-                      navigator.clipboard.writeText(callbackUrl)
+                      navigator.clipboard.writeText(callbackUrlWithScheme)
                     }}
                   />
                 </p>
