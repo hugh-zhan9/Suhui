@@ -229,7 +229,7 @@ const ImageItem = ({
                 // Workaround for a bug where the image doesn't retrieve the cache on iOS
                 // Remove this when updated to Expo
                 // Learn more https://github.com/expo/expo/issues/37705
-                blurRadius={0.001}
+                // blurRadius={0.001}
                 onLoad={
                   hasLoaded
                     ? undefined
