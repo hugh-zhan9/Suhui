@@ -1,6 +1,7 @@
 import { Routes } from "@follow/constants"
 import { registerGlobalContext } from "@follow/shared/bridge"
 import { env } from "@follow/shared/env.desktop"
+import { invalidateUserSession } from "@follow/store/user/hooks"
 import { useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import { useLocation } from "react-router"
@@ -17,7 +18,7 @@ import { navigateEntry } from "~/hooks/biz/useNavigateEntry"
 import { oneTimeToken } from "~/lib/auth"
 import { queryClient } from "~/lib/query-client"
 import { usePresentUserProfileModal } from "~/modules/profile/hooks"
-import { useSettingModal } from "~/modules/settings/modal/use-setting-modal"
+import { useSettingModal } from "~/modules/settings/modal/useSettingModal"
 import { handleSessionChanges } from "~/queries/auth"
 import { clearDataIfLoginOtherAccount } from "~/store/utils/clear"
 
@@ -132,6 +133,13 @@ export const ExtensionExposeProvider = () => {
   }, [dialog])
 
   useBindElectronBridge()
+
+  useEffect(() => {
+    registerGlobalContext({
+      refreshSession: invalidateUserSession,
+    })
+  }, [dialog])
+
   return null
 }
 

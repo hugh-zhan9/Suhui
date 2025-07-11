@@ -28,7 +28,7 @@ For a more convenient development experience, we recommend developing in the bro
 cd apps/desktop && pnpm run dev:web
 ```
 
-This will open the browser at `https://app.follow.is/__debug_proxy`, allowing you to access the online API environment for development and debugging.
+This will open the browser at `https://app.folo.is/__debug_proxy`, allowing you to access the online API environment for development and debugging.
 
 ### Develop in Electron
 
@@ -93,6 +93,20 @@ To develop in the mobile app, follow these steps:
    cp .env.example .env
    ```
 
+   Then set the required environment variables in your `.env` file:
+
+   ```sh
+   echo 'EXPO_PUBLIC_APP_CHECK_DEBUG_TOKEN="xxx"' >> .env
+   ```
+
+   Or manually edit the `.env` file to add:
+
+   ```
+   EXPO_PUBLIC_APP_CHECK_DEBUG_TOKEN="xxx"
+   ```
+
+   the value is any string.
+
 3. Build and install Folo(dev) app from source: (This step will take a while and only need to be done once)
 
    ```sh
@@ -140,7 +154,7 @@ To develop native iOS modules, follow these steps:
 Join our community to discuss ideas, ask questions, and share your contributions:
 
 - [Discord](https://discord.gg/followapp)
-- [Twitter](https://x.com/intent/follow?screen_name=follow_app_)
+- [Twitter](https://x.com/intent/follow?screen_name=folo_is)
 
 We look forward to your contributions!
 

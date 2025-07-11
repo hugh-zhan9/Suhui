@@ -1,8 +1,8 @@
-import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 
 import react from "@vitejs/plugin-react"
 import { codeInspectorPlugin } from "code-inspector-plugin"
+import { dirname, resolve } from "pathe"
 import { tsImport } from "tsx/esm/api"
 import { defineConfig } from "vite"
 
@@ -39,8 +39,8 @@ export default defineConfig({
   },
   plugins: [
     routeBuilderPluginV2({
-      pagePattern: `${resolve(__dirname, "./client/pages")}/**/*.tsx`,
-      outputPath: `${resolve(__dirname, "./client/generated-routes.ts")}`,
+      pagePattern: "client/pages/**/*.tsx",
+      outputPath: "client/generated-routes.ts",
       enableInDev: true,
       segmentGroupOrder: ["(main)", "(login)"],
     }),

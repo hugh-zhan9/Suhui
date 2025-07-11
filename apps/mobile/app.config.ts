@@ -1,6 +1,5 @@
-import { resolve } from "node:path"
-
 import type { ConfigContext, ExpoConfig } from "expo/config"
+import { resolve } from "pathe"
 
 import PKG from "./package.json"
 
@@ -63,6 +62,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       edgeToEdgeEnabled: true,
       adaptiveIcon: {
         foregroundImage: adaptiveIconPath,
+        monochromeImage: adaptiveIconPath,
         backgroundColor: "#FF5C00",
       },
       googleServicesFile: "./build/google-services.json",

@@ -6,6 +6,7 @@ import {
   TooltipPortal,
   TooltipTrigger,
 } from "@follow/components/ui/tooltip/index.js"
+import { IN_ELECTRON } from "@follow/shared/constants"
 import type { MediaModel } from "@follow/shared/hono"
 import { stopPropagation } from "@follow/utils/dom"
 import { cn } from "@follow/utils/utils"
@@ -21,6 +22,7 @@ import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch"
 
 import { m } from "~/components/common/Motion"
 import { COPY_MAP } from "~/constants"
+import { ipcServices } from "~/lib/client"
 import { replaceImgUrlIfNeed } from "~/lib/img-proxy"
 
 import { useCurrentModal } from "../modal/stacked/hooks"
@@ -202,19 +204,16 @@ const HeaderActions: FC<{
       <HeaderButton description={t(COPY_MAP.OpenInBrowser())} onClick={() => window.open(src)}>
         <i className="i-mgc-external-link-cute-re" />
       </HeaderButton>
-      <HeaderButton
-        description={t("common:words.download")}
-        onClick={() => {
-          const a = document.createElement("a")
-          a.href = src
-          a.download = src.split("/").pop()!
-          a.target = "_blank"
-          a.rel = "noreferrer"
-          a.click()
-        }}
-      >
-        <i className="i-mgc-download-2-cute-re" />
-      </HeaderButton>
+      {IN_ELECTRON && (
+        <HeaderButton
+          description={t("common:words.download")}
+          onClick={() => {
+            ipcServices?.app.download(src)
+          }}
+        >
+          <i className="i-mgc-download-2-cute-re" />
+        </HeaderButton>
+      )}
 
       <HeaderButton
         description={t("common:words.close")}
@@ -432,7 +431,7 @@ const FallbackableImage: FC<
     blurhash?: string
     onZoomChange?: (isZoomed: boolean) => void
   }
-> = ({ src, fallbackUrl, containerClassName, onZoomChange }) => {
+> = ({ src, fallbackUrl, containerClassName, onZoomChange, loading }) => {
   const [currentSrc, setCurrentSrc] = useState(() => replaceImgUrlIfNeed(src))
   const [isAllError, setIsAllError] = useState(false)
 
@@ -480,6 +479,7 @@ const FallbackableImage: FC<
           maxZoom={2}
           src={currentSrc}
           alt="preview"
+          loading={loading}
           highResLoaded={!isLoading}
           onLoad={() => setIsLoading(false)}
           onError={handleError}
@@ -519,7 +519,7 @@ const FallbackableImage: FC<
       )}
 
       {currentState === "fallback" && (
-        <div className="bg-material-thick backdrop-blur-background text-text absolute bottom-8 left-1/2 mt-4 -translate-x-1/2 rounded-lg px-3 py-2 text-center text-xs">
+        <div className="bg-material-thick backdrop-blur-background text-text absolute bottom-8 left-1/2 mt-4 -translate-x-1/2 rounded-lg px-3 py-2 text-center text-xs opacity-70">
           <span>
             This image is preview in low quality, because the original image is not available.
           </span>
@@ -551,6 +551,7 @@ const DOMImageViewer: FC<{
   src: string
   alt: string
   highResLoaded: boolean
+  loading?: "lazy" | "eager"
   onLoad?: () => void
   onError?: () => void
 }> = ({
@@ -562,6 +563,7 @@ const DOMImageViewer: FC<{
   src,
   alt,
   highResLoaded,
+  loading = "eager",
   onLoad,
   onError,
 }) => {
@@ -649,7 +651,7 @@ const DOMImageViewer: FC<{
               highResLoaded ? "opacity-100" : "opacity-0",
             )}
             draggable={false}
-            loading="eager"
+            loading={loading}
             decoding="async"
             onLoad={onLoad}
             onClick={stopPropagation}

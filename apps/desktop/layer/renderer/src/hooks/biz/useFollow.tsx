@@ -5,13 +5,13 @@ import {
   useFeedSubscriptionCount,
   useListSubscriptionCount,
 } from "@follow/store/subscription/hooks"
+import { useUserRole } from "@follow/store/user/hooks"
 import { t } from "i18next"
 import { useCallback } from "react"
 import { withoutTrailingSlash, withTrailingSlash } from "ufo"
 import { useEventCallback } from "usehooks-ts"
 
 import { useServerConfigs } from "~/atoms/server-configs"
-import { useUserRole } from "~/atoms/user"
 import { useModalStack } from "~/components/ui/modal/stacked/hooks"
 import { CustomSafeError } from "~/errors/CustomSafeError"
 import { useActivationModal } from "~/modules/activation"
@@ -28,7 +28,7 @@ const useCanFollowMoreInboxAndNotify = () => {
   const serverConfigs = useServerConfigs()
 
   return useEventCallback((type: "list" | "feed") => {
-    if (role === UserRole.Trial) {
+    if (role === UserRole.Free || role === UserRole.Trial) {
       const LIMIT =
         (type !== "list"
           ? serverConfigs?.MAX_TRIAL_USER_FEED_SUBSCRIPTION

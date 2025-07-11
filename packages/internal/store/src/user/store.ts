@@ -5,7 +5,7 @@ import type { AuthSession } from "@follow/shared/hono"
 import { create, indexedResolver, windowScheduler } from "@yornaath/batshit"
 
 import { apiClient, authClient } from "../context"
-import type { Hydratable } from "../internal/base"
+import type { Hydratable, Resetable } from "../internal/base"
 import { createImmerSetter, createTransaction, createZustandStore } from "../internal/helper"
 import { honoMorph } from "../morph/hono"
 import type { UserProfileEditable } from "./types"
@@ -19,16 +19,21 @@ export type MeModel = UserModel & {
 type UserStore = {
   users: Record<string, UserModel>
   whoami: MeModel | null
-  role: UserRole
+  role: UserRole | null
+  roleEndAt: Date | null
 }
 
-export const useUserStore = createZustandStore<UserStore>("user")(() => ({
+const defaultState: UserStore = {
   users: {},
   whoami: null,
-  role: UserRole.Trial,
-}))
+  role: null,
+  roleEndAt: null,
+}
+
+export const useUserStore = createZustandStore<UserStore>("user")(() => defaultState)
 
 const get = useUserStore.getState
+const set = useUserStore.setState
 const immerSet = createImmerSetter(useUserStore)
 
 class UserSyncService {
@@ -68,11 +73,14 @@ class UserSyncService {
       const user = honoMorph.toUser(res.user, true)
       immerSet((state) => {
         state.whoami = { ...user, emailVerified: res.user.emailVerified }
-        state.role = res.role as UserRole
+        state.role = res.role
+        if (res.roleEndAt) {
+          state.roleEndAt = new Date(res.roleEndAt)
+        }
       })
       userActions.upsertMany([user])
 
-      return res.user
+      return res
     } else {
       return null
     }
@@ -173,7 +181,7 @@ class UserSyncService {
     const res = await apiClient().invitations.use.$post({ json: { code } })
     if (res.code === 0) {
       immerSet((state) => {
-        state.role = UserRole.User
+        state.role = UserRole.PrePro
       })
     }
 
@@ -197,11 +205,21 @@ class UserSyncService {
   }
 }
 
-class UserActions implements Hydratable {
+class UserActions implements Hydratable, Resetable {
   async hydrate() {
     const users = await UserService.getUserAll()
     userActions.upsertManyInSession(users)
   }
+
+  async reset() {
+    const tx = createTransaction()
+    tx.store(() => {
+      set(defaultState)
+    })
+    tx.persist(() => UserService.reset())
+    await tx.run()
+  }
+
   upsertManyInSession(users: UserModel[]) {
     immerSet((state) => {
       for (const user of users) {
@@ -210,6 +228,13 @@ class UserActions implements Hydratable {
           state.whoami = { ...user, emailVerified: user.emailVerified ?? false }
         }
       }
+    })
+  }
+
+  updateWhoami(data: Partial<MeModel>) {
+    immerSet((state) => {
+      if (!state.whoami) return
+      state.whoami = { ...state.whoami, ...data }
     })
   }
 
@@ -228,6 +253,8 @@ class UserActions implements Hydratable {
     tx.store(() => {
       immerSet((state) => {
         state.whoami = null
+        state.role = null
+        state.roleEndAt = null
       })
     })
     tx.persist(() => UserService.removeCurrentUser())

@@ -24,7 +24,7 @@ import { TimelineViewSelectorContextMenu } from "./TimelineViewSelectorContextMe
 
 const ACTIVE_WIDTH = 180
 const INACTIVE_WIDTH = 48
-const ACTIVE_TEXT_WIDTH = 95
+const ACTIVE_TEXT_WIDTH = 100
 
 export function TimelineViewSelector() {
   const activeViews = useViewWithSubscription()
@@ -181,7 +181,7 @@ function ViewItem({
           </View>
 
           <Animated.View
-            className="flex flex-row items-center justify-center gap-2"
+            className="flex flex-row items-center justify-center gap-2 overflow-hidden"
             style={useAnimatedStyle(() => ({
               width: interpolate(
                 dragProgress.get(),
@@ -199,6 +199,7 @@ function ViewItem({
             >
               {t(view.name)}
             </Text>
+
             <UnreadCount
               max={99}
               unread={unreadCount}

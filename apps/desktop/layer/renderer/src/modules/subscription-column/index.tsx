@@ -4,6 +4,8 @@ import { RootPortal } from "@follow/components/ui/portal/index.js"
 import type { FeedViewType } from "@follow/constants"
 import { useTypeScriptHappyCallback } from "@follow/hooks"
 import { ELECTRON_BUILD } from "@follow/shared/constants"
+import { usePrefetchSubscription } from "@follow/store/subscription/hooks"
+import { usePrefetchUnread } from "@follow/store/unread/hooks"
 import { EventBus } from "@follow/utils/event-bus"
 import { clamp, cn } from "@follow/utils/utils"
 import { useWheel } from "@use-gesture/react"
@@ -27,8 +29,8 @@ import { COMMAND_ID } from "../command/commands/id"
 import { useCommandBinding } from "../command/hooks/use-command-binding"
 import { getSelectedFeedIds, resetSelectedFeedIds, setSelectedFeedIds } from "./atom"
 import { useShouldFreeUpSpace } from "./hook"
+import { SubscriptionListGuard } from "./subscription-list/SubscriptionListGuard"
 import { SubscriptionColumnHeader } from "./SubscriptionColumnHeader"
-import { SubscriptionList } from "./SubscriptionList.entry"
 import { SubscriptionTabButton } from "./SubscriptionTabButton"
 
 const lethargy = new Lethargy()
@@ -37,6 +39,9 @@ export function SubscriptionColumn({
   children,
   className,
 }: PropsWithChildren<{ className?: string }>) {
+  usePrefetchSubscription()
+  usePrefetchUnread()
+
   const carouselRef = useRef<HTMLDivElement>(null)
   const timelineList = useTimelineList()
 
@@ -156,7 +161,7 @@ export function SubscriptionColumn({
         <SwipeWrapper active={timelineId!}>
           {timelineList.map((timelineId) => (
             <section key={timelineId} className="w-feed-col h-full shrink-0 snap-center">
-              <SubscriptionList
+              <SubscriptionListGuard
                 key={timelineId}
                 view={
                   Number.parseInt(

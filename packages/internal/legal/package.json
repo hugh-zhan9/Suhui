@@ -1,5 +1,6 @@
 {
   "name": "@follow/legal",
+  "type": "module",
   "version": "0.0.1",
   "private": true,
   "exports": {
@@ -11,6 +12,6 @@
     "build": "tsx script/build.ts"
   },
   "devDependencies": {
-    "marked": "15.0.12"
+    "marked": "16.0.0"
   }
 }

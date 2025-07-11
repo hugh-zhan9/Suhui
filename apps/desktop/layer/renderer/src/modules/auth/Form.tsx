@@ -1,4 +1,5 @@
 import { Button } from "@follow/components/ui/button/index.js"
+import { Divider } from "@follow/components/ui/divider/index.js"
 import {
   Form,
   FormControl,
@@ -18,18 +19,26 @@ import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { z } from "zod"
 
+import { useServerConfigs } from "~/atoms/server-configs"
 import { useModalStack } from "~/components/ui/modal/stacked/hooks"
 import { loginHandler, signUp, twoFactor } from "~/lib/auth"
 import { handleSessionChanges } from "~/queries/auth"
 
 import { TOTPForm } from "../profile/two-factor"
+import { ReferralForm } from "./ReferralForm"
 
 const formSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8).max(128),
 })
 
-export function LoginWithPassword({ runtime }: { runtime: LoginRuntime }) {
+export function LoginWithPassword({
+  runtime,
+  onLoginStateChange,
+}: {
+  runtime: LoginRuntime
+  onLoginStateChange: (state: "register" | "login") => void
+}) {
   const { t } = useTranslation("app")
   const { t: tSettings } = useTranslation("settings")
   const form = useForm<z.infer<typeof formSchema>>({
@@ -137,6 +146,20 @@ export function LoginWithPassword({ runtime }: { runtime: LoginRuntime }) {
           </Button>
         </div>
       </form>
+
+      <Divider className="my-4" />
+
+      <div className="flex items-center justify-center gap-1 pb-2 text-center text-sm">
+        If you don't have an account,{" "}
+        <button
+          type="button"
+          className="text-accent flex cursor-pointer items-center gap-1 hover:underline"
+          onClick={() => onLoginStateChange("register")}
+        >
+          Sign up
+          <i className="i-mgc-right-cute-fi !text-text" />
+        </button>
+      </div>
     </Form>
   )
 }
@@ -152,7 +175,11 @@ const registerFormSchema = z
     path: ["confirmPassword"],
   })
 
-export function RegisterForm() {
+export function RegisterForm({
+  onLoginStateChange,
+}: {
+  onLoginStateChange: (state: "register" | "login") => void
+}) {
   const { t } = useTranslation("app")
 
   const form = useForm<z.infer<typeof registerFormSchema>>({
@@ -164,6 +191,8 @@ export function RegisterForm() {
     },
     mode: "all",
   })
+
+  const serverConfigs = useServerConfigs()
 
   const captchaRef = useRef<HCaptcha>(null)
 
@@ -231,6 +260,7 @@ export function RegisterForm() {
               </FormItem>
             )}
           />
+          {serverConfigs?.REFERRAL_ENABLED && <ReferralForm className="mb-4 w-full" align="left" />}
           {!import.meta.env.DEV && (
             <HCaptcha sitekey={env.VITE_HCAPTCHA_SITE_KEY} ref={captchaRef} size="invisible" />
           )}
@@ -239,6 +269,19 @@ export function RegisterForm() {
           </Button>
         </form>
       </Form>
+      <Divider className="my-4" />
+
+      <div className="flex items-center justify-center gap-1 pb-2 text-center text-sm">
+        If you already have an account,{" "}
+        <button
+          type="button"
+          className="text-accent flex cursor-pointer items-center gap-1 hover:underline"
+          onClick={() => onLoginStateChange("login")}
+        >
+          Sign in
+          <i className="i-mgc-right-cute-fi !text-text" />
+        </button>
+      </div>
     </div>
   )
 }

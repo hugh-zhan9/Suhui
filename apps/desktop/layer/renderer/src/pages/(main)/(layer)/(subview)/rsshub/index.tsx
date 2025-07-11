@@ -1,12 +1,12 @@
 import { Logo } from "@follow/components/icons/logo.jsx"
 import { Button } from "@follow/components/ui/button/index.js"
 import type { RSSHubModel } from "@follow/models"
+import { whoami } from "@follow/store/user/getters"
 import { cn, formatNumber } from "@follow/utils/utils"
 import { memo, useCallback, useEffect } from "react"
 import { useTranslation } from "react-i18next"
 
 import RSSHubIconUrl from "~/assets/rsshub-icon.png?url"
-import { whoami } from "~/atoms/user"
 import { ErrorTooltip } from "~/components/common/ErrorTooltip"
 import { HeaderActionButton, HeaderActionGroup } from "~/components/ui/button/HeaderActionButton"
 import { useModalStack } from "~/components/ui/modal/stacked/hooks"
@@ -46,7 +46,7 @@ export function Component() {
       setRightView(null)
     }
   }, [setRightView, handleAddInstance, t])
-  const list = useAuthQuery(Queries.rsshub.list())
+  const list = useAuthQuery(Queries.rsshub.list(), { meta: { persist: true } })
 
   return (
     <div className="flex size-full flex-col px-6 py-8">

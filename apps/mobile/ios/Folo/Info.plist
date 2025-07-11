@@ -41,6 +41,7 @@
         <key>CFBundleURLSchemes</key>
         <array>
           <string>follow</string>
+          <string>folo</string>
           <string>is.follow</string>
         </array>
       </dict>
