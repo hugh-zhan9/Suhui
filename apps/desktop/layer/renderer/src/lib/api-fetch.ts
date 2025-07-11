@@ -20,6 +20,7 @@ export const apiFetch = ofetch.create({
   baseURL: env.VITE_API_URL,
   credentials: "include",
   retry: false,
+  cache: "no-store",
   onRequest: ({ options }) => {
     const header = new Headers(options.headers)
 
@@ -85,10 +86,7 @@ export const apiFetch = ofetch.create({
 
 export const apiClient = hc<AppType>(env.VITE_API_URL, {
   fetch: async (input, options = {}) =>
-    apiFetch(input.toString(), {
-      ...options,
-      cache: "no-store",
-    }).catch((err) => {
+    apiFetch(input.toString(), options).catch((err) => {
       if (err instanceof FetchError && !err.response) {
         setApiStatus(NetworkStatus.OFFLINE)
       }
