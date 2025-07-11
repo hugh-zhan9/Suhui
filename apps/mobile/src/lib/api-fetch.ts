@@ -78,7 +78,10 @@ export const apiFetch = ofetch.create({
 
 export const apiClient = hc<AppType>(proxyEnv.API_URL, {
   fetch: async (input: any, options = {}) =>
-    apiFetch(input.toString(), options).catch((err) => {
+    apiFetch(input.toString(), {
+      ...options,
+      cache: "no-store",
+    }).catch((err) => {
       throw err
     }),
   async headers() {

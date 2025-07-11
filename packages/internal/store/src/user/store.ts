@@ -3,6 +3,7 @@ import type { UserSchema } from "@follow/database/schemas/types"
 import { UserService } from "@follow/database/services/user"
 import type { AuthSession } from "@follow/shared/hono"
 import { create, indexedResolver, windowScheduler } from "@yornaath/batshit"
+import { nanoid } from "nanoid"
 
 import { apiClient, authClient } from "../context"
 import type { Hydratable, Resetable } from "../internal/base"
@@ -66,9 +67,11 @@ class UserSyncService {
   })
 
   async whoami() {
-    const res = (await (apiClient()["better-auth"] as any)[
-      "get-session"
-    ].$get()) as AuthSession | null
+    const res = (await (apiClient()["better-auth"] as any)["get-session"].$get({
+      query: {
+        v: nanoid(8),
+      },
+    })) as AuthSession | null
     if (res) {
       const user = honoMorph.toUser(res.user, true)
       immerSet((state) => {
