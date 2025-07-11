@@ -4,7 +4,6 @@ import type { authPlugins } from "@follow/shared/hono"
 import type { BetterAuthClientPlugin, BetterFetchOption } from "better-auth/client"
 import { inferAdditionalFields, twoFactorClient } from "better-auth/client/plugins"
 import { createAuthClient } from "better-auth/react"
-import { nanoid } from "nanoid"
 
 type AuthPlugin = (typeof authPlugins)[number]
 export const baseAuthPlugins = [
@@ -58,19 +57,11 @@ export class Auth {
       plugins: baseAuthPlugins,
       fetchOptions: {
         ...this.options.fetchOptions,
-
+        cache: "no-store",
         onRequest: (context) => {
           const referralCode = localStorage.getItem(getStorageNS("referral-code"))
           if (referralCode) {
             context.headers.set("folo-referral-code", referralCode)
-          }
-
-          if (context.query) {
-            context.query.v = nanoid(8)
-          } else {
-            context.query = {
-              v: nanoid(8),
-            }
           }
 
           this.options.fetchOptions?.onRequest?.(context)
