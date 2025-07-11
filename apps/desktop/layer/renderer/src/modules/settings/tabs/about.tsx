@@ -71,7 +71,7 @@ export const SettingAbout = () => {
         <div className="mb-6 flex justify-center">
           <Logo className="size-20" />
         </div>
-        <h1 className="flex justify-center">
+        <h1 className="-mt-6 flex justify-center">
           <Folo className="size-16" />
         </h1>
         {MODE !== ModeEnum.production && (
