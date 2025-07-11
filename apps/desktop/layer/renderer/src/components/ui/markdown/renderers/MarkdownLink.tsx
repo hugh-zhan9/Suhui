@@ -7,6 +7,7 @@ import {
   TooltipTrigger,
 } from "@follow/components/ui/tooltip/index.jsx"
 import { useCorrectZIndex } from "@follow/components/ui/z-index/ctx.js"
+import { stopPropagation } from "@follow/utils"
 import { use, useCallback } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
@@ -55,6 +56,7 @@ export const MarkdownLink = (props: LinkProps) => {
           title={props.title}
           target="_blank"
           rel="noreferrer"
+          onClick={stopPropagation}
         >
           {props.children}
 
