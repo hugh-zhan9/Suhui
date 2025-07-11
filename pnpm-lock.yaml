@@ -1697,6 +1697,9 @@ importers:
       hono:
         specifier: 4.8.1
         version: 4.8.1(patch_hash=5c74c2d2afaa5880c13d75458dd26c84da568851691b1fb6de6d877c29936d05)
+      nanoid:
+        specifier: 5.1.5
+        version: 5.1.5
       sonner:
         specifier: 2.0.6
         version: 2.0.6(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -1739,6 +1742,9 @@ importers:
       immer:
         specifier: 10.1.1
         version: 10.1.1(patch_hash=594c60b929bc0a3b56576f1a1787da1aec2a1fba51e3c21ec09c0ed38280af6c)
+      nanoid:
+        specifier: 5.1.5
+        version: 5.1.5
       react:
         specifier: 19.0.0
         version: 19.0.0
