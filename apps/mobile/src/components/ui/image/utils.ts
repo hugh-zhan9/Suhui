@@ -8,7 +8,7 @@ import * as Sharing from "expo-sharing"
 import { useCallback } from "react"
 import { Image } from "react-native"
 
-import { isNative } from "@/src/lib/platform"
+import { isAndroid, isNative } from "@/src/lib/platform"
 import { proxyEnv } from "@/src/lib/proxy-env"
 import { toast } from "@/src/lib/toast"
 
@@ -71,7 +71,18 @@ export const getAllSources = (
 }
 
 const getImageData = async (imageUrl: string) => {
-  const size = await Image.getSize(imageUrl)
+  let size = await Image.getSize(imageUrl)
+
+  // Workaround for Android where the size returned by Image.getSize is not accurate for remote images
+  // https://github.com/facebook/react-native/issues/33498
+  if (isAndroid) {
+    // If the image is not a remote URL, we can use the local file path directly
+    size = {
+      width: size.width * 10,
+      height: size.height * 10,
+    }
+  }
+
   const croppedImage = await ImageEditor.cropImage(imageUrl, {
     offset: {
       x: 0,
@@ -157,7 +168,7 @@ export function useSaveImageToMediaLibrary() {
         try {
           await saveImageToMediaLibrary({ uri })
           toast.success("Image saved to library")
-        } catch (e: any) {
+        } catch (e) {
           toast.error(`Failed to save image: ${String(e)}`)
         }
       }
