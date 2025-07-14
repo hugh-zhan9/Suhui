@@ -38,6 +38,7 @@ export const getAllSources = (
   },
 ) => {
   if (!isImageSourceWithUri(source)) {
+    console.warn("Invalid image source", source)
     return [undefined, undefined] as const
   }
 
@@ -45,6 +46,8 @@ export const getAllSources = (
   source.uri = source.uri.replace("http://", "https://")
 
   const safeSource: ImageProps["source"] = {
+    width: proxy?.width,
+    height: proxy?.height,
     ...source,
     headers: {
       ...buildSafeHeaders({ url: source.uri }),
@@ -58,13 +61,15 @@ export const getAllSources = (
     }
 
     return {
+      width: proxy?.width,
+      height: proxy?.height,
       ...safeSource,
       uri: getImageProxyUrl({
         url: source.uri,
         width: proxy?.width ? proxy?.width * 3 : undefined,
         height: proxy?.height ? proxy?.height * 3 : undefined,
       }),
-    }
+    } satisfies ImageProps["source"]
   })()
 
   return [safeSource, proxiesSafeSource] as const
@@ -74,9 +79,8 @@ const getImageData = async (imageUrl: string) => {
   let size = await Image.getSize(imageUrl)
 
   // Workaround for Android where the size returned by Image.getSize is not accurate for remote images
-  // https://github.com/facebook/react-native/issues/33498
+  // Learn more https://github.com/facebook/react-native/issues/33498
   if (isAndroid) {
-    // If the image is not a remote URL, we can use the local file path directly
     size = {
       width: size.width * 10,
       height: size.height * 10,
