@@ -29,6 +29,8 @@ import { useCommandShortcuts } from "~/modules/command/hooks/use-command-binding
 import type { FollowCommandId } from "~/modules/command/types"
 import { useToolbarOrderMap } from "~/modules/customize-toolbar/hooks"
 
+import { useRouteParams } from "./useRouteParams"
+
 export const enableEntryReadability = async ({ id, url }: { id: string; url: string }) => {
   const status = getReadabilityStatus()[id]
   const isTurnOn = status !== ReadabilityStatus.INITIAL && !!status
@@ -154,6 +156,7 @@ export const useEntryActions = ({
   compact?: boolean
 }) => {
   const entry = useEntry(entryId, entrySelector)
+  const { isCollection } = useRouteParams()
   const isInCollection = useIsEntryStarred(entryId)
   const isEntryInReadability = useEntryIsInReadability(entryId)
 
@@ -320,13 +323,13 @@ export const useEntryActions = ({
       new EntryActionMenuItem({
         id: COMMAND_ID.entry.readAbove,
         onClick: runCmdFn(COMMAND_ID.entry.readAbove, [{ publishedAt: entry.publishedAt }]),
-        hide: !!isInCollection,
+        hide: !!isCollection,
         entryId,
       }),
       new EntryActionMenuItem({
         id: COMMAND_ID.entry.read,
         onClick: runCmdFn(COMMAND_ID.entry.read, [{ entryId }]),
-        hide: !!isInCollection,
+        hide: !!isCollection,
         active: !!entry.read,
         shortcut: shortcuts[COMMAND_ID.entry.read],
         entryId,
@@ -334,7 +337,7 @@ export const useEntryActions = ({
       new EntryActionMenuItem({
         id: COMMAND_ID.entry.readBelow,
         onClick: runCmdFn(COMMAND_ID.entry.readBelow, [{ publishedAt: entry.publishedAt }]),
-        hide: !!isInCollection,
+        hide: !!isCollection,
         entryId,
       }),
       MENU_ITEM_SEPARATOR,
@@ -392,6 +395,7 @@ export const useEntryActions = ({
     isInbox,
     shortcuts,
     view,
+    isCollection,
     isInCollection,
     isShowSourceContent,
     isShowAISummaryAuto,
