@@ -246,7 +246,16 @@ const config: ForgeConfig = {
   ],
   hooks: {
     preMake: async () => {
-      await rimraf("out/**/*.tmp")
+      // Clean up possible temporary files
+      const outDir = path.resolve(process.cwd(), "out")
+      if (fs.existsSync(outDir)) {
+        const files = await readdir(outDir, { recursive: true })
+        for (const file of files) {
+          if (file.toString().endsWith(".tmp")) {
+            await rimraf(path.join(outDir, file.toString()))
+          }
+        }
+      }
     },
     postMake: async (_config, makeResults) => {
       const yml: {
