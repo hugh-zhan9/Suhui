@@ -245,6 +245,9 @@ const config: ForgeConfig = {
     },
   ],
   hooks: {
+    preMake: async () => {
+      await rimraf("out/**/*.tmp")
+    },
     postMake: async (_config, makeResults) => {
       const yml: {
         version?: string
