@@ -44,8 +44,13 @@ export const EntrySocialItem = memo(
       author: state.author,
       translation: state.settings?.translation,
     }))
+    const enableTranslation = useGeneralSettingKey("translation")
     const actionLanguage = useActionLanguage()
-    const translation = useEntryTranslation(entryId, actionLanguage)
+    const translation = useEntryTranslation({
+      entryId,
+      language: actionLanguage,
+      setting: enableTranslation,
+    })
     const { openLightbox } = useLightboxControls()
 
     const feed = useFeedById(entry?.feedId || "")

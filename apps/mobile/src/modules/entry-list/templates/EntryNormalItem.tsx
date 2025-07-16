@@ -11,7 +11,7 @@ import { memo, useCallback, useMemo, useRef, useState } from "react"
 import type { ImageErrorEventData } from "react-native"
 import { Text, View } from "react-native"
 
-import { useActionLanguage } from "@/src/atoms/settings/general"
+import { useActionLanguage, useGeneralSettingKey } from "@/src/atoms/settings/general"
 import { useUISettingKey } from "@/src/atoms/settings/ui"
 import { preloadWebViewEntry } from "@/src/components/native/webview/EntryContentWebView"
 import { RelativeDateTime } from "@/src/components/ui/datetime/RelativeDateTime"
@@ -52,8 +52,13 @@ export const EntryNormalItem = memo(
       title: state.title,
       description: state.description,
     }))
+    const enableTranslation = useGeneralSettingKey("translation")
     const actionLanguage = useActionLanguage()
-    const translation = useEntryTranslation(entryId, actionLanguage)
+    const translation = useEntryTranslation({
+      entryId,
+      language: actionLanguage,
+      setting: enableTranslation,
+    })
     const from = getInboxFrom(entry)
     const feed = useFeedById(entry?.feedId as string)
     const navigation = useNavigation()

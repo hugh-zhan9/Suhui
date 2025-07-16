@@ -130,9 +130,9 @@ export const EntryDetailScreen: NavigationControllerView<{
 
 const EntryContentWebViewWithContext = ({ entryId }: { entryId: string }) => {
   const { showReadabilityAtom, showAITranslationAtom } = useEntryContentContext()
-  const showReadability = useAtomValue(showReadabilityAtom)
+  const showReadabilityOnce = useAtomValue(showReadabilityAtom)
   const translationSetting = useGeneralSettingKey("translation")
-  const showTranslation = useAtomValue(showAITranslationAtom)
+  const showTranslationOnce = useAtomValue(showAITranslationAtom)
   const actionLanguage = useActionLanguage()
   const translation = useGeneralSettingKey("translation")
 
@@ -144,10 +144,10 @@ const EntryContentWebViewWithContext = ({ entryId }: { entryId: string }) => {
   usePrefetchEntryTranslation({
     entryIds: [entryId],
     withContent: true,
-    target: showReadability && entry?.readabilityContent ? "readabilityContent" : "content",
+    target: showReadabilityOnce && entry?.readabilityContent ? "readabilityContent" : "content",
     language: actionLanguage,
     checkLanguage,
-    translation,
+    setting: translation,
   })
 
   // Auto toggle readability when content is empty
@@ -160,16 +160,16 @@ const EntryContentWebViewWithContext = ({ entryId }: { entryId: string }) => {
   }, [isPending, entry?.content, setShowReadability])
 
   useEffect(() => {
-    if (showReadability) {
+    if (showReadabilityOnce) {
       entrySyncServices.fetchEntryReadabilityContent(entryId)
     }
-  }, [showReadability, entryId])
+  }, [showReadabilityOnce, entryId])
 
   return (
     <EntryContentWebView
       entryId={entryId}
-      showReadability={showReadability}
-      showTranslation={translationSetting || showTranslation}
+      showReadability={showReadabilityOnce}
+      showTranslation={translationSetting || showTranslationOnce}
     />
   )
 }

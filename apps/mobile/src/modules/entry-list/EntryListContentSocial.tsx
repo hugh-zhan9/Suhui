@@ -52,7 +52,7 @@ export const EntryListContentSocial = ({
   usePrefetchEntryTranslation({
     entryIds: active ? viewableItems.map((item) => item.key) : [],
     language: actionLanguage,
-    translation,
+    setting: translation,
     checkLanguage,
   })
 

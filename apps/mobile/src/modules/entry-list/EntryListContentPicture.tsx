@@ -40,7 +40,7 @@ export const EntryListContentPicture = ({
     entryIds: active ? viewableItems.map((item) => item.key) : [],
     language: actionLanguage,
     checkLanguage,
-    translation,
+    setting: translation,
   })
 
   const renderItem = useTypeScriptHappyCallback(({ item }: { item: string }) => {

@@ -6,6 +6,7 @@ import { useWhoami } from "@follow/store/user/hooks"
 import { formatEstimatedMins, formatTimeToSeconds } from "@follow/utils"
 import { titleCase } from "title-case"
 
+import { useShowAITranslation } from "~/atoms/ai-translation"
 import { useActionLanguage } from "~/atoms/settings/general"
 import { useUISettingKey } from "~/atoms/settings/ui"
 import { RelativeTime } from "~/components/ui/datetime"
@@ -57,9 +58,13 @@ export const EntryTitle = ({ entryId, compact }: EntryLinkProps) => {
   const data = useEntryReadHistory(entryId)
   const entryHistory = data?.entryReadHistories
   const populatedFullHref = useFeedSafeUrl(entryId)
+  const enableTranslation = useShowAITranslation()
   const actionLanguage = useActionLanguage()
-
-  const translation = useEntryTranslation(entryId, actionLanguage)
+  const translation = useEntryTranslation({
+    entryId,
+    language: actionLanguage,
+    setting: enableTranslation,
+  })
 
   const dateFormat = useUISettingKey("dateFormat")
 
