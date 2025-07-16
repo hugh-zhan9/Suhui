@@ -212,6 +212,7 @@ const config: ForgeConfig = {
       packageDisplayName: "Folo - Follow everything in one place",
       devCert: "build/dev.pfx",
       assets: "static/appx",
+      manifest: "build/appxmanifest.xml",
       // @ts-ignore
       publisherDisplayName: "Natural Selection Labs",
       identityName: "NaturalSelectionLabs.Follow-Yourfavoritesinoneinbo",
