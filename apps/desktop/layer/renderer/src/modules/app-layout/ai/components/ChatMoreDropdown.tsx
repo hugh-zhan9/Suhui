@@ -96,7 +96,7 @@ export const ChatMoreDropdown = () => {
     <DropdownMenu onOpenChange={handleDropdownOpen}>
       <DropdownMenuTrigger asChild>
         <ActionButton tooltip="More">
-          <i className="i-mgc-more-1-cute-re text-base" />
+          <i className="i-mingcute-more-1-fill size-5 opacity-80" />
         </ActionButton>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
