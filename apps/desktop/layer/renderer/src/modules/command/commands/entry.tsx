@@ -44,12 +44,14 @@ const category: CommandCategory = "category.entry"
 const useCollect = () => {
   const { t } = useTranslation()
   return useMutation({
-    mutationFn: async ({ entryId, view }: { entryId: string; view: FeedViewType }) =>
-      collectionSyncService.starEntry({
+    mutationFn: async ({ entryId, view }: { entryId: string; view: FeedViewType }) => {
+      const { isCollection } = getRouteParams()
+      return collectionSyncService.starEntry({
         entryId,
         view,
-      }),
-
+        invalidate: !isCollection,
+      })
+    },
     onSuccess: () => {
       toast.success(t("entry_actions.starred"), {
         duration: 1000,

@@ -24,7 +24,15 @@ const get = useCollectionStore.getState
 const set = useCollectionStore.setState
 
 class CollectionSyncService {
-  async starEntry({ entryId, view }: { entryId: string; view: FeedViewType }) {
+  async starEntry({
+    entryId,
+    view,
+    invalidate,
+  }: {
+    entryId: string
+    view: FeedViewType
+    invalidate?: boolean
+  }) {
     const entry = getEntry(entryId)
     if (!entry) {
       return
@@ -54,7 +62,9 @@ class CollectionSyncService {
 
     await tx.run()
 
-    invalidateEntriesQuery({ collection: true })
+    if (invalidate) {
+      invalidateEntriesQuery({ collection: true })
+    }
   }
 
   async unstarEntry({ entryId, invalidate = true }: { entryId: string; invalidate?: boolean }) {
