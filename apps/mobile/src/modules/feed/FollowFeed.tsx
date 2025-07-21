@@ -43,9 +43,7 @@ const formSchema = z.object({
 export function FollowFeed(props: { id: string }) {
   const { id } = props
   const feed = useFeedById(id as string)
-  const { data } = usePrefetchFeed(id as string, {
-    enabled: !feed?.subscriptionCount,
-  })
+  const { data } = usePrefetchFeed(id as string)
 
   if (!feed) {
     return (
@@ -101,6 +99,14 @@ function FollowImpl(props: { feedId: string; defaultView?: FeedViewType }) {
       view: subscription?.view ?? defaultView ?? FeedViewType.Articles,
     },
   })
+  useEffect(() => {
+    form.reset(
+      {
+        view: subscription?.view ?? defaultView,
+      },
+      { keepDirtyValues: true },
+    )
+  }, [defaultView, form, subscription?.view])
 
   const [isLoading, setIsLoading] = useState(false)
 
