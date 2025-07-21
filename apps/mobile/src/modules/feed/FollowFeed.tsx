@@ -43,7 +43,7 @@ const formSchema = z.object({
 export function FollowFeed(props: { id: string }) {
   const { id } = props
   const feed = useFeedById(id as string)
-  usePrefetchFeed(id as string, {
+  const { data } = usePrefetchFeed(id as string, {
     enabled: !feed?.subscriptionCount,
   })
 
@@ -54,8 +54,7 @@ export function FollowFeed(props: { id: string }) {
       </View>
     )
   }
-
-  return <FollowImpl feedId={id} />
+  return <FollowImpl feedId={id} defaultView={data?.analytics?.view ?? undefined} />
 }
 
 export function FollowUrl(props: { url: string }) {
@@ -75,14 +74,19 @@ export function FollowUrl(props: { url: string }) {
     return <Text className="text-label">{error?.message}</Text>
   }
 
-  return <FollowImpl feedId={data.id} />
+  return (
+    <FollowImpl
+      feedId={data.feed.id}
+      defaultView={data.responseData?.analytics?.view ?? undefined}
+    />
+  )
 }
 
-function FollowImpl(props: { feedId: string }) {
+function FollowImpl(props: { feedId: string; defaultView?: FeedViewType }) {
   const { t } = useTranslation()
   const { t: tCommon } = useTranslation("common")
   const textLabelColor = useColor("label")
-  const { feedId: id } = props
+  const { feedId: id, defaultView } = props
 
   const feed = useFeedById(id)
   const subscription = useSubscriptionByFeedId(feed?.id)
@@ -94,7 +98,7 @@ function FollowImpl(props: { feedId: string }) {
       category: subscription?.category ?? "",
       isPrivate: subscription?.isPrivate ?? false,
       title: subscription?.title ?? "",
-      view: subscription?.view ?? FeedViewType.Articles,
+      view: subscription?.view ?? defaultView ?? FeedViewType.Articles,
     },
   })
 

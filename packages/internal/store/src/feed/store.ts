@@ -156,7 +156,10 @@ class FeedSyncServices {
     }
     feedActions.upsertMany([finalData])
 
-    return finalData
+    return {
+      responseData: res.data,
+      feed: finalData,
+    }
   }
 
   async claimFeed(feedId: string) {
