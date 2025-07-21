@@ -61,7 +61,10 @@ const useCollect = () => {
 const useUnCollect = () => {
   const { t } = useTranslation()
   return useMutation({
-    mutationFn: async (entryId: string) => collectionSyncService.unstarEntry(entryId),
+    mutationFn: async (entryId: string) => {
+      const { isCollection } = getRouteParams()
+      return collectionSyncService.unstarEntry({ entryId, invalidate: !isCollection })
+    },
 
     onSuccess: () => {
       toast.success(t("entry_actions.unstarred"), {
