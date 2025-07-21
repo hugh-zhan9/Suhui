@@ -238,7 +238,7 @@ export const PictureMasonry: FC<MasonryProps> = (props) => {
   }, [])
 
   return (
-    <div ref={containerRef} className="mx-4 pt-2">
+    <div ref={containerRef} className="mx-4 pt-4">
       {isInitDim && deferIsInitLayout && (
         <MasonryItemWidthContext value={finalItemWidth}>
           {/* eslint-disable-next-line @eslint-react/no-context-provider */}

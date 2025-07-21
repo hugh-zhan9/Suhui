@@ -25,7 +25,7 @@ export interface ActionButtonProps {
   shortcut?: string
   disableTriggerShortcut?: boolean
   enableHoverableContent?: boolean
-  size?: "sm" | "base" | "lg"
+  size?: "xs" | "sm" | "base" | "lg"
   id?: string
   /**
    * Use motion effects to prompt and guide users to pay attention or click this button
@@ -48,6 +48,7 @@ const actionButtonStyleVariant = {
     lg: tw`text-xl size-10`,
     base: tw`text-xl size-8`,
     sm: tw`text-lg size-7`,
+    xs: tw`text-base size-[1.3rem]`,
   },
 }
 

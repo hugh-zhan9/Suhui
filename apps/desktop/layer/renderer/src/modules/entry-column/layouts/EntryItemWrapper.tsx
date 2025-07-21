@@ -216,7 +216,7 @@ export const EntryItemWrapper: FC<
       <Link
         to={navigationPath}
         className={cn(
-          "hover:bg-theme-item-hover cursor-button relative block duration-200",
+          "hover:bg-theme-item-hover cursor-button relative block overflow-visible duration-200",
           isWide ? "rounded-md" : "",
           (isActive || isContextMenuOpen) && "!bg-theme-item-active",
           itemClassName,
@@ -250,8 +250,11 @@ const ActionBar = ({ entryId }: { entryId: string }) => {
       animate={{ opacity: 1, scale: 1, y: "-1/2" }}
       exit={{ opacity: 0, scale: 0.9, y: "-1/2" }}
       transition={Spring.presets.smooth}
-      className="absolute right-1 top-0 -translate-y-1/2 rounded-lg border border-gray-200 bg-white/90 p-1 shadow-sm backdrop-blur-sm dark:border-neutral-900 dark:bg-neutral-900"
-      onClick={(e) => e.stopPropagation()}
+      className="absolute -right-2 top-0 -translate-y-1/2 rounded-lg border border-gray-200 bg-white/90 p-1 shadow-sm backdrop-blur-sm dark:border-neutral-900 dark:bg-neutral-900"
+      onClick={(e) => {
+        e.stopPropagation()
+        e.preventDefault()
+      }}
     >
       <div className="flex items-center gap-1">
         <EntryHeaderActions entryId={entryId} view={view} compact />

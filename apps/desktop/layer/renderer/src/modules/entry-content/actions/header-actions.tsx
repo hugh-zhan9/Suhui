@@ -30,7 +30,7 @@ export const EntryHeaderActions = ({
           clickableDisabled={config.disabled}
           highlightMotion={config.notice}
           id={`${config.entryId}/${config.id}`}
-          size={compact ? "sm" : "base"}
+          size={compact ? "xs" : "base"}
         />
       )
     })

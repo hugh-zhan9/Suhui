@@ -69,7 +69,7 @@ export const EntryListHeader: FC<{
   return (
     <div
       className={cn(
-        "mb-2 flex w-full flex-col pr-4 pt-2.5",
+        "flex w-full flex-col pr-4 pt-2.5",
         !feedColumnShow && "macos:mt-4 macos:pt-margin-macos-traffic-light-y",
         titleStyleBasedView[view],
         isPreview && "px-4",
