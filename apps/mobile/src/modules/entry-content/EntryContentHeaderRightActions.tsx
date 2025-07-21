@@ -91,7 +91,7 @@ const HeaderRightActionsImpl = ({
     if (!entry || !feed || !subscription) return
 
     isStarred
-      ? collectionSyncService.unstarEntry(entryId)
+      ? collectionSyncService.unstarEntry({ entryId })
       : collectionSyncService.starEntry({
           entryId,
           view: subscription.view,

@@ -72,8 +72,8 @@ export const SettingAppearance = () => {
           },
 
           defineItem("sidebarShowUnreadCount", {
-            label: t("appearance.unread_count.sidebra.title"),
-            description: t("appearance.unread_count.sidebra.description"),
+            label: t("appearance.unread_count.sidebar.title"),
+            description: t("appearance.unread_count.sidebar.description"),
           }),
           defineItem("hideExtraBadge", {
             label: t("appearance.hide_extra_badge.label"),

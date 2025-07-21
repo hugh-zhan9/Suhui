@@ -153,7 +153,7 @@ export const EntryItemContextMenu = ({
             key="Star"
             onSelect={() => {
               if (isEntryStarred) {
-                collectionSyncService.unstarEntry(id)
+                collectionSyncService.unstarEntry({ entryId: id })
                 toast.success("Unstarred")
               } else {
                 collectionSyncService.starEntry({

@@ -57,7 +57,7 @@ export const VideoContextMenu = ({ entryId, children }: VideoContextMenuProps) =
             key="Star"
             onSelect={() => {
               if (isEntryStarred) {
-                collectionSyncService.unstarEntry(entryId)
+                collectionSyncService.unstarEntry({ entryId })
                 toast.success("Unstarred")
               } else {
                 collectionSyncService.starEntry({
