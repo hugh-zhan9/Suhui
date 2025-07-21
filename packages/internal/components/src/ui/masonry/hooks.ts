@@ -15,7 +15,11 @@ export const useMasonryColumn = (gutter: number, onReady?: (column: number) => a
     let readyCallOnce = false
     const $warpper = containerRef.current
     if (!$warpper) return
+
     const handler = () => {
+      // Skip if element doesn't have proper dimensions yet
+      if ($warpper.clientWidth === 0) return
+
       const column = getCurrentColumn($warpper.clientWidth)
 
       setCurrentItemWidth(calItemWidth($warpper.clientWidth, gutter, column))
@@ -35,14 +39,19 @@ export const useMasonryColumn = (gutter: number, onReady?: (column: number) => a
       for (const entry of entries) {
         const newWidth = entry.contentRect.width
 
-        if (newWidth !== previousWidth) {
+        if (newWidth !== previousWidth && newWidth > 0) {
           previousWidth = newWidth
 
           recal()
         }
       }
     })
-    recal()
+
+    // Use nextFrame to ensure DOM is ready before initial calculation
+    nextFrame(() => {
+      recal()
+    })
+
     resizeObserver.observe($warpper)
     return () => {
       resizeObserver.disconnect()
