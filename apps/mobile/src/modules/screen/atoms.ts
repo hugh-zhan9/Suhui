@@ -178,24 +178,13 @@ function useRemoteEntries(props?: UseEntriesProps): UseEntriesReturn {
 
   const refetch = useCallback(async () => void query.refetch(), [query])
   const fetchNextPage = useCallback(async () => void query.fetchNextPage(), [query])
-  const entriesIds = useMemo(() => {
-    if (!query.data || query.isLoading || query.isError) {
-      return []
-    }
-    return (
-      query.data?.pages
-        ?.map((page) => page.data?.map((entry) => entry.entries.id))
-        .flat()
-        .filter((id) => typeof id === "string") || []
-    )
-  }, [query.data, query.isLoading, query.isError])
 
   if (!query.data || query.isLoading) {
     return fallbackReturn
   }
 
   return {
-    entriesIds,
+    entriesIds: query.entriesIds,
     hasNext: query.hasNextPage,
     hasUpdate: false,
     refetch,

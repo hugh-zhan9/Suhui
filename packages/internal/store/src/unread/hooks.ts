@@ -2,6 +2,7 @@ import type { FeedViewType } from "@follow/constants"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { useCallback, useEffect } from "react"
 
+import { getEntry } from "../entry/getter"
 import { useListFeedIds } from "../list/hooks"
 import { useSubscriptionIdsByView } from "../subscription/hooks"
 import { unreadCountAllSelector, unreadCountIdSelector, unreadCountIdsSelector } from "./selectors"
@@ -13,6 +14,32 @@ export const usePrefetchUnread = () => {
     queryFn: () => unreadSyncService.resetFromRemote(),
     staleTime: 5 * 1000 * 60, // 5 minutes
   })
+}
+
+export const useSyncUnreadWhenUnMatch = (entryIds: string[]) => {
+  useEffect(() => {
+    const entries = entryIds.map((id) => getEntry(id))
+    const unreadCountMap = entries.reduce(
+      (acc, entry) => {
+        if (entry && entry.feedId && !entry?.read) {
+          acc[entry.feedId] = (acc[entry.feedId] || 0) + 1
+        }
+        return acc
+      },
+      {} as Record<string, number>,
+    )
+
+    const unread = useUnreadStore.getState().data
+
+    const hasUnreadMismatch = Object.keys(unreadCountMap).some(
+      (feedId) =>
+        !unread[feedId] || (unreadCountMap[feedId] && unreadCountMap[feedId] > unread[feedId]),
+    )
+
+    if (hasUnreadMismatch) {
+      unreadSyncService.resetFromRemote()
+    }
+  }, [entryIds.toString()])
 }
 
 export const useAutoMarkAsRead = (entryId: string) => {

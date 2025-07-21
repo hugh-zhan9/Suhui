@@ -99,18 +99,12 @@ const useRemoteEntries = (): UseEntriesReturn => {
 
   const refetch = useCallback(async () => void query.refetch(), [query])
   const fetchNextPage = useCallback(async () => void query.fetchNextPage(), [query])
-  const entriesIds = useMemo(() => {
-    if (!query.data || query.isLoading || query.isError) {
-      return []
-    }
-    return query.data?.pages?.map((page) => page.data?.map((entry) => entry.entries.id)).flat()
-  }, [query.data, query.isLoading, query.isError])
 
   if (!query.data || query.isLoading) {
     return fallbackReturn
   }
   return {
-    entriesIds,
+    entriesIds: query.entriesIds,
     hasNext: query.hasNextPage,
     hasUpdate,
     refetch,
