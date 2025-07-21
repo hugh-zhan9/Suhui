@@ -122,7 +122,7 @@ export const EntryItemWrapper: FC<
   }, [entry?.id])
 
   const handleClick = useCallback(
-    (e: TouchEvent<HTMLAnchorElement> | MouseEvent<HTMLAnchorElement>) => {
+    (e: TouchEvent<HTMLElement> | MouseEvent<HTMLElement>) => {
       e.preventDefault()
       e.stopPropagation()
 
@@ -146,7 +146,7 @@ export const EntryItemWrapper: FC<
     },
     [asRead, entry?.id, entry?.feedId, navigate],
   )
-  const handleDoubleClick: MouseEventHandler<HTMLAnchorElement> = useCallback(
+  const handleDoubleClick: MouseEventHandler<HTMLElement> = useCallback(
     () => entry?.url && window.open(entry.url, "_blank"),
     [entry?.url],
   )
@@ -209,9 +209,11 @@ export const EntryItemWrapper: FC<
   const aiEnabled = useFeature("ai")
   const isWide = views[view as FeedViewType]?.wideMode || aiEnabled
 
+  const Link = view === FeedViewType.SocialMedia ? "article" : NavLink
+
   return (
     <div data-entry-id={entry?.id} style={style}>
-      <NavLink
+      <Link
         to={navigationPath}
         className={cn(
           "hover:bg-theme-item-hover cursor-button relative block duration-200",
@@ -228,7 +230,7 @@ export const EntryItemWrapper: FC<
       >
         {children}
         <AnimatePresence>{showAction && isWide && <ActionBar entryId={entryId} />}</AnimatePresence>
-      </NavLink>
+      </Link>
     </div>
   )
 }
