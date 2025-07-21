@@ -1,10 +1,11 @@
-import { FeedViewType, views } from "@follow/constants"
+import { views } from "@follow/constants"
 import { useEntry } from "@follow/store/entry/hooks"
 import { cn } from "@follow/utils/utils"
 import { AnimatePresence, m } from "motion/react"
 import { memo } from "react"
 
 import { useUISettingKey } from "~/atoms/settings/ui"
+import { useFeature } from "~/hooks/biz/useFeature"
 
 import { EntryHeaderActions } from "../../actions/header-actions"
 import { MoreActions } from "../../actions/more-actions"
@@ -20,6 +21,9 @@ function EntryHeaderImpl({ view, entryId, className, compact }: EntryHeaderProps
   const hideRecentReader = useUISettingKey("hideRecentReader")
 
   const shouldShowMeta = !isAtTop && !!entryTitleMeta?.title
+
+  const aiEnabled = useFeature("ai")
+  const isWide = views[view]?.wideMode || aiEnabled
 
   if (!entry) return null
 
@@ -69,7 +73,7 @@ function EntryHeaderImpl({ view, entryId, className, compact }: EntryHeaderProps
           </AnimatePresence>
         </div>
 
-        {view !== FeedViewType.SocialMedia && (
+        {!isWide && (
           <div className="relative flex shrink-0 items-center justify-end gap-2">
             <EntryHeaderActions entryId={entryId} view={view} compact={compact} />
             <MoreActions entryId={entryId} view={view} />
