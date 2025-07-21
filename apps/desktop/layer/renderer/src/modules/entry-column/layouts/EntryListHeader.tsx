@@ -83,7 +83,7 @@ export const EntryListHeader: FC<{
           <div
             className={cn(
               "text-text-secondary relative z-[1] flex items-center gap-1 self-baseline",
-              (isInCollectionList || !headerTitle) && "pointer-events-none opacity-0",
+              (isInCollectionList || !headerTitle) && "opacity-0 [&_*]:!pointer-events-none",
 
               "translate-x-[6px]",
             )}
