@@ -1,6 +1,7 @@
 import type { TextProps } from "react-native"
-import { Text } from "react-native"
 import type { StackPresentationTypes } from "react-native-screens"
+
+import { Text } from "@/src/components/ui/typography/Text"
 
 import { useNavigation } from "./hooks"
 import type { NavigationControllerView } from "./types"
@@ -20,7 +21,6 @@ export function NavigationLink<T>({
   ...rest
 }: NavigationLinkProps<T>) {
   const navigation = useNavigation()
-
   return (
     <Text
       onPress={() => {

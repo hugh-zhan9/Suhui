@@ -3,11 +3,12 @@ import * as Haptics from "expo-haptics"
 import { useCallback, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native"
-import { Text, View } from "react-native"
+import { View } from "react-native"
 import type { ReanimatedScrollEvent } from "react-native-reanimated/lib/typescript/hook/commonTypes"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useColor } from "react-native-uikit-colors"
 
+import { Text } from "@/src/components/ui/typography/Text"
 import { ArrowLeftCuteReIcon } from "@/src/icons/arrow_left_cute_re"
 
 interface EntryPullUpToNextProps {
@@ -23,14 +24,15 @@ const EntryPullUpToNext = ({ active, hide = false }: EntryPullUpToNextProps) => 
   const insets = useSafeAreaInsets()
   const textColor = useColor("secondaryLabel")
   const iconColor = useColor("label")
-
   return (
     <View
       className={cn(
         "absolute bottom-0 flex w-full translate-y-full flex-row items-center justify-center gap-2 pt-4 transition-all duration-200",
         hide ? "opacity-0" : "opacity-100",
       )}
-      style={{ paddingBottom: insets.bottom + 20 }}
+      style={{
+        paddingBottom: insets.bottom + 20,
+      }}
     >
       <View
         className={cn(
@@ -46,14 +48,17 @@ const EntryPullUpToNext = ({ active, hide = false }: EntryPullUpToNextProps) => 
         >
           <ArrowLeftCuteReIcon width={16} height={16} color={iconColor} />
         </View>
-        <Text style={{ color: textColor }}>
+        <Text
+          style={{
+            color: textColor,
+          }}
+        >
           {active ? t("entry.release_to_next_entry") : t("entry.pull_up_to_next_entry")}
         </Text>
       </View>
     </View>
   )
 }
-
 export const usePullUpToNext = ({
   enabled = true,
   onRefresh,
@@ -67,7 +72,6 @@ export const usePullUpToNext = ({
   const isOverThreshold = useRef(false)
   const [dragState, setDragState] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
-
   const onScroll = useCallback(
     (e: ReanimatedScrollEvent) => {
       if (!dragging.current) return
@@ -92,7 +96,6 @@ export const usePullUpToNext = ({
     },
     [dragging, onRefresh, progressViewOffset],
   )
-
   const onScrollBeginDrag = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
       const beginOffset =
@@ -108,7 +111,6 @@ export const usePullUpToNext = ({
     },
     [dragging],
   )
-
   const onScrollEndDrag = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       dragging.current = false
@@ -122,7 +124,6 @@ export const usePullUpToNext = ({
     },
     [dragging, onRefresh],
   )
-
   if (!enabled) {
     return {
       scrollViewEventHandlers: {},
@@ -133,7 +134,6 @@ export const usePullUpToNext = ({
       EntryPullUpToNext: () => null,
     }
   }
-
   return {
     scrollViewEventHandlers: {
       onScroll,

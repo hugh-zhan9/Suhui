@@ -1,17 +1,18 @@
-import { cssInterop } from "nativewind"
+import { cn } from "@follow/utils"
 import type { FC } from "react"
 import type { TextProps } from "react-native"
-import { StyleSheet, Text as RNText } from "react-native"
+import { Text as RNText } from "react-native"
+
+import { useUISettingKey } from "@/src/atoms/settings/ui"
 
 export const Text: FC<TextProps> = (props) => {
-  return <RNText {...props} style={StyleSheet.flatten([styles.text, props.style])} />
-}
-cssInterop(Text, {
-  className: "style",
-})
-const styles = {
-  text: {
-    fontSize: 16,
-    lineHeight: 20,
-  },
+  const systemFontScaling = useUISettingKey("useSystemFontScaling")
+
+  return (
+    <RNText
+      {...props}
+      className={cn("text-label text-base", props.className)}
+      allowFontScaling={systemFontScaling}
+    />
+  )
 }

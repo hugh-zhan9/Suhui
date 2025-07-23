@@ -7,7 +7,7 @@ import { useAutoMarkAsRead } from "@follow/store/unread/hooks"
 import { PortalProvider } from "@gorhom/portal"
 import { atom, useAtomValue, useSetAtom } from "jotai"
 import { useCallback, useEffect, useMemo } from "react"
-import { Text, View } from "react-native"
+import { View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useColor } from "react-native-uikit-colors"
 
@@ -20,6 +20,7 @@ import { RelativeDateTime } from "@/src/components/ui/datetime/RelativeDateTime"
 import { FeedIcon } from "@/src/components/ui/icon/feed-icon"
 import { ItemPressableStyle } from "@/src/components/ui/pressable/enum"
 import { ItemPressable } from "@/src/components/ui/pressable/ItemPressable"
+import { Text } from "@/src/components/ui/typography/Text"
 import { CalendarTimeAddCuteReIcon } from "@/src/icons/calendar_time_add_cute_re"
 import { openLink } from "@/src/lib/native"
 import { useNavigation } from "@/src/lib/navigation/hooks"
@@ -45,26 +46,22 @@ export const EntryDetailScreen: NavigationControllerView<{
     translation: state.settings?.translation,
     readability: state.settings?.readability,
   }))
-
   const insets = useSafeAreaInsets()
   const ctxValue = useMemo(
     () => ({
       showAISummaryAtom: atom(entry?.summary || false),
       showAITranslationAtom: atom(!!entry?.translation || false),
       showReadabilityAtom: atom(entry?.readability || false),
-
       titleHeightAtom: atom(0),
     }),
     [entry?.readability, entry?.summary, entry?.translation],
   )
-
   const navigation = useNavigation()
   const nextEntryId = useMemo(() => {
     if (!entryIds) return
     const currentEntryIdx = entryIds.indexOf(entryId)
     return entryIds[currentEntryIdx + 1]
   }, [entryId, entryIds])
-
   const { EntryPullUpToNext, scrollViewEventHandlers, pullUpViewProps } = usePullUpToNext({
     enabled: !!nextEntryId,
     onRefresh: useCallback(() => {
@@ -84,7 +81,6 @@ export const EntryDetailScreen: NavigationControllerView<{
       )
     }, [entryIds, navigation, nextEntryId, viewType]),
   })
-
   return (
     <EntryContentContext value={ctxValue}>
       <PortalProvider>
@@ -127,7 +123,6 @@ export const EntryDetailScreen: NavigationControllerView<{
     </EntryContentContext>
   )
 }
-
 const EntryContentWebViewWithContext = ({ entryId }: { entryId: string }) => {
   const { showReadabilityAtom, showAITranslationAtom } = useEntryContentContext()
   const showReadabilityOnce = useAtomValue(showReadabilityAtom)
@@ -135,12 +130,10 @@ const EntryContentWebViewWithContext = ({ entryId }: { entryId: string }) => {
   const showTranslationOnce = useAtomValue(showAITranslationAtom)
   const actionLanguage = useActionLanguage()
   const translation = useGeneralSettingKey("translation")
-
   const entry = useEntry(entryId, (state) => ({
     content: state.content,
     readabilityContent: state.readabilityContent,
   }))
-
   usePrefetchEntryTranslation({
     entryIds: [entryId],
     withContent: true,
@@ -158,13 +151,11 @@ const EntryContentWebViewWithContext = ({ entryId }: { entryId: string }) => {
       setShowReadability(true)
     }
   }, [isPending, entry?.content, setShowReadability])
-
   useEffect(() => {
     if (showReadabilityOnce) {
       entrySyncServices.fetchEntryReadabilityContent(entryId)
     }
   }, [showReadabilityOnce, entryId])
-
   return (
     <EntryContentWebView
       entryId={entryId}
@@ -173,7 +164,6 @@ const EntryContentWebViewWithContext = ({ entryId }: { entryId: string }) => {
     />
   )
 }
-
 const EntryInfo = ({ entryId }: { entryId: string }) => {
   const entry = useEntry(entryId, (state) => ({
     publishedAt: state.publishedAt,
@@ -181,14 +171,10 @@ const EntryInfo = ({ entryId }: { entryId: string }) => {
   }))
   const feed = useFeedById(entry?.feedId)
   const secondaryLabelColor = useColor("secondaryLabel")
-
   const readCount = useEntryReadHistory(entryId)?.entryReadHistories?.readCount
   const hideRecentReader = useUISettingKey("hideRecentReader")
-
   if (!entry) return null
-
   const { publishedAt } = entry
-
   return (
     <View className="mt-4 flex flex-row items-center gap-4 px-5">
       {feed && (
@@ -214,17 +200,18 @@ const EntryInfo = ({ entryId }: { entryId: string }) => {
     </View>
   )
 }
-
 const EntryInfoSocial = ({ entryId }: { entryId: string }) => {
   const entry = useEntry(entryId, (state) => ({
     publishedAt: state.publishedAt,
   }))
-
   if (!entry) return null
   return (
     <View className="mt-3 px-4">
       <Text className="text-secondary-label">
-        {entry.publishedAt.toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}
+        {entry.publishedAt.toLocaleString("en-US", {
+          dateStyle: "medium",
+          timeStyle: "short",
+        })}
       </Text>
     </View>
   )
