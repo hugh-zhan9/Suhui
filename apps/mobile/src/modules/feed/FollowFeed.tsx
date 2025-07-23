@@ -37,6 +37,7 @@ const formSchema = z.object({
   view: z.coerce.number(),
   category: z.string().nullable().optional(),
   isPrivate: z.boolean().optional(),
+  hideFromTimeline: z.boolean().optional(),
   title: z.string().optional(),
 })
 
@@ -93,9 +94,10 @@ function FollowImpl(props: { feedId: string; defaultView?: FeedViewType }) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      category: subscription?.category ?? "",
-      isPrivate: subscription?.isPrivate ?? false,
-      title: subscription?.title ?? "",
+      category: subscription?.category ?? undefined,
+      isPrivate: subscription?.isPrivate ?? undefined,
+      hideFromTimeline: subscription?.hideFromTimeline ?? undefined,
+      title: subscription?.title ?? undefined,
       view: subscription?.view ?? defaultView ?? FeedViewType.Articles,
     },
   })
@@ -121,8 +123,10 @@ function FollowImpl(props: { feedId: string; defaultView?: FeedViewType }) {
       view: values.view,
       category: values.category ?? "",
       isPrivate: values.isPrivate ?? false,
+      hideFromTimeline: values.hideFromTimeline,
       title: values.title ?? "",
       feedId: feed?.id,
+      listId: undefined,
     }
 
     if (isSubscribed) {
@@ -270,6 +274,22 @@ function FollowImpl(props: { feedId: string; defaultView?: FeedViewType }) {
                   value={value}
                   label={t("subscription_form.private_follow")}
                   description={t("subscription_form.private_follow_description")}
+                  onValueChange={onChange}
+                />
+              )}
+            />
+          </View>
+
+          <View>
+            <Controller
+              name="hideFromTimeline"
+              control={form.control}
+              render={({ field: { onChange, value } }) => (
+                <FormSwitch
+                  size="sm"
+                  value={value}
+                  label={t("subscription_form.hide_from_timeline")}
+                  description={t("subscription_form.hide_from_timeline_description")}
                   onValueChange={onChange}
                 />
               )}
