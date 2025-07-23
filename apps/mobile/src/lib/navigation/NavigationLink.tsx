@@ -1,4 +1,4 @@
-import type { TextProps } from "react-native"
+import type { Text as RNText, TextProps } from "react-native"
 import type { StackPresentationTypes } from "react-native-screens"
 
 import { Text } from "@/src/components/ui/typography/Text"
@@ -10,7 +10,7 @@ interface NavigationLinkProps<T> extends TextProps {
   destination: NavigationControllerView<T>
   stackPresentation?: StackPresentationTypes
   props?: T
-  ref?: React.Ref<Text>
+  ref?: React.Ref<RNText>
 }
 export function NavigationLink<T>({
   destination,
