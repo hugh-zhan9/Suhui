@@ -1,6 +1,6 @@
 import { useCallback } from "react"
 
-import { shareImage, useSaveImageToMediaLibrary } from "../ui/image/utils"
+import { shareImage, useSaveImageToMediaLibrary } from "../image/utils"
 import ImageView from "./ImageViewing"
 import { useLightbox, useLightboxControls } from "./lightboxState"
 

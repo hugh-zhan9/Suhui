@@ -16,7 +16,7 @@ import { useCurrentColorsVariants } from "react-native-uikit-colors"
 
 import { ErrorBoundary } from "../components/common/ErrorBoundary"
 import { GlobalErrorScreen } from "../components/errors/GlobalErrorScreen"
-import { LightboxStateProvider } from "../components/lightbox/lightboxState"
+import { LightboxStateProvider } from "../components/ui/lightbox/lightboxState"
 import { queryClient } from "../lib/query-client"
 import { TimelineSelectorDragProgressProvider } from "../modules/screen/atoms"
 import { MigrationProvider } from "./migration"

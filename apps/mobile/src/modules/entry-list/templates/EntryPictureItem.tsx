@@ -11,8 +11,8 @@ import { useMemo } from "react"
 import { Text, View } from "react-native"
 import { measure, runOnJS, runOnUI, useAnimatedRef } from "react-native-reanimated"
 
-import { useLightboxControls } from "@/src/components/lightbox/lightboxState"
 import { MediaCarousel } from "@/src/components/ui/carousel/MediaCarousel"
+import { useLightboxControls } from "@/src/components/ui/lightbox/lightboxState"
 
 export function EntryPictureItem({ id }: { id: string }) {
   const { openLightbox } = useLightboxControls()

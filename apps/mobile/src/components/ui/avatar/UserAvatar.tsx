@@ -9,8 +9,8 @@ import { PowerIcon } from "@/src/icons/power"
 import { User4CuteFiIcon } from "@/src/icons/user_4_cute_fi"
 import { accentColor } from "@/src/theme/colors"
 
-import { useLightboxControls } from "../../lightbox/lightboxState"
 import { Image } from "../image/Image"
+import { useLightboxControls } from "../lightbox/lightboxState"
 
 interface UserAvatarProps {
   image?: string | null
