@@ -63,7 +63,7 @@ export const GroupedInsetListCard: FC<
         props.style,
       ]}
       className={cn(
-        "bg-secondary-system-grouped-background flex flex-col overflow-hidden rounded-[10px]",
+        "bg-secondary-system-grouped-background flex flex-1 flex-col overflow-hidden rounded-[10px]",
         className,
       )}
     >
