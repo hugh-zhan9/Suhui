@@ -15,7 +15,7 @@ import { useNavigation } from "@/src/lib/navigation/hooks"
 import { FollowScreen } from "@/src/screens/(modal)/FollowScreen"
 import { FeedScreen } from "@/src/screens/(stack)/feeds/[feedId]/FeedScreen"
 
-import { selectFeed } from "../screen/atoms"
+import { selectFeed, selectTimeline } from "../screen/atoms"
 
 type SearchResultItem = Awaited<ReturnType<typeof apiClient.discover.$post>>["data"][number]
 export const FeedSummary = ({
@@ -24,12 +24,16 @@ export const FeedSummary = ({
   preChildren,
   className,
   simple,
+  view,
+  preview,
 }: {
   item: SearchResultItem
   children?: React.ReactNode
   preChildren?: React.ReactNode
   className?: string
   simple?: boolean
+  view?: number | null
+  preview?: boolean
 }) => {
   const navigation = useNavigation()
   return (
@@ -37,13 +41,27 @@ export const FeedSummary = ({
       itemStyle={ItemPressableStyle.UnStyled}
       onPress={() => {
         if (item.feed?.id) {
-          selectFeed({
-            type: "feed",
-            feedId: item.feed.id,
-          })
-          navigation.pushControllerView(FeedScreen, {
-            feedId: item.feed?.id,
-          })
+          if (preview) {
+            if (typeof view === "number") {
+              selectTimeline({
+                type: "view",
+                viewId: view,
+              })
+            }
+
+            selectFeed({
+              type: "feed",
+              feedId: item.feed.id,
+            })
+            navigation.pushControllerView(FeedScreen, {
+              feedId: item.feed?.id,
+            })
+          } else {
+            navigation.presentControllerView(FollowScreen, {
+              id: item.feed.id,
+              type: "feed",
+            })
+          }
         } else if (item.feed?.url) {
           navigation.presentControllerView(FollowScreen, {
             url: item.feed.url,

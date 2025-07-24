@@ -64,6 +64,8 @@ export const Trending = ({
         ) : (
           data?.map((item, index) => (
             <FeedSummary
+              preview
+              view={item.view}
               key={item.feed?.id}
               item={item}
               className={cn("flex flex-1 flex-row items-center bg-none py-3", itemClassName)}
