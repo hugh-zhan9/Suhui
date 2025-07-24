@@ -3,7 +3,7 @@ import { SubscriptionService } from "@follow/database/services/subscription"
 import { tracker } from "@follow/tracker"
 import { omit } from "es-toolkit"
 
-import { api, apiClient } from "../context"
+import { api } from "../context"
 import { invalidateEntriesQuery } from "../entry/hooks"
 import { getFeedById } from "../feed/getter"
 import { feedActions } from "../feed/store"
@@ -260,9 +260,7 @@ class SubscriptionSyncService {
   }
 
   async subscribe(subscription: SubscriptionForm) {
-    const data = await apiClient().subscriptions.$post({
-      json: subscription,
-    })
+    const data = await api().subscriptions.create(subscription)
 
     if (data.feed) {
       feedActions.upsertMany([data.feed])
