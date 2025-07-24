@@ -1338,6 +1338,22 @@ importers:
         specifier: 0.3.0
         version: 0.3.0
 
+  packages/changelog-cli:
+    dependencies:
+      dotenv:
+        specifier: 17.2.0
+        version: 17.2.0
+      pathe:
+        specifier: 2.0.3
+        version: 2.0.3
+    devDependencies:
+      tsx:
+        specifier: 4.20.3
+        version: 4.20.3
+      typescript:
+        specifier: 'catalog:'
+        version: 5.8.3
+
   packages/configs:
     dependencies:
       '@egoist/tailwindcss-icons':
@@ -8688,6 +8704,10 @@ packages:
 
   dotenv@16.5.0:
     resolution: {integrity: sha512-m/C+AwOAr9/W1UOIZUo232ejMNnJAJtYQjUbHoNTBNTJSvqzzDh7vnrei3o3r3m9blf6ZoDkvcw0VmozNRFJxg==}
+    engines: {node: '>=12'}
+
+  dotenv@17.2.0:
+    resolution: {integrity: sha512-Q4sgBT60gzd0BB0lSyYD3xM4YxrXA9y4uBDof1JNYGzOXrQdQ6yX+7XIAqoFOGQFOTK1D3Hts5OllpxMDZFONQ==}
     engines: {node: '>=12'}
 
   dotenv@9.0.2:
@@ -24847,6 +24867,8 @@ snapshots:
   dotenv@16.4.7: {}
 
   dotenv@16.5.0: {}
+
+  dotenv@17.2.0: {}
 
   dotenv@9.0.2: {}
 
