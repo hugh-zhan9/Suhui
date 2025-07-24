@@ -45,7 +45,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
+        os: [macos-16, ubuntu-latest, windows-latest]
         exclude:
           - os: ${{ github.event.inputs.store == 'true' && 'ubuntu-latest' }}
 
