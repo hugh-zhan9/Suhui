@@ -1,4 +1,4 @@
-name: Build iOS for development
+name: 📱 Build iOS for development
 
 on:
   push:
@@ -41,9 +41,6 @@ jobs:
     steps:
       - name: 📦 Checkout code
         uses: actions/checkout@v4
-
-      - name: 🔧 Setup Xcode
-        uses: ./.github/actions/setup-xcode
 
       - name: 📱 Setup EAS
         uses: expo/expo-github-action@v8
