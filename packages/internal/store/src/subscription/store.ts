@@ -15,10 +15,11 @@ import { listActions } from "../list/store"
 import { apiMorph } from "../morph/api"
 import { dbStoreMorph } from "../morph/db-store"
 import { buildSubscriptionDbId, storeDbMorph } from "../morph/store-db"
+import { unreadActions } from "../unread/store"
 import { whoami } from "../user/getters"
 import { getCategoryFeedIds } from "./getter"
 import type { SubscriptionForm, SubscriptionModel } from "./types"
-import { getDefaultCategory, getInboxStoreId, getSubscriptionStoreId } from "./utils"
+import { getDefaultCategory, getSubscriptionDBId, getSubscriptionStoreId } from "./utils"
 
 type FeedId = string
 type ListId = string
@@ -88,23 +89,20 @@ class SubscriptionActions implements Hydratable, Resetable {
   async upsertManyInSession(subscriptions: SubscriptionModel[]) {
     immerSet((draft) => {
       for (const subscription of subscriptions) {
+        const subscriptionSetId = getSubscriptionDBId(subscription)
+        const subscriptionStoreId = getSubscriptionStoreId(subscription)
+
+        draft.data[subscriptionStoreId] = subscription
+        draft.subscriptionIdSet.add(subscriptionSetId)
+
         if (subscription.feedId && subscription.type === "feed") {
-          draft.data[subscription.feedId] = subscription
-          draft.subscriptionIdSet.add(`${subscription.type}/${subscription.feedId}`)
-          draft.feedIdByView[subscription.view as FeedViewType].add(subscription.feedId)
+          draft.feedIdByView[subscription.view].add(subscription.feedId)
           if (subscription.category) {
-            draft.categories[subscription.view as FeedViewType].add(subscription.category)
+            draft.categories[subscription.view].add(subscription.category)
           }
         }
         if (subscription.listId && subscription.type === "list") {
-          draft.data[subscription.listId] = subscription
-          draft.subscriptionIdSet.add(`${subscription.type}/${subscription.listId}`)
-          draft.listIdByView[subscription.view as FeedViewType].add(subscription.listId)
-        }
-
-        if (subscription.inboxId && subscription.type === "inbox") {
-          draft.data[getInboxStoreId(subscription.inboxId)] = subscription
-          draft.subscriptionIdSet.add(`${subscription.type}/${subscription.inboxId}`)
+          draft.listIdByView[subscription.view].add(subscription.listId)
         }
       }
     })
@@ -283,6 +281,10 @@ class SubscriptionSyncService {
       ])
       tracker.subscribe({ listId: data.list.id, view: subscription.view })
     }
+
+    if (data.unread) {
+      unreadActions.upsertMany(data.unread)
+    }
     // Insert to subscription
     subscriptionActions.upsertMany([
       {
@@ -316,14 +318,14 @@ class SubscriptionSyncService {
     tx.store(() => {
       immerSet((draft) => {
         for (const id of normalizedIds) {
-          delete draft.data[id]
           const subscription = draft.data[id]
           if (!subscription) continue
-          draft.subscriptionIdSet.delete(getSubscriptionStoreId(subscription))
+          draft.subscriptionIdSet.delete(getSubscriptionDBId(subscription))
           if (subscription.feedId) draft.feedIdByView[subscription.view].delete(subscription.feedId)
           if (subscription.listId) draft.listIdByView[subscription.view].delete(subscription.listId)
           if (subscription.category)
             draft.categories[subscription.view].delete(subscription.category)
+          delete draft.data[id]
         }
       })
     })
@@ -344,7 +346,7 @@ class SubscriptionSyncService {
 
           draft.data[id] = subscription
 
-          draft.subscriptionIdSet.add(`${subscription.type}/${subscription.feedId}`)
+          draft.subscriptionIdSet.add(getSubscriptionDBId(subscription))
           if (subscription.feedId) draft.feedIdByView[subscription.view].add(subscription.feedId)
           if (subscription.listId) draft.listIdByView[subscription.view].add(subscription.listId)
           if (subscription.category) draft.categories[subscription.view].add(subscription.category)
@@ -359,6 +361,10 @@ class SubscriptionSyncService {
     await tx.run()
     invalidateEntriesQuery({
       views: Array.from(new Set([...feedSubscriptions, ...listSubscriptions].map((i) => i.view))),
+    })
+
+    feedSubscriptions.forEach((i) => {
+      unreadActions.updateById(i.feedId, 0)
     })
     return feedsAndLists
   }
