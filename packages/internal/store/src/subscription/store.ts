@@ -3,7 +3,7 @@ import { SubscriptionService } from "@follow/database/services/subscription"
 import { tracker } from "@follow/tracker"
 import { omit } from "es-toolkit"
 
-import { api } from "../context"
+import { api, apiClient } from "../context"
 import { invalidateEntriesQuery } from "../entry/hooks"
 import { getFeedById } from "../feed/getter"
 import { feedActions } from "../feed/store"
@@ -262,14 +262,8 @@ class SubscriptionSyncService {
   }
 
   async subscribe(subscription: SubscriptionForm) {
-    const { data } = await api().subscriptions.create({
-      url: subscription.url,
-
-      view: subscription.view,
-      category: subscription.category,
-      isPrivate: subscription.isPrivate,
-      title: subscription.title,
-      listId: subscription.listId,
+    const data = await apiClient().subscriptions.$post({
+      json: subscription,
     })
 
     if (data.feed) {

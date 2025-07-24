@@ -13,6 +13,9 @@ import { Text } from "@/src/components/ui/typography/Text"
 import type { apiClient } from "@/src/lib/api-fetch"
 import { useNavigation } from "@/src/lib/navigation/hooks"
 import { FollowScreen } from "@/src/screens/(modal)/FollowScreen"
+import { FeedScreen } from "@/src/screens/(stack)/feeds/[feedId]/FeedScreen"
+
+import { selectFeed } from "../screen/atoms"
 
 type SearchResultItem = Awaited<ReturnType<typeof apiClient.discover.$post>>["data"][number]
 export const FeedSummary = ({
@@ -34,9 +37,12 @@ export const FeedSummary = ({
       itemStyle={ItemPressableStyle.UnStyled}
       onPress={() => {
         if (item.feed?.id) {
-          navigation.presentControllerView(FollowScreen, {
-            id: item.feed.id,
+          selectFeed({
             type: "feed",
+            feedId: item.feed.id,
+          })
+          navigation.pushControllerView(FeedScreen, {
+            feedId: item.feed?.id,
           })
         } else if (item.feed?.url) {
           navigation.presentControllerView(FollowScreen, {
