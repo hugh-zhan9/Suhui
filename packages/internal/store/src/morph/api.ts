@@ -40,7 +40,6 @@ class APIMorph {
         userId: item.userId,
         view: item.view,
         isPrivate: item.isPrivate,
-        // @ts-expect-error update client sdk
         hideFromTimeline: item.hideFromTimeline,
         title: item.title,
         createdAt: item.createdAt,
