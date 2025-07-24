@@ -1,7 +1,7 @@
 import { cn } from "@follow/utils"
 import { useTranslation } from "react-i18next"
 import { View } from "react-native"
-import Animated, { useAnimatedStyle } from "react-native-reanimated"
+import Animated, { useAnimatedStyle, withTiming } from "react-native-reanimated"
 import { useColor } from "react-native-uikit-colors"
 
 import { Text } from "@/src/components/ui/typography/Text"
@@ -24,7 +24,7 @@ export const PullUpIndicatorAndroid: UsePullUpToNextReturn["EntryPullUpToNext"] 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: -translateY.value }],
     // paddingBottom: insets.bottom,
-    opacity: hide ? 0 : 1,
+    opacity: withTiming(hide ? 0 : 1, { duration: 100 }),
   }))
 
   return (

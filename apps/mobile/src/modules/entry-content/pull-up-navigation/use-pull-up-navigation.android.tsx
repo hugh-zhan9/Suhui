@@ -37,8 +37,9 @@ export const usePullUpToNext = ({
   const isAtEnd = useSharedValue(false)
   const [refreshing, setRefreshing] = useState(false)
   const [dragState, setDragState] = useState(false)
-  const feedbackGiven = useRef(false)
+  const feedbackGiven = useSharedValue(false)
   const translateY = useSharedValue(0)
+  const gestureState = useSharedValue(false)
 
   const initialTouchLocation = useSharedValue<{ x: number; y: number } | null>(null)
   const panGesture = Gesture.Pan()
@@ -62,14 +63,15 @@ export const usePullUpToNext = ({
       }
 
       const yDiff = changedTouch.y - initialTouchLocation.value.y
-      const isPullUpPanning = yDiff < -1
+      const isPullUpPanning = yDiff < 0
 
-      if (isPullUpPanning) {
-        runOnJS(setDragState)(true)
-        state.activate()
-      } else {
+      if (!isPullUpPanning && !gestureState.value) {
         state.fail()
+        return
       }
+      state.activate()
+      runOnJS(setDragState)(true)
+      gestureState.value = true
     })
     .onUpdate((event) => {
       // Only process upward gestures when at the end of the content
@@ -83,24 +85,21 @@ export const usePullUpToNext = ({
       // Ratio used to determine when to deactivate the pulling threshold
       const thresholdRatio = 0.95
       // Provide haptic feedback when crossing the threshold
-      if (pullDistance > THRESHOLD * FEEDBACK_THRESHOLD && !feedbackGiven.current) {
+      if (pullDistance > THRESHOLD * FEEDBACK_THRESHOLD && !feedbackGiven.value) {
         runOnJS(Haptics.impactAsync)(Haptics.ImpactFeedbackStyle.Heavy)
-        feedbackGiven.current = true
         runOnJS(setRefreshing)(true)
+        feedbackGiven.value = true
       } else if (
         pullDistance < THRESHOLD * FEEDBACK_THRESHOLD * thresholdRatio &&
-        feedbackGiven.current
+        feedbackGiven.value
       ) {
-        feedbackGiven.current = false
         runOnJS(Haptics.impactAsync)(Haptics.ImpactFeedbackStyle.Soft)
         runOnJS(setRefreshing)(false)
+        feedbackGiven.value = false
       }
     })
     .onEnd(() => {
-      feedbackGiven.current = false
-      runOnJS(setDragState)(false)
-
-      if (refreshing) {
+      if (feedbackGiven.value) {
         if (onRefresh) {
           runOnJS(onRefresh)()
         }
@@ -111,10 +110,12 @@ export const usePullUpToNext = ({
           mass: 1,
           stiffness: 200,
         })
-
-        if (refreshing) {
-          runOnJS(setRefreshing)(false)
-        }
+      }
+      gestureState.value = false
+      feedbackGiven.value = false
+      runOnJS(setDragState)(false)
+      if (refreshing) {
+        runOnJS(setRefreshing)(false)
       }
     })
 
