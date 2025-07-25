@@ -5,9 +5,7 @@ import { useCallback, useImperativeHandle, useMemo, useRef } from "react"
 import { View } from "react-native"
 
 import { useActionLanguage, useGeneralSettingKey } from "@/src/atoms/settings/general"
-import { useBottomTabBarHeight } from "@/src/components/layouts/tabbar/hooks"
 import { checkLanguage } from "@/src/lib/translation"
-import { useHeaderHeight } from "@/src/modules/screen/hooks/useHeaderHeight"
 
 import { useEntries } from "../screen/atoms"
 import { TimelineSelectorList } from "../screen/TimelineSelectorList"
@@ -55,17 +53,18 @@ export const EntryListContentSocial = ({
     checkLanguage,
   })
 
-  const headerHeight = useHeaderHeight()
-  const tabBarHeight = useBottomTabBarHeight()
-
   // Show loading skeleton when entries are not ready and no data yet
   if (!isReady && (!entryIds || entryIds.length === 0)) {
     return (
-      <View className="flex-1" style={{ paddingTop: headerHeight, paddingBottom: tabBarHeight }}>
-        {Array.from({ length: 5 }).map((_, index) => (
-          <EntryItemSkeleton key={index} />
-        ))}
-      </View>
+      <TimelineSelectorList
+        onRefresh={() => {}}
+        isRefetching={false}
+        data={Array.from({ length: 5 }).map((_, index) => `skeleton-${index}`)}
+        keyExtractor={(id) => id}
+        estimatedItemSize={5}
+        renderItem={EntryItemSkeleton}
+        ItemSeparatorComponent={ItemSeparatorFullWidth}
+      />
     )
   }
 
