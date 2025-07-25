@@ -51,6 +51,7 @@ export type AccentColor =
 export interface UISettings {
   accentColor: AccentColor
   entryColWidth: number
+  aiColWidth: number
   feedColWidth: number
   opaqueSidebar: boolean
   sidebarShowUnreadCount: boolean
@@ -131,5 +132,25 @@ export interface IntegrationSettings {
   zoteroUserID: string
   zoteroToken: string
 
+  // qbittorrent
+  enableQBittorrent: boolean
+  qbittorrentHost: string
+  qbittorrentUsername: string
+  qbittorrentPassword: string
+
   saveSummaryAsDescription: boolean
+}
+
+export interface AIShortcut {
+  id: string
+  name: string
+  prompt: string
+  enabled: boolean
+  icon?: string
+  hotkey?: string
+}
+
+export interface AISettings {
+  personalizePrompt: string
+  shortcuts: AIShortcut[]
 }

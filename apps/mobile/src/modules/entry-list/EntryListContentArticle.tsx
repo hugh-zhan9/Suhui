@@ -1,18 +1,19 @@
 import type { FeedViewType } from "@follow/constants"
 import { usePrefetchEntryTranslation } from "@follow/store/translation/hooks"
-import type { ListRenderItemInfo } from "@shopify/flash-list"
+import type { FlashList, ListRenderItemInfo } from "@shopify/flash-list"
 import type { ElementRef } from "react"
-import { useCallback, useImperativeHandle, useMemo } from "react"
+import { useCallback, useImperativeHandle, useMemo, useRef } from "react"
 import { View } from "react-native"
 
 import { useActionLanguage, useGeneralSettingKey } from "@/src/atoms/settings/general"
-import { usePlayingUrl } from "@/src/lib/player"
+import { useBottomTabBarHeight } from "@/src/components/layouts/tabbar/hooks"
 import { checkLanguage } from "@/src/lib/translation"
+import { useHeaderHeight } from "@/src/modules/screen/hooks/useHeaderHeight"
 
 import { useEntries } from "../screen/atoms"
 import { TimelineSelectorList } from "../screen/TimelineSelectorList"
 import { EntryListFooter } from "./EntryListFooter"
-import { useOnViewableItemsChanged, usePagerListPerformanceHack } from "./hooks"
+import { useOnViewableItemsChanged } from "./hooks"
 import { ItemSeparator } from "./ItemSeparator"
 import { EntryNormalItem } from "./templates/EntryNormalItem"
 import type { EntryExtraData } from "./types"
@@ -25,13 +26,9 @@ export const EntryListContentArticle = ({
 }: { entryIds: string[] | null; active?: boolean; view: FeedViewType } & {
   ref?: React.Ref<ElementRef<typeof TimelineSelectorList> | null>
 }) => {
-  const playingAudioUrl = usePlayingUrl()
-  const extraData: EntryExtraData = useMemo(
-    () => ({ playingAudioUrl, entryIds }),
-    [playingAudioUrl, entryIds],
-  )
+  const extraData: EntryExtraData = useMemo(() => ({ entryIds }), [entryIds])
 
-  const { fetchNextPage, isFetching, refetch, isRefetching, hasNextPage, fetchedTime } =
+  const { fetchNextPage, isFetching, refetch, isRefetching, hasNextPage, fetchedTime, isReady } =
     useEntries()
 
   const renderItem = useCallback(
@@ -46,11 +43,10 @@ export const EntryListContentArticle = ({
     [hasNextPage, fetchedTime],
   )
 
-  const { onScroll: hackOnScroll, ref, style: hackStyle } = usePagerListPerformanceHack()
+  const ref = useRef<FlashList<any>>(null)
 
   const { onViewableItemsChanged, onScroll, viewableItems } = useOnViewableItemsChanged({
     disabled: active === false || isFetching,
-    onScroll: hackOnScroll,
   })
 
   useImperativeHandle(forwardRef, () => ref.current!)
@@ -60,9 +56,23 @@ export const EntryListContentArticle = ({
   usePrefetchEntryTranslation({
     entryIds: active ? viewableItems.map((item) => item.key) : [],
     language: actionLanguage,
-    translation,
+    setting: translation,
     checkLanguage,
   })
+
+  const headerHeight = useHeaderHeight()
+  const tabBarHeight = useBottomTabBarHeight()
+
+  // Show loading skeleton when entries are not ready and no data yet
+  if (!isReady && (!entryIds || entryIds.length === 0)) {
+    return (
+      <View className="flex-1" style={{ paddingTop: headerHeight, paddingBottom: tabBarHeight }}>
+        {Array.from({ length: 7 }).map((_, index) => (
+          <EntryItemSkeleton key={index} />
+        ))}
+      </View>
+    )
+  }
 
   return (
     <TimelineSelectorList
@@ -79,7 +89,6 @@ export const EntryListContentArticle = ({
       onViewableItemsChanged={onViewableItemsChanged}
       ItemSeparatorComponent={ItemSeparator}
       ListFooterComponent={ListFooterComponent}
-      style={hackStyle}
     />
   )
 }

@@ -226,7 +226,7 @@ const VirtualGridImpl: FC<
           return (
             <div
               key={virtualRow.key}
-              className="absolute left-0 top-0 w-full"
+              className="absolute left-0 top-4 w-full"
               style={{
                 height: `${virtualRow.size}px`,
                 transform: `translateY(${virtualRow.start}px)`,
@@ -244,7 +244,7 @@ const VirtualGridImpl: FC<
                 ref={columnVirtualizer.measureElement}
                 key={virtualColumn.key}
                 data-index={virtualColumn.index}
-                className="absolute left-0 top-0"
+                className="absolute left-0 top-4"
                 style={{
                   height: `${virtualRow.size}px`,
                   width: `${virtualColumn.size}px`,

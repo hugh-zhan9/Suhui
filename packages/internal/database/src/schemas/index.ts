@@ -1,6 +1,7 @@
 import type { FeedViewType } from "@follow/constants"
-import type { ActionSettings } from "@follow/models/types"
 import type { SupportedActionLanguage } from "@follow/shared/language"
+import type { EntrySettings } from "@follow-app/client-sdk"
+import type { UIMessage } from "ai"
 import { sql } from "drizzle-orm"
 import { integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core"
 
@@ -30,6 +31,7 @@ export const subscriptionsTable = sqliteTable("subscriptions", {
   userId: text("user_id").notNull(),
   view: integer("view").notNull().$type<FeedViewType>(),
   isPrivate: integer("is_private", { mode: "boolean" }).notNull(),
+  hideFromTimeline: integer("hide_from_timeline", { mode: "boolean" }),
   title: text("title"),
   category: text("category"),
   createdAt: text("created_at"),
@@ -81,7 +83,6 @@ export const usersTable = sqliteTable("users", {
     discord?: string
   }>(),
 })
-
 export const entriesTable = sqliteTable("entries", {
   id: text("id").primaryKey(),
   title: text("title"),
@@ -107,7 +108,7 @@ export const entriesTable = sqliteTable("entries", {
   inboxHandle: text("inbox_handle"),
   read: integer("read", { mode: "boolean" }),
   sources: text("sources", { mode: "json" }).$type<string[]>(),
-  settings: text("settings", { mode: "json" }).$type<ActionSettings>(),
+  settings: text("settings", { mode: "json" }).$type<EntrySettings>(),
 })
 
 export const collectionsTable = sqliteTable("collections", {
@@ -154,3 +155,29 @@ export const imagesTable = sqliteTable("images", (t) => ({
     .notNull()
     .default(sql`(unixepoch() * 1000)`),
 }))
+
+export const aiChatTable = sqliteTable("ai_chat", (t) => ({
+  roomId: t.text("room_id").notNull().primaryKey(),
+  title: t.text("title"),
+  createdAt: t
+    .integer("created_at", { mode: "timestamp_ms" })
+    .notNull()
+    .default(sql`(unixepoch() * 1000)`),
+}))
+
+export const aiChatMessagesTable = sqliteTable(
+  "ai_chat_messages",
+  (t) => ({
+    roomId: t
+      .text("room_id")
+      .notNull()
+      .references(() => aiChatTable.roomId),
+    id: t.text("id").notNull().primaryKey(),
+    createdAt: t
+      .integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(sql`(unixepoch() * 1000)`),
+    message: t.text("message", { mode: "json" }).$type<UIMessage<any, any, any>>().notNull(),
+  }),
+  (t) => [uniqueIndex("ai_chat_messages_unq").on(t.roomId, t.id)],
+)

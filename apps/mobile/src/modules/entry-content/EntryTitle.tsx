@@ -1,24 +1,30 @@
 import { useEntry } from "@follow/store/entry/hooks"
 import { useFeedById } from "@follow/store/feed/hooks"
 import { useEntryTranslation } from "@follow/store/translation/hooks"
-import { useSetAtom } from "jotai"
+import { useAtomValue, useSetAtom } from "jotai"
 import { use } from "react"
-import { Text, View } from "react-native"
+import { View } from "react-native"
 
-import { useActionLanguage } from "@/src/atoms/settings/general"
+import { useActionLanguage, useGeneralSettingKey } from "@/src/atoms/settings/general"
 import { UserAvatar } from "@/src/components/ui/avatar/UserAvatar"
 import { FeedIcon } from "@/src/components/ui/icon/feed-icon"
-import { EntryContentContext } from "@/src/modules/entry-content/ctx"
+import { Text } from "@/src/components/ui/typography/Text"
+import { EntryContentContext, useEntryContentContext } from "@/src/modules/entry-content/ctx"
 
 import { EntryTranslation } from "../entry-list/templates/EntryTranslation"
 
 export const EntryTitle = ({ title, entryId }: { title: string; entryId: string }) => {
+  const { showAITranslationAtom } = useEntryContentContext()
+  const showTranslationOnce = useAtomValue(showAITranslationAtom)
+  const enableTranslation = useGeneralSettingKey("translation") || showTranslationOnce
   const actionLanguage = useActionLanguage()
-  const translation = useEntryTranslation(entryId, actionLanguage)
-
+  const translation = useEntryTranslation({
+    entryId,
+    language: actionLanguage,
+    setting: enableTranslation,
+  })
   const { titleHeightAtom } = use(EntryContentContext)
   const setTitleHeight = useSetAtom(titleHeightAtom)
-
   return (
     <View
       onLayout={(e) => {
@@ -26,7 +32,7 @@ export const EntryTitle = ({ title, entryId }: { title: string; entryId: string 
       }}
     >
       <EntryTranslation
-        className="text-label px-5 text-4xl font-bold leading-snug"
+        className="text-label text-title1 px-5 font-bold leading-snug"
         source={title}
         target={translation?.title}
         bilingual
@@ -34,7 +40,6 @@ export const EntryTitle = ({ title, entryId }: { title: string; entryId: string 
     </View>
   )
 }
-
 export const EntrySocialTitle = ({ entryId }: { entryId: string }) => {
   const entry = useEntry(entryId, (entry) => {
     return {
@@ -43,9 +48,7 @@ export const EntrySocialTitle = ({ entryId }: { entryId: string }) => {
       feedId: entry.feedId,
     }
   })
-
   const feed = useFeedById(entry?.feedId as string)
-
   return (
     <View className="flex-row items-center gap-3 px-4">
       {entry?.authorAvatar ? (

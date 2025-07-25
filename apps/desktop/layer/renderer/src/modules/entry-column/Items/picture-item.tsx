@@ -12,6 +12,7 @@ import { memo, use, useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { SwipeMedia } from "~/components/ui/media/SwipeMedia"
+import { useFeature } from "~/hooks/biz/useFeature"
 import { useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
 import { EntryContent } from "~/modules/entry-content/components/entry-content"
 import { useImageDimensions } from "~/store/image"
@@ -43,9 +44,7 @@ export function PictureItem({ entryId, entryPreview, translation }: UniversalIte
               isActive && "rounded-b-none",
             )}
             imgClassName="object-cover"
-            onPreview={(media, i) => {
-              previewMedia(media, i)
-            }}
+            onPreview={previewMedia}
           />
         ) : (
           <div className="center bg-material-medium text-text-secondary aspect-square w-full flex-col gap-1 rounded-md text-xs">
@@ -75,6 +74,7 @@ export const PictureWaterFallItem = memo(function PictureWaterFallItem({
     id: state.id,
   }))
 
+  const aiEnabled = useFeature("ai")
   const isActive = useRouteParamsSelector(({ entryId }) => entryId === entry?.id)
   const entryContent = useMemo(() => <EntryContent entryId={entryId} noMedia compact />, [entryId])
   const previewMedia = usePreviewMedia(entryContent)
@@ -103,7 +103,7 @@ export const PictureWaterFallItem = memo(function PictureWaterFallItem({
       <EntryItemWrapper
         view={FeedViewType.Pictures}
         entryId={entryId}
-        itemClassName="group rounded-md overflow-hidden hover:bg-transparent"
+        itemClassName="group rounded-md hover:bg-transparent"
         style={{
           width: itemWidth,
         }}
@@ -118,7 +118,7 @@ export const PictureWaterFallItem = memo(function PictureWaterFallItem({
               )}
               proxySize={proxySize}
               imgClassName="object-cover"
-              onPreview={previewMedia}
+              onPreview={aiEnabled ? undefined : previewMedia}
             />
 
             <div className="z-[3] shrink-0 overflow-hidden rounded-b-md pb-1">
@@ -149,25 +149,29 @@ const MasonryItemFixedDimensionWrapper = (
   const dim = useImageDimensions(url)
   const itemWidth = useMasonryItemWidth()
 
-  const itemHeight = dim ? itemWidth / dim.ratio : itemWidth
-  const stableRadio = useState(() => itemWidth / itemHeight || 1)[0]
+  const stableRadio = useMemo(() => {
+    return dim ? dim.ratio : 1
+  }, [dim])
   const setItemStableRatio = useSetStableMasonryItemRatio()
 
   const stableRadioCtx = useMasonryItemRatio(url)
 
   useEffect(() => {
-    setItemStableRatio(url, stableRadio)
-  }, [setItemStableRatio, stableRadio, url])
+    if (dim) {
+      setItemStableRatio(url, stableRadio)
+    }
+  }, [setItemStableRatio, stableRadio, url, dim])
 
+  const finalRatio = stableRadioCtx || stableRadio
   const style = useMemo(
     () => ({
       width: itemWidth,
-      height: itemWidth / stableRadioCtx! + 60,
+      height: itemWidth / finalRatio + 60,
     }),
-    [itemWidth, stableRadioCtx],
+    [itemWidth, finalRatio],
   )
 
-  if (!style.height) return null
+  if (!style.height || style.height === Infinity) return null
 
   return (
     <div className="relative flex h-full flex-col overflow-x-auto overflow-y-hidden" style={style}>

@@ -191,7 +191,7 @@ export const EntryList: FC<EntryListProps> = memo(
       <>
         <div
           onKeyDown={handleKeyDown}
-          className={"relative w-full select-none"}
+          className={"relative mt-3 w-full select-none"}
           style={{
             height: `${rowVirtualizer.getTotalSize()}px`,
           }}

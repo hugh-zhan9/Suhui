@@ -13,6 +13,7 @@ const iconPathMap = {
 const iconPath = iconPathMap[process.env.PROFILE || "production"] || iconPathMap.production
 
 const adaptiveIconPath = resolve(__dirname, "./assets/adaptive-icon.png")
+const splashIconPath = resolve(__dirname, "./assets/splash-icon.png")
 
 const isDev = process.env.NODE_ENV === "development"
 
@@ -26,9 +27,15 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       },
     },
     owner: "follow",
-    updates: {
-      url: "https://u.expo.dev/a6335b14-fb84-45aa-ba80-6f6ab8926920",
-    },
+    // disable expo updates for now, https://github.com/expo/expo/issues/29630
+    // updates: {
+    //   url: "https://folo-custom-expo-updates.vercel.app/api/manifest",
+    //   codeSigningCertificate: "./code-signing/certificate.pem",
+    //   codeSigningMetadata: {
+    //     keyid: "main",
+    //     alg: "rsa-v1_5-sha256",
+    //   },
+    // },
     runtimeVersion: isDev ? "0.0.0-dev" : PKG.version,
 
     name: "Folo",
@@ -86,12 +93,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       [
         "expo-splash-screen",
         {
-          backgroundColor: "#ffffff",
-          dark: {
-            backgroundColor: "#000000",
-          },
           android: {
-            image: iconPath,
+            image: splashIconPath,
             imageWidth: 200,
           },
         },

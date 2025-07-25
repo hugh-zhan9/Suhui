@@ -124,13 +124,14 @@ export const PictureMasonry: FC<MasonryProps> = (props) => {
       return ret
     }) as { entryId: string; cache?: object }[]
 
-    if (props.hasNextPage) {
-      for (let i = 0; i < 10; i++) {
-        result.push({
-          entryId: `placeholder${i}`,
-        })
-      }
-    }
+    // Disable placeholders in waterfall to prevent layout redraws on last page
+    // if (props.hasNextPage) {
+    //   for (let i = 0; i < 10; i++) {
+    //     result.push({
+    //       entryId: `placeholder${i}`,
+    //     })
+    //   }
+    // }
 
     return result
   }, [cacheMap, data, props.hasNextPage])
@@ -237,7 +238,7 @@ export const PictureMasonry: FC<MasonryProps> = (props) => {
   }, [])
 
   return (
-    <div ref={containerRef} className="mx-4 pt-2">
+    <div ref={containerRef} className="mx-4 pt-4">
       {isInitDim && deferIsInitLayout && (
         <MasonryItemWidthContext value={finalItemWidth}>
           {/* eslint-disable-next-line @eslint-react/no-context-provider */}
@@ -283,8 +284,13 @@ const MasonryRender: React.ComponentType<
   }>
 > = ({ data, index }) => {
   const firstScreenReady = use(FirstScreenReadyContext)
+  const enableTranslation = useGeneralSettingKey("translation")
   const actionLanguage = useActionLanguage()
-  const translation = useEntryTranslation(data.entryId, actionLanguage)
+  const translation = useEntryTranslation({
+    entryId: data.entryId,
+    language: actionLanguage,
+    setting: enableTranslation,
+  })
 
   if (data.entryId.startsWith("placeholder")) {
     return <LoadingSkeletonItem />

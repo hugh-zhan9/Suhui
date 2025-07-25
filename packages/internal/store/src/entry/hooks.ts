@@ -1,11 +1,12 @@
 import type { FeedViewType } from "@follow/constants"
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query"
-import { useCallback } from "react"
+import { useCallback, useMemo } from "react"
 
 import { useFeedUnreadIsDirty } from "../atoms/feed"
 import { FEED_COLLECTION_LIST } from "../constants/app"
 import { queryClient } from "../context"
 import { getSubscriptionByEntryId } from "../subscription/getter"
+import { useSyncUnreadWhenUnMatch } from "../unread/hooks"
 import { getEntry } from "./getter"
 import { entrySyncServices, useEntryStore } from "./store"
 import type { EntryModel, FetchEntriesProps, FetchEntriesPropsSettings } from "./types"
@@ -62,7 +63,7 @@ export const useEntriesQuery = (
   const isPop =
     "history" in globalThis && "isPop" in globalThis.history && !!globalThis.history.isPop
 
-  return useInfiniteQuery({
+  const query = useInfiniteQuery({
     queryKey: [
       "entries",
       feedId,
@@ -96,6 +97,27 @@ export const useEntriesQuery = (
       isPop ? Infinity : fetchUnread && feedUnreadDirty ? 0 : defaultStaleTime,
     enabled: !!props,
   })
+
+  const entriesIds = useMemo(() => {
+    if (!query.data || query.isLoading || query.isError) {
+      return []
+    }
+    return (
+      query.data?.pages
+        ?.map((page) => page.data?.map((entry) => entry.entries.id))
+        .flat()
+        .filter((id) => typeof id === "string") || []
+    )
+  }, [query.data, query.isLoading, query.isError])
+
+  useSyncUnreadWhenUnMatch(entriesIds)
+
+  return useMemo(() => {
+    return {
+      ...query,
+      entriesIds,
+    }
+  }, [entriesIds, query])
 }
 
 export const usePrefetchEntryDetail = (entryId: string) => {

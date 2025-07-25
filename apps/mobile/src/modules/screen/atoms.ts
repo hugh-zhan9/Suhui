@@ -20,7 +20,7 @@ import { useFeedById } from "@follow/store/feed/hooks"
 import { useInboxById } from "@follow/store/inbox/hooks"
 import { useListById } from "@follow/store/list/hooks"
 import { getSubscriptionByCategory } from "@follow/store/subscription/getter"
-import { useViewWithSubscription } from "@follow/store/subscription/hooks"
+import { useSubscriptionByFeedId, useViewWithSubscription } from "@follow/store/subscription/hooks"
 import { jotaiStore } from "@follow/utils"
 import { EventBus } from "@follow/utils/event-bus"
 import { debounce } from "es-toolkit"
@@ -178,24 +178,13 @@ function useRemoteEntries(props?: UseEntriesProps): UseEntriesReturn {
 
   const refetch = useCallback(async () => void query.refetch(), [query])
   const fetchNextPage = useCallback(async () => void query.fetchNextPage(), [query])
-  const entriesIds = useMemo(() => {
-    if (!query.data || query.isLoading || query.isError) {
-      return []
-    }
-    return (
-      query.data?.pages
-        ?.map((page) => page.data?.map((entry) => entry.entries.id))
-        .flat()
-        .filter((id) => typeof id === "string") || []
-    )
-  }, [query.data, query.isLoading, query.isError])
 
   if (!query.data || query.isLoading) {
     return fallbackReturn
   }
 
   return {
-    entriesIds,
+    entriesIds: query.entriesIds,
     hasNext: query.hasNextPage,
     hasUpdate: false,
     refetch,
@@ -332,7 +321,10 @@ export function useEntries(props?: UseEntriesProps): UseEntriesReturn {
   const remoteQuery = useRemoteEntries({ viewId, active })
   const localQuery = useLocalEntries({ viewId, active })
   const query = remoteQuery.isReady ? remoteQuery : localQuery
-  return query
+  return {
+    ...query,
+    isReady: remoteQuery.isReady,
+  }
 }
 
 export const useSelectedFeedTitle = () => {
@@ -342,6 +334,9 @@ export const useSelectedFeedTitle = () => {
     selectedFeed && selectedFeed.type === "view" ? selectedFeed.viewId : undefined,
   )
   const feed = useFeedById(selectedFeed && selectedFeed.type === "feed" ? selectedFeed.feedId : "")
+  const feedSubscription = useSubscriptionByFeedId(
+    selectedFeed && selectedFeed.type === "feed" ? selectedFeed.feedId : "",
+  )
   const list = useListById(selectedFeed && selectedFeed.type === "list" ? selectedFeed.listId : "")
   const inbox = useInboxById(
     selectedFeed && selectedFeed.type === "inbox" ? selectedFeed.inboxId : "",
@@ -357,7 +352,9 @@ export const useSelectedFeedTitle = () => {
       return viewDef?.name ? t(viewDef.name) : ""
     }
     case "feed": {
-      return selectedFeed.feedId === FEED_COLLECTION_LIST ? t("words.starred") : (feed?.title ?? "")
+      return selectedFeed.feedId === FEED_COLLECTION_LIST
+        ? t("words.starred")
+        : feedSubscription?.title || feed?.title || ""
     }
     case "category": {
       return selectedFeed.categoryName

@@ -1,10 +1,11 @@
-import { FeedViewType, views } from "@follow/constants"
+import { views } from "@follow/constants"
 import { useEntry } from "@follow/store/entry/hooks"
 import { cn } from "@follow/utils/utils"
 import { AnimatePresence, m } from "motion/react"
 import { memo } from "react"
 
 import { useUISettingKey } from "~/atoms/settings/ui"
+import { useFeature } from "~/hooks/biz/useFeature"
 
 import { EntryHeaderActions } from "../../actions/header-actions"
 import { MoreActions } from "../../actions/more-actions"
@@ -21,13 +22,16 @@ function EntryHeaderImpl({ view, entryId, className, compact }: EntryHeaderProps
 
   const shouldShowMeta = !isAtTop && !!entryTitleMeta?.title
 
+  const aiEnabled = useFeature("ai")
+  const isWide = views[view]?.wideMode || aiEnabled
+
   if (!entry) return null
 
   return (
     <div
       data-hide-in-print
       className={cn(
-        "zen-mode-macos:ml-margin-macos-traffic-light-x relative flex min-w-0 items-center justify-between gap-3 overflow-hidden text-lg text-zinc-500 duration-200",
+        "zen-mode-macos:ml-margin-macos-traffic-light-x text-text-secondary relative flex min-w-0 items-center justify-between gap-3 overflow-hidden text-lg duration-200",
         shouldShowMeta && "border-border border-b",
         className,
       )}
@@ -35,7 +39,7 @@ function EntryHeaderImpl({ view, entryId, className, compact }: EntryHeaderProps
       {!hideRecentReader && (
         <div
           className={cn(
-            "zen-mode-macos:left-12 text-body absolute left-5 top-0 flex h-full items-center gap-2 leading-none text-zinc-500",
+            "zen-mode-macos:left-12 text-body absolute left-5 top-0 flex h-full items-center gap-2 leading-none",
             "visible z-[11]",
             views[view]!.wideMode && "static",
             shouldShowMeta && "hidden",
@@ -69,7 +73,7 @@ function EntryHeaderImpl({ view, entryId, className, compact }: EntryHeaderProps
           </AnimatePresence>
         </div>
 
-        {view !== FeedViewType.SocialMedia && (
+        {!isWide && (
           <div className="relative flex shrink-0 items-center justify-end gap-2">
             <EntryHeaderActions entryId={entryId} view={view} compact={compact} />
             <MoreActions entryId={entryId} view={view} />

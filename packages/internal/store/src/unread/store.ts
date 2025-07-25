@@ -2,6 +2,7 @@ import type { FeedViewType } from "@follow/constants"
 import type { UnreadSchema } from "@follow/database/schemas/types"
 import { EntryService } from "@follow/database/services/entry"
 import { UnreadService } from "@follow/database/services/unread"
+import { isEqual } from "es-toolkit"
 
 import { setFeedUnreadDirty } from "../atoms/feed"
 import { apiClient } from "../context"
@@ -33,6 +34,10 @@ class UnreadSyncService {
     const res = await apiClient().reads.$get({
       query: {},
     })
+
+    if (isEqual(res.data, get().data)) {
+      return res.data
+    }
 
     await unreadActions.upsertMany(res.data, { reset: true })
     return res.data

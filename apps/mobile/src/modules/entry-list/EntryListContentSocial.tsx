@@ -1,7 +1,7 @@
 import { usePrefetchEntryTranslation } from "@follow/store/translation/hooks"
-import type { ListRenderItemInfo } from "@shopify/flash-list"
+import type { FlashList, ListRenderItemInfo } from "@shopify/flash-list"
 import type { ElementRef } from "react"
-import { useCallback, useImperativeHandle, useMemo } from "react"
+import { useCallback, useImperativeHandle, useMemo, useRef } from "react"
 import { View } from "react-native"
 
 import { useActionLanguage, useGeneralSettingKey } from "@/src/atoms/settings/general"
@@ -10,7 +10,7 @@ import { checkLanguage } from "@/src/lib/translation"
 import { useEntries } from "../screen/atoms"
 import { TimelineSelectorList } from "../screen/TimelineSelectorList"
 import { EntryListFooter } from "./EntryListFooter"
-import { useOnViewableItemsChanged, usePagerListPerformanceHack } from "./hooks"
+import { useOnViewableItemsChanged } from "./hooks"
 import { ItemSeparatorFullWidth } from "./ItemSeparator"
 import { EntrySocialItem } from "./templates/EntrySocialItem"
 import type { EntryExtraData } from "./types"
@@ -22,10 +22,10 @@ export const EntryListContentSocial = ({
 }: { entryIds: string[] | null; active?: boolean } & {
   ref?: React.Ref<ElementRef<typeof TimelineSelectorList> | null>
 }) => {
-  const { fetchNextPage, isFetching, refetch, isRefetching, hasNextPage } = useEntries()
-  const extraData: EntryExtraData = useMemo(() => ({ playingAudioUrl: null, entryIds }), [entryIds])
+  const { fetchNextPage, isFetching, refetch, isRefetching, hasNextPage, isReady } = useEntries()
+  const extraData: EntryExtraData = useMemo(() => ({ entryIds }), [entryIds])
 
-  const { onScroll: hackOnScroll, ref, style: hackStyle } = usePagerListPerformanceHack()
+  const ref = useRef<FlashList<any>>(null)
   useImperativeHandle(forwardRef, () => ref.current!)
   // eslint-disable-next-line @eslint-react/hooks-extra/no-unnecessary-use-callback
   const renderItem = useCallback(
@@ -42,7 +42,6 @@ export const EntryListContentSocial = ({
 
   const { onViewableItemsChanged, onScroll, viewableItems } = useOnViewableItemsChanged({
     disabled: active === false || isFetching,
-    onScroll: hackOnScroll,
   })
 
   const translation = useGeneralSettingKey("translation")
@@ -50,9 +49,24 @@ export const EntryListContentSocial = ({
   usePrefetchEntryTranslation({
     entryIds: active ? viewableItems.map((item) => item.key) : [],
     language: actionLanguage,
-    translation,
+    setting: translation,
     checkLanguage,
   })
+
+  // Show loading skeleton when entries are not ready and no data yet
+  if (!isReady && (!entryIds || entryIds.length === 0)) {
+    return (
+      <TimelineSelectorList
+        onRefresh={() => {}}
+        isRefetching={false}
+        data={Array.from({ length: 5 }).map((_, index) => `skeleton-${index}`)}
+        keyExtractor={(id) => id}
+        estimatedItemSize={5}
+        renderItem={EntryItemSkeleton}
+        ItemSeparatorComponent={ItemSeparatorFullWidth}
+      />
+    )
+  }
 
   return (
     <TimelineSelectorList
@@ -71,7 +85,6 @@ export const EntryListContentSocial = ({
       onScroll={onScroll}
       ItemSeparatorComponent={ItemSeparatorFullWidth}
       ListFooterComponent={ListFooterComponent}
-      style={hackStyle}
     />
   )
 }

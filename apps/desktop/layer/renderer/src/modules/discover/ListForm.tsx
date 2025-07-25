@@ -44,6 +44,7 @@ const formSchema = z.object({
   view: z.string(),
   category: z.string().nullable().optional(),
   isPrivate: z.boolean().optional(),
+  hideFromTimeline: z.boolean().optional(),
   title: z.string().optional(),
 })
 
@@ -90,6 +91,7 @@ export const ListForm: Component<{
             subscriptionData: feedQuery.data?.subscription,
             analytics: feedQuery.data?.analytics,
             list,
+            isLoading: feedQuery.isLoading,
           }}
         />
       ) : feedQuery.isLoading ? (
@@ -163,6 +165,7 @@ const ListInnerForm = ({
   subscriptionData,
   list,
   analytics,
+  isLoading,
 }: {
   defaultValues?: z.infer<typeof formSchema>
   id?: string
@@ -173,9 +176,11 @@ const ListInnerForm = ({
     category?: string | null
     isPrivate?: boolean
     title?: string | null
+    hideFromTimeline?: boolean | null
   }
   list: ListModel
   analytics?: ListAnalyticsModel
+  isLoading: boolean
 }) => {
   const subscription = useSubscriptionByFeedId(id || "") || subscriptionData
   const isSubscribed = !!subscription
@@ -198,8 +203,11 @@ const ListInnerForm = ({
   useEffect(() => {
     if (subscription) {
       form.setValue("view", `${subscription?.view}`)
-      form.setValue("isPrivate", subscription?.isPrivate || false)
-      form.setValue("title", subscription?.title || "")
+      typeof subscription.isPrivate === "boolean" &&
+        form.setValue("isPrivate", subscription.isPrivate)
+      subscription?.title && form.setValue("title", subscription.title)
+      typeof subscription.hideFromTimeline === "boolean" &&
+        form.setValue("hideFromTimeline", subscription.hideFromTimeline)
     }
   }, [subscription])
 
@@ -210,6 +218,7 @@ const ListInnerForm = ({
         view: Number.parseInt(values.view),
         category: values.category,
         isPrivate: values.isPrivate,
+        hideFromTimeline: values.hideFromTimeline,
         title: values.title,
         TOTPCode: values.TOTPCode,
       }
@@ -266,6 +275,7 @@ const ListInnerForm = ({
   return (
     <div className="flex flex-1 flex-col gap-y-4">
       <FeedSummary
+        isLoading={isLoading}
         feed={{
           ...list,
           fee: list.fee || 0,
@@ -318,6 +328,29 @@ const ListInnerForm = ({
                   <div>
                     <FormLabel>{t("feed_form.private_follow")}</FormLabel>
                     <FormDescription>{t("feed_form.private_follow_description")}</FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      className="shrink-0"
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </div>
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="hideFromTimeline"
+            render={({ field }) => (
+              <FormItem>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <FormLabel>{t("feed_form.hide_from_timeline")}</FormLabel>
+                    <FormDescription>
+                      {t("feed_form.hide_from_timeline_description")}
+                    </FormDescription>
                   </div>
                   <FormControl>
                     <Switch
