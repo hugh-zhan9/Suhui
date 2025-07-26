@@ -29,7 +29,7 @@ jobs:
           if [ -n "$available" ]; then
             echo "runner-label=self-hosted" >> $GITHUB_OUTPUT
           else
-            echo "runner-label=macos-16" >> $GITHUB_OUTPUT
+            echo "runner-label=macos-latest" >> $GITHUB_OUTPUT
           fi
 
   build-ipa-device-self-hosted:
@@ -71,9 +71,9 @@ jobs:
 
   build-ipa-device-github:
     name: Build iOS IPA for device (GitHub-hosted)
-    if: github.secret_source != 'None' && needs.check-runner.outputs.runner-label == 'macos-16'
+    if: github.secret_source != 'None' && needs.check-runner.outputs.runner-label == 'macos-latest'
     needs: check-runner
-    runs-on: macos-16
+    runs-on: macos-latest
 
     steps:
       - name: 📦 Checkout code
@@ -117,7 +117,7 @@ jobs:
   build-simulator:
     name: Build iOS IPA for simulator
     if: github.secret_source != 'None'
-    runs-on: macos-16
+    runs-on: macos-latest
 
     steps:
       - name: 📦 Checkout code
