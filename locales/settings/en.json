@@ -448,6 +448,8 @@
   "integration.status.enabled": "Enabled",
   "integration.tip": "Tip: Your sensitive data is stored locally and is not uploaded to the server.",
   "integration.title": "Integration",
+  "integration.use_browser_fetch.description": "Use browser fetch API for custom integrations instead of Electron's native fetch. Enable for better web compatibility, disable for enhanced security.",
+  "integration.use_browser_fetch.label": "Use Browser Fetch",
   "integration.zotero.enable.description": "Show 'Save to Zotero' button if avilable.",
   "integration.zotero.enable.label": "Enable",
   "integration.zotero.title": "Zotero",

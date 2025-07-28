@@ -143,6 +143,9 @@ export interface IntegrationSettings {
   // custom actions
   enableCustomIntegration: boolean
   customIntegration: CustomIntegration[]
+
+  // fetch preferences (Electron only)
+  useBrowserFetch: boolean
 }
 
 export interface FetchTemplate {

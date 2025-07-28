@@ -2,13 +2,13 @@ import type { CustomIntegration, FetchTemplate } from "@follow/shared/settings/i
 import type { EntryModel } from "@follow/store/entry/types"
 import { getSummary } from "@follow/store/summary/getters"
 import { tracker } from "@follow/tracker"
-import type { FetchError } from "ofetch"
-import { ofetch } from "ofetch"
 import { toast } from "sonner"
 
 import { getActionLanguage } from "~/atoms/settings/general"
 import { getIntegrationSettings } from "~/atoms/settings/integration"
 import { parseHtml } from "~/lib/parse-html"
+
+import { getFetchAdapter } from "./fetch-adapter"
 
 /**
  * Placeholder values that can be used in custom integration templates
@@ -214,31 +214,33 @@ export class CustomIntegrationManager {
         context,
       )
 
-      // Prepare request options
-      const requestOptions: Parameters<typeof ofetch>[1] = {
-        method: method as any,
-        headers,
+      // Prepare request options for fetch adapter
+      const finalHeaders = { ...headers }
+
+      // Set content-type if not already set and we have a body
+      if (
+        body &&
+        ["POST", "PUT", "PATCH"].includes(method) &&
+        !Object.keys(headers).some((key) => key.toLowerCase() === "content-type")
+      ) {
+        finalHeaders["Content-Type"] = "application/json"
       }
 
-      // Add body for methods that support it
-      if (body && ["POST", "PUT", "PATCH"].includes(method)) {
-        requestOptions.body = body
+      // Execute the HTTP request using fetch adapter
+      const response = await getFetchAdapter().fetch(url, {
+        method: method as "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
+        headers: finalHeaders,
+        body: body && ["POST", "PUT", "PATCH"].includes(method) ? body : undefined,
+      })
 
-        // Set content-type if not already set
-        if (!Object.keys(headers).some((key) => key.toLowerCase() === "content-type")) {
-          requestOptions.headers = {
-            ...headers,
-            "Content-Type": "application/json",
-          }
-        }
+      // Check if request was successful
+      if (!response.ok) {
+        throw new Error(`Request failed with status ${response.status}: ${response.statusText}`)
       }
-
-      // Execute the HTTP request
-      await ofetch(url, requestOptions)
 
       return { success: true }
     } catch (error) {
-      const errorMessage = (error as FetchError)?.message || "Unknown error"
+      const errorMessage = (error as Error)?.message || "Unknown error"
       return { success: false, error: errorMessage }
     }
   }

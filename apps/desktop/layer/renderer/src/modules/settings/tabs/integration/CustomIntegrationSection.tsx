@@ -203,7 +203,7 @@ const CustomIntegrationsSection = ({
 
       {integrations.length === 0 ? (
         <div className="border-fill-secondary flex flex-col items-center justify-center rounded-lg border-2 border-dashed py-12">
-          <i className="i-mgc-magic-2-cute-re text-text-tertiary mb-3 text-2xl" />
+          <i className="i-mgc-webhook-cute-re text-text-tertiary mb-3 text-2xl" />
           <p className="text-text-tertiary mb-2 text-sm font-medium">
             {t("integration.custom_integrations.list.empty.title")}
           </p>
