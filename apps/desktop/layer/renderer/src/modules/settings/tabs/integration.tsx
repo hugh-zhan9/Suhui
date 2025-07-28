@@ -1,3 +1,4 @@
+import { Button } from "@follow/components/ui/button/index.js"
 import { Collapse, CollapseGroup } from "@follow/components/ui/collapse/index.js"
 import { Divider } from "@follow/components/ui/divider/index.js"
 import { InputV2 } from "@follow/components/ui/input/index.js"
@@ -13,8 +14,14 @@ import {
 } from "@follow/components/ui/platform-icon/icons.js"
 import { useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { toast } from "sonner"
 
-import { setIntegrationSetting, useIntegrationSettingValue } from "~/atoms/settings/integration"
+import {
+  getIntegrationSettings,
+  setIntegrationSetting,
+  useIntegrationSettingValue,
+} from "~/atoms/settings/integration"
+import { downloadJsonFile, selectJsonFile } from "~/lib/export"
 
 import { createSetting } from "../helper/builder"
 import { useSetSettingCanSync } from "../modal/hooks"
@@ -380,7 +387,7 @@ export const SettingIntegration = () => {
                     {category.icon}
                   </span>
                   <span className="font-medium">{category.title as string}</span>
-                  <span className="text-text-tertiary ml-auto mr-2 flex items-center gap-1 text-xs">
+                  <span className="text-text-tertiary ml-auto mr-2 flex items-center gap-1 text-xs tabular-nums">
                     <span className="bg-green size-1.5 rounded-full" />
                     {category.integrations.filter((i) => i.configured).length}/
                     {category.integrations.length}
@@ -431,12 +438,89 @@ export const SettingIntegration = () => {
 
 const BottomTip = () => {
   const { t } = useTranslation("settings")
+
+  const handleExport = () => {
+    try {
+      const settings = getIntegrationSettings()
+      const jsonData = JSON.stringify(settings, null, 2)
+      const filename = `follow-integration-settings-${new Date().toISOString().split("T")[0]}.json`
+      downloadJsonFile(jsonData, filename)
+      toast.success(t("integration.export.success"))
+    } catch (error) {
+      console.error("Failed to export integration settings:", error)
+      toast.error(t("integration.export.error"))
+    }
+  }
+
+  const handleImport = async () => {
+    try {
+      const jsonData = await selectJsonFile()
+      const settings = JSON.parse(jsonData)
+
+      // Validate the imported settings structure
+      if (typeof settings !== "object" || settings === null) {
+        throw new Error("Invalid settings format")
+      }
+
+      // Get current settings to use as a base for validation
+      const currentSettings = getIntegrationSettings()
+
+      // Only apply settings that exist in the current schema
+      let importCount = 0
+      Object.entries(settings).forEach(([key, value]) => {
+        if (key in currentSettings) {
+          setIntegrationSetting(key as any, value)
+          importCount++
+        }
+      })
+
+      if (importCount === 0) {
+        throw new Error("No valid settings found in the imported file")
+      }
+
+      toast.success(t("integration.import.success"))
+    } catch (error) {
+      if (error instanceof Error && error.message === "No file selected") {
+        // User cancelled file selection, don't show error
+        return
+      }
+      console.error("Failed to import integration settings:", error)
+      if (error instanceof SyntaxError) {
+        toast.error(t("integration.import.invalid"))
+      } else {
+        toast.error(t("integration.import.error"))
+      }
+    }
+  }
+
   return (
-    <div className="mt-6">
+    <div className="mt-6 space-y-4">
       <Divider />
-      <p className="text-text-tertiary">
-        <small>{t("integration.tip")}</small>
-      </p>
+      <div className="flex flex-col gap-3">
+        <p className="text-text-tertiary">
+          <small>{t("integration.tip")}</small>
+        </p>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExport}
+            buttonClassName="flex items-center gap-2"
+          >
+            <i className="i-mgc-download-2-cute-re mr-2 size-4" />
+            {t("integration.export.button")}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleImport}
+            buttonClassName="flex items-center gap-2"
+          >
+            <i className="i-mgc-file-upload-cute-re mr-2 size-4" />
+            {t("integration.import.button")}
+          </Button>
+        </div>
+      </div>
     </div>
   )
 }
