@@ -144,6 +144,10 @@ export const defaultIntegrationSettings: IntegrationSettings = {
   qbittorrentPassword: "",
 
   saveSummaryAsDescription: false,
+
+  // custom actions
+  enableCustomIntegration: false,
+  customIntegration: [],
 }
 
 export const defaultAISettings: AISettings = {

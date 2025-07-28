@@ -12,7 +12,7 @@ import {
   SimpleIconsReadwise,
   SimpleIconsZotero,
 } from "@follow/components/ui/platform-icon/icons.js"
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
@@ -23,8 +23,10 @@ import {
 } from "~/atoms/settings/integration"
 import { downloadJsonFile, selectJsonFile } from "~/lib/export"
 
-import { createSetting } from "../helper/builder"
-import { useSetSettingCanSync } from "../modal/hooks"
+import { createSetting } from "../../helper/builder"
+import { useSetSettingCanSync } from "../../modal/hooks"
+import { SettingSectionTitle } from "../../section"
+import { CustomIntegrationSection } from "./CustomIntegrationSection"
 
 const { defineSettingItem, SettingBuilder } = createSetting(
   useIntegrationSettingValue,
@@ -345,30 +347,32 @@ export const SettingIntegration = () => {
       .filter((category) => category.integrations.length > 0)
   }, [integrationCategories, searchQuery])
 
-  const shouldDefaultOpen = (category: any) => {
-    return category.integrations.some((integration: any) => integration.configured)
-  }
+  const shouldDefaultOpen = useCallback((category: (typeof integrationCategories)[0]) => {
+    return category.integrations.some((integration) => integration.configured)
+  }, [])
 
   return (
-    <div className="mt-4 space-y-6">
-      <div className="space-y-6">
-        <div className="max-w-md">
-          <InputV2
-            icon={<i className="i-mingcute-search-line" />}
-            canClear
-            placeholder={t("integration.search.placeholder")}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-9"
-          />
-        </div>
+    <div className="mt-4 space-y-8">
+      {/* Search Bar */}
+      <div className="max-w-md">
+        <InputV2
+          icon={<i className="i-mgc-search-cute-re" />}
+          canClear
+          placeholder={t("integration.search.placeholder")}
+          value={searchQuery}
+          onChange={useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+            setSearchQuery(e.target.value)
+          }, [])}
+          className="h-9"
+          aria-label="Search integrations"
+        />
+      </div>
 
+      {/* General Section */}
+      <div>
+        <SettingSectionTitle title={t("integration.general")} />
         <SettingBuilder
           settings={[
-            {
-              type: "title",
-              value: t("integration.general"),
-            },
             defineSettingItem("saveSummaryAsDescription", {
               label: t("integration.save_ai_summary_as_description.label"),
             }),
@@ -377,60 +381,82 @@ export const SettingIntegration = () => {
       </div>
 
       <Divider />
-      <>
-        {filteredCategories.map((category) => (
-          <CollapseGroup key={category.id}>
-            <Collapse
-              title={
-                <div className="flex items-center gap-3">
-                  <span className="text-text-secondary inline-flex items-center justify-center">
-                    {category.icon}
-                  </span>
-                  <span className="font-medium">{category.title as string}</span>
-                  <span className="text-text-tertiary ml-auto mr-2 flex items-center gap-1 text-xs tabular-nums">
-                    <span className="bg-green size-1.5 rounded-full" />
-                    {category.integrations.filter((i) => i.configured).length}/
-                    {category.integrations.length}
-                  </span>
-                </div>
-              }
-              defaultOpen={shouldDefaultOpen(category)}
-              className="border-border bg-background rounded-lg border px-4 py-2 shadow-sm"
-              contentClassName="px-4 pb-4 pt-8"
-            >
-              <div className="space-y-6">
-                {category.integrations.map((integration) => (
-                  <div key={integration.key} className="space-y-4">
-                    <div className="border-fill-secondary flex items-center gap-3 border-b pb-3">
-                      <span className="text-text-secondary inline-flex items-center justify-center">
-                        {integration.icon}
-                      </span>
-                      <h4 className="text-text font-medium">{integration.title}</h4>
-                      <div className="ml-auto flex items-center gap-2">
-                        {integration.configured && (
-                          <span className="bg-green/10 text-green inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs">
-                            <i className="i-mingcute-check-line" />
-                            {t("integration.status.configured")}
-                          </span>
-                        )}
-                        {integration.enabled && (
-                          <span className="bg-blue/10 text-blue inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs">
-                            <i className="i-mingcute-power-line" />
-                            {t("integration.status.enabled")}
-                          </span>
-                        )}
+
+      {/* Built-in Integration Section */}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <SettingSectionTitle title={t("integration.builtin.title")} />
+          <span className="text-text-tertiary flex items-center gap-1 text-sm tabular-nums">
+            <span className="bg-green size-2 rounded-full" />
+            {filteredCategories.reduce(
+              (acc, cat) => acc + cat.integrations.filter((i) => i.configured).length,
+              0,
+            )}
+            /{filteredCategories.reduce((acc, cat) => acc + cat.integrations.length, 0)} configured
+          </span>
+        </div>
+
+        <div className="space-y-4">
+          {filteredCategories.map((category) => (
+            <CollapseGroup key={category.id}>
+              <Collapse
+                title={
+                  <div className="flex items-center gap-3">
+                    <span className="text-text-secondary inline-flex items-center justify-center">
+                      {category.icon}
+                    </span>
+                    <span className="font-medium">{category.title as string}</span>
+                    <span className="text-text-tertiary ml-auto mr-2 flex items-center gap-1 text-xs tabular-nums">
+                      <span className="bg-green size-1.5 rounded-full" />
+                      {category.integrations.filter((i) => i.configured).length}/
+                      {category.integrations.length}
+                    </span>
+                  </div>
+                }
+                defaultOpen={shouldDefaultOpen(category)}
+                className="border-border bg-background rounded-lg border px-4 py-2 shadow-sm"
+                contentClassName="px-4 pb-4 pt-8"
+              >
+                <div className="space-y-6">
+                  {category.integrations.map((integration) => (
+                    <div key={integration.key} className="space-y-4">
+                      <div className="border-fill-secondary flex items-center gap-3 border-b pb-3">
+                        <span className="text-text-secondary inline-flex items-center justify-center">
+                          {integration.icon}
+                        </span>
+                        <h4 className="text-text font-medium">{integration.title as string}</h4>
+                        <div className="ml-auto flex items-center gap-2">
+                          {integration.configured && (
+                            <span className="bg-green/10 text-green inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs">
+                              <i className="i-mingcute-check-line" />
+                              {t("integration.status.configured")}
+                            </span>
+                          )}
+                          {integration.enabled && (
+                            <span className="bg-blue/10 text-blue inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs">
+                              <i className="i-mingcute-power-line" />
+                              {t("integration.status.enabled")}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="pl-7">
+                        <SettingBuilder settings={integration.settings} />
                       </div>
                     </div>
-                    <div className="pl-7">
-                      <SettingBuilder settings={integration.settings} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Collapse>
-          </CollapseGroup>
-        ))}
-      </>
+                  ))}
+                </div>
+              </Collapse>
+            </CollapseGroup>
+          ))}
+        </div>
+      </div>
+
+      <Divider />
+
+      {/* Custom Integration Section */}
+      <CustomIntegrationSection searchQuery={searchQuery} />
+
       <BottomTip />
     </div>
   )
@@ -439,7 +465,7 @@ export const SettingIntegration = () => {
 const BottomTip = () => {
   const { t } = useTranslation("settings")
 
-  const handleExport = () => {
+  const handleExport = useCallback(() => {
     try {
       const settings = getIntegrationSettings()
       const jsonData = JSON.stringify(settings, null, 2)
@@ -450,9 +476,9 @@ const BottomTip = () => {
       console.error("Failed to export integration settings:", error)
       toast.error(t("integration.export.error"))
     }
-  }
+  }, [t])
 
-  const handleImport = async () => {
+  const handleImport = useCallback(async () => {
     try {
       const jsonData = await selectJsonFile()
       const settings = JSON.parse(jsonData)
@@ -491,7 +517,7 @@ const BottomTip = () => {
         toast.error(t("integration.import.error"))
       }
     }
-  }
+  }, [t])
 
   return (
     <div className="mt-6 space-y-4">
