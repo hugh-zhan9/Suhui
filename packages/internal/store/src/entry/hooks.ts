@@ -172,7 +172,7 @@ export const useEntryIdsByView = (view: FeedViewType, excludePrivate: boolean | 
         return Array.from(ids)
           .filter((id) => {
             const subscription = getSubscriptionByEntryId(id)
-            if (excludePrivate && subscription?.isPrivate) {
+            if ((excludePrivate && subscription?.isPrivate) || subscription?.hideFromTimeline) {
               return false
             }
             return true
