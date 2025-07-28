@@ -1,4 +1,6 @@
+import { Collapse, CollapseGroup } from "@follow/components/ui/collapse/index.js"
 import { Divider } from "@follow/components/ui/divider/index.js"
+import { InputV2 } from "@follow/components/ui/input/index.js"
 import {
   SimpleIconsCubox,
   SimpleIconsEagle,
@@ -9,7 +11,7 @@ import {
   SimpleIconsReadwise,
   SimpleIconsZotero,
 } from "@follow/components/ui/platform-icon/icons.js"
-import { useEffect } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { setIntegrationSetting, useIntegrationSettingValue } from "~/atoms/settings/integration"
@@ -24,287 +26,405 @@ const { defineSettingItem, SettingBuilder } = createSetting(
 export const SettingIntegration = () => {
   const { t } = useTranslation("settings")
   const setSync = useSetSettingCanSync()
+  const [searchQuery, setSearchQuery] = useState("")
+  const settings = useIntegrationSettingValue()
+
   useEffect(() => {
     setSync(false)
     return () => {
       setSync(true)
     }
   }, [setSync])
+
+  const integrationCategories = useMemo(() => {
+    const knowledgeManagement = {
+      id: "knowledge",
+      title: t("integration.categories.knowledge_management"),
+      icon: <i className="i-mingcute-document-line" />,
+      integrations: [
+        {
+          key: "cubox",
+          title: t("integration.cubox.title"),
+          icon: <SimpleIconsCubox />,
+          enabled: settings.enableCubox,
+          configured: Boolean(settings.cuboxToken),
+          settings: [
+            defineSettingItem("enableCubox", {
+              label: t("integration.cubox.enable.label"),
+              description: t("integration.cubox.enable.description"),
+            }),
+            defineSettingItem("cuboxToken", {
+              label: t("integration.cubox.token.label"),
+              vertical: true,
+              type: "password",
+              description: (
+                <>
+                  {t("integration.cubox.token.description")}{" "}
+                  <a
+                    target="_blank"
+                    className="underline"
+                    rel="noreferrer noopener"
+                    href="https://cubox.pro/my/settings/extensions"
+                  >
+                    https://cubox.pro/my/settings/extensions
+                  </a>
+                </>
+              ),
+            }),
+            defineSettingItem("enableCuboxAutoMemo", {
+              label: t("integration.cubox.autoMemo.label"),
+              description: t("integration.cubox.autoMemo.description"),
+            }),
+          ],
+        },
+        {
+          key: "obsidian",
+          title: t("integration.obsidian.title"),
+          icon: <SimpleIconsObsidian />,
+          enabled: settings.enableObsidian,
+          configured: Boolean(settings.obsidianVaultPath),
+          settings: [
+            defineSettingItem("enableObsidian", {
+              label: t("integration.obsidian.enable.label"),
+              description: t("integration.obsidian.enable.description"),
+            }),
+            defineSettingItem("obsidianVaultPath", {
+              label: t("integration.obsidian.vaultPath.label"),
+              vertical: true,
+              description: t("integration.obsidian.vaultPath.description"),
+            }),
+          ],
+        },
+        {
+          key: "outline",
+          title: t("integration.outline.title"),
+          icon: <SimpleIconsOutline />,
+          enabled: settings.enableOutline,
+          configured: Boolean(settings.outlineEndpoint && settings.outlineToken),
+          settings: [
+            defineSettingItem("enableOutline", {
+              label: t("integration.outline.enable.label"),
+              description: t("integration.outline.enable.description"),
+            }),
+            defineSettingItem("outlineEndpoint", {
+              label: t("integration.outline.endpoint.label"),
+              vertical: true,
+              description: t("integration.outline.endpoint.description"),
+            }),
+            defineSettingItem("outlineToken", {
+              label: t("integration.outline.token.label"),
+              vertical: true,
+              type: "password",
+              description: t("integration.outline.token.description"),
+            }),
+            defineSettingItem("outlineCollection", {
+              label: t("integration.outline.collection.label"),
+              vertical: true,
+              description: t("integration.outline.collection.description"),
+            }),
+          ],
+        },
+        {
+          key: "readwise",
+          title: t("integration.readwise.title"),
+          icon: <SimpleIconsReadwise />,
+          enabled: settings.enableReadwise,
+          configured: Boolean(settings.readwiseToken),
+          settings: [
+            defineSettingItem("enableReadwise", {
+              label: t("integration.readwise.enable.label"),
+              description: t("integration.readwise.enable.description"),
+            }),
+            defineSettingItem("readwiseToken", {
+              label: t("integration.readwise.token.label"),
+              vertical: true,
+              type: "password",
+              description: (
+                <>
+                  {t("integration.readwise.token.description")}{" "}
+                  <a
+                    target="_blank"
+                    className="underline"
+                    rel="noreferrer noopener"
+                    href="https://readwise.io/access_token"
+                  >
+                    readwise.io/access_token
+                  </a>
+                  .
+                </>
+              ),
+            }),
+          ],
+        },
+        {
+          key: "zotero",
+          title: t("integration.zotero.title"),
+          icon: <SimpleIconsZotero />,
+          enabled: settings.enableZotero,
+          configured: Boolean(settings.zoteroUserID && settings.zoteroToken),
+          settings: [
+            defineSettingItem("enableZotero", {
+              label: t("integration.zotero.enable.label"),
+              description: t("integration.zotero.enable.description"),
+            }),
+            defineSettingItem("zoteroUserID", {
+              label: t("integration.zotero.userID.label"),
+              description: (
+                <>
+                  {t("integration.zotero.userID.description")}{" "}
+                  <a
+                    target="_blank"
+                    className="underline"
+                    rel="noreferrer noopener"
+                    href="https://www.zotero.org/settings/keys"
+                  >
+                    https://www.zotero.org/settings/keys
+                  </a>
+                </>
+              ),
+              vertical: true,
+              type: "password",
+            }),
+            defineSettingItem("zoteroToken", {
+              label: t("integration.zotero.token.label"),
+              description: (
+                <>
+                  {t("integration.zotero.token.description")}{" "}
+                  <a
+                    target="_blank"
+                    className="underline"
+                    rel="noreferrer noopener"
+                    href="https://www.zotero.org/settings/keys/new"
+                  >
+                    https://www.zotero.org/settings/keys/new
+                  </a>
+                </>
+              ),
+              vertical: true,
+              type: "password",
+            }),
+          ],
+        },
+      ],
+    }
+
+    const readingServices = {
+      id: "reading",
+      title: t("integration.categories.reading_services"),
+      icon: <i className="i-mingcute-book-line" />,
+      integrations: [
+        {
+          key: "instapaper",
+          title: t("integration.instapaper.title"),
+          icon: <SimpleIconsInstapaper />,
+          enabled: settings.enableInstapaper,
+          configured: Boolean(settings.instapaperUsername && settings.instapaperPassword),
+          settings: [
+            defineSettingItem("enableInstapaper", {
+              label: t("integration.instapaper.enable.label"),
+              description: t("integration.instapaper.enable.description"),
+            }),
+            defineSettingItem("instapaperUsername", {
+              label: t("integration.instapaper.username.label"),
+              vertical: true,
+            }),
+            defineSettingItem("instapaperPassword", {
+              label: t("integration.instapaper.password.label"),
+              vertical: true,
+              type: "password",
+            }),
+          ],
+        },
+        {
+          key: "readeck",
+          title: t("integration.readeck.title"),
+          icon: <SimpleIconsReadeck />,
+          enabled: settings.enableReadeck,
+          configured: Boolean(settings.readeckEndpoint && settings.readeckToken),
+          settings: [
+            defineSettingItem("enableReadeck", {
+              label: t("integration.readeck.enable.label"),
+              description: t("integration.readeck.enable.description"),
+            }),
+            defineSettingItem("readeckEndpoint", {
+              label: t("integration.readeck.endpoint.label"),
+              vertical: true,
+              description: t("integration.readeck.endpoint.description"),
+            }),
+            defineSettingItem("readeckToken", {
+              label: t("integration.readeck.token.label"),
+              vertical: true,
+              type: "password",
+              description: t("integration.readeck.token.description"),
+            }),
+          ],
+        },
+      ],
+    }
+
+    const mediaTools = {
+      id: "media",
+      title: t("integration.categories.media_tools"),
+      icon: <i className="i-mingcute-pic-line" />,
+      integrations: [
+        {
+          key: "eagle",
+          title: t("integration.eagle.title"),
+          icon: <SimpleIconsEagle />,
+          enabled: settings.enableEagle,
+          configured: settings.enableEagle,
+          settings: [
+            defineSettingItem("enableEagle", {
+              label: t("integration.eagle.enable.label"),
+              description: t("integration.eagle.enable.description"),
+            }),
+          ],
+        },
+      ],
+    }
+
+    const downloadTools = {
+      id: "download",
+      title: t("integration.categories.download_tools"),
+      icon: <i className="i-mingcute-download-line" />,
+      integrations: [
+        {
+          key: "qbittorrent",
+          title: t("integration.qbittorrent.title"),
+          icon: <i className="i-simple-icons-qbittorrent" />,
+          enabled: settings.enableQBittorrent,
+          configured: Boolean(settings.qbittorrentHost && settings.qbittorrentUsername),
+          settings: [
+            defineSettingItem("enableQBittorrent", {
+              label: t("integration.qbittorrent.enable.label"),
+              description: t("integration.qbittorrent.enable.description"),
+            }),
+            defineSettingItem("qbittorrentHost", {
+              label: t("integration.qbittorrent.host.label"),
+              vertical: true,
+              description: t("integration.qbittorrent.host.description"),
+            }),
+            defineSettingItem("qbittorrentUsername", {
+              label: t("integration.qbittorrent.username.label"),
+              vertical: true,
+            }),
+            defineSettingItem("qbittorrentPassword", {
+              label: t("integration.qbittorrent.password.label"),
+              vertical: true,
+              type: "password",
+            }),
+          ],
+        },
+      ],
+    }
+
+    return [knowledgeManagement, readingServices, mediaTools, downloadTools]
+  }, [t, settings])
+
+  const filteredCategories = useMemo(() => {
+    if (!searchQuery) return integrationCategories
+
+    return integrationCategories
+      .map((category) => ({
+        ...category,
+        integrations: category.integrations.filter((integration) => {
+          const matchesSearch = searchQuery
+            ? (integration.title as string).toLowerCase().includes(searchQuery.toLowerCase()) ||
+              integration.key.toString().toLowerCase().includes(searchQuery.toLowerCase())
+            : true
+          return matchesSearch
+        }),
+      }))
+      .filter((category) => category.integrations.length > 0)
+  }, [integrationCategories, searchQuery])
+
+  const shouldDefaultOpen = (category: any) => {
+    return category.integrations.some((integration: any) => integration.configured)
+  }
+
   return (
-    <div className="mt-4">
-      <SettingBuilder
-        settings={[
-          {
-            type: "title",
-            value: t("integration.general"),
-          },
-          defineSettingItem("saveSummaryAsDescription", {
-            label: t("integration.save_ai_summary_as_description.label"),
-          }),
+    <div className="mt-4 space-y-6">
+      <div className="space-y-6">
+        <div className="max-w-md">
+          <InputV2
+            icon={<i className="i-mingcute-search-line" />}
+            canClear
+            placeholder={t("integration.search.placeholder")}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="h-9"
+          />
+        </div>
 
-          {
-            type: "title",
-            value: (
-              <span className="flex items-center gap-2 font-bold">
-                <SimpleIconsCubox />
-                {t("integration.cubox.title")}
-              </span>
-            ),
-          },
-          defineSettingItem("enableCubox", {
-            label: t("integration.cubox.enable.label"),
-            description: t("integration.cubox.enable.description"),
-          }),
-          defineSettingItem("cuboxToken", {
-            label: t("integration.cubox.token.label"),
-            vertical: true,
-            type: "password",
-            description: (
-              <>
-                {t("integration.cubox.token.description")}{" "}
-                <a
-                  target="_blank"
-                  className="underline"
-                  rel="noreferrer noopener"
-                  href="https://cubox.pro/my/settings/extensions"
-                >
-                  https://cubox.pro/my/settings/extensions
-                </a>
-              </>
-            ),
-          }),
-          defineSettingItem("enableCuboxAutoMemo", {
-            label: t("integration.cubox.autoMemo.label"),
-            description: t("integration.cubox.autoMemo.description"),
-          }),
+        <SettingBuilder
+          settings={[
+            {
+              type: "title",
+              value: t("integration.general"),
+            },
+            defineSettingItem("saveSummaryAsDescription", {
+              label: t("integration.save_ai_summary_as_description.label"),
+            }),
+          ]}
+        />
+      </div>
 
-          {
-            type: "title",
-            value: (
-              <span className="flex items-center gap-2 font-bold">
-                <SimpleIconsEagle />
-                {t("integration.eagle.title")}
-              </span>
-            ),
-          },
-          defineSettingItem("enableEagle", {
-            label: t("integration.eagle.enable.label"),
-            description: t("integration.eagle.enable.description"),
-          }),
-
-          {
-            type: "title",
-            value: (
-              <span className="flex items-center gap-2 font-bold">
-                <SimpleIconsInstapaper />
-                {t("integration.instapaper.title")}
-              </span>
-            ),
-          },
-          defineSettingItem("enableInstapaper", {
-            label: t("integration.instapaper.enable.label"),
-            description: t("integration.instapaper.enable.description"),
-          }),
-          defineSettingItem("instapaperUsername", {
-            label: t("integration.instapaper.username.label"),
-            vertical: true,
-          }),
-          defineSettingItem("instapaperPassword", {
-            label: t("integration.instapaper.password.label"),
-            vertical: true,
-            type: "password",
-          }),
-
-          {
-            type: "title",
-            value: (
-              <span className="flex items-center gap-2 font-bold">
-                <SimpleIconsReadeck />
-                {t("integration.readeck.title")}
-              </span>
-            ),
-          },
-          defineSettingItem("enableReadeck", {
-            label: t("integration.readeck.enable.label"),
-            description: t("integration.readeck.enable.description"),
-          }),
-          defineSettingItem("readeckEndpoint", {
-            label: t("integration.readeck.endpoint.label"),
-            vertical: true,
-            description: t("integration.readeck.endpoint.description"),
-          }),
-          defineSettingItem("readeckToken", {
-            label: t("integration.readeck.token.label"),
-            vertical: true,
-            type: "password",
-            description: t("integration.readeck.token.description"),
-          }),
-
-          {
-            type: "title",
-            value: (
-              <span className="flex items-center gap-2 font-bold">
-                <SimpleIconsReadwise />
-                {t("integration.readwise.title")}
-              </span>
-            ),
-          },
-          defineSettingItem("enableReadwise", {
-            label: t("integration.readwise.enable.label"),
-            description: t("integration.readwise.enable.description"),
-          }),
-          defineSettingItem("readwiseToken", {
-            label: t("integration.readwise.token.label"),
-            vertical: true,
-            type: "password",
-            description: (
-              <>
-                {t("integration.readwise.token.description")}{" "}
-                <a
-                  target="_blank"
-                  className="underline"
-                  rel="noreferrer noopener"
-                  href="https://readwise.io/access_token"
-                >
-                  readwise.io/access_token
-                </a>
-                .
-              </>
-            ),
-          }),
-
-          {
-            type: "title",
-            value: (
-              <span className="flex items-center gap-2 font-bold">
-                <SimpleIconsObsidian />
-                {t("integration.obsidian.title")}
-              </span>
-            ),
-          },
-          defineSettingItem("enableObsidian", {
-            label: t("integration.obsidian.enable.label"),
-            description: t("integration.obsidian.enable.description"),
-          }),
-          defineSettingItem("obsidianVaultPath", {
-            label: t("integration.obsidian.vaultPath.label"),
-            vertical: true,
-            description: t("integration.obsidian.vaultPath.description"),
-          }),
-
-          {
-            type: "title",
-            value: (
-              <span className="flex items-center gap-2 font-bold">
-                <SimpleIconsOutline />
-                {t("integration.outline.title")}
-              </span>
-            ),
-          },
-          defineSettingItem("enableOutline", {
-            label: t("integration.outline.enable.label"),
-            description: t("integration.outline.enable.description"),
-          }),
-          defineSettingItem("outlineEndpoint", {
-            label: t("integration.outline.endpoint.label"),
-            vertical: true,
-            description: t("integration.outline.endpoint.description"),
-          }),
-          defineSettingItem("outlineToken", {
-            label: t("integration.outline.token.label"),
-            vertical: true,
-            type: "password",
-            description: t("integration.outline.token.description"),
-          }),
-          defineSettingItem("outlineCollection", {
-            label: t("integration.outline.collection.label"),
-            vertical: true,
-            description: t("integration.outline.collection.description"),
-          }),
-
-          {
-            type: "title",
-            value: (
-              <span className="flex items-center gap-2 font-bold">
-                <SimpleIconsZotero />
-                {t("integration.zotero.title")}
-              </span>
-            ),
-          },
-          defineSettingItem("enableZotero", {
-            label: t("integration.zotero.enable.label"),
-            description: t("integration.zotero.enable.description"),
-          }),
-          defineSettingItem("zoteroUserID", {
-            // https://www.zotero.org/settings/keys
-            label: t("integration.zotero.userID.label"),
-            description: (
-              <>
-                {t("integration.zotero.userID.description")}{" "}
-                <a
-                  target="_blank"
-                  className="underline"
-                  rel="noreferrer noopener"
-                  href="https://www.zotero.org/settings/keys"
-                >
-                  https://www.zotero.org/settings/keys
-                </a>
-              </>
-            ),
-            vertical: true,
-            type: "password",
-          }),
-          defineSettingItem("zoteroToken", {
-            // https://www.zotero.org/settings/keys/new
-            label: t("integration.zotero.token.label"),
-            description: (
-              <>
-                {t("integration.zotero.token.description")}{" "}
-                <a
-                  target="_blank"
-                  className="underline"
-                  rel="noreferrer noopener"
-                  href="https://www.zotero.org/settings/keys/new"
-                >
-                  https://www.zotero.org/settings/keys/new
-                </a>
-              </>
-            ),
-            vertical: true,
-            type: "password",
-          }),
-
-          {
-            type: "title",
-            value: (
-              <span className="flex items-center gap-2 font-bold">
-                <i className="i-simple-icons-qbittorrent" />
-                {t("integration.qbittorrent.title")}
-              </span>
-            ),
-          },
-          defineSettingItem("enableQBittorrent", {
-            label: t("integration.qbittorrent.enable.label"),
-            description: t("integration.qbittorrent.enable.description"),
-          }),
-          defineSettingItem("qbittorrentHost", {
-            label: t("integration.qbittorrent.host.label"),
-            vertical: true,
-            description: t("integration.qbittorrent.host.description"),
-          }),
-          defineSettingItem("qbittorrentUsername", {
-            label: t("integration.qbittorrent.username.label"),
-            vertical: true,
-          }),
-          defineSettingItem("qbittorrentPassword", {
-            label: t("integration.qbittorrent.password.label"),
-            vertical: true,
-            type: "password",
-          }),
-
-          BottomTip,
-        ]}
-      />
+      <Divider />
+      <>
+        {filteredCategories.map((category) => (
+          <CollapseGroup key={category.id}>
+            <Collapse
+              title={
+                <div className="flex items-center gap-3">
+                  <span className="text-text-secondary inline-flex items-center justify-center">
+                    {category.icon}
+                  </span>
+                  <span className="font-medium">{category.title as string}</span>
+                  <span className="text-text-tertiary ml-auto mr-2 flex items-center gap-1 text-xs">
+                    <span className="bg-green size-1.5 rounded-full" />
+                    {category.integrations.filter((i) => i.configured).length}/
+                    {category.integrations.length}
+                  </span>
+                </div>
+              }
+              defaultOpen={shouldDefaultOpen(category)}
+              className="border-border bg-background rounded-lg border px-4 py-2 shadow-sm"
+              contentClassName="px-4 pb-4 pt-8"
+            >
+              <div className="space-y-6">
+                {category.integrations.map((integration) => (
+                  <div key={integration.key} className="space-y-4">
+                    <div className="border-fill-secondary flex items-center gap-3 border-b pb-3">
+                      <span className="text-text-secondary inline-flex items-center justify-center">
+                        {integration.icon}
+                      </span>
+                      <h4 className="text-text font-medium">{integration.title}</h4>
+                      <div className="ml-auto flex items-center gap-2">
+                        {integration.configured && (
+                          <span className="bg-green/10 text-green inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs">
+                            <i className="i-mingcute-check-line" />
+                            {t("integration.status.configured")}
+                          </span>
+                        )}
+                        {integration.enabled && (
+                          <span className="bg-blue/10 text-blue inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs">
+                            <i className="i-mingcute-power-line" />
+                            {t("integration.status.enabled")}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="pl-7">
+                      <SettingBuilder settings={integration.settings} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Collapse>
+          </CollapseGroup>
+        ))}
+      </>
+      <BottomTip />
     </div>
   )
 }
@@ -314,7 +434,7 @@ const BottomTip = () => {
   return (
     <div className="mt-6">
       <Divider />
-      <p className="opacity-60">
+      <p className="text-text-tertiary">
         <small>{t("integration.tip")}</small>
       </p>
     </div>
