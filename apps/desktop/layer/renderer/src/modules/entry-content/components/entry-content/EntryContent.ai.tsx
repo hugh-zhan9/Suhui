@@ -31,7 +31,6 @@ import { EntryHeader } from "../entry-header"
 import { EntryTimelineSidebar } from "../EntryTimelineSidebar"
 import { getEntryContentLayout } from "../layouts"
 import { SourceContentPanel } from "../SourceContentView"
-import { AISmartSidebar } from "./ai"
 import { EntryCommandShortcutRegister } from "./EntryCommandShortcutRegister"
 import { EntryContentLoading } from "./EntryContentLoading"
 import { EntryNoContent } from "./EntryNoContent"
@@ -199,7 +198,7 @@ const EntryContentImpl: Component<EntryContentProps> = ({
         <SourceContentPanel src={safeUrl ?? "#"} />
       </Focusable>
 
-      <React.Suspense>{!isInPeekModal && <AISmartSidebar entryId={entryId} />}</React.Suspense>
+      {/* <React.Suspense>{!isInPeekModal && <AISmartSidebar entryId={entryId} />}</React.Suspense> */}
     </div>
   )
 }
