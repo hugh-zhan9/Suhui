@@ -120,10 +120,10 @@ export const useEntriesQuery = (
   }, [entriesIds, query])
 }
 
-export const usePrefetchEntryDetail = (entryId: string) => {
+export const usePrefetchEntryDetail = (entryId: string, isInbox?: boolean) => {
   return useQuery({
     queryKey: ["entry", entryId],
-    queryFn: () => entrySyncServices.fetchEntryDetail(entryId),
+    queryFn: () => entrySyncServices.fetchEntryDetail(entryId, isInbox),
   })
 }
 
