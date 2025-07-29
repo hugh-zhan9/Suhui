@@ -56,6 +56,7 @@ const EntryContentImpl: Component<EntryContentProps> = ({
 
     return { feedId, inboxId: inboxHandle, title, url }
   })
+  const entryExists = !!entry
   useTitle(entry?.title)
 
   const feed = useFeedById(entry?.feedId)
@@ -78,7 +79,7 @@ const EntryContentImpl: Component<EntryContentProps> = ({
   const prevEntryId = useRef<string | undefined>(undefined)
   const scrollAnimationRef = useRef<JSAnimation<any> | null>(null)
   useEffect(() => {
-    if (prevEntryId.current !== entryId) {
+    if (entryExists && prevEntryId.current !== entryId) {
       scrollAnimationRef.current?.stop()
       nextFrame(() => {
         scrollerRef.current?.scrollTo({ top: 0 })
@@ -88,7 +89,7 @@ const EntryContentImpl: Component<EntryContentProps> = ({
       })
       prevEntryId.current = entryId
     }
-  }, [animationController, entryId])
+  }, [animationController, entryExists, entryId])
 
   const isInHasTimelineView = ![
     FeedViewType.Pictures,
