@@ -5,7 +5,7 @@ import * as React from "react"
 import { toast } from "sonner"
 
 import { copyToClipboard } from "~/lib/clipboard"
-import { AIChatContext } from "~/modules/ai/chat/__internal__/AIChatContext"
+import { useChatActions } from "~/modules/ai/chat/__internal__/hooks"
 import type { BizUIMetadata, BizUITools } from "~/modules/ai/chat/__internal__/types"
 import { useEditingMessageId, useSetEditingMessageId } from "~/modules/ai/chat/atoms/session"
 
@@ -26,7 +26,8 @@ interface AIChatMessageProps {
 }
 
 export const AIChatMessage: React.FC<AIChatMessageProps> = React.memo(({ message }) => {
-  const { regenerate, sendMessage, setMessages, messages } = React.use(AIChatContext)
+  const chatActions = useChatActions()
+
   const messageId = message.id
   const [isHovered, setIsHovered] = React.useState(false)
   const editingMessageId = useEditingMessageId()
@@ -53,25 +54,21 @@ export const AIChatMessage: React.FC<AIChatMessageProps> = React.memo(({ message
 
   const handleSaveEdit = React.useCallback(
     (newContent: string) => {
+      const messages = chatActions.getMessages()
       if (newContent.trim() !== messageContent.trim()) {
         // Find the message index and remove all messages after it (including AI responses)
         const messageIndex = messages.findIndex((msg) => msg.id === messageId)
         if (messageIndex !== -1) {
           const messagesToKeep = messages.slice(0, messageIndex)
-          setMessages(messagesToKeep)
+          chatActions.setMessages(messagesToKeep)
 
           // Send the edited message
-          sendMessage({
-            text: newContent,
-            metadata: {
-              finishTime: new Date().toISOString(),
-            },
-          })
+          chatActions.sendMessage(newContent)
         }
       }
       setEditingMessageId(null)
     },
-    [messageContent, messageId, messages, setMessages, sendMessage, setEditingMessageId],
+    [messageContent, messageId, chatActions, setEditingMessageId],
   )
 
   const handleCancelEdit = React.useCallback(() => {
@@ -88,8 +85,8 @@ export const AIChatMessage: React.FC<AIChatMessageProps> = React.memo(({ message
   }, [messageContent])
 
   const handleRetry = React.useCallback(() => {
-    regenerate({ messageId })
-  }, [regenerate, messageId])
+    chatActions.regenerate({ messageId })
+  }, [chatActions, messageId])
 
   return (
     <m.div
@@ -113,7 +110,7 @@ export const AIChatMessage: React.FC<AIChatMessageProps> = React.memo(({ message
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="flex max-w-[calc(100%-1rem)] flex-col gap-2">
+      <div className="relative flex max-w-[calc(100%-1rem)] flex-col gap-2">
         {/* Show editable message if editing */}
         {isEditing && isUserMessage ? (
           <EditableMessage
@@ -161,7 +158,7 @@ export const AIChatMessage: React.FC<AIChatMessageProps> = React.memo(({ message
 
             {/* Action buttons */}
             <m.div
-              className={`flex ${message.role === "user" ? "justify-end" : "justify-start"} gap-1`}
+              className={`absolute bottom-0 flex ${message.role === "user" ? "right-0" : "left-0"} gap-1`}
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{
                 opacity: isHovered ? 1 : 0,
@@ -202,6 +199,8 @@ export const AIChatMessage: React.FC<AIChatMessageProps> = React.memo(({ message
                 </button>
               )}
             </m.div>
+
+            <div className="h-6" />
           </>
         )}
       </div>

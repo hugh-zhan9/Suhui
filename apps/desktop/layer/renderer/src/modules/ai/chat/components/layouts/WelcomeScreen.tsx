@@ -2,10 +2,10 @@ import { m } from "motion/react"
 import { useTranslation } from "react-i18next"
 
 import { useAISettingValue } from "~/atoms/settings/ai"
-import { ChatInput } from "~/modules/ai/chat/components/ChatInput"
+import { AISpline } from "~/modules/ai/AISpline"
 import { useSettingModal } from "~/modules/settings/modal/use-setting-modal-hack"
 
-import { AISpline } from "../../AISpline"
+import { ChatInput } from "./ChatInput"
 
 interface WelcomeScreenProps {
   onSend: (message: string) => void
@@ -27,14 +27,14 @@ export const WelcomeScreen = ({ onSend }: WelcomeScreenProps) => {
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center px-6">
-      <div className="w-full max-w-2xl space-y-8 text-center">
-        <div className="space-y-6">
+      <div className="w-full max-w-2xl space-y-8">
+        <div className="space-y-6 text-center">
           <div className="mx-auto size-16">
             <AISpline />
           </div>
           <div className="flex flex-col gap-2">
             <h1 className="text-text text-2xl font-semibold">{APP_NAME} AI</h1>
-            <p className="text-text-secondary text-sm">{t("welcome_description")}</p>
+            <p className="text-text-secondary text-balance text-sm">{t("welcome_description")}</p>
             {hasCustomPrompt && (
               <div className="bg-material-medium border-border mx-auto mt-2 w-full max-w-2xl rounded-lg border p-3 text-left">
                 <div className="flex items-center justify-between">

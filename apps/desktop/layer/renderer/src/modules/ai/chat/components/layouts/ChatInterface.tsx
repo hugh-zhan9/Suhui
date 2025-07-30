@@ -1,43 +1,48 @@
 import { ScrollArea } from "@follow/components/ui/scroll-area/ScrollArea.js"
 import { cn, nextFrame } from "@follow/utils"
 import { springScrollTo } from "@follow/utils/scroller"
-import { use, useCallback, useEffect, useRef, useState } from "react"
+import { nanoid } from "nanoid"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useEventCallback } from "usehooks-ts"
 
 import {
-  AIChatContext,
-  useAIChatSessionMethods,
-} from "~/modules/ai/chat/__internal__/AIChatContext"
-import { useCurrentRoomId } from "~/modules/ai/chat/atoms/session"
-import { ChatInput } from "~/modules/ai/chat/components/ChatInput"
+  useBlockActions,
+  useChatActions,
+  useChatError,
+  useChatStatus,
+  useCurrentChatId,
+  useHasMessages,
+  useMessages,
+} from "~/modules/ai/chat/__internal__/hooks"
 import {
   AIChatMessage,
   AIChatTypingIndicator,
 } from "~/modules/ai/chat/components/message/AIChatMessage"
-import { WelcomeScreen } from "~/modules/ai/chat/components/WelcomeScreen"
 import { useAutoScroll } from "~/modules/ai/chat/hooks/useAutoScroll"
 import { useLoadMessages } from "~/modules/ai/chat/hooks/useLoadMessages"
-import { useSaveMessages } from "~/modules/ai/chat/hooks/useSaveMessages"
+
+import { ChatInput } from "./ChatInput"
+import { WelcomeScreen } from "./WelcomeScreen"
 
 const SCROLL_BOTTOM_THRESHOLD = 50
 
 export const ChatInterface = () => {
-  const { messages, status, sendMessage, error } = use(AIChatContext)
+  const hasMessages = useHasMessages()
+  const status = useChatStatus()
+  const chatActions = useChatActions()
+  const error = useChatError()
 
-  const currentRoomId = useCurrentRoomId()
+  const currentChatId = useCurrentChatId()
 
-  const { handleFirstMessage } = useAIChatSessionMethods()
   const scrollAreaRef = useRef<HTMLDivElement>(null)
-  const [hasHandledFirstMessage, setHasHandledFirstMessage] = useState(false)
   const [isAtBottom, setIsAtBottom] = useState(true)
 
-  // Reset handlers when roomId changes
+  // Reset handlers when chatId changes
   useEffect(() => {
-    setHasHandledFirstMessage(false)
     setIsAtBottom(true)
-  }, [currentRoomId])
+  }, [currentChatId])
 
-  const { isLoading: isLoadingHistory } = useLoadMessages(currentRoomId || "", {
+  const { isLoading: isLoadingHistory } = useLoadMessages(currentChatId || "", {
     onLoad: () => {
       nextFrame(() => {
         const $scrollArea = scrollAreaRef.current
@@ -52,7 +57,6 @@ export const ChatInterface = () => {
       })
     },
   })
-  useSaveMessages(currentRoomId || "", { enabled: !isLoadingHistory })
 
   const { resetScrollState } = useAutoScroll(scrollAreaRef.current, status === "streaming")
 
@@ -83,20 +87,23 @@ export const ChatInterface = () => {
     springScrollTo(scrollElement.scrollHeight, scrollElement)
   }, [])
 
+  const blockActions = useBlockActions()
   const handleSendMessage = useEventCallback((message: string) => {
     resetScrollState()
 
-    // Handle first message persistence
-    if (messages.length === 0 && !hasHandledFirstMessage) {
-      handleFirstMessage()
-      setHasHandledFirstMessage(true)
-    }
-
-    sendMessage({
-      text: message,
-      metadata: {
-        finishTime: new Date().toISOString(),
-      },
+    chatActions.sendMessage({
+      parts: [
+        {
+          type: "data-block",
+          data: blockActions.getBlocks().map((b) => ({
+            type: b.type,
+            value: b.value,
+          })),
+        },
+        { type: "text", text: message },
+      ],
+      role: "user",
+      id: nanoid(),
     })
   })
 
@@ -105,8 +112,6 @@ export const ChatInterface = () => {
       resetScrollState()
     }
   }, [status, resetScrollState])
-
-  const hasMessages = messages.length > 0
 
   const shouldShowScrollToBottom = hasMessages && !isAtBottom && !isLoadingHistory
 
@@ -127,9 +132,7 @@ export const ChatInterface = () => {
               </div>
             ) : (
               <div className="mx-auto max-w-4xl px-6 py-8">
-                {messages.map((message) => (
-                  <AIChatMessage key={message.id} message={message} />
-                ))}
+                <Messages />
                 {status === "submitted" && <AIChatTypingIndicator />}
               </div>
             )}
@@ -165,5 +168,17 @@ export const ChatInterface = () => {
         </div>
       )}
     </div>
+  )
+}
+
+const Messages = () => {
+  const messages = useMessages()
+
+  return (
+    <>
+      {messages.map((message) => (
+        <AIChatMessage key={message.id} message={message} />
+      ))}
+    </>
   )
 }
