@@ -22,4 +22,5 @@ export interface LexicalRichEditorProps {
     link?: boolean
     autoFocus?: boolean
   }
+  initalEditorState?: EditorState
 }

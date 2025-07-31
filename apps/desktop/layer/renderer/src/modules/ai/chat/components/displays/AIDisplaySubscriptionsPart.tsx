@@ -6,12 +6,13 @@ import {
   CardTitle,
 } from "@follow/components/ui/card/index.js"
 import dayjs from "dayjs"
+import { memo } from "react"
 
 import { FeedIcon } from "~/modules/feed/feed-icon"
 
 import type { AIDisplaySubscriptionsTool } from "../../__internal__/types"
 import { ErrorState, LoadingState } from "../common-states"
-import { AnalyticsMetrics, CategoryTag, EmptyState, GridContainer, StatCard } from "./shared"
+import { AnalyticsMetrics, CategoryTag, EmptyState, StatCard } from "./shared"
 
 type SubscriptionData = AIDisplaySubscriptionsTool["output"]["subscriptions"]
 
@@ -58,7 +59,7 @@ const SubscriptionsGrid = ({
   }
 
   return (
-    <GridContainer columns={{ base: 2, md: 3 }} className="@[600px]:grid-cols-3">
+    <div className="@[600px]:grid-cols-3 @[400px]:grid-cols-2 grid grid-cols-1 gap-4">
       {data.map((sub) => (
         <Card key={`${sub.subscription?.userId}-${sub.subscription?.feedId}`} className="p-4">
           <CardHeader className="h-24 px-2 py-3">
@@ -105,7 +106,7 @@ const SubscriptionsGrid = ({
           </CardContent>
         </Card>
       ))}
-    </GridContainer>
+    </div>
   )
 }
 
@@ -171,18 +172,8 @@ const GroupedSubscriptions = ({
   )
 }
 
-export const AIDisplaySubscriptionsPart = ({ part }: { part: AIDisplaySubscriptionsTool }) => {
-  // Handle loading state
-  if (part.state === "input-streaming" || part.state === "input-available") {
-    return (
-      <LoadingState
-        title="Loading Subscriptions..."
-        description="Fetching subscription data..."
-        maxWidth="max-w-6xl"
-      />
-    )
-  }
-
+export const AIDisplaySubscriptionsPart = memo(({ part }: { part: AIDisplaySubscriptionsTool }) => {
+  return null
   // Handle error state
   if (part.state === "output-error") {
     return (
@@ -194,7 +185,7 @@ export const AIDisplaySubscriptionsPart = ({ part }: { part: AIDisplaySubscripti
     )
   }
 
-  // Handle no output or invalid state
+  // Handle loading state
   if (part.state !== "output-available" || !part.output) {
     return (
       <LoadingState
@@ -266,7 +257,7 @@ export const AIDisplaySubscriptionsPart = ({ part }: { part: AIDisplaySubscripti
       </CardHeader>
       <CardContent className="@container space-y-6">
         {/* Statistics Overview */}
-        <GridContainer columns={{ base: 2, md: 4 }} className="@[600px]:grid-cols-4">
+        <div className="@[700px]:grid-cols-4 grid grid-cols-2 gap-4">
           <StatCard title="Total Subscriptions" value={totalSubscriptions} emoji="📊" />
           <StatCard
             title="Active Feeds"
@@ -276,11 +267,11 @@ export const AIDisplaySubscriptionsPart = ({ part }: { part: AIDisplaySubscripti
           />
           {showCategories && <StatCard title="Categories" value={categoriesCount} emoji="🏷️" />}
           <StatCard title="Total Views" value={totalViews.toLocaleString()} emoji="👀" />
-        </GridContainer>
+        </div>
 
         {/* Subscriptions Display */}
         {renderSubscriptions()}
       </CardContent>
     </Card>
   )
-}
+})

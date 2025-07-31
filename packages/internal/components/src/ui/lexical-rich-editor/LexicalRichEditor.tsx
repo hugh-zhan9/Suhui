@@ -1,10 +1,7 @@
 import { cn } from "@follow/utils"
-import { CodeHighlightNode, CodeNode } from "@lexical/code"
-import { LinkNode } from "@lexical/link"
-import { ListItemNode, ListNode } from "@lexical/list"
-import { MarkNode } from "@lexical/mark"
 import { TRANSFORMERS } from "@lexical/markdown"
 import { AutoFocusPlugin } from "@lexical/react/LexicalAutoFocusPlugin"
+import type { InitialConfigType } from "@lexical/react/LexicalComposer"
 import { LexicalComposer } from "@lexical/react/LexicalComposer"
 import { ContentEditable } from "@lexical/react/LexicalContentEditable"
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary"
@@ -14,17 +11,24 @@ import { ListPlugin } from "@lexical/react/LexicalListPlugin"
 import { MarkdownShortcutPlugin } from "@lexical/react/LexicalMarkdownShortcutPlugin"
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin"
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin"
-import { HeadingNode, QuoteNode } from "@lexical/rich-text"
 import type { EditorState, LexicalEditor } from "lexical"
-import { $getRoot, ParagraphNode, TextNode } from "lexical"
+import { $getRoot } from "lexical"
 import { useImperativeHandle, useRef, useState } from "react"
 
+import { LexicalRichEditorNodes } from "./nodes"
 import { KeyboardPlugin } from "./plugins"
 import { defaultLexicalTheme } from "./theme"
 import type { LexicalRichEditorProps, LexicalRichEditorRef } from "./types"
 
 function onError(error: Error) {
   console.error("Lexical Editor Error:", error)
+}
+const defaultEnabledPlugins = {
+  history: true,
+  markdown: true,
+  list: true,
+  link: true,
+  autoFocus: true,
 }
 
 export const LexicalRichEditor = ({
@@ -36,44 +40,18 @@ export const LexicalRichEditor = ({
   autoFocus = false,
   namespace = "LexicalRichEditor",
   theme = defaultLexicalTheme,
-  enabledPlugins = {
-    history: true,
-    markdown: true,
-    list: true,
-    link: true,
-    autoFocus: true,
-  },
+  enabledPlugins = defaultEnabledPlugins,
+  initalEditorState,
 }: LexicalRichEditorProps & { ref?: React.RefObject<LexicalRichEditorRef | null> }) => {
   const editorRef = useRef<LexicalEditor | null>(null)
   const [isEmpty, setIsEmpty] = useState(true)
 
-  const initialConfig = {
+  const initialConfig: InitialConfigType = {
     namespace,
     theme,
     onError,
-    nodes: [
-      // Core nodes
-      ParagraphNode,
-      TextNode,
-
-      // Rich text nodes
-      HeadingNode, // For HEADING transformer
-      QuoteNode, // For QUOTE transformer
-
-      // List nodes
-      ListNode, // For UNORDERED_LIST, ORDERED_LIST transformers
-      ListItemNode,
-
-      // Code nodes
-      CodeNode, // For CODE transformer (multiline)
-      CodeHighlightNode, // For code syntax highlighting
-
-      // Link nodes
-      LinkNode, // For LINK transformer
-
-      // Text format nodes
-      MarkNode, // For HIGHLIGHT transformer
-    ],
+    nodes: LexicalRichEditorNodes,
+    editorState: initalEditorState,
   }
 
   useImperativeHandle(ref, () => ({
