@@ -69,6 +69,8 @@ export const EnvironmentIndicator = () => {
 }
 
 if (DEV) {
+  const sqliteOnlineWebsite = "https://sqlite-online.vercel.app"
+
   DebugRegistry.add("SQLite Online", () => {
     window.presentModal({
       title: "SQLite Online",
@@ -76,29 +78,41 @@ if (DEV) {
         <div className="h-full p-16" onClick={dismiss}>
           <iframe
             id="sql-viewer"
-            src="https://sqlite-online.vercel.app/"
+            src={sqliteOnlineWebsite}
             className="size-full"
             onLoad={() => {
               const iframe = document.querySelector("#sql-viewer") as HTMLIFrameElement
               if (!iframe) return
               const win = iframe.contentWindow
               if (!win) return
-              getDBFile()
-                .then(async (blob) => {
-                  const arrayBuffer = await blob.arrayBuffer()
-                  await new Promise((resolve) => setTimeout(resolve, 1000))
 
-                  win.postMessage(
-                    {
-                      type: "invokeLoadDatabaseBuffer",
-                      buffer: arrayBuffer,
-                    },
-                    "https://sqlite-online.vercel.app/",
-                  )
-                })
-                .catch((error) => {
-                  console.error("Failed to load database file into SQLite Online", error)
-                })
+              let isDatabaseLoaded = false
+
+              window.addEventListener("message", (event) => {
+                if (event.origin !== sqliteOnlineWebsite) {
+                  console.warn("Blocked message from unauthorized origin:", event.origin)
+                  return
+                }
+
+                if (event.data.type === "loadDatabaseBufferReady" && !isDatabaseLoaded) {
+                  getDBFile()
+                    .then(async (blob) => {
+                      const arrayBuffer = await blob.arrayBuffer()
+
+                      win.postMessage(
+                        {
+                          type: "invokeLoadDatabaseBuffer",
+                          buffer: arrayBuffer,
+                        },
+                        sqliteOnlineWebsite,
+                      )
+                      isDatabaseLoaded = true
+                    })
+                    .catch((error) => {
+                      console.error("Failed to load database file into SQLite Online", error)
+                    })
+                }
+              })
             }}
           />
         </div>
