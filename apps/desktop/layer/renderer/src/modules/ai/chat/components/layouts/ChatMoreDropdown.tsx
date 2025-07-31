@@ -38,6 +38,7 @@ export const ChatMoreDropdown = () => {
   const handleDropdownOpen = (open: boolean) => {
     if (open) {
       loadHistory()
+      AIPersistService.cleanupEmptySessions()
     }
   }
 

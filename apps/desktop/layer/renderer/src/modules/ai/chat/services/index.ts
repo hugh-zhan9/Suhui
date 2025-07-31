@@ -6,6 +6,26 @@ import { asc, count, eq, inArray, sql } from "drizzle-orm"
 import type { BizUIMessage } from "../__internal__/types"
 
 class AIPersistServiceStatic {
+  // Cache for session existence to avoid repeated queries
+  private sessionExistsCache = new Map<string, boolean>()
+
+  // Clear cache when session is created or deleted
+  private markSessionExists(chatId: string, exists: boolean) {
+    this.sessionExistsCache.set(chatId, exists)
+  }
+
+  private getSessionExistsFromCache(chatId: string): boolean | undefined {
+    return this.sessionExistsCache.get(chatId)
+  }
+
+  private clearSessionCache(chatId?: string) {
+    if (chatId) {
+      this.sessionExistsCache.delete(chatId)
+    } else {
+      this.sessionExistsCache.clear()
+    }
+  }
+
   async loadMessages(chatId: string) {
     return db.query.aiChatMessagesTable.findMany({
       where: eq(aiChatMessagesTable.chatId, chatId),
@@ -47,6 +67,31 @@ class AIPersistServiceStatic {
   async loadUIMessages(chatId: string): Promise<BizUIMessage[]> {
     const dbMessages = await this.loadMessages(chatId)
     return dbMessages.map((msg) => this.convertToUIMessage(msg))
+  }
+
+  /**
+   * Load session and messages in a single optimized call
+   * Returns both session details and messages to avoid redundant queries
+   */
+  async loadSessionWithMessages(chatId: string): Promise<{
+    session: { chatId: string; title?: string; createdAt: Date } | null
+    messages: BizUIMessage[]
+  }> {
+    // Load both session and messages in parallel
+    const [sessionRaw, messages] = await Promise.all([
+      this.getChatSession(chatId),
+      this.loadUIMessages(chatId),
+    ])
+
+    // Convert null title to undefined for type compatibility
+    const session = sessionRaw
+      ? {
+          ...sessionRaw,
+          title: sessionRaw.title || undefined,
+        }
+      : null
+
+    return { session, messages }
   }
 
   async insertMessages(chatId: string, messages: BizUIMessage[]) {
@@ -154,84 +199,30 @@ class AIPersistServiceStatic {
   /**
    * Ensure session exists (idempotent operation)
    */
-  async ensureSession(chatId: string, title?: string) {
-    const existing = await this.getChatSession(chatId)
+  async ensureSession(chatId: string, title?: string): Promise<void> {
+    // Check cache first to avoid database query
+    const cachedExists = this.getSessionExistsFromCache(chatId)
 
-    if (!existing) {
-      await this.createSession(chatId, title)
-      return { created: true, session: { chatId, title, createdAt: new Date() } }
+    if (cachedExists === true) {
+      return
     }
-    return { created: false, session: existing }
-  }
 
-  /**
-   * Batch multiple persistence operations atomically
-   */
-  async batchUpdate(
-    operations: Array<{
-      type: "session_create" | "session_update" | "messages_upsert" | "messages_delete"
-      payload: any
-    }>,
-  ) {
-    return db.transaction(async (tx) => {
-      for (const operation of operations) {
-        switch (operation.type) {
-          case "session_create": {
-            await tx
-              .insert(aiChatTable)
-              .values({
-                chatId: operation.payload.chatId,
-                title: operation.payload.title,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-              })
-              .onConflictDoNothing()
-            break
-          }
+    // Only query database if not in cache or cache shows it doesn't exist
+    if (cachedExists === undefined) {
+      const existing = await this.getChatSession(chatId)
 
-          case "session_update": {
-            await tx
-              .update(aiChatTable)
-              .set({
-                title: operation.payload.title,
-                updatedAt: new Date(),
-              })
-              .where(eq(aiChatTable.chatId, operation.payload.chatId))
-            break
-          }
-
-          case "messages_upsert": {
-            if (operation.payload.messages.length > 0) {
-              await tx
-                .insert(aiChatMessagesTable)
-                .values(operation.payload.messages)
-                .onConflictDoUpdate({
-                  target: [aiChatMessagesTable.id],
-                  set: {
-                    messageParts: sql`excluded.message_parts`,
-                    metadata: sql`excluded.metadata`,
-                    finishedAt: sql`excluded.finished_at`,
-                    status: sql`excluded.status`,
-                  },
-                })
-            }
-            break
-          }
-
-          case "messages_delete": {
-            if (operation.payload.messageIds.length > 0) {
-              await tx
-                .delete(aiChatMessagesTable)
-                .where(
-                  eq(aiChatMessagesTable.chatId, operation.payload.chatId) &&
-                    inArray(aiChatMessagesTable.id, operation.payload.messageIds),
-                )
-            }
-            break
-          }
-        }
+      if (existing) {
+        this.markSessionExists(chatId, true)
+        return
       }
-    })
+
+      // Mark as not existing before creating
+      this.markSessionExists(chatId, false)
+    }
+
+    // Create new session
+    await this.createSession(chatId, title)
+    this.markSessionExists(chatId, true)
   }
 
   async createSession(chatId: string, title?: string) {
@@ -242,6 +233,8 @@ class AIPersistServiceStatic {
       createdAt: now,
       updatedAt: now,
     })
+    // Mark session as existing in cache
+    this.markSessionExists(chatId, true)
   }
 
   async getChatSession(chatId: string) {
@@ -256,9 +249,13 @@ class AIPersistServiceStatic {
 
     // Explicitly check if the result is valid
     if (!result || !result.chatId) {
+      // Mark as not existing in cache
+      this.markSessionExists(chatId, false)
       return null
     }
 
+    // Mark as existing in cache
+    this.markSessionExists(chatId, true)
     return result
   }
 
@@ -302,6 +299,8 @@ class AIPersistServiceStatic {
   async deleteSession(chatId: string) {
     await db.delete(aiChatMessagesTable).where(eq(aiChatMessagesTable.chatId, chatId))
     await db.delete(aiChatTable).where(eq(aiChatTable.chatId, chatId))
+    // Clear session from cache
+    this.clearSessionCache(chatId)
   }
 
   async updateSessionTitle(chatId: string, title: string) {
@@ -329,6 +328,9 @@ class AIPersistServiceStatic {
     if (emptySessions.length > 0) {
       const chatIdsToDelete = emptySessions.map((row) => row[0])
       await db.delete(aiChatTable).where(inArray(aiChatTable.chatId, chatIdsToDelete))
+
+      // Clear deleted sessions from cache
+      chatIdsToDelete.forEach((chatId) => this.clearSessionCache(chatId))
     }
   }
 }

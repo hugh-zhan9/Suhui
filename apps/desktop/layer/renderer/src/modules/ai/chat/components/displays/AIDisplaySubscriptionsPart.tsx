@@ -173,7 +173,6 @@ const GroupedSubscriptions = ({
 }
 
 export const AIDisplaySubscriptionsPart = memo(({ part }: { part: AIDisplaySubscriptionsTool }) => {
-  return null
   // Handle error state
   if (part.state === "output-error") {
     return (
