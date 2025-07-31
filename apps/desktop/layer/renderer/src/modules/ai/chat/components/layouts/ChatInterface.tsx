@@ -1,6 +1,8 @@
 import { ScrollArea } from "@follow/components/ui/scroll-area/ScrollArea.js"
 import { cn, nextFrame } from "@follow/utils"
 import { springScrollTo } from "@follow/utils/scroller"
+import type { BizUIMessage } from "@folo-services/ai-tools"
+import type { EditorState, LexicalEditor } from "lexical"
 import { nanoid } from "nanoid"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useEventCallback } from "usehooks-ts"
@@ -21,6 +23,7 @@ import {
 import { useAutoScroll } from "~/modules/ai/chat/hooks/useAutoScroll"
 import { useLoadMessages } from "~/modules/ai/chat/hooks/useLoadMessages"
 
+import { convertLexicalToMarkdown } from "../../utils/lexical-markdown"
 import { ChatInput } from "./ChatInput"
 import { WelcomeScreen } from "./WelcomeScreen"
 
@@ -88,11 +91,11 @@ export const ChatInterface = () => {
   }, [])
 
   const blockActions = useBlockActions()
-  const handleSendMessage = useEventCallback((message: string) => {
-    resetScrollState()
+  const handleSendMessage = useEventCallback(
+    (message: string | EditorState, editor: LexicalEditor | null) => {
+      resetScrollState()
 
-    chatActions.sendMessage({
-      parts: [
+      const parts: BizUIMessage["parts"] = [
         {
           type: "data-block",
           data: blockActions.getBlocks().map((b) => ({
@@ -100,12 +103,30 @@ export const ChatInterface = () => {
             value: b.value,
           })),
         },
-        { type: "text", text: message },
-      ],
-      role: "user",
-      id: nanoid(),
-    })
-  })
+      ]
+
+      if (typeof message === "string") {
+        parts.push({
+          type: "text",
+          text: message,
+        })
+      } else if (editor) {
+        parts.push({
+          type: "data-rich-text",
+          data: {
+            state: message.toJSON(),
+            text: convertLexicalToMarkdown(editor),
+          },
+        })
+      }
+
+      chatActions.sendMessage({
+        parts,
+        role: "user",
+        id: nanoid(),
+      })
+    },
+  )
 
   useEffect(() => {
     if (status === "submitted") {

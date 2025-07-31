@@ -1,3 +1,5 @@
+import type { LexicalRichEditorRef } from "@follow/components/ui/lexical-rich-editor/index.js"
+import { LexicalRichEditor } from "@follow/components/ui/lexical-rich-editor/index.js"
 import { cn, stopPropagation } from "@follow/utils"
 import type { VariantProps } from "class-variance-authority"
 import { cva } from "class-variance-authority"
@@ -6,13 +8,10 @@ import { $getRoot } from "lexical"
 import { memo, useCallback, useRef, useState } from "react"
 
 import { AIChatContextBar } from "~/modules/ai/chat/components/AIChatContextBar"
-import { convertLexicalToMarkdown } from "~/modules/ai/chat/utils/lexical-markdown"
 
 import { useChatActions, useChatError, useChatStatus } from "../../__internal__/hooks"
 import { AIChatSendButton } from "./AIChatSendButton"
 import { CollapsibleError } from "./CollapsibleError"
-import type { LexicalRichEditorRef } from "./LexicalRichEditor"
-import { LexicalRichEditor } from "./LexicalRichEditor"
 
 const chatInputVariants = cva(
   [
@@ -33,7 +32,7 @@ const chatInputVariants = cva(
 )
 
 interface ChatInputProps extends VariantProps<typeof chatInputVariants> {
-  onSend: (message: string) => void
+  onSend: (message: EditorState | string, editor: LexicalEditor | null) => void
 }
 
 export const ChatInput = memo(({ onSend, variant }: ChatInputProps) => {
@@ -52,11 +51,8 @@ export const ChatInput = memo(({ onSend, variant }: ChatInputProps) => {
 
   const handleSend = useCallback(() => {
     if (currentEditor && editorRef.current && !editorRef.current.isEmpty()) {
-      const markdown = convertLexicalToMarkdown(currentEditor)
-      if (markdown.trim()) {
-        onSend(markdown.trim())
-        editorRef.current.clear()
-      }
+      onSend(currentEditor.getEditorState(), currentEditor)
+      editorRef.current.clear()
     }
   }, [currentEditor, onSend])
 
@@ -102,6 +98,7 @@ export const ChatInput = memo(({ onSend, variant }: ChatInputProps) => {
             onChange={handleEditorChange}
             onKeyDown={handleKeyDown}
             autoFocus
+            namespace="AIChatRichEditor"
           />
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
             <AIChatSendButton
@@ -117,7 +114,7 @@ export const ChatInput = memo(({ onSend, variant }: ChatInputProps) => {
         <div className="border-border/20 relative z-10 border-t bg-transparent">
           <AIChatContextBar
             className="border-0 bg-transparent px-4 py-2.5"
-            onSendShortcut={onSend}
+            onSendShortcut={(prompt) => onSend(prompt, null)}
           />
         </div>
       </div>

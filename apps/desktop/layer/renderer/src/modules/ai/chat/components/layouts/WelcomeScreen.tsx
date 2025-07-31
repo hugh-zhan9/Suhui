@@ -1,3 +1,4 @@
+import type { EditorState, LexicalEditor } from "lexical"
 import { m } from "motion/react"
 import { useTranslation } from "react-i18next"
 
@@ -8,7 +9,7 @@ import { useSettingModal } from "~/modules/settings/modal/use-setting-modal-hack
 import { ChatInput } from "./ChatInput"
 
 interface WelcomeScreenProps {
-  onSend: (message: string) => void
+  onSend: (message: EditorState | string, editor: LexicalEditor | null) => void
 }
 const DEFAULT_SHORTCUTS = [
   "Generate today daily report",
@@ -71,7 +72,7 @@ export const WelcomeScreen = ({ onSend }: WelcomeScreenProps) => {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: index * 0.1 }}
-              onClick={() => onSend(shortcut.prompt)}
+              onClick={() => onSend(shortcut.prompt, null)}
               title={shortcut.hotkey ? `${shortcut.name} (${shortcut.hotkey})` : shortcut.name}
             >
               {shortcut.name}
@@ -87,7 +88,7 @@ export const WelcomeScreen = ({ onSend }: WelcomeScreenProps) => {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: (enabledShortcuts.length + index) * 0.1 }}
-                onClick={() => onSend(suggestion)}
+                onClick={() => onSend(suggestion, null)}
               >
                 {suggestion}
               </m.button>

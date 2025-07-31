@@ -228,18 +228,11 @@ export const aiChatMessagesTable = sqliteTable(
       .notNull()
       .references(() => aiChatTable.chatId, { onDelete: "cascade" }),
 
-    // Core message properties matching Vercel AI SDK UIMessage
     role: t.text("role").notNull().$type<"user" | "assistant" | "system">(),
 
-    richTextSchema: t
-      .text("rich_text_schema", { mode: "json" })
-      .$type<import("lexical").SerializedEditorState>(), // Lexical schema for user rich text
-
-    // Vercel AI SDK UIMessage properties
     createdAt: t.integer("created_at", { mode: "timestamp_ms" }),
     metadata: t.text("metadata", { mode: "json" }).$type<any>(),
 
-    // Message processing status
     status: t
       .text("status")
       .$type<"pending" | "streaming" | "completed" | "error">()

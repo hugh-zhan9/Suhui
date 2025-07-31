@@ -1462,6 +1462,27 @@ importers:
       '@headlessui/react':
         specifier: 2.2.4
         version: 2.2.4(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      '@lexical/code':
+        specifier: 0.33.1
+        version: 0.33.1
+      '@lexical/link':
+        specifier: 0.33.1
+        version: 0.33.1
+      '@lexical/list':
+        specifier: 0.33.1
+        version: 0.33.1
+      '@lexical/mark':
+        specifier: 0.33.1
+        version: 0.33.1
+      '@lexical/markdown':
+        specifier: 0.33.1
+        version: 0.33.1
+      '@lexical/react':
+        specifier: 0.33.1
+        version: 0.33.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(yjs@13.6.27)
+      '@lexical/rich-text':
+        specifier: 0.33.1
+        version: 0.33.1
       '@microflash/remark-callout-directives':
         specifier: 4.4.0
         version: 4.4.0(patch_hash=6160b1cf0eab6deca36415693dda703746edcd42e0e64b9174294e2210481396)
@@ -1558,6 +1579,9 @@ importers:
       katex:
         specifier: 0.16.22
         version: 0.16.22
+      lexical:
+        specifier: 0.33.1
+        version: 0.33.1
       masonic:
         specifier: 4.1.0
         version: 4.1.0(react@19.0.0)

@@ -2,10 +2,8 @@ import type { AsyncDb } from "@follow/database/db"
 import { db } from "@follow/database/db"
 import { aiChatMessagesTable, aiChatTable } from "@follow/database/schemas/index"
 import { asc, count, eq, inArray, sql } from "drizzle-orm"
-import type { SerializedEditorState } from "lexical"
 
 import type { BizUIMessage } from "../__internal__/types"
-import type { MessageContent } from "../utils/lexical-markdown"
 
 class AIPersistServiceStatic {
   async loadMessages(chatId: string) {
@@ -51,27 +49,6 @@ class AIPersistServiceStatic {
     return dbMessages.map((msg) => this.convertToUIMessage(msg))
   }
 
-  /**
-   * Store a rich text message from user input
-   */
-  async insertRichTextMessage(chatId: string, messageId: string, content: MessageContent) {
-    let richTextSchema: SerializedEditorState | undefined
-
-    if (content.format === "richtext") {
-      richTextSchema = content.content as SerializedEditorState
-    }
-
-    await db.insert(aiChatMessagesTable).values({
-      id: messageId,
-      chatId,
-      role: "user",
-
-      richTextSchema,
-      createdAt: new Date(),
-      status: "completed",
-    })
-  }
-
   async insertMessages(chatId: string, messages: BizUIMessage[]) {
     if (messages.length === 0) {
       return
@@ -90,7 +67,6 @@ class AIPersistServiceStatic {
             role: message.role,
             contentFormat: "plaintext" as const,
 
-            richTextSchema: undefined,
             createdAt: new Date(),
             status: "completed" as const,
             finishedAt: message.metadata?.finishTime
@@ -109,7 +85,6 @@ class AIPersistServiceStatic {
           finishedAt: sql`excluded.finished_at`,
           createdAt: sql`excluded.created_at`,
           status: sql`excluded.status`,
-          richTextSchema: sql`excluded.rich_text_schema`,
         },
       })
   }
@@ -142,7 +117,6 @@ class AIPersistServiceStatic {
             chatId,
             role: message.role,
             contentFormat: "plaintext" as const,
-            richTextSchema: undefined,
             createdAt: new Date(),
             status: "completed" as const,
             finishedAt: message.metadata?.finishTime
@@ -160,7 +134,6 @@ class AIPersistServiceStatic {
           metadata: sql`excluded.metadata`,
           finishedAt: sql`excluded.finished_at`,
           status: sql`excluded.status`,
-          richTextSchema: sql`excluded.rich_text_schema`,
         },
       })
   }
@@ -239,7 +212,6 @@ class AIPersistServiceStatic {
                     metadata: sql`excluded.metadata`,
                     finishedAt: sql`excluded.finished_at`,
                     status: sql`excluded.status`,
-                    richTextSchema: sql`excluded.rich_text_schema`,
                   },
                 })
             }

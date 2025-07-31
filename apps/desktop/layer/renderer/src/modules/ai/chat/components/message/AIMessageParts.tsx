@@ -1,4 +1,5 @@
 import type { ToolUIPart } from "ai"
+import type { SerializedEditorState } from "lexical"
 import { m } from "motion/react"
 import * as React from "react"
 
@@ -20,6 +21,7 @@ import {
 import { ToolInvocationComponent } from "../ToolInvocationComponent"
 import { AIDataBlockPart } from "./AIDataBlockPart"
 import { AIMarkdownMessage } from "./AIMarkdownMessage"
+import { AIRichTextMessage } from "./AIRichTextMessage"
 
 interface MessagePartsProps {
   message: BizUIMessage
@@ -93,6 +95,16 @@ export const AIMessageParts: React.FC<MessagePartsProps> = React.memo(({ message
 
           case "data-block": {
             return <AIDataBlockPart key={partKey} blocks={part.data as AIChatContextBlock[]} />
+          }
+
+          case "data-rich-text": {
+            return (
+              <AIRichTextMessage
+                key={partKey}
+                data={part.data as { state: SerializedEditorState; text: string }}
+                className={isUser ? "text-white" : "text-text"}
+              />
+            )
           }
 
           case "tool-displayAnalytics": {
