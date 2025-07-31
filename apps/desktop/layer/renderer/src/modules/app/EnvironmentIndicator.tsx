@@ -1,3 +1,4 @@
+/* eslint-disable @eslint-react/dom/no-missing-iframe-sandbox */
 import { Button } from "@follow/components/ui/button/index.js"
 import {
   Tooltip,
@@ -5,10 +6,12 @@ import {
   TooltipPortal,
   TooltipTrigger,
 } from "@follow/components/ui/tooltip/index.jsx"
+import { getDBFile } from "@follow/database/db"
 import { DEV, MODE } from "@follow/shared/constants"
 import { env } from "@follow/shared/env.desktop"
 import { useUserRole } from "@follow/store/user/hooks"
 
+import { PlainModal } from "~/components/ui/modal/stacked/custom-modal"
 import { useModalStack } from "~/components/ui/modal/stacked/hooks"
 
 import { DebugRegistry } from "../debug/registry"
@@ -63,4 +66,45 @@ export const EnvironmentIndicator = () => {
       </TooltipPortal>
     </Tooltip>
   )
+}
+
+if (DEV) {
+  DebugRegistry.add("SQLite Online", () => {
+    window.presentModal({
+      title: "SQLite Online",
+      content: ({ dismiss }) => (
+        <div className="h-full p-16" onClick={dismiss}>
+          <iframe
+            id="sql-viewer"
+            src="https://sqlite-online.vercel.app/"
+            className="size-full"
+            onLoad={() => {
+              const iframe = document.querySelector("#sql-viewer") as HTMLIFrameElement
+              if (!iframe) return
+              const win = iframe.contentWindow
+              if (!win) return
+              getDBFile()
+                .then(async (blob) => {
+                  const arrayBuffer = await blob.arrayBuffer()
+                  await new Promise((resolve) => setTimeout(resolve, 1000))
+
+                  win.postMessage(
+                    {
+                      type: "invokeLoadDatabaseBuffer",
+                      buffer: arrayBuffer,
+                    },
+                    "https://sqlite-online.vercel.app/",
+                  )
+                })
+                .catch((error) => {
+                  console.error("Failed to load database file into SQLite Online", error)
+                })
+            }}
+          />
+        </div>
+      ),
+
+      CustomModalComponent: PlainModal,
+    })
+  })
 }
