@@ -19,7 +19,8 @@
       "mcp__context7__get-library-docs",
       "Bash(pnpm add:*)",
       "Bash(pnpm -w run typecheck)",
-      "Bash(pnpm --filter @follow/components run typecheck)"
+      "Bash(pnpm --filter @follow/components run typecheck)",
+      "Bash(pnpm -w run lint:fix)"
     ],
     "deny": []
   }
