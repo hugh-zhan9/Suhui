@@ -86,15 +86,13 @@ if (DEV) {
               const win = iframe.contentWindow
               if (!win) return
 
-              let isDatabaseLoaded = false
-
-              window.addEventListener("message", (event) => {
+              const eventHandler = (event: MessageEvent) => {
                 if (event.origin !== sqliteOnlineWebsite) {
                   console.warn("Blocked message from unauthorized origin:", event.origin)
                   return
                 }
 
-                if (event.data.type === "loadDatabaseBufferReady" && !isDatabaseLoaded) {
+                if (event.data.type === "loadDatabaseBufferReady") {
                   getDBFile()
                     .then(async (blob) => {
                       const arrayBuffer = await blob.arrayBuffer()
@@ -106,13 +104,16 @@ if (DEV) {
                         },
                         sqliteOnlineWebsite,
                       )
-                      isDatabaseLoaded = true
+
+                      window.removeEventListener("message", eventHandler)
                     })
                     .catch((error) => {
                       console.error("Failed to load database file into SQLite Online", error)
                     })
                 }
-              })
+              }
+
+              window.addEventListener("message", eventHandler)
             }}
           />
         </div>
