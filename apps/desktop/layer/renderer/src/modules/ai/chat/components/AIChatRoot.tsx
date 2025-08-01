@@ -1,18 +1,13 @@
 import type { FC, PropsWithChildren } from "react"
-import { useCallback, useMemo, useRef } from "react"
+import { useMemo, useRef } from "react"
 
 import { Focusable } from "~/components/common/Focusable"
 import { HotkeyScope } from "~/constants"
 
-import type { AIChatSessionMethods, AIPanelRefs } from "../__internal__/AIChatContext"
-import {
-  AIChatSessionMethodsContext,
-  AIChatStoreContext,
-  AIPanelRefsContext,
-} from "../__internal__/AIChatContext"
+import type { AIPanelRefs } from "../__internal__/AIChatContext"
+import { AIChatStoreContext, AIPanelRefsContext } from "../__internal__/AIChatContext"
 import { useChatActions, useCurrentChatId } from "../__internal__/hooks"
 import { createAIChatStore } from "../__internal__/store"
-import { AIPersistService } from "../services"
 
 interface AIChatRootProps extends PropsWithChildren {
   wrapFocusable?: boolean
@@ -33,37 +28,9 @@ const AIChatRootInner: FC<AIChatRootProps> = ({ children, chatId: externalChatId
     }
   }, [currentChatId, externalChatId, chatActions])
 
-  const handleTitleGenerated = useCallback(
-    async (title: string) => {
-      if (currentChatId) {
-        try {
-          await AIPersistService.updateSessionTitle(currentChatId, title)
-          chatActions.setCurrentTitle(title)
-        } catch (error) {
-          console.error("Failed to update session title:", error)
-        }
-      }
-    },
-    [currentChatId, chatActions],
-  )
-
-  const handleNewChat = useCallback(() => {
-    chatActions.newChat()
-    chatActions.setCurrentTitle(undefined)
-  }, [chatActions])
-
   const panelRef = useRef<HTMLDivElement>(null!)
   const inputRef = useRef<HTMLTextAreaElement>(null!)
   const refsContext = useMemo<AIPanelRefs>(() => ({ panelRef, inputRef }), [panelRef, inputRef])
-
-  // Provide session methods through context
-  const sessionMethods = useMemo<AIChatSessionMethods>(
-    () => ({
-      handleTitleGenerated,
-      handleNewChat,
-    }),
-    [handleTitleGenerated, handleNewChat],
-  )
 
   if (!currentChatId) {
     return (
@@ -76,11 +43,7 @@ const AIChatRootInner: FC<AIChatRootProps> = ({ children, chatId: externalChatId
     )
   }
 
-  return (
-    <AIPanelRefsContext value={refsContext}>
-      <AIChatSessionMethodsContext value={sessionMethods}>{children}</AIChatSessionMethodsContext>
-    </AIPanelRefsContext>
-  )
+  return <AIPanelRefsContext value={refsContext}>{children}</AIPanelRefsContext>
 }
 
 export const AIChatRoot: FC<AIChatRootProps> = ({

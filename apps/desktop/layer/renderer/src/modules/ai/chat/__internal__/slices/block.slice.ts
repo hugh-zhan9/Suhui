@@ -1,3 +1,4 @@
+import { autoBindThis } from "@follow/utils/bind-this"
 import { produce } from "immer"
 import { nanoid } from "nanoid"
 import type { StateCreator } from "zustand"
@@ -22,9 +23,15 @@ export const createBlockSlice: (
     }
   }
 
-class BlockSliceAction {
-  constructor(private params: Parameters<StateCreator<BlockSlice, [], [], BlockSlice>>) {}
+export class BlockSliceAction {
+  constructor(private params: Parameters<StateCreator<BlockSlice, [], [], BlockSlice>>) {
+    return autoBindThis(this)
+  }
 
+  static SPECIAL_TYPES = {
+    mainEntry: "mainEntry",
+    selectedText: "selectedText",
+  }
   get set() {
     return this.params[0]
   }
@@ -35,36 +42,17 @@ class BlockSliceAction {
   addBlock(block: Omit<AIChatContextBlock, "id">) {
     const currentBlocks = this.get().blocks
 
-    // Only allow one mainEntry
-    if (block.type === "mainEntry" && currentBlocks.some((b) => b.type === "mainEntry")) {
-      return
-    }
-
-    // Only allow one selectedText
-    if (block.type === "selectedText" && currentBlocks.some((b) => b.type === "selectedText")) {
-      return
-    }
-
-    // Prevent duplicate referEntry or referFeed
+    // Only allow one SPECIAL_TYPES
     if (
-      block.type === "referEntry" &&
-      block.value &&
-      currentBlocks.some((b) => b.type === "referEntry" && b.value === block.value)
-    ) {
-      return
-    }
-
-    if (
-      block.type === "referFeed" &&
-      block.value &&
-      currentBlocks.some((b) => b.type === "referFeed" && b.value === block.value)
+      Object.values(BlockSliceAction.SPECIAL_TYPES).includes(block.type) &&
+      currentBlocks.some((b) => b.type === block.type)
     ) {
       return
     }
 
     this.set(
       produce((state: BlockSlice) => {
-        state.blocks.push({ ...block, id: nanoid(8) })
+        state.blocks.push({ ...block, id: BlockSliceAction.SPECIAL_TYPES[block.type] || nanoid(8) })
       }),
     )
   }
@@ -85,6 +73,15 @@ class BlockSliceAction {
         )
       }),
     )
+  }
+
+  addOrUpdateBlock(block: AIChatContextBlock) {
+    const isExist = this.get().blocks.some((b) => b.id === block.id)
+    if (isExist) {
+      this.updateBlock(block.id, block)
+    } else {
+      this.addBlock(block)
+    }
   }
 
   clearBlocks() {

@@ -1,3 +1,4 @@
+import { autoBindThis } from "@follow/utils/bind-this"
 import type { ChatStatus } from "ai"
 import { nanoid } from "nanoid"
 import type { StateCreator } from "zustand"
@@ -12,7 +13,9 @@ export class ChatSliceActions {
   constructor(
     private params: Parameters<StateCreator<ChatSlice, [], [], ChatSlice>>,
     private chatInstance: ZustandChat<BizUIMessage>,
-  ) {}
+  ) {
+    return autoBindThis(this)
+  }
 
   get set() {
     return this.params[0]
@@ -146,7 +149,6 @@ export class ChatSliceActions {
 
   newChat = () => {
     const newChatId = nanoid()
-
     // Cleanup old chat instance
     this.chatInstance.destroy()
 

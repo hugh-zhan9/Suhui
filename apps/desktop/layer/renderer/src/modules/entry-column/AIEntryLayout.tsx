@@ -14,9 +14,10 @@ import { AIChatLayout } from "~/modules/app-layout/ai/AIChatLayout"
 import { EntryContent } from "~/modules/entry-content/components/entry-content"
 import { AppLayoutGridContainerProvider } from "~/providers/app-grid-layout-container-provider"
 
+import { AIChatRoot } from "../ai/chat/components/AIChatRoot"
 import { EntryColumn } from "./index"
 
-export const EntryColumnLayout = () => {
+const AIEntryLayoutImpl = () => {
   const { entryId } = useParams()
   const navigate = useNavigateEntry()
 
@@ -193,5 +194,13 @@ export const EntryColumnLayout = () => {
         }
       />
     </div>
+  )
+}
+
+export const AIEntryLayout = () => {
+  return (
+    <AIChatRoot wrapFocusable={false}>
+      <AIEntryLayoutImpl />
+    </AIChatRoot>
   )
 }

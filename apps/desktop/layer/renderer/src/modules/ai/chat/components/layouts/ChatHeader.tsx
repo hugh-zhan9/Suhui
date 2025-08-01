@@ -3,7 +3,6 @@ import { useCallback } from "react"
 import { useTranslation } from "react-i18next"
 
 import { useDialog } from "~/components/ui/modal/stacked/hooks"
-import { useAIChatSessionMethods } from "~/modules/ai/chat/__internal__/AIChatContext"
 import { useChatActions, useCurrentTitle } from "~/modules/ai/chat/__internal__/hooks"
 import { useSettingModal } from "~/modules/settings/modal/use-setting-modal-hack"
 
@@ -11,7 +10,7 @@ import { ChatMoreDropdown } from "./ChatMoreDropdown"
 
 export const ChatHeader = () => {
   const currentTitle = useCurrentTitle()
-  const { handleNewChat } = useAIChatSessionMethods()
+
   const settingModalPresent = useSettingModal()
   const chatActions = useChatActions()
   const { ask } = useDialog()
@@ -28,10 +27,10 @@ export const ChatHeader = () => {
       message: t("clear_chat_message"),
       variant: "danger",
       onConfirm: () => {
-        handleNewChat()
+        chatActions.newChat()
       },
     })
-  }, [chatActions, currentTitle, ask, t, handleNewChat])
+  }, [chatActions, currentTitle, ask, t])
 
   const maskImage = `linear-gradient(to bottom, black 0%, black 75%, transparent 100%)`
   return (

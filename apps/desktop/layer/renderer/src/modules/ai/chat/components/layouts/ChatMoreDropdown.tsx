@@ -15,7 +15,6 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu/dropdown-menu"
 import { useDialog } from "~/components/ui/modal/stacked/hooks"
-import { useAIChatSessionMethods } from "~/modules/ai/chat/__internal__/AIChatContext"
 import {
   useChatActions,
   useCurrentChatId,
@@ -28,7 +27,7 @@ import { downloadMarkdown, exportChatToMarkdown } from "~/modules/ai/chat/utils/
 export const ChatMoreDropdown = () => {
   const currentTitle = useCurrentTitle()
   const currentChatId = useCurrentChatId()
-  const { handleNewChat } = useAIChatSessionMethods()
+
   const chatActions = useChatActions()
   const { t } = useTranslation("ai")
   const { ask } = useDialog()
@@ -64,7 +63,7 @@ export const ChatMoreDropdown = () => {
         toast.success(t("delete_chat_success"))
 
         if (chatId === currentChatId) {
-          handleNewChat()
+          chatActions.newChat()
         }
 
         loadHistory()
@@ -75,7 +74,7 @@ export const ChatMoreDropdown = () => {
         setDeletingChatId(null)
       }
     },
-    [sessions, ask, t, currentChatId, loadHistory, handleNewChat],
+    [sessions, ask, t, currentChatId, loadHistory, chatActions],
   )
 
   const handleExport = useCallback(() => {
@@ -154,7 +153,7 @@ export const ChatMoreDropdown = () => {
                 ))}
                 <DropdownMenuSeparator className="my-1.5" />
                 <DropdownMenuItem
-                  onClick={handleNewChat}
+                  onClick={chatActions.newChat}
                   className="flex cursor-pointer items-center gap-2 rounded-md px-1 py-2.5"
                 >
                   <i className="i-mgc-add-cute-re size-4" />

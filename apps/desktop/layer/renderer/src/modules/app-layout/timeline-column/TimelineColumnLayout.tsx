@@ -16,7 +16,7 @@ import { useRouteParams } from "~/hooks/biz/useRouteParams"
 import { EntryColumn } from "~/modules/entry-column"
 import { AppLayoutGridContainerProvider } from "~/providers/app-grid-layout-container-provider"
 
-export function CenterColumnLayout() {
+export function TimelineColumnLayout() {
   const containerRef = useRef<HTMLDivElement>(null)
 
   // Memo this initial value to avoid re-render
