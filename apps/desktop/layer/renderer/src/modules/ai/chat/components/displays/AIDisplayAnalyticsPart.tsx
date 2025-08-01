@@ -14,10 +14,10 @@ import {
   TableRow,
 } from "@follow/components/ui/table/index.js"
 import dayjs from "dayjs"
-import { memo } from "react"
 
 import type { AIDisplayAnalyticsTool } from "../../__internal__/types"
 import { ErrorState, LoadingState } from "../common-states"
+import { toolMemo } from "./share"
 import { ChartPlaceholder, StatCard } from "./shared"
 
 type AnalyticsData = AIDisplayAnalyticsTool["output"]["analyticsData"]
@@ -230,7 +230,7 @@ const OverviewAnalytics = ({ data }: { data: AnalyticsData["overviewStats"] }) =
   )
 }
 
-export const AIDisplayAnalyticsPart = memo(({ part }: { part: AIDisplayAnalyticsTool }) => {
+export const AIDisplayAnalyticsPart = toolMemo(({ part }: { part: AIDisplayAnalyticsTool }) => {
   // Handle error state
   if (part.state === "output-error") {
     return (

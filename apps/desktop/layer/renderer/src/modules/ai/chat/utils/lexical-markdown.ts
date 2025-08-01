@@ -30,28 +30,6 @@ export function convertLexicalToMarkdown(editor: LexicalEditor): string {
 }
 
 /**
- * Create MessageContent for user's rich text input
- */
-export function createRichTextMessage(editor: LexicalEditor): MessageContent {
-  const schema = editor.getEditorState().toJSON()
-
-  return {
-    format: "richtext",
-    content: schema,
-  }
-}
-
-/**
- * Create MessageContent for plaintext (AI responses, existing messages)
- */
-export function createPlaintextMessage(text: string): MessageContent {
-  return {
-    format: "plaintext",
-    content: text,
-  }
-}
-
-/**
  * Get markdown string for AI communication from any MessageContent
  */
 export function getMarkdownForAI(message: MessageContent, editor?: LexicalEditor): string {
@@ -69,18 +47,4 @@ export function getMarkdownForAI(message: MessageContent, editor?: LexicalEditor
 
   // Fallback
   return ""
-}
-
-/**
- * Check if message is rich text format
- */
-export function isRichTextMessage(message: MessageContent): boolean {
-  return message.format === "richtext"
-}
-
-/**
- * Check if message is plaintext format
- */
-export function isPlaintextMessage(message: MessageContent): boolean {
-  return message.format === "plaintext"
 }
