@@ -154,11 +154,18 @@ export interface FetchTemplate {
   body?: string
 }
 
+export interface URLSchemeTemplate {
+  scheme: string // e.g., "obsidian://", "bear://", "drafts://action"
+  // URL schemes use query parameters or path segments for data
+}
+
 export interface CustomIntegration {
   id: string
   name: string
   icon: string
-  fetchTemplate: FetchTemplate
+  type?: "http" | "url-scheme" // Optional for backward compatibility
+  fetchTemplate?: FetchTemplate // Keep optional for url-scheme integrations
+  urlSchemeTemplate?: URLSchemeTemplate
   enabled: boolean
 }
 
