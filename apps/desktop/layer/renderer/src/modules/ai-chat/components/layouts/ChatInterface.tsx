@@ -9,6 +9,12 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { useEventCallback } from "usehooks-ts"
 
 import {
+  AIChatMessage,
+  AIChatTypingIndicator,
+} from "~/modules/ai-chat/components/message/AIChatMessage"
+import { useAutoScroll } from "~/modules/ai-chat/hooks/useAutoScroll"
+import { useLoadMessages } from "~/modules/ai-chat/hooks/useLoadMessages"
+import {
   useBlockActions,
   useChatActions,
   useChatError,
@@ -16,13 +22,7 @@ import {
   useCurrentChatId,
   useHasMessages,
   useMessages,
-} from "~/modules/ai-chat/__internal__/hooks"
-import {
-  AIChatMessage,
-  AIChatTypingIndicator,
-} from "~/modules/ai-chat/components/message/AIChatMessage"
-import { useAutoScroll } from "~/modules/ai-chat/hooks/useAutoScroll"
-import { useLoadMessages } from "~/modules/ai-chat/hooks/useLoadMessages"
+} from "~/modules/ai-chat/store/hooks"
 
 import { convertLexicalToMarkdown } from "../../utils/lexical-markdown"
 import { ChatInput } from "./ChatInput"

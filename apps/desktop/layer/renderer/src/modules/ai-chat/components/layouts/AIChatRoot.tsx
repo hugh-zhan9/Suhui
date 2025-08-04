@@ -4,10 +4,10 @@ import { useMemo, useRef } from "react"
 import { Focusable } from "~/components/common/Focusable"
 import { HotkeyScope } from "~/constants"
 
-import type { AIPanelRefs } from "../../__internal__/AIChatContext"
-import { AIChatStoreContext, AIPanelRefsContext } from "../../__internal__/AIChatContext"
-import { useChatActions, useCurrentChatId } from "../../__internal__/hooks"
-import { createAIChatStore } from "../../__internal__/store"
+import type { AIPanelRefs } from "../../store/AIChatContext"
+import { AIChatStoreContext, AIPanelRefsContext } from "../../store/AIChatContext"
+import { useChatActions, useCurrentChatId } from "../../store/hooks"
+import { createAIChatStore } from "../../store/store"
 
 interface AIChatRootProps extends PropsWithChildren {
   wrapFocusable?: boolean

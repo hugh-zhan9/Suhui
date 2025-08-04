@@ -7,9 +7,9 @@ import * as React from "react"
 import { toast } from "sonner"
 
 import { copyToClipboard } from "~/lib/clipboard"
-import { useChatActions } from "~/modules/ai-chat/__internal__/hooks"
-import type { BizUIMetadata, BizUITools } from "~/modules/ai-chat/__internal__/types"
 import { useEditingMessageId, useSetEditingMessageId } from "~/modules/ai-chat/atoms/session"
+import { useChatActions } from "~/modules/ai-chat/store/hooks"
+import type { BizUIMetadata, BizUITools } from "~/modules/ai-chat/store/types"
 
 import type { RichTextPart } from "../../types/ChatSession"
 import { convertLexicalToMarkdown } from "../../utils/lexical-markdown"

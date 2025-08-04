@@ -1,6 +1,6 @@
 import type { UIDataTypes, UIMessage } from "ai"
 
-import type { BizUIMetadata, BizUITools } from "../__internal__/types"
+import type { BizUIMetadata, BizUITools } from "../store/types"
 
 export const exportChatToMarkdown = (
   messages: UIMessage<BizUIMetadata, UIDataTypes, BizUITools>[],

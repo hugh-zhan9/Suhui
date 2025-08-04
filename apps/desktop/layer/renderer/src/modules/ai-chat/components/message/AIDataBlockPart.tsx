@@ -4,7 +4,7 @@ import { cn } from "@follow/utils/utils"
 import { m } from "motion/react"
 import * as React from "react"
 
-import type { AIChatContextBlock } from "~/modules/ai-chat/__internal__/types"
+import type { AIChatContextBlock } from "~/modules/ai-chat/store/types"
 
 interface AIDataBlockPartProps {
   blocks: AIChatContextBlock[]

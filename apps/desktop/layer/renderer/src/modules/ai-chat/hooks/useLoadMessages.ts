@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react"
 import { useEventCallback } from "usehooks-ts"
 
-import { useChatActions } from "../__internal__/hooks"
-import type { BizUIMessage, BizUIMetadata } from "../__internal__/types"
 import { AIPersistService } from "../services"
+import { useChatActions } from "../store/hooks"
+import type { BizUIMessage, BizUIMetadata } from "../store/types"
 
 export const useLoadMessages = (
   chatId: string,

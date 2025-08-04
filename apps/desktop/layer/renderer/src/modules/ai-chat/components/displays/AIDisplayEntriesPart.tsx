@@ -12,7 +12,7 @@ import { memo } from "react"
 import { usePeekModal } from "~/hooks/biz/usePeekModal"
 import { FeedIcon } from "~/modules/feed/feed-icon"
 
-import type { AIDisplayEntriesTool } from "../../__internal__/types"
+import type { AIDisplayEntriesTool } from "../../store/types"
 import { ErrorState, LoadingState } from "../shared/common-states"
 import { CategoryTag, EmptyState, StatCard } from "./shared"
 

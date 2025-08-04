@@ -10,8 +10,8 @@ import { memo, useCallback, useRef, useState } from "react"
 
 import { AIChatContextBar } from "~/modules/ai-chat/components/layouts/AIChatContextBar"
 
-import { useChatActions, useChatError, useChatStatus } from "../../__internal__/hooks"
 import { MentionPlugin } from "../../editor"
+import { useChatActions, useChatError, useChatStatus } from "../../store/hooks"
 import { AIChatSendButton } from "./AIChatSendButton"
 import { CollapsibleError } from "./CollapsibleError"
 

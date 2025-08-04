@@ -1,7 +1,7 @@
 import { useEffect } from "react"
 
-import { useChatStatus, useMessages } from "../__internal__/hooks"
 import { AIPersistService } from "../services"
+import { useChatStatus, useMessages } from "../store/hooks"
 
 export const useSaveMessages = (
   chatId: string,

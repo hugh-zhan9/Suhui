@@ -15,7 +15,7 @@ import {
 } from "@follow/components/ui/table/index.js"
 import dayjs from "dayjs"
 
-import type { AIDisplayAnalyticsTool } from "../../__internal__/types"
+import type { AIDisplayAnalyticsTool } from "../../store/types"
 import { ErrorState, LoadingState } from "../shared/common-states"
 import { toolMemo } from "./share"
 import { ChartPlaceholder, StatCard } from "./shared"

@@ -3,7 +3,7 @@ import { db } from "@follow/database/db"
 import { aiChatMessagesTable, aiChatTable } from "@follow/database/schemas/index"
 import { asc, count, eq, inArray, sql } from "drizzle-orm"
 
-import type { BizUIMessage } from "../__internal__/types"
+import type { BizUIMessage } from "../store/types"
 
 class AIPersistServiceStatic {
   // Cache for session existence to avoid repeated queries

@@ -9,7 +9,7 @@ import dayjs from "dayjs"
 
 import { FeedIcon } from "~/modules/feed/feed-icon"
 
-import type { AIDisplaySubscriptionsTool } from "../../__internal__/types"
+import type { AIDisplaySubscriptionsTool } from "../../store/types"
 import { ErrorState, LoadingState } from "../shared/common-states"
 import { toolMemo } from "./share"
 import { AnalyticsMetrics, CategoryTag, EmptyState, StatCard } from "./shared"

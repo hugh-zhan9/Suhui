@@ -15,13 +15,9 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu/dropdown-menu"
 import { useDialog } from "~/components/ui/modal/stacked/hooks"
-import {
-  useChatActions,
-  useCurrentChatId,
-  useCurrentTitle,
-} from "~/modules/ai-chat/__internal__/hooks"
 import { useChatHistory } from "~/modules/ai-chat/hooks/useChatHistory"
 import { AIPersistService } from "~/modules/ai-chat/services"
+import { useChatActions, useCurrentChatId, useCurrentTitle } from "~/modules/ai-chat/store/hooks"
 import { downloadMarkdown, exportChatToMarkdown } from "~/modules/ai-chat/utils/export"
 
 export const ChatMoreDropdown = () => {

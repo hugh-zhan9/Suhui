@@ -10,7 +10,7 @@ import { memo } from "react"
 
 import { FeedIcon } from "~/modules/feed/feed-icon"
 
-import type { AIDisplayFeedsTool } from "../../__internal__/types"
+import type { AIDisplayFeedsTool } from "../../store/types"
 import { ErrorState, LoadingState } from "../shared/common-states"
 import { AnalyticsMetrics, EmptyState, StatCard } from "./shared"
 

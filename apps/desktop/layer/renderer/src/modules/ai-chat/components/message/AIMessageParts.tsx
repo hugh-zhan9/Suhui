@@ -10,7 +10,7 @@ import type {
   AIDisplayFeedsTool,
   AIDisplaySubscriptionsTool,
   BizUIMessage,
-} from "~/modules/ai-chat/__internal__/types"
+} from "~/modules/ai-chat/store/types"
 
 import {
   AIDisplayAnalyticsPart,
