@@ -3,7 +3,7 @@ import { useCallback } from "react"
 import { useTranslation } from "react-i18next"
 
 import { useDialog } from "~/components/ui/modal/stacked/hooks"
-import { useChatActions, useCurrentTitle } from "~/modules/ai/chat/__internal__/hooks"
+import { useChatActions, useCurrentTitle } from "~/modules/ai-chat/__internal__/hooks"
 import { useSettingModal } from "~/modules/settings/modal/use-setting-modal-hack"
 
 import { ChatMoreDropdown } from "./ChatMoreDropdown"

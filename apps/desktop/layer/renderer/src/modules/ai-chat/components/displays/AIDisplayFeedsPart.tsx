@@ -11,7 +11,7 @@ import { memo } from "react"
 import { FeedIcon } from "~/modules/feed/feed-icon"
 
 import type { AIDisplayFeedsTool } from "../../__internal__/types"
-import { ErrorState, LoadingState } from "../common-states"
+import { ErrorState, LoadingState } from "../shared/common-states"
 import { AnalyticsMetrics, EmptyState, StatCard } from "./shared"
 
 type FeedData = AIDisplayFeedsTool["output"]["feeds"]

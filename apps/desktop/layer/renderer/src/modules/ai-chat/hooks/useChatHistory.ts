@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react"
 
-import { AIPersistService } from "~/modules/ai/chat/services/index"
+import { AIPersistService } from "~/modules/ai-chat/services/index"
 
 import type { ChatSession } from "../types/ChatSession"
 

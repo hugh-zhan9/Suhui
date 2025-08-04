@@ -16,7 +16,7 @@ import {
 import dayjs from "dayjs"
 
 import type { AIDisplayAnalyticsTool } from "../../__internal__/types"
-import { ErrorState, LoadingState } from "../common-states"
+import { ErrorState, LoadingState } from "../shared/common-states"
 import { toolMemo } from "./share"
 import { ChartPlaceholder, StatCard } from "./shared"
 

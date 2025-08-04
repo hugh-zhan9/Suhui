@@ -8,7 +8,7 @@ import type { EditorState, LexicalEditor } from "lexical"
 import { $getRoot } from "lexical"
 import { memo, useCallback, useRef, useState } from "react"
 
-import { AIChatContextBar } from "~/modules/ai/chat/components/AIChatContextBar"
+import { AIChatContextBar } from "~/modules/ai-chat/components/layouts/AIChatContextBar"
 
 import { useChatActions, useChatError, useChatStatus } from "../../__internal__/hooks"
 import { MentionPlugin } from "../../editor"

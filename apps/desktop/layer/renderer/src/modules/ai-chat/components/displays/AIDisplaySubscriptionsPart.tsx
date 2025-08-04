@@ -10,7 +10,7 @@ import dayjs from "dayjs"
 import { FeedIcon } from "~/modules/feed/feed-icon"
 
 import type { AIDisplaySubscriptionsTool } from "../../__internal__/types"
-import { ErrorState, LoadingState } from "../common-states"
+import { ErrorState, LoadingState } from "../shared/common-states"
 import { toolMemo } from "./share"
 import { AnalyticsMetrics, CategoryTag, EmptyState, StatCard } from "./shared"
 

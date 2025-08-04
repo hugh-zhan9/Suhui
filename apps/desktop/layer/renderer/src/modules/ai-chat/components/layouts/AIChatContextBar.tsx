@@ -22,10 +22,10 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu/dropdown-menu"
 import { useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
-import { useAIChatStore } from "~/modules/ai/chat/__internal__/AIChatContext"
-import type { AIChatContextBlock } from "~/modules/ai/chat/__internal__/types"
+import { useAIChatStore } from "~/modules/ai-chat/__internal__/AIChatContext"
+import type { AIChatContextBlock } from "~/modules/ai-chat/__internal__/types"
 
-import { useChatBlockActions } from "../__internal__/hooks"
+import { useChatBlockActions } from "../../__internal__/hooks"
 
 export const AIChatContextBar: Component<{ onSendShortcut?: (prompt: string) => void }> = memo(
   ({ className, onSendShortcut }) => {

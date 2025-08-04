@@ -13,7 +13,7 @@ import { usePeekModal } from "~/hooks/biz/usePeekModal"
 import { FeedIcon } from "~/modules/feed/feed-icon"
 
 import type { AIDisplayEntriesTool } from "../../__internal__/types"
-import { ErrorState, LoadingState } from "../common-states"
+import { ErrorState, LoadingState } from "../shared/common-states"
 import { CategoryTag, EmptyState, StatCard } from "./shared"
 
 type EntryData = AIDisplayEntriesTool["output"]["entries"]

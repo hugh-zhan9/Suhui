@@ -19,10 +19,10 @@ import {
   useChatActions,
   useCurrentChatId,
   useCurrentTitle,
-} from "~/modules/ai/chat/__internal__/hooks"
-import { useChatHistory } from "~/modules/ai/chat/hooks/useChatHistory"
-import { AIPersistService } from "~/modules/ai/chat/services"
-import { downloadMarkdown, exportChatToMarkdown } from "~/modules/ai/chat/utils/export"
+} from "~/modules/ai-chat/__internal__/hooks"
+import { useChatHistory } from "~/modules/ai-chat/hooks/useChatHistory"
+import { AIPersistService } from "~/modules/ai-chat/services"
+import { downloadMarkdown, exportChatToMarkdown } from "~/modules/ai-chat/utils/export"
 
 export const ChatMoreDropdown = () => {
   const currentTitle = useCurrentTitle()

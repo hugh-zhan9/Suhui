@@ -2,9 +2,9 @@ import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext
 import { $getNodeByKey } from "lexical"
 import { useCallback, useEffect, useRef } from "react"
 
-import { useAIChatStore } from "~/modules/ai/chat/__internal__/AIChatContext"
-import { useChatBlockActions } from "~/modules/ai/chat/__internal__/hooks"
-import type { AIChatContextBlock } from "~/modules/ai/chat/__internal__/types"
+import { useAIChatStore } from "~/modules/ai-chat/__internal__/AIChatContext"
+import { useChatBlockActions } from "~/modules/ai-chat/__internal__/hooks"
+import type { AIChatContextBlock } from "~/modules/ai-chat/__internal__/types"
 
 import { $isMentionNode, MentionNode } from "../MentionNode"
 import type { MentionData } from "../types"

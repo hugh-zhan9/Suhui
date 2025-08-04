@@ -10,7 +10,7 @@ import type {
   AIDisplayFeedsTool,
   AIDisplaySubscriptionsTool,
   BizUIMessage,
-} from "~/modules/ai/chat/__internal__/types"
+} from "~/modules/ai-chat/__internal__/types"
 
 import {
   AIDisplayAnalyticsPart,
@@ -18,10 +18,10 @@ import {
   AIDisplayFeedsPart,
   AIDisplaySubscriptionsPart,
 } from "../displays"
-import { ToolInvocationComponent } from "../ToolInvocationComponent"
 import { AIDataBlockPart } from "./AIDataBlockPart"
 import { AIMarkdownMessage } from "./AIMarkdownMessage"
 import { AIRichTextMessage } from "./AIRichTextMessage"
+import { ToolInvocationComponent } from "./ToolInvocationComponent"
 
 interface MessagePartsProps {
   message: BizUIMessage

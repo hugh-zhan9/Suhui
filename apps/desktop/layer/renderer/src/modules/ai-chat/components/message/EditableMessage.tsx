@@ -10,8 +10,8 @@ import type { EditorState, LexicalEditor, SerializedEditorState } from "lexical"
 import { $getRoot } from "lexical"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
-import { useChatStatus } from "~/modules/ai/chat/__internal__/hooks"
-import { useEditingMessageId, useSetEditingMessageId } from "~/modules/ai/chat/atoms/session"
+import { useChatStatus } from "~/modules/ai-chat/__internal__/hooks"
+import { useEditingMessageId, useSetEditingMessageId } from "~/modules/ai-chat/atoms/session"
 
 interface EditableMessageProps {
   messageId: string

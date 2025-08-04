@@ -3,7 +3,7 @@ import { m } from "motion/react"
 import { useTranslation } from "react-i18next"
 
 import { useAISettingValue } from "~/atoms/settings/ai"
-import { AISpline } from "~/modules/ai/AISpline"
+import { AISpline } from "~/modules/ai-chat/components/3d-models/AISpline"
 import { useSettingModal } from "~/modules/settings/modal/use-setting-modal-hack"
 
 import { ChatInput } from "./ChatInput"
