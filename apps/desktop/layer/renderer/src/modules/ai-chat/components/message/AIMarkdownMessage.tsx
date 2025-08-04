@@ -278,7 +278,7 @@ const useThrottledMarkdownParsing = (text: string, isProcessing: boolean) => {
 
     // Parse and cache the result
     const result = parseMarkdown(content, {
-      rehypePlugins: [animatedPlugin],
+      rehypePlugins: isProcessing ? [animatedPlugin] : undefined,
       components: {
         pre: ({ children }) => {
           const props = isValidElement(children) && "props" in children && children.props

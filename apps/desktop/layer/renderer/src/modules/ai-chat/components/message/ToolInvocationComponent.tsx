@@ -4,6 +4,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@follow/components/ui/accordion/index.js"
+import { JsonHighlighter } from "@follow/components/ui/json-highlighter/index.js"
 import type { ToolUIPart } from "ai"
 import { getToolName } from "ai"
 import * as React from "react"
@@ -39,9 +40,7 @@ export const ToolInvocationComponent: React.FC<ToolInvocationComponentProps> = R
                     <div className="text-text-tertiary mb-2 text-xs font-semibold uppercase tracking-wide">
                       Arguments
                     </div>
-                    <pre className="text-text-secondary max-h-32 overflow-auto rounded-lg bg-zinc-100/80 p-3 text-xs leading-relaxed dark:bg-zinc-900/80">
-                      {JSON.stringify(part.input, null, 2)}
-                    </pre>
+                    <JsonHighlighter json={JSON.stringify(part.input, null, 2)} />
                   </div>
                 )}
 
@@ -50,9 +49,7 @@ export const ToolInvocationComponent: React.FC<ToolInvocationComponentProps> = R
                     <div className="text-text-tertiary mb-2 text-xs font-semibold uppercase tracking-wide">
                       Result
                     </div>
-                    <pre className="text-text max-h-32 overflow-auto rounded-lg bg-zinc-100/80 p-3 text-xs leading-relaxed dark:bg-zinc-900/80">
-                      {JSON.stringify(part.output, null, 2)}
-                    </pre>
+                    <JsonHighlighter json={JSON.stringify(part.output, null, 2)} />
                   </div>
                 )}
               </div>
