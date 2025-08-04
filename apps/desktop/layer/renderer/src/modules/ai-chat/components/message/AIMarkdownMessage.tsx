@@ -9,12 +9,233 @@ import {
   useDeferredValue,
   useMemo,
   useRef,
+  useSyncExternalStore,
 } from "react"
 
 import { ShikiHighLighter } from "~/components/ui/code-highlighter"
 import { MermaidDiagram } from "~/components/ui/diagrams"
 import { MarkdownLink } from "~/components/ui/markdown/renderers/MarkdownLink"
 import { usePeekModal } from "~/hooks/biz/usePeekModal"
+
+// Buffer configuration interface
+interface BufferConfig {
+  minBufferSize: number
+  maxBufferTime: number
+  semanticTimeout: number
+  emergencyTimeout: number
+}
+
+// Buffer endpoint patterns by priority
+const BUFFER_ENDPOINTS = {
+  HIGH_PRIORITY: [
+    /\n\n/g, // Paragraph breaks
+    /\n```\w*\n/g, // Code block boundaries
+    /\n-{2,}\n/g, // Horizontal rules
+    /[.!?]\s+/g, // Sentence endings with space
+    /\n[-*+]\s/g, // List items
+    /\n\d+\.\s/g, // Numbered lists
+  ],
+  MEDIUM_PRIORITY: [
+    /[,:;]\s/g, // Clause boundaries
+    /[)\]]\s/g, // Closing brackets with space
+    /\n(?!\n)/g, // Single line breaks
+  ],
+  LOW_PRIORITY: [/\s/g], // Any whitespace
+} as const
+
+// Streaming message buffer class for external state management
+class StreamingMessageBuffer {
+  private displayedText = ""
+  private bufferedText = ""
+  private lastFlushTime = Date.now()
+  private flushTimeoutId: ReturnType<typeof setTimeout> | null = null
+  private subscribers = new Set<() => void>()
+  private config: BufferConfig
+
+  constructor(config: BufferConfig) {
+    this.config = config
+  }
+
+  // Subscribe to state changes
+  subscribe = (callback: () => void) => {
+    this.subscribers.add(callback)
+    return () => {
+      this.subscribers.delete(callback)
+    }
+  }
+
+  // Get current displayed text snapshot
+  getSnapshot = () => {
+    return this.displayedText
+  }
+
+  // Notify all subscribers of state change
+  private notify = () => {
+    this.subscribers.forEach((callback) => callback())
+  }
+
+  // Find last endpoint of given priority in text
+  private findLastEndpoint = (text: string, priority: keyof typeof BUFFER_ENDPOINTS): number => {
+    const patterns = BUFFER_ENDPOINTS[priority]
+    let lastIndex = -1
+
+    for (const pattern of patterns) {
+      const matches = [...text.matchAll(pattern)]
+      if (matches.length > 0) {
+        const lastMatch = matches.at(-1)
+        if (lastMatch?.index !== undefined) {
+          lastIndex = Math.max(lastIndex, lastMatch.index + lastMatch[0].length)
+        }
+      }
+    }
+
+    return lastIndex
+  }
+
+  // Determine optimal flush point in buffered text
+  private determineFlushPoint = (bufferedText: string): number => {
+    // Try high priority endpoints first
+    const highPriorityPoint = this.findLastEndpoint(bufferedText, "HIGH_PRIORITY")
+    if (highPriorityPoint > 0) return highPriorityPoint
+
+    // Try medium priority endpoints
+    const mediumPriorityPoint = this.findLastEndpoint(bufferedText, "MEDIUM_PRIORITY")
+    if (mediumPriorityPoint > 0) return mediumPriorityPoint
+
+    // Try low priority endpoints
+    const lowPriorityPoint = this.findLastEndpoint(bufferedText, "LOW_PRIORITY")
+    if (lowPriorityPoint > 0) return lowPriorityPoint
+
+    // Flush entire buffer if no endpoints found
+    return bufferedText.length
+  }
+
+  // Check if buffer should be flushed
+  private shouldFlushBuffer = (bufferedText: string): boolean => {
+    const now = Date.now()
+    const timeSinceLastFlush = now - this.lastFlushTime
+
+    // Emergency timeout - always flush
+    if (timeSinceLastFlush > this.config.emergencyTimeout) return true
+
+    // Minimum buffer size not met
+    if (bufferedText.length < this.config.minBufferSize) return false
+
+    // Check for high priority endpoints (immediate flush)
+    if (this.findLastEndpoint(bufferedText, "HIGH_PRIORITY") > 0) return true
+
+    // Check for medium priority endpoints with time condition
+    if (
+      this.findLastEndpoint(bufferedText, "MEDIUM_PRIORITY") > 0 &&
+      timeSinceLastFlush > this.config.maxBufferTime
+    ) {
+      return true
+    }
+
+    // Semantic timeout for incomplete sentences
+    if (timeSinceLastFlush > this.config.semanticTimeout) {
+      return this.findLastEndpoint(bufferedText, "LOW_PRIORITY") > 0
+    }
+
+    return false
+  }
+
+  // Emergency flush timer
+  private scheduleEmergencyFlush = () => {
+    if (this.flushTimeoutId) return
+
+    this.flushTimeoutId = setTimeout(() => {
+      this.displayedText += this.bufferedText
+      this.bufferedText = ""
+      this.lastFlushTime = Date.now()
+      this.flushTimeoutId = null
+      this.notify()
+    }, this.config.emergencyTimeout)
+  }
+
+  // Clear emergency flush timer
+  private clearEmergencyFlush = () => {
+    if (this.flushTimeoutId) {
+      clearTimeout(this.flushTimeoutId)
+      this.flushTimeoutId = null
+    }
+  }
+
+  // Update text content
+  updateText = (newText: string, isProcessing: boolean) => {
+    if (!isProcessing) {
+      // Immediate update when not processing
+      this.displayedText = newText
+      this.bufferedText = ""
+      this.lastFlushTime = Date.now()
+      this.clearEmergencyFlush()
+      this.notify()
+      return
+    }
+
+    // Calculate delta and update buffer
+    const deltaText = newText.slice(this.displayedText.length + this.bufferedText.length)
+    if (!deltaText) return
+
+    const newBufferedText = this.bufferedText + deltaText
+
+    // Check if we should flush
+    if (this.shouldFlushBuffer(newBufferedText)) {
+      const flushPoint = this.determineFlushPoint(newBufferedText)
+      const textToFlush = newBufferedText.slice(0, flushPoint)
+      const remainingBuffer = newBufferedText.slice(flushPoint)
+
+      this.displayedText += textToFlush
+      this.bufferedText = remainingBuffer
+      this.lastFlushTime = Date.now()
+      this.clearEmergencyFlush()
+
+      if (remainingBuffer.length > 0) {
+        this.scheduleEmergencyFlush()
+      }
+
+      this.notify()
+    } else {
+      this.bufferedText = newBufferedText
+      this.scheduleEmergencyFlush()
+    }
+  }
+
+  // Cleanup resources
+  destroy = () => {
+    this.clearEmergencyFlush()
+    this.subscribers.clear()
+  }
+}
+
+// Buffer configurations
+const BUFFER_CONFIG = {
+  minBufferSize: 10,
+  maxBufferTime: 100,
+  semanticTimeout: 300,
+  emergencyTimeout: 500,
+} as const
+
+// Hook to use streaming text buffer
+const useStreamingTextBuffer = (text: string, isProcessing: boolean) => {
+  const bufferRef = useRef<StreamingMessageBuffer>(null)
+
+  // Initialize buffer if needed
+  if (!bufferRef.current) {
+    bufferRef.current = new StreamingMessageBuffer(BUFFER_CONFIG)
+  }
+
+  // Update buffer when text changes
+  bufferRef.current.updateText(text, isProcessing)
+
+  // Subscribe to buffer changes
+  const displayedText = useSyncExternalStore(
+    bufferRef.current.subscribe,
+    bufferRef.current.getSnapshot,
+  )
+
+  return displayedText
+}
 
 // Custom hook for throttled markdown parsing during streaming
 const useThrottledMarkdownParsing = (text: string, isProcessing: boolean) => {
@@ -147,12 +368,15 @@ export const AIMarkdownMessage = memo(
   prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg prose-h4:text-base prose-h5:text-base prose-h6:text-sm
   prose-li:list-disc prose-li:marker:text-accent prose-hr:border-border prose-hr:mx-8`
 
-    // Use deferred value for lower priority rendering during streaming
-    const deferredText = useDeferredValue(text)
+    // Use intelligent streaming buffer for semantic text rendering
+    const bufferedText = useStreamingTextBuffer(text, isProcessing ?? false)
 
-    // Use our optimized parsing hook
+    // Use deferred value for lower priority rendering during streaming
+    const deferredText = useDeferredValue(bufferedText)
+
+    // Use our optimized parsing hook with buffered text
     const parsedContent = useThrottledMarkdownParsing(
-      // During streaming, use deferred text for non-urgent updates
+      // During streaming, use deferred buffered text for optimal rendering
       isProcessing ? deferredText : text,
       isProcessing ?? false,
     )

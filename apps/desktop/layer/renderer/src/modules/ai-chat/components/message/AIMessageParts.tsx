@@ -27,40 +27,16 @@ interface MessagePartsProps {
   message: BizUIMessage
 }
 const ThinkingIndicator: React.FC = () => {
-  const text = "Thinking..."
-  const [displayedText, setDisplayedText] = React.useState("")
-  const [currentIndex, setCurrentIndex] = React.useState(0)
-
-  React.useEffect(() => {
-    if (currentIndex < text.length) {
-      const timer = setTimeout(() => {
-        setDisplayedText(text.slice(0, currentIndex + 1))
-        setCurrentIndex(currentIndex + 1)
-      }, 100)
-
-      return () => clearTimeout(timer)
-    }
-  }, [currentIndex, text])
-
   return (
-    <div className="flex items-center justify-center py-4">
+    <div className="flex w-24 items-center">
       <m.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-text-secondary flex items-center gap-1"
+        className="relative inline-block"
       >
-        <span className="text-sm font-medium">{displayedText}</span>
-        <m.span
-          animate={{ opacity: [1, 0.3, 1] }}
-          transition={{
-            duration: 1,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-          className="text-accent text-sm"
-        >
-          |
-        </m.span>
+        <span className="from-text-tertiary via-text to-text-tertiary animate-[shimmer_5s_linear_infinite] bg-gradient-to-r bg-[length:200%_100%] bg-clip-text text-sm font-medium text-transparent">
+          Thinking...
+        </span>
       </m.div>
     </div>
   )
