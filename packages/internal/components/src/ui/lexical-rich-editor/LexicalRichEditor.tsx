@@ -18,12 +18,12 @@ import { useImperativeHandle, useRef, useState } from "react"
 import { LexicalRichEditorNodes } from "./nodes"
 import { KeyboardPlugin } from "./plugins"
 import { defaultLexicalTheme } from "./theme"
-import type { LexicalRichEditorProps, LexicalRichEditorRef } from "./types"
+import type { BuiltInPlugins, LexicalRichEditorProps, LexicalRichEditorRef } from "./types"
 
 function onError(error: Error) {
   console.error("Lexical Editor Error:", error)
 }
-const defaultEnabledPlugins = {
+const defaultEnabledPlugins: BuiltInPlugins = {
   history: true,
   markdown: true,
   list: true,
@@ -42,15 +42,22 @@ export const LexicalRichEditor = ({
   theme = defaultLexicalTheme,
   enabledPlugins = defaultEnabledPlugins,
   initalEditorState,
+  plugins,
 }: LexicalRichEditorProps & { ref?: React.RefObject<LexicalRichEditorRef | null> }) => {
   const editorRef = useRef<LexicalEditor | null>(null)
   const [isEmpty, setIsEmpty] = useState(true)
+
+  // Collect nodes from plugins
+  const pluginNodes = plugins?.flatMap((plugin) => plugin.nodes || []) || []
+
+  // Merge base nodes with custom nodes and plugin nodes
+  const allNodes = [...LexicalRichEditorNodes, ...pluginNodes]
 
   const initialConfig: InitialConfigType = {
     namespace,
     theme,
     onError,
-    nodes: LexicalRichEditorNodes,
+    nodes: allNodes,
     editorState: initalEditorState,
   }
 
@@ -88,13 +95,13 @@ export const LexicalRichEditor = ({
           contentEditable={
             <ContentEditable
               className={cn(
-                "scrollbar-none text-text placeholder:text-text-secondary",
-                "max-h-40 min-h-14 w-full resize-none bg-transparent px-5 py-3.5 pr-14",
+                "scrollbar-none text-text placeholder:text-text-secondary cursor-text",
+                "max-h-40 min-h-14 w-full resize-none bg-transparent",
                 "text-sm !outline-none transition-all duration-200 focus:outline-none",
               )}
               aria-placeholder={placeholder}
               placeholder={
-                <div className="text-text-secondary pointer-events-none absolute left-5 top-3.5 text-sm">
+                <div className="text-text-secondary pointer-events-none absolute left-0 top-0 text-sm">
                   {placeholder}
                 </div>
               }
@@ -108,6 +115,10 @@ export const LexicalRichEditor = ({
         {enabledPlugins.markdown && <MarkdownShortcutPlugin transformers={TRANSFORMERS} />}
         {enabledPlugins.list && <ListPlugin />}
         {enabledPlugins.link && <LinkPlugin />}
+
+        {plugins?.map((Plugin) => (
+          <Plugin key={Plugin.id} />
+        ))}
 
         <KeyboardPlugin onKeyDown={onKeyDown} />
         {autoFocus && enabledPlugins.autoFocus && <AutoFocusPlugin />}
