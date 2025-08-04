@@ -59,7 +59,7 @@ const EntriesGrid = ({
   }
 
   return (
-    <div className="@[600px]:grid-cols-2 @[900px]:grid-cols-3 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div className="@[600px]:grid-cols-2 @[900px]:grid-cols-3 grid grid-cols-1 gap-4">
       {data.map((item) => (
         <EntryCard
           key={item.entry.id}
@@ -77,7 +77,7 @@ const EntryCard = memo(({ item, showSummary, showMetadata }: EntryCardProps) => 
   return (
     <Card
       key={item.entry.id}
-      className="cursor-pointer p-4"
+      className="hover:bg-fill-tertiary cursor-pointer p-4"
       onMouseEnter={() => entrySyncServices.fetchEntryDetail(item.entry.id)}
       onClick={() => peekModal(item.entry.id, "modal")}
     >
@@ -136,6 +136,8 @@ const TimelineView = ({
   showSummary: boolean
   showMetadata: boolean
 }) => {
+  const peekModal = usePeekModal()
+
   if (!data?.length) {
     return <EmptyState message="No entries found" />
   }
@@ -143,7 +145,12 @@ const TimelineView = ({
   return (
     <div className="space-y-4">
       {data.map((item) => (
-        <Card key={item.entry.id} className="p-4">
+        <Card
+          key={item.entry.id}
+          className="hover:bg-fill-tertiary cursor-pointer p-4"
+          onMouseEnter={() => entrySyncServices.fetchEntryDetail(item.entry.id)}
+          onClick={() => peekModal(item.entry.id, "modal")}
+        >
           <div className="flex gap-4">
             <FeedIcon
               feed={item.feed ? { ...item.feed, type: "feed" as const } : null}
@@ -341,7 +348,7 @@ export const AIDisplayEntriesPart = memo(({ part }: { part: AIDisplayEntriesTool
       </CardHeader>
       <CardContent className="@container space-y-6">
         {/* Statistics Overview */}
-        <div className="@[600px]:grid-cols-4 grid grid-cols-2 gap-4 md:grid-cols-4">
+        <div className="@[600px]:grid-cols-4 @[400px]:grid-cols-2 grid grid-cols-1 gap-4">
           <StatCard title="Total Entries" value={totalEntries} emoji="📄" />
           <StatCard title="Feeds" value={feedsCount} emoji="📡" />
           <StatCard title="Authors" value={authorsCount} emoji="✍️" />

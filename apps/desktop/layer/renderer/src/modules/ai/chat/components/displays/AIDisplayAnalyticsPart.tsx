@@ -40,7 +40,7 @@ const FeedAnalytics = ({ data }: { data: AnalyticsData["feedData"] }) => {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div className="@[600px]:grid-cols-3 @[400px]:grid-cols-2 grid grid-cols-1 gap-4">
         <StatCard
           title="Feed Title"
           value={feed.title || "Untitled Feed"}
@@ -52,7 +52,7 @@ const FeedAnalytics = ({ data }: { data: AnalyticsData["feedData"] }) => {
       </div>
 
       {analytics && (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="@[400px]:grid-cols-2 grid grid-cols-1 gap-4">
           <StatCard title="Views" value={analytics.view || 0} emoji="👀" />
           <StatCard
             title="Last Checked"
@@ -70,7 +70,7 @@ const SubscriptionAnalytics = ({ data }: { data: AnalyticsData["subscriptionStat
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div className="@[600px]:grid-cols-3 @[400px]:grid-cols-2 grid grid-cols-1 gap-4">
         <StatCard title="Total Subscriptions" value={data.length} emoji="📊" />
         <StatCard title="Active Feeds" value={data.filter((s) => s.feed).length} emoji="🟢" />
         <StatCard
@@ -126,7 +126,7 @@ const ReadingAnalytics = ({ data }: { data: AnalyticsData["readingStats"] }) => 
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div className="@[600px]:grid-cols-3 @[400px]:grid-cols-2 grid grid-cols-1 gap-4">
         <StatCard title="Total Reads" value={totalReads} emoji="📖" />
         <StatCard title="Average Daily Reads" value={averageReads} emoji="📊" />
         <StatCard title="Active Days" value={data.length} emoji="🗓️" />
@@ -168,7 +168,7 @@ const TrendingAnalytics = ({ data }: { data: AnalyticsData["trendingFeeds"] }) =
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div className="@[600px]:grid-cols-3 @[400px]:grid-cols-2 grid grid-cols-1 gap-4">
         <StatCard title="Trending Feeds" value={data.length} emoji="🔥" />
         <StatCard
           title="Top Feed Subscribers"
@@ -221,7 +221,7 @@ const OverviewAnalytics = ({ data }: { data: AnalyticsData["overviewStats"] }) =
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div className="@[600px]:grid-cols-3 @[400px]:grid-cols-2 grid grid-cols-1 gap-4">
         <StatCard title="Total Feeds" value={data.totalFeeds || 0} emoji="📰" />
         <StatCard title="Total Subscriptions" value={data.totalSubscriptions || 0} emoji="📊" />
         <StatCard title="Total Reads" value={data.totalReads || 0} emoji="📖" />
@@ -295,7 +295,7 @@ export const AIDisplayAnalyticsPart = toolMemo(({ part }: { part: AIDisplayAnaly
           {formatTimeRange(timeRange)} • Display type: {displayType}
         </CardDescription>
       </CardHeader>
-      <CardContent>{renderAnalytics()}</CardContent>
+      <CardContent className="@container">{renderAnalytics()}</CardContent>
     </Card>
   )
 })

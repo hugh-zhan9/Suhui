@@ -22,9 +22,9 @@ const FeedsGrid = ({ data, showAnalytics }: { data: FeedData; showAnalytics: boo
   }
 
   return (
-    <div className="@[600px]:grid-cols-3 grid grid-cols-2 gap-4 md:grid-cols-3">
+    <div className="@[600px]:grid-cols-3 @[400px]:grid-cols-2 grid grid-cols-1 gap-4">
       {data.map((item) => (
-        <Card key={item.feed.id} className="p-4">
+        <Card key={item.feed.id} className="hover:bg-fill-tertiary cursor-pointer p-4">
           <CardHeader className="h-24 px-2 py-3">
             <div className="flex items-start gap-3">
               <FeedIcon
