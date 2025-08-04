@@ -12,7 +12,6 @@ export type {
   MentionData,
   MentionDropdownPosition,
   MentionMatch,
-  MentionPluginProps,
   MentionSearchState,
   MentionTriggerState,
   MentionType,
