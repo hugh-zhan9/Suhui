@@ -23,7 +23,10 @@ export const useMentionSelection = ({
     (mentionData: MentionData) => {
       if (!mentionMatch) return false
 
-      let result = { success: false, nodeKey: undefined as string | undefined }
+      let result: ReturnType<typeof insertMentionNode> = {
+        success: false,
+        nodeKey: undefined as string | undefined,
+      }
       editor.update(() => {
         result = insertMentionNode(mentionData, mentionMatch)
 
