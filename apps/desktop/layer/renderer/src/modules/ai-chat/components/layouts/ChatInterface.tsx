@@ -186,7 +186,7 @@ export const ChatInterface = () => {
       )}
 
       {hasMessages && (
-        <div className="absolute inset-x-0 bottom-0 mx-auto max-w-4xl p-6">
+        <div className="absolute inset-x-0 bottom-0 mx-auto max-w-4xl px-6 pb-6">
           <ChatInput onSend={handleSendMessage} />
         </div>
       )}

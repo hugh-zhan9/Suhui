@@ -7,6 +7,7 @@ import {
   memo,
   useCallback,
   useDeferredValue,
+  useEffect,
   useMemo,
   useRef,
   useSyncExternalStore,
@@ -17,9 +18,12 @@ import { MermaidDiagram } from "~/components/ui/diagrams"
 import { MarkdownLink } from "~/components/ui/markdown/renderers/MarkdownLink"
 import { usePeekModal } from "~/hooks/biz/usePeekModal"
 
+import { animatedPlugin } from "./animatedPlugin"
+
 // Buffer configuration interface
 interface BufferConfig {
   minBufferSize: number
+  maxBufferSize: number // Maximum buffer size to prevent OOM
   maxBufferTime: number
   semanticTimeout: number
   emergencyTimeout: number
@@ -118,6 +122,9 @@ class StreamingMessageBuffer {
     // Emergency timeout - always flush
     if (timeSinceLastFlush > this.config.emergencyTimeout) return true
 
+    // Buffer size limit - prevent OOM
+    if (bufferedText.length > this.config.maxBufferSize) return true
+
     // Minimum buffer size not met
     if (bufferedText.length < this.config.minBufferSize) return false
 
@@ -211,6 +218,7 @@ class StreamingMessageBuffer {
 // Buffer configurations
 const BUFFER_CONFIG = {
   minBufferSize: 10,
+  maxBufferSize: 10000, // Prevent OOM with 10KB limit
   maxBufferTime: 100,
   semanticTimeout: 300,
   emergencyTimeout: 500,
@@ -218,7 +226,7 @@ const BUFFER_CONFIG = {
 
 // Hook to use streaming text buffer
 const useStreamingTextBuffer = (text: string, isProcessing: boolean) => {
-  const bufferRef = useRef<StreamingMessageBuffer>(null)
+  const bufferRef = useRef<StreamingMessageBuffer | null>(null)
 
   // Initialize buffer if needed
   if (!bufferRef.current) {
@@ -233,6 +241,14 @@ const useStreamingTextBuffer = (text: string, isProcessing: boolean) => {
     bufferRef.current.subscribe,
     bufferRef.current.getSnapshot,
   )
+
+  // Cleanup on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      bufferRef.current?.destroy()
+      bufferRef.current = null
+    }
+  }, [])
 
   return displayedText
 }
@@ -262,6 +278,7 @@ const useThrottledMarkdownParsing = (text: string, isProcessing: boolean) => {
 
     // Parse and cache the result
     const result = parseMarkdown(content, {
+      rehypePlugins: [animatedPlugin],
       components: {
         pre: ({ children }) => {
           const props = isValidElement(children) && "props" in children && children.props
