@@ -15,13 +15,9 @@ export function MentionPlugin() {
   // Get integrated search and context block handling
   const { searchMentions, handleMentionInsert } = useMentionIntegration()
 
-  const { maxSuggestions, triggerFn } = {
-    maxSuggestions: DEFAULT_MAX_SUGGESTIONS,
-    triggerFn: defaultTriggerFn,
-  }
   // Hook for detecting mention triggers
   const { mentionMatch, isActive, clearMentionMatch } = useMentionTrigger({
-    triggerFn,
+    triggerFn: defaultTriggerFn,
   })
 
   // Hook for searching mentions
@@ -35,7 +31,7 @@ export function MentionPlugin() {
     hasResults,
   } = useMentionSearch({
     onSearch: searchMentions,
-    maxSuggestions,
+    maxSuggestions: DEFAULT_MAX_SUGGESTIONS,
   })
 
   // Hook for handling mention selection

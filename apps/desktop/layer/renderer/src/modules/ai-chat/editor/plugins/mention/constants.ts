@@ -11,6 +11,6 @@ export const MENTION_TYPEAHEAD_COMMAND = createCommand<string>("MENTION_TYPEAHEA
 export const DEFAULT_MAX_SUGGESTIONS = 10
 
 // Trigger patterns
-export const MENTION_TRIGGER_PATTERN = /(?:^|\s)(@[\w-]*)$/
-export const FEED_MENTION_PATTERN = /(?:^|\s)(@#[\w-]*)$/
-export const ENTRY_MENTION_PATTERN = /(?:^|\s)(@\+[\w-]*)$/
+// Support CJK characters (Chinese, Japanese, Korean) in addition to ASCII
+export const MENTION_TRIGGER_PATTERN =
+  /(?:^|\s)(@[#+]?[\w\u4e00-\u9fff\u3400-\u4dbf\u3040-\u309f\u30a0-\u30ff\uac00-\ud7af-]*)$/

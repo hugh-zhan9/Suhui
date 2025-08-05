@@ -39,11 +39,12 @@ export const defaultTriggerFn = (): MentionMatch | null => {
   }
 }
 
-export const getMentionType = (query: string): MentionType => {
+export const getMentionType = (query: string): [MentionType | undefined, string] => {
   // Simple heuristic - could be enhanced with more sophisticated detection
-  if (query.startsWith("@#")) return "feed"
-  if (query.startsWith("@+")) return "entry"
-  return "feed"
+  if (query.startsWith("@#")) return ["feed", query.slice(2)]
+  if (query.startsWith("@+")) return ["entry", query.slice(2)]
+  // Return undefined for general @ trigger to search both types
+  return [undefined, query.slice(1)]
 }
 
 export const cleanQuery = (query: string): string => {

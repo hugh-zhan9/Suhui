@@ -15,7 +15,7 @@ export const useMentionSearchService = () => {
 
   // Search function that converts search results to MentionData format
   const searchMentions = useMemo(() => {
-    return async (query: string, type?: MentionType): Promise<MentionData[]> => {
+    return async (query: string, type?: MentionType | undefined): Promise<MentionData[]> => {
       const searchResults = search(query, type, 10)
 
       // Convert to MentionData format

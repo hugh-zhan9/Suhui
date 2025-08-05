@@ -12,6 +12,7 @@ import type {
 import { $applyNodeReplacement, DecoratorNode } from "lexical"
 import * as React from "react"
 
+import { MentionComponent } from "./components/MentionComponent"
 import type { MentionData } from "./types"
 
 export type SerializedMentionNode = Spread<
@@ -20,12 +21,6 @@ export type SerializedMentionNode = Spread<
   },
   SerializedLexicalNode
 >
-
-const MentionComponent = React.lazy(() =>
-  import("./components/MentionComponent").then((module) => ({
-    default: module.MentionComponent,
-  })),
-)
 
 export class MentionNode extends DecoratorNode<React.JSX.Element> {
   __mentionData: MentionData

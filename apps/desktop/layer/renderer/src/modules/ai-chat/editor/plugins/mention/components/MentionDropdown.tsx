@@ -14,6 +14,7 @@ import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext
 import * as React from "react"
 import { useCallback, useEffect, useRef, useState } from "react"
 
+import { MENTION_TRIGGER_PATTERN } from "../constants"
 import type { MentionData } from "../types"
 import { calculateDropdownPosition } from "../utils/positioning"
 import { MentionTypeIcon } from "./shared/MentionTypeIcon"
@@ -47,16 +48,15 @@ const MentionSuggestionItem = React.memo(
 
     // Highlight matching text
     const highlightText = (text: string, query: string) => {
-      const cleanQuery = query.replace("@", "").toLowerCase()
+      const cleanQuery = query.replace(MENTION_TRIGGER_PATTERN, "").toLowerCase()
       if (!cleanQuery) return text
 
       const parts = text.split(new RegExp(`(${cleanQuery})`, "gi"))
-      return parts.map((part, partIndex) => {
+      return parts.map((part) => {
         const isMatch = part.toLowerCase() === cleanQuery
-        // Create a more unique key that doesn't rely solely on index
-        const uniqueKey = `${mention.id}-${mention.type}-${part}-${partIndex}-${part.length}`
+
         return (
-          <span key={uniqueKey} className={isMatch ? "text-text-vibrant font-semibold" : ""}>
+          <span key={mention.id} className={isMatch ? "text-text-vibrant font-semibold" : ""}>
             {part}
           </span>
         )

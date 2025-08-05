@@ -5,7 +5,10 @@ import type { MentionData, MentionSearchState, MentionType } from "../types"
 import { getMentionType, shouldTriggerMention } from "../utils/triggerDetection"
 
 interface UseMentionSearchOptions {
-  onSearch?: (query: string, type: MentionType) => Promise<MentionData[]> | MentionData[]
+  onSearch?: (
+    query: string,
+    type: MentionType | undefined,
+  ) => Promise<MentionData[]> | MentionData[]
   maxSuggestions?: number
 }
 
@@ -58,8 +61,9 @@ export const useMentionSearch = ({
       })
 
       try {
-        const mentionType = getMentionType(query)
-        const results = await onSearchRef.current(query, mentionType)
+        const [mentionType, cleanQuery] = getMentionType(query)
+
+        const results = await onSearchRef.current(cleanQuery, mentionType)
 
         // Check if this search was aborted
         if (abortController.signal.aborted) {
