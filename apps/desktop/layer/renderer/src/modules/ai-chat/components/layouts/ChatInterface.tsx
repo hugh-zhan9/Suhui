@@ -6,6 +6,7 @@ import type { BizUIMessage } from "@folo-services/ai-tools"
 import { ErrorBoundary } from "@sentry/react"
 import type { EditorState, LexicalEditor } from "lexical"
 import { nanoid } from "nanoid"
+import type { FC } from "react"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useEventCallback } from "usehooks-ts"
 
@@ -202,22 +203,14 @@ const ChatInterfaceContent = () => {
   )
 }
 
-export const ChatInterface = () => {
-  return (
-    <ErrorBoundary fallback={AIErrorFallback}>
-      <ChatInterfaceContent />
-    </ErrorBoundary>
-  )
-}
+export const ChatInterface = () => (
+  <ErrorBoundary fallback={AIErrorFallback}>
+    <ChatInterfaceContent />
+  </ErrorBoundary>
+)
 
-const Messages = () => {
+const Messages: FC = () => {
   const messages = useMessages()
 
-  return (
-    <>
-      {messages.map((message) => (
-        <AIChatMessage key={message.id} message={message} />
-      ))}
-    </>
-  )
+  return messages.map((message) => <AIChatMessage key={message.id} message={message} />)
 }

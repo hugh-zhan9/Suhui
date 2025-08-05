@@ -4,20 +4,13 @@ import type { FallbackRender } from "@sentry/react"
 import { attachOpenInEditor } from "~/lib/dev"
 
 import { FeedbackIssue } from "../../../../components/common/ErrorElement"
-import { m } from "../../../../components/common/Motion"
 import { parseError } from "../../../../components/errors/helper"
 
 export const AIErrorFallback: FallbackRender = (props) => {
   const { message, stack } = parseError(props.error)
 
   return (
-    <m.div
-      className="bg-theme-background border-border/60 mx-auto flex max-w-2xl flex-col items-center justify-center rounded-lg border p-8 shadow-sm"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      transition={{ duration: 0.3 }}
-    >
+    <div className="bg-theme-background absolute inset-0 mx-auto flex max-w-2xl flex-col items-center justify-center rounded-lg p-8 shadow-sm">
       <div className="text-center">
         {/* AI-specific icon */}
         <div className="mb-6">
@@ -56,7 +49,7 @@ export const AIErrorFallback: FallbackRender = (props) => {
           </Button>
 
           <Button onClick={() => window.location.reload()} variant="outline">
-            Reload Chat
+            Reload Page
           </Button>
         </div>
 
@@ -65,6 +58,6 @@ export const AIErrorFallback: FallbackRender = (props) => {
           <FeedbackIssue message={message || "AI Chat Error"} stack={stack} error={props.error} />
         </div>
       </div>
-    </m.div>
+    </div>
   )
 }
