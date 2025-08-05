@@ -19,7 +19,7 @@ import {
   AIDisplaySubscriptionsPart,
 } from "../displays"
 import { AIDataBlockPart } from "./AIDataBlockPart"
-import { AIMarkdownMessage } from "./AIMarkdownMessage"
+import { AIMarkdownMessage, AIMarkdownStreamingMessage } from "./AIMarkdownMessage"
 import { AIRichTextMessage } from "./AIRichTextMessage"
 import { ToolInvocationComponent } from "./ToolInvocationComponent"
 
@@ -52,65 +52,63 @@ export const AIMessageParts: React.FC<MessagePartsProps> = React.memo(({ message
   }
   const isUser = message.role === "user"
 
-  return (
-    <>
-      {message.parts.map((part, index) => {
-        const partKey = `${message.id}-${index}`
+  return message.parts.map((part, index) => {
+    const partKey = `${message.id}-${index}`
 
-        switch (part.type) {
-          case "text": {
-            return (
-              <AIMarkdownMessage
-                isProcessing={message.metadata?.totalTokens === undefined}
-                key={partKey}
-                text={part.text}
-                className={isUser ? "text-white" : "text-text"}
-              />
-            )
-          }
+    switch (part.type) {
+      case "text": {
+        if (message.role === "assistant")
+          return (
+            <AIMarkdownStreamingMessage
+              isProcessing={message.metadata?.totalTokens === undefined}
+              key={partKey}
+              text={part.text}
+              className={"text-text"}
+            />
+          )
+        return <AIMarkdownMessage key={partKey} text={part.text} className={"text-white"} />
+      }
 
-          case "data-block": {
-            return <AIDataBlockPart key={partKey} blocks={part.data as AIChatContextBlock[]} />
-          }
+      case "data-block": {
+        return <AIDataBlockPart key={partKey} blocks={part.data as AIChatContextBlock[]} />
+      }
 
-          case "data-rich-text": {
-            return (
-              <AIRichTextMessage
-                key={partKey}
-                data={part.data as { state: SerializedEditorState; text: string }}
-                className={isUser ? "text-white" : "text-text"}
-              />
-            )
-          }
+      case "data-rich-text": {
+        return (
+          <AIRichTextMessage
+            key={partKey}
+            data={part.data as { state: SerializedEditorState; text: string }}
+            className={isUser ? "text-white" : "text-text"}
+          />
+        )
+      }
 
-          case "tool-displayAnalytics": {
-            return <AIDisplayAnalyticsPart key={partKey} part={part as AIDisplayAnalyticsTool} />
-          }
-          case "tool-displayEntries": {
-            return <AIDisplayEntriesPart key={partKey} part={part as AIDisplayEntriesTool} />
-          }
-          case "tool-displaySubscriptions": {
-            return (
-              <AIDisplaySubscriptionsPart key={partKey} part={part as AIDisplaySubscriptionsTool} />
-            )
-          }
-          case "tool-displayFeeds": {
-            return <AIDisplayFeedsPart key={partKey} part={part as AIDisplayFeedsTool} />
-          }
+      case "tool-displayAnalytics": {
+        return <AIDisplayAnalyticsPart key={partKey} part={part as AIDisplayAnalyticsTool} />
+      }
+      case "tool-displayEntries": {
+        return <AIDisplayEntriesPart key={partKey} part={part as AIDisplayEntriesTool} />
+      }
+      case "tool-displaySubscriptions": {
+        return (
+          <AIDisplaySubscriptionsPart key={partKey} part={part as AIDisplaySubscriptionsTool} />
+        )
+      }
+      case "tool-displayFeeds": {
+        return <AIDisplayFeedsPart key={partKey} part={part as AIDisplayFeedsTool} />
+      }
 
-          default: {
-            if (part.type.startsWith("tool-")) {
-              if (part.type.startsWith("tool-chunkBreak")) {
-                return null
-              }
-              return <ToolInvocationComponent key={partKey} part={part as ToolUIPart} />
-            }
+      default: {
+        if (part.type.startsWith("tool-")) {
+          if (part.type.startsWith("tool-chunkBreak")) {
             return null
           }
+          return <ToolInvocationComponent key={partKey} part={part as ToolUIPart} />
         }
-      })}
-    </>
-  )
+        return null
+      }
+    }
+  })
 })
 
 AIMessageParts.displayName = "AIMessageParts"

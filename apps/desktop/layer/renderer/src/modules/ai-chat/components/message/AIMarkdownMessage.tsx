@@ -170,6 +170,11 @@ class StreamingMessageBuffer {
 
   // Update text content
   updateText = (newText: string, isProcessing: boolean) => {
+    // Safety check for undefined/null newText
+    if (typeof newText !== "string") {
+      return
+    }
+
     if (!isProcessing) {
       // Immediate update when not processing
       this.displayedText = newText
@@ -228,18 +233,26 @@ const BUFFER_CONFIG = {
 const useStreamingTextBuffer = (text: string, isProcessing: boolean) => {
   const bufferRef = useRef<StreamingMessageBuffer | null>(null)
 
-  // Initialize buffer if needed
-  if (!bufferRef.current) {
+  // Initialize buffer if needed (only during processing)
+  if (isProcessing && !bufferRef.current) {
     bufferRef.current = new StreamingMessageBuffer(BUFFER_CONFIG)
   }
 
-  // Update buffer when text changes
-  bufferRef.current.updateText(text, isProcessing)
+  // Clean up buffer when not processing
+  if (!isProcessing && bufferRef.current) {
+    bufferRef.current.destroy()
+    bufferRef.current = null
+  }
 
-  // Subscribe to buffer changes
+  // Update buffer when text changes (only if processing)
+  if (isProcessing && bufferRef.current) {
+    bufferRef.current.updateText(text, isProcessing)
+  }
+
+  // Subscribe to buffer changes - always call the hook
   const displayedText = useSyncExternalStore(
-    bufferRef.current.subscribe,
-    bufferRef.current.getSnapshot,
+    bufferRef.current?.subscribe || (() => () => {}),
+    bufferRef.current?.getSnapshot || (() => text),
   )
 
   // Cleanup on unmount to prevent memory leaks
@@ -250,7 +263,8 @@ const useStreamingTextBuffer = (text: string, isProcessing: boolean) => {
     }
   }, [])
 
-  return displayedText
+  // Return text directly when not processing, buffered text when processing
+  return isProcessing ? displayedText : text
 }
 
 // Custom hook for throttled markdown parsing during streaming
@@ -259,106 +273,34 @@ const useThrottledMarkdownParsing = (text: string, isProcessing: boolean) => {
   const cachedResultRef = useRef<any>(null)
   const lastParseTimeRef = useRef<number>(0)
 
-  const parseWithCache = useCallback((content: string, shouldProcess: boolean) => {
-    const now = Date.now()
+  const parseWithCache = useCallback(
+    (content: string, shouldProcess: boolean) => {
+      const now = Date.now()
 
-    // During streaming, throttle parsing
-    if (shouldProcess && cachedResultRef.current) {
-      const timeSinceLastParse = now - lastParseTimeRef.current
-      if (timeSinceLastParse < 16) {
-        // Return cached result if within throttle window
+      // During streaming, throttle parsing
+      if (shouldProcess && cachedResultRef.current) {
+        const timeSinceLastParse = now - lastParseTimeRef.current
+        if (timeSinceLastParse < 16) {
+          // Return cached result if within throttle window
+          return cachedResultRef.current
+        }
+      }
+
+      // If content hasn't changed, return cached result
+      if (content === lastParsedTextRef.current && cachedResultRef.current) {
         return cachedResultRef.current
       }
-    }
 
-    // If content hasn't changed, return cached result
-    if (content === lastParsedTextRef.current && cachedResultRef.current) {
-      return cachedResultRef.current
-    }
+      // Parse and cache the result
+      const result = baseAIMarkdownParser(content, isProcessing)
 
-    // Parse and cache the result
-    const result = parseMarkdown(content, {
-      rehypePlugins: isProcessing ? [animatedPlugin] : undefined,
-      components: {
-        pre: ({ children }) => {
-          const props = isValidElement(children) && "props" in children && children.props
-
-          if (props) {
-            const { className, children } = props as any
-
-            if (className && className.includes("language-") && typeof children === "string") {
-              const language = className.replace("language-", "")
-              const code = children
-
-              // Render Mermaid diagrams - skip during processing for performance
-              if (language === "mermaid") {
-                return <MermaidDiagram code={code} shouldRender={!shouldProcess} />
-              }
-
-              return <ShikiHighLighter code={code} language={language} showCopy />
-            }
-          }
-
-          return <pre className="text-text-secondary">{children}</pre>
-        },
-        a: ({ node, ...props }) => {
-          return createElement(RelatedEntryLink, { ...props } as any)
-        },
-        table: ({ children, ref, node, ...props }) => {
-          return (
-            <div className="border-border bg-material-thin overflow-x-auto rounded-lg border">
-              <table {...props} className="divide-border my-0 min-w-full divide-y text-sm">
-                {children}
-              </table>
-            </div>
-          )
-        },
-        thead: ({ children, ref, node, ...props }) => {
-          return (
-            <thead {...props} className="bg-fill-tertiary">
-              {children}
-            </thead>
-          )
-        },
-        th: ({ children, ref, node, ...props }) => {
-          return (
-            <th
-              {...props}
-              className="text-text-secondary whitespace-nowrap px-4 py-3 text-left text-xs font-medium uppercase tracking-wider"
-            >
-              {children}
-            </th>
-          )
-        },
-        tbody: ({ children, ref, node, ...props }) => {
-          return (
-            <tbody {...props} className="bg-material-ultra-thin divide-border divide-y">
-              {children}
-            </tbody>
-          )
-        },
-        tr: ({ children, ref, node, ...props }) => {
-          return (
-            <tr {...props} className="hover:bg-material-thin transition-colors duration-150">
-              {children}
-            </tr>
-          )
-        },
-        td: ({ children, ref, node, ...props }) => {
-          return (
-            <td {...props} className="text-text whitespace-nowrap px-4 py-3 text-sm">
-              {children}
-            </td>
-          )
-        },
-      },
-    }).content
-
-    lastParsedTextRef.current = content
-    cachedResultRef.current = result
-    lastParseTimeRef.current = now
-    return result
-  }, [])
+      lastParsedTextRef.current = content
+      cachedResultRef.current = result
+      lastParseTimeRef.current = now
+      return result
+    },
+    [isProcessing],
+  )
 
   return useMemo(() => {
     // For non-processing state, always parse immediately
@@ -371,7 +313,7 @@ const useThrottledMarkdownParsing = (text: string, isProcessing: boolean) => {
   }, [text, isProcessing, parseWithCache])
 }
 
-export const AIMarkdownMessage = memo(
+export const AIMarkdownStreamingMessage = memo(
   ({
     text,
     className: classNameProp,
@@ -426,6 +368,14 @@ export const AIMarkdownMessage = memo(
   },
 )
 
+export const AIMarkdownMessage = memo(
+  ({ text, className }: { text: string; className?: string }) => {
+    return (
+      <div className={className}>{useMemo(() => baseAIMarkdownParser(text, false), [text])}</div>
+    )
+  },
+)
+
 const RelatedEntryLink = (props: LinkProps) => {
   const { href, children } = props
   const entryId = isBizId(href) ? href : null
@@ -446,4 +396,83 @@ const RelatedEntryLink = (props: LinkProps) => {
       <i className="i-mgc-arrow-right-up-cute-re size-[0.9em] translate-y-[2px] opacity-70" />
     </button>
   )
+}
+
+function baseAIMarkdownParser(content: string, isProcessing: boolean) {
+  return parseMarkdown(content, {
+    rehypePlugins: isProcessing ? [animatedPlugin] : undefined,
+    components: {
+      pre: ({ children }) => {
+        const props = isValidElement(children) && "props" in children && children.props
+
+        if (props) {
+          const { className, children } = props as any
+
+          if (className && className.includes("language-") && typeof children === "string") {
+            const language = className.replace("language-", "")
+            const code = children
+
+            // Render Mermaid diagrams - skip during processing for performance
+            if (language === "mermaid") {
+              return <MermaidDiagram code={code} shouldRender={!isProcessing} />
+            }
+
+            return <ShikiHighLighter code={code} language={language} showCopy />
+          }
+        }
+
+        return <pre className="text-text-secondary">{children}</pre>
+      },
+      a: ({ node, ...props }) => {
+        return createElement(RelatedEntryLink, { ...props } as any)
+      },
+      table: ({ children, ref, node, ...props }) => {
+        return (
+          <div className="border-border bg-material-thin overflow-x-auto rounded-lg border">
+            <table {...props} className="divide-border my-0 min-w-full divide-y text-sm">
+              {children}
+            </table>
+          </div>
+        )
+      },
+      thead: ({ children, ref, node, ...props }) => {
+        return (
+          <thead {...props} className="bg-fill-tertiary">
+            {children}
+          </thead>
+        )
+      },
+      th: ({ children, ref, node, ...props }) => {
+        return (
+          <th
+            {...props}
+            className="text-text-secondary whitespace-nowrap px-4 py-3 text-left text-xs font-medium uppercase tracking-wider"
+          >
+            {children}
+          </th>
+        )
+      },
+      tbody: ({ children, ref, node, ...props }) => {
+        return (
+          <tbody {...props} className="bg-material-ultra-thin divide-border divide-y">
+            {children}
+          </tbody>
+        )
+      },
+      tr: ({ children, ref, node, ...props }) => {
+        return (
+          <tr {...props} className="hover:bg-material-thin transition-colors duration-150">
+            {children}
+          </tr>
+        )
+      },
+      td: ({ children, ref, node, ...props }) => {
+        return (
+          <td {...props} className="text-text whitespace-nowrap px-4 py-3 text-sm">
+            {children}
+          </td>
+        )
+      },
+    },
+  }).content
 }
