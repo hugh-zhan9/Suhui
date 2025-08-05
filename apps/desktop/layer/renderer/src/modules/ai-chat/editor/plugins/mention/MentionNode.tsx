@@ -103,7 +103,7 @@ export class MentionNode extends DecoratorNode<React.JSX.Element> {
 
   override decorate(_editor: LexicalEditor): React.JSX.Element {
     return (
-      <React.Suspense fallback={<span>@{this.__mentionData.name}</span>}>
+      <React.Suspense fallback={null}>
         <MentionComponent mentionData={this.__mentionData} />
       </React.Suspense>
     )
