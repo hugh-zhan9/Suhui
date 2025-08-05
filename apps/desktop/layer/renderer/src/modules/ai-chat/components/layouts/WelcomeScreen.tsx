@@ -6,8 +6,6 @@ import { useAISettingValue } from "~/atoms/settings/ai"
 import { AISpline } from "~/modules/ai-chat/components/3d-models/AISpline"
 import { useSettingModal } from "~/modules/settings/modal/use-setting-modal-hack"
 
-import { ChatInput } from "./ChatInput"
-
 interface WelcomeScreenProps {
   onSend: (message: EditorState | string, editor: LexicalEditor | null) => void
 }
@@ -59,9 +57,7 @@ export const WelcomeScreen = ({ onSend }: WelcomeScreenProps) => {
           </div>
         </div>
 
-        <div className="relative mx-auto max-w-2xl">
-          <ChatInput onSend={onSend} variant="minimal" />
-        </div>
+        <div className="relative mx-auto h-36 max-w-2xl" />
 
         <div className="flex flex-wrap items-center justify-center gap-2">
           {/* Custom shortcuts first */}

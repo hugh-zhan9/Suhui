@@ -1,8 +1,9 @@
 import { ScrollArea } from "@follow/components/ui/scroll-area/ScrollArea.js"
 import { tracker } from "@follow/tracker"
-import { cn, nextFrame } from "@follow/utils"
+import { clsx, cn, nextFrame } from "@follow/utils"
 import { springScrollTo } from "@follow/utils/scroller"
 import type { BizUIMessage } from "@folo-services/ai-tools"
+import { ErrorBoundary } from "@sentry/react"
 import type { EditorState, LexicalEditor } from "lexical"
 import { nanoid } from "nanoid"
 import { useCallback, useEffect, useRef, useState } from "react"
@@ -25,13 +26,14 @@ import {
 } from "~/modules/ai-chat/store/hooks"
 
 import { convertLexicalToMarkdown } from "../../utils/lexical-markdown"
+import { AIErrorFallback } from "./AIErrorFallback"
 import { ChatInput } from "./ChatInput"
 import { CollapsibleError } from "./CollapsibleError"
 import { WelcomeScreen } from "./WelcomeScreen"
 
 const SCROLL_BOTTOM_THRESHOLD = 50
 
-export const ChatInterface = () => {
+const ChatInterfaceContent = () => {
   const hasMessages = useHasMessages()
   const status = useChatStatus()
   const chatActions = useChatActions()
@@ -186,13 +188,25 @@ export const ChatInterface = () => {
         </div>
       )}
 
-      {hasMessages && (
-        <div className="absolute inset-x-0 bottom-0 mx-auto max-w-4xl px-6 pb-6">
-          {error && <CollapsibleError error={error} />}
-          <ChatInput onSend={handleSendMessage} />
-        </div>
-      )}
+      <div
+        className={clsx(
+          "absolute mx-auto duration-200 ease-in-out",
+          hasMessages && "inset-x-0 bottom-0 max-w-4xl px-6 pb-6",
+          !hasMessages && "inset-x-0 bottom-1/2 max-w-3xl translate-y-full px-6 pb-6",
+        )}
+      >
+        {error && <CollapsibleError error={error} />}
+        <ChatInput onSend={handleSendMessage} variant={!hasMessages ? "minimal" : "default"} />
+      </div>
     </div>
+  )
+}
+
+export const ChatInterface = () => {
+  return (
+    <ErrorBoundary fallback={AIErrorFallback}>
+      <ChatInterfaceContent />
+    </ErrorBoundary>
   )
 }
 
