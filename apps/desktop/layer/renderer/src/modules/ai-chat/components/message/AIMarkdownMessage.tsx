@@ -14,7 +14,6 @@ import {
 } from "react"
 
 import { ShikiHighLighter } from "~/components/ui/code-highlighter"
-import { MermaidDiagram } from "~/components/ui/diagrams"
 import { MarkdownLink } from "~/components/ui/markdown/renderers/MarkdownLink"
 import { usePeekModal } from "~/hooks/biz/usePeekModal"
 
@@ -411,11 +410,6 @@ function baseAIMarkdownParser(content: string, isProcessing: boolean) {
           if (className && className.includes("language-") && typeof children === "string") {
             const language = className.replace("language-", "")
             const code = children
-
-            // Render Mermaid diagrams - skip during processing for performance
-            if (language === "mermaid") {
-              return <MermaidDiagram code={code} shouldRender={!isProcessing} />
-            }
 
             return <ShikiHighLighter code={code} language={language} showCopy />
           }
