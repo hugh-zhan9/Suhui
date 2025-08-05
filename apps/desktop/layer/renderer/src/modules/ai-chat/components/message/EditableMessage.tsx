@@ -1,9 +1,7 @@
 import type { LexicalRichEditorRef } from "@follow/components/ui/lexical-rich-editor/index.js"
-import {
-  createDefaultLexicalEditor,
-  LexicalRichEditor,
-} from "@follow/components/ui/lexical-rich-editor/index.js"
-import { cn } from "@follow/utils"
+import { LexicalRichEditor } from "@follow/components/ui/lexical-rich-editor/index.js"
+import { ScrollArea } from "@follow/components/ui/scroll-area/ScrollArea.js"
+import { cn, nextFrame } from "@follow/utils"
 import type { BizUIMessage } from "@folo-services/ai-tools"
 import { isEqual } from "es-toolkit"
 import type { EditorState, LexicalEditor, SerializedEditorState } from "lexical"
@@ -12,6 +10,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { useEditingMessageId, useSetEditingMessageId } from "~/modules/ai-chat/atoms/session"
 import { useChatStatus } from "~/modules/ai-chat/store/hooks"
+
+import { MentionPlugin } from "../../editor"
 
 interface EditableMessageProps {
   messageId: string
@@ -36,10 +36,10 @@ export const EditableMessage = ({
   const [currentEditor, setCurrentEditor] = useState<LexicalEditor | null>(null)
 
   const initialEditorState = useMemo(() => {
-    const serializedEditorState = (parts.find((part) => part.type === "data-rich-text") as any)
-      ?.data.state as SerializedEditorState
-    return createDefaultLexicalEditor().parseEditorState(serializedEditorState)
-  }, [parts])
+    return (parts.find((part) => part.type === "data-rich-text") as any)?.data
+      .state as SerializedEditorState
+  }, [])
+
   const isEditing = editingMessageId === messageId
   const isProcessing = status === "submitted" || status === "streaming"
 
@@ -49,13 +49,26 @@ export const EditableMessage = ({
       // Focus the editor
       editorRef.current.focus()
     }
-  }, [isEditing, initialEditorState, currentEditor])
+  }, [isEditing, currentEditor])
+
+  const setInitialEditorStateOnceRef = useRef(false)
+
+  useEffect(() => {
+    return nextFrame(() => {
+      if (setInitialEditorStateOnceRef.current) return
+      const editor = editorRef.current?.getEditor()
+
+      if (!editor) return
+      editor.setEditorState(editor.parseEditorState(initialEditorState))
+      setInitialEditorStateOnceRef.current = true
+    })
+  }, [initialEditorState])
 
   const handleSave = useCallback(() => {
     if (currentEditor && editorRef.current && !editorRef.current.isEmpty()) {
       const serializedEditorState = currentEditor.getEditorState().toJSON()
 
-      if (!isEqual(serializedEditorState, initialEditorState.toJSON())) {
+      if (!isEqual(serializedEditorState, initialEditorState)) {
         onSave(serializedEditorState, currentEditor)
       }
     }
@@ -102,15 +115,17 @@ export const EditableMessage = ({
     <div className={cn("relative", className)}>
       {/* Edit input */}
       <div className="bg-background/60 focus-within:ring-accent/20 focus-within:border-accent/80 border-border/80 relative overflow-hidden rounded-xl border backdrop-blur-xl duration-200 focus-within:ring-2">
-        <LexicalRichEditor
-          ref={editorRef}
-          placeholder="Edit your message..."
-          initalEditorState={initialEditorState}
-          className="w-full pr-20"
-          onChange={handleEditorChange}
-          onKeyDown={handleKeyDown}
-          namespace="EditableMessageRichEditor"
-        />
+        <ScrollArea rootClassName="mx-5 my-3.5 mr-20 flex-1 overflow-auto">
+          <LexicalRichEditor
+            ref={editorRef}
+            placeholder="Edit your message..."
+            className="w-full min-w-64"
+            onChange={handleEditorChange}
+            onKeyDown={handleKeyDown}
+            namespace="EditableMessageRichEditor"
+            plugins={[MentionPlugin]}
+          />
+        </ScrollArea>
 
         {/* Action buttons */}
         <div className="absolute right-2 top-1/2 flex -translate-y-1/2 gap-1">
