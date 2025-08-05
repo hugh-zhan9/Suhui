@@ -6,7 +6,6 @@ import {
   CardTitle,
 } from "@follow/components/ui/card/index.js"
 import dayjs from "dayjs"
-import { memo } from "react"
 
 import { FeedIcon } from "~/modules/feed/feed-icon"
 
@@ -77,52 +76,50 @@ const FeedsGrid = ({ data, showAnalytics }: { data: FeedData; showAnalytics: boo
   )
 }
 
-const AIDisplayFeedsPartBase = memo(
-  ({ output }: { output: NonNullable<AIDisplayFeedsTool["output"]> }) => {
-    const { feeds, showAnalytics = true, title } = output
+const AIDisplayFeedsPartBase = ({
+  output,
+}: {
+  output: NonNullable<AIDisplayFeedsTool["output"]>
+}) => {
+  const { feeds, showAnalytics = true, title } = output
 
-    // Calculate statistics
-    const totalFeeds = feeds.length
-    const activeFeeds = feeds.filter((f) => !f.feed.errorMessage).length
-    const errorFeeds = feeds.filter((f) => f.feed.errorMessage).length
-    const totalSubscriptions = feeds.reduce(
-      (acc, f) => acc + (f.analytics?.subscriptionCount || 0),
-      0,
-    )
-    const totalViews = feeds.reduce((acc, f) => acc + (f.analytics?.view || 0), 0)
+  // Calculate statistics
+  const totalFeeds = feeds.length
+  const activeFeeds = feeds.filter((f) => !f.feed.errorMessage).length
+  const errorFeeds = feeds.filter((f) => f.feed.errorMessage).length
+  const totalSubscriptions = feeds.reduce(
+    (acc, f) => acc + (f.analytics?.subscriptionCount || 0),
+    0,
+  )
+  const totalViews = feeds.reduce((acc, f) => acc + (f.analytics?.view || 0), 0)
 
-    return (
-      <DisplayCardWrapper
-        title={title || "RSS Feeds"}
-        emoji="📡"
-        description={`${totalFeeds} feeds`}
-      >
-        {/* Statistics Overview */}
-        <div className="@[600px]:grid-cols-4 grid grid-cols-2 gap-4 md:grid-cols-4">
-          <StatCard title="Total Feeds" value={totalFeeds} emoji="📊" />
-          <StatCard
-            title="Active Feeds"
-            value={activeFeeds}
-            description={`${errorFeeds} with errors`}
-            emoji="🟢"
-          />
-          {showAnalytics && (
-            <>
-              <StatCard
-                title="Total Subscribers"
-                value={totalSubscriptions.toLocaleString()}
-                emoji="👥"
-              />
-              <StatCard title="Total Views" value={totalViews.toLocaleString()} emoji="👀" />
-            </>
-          )}
-        </div>
+  return (
+    <DisplayCardWrapper title={title || "RSS Feeds"} emoji="📡" description={`${totalFeeds} feeds`}>
+      {/* Statistics Overview */}
+      <div className="@[600px]:grid-cols-4 grid grid-cols-2 gap-4 md:grid-cols-4">
+        <StatCard title="Total Feeds" value={totalFeeds} emoji="📊" />
+        <StatCard
+          title="Active Feeds"
+          value={activeFeeds}
+          description={`${errorFeeds} with errors`}
+          emoji="🟢"
+        />
+        {showAnalytics && (
+          <>
+            <StatCard
+              title="Total Subscribers"
+              value={totalSubscriptions.toLocaleString()}
+              emoji="👥"
+            />
+            <StatCard title="Total Views" value={totalViews.toLocaleString()} emoji="👀" />
+          </>
+        )}
+      </div>
 
-        <FeedsGrid data={feeds} showAnalytics={showAnalytics} />
-      </DisplayCardWrapper>
-    )
-  },
-)
+      <FeedsGrid data={feeds} showAnalytics={showAnalytics} />
+    </DisplayCardWrapper>
+  )
+}
 
 export const AIDisplayFeedsPart = withDisplayStateHandler<AIDisplayFeedsTool["output"]>({
   title: "Feeds",

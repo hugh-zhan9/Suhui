@@ -33,7 +33,7 @@ export function withDisplayStateHandler<T>(config: {
   return function <P extends { part: { state: string; output?: T } }>(
     WrappedComponent: ComponentType<P & { output: NonNullable<T> }>,
   ): ComponentType<P> {
-    const WithDisplayStateHandler = (props: P) => {
+    const WithDisplayStateHandler = toolMemo((props: P) => {
       const { part } = props
 
       // Handle error state
@@ -60,7 +60,7 @@ export function withDisplayStateHandler<T>(config: {
 
       // Render the wrapped component with the validated output
       return <WrappedComponent {...props} output={part.output as NonNullable<T>} />
-    }
+    })
 
     WithDisplayStateHandler.displayName = `withDisplayStateHandler(${WrappedComponent.displayName || WrappedComponent.name})`
 

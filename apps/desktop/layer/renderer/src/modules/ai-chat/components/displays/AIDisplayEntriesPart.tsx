@@ -262,62 +262,64 @@ const GroupedEntries = ({
   )
 }
 
-const AIDisplayEntriesPartBase = memo(
-  ({ output }: { output: NonNullable<AIDisplayEntriesTool["output"]> }) => {
-    const {
-      entries,
-      displayType = "grid",
-      showSummary = true,
-      showMetadata = true,
-      title,
-      groupBy = "none",
-    } = output
+const AIDisplayEntriesPartBase = ({
+  output,
+}: {
+  output: NonNullable<AIDisplayEntriesTool["output"]>
+}) => {
+  const {
+    entries,
+    displayType = "grid",
+    showSummary = true,
+    showMetadata = true,
+    title,
+    groupBy = "none",
+  } = output
 
-    // Calculate statistics
-    const totalEntries = entries.length
-    const feedsCount = new Set(entries.map((e) => e.entry.feedId)).size
-    const authorsCount = new Set(entries.map((e) => e.entry.author).filter(Boolean)).size
-    const categoriesCount = new Set(entries.flatMap((e) => e.entry.categories || [])).size
+  // Calculate statistics
+  const totalEntries = entries.length
+  const feedsCount = new Set(entries.map((e) => e.entry.feedId)).size
+  const authorsCount = new Set(entries.map((e) => e.entry.author).filter(Boolean)).size
+  const categoriesCount = new Set(entries.flatMap((e) => e.entry.categories || [])).size
 
-    const renderEntries = () => {
-      if (groupBy !== "none") {
-        return (
-          <GroupedEntries
-            data={entries}
-            groupBy={groupBy}
-            displayType={displayType}
-            showSummary={showSummary}
-            showMetadata={showMetadata}
-          />
-        )
-      }
-
-      if (displayType === "timeline") {
-        return <TimelineView data={entries} showSummary={showSummary} showMetadata={showMetadata} />
-      }
-      return <EntriesGrid data={entries} showSummary={showSummary} showMetadata={showMetadata} />
+  const renderEntries = () => {
+    if (groupBy !== "none") {
+      return (
+        <GroupedEntries
+          data={entries}
+          groupBy={groupBy}
+          displayType={displayType}
+          showSummary={showSummary}
+          showMetadata={showMetadata}
+        />
+      )
     }
 
-    return (
-      <DisplayCardWrapper
-        title={title || "Entries"}
-        emoji="📰"
-        description={`${formatDisplayType(displayType)} • ${formatGroupBy(groupBy)} • ${totalEntries} entries`}
-      >
-        {/* Statistics Overview */}
-        <div className="@[600px]:grid-cols-4 @[400px]:grid-cols-2 grid grid-cols-1 gap-4">
-          <StatCard title="Total Entries" value={totalEntries} emoji="📄" />
-          <StatCard title="Feeds" value={feedsCount} emoji="📡" />
-          <StatCard title="Authors" value={authorsCount} emoji="✍️" />
-          <StatCard title="Categories" value={categoriesCount} emoji="🏷️" />
-        </div>
+    if (displayType === "timeline") {
+      return <TimelineView data={entries} showSummary={showSummary} showMetadata={showMetadata} />
+    }
+    return <EntriesGrid data={entries} showSummary={showSummary} showMetadata={showMetadata} />
+  }
 
-        {/* Entries Display */}
-        {renderEntries()}
-      </DisplayCardWrapper>
-    )
-  },
-)
+  return (
+    <DisplayCardWrapper
+      title={title || "Entries"}
+      emoji="📰"
+      description={`${formatDisplayType(displayType)} • ${formatGroupBy(groupBy)} • ${totalEntries} entries`}
+    >
+      {/* Statistics Overview */}
+      <div className="@[600px]:grid-cols-4 @[400px]:grid-cols-2 grid grid-cols-1 gap-4">
+        <StatCard title="Total Entries" value={totalEntries} emoji="📄" />
+        <StatCard title="Feeds" value={feedsCount} emoji="📡" />
+        <StatCard title="Authors" value={authorsCount} emoji="✍️" />
+        <StatCard title="Categories" value={categoriesCount} emoji="🏷️" />
+      </div>
+
+      {/* Entries Display */}
+      {renderEntries()}
+    </DisplayCardWrapper>
+  )
+}
 
 export const AIDisplayEntriesPart = withDisplayStateHandler<AIDisplayEntriesTool["output"]>({
   title: "Entries",

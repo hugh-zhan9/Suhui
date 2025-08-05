@@ -6,7 +6,6 @@ import {
   CardTitle,
 } from "@follow/components/ui/card/index.js"
 import dayjs from "dayjs"
-import { memo } from "react"
 
 import { FeedIcon } from "~/modules/feed/feed-icon"
 
@@ -167,41 +166,35 @@ const GroupedSubscriptions = ({
   )
 }
 
-const AIDisplaySubscriptionsPartBase = memo(
-  ({ output }: { output: NonNullable<AIDisplaySubscriptionsTool["output"]> }) => {
-    const {
-      subscriptions,
-      displayType = "list",
-      showAnalytics = true,
-      showCategories = true,
-      title,
-      groupBy = "none",
-      filterBy = "all",
-    } = output
+const AIDisplaySubscriptionsPartBase = ({
+  output,
+}: {
+  output: NonNullable<AIDisplaySubscriptionsTool["output"]>
+}) => {
+  const {
+    subscriptions,
+    displayType = "list",
+    showAnalytics = true,
+    showCategories = true,
+    title,
+    groupBy = "none",
+    filterBy = "all",
+  } = output
 
-    // Calculate statistics
-    const totalSubscriptions = subscriptions.length
-    const categoriesCount = new Set(
-      subscriptions.map((s) => s.subscription?.category).filter(Boolean),
-    ).size
-    const activeSubscriptions = subscriptions.filter((s) => !s.feed?.errorMessage).length
-    const totalViews = subscriptions.reduce((acc, s) => acc + (s.subscription?.view || 0), 0)
+  // Calculate statistics
+  const totalSubscriptions = subscriptions.length
+  const categoriesCount = new Set(
+    subscriptions.map((s) => s.subscription?.category).filter(Boolean),
+  ).size
+  const activeSubscriptions = subscriptions.filter((s) => !s.feed?.errorMessage).length
+  const totalViews = subscriptions.reduce((acc, s) => acc + (s.subscription?.view || 0), 0)
 
-    const renderSubscriptions = () => {
-      if (groupBy !== "none") {
-        return (
-          <GroupedSubscriptions
-            data={subscriptions}
-            groupBy={groupBy}
-            showAnalytics={showAnalytics}
-            showCategories={showCategories}
-          />
-        )
-      }
-
+  const renderSubscriptions = () => {
+    if (groupBy !== "none") {
       return (
-        <SubscriptionsGrid
+        <GroupedSubscriptions
           data={subscriptions}
+          groupBy={groupBy}
           showAnalytics={showAnalytics}
           showCategories={showCategories}
         />
@@ -209,30 +202,38 @@ const AIDisplaySubscriptionsPartBase = memo(
     }
 
     return (
-      <DisplayCardWrapper
-        title={title || "My Subscriptions"}
-        emoji="📋"
-        description={`${formatDisplayType(displayType)} • ${formatFilterBy(filterBy)} • ${formatGroupBy(groupBy)}`}
-      >
-        {/* Statistics Overview */}
-        <div className="@[700px]:grid-cols-4 grid grid-cols-2 gap-4">
-          <StatCard title="Total Subscriptions" value={totalSubscriptions} emoji="📊" />
-          <StatCard
-            title="Active Feeds"
-            value={activeSubscriptions}
-            description={`${totalSubscriptions - activeSubscriptions} inactive`}
-            emoji="🟢"
-          />
-          {showCategories && <StatCard title="Categories" value={categoriesCount} emoji="🏷️" />}
-          <StatCard title="Total Views" value={totalViews.toLocaleString()} emoji="👀" />
-        </div>
-
-        {/* Subscriptions Display */}
-        {renderSubscriptions()}
-      </DisplayCardWrapper>
+      <SubscriptionsGrid
+        data={subscriptions}
+        showAnalytics={showAnalytics}
+        showCategories={showCategories}
+      />
     )
-  },
-)
+  }
+
+  return (
+    <DisplayCardWrapper
+      title={title || "My Subscriptions"}
+      emoji="📋"
+      description={`${formatDisplayType(displayType)} • ${formatFilterBy(filterBy)} • ${formatGroupBy(groupBy)}`}
+    >
+      {/* Statistics Overview */}
+      <div className="@[700px]:grid-cols-4 grid grid-cols-2 gap-4">
+        <StatCard title="Total Subscriptions" value={totalSubscriptions} emoji="📊" />
+        <StatCard
+          title="Active Feeds"
+          value={activeSubscriptions}
+          description={`${totalSubscriptions - activeSubscriptions} inactive`}
+          emoji="🟢"
+        />
+        {showCategories && <StatCard title="Categories" value={categoriesCount} emoji="🏷️" />}
+        <StatCard title="Total Views" value={totalViews.toLocaleString()} emoji="👀" />
+      </div>
+
+      {/* Subscriptions Display */}
+      {renderSubscriptions()}
+    </DisplayCardWrapper>
+  )
+}
 
 export const AIDisplaySubscriptionsPart = withDisplayStateHandler<
   AIDisplaySubscriptionsTool["output"]

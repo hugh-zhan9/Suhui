@@ -1,3 +1,5 @@
+import "@xyflow/react/dist/style.css"
+
 import type { ToolUIPart } from "ai"
 import type { SerializedEditorState } from "lexical"
 import { m } from "motion/react"
@@ -8,6 +10,7 @@ import type {
   AIDisplayAnalyticsTool,
   AIDisplayEntriesTool,
   AIDisplayFeedsTool,
+  AIDisplayFlowTool,
   AIDisplaySubscriptionsTool,
   BizUIMessage,
 } from "~/modules/ai-chat/store/types"
@@ -18,10 +21,15 @@ import {
   AIDisplayFeedsPart,
   AIDisplaySubscriptionsPart,
 } from "../displays"
+// import { AIDisplayFlowPart } from "../displays/AIDisplayFlowPart"
 import { AIDataBlockPart } from "./AIDataBlockPart"
 import { AIMarkdownMessage, AIMarkdownStreamingMessage } from "./AIMarkdownMessage"
 import { AIRichTextMessage } from "./AIRichTextMessage"
 import { ToolInvocationComponent } from "./ToolInvocationComponent"
+
+const LazyAIDisplayFlowPart = React.lazy(() =>
+  import("../displays/AIDisplayFlowPart").then((mod) => ({ default: mod.AIDisplayFlowPart })),
+)
 
 interface MessagePartsProps {
   message: BizUIMessage
@@ -96,6 +104,29 @@ export const AIMessageParts: React.FC<MessagePartsProps> = React.memo(({ message
       }
       case "tool-displayFeeds": {
         return <AIDisplayFeedsPart key={partKey} part={part as AIDisplayFeedsTool} />
+      }
+
+      case "tool-displayFlowChart": {
+        const loadingElement = (
+          <div className="my-2 flex aspect-[4/3] w-full items-center justify-center">
+            <div className="flex flex-col items-center gap-4">
+              <div className="flex items-center gap-2">
+                <i className="i-mgc-loading-3-cute-re text-text-secondary size-4 animate-spin" />
+                <span className="text-text-secondary text-sm font-medium">
+                  Generating Flow Chart...
+                </span>
+              </div>
+            </div>
+          </div>
+        )
+        return (
+          <React.Suspense fallback={loadingElement} key={partKey}>
+            <LazyAIDisplayFlowPart
+              part={part as AIDisplayFlowTool}
+              loadingElement={loadingElement}
+            />
+          </React.Suspense>
+        )
       }
 
       default: {
