@@ -55,7 +55,7 @@ export const AIMessageParts: React.FC<MessagePartsProps> = React.memo(({ message
   return (
     <>
       {message.parts.map((part, index) => {
-        const partKey = `${message.id}-part-${index}`
+        const partKey = `${message.id}-${index}`
 
         switch (part.type) {
           case "text": {
@@ -100,6 +100,9 @@ export const AIMessageParts: React.FC<MessagePartsProps> = React.memo(({ message
 
           default: {
             if (part.type.startsWith("tool-")) {
+              if (part.type.startsWith("tool-chunkBreak")) {
+                return null
+              }
               return <ToolInvocationComponent key={partKey} part={part as ToolUIPart} />
             }
             return null

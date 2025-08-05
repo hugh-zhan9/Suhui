@@ -14,11 +14,11 @@ import {
   TableRow,
 } from "@follow/components/ui/table/index.js"
 import dayjs from "dayjs"
+import { memo } from "react"
 
 import type { AIDisplayAnalyticsTool } from "../../store/types"
-import { ErrorState, LoadingState } from "../shared/common-states"
-import { toolMemo } from "./share"
-import { ChartPlaceholder, StatCard } from "./shared"
+import { withDisplayStateHandler } from "./share"
+import { StatCard } from "./shared"
 
 type AnalyticsData = AIDisplayAnalyticsTool["output"]["analyticsData"]
 
@@ -132,8 +132,6 @@ const ReadingAnalytics = ({ data }: { data: AnalyticsData["readingStats"] }) => 
         <StatCard title="Active Days" value={data.length} emoji="🗓️" />
       </div>
 
-      <ChartPlaceholder title="Reading Activity Over Time" data={data} />
-
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Recent Reading Activity</CardTitle>
@@ -230,72 +228,56 @@ const OverviewAnalytics = ({ data }: { data: AnalyticsData["overviewStats"] }) =
   )
 }
 
-export const AIDisplayAnalyticsPart = toolMemo(({ part }: { part: AIDisplayAnalyticsTool }) => {
-  // Handle error state
-  if (part.state === "output-error") {
-    return (
-      <ErrorState
-        title="Analytics Error"
-        error={
-          typeof part.output === "string"
-            ? part.output
-            : "An error occurred while loading analytics"
+const AIDisplayAnalyticsPartBase = memo(
+  ({ output }: { output: NonNullable<AIDisplayAnalyticsTool["output"]> }) => {
+    const { analyticsData, analyticsType, timeRange, displayType, title } = output
+
+    const renderAnalytics = () => {
+      switch (analyticsType) {
+        case "feed": {
+          return <FeedAnalytics data={analyticsData.feedData} />
         }
-        maxWidth="max-w-4xl"
-      />
-    )
-  }
-
-  // Handle no output or invalid state
-  if (part.state !== "output-available" || !part.output) {
-    return (
-      <LoadingState
-        title="Loading Analytics..."
-        description="Fetching analytics data..."
-        maxWidth="max-w-4xl"
-      />
-    )
-  }
-
-  const { analyticsData, analyticsType, timeRange, displayType, title } = part.output
-
-  const renderAnalytics = () => {
-    switch (analyticsType) {
-      case "feed": {
-        return <FeedAnalytics data={analyticsData.feedData} />
-      }
-      case "subscription": {
-        return <SubscriptionAnalytics data={analyticsData.subscriptionStats} />
-      }
-      case "reading": {
-        return <ReadingAnalytics data={analyticsData.readingStats} />
-      }
-      case "trending": {
-        return <TrendingAnalytics data={analyticsData.trendingFeeds} />
-      }
-      case "overview": {
-        return <OverviewAnalytics data={analyticsData.overviewStats} />
-      }
-      default: {
-        return <div className="text-text-secondary">No analytics data available</div>
+        case "subscription": {
+          return <SubscriptionAnalytics data={analyticsData.subscriptionStats} />
+        }
+        case "reading": {
+          return <ReadingAnalytics data={analyticsData.readingStats} />
+        }
+        case "trending": {
+          return <TrendingAnalytics data={analyticsData.trendingFeeds} />
+        }
+        case "overview": {
+          return <OverviewAnalytics data={analyticsData.overviewStats} />
+        }
+        default: {
+          return <div className="text-text-secondary">No analytics data available</div>
+        }
       }
     }
-  }
 
-  return (
-    <Card className="mx-auto mb-2 w-full max-w-4xl">
-      <CardHeader>
-        <CardTitle className="text-text flex items-center gap-2 text-xl font-semibold">
-          <span className="text-lg">📊</span>
-          <span>
-            {title || `${analyticsType.charAt(0).toUpperCase() + analyticsType.slice(1)} Analytics`}
-          </span>
-        </CardTitle>
-        <CardDescription>
-          {formatTimeRange(timeRange)} • Display type: {displayType}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="@container">{renderAnalytics()}</CardContent>
-    </Card>
-  )
-})
+    return (
+      <Card className="mx-auto mb-2 w-full max-w-4xl">
+        <CardHeader>
+          <CardTitle className="text-text flex items-center gap-2 text-xl font-semibold">
+            <span className="text-lg">📊</span>
+            <span>
+              {title ||
+                `${analyticsType.charAt(0).toUpperCase() + analyticsType.slice(1)} Analytics`}
+            </span>
+          </CardTitle>
+          <CardDescription>
+            {formatTimeRange(timeRange)} • Display type: {displayType}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="@container">{renderAnalytics()}</CardContent>
+      </Card>
+    )
+  },
+)
+
+export const AIDisplayAnalyticsPart = withDisplayStateHandler<AIDisplayAnalyticsTool["output"]>({
+  title: "Analytics",
+  loadingDescription: "Fetching analytics data...",
+  errorTitle: "Analytics Error",
+  maxWidth: "max-w-4xl",
+})(AIDisplayAnalyticsPartBase)

@@ -11,7 +11,7 @@ import { memo } from "react"
 import { FeedIcon } from "~/modules/feed/feed-icon"
 
 import type { AIDisplayFeedsTool } from "../../store/types"
-import { ErrorState, LoadingState } from "../shared/common-states"
+import { DisplayCardWrapper, withDisplayStateHandler } from "./share"
 import { AnalyticsMetrics, EmptyState, StatCard } from "./shared"
 
 type FeedData = AIDisplayFeedsTool["output"]["feeds"]
@@ -77,63 +77,26 @@ const FeedsGrid = ({ data, showAnalytics }: { data: FeedData; showAnalytics: boo
   )
 }
 
-export const AIDisplayFeedsPart = memo(({ part }: { part: AIDisplayFeedsTool }) => {
-  // Handle error state
-  if (part.state === "output-error") {
-    return (
-      <ErrorState
-        title="Feeds Error"
-        error="An error occurred while loading feeds"
-        maxWidth="max-w-6xl"
-      />
+const AIDisplayFeedsPartBase = memo(
+  ({ output }: { output: NonNullable<AIDisplayFeedsTool["output"]> }) => {
+    const { feeds, showAnalytics = true, title } = output
+
+    // Calculate statistics
+    const totalFeeds = feeds.length
+    const activeFeeds = feeds.filter((f) => !f.feed.errorMessage).length
+    const errorFeeds = feeds.filter((f) => f.feed.errorMessage).length
+    const totalSubscriptions = feeds.reduce(
+      (acc, f) => acc + (f.analytics?.subscriptionCount || 0),
+      0,
     )
-  }
+    const totalViews = feeds.reduce((acc, f) => acc + (f.analytics?.view || 0), 0)
 
-  // Handle no output or invalid state
-  if (part.state !== "output-available" || !part.output) {
     return (
-      <LoadingState
-        title="Loading Feeds..."
-        description="Fetching feed data..."
-        maxWidth="max-w-6xl"
-      />
-    )
-  }
-
-  // Extract output with proper typing
-  const output = part.output as NonNullable<AIDisplayFeedsTool["output"]>
-
-  const { feeds, displayType = "list", showAnalytics = true, title } = output
-
-  // Calculate statistics
-  const totalFeeds = feeds.length
-  const activeFeeds = feeds.filter((f) => !f.feed.errorMessage).length
-  const errorFeeds = feeds.filter((f) => f.feed.errorMessage).length
-  const totalSubscriptions = feeds.reduce(
-    (acc, f) => acc + (f.analytics?.subscriptionCount || 0),
-    0,
-  )
-  const totalViews = feeds.reduce((acc, f) => acc + (f.analytics?.view || 0), 0)
-
-  const renderFeeds = () => {
-    switch (displayType) {
-      default: {
-        return <FeedsGrid data={feeds} showAnalytics={showAnalytics} />
-      }
-    }
-  }
-
-  return (
-    <Card className="mb-2 w-full min-w-0">
-      <div className="w-[9999px] max-w-[calc(var(--ai-chat-layout-width,65ch)_-120px)]" />
-      <CardHeader>
-        <CardTitle className="text-text flex items-center gap-2 text-xl font-semibold">
-          <span className="text-lg">📡</span>
-          <span>{title || "RSS Feeds"}</span>
-        </CardTitle>
-        <CardDescription>{totalFeeds} feeds</CardDescription>
-      </CardHeader>
-      <CardContent className="@container space-y-6">
+      <DisplayCardWrapper
+        title={title || "RSS Feeds"}
+        emoji="📡"
+        description={`${totalFeeds} feeds`}
+      >
         {/* Statistics Overview */}
         <div className="@[600px]:grid-cols-4 grid grid-cols-2 gap-4 md:grid-cols-4">
           <StatCard title="Total Feeds" value={totalFeeds} emoji="📊" />
@@ -155,9 +118,14 @@ export const AIDisplayFeedsPart = memo(({ part }: { part: AIDisplayFeedsTool }) 
           )}
         </div>
 
-        {/* Feeds Display */}
-        {renderFeeds()}
-      </CardContent>
-    </Card>
-  )
-})
+        <FeedsGrid data={feeds} showAnalytics={showAnalytics} />
+      </DisplayCardWrapper>
+    )
+  },
+)
+
+export const AIDisplayFeedsPart = withDisplayStateHandler<AIDisplayFeedsTool["output"]>({
+  title: "Feeds",
+  loadingDescription: "Fetching feed data...",
+  errorTitle: "Feeds Error",
+})(AIDisplayFeedsPartBase)

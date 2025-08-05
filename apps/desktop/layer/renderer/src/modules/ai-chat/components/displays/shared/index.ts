@@ -1,6 +1,5 @@
 export * from "./AnalyticsMetrics"
 export * from "./CategoryTag"
-export * from "./ChartPlaceholder"
 export * from "./DisplayHeader"
 export * from "./EmptyState"
 export * from "./FeedItemCard"

@@ -24,6 +24,7 @@ import {
 import { useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
 import { useAIChatStore } from "~/modules/ai-chat/store/AIChatContext"
 import type { AIChatContextBlock } from "~/modules/ai-chat/store/types"
+import { useSettingModal } from "~/modules/settings/modal/use-setting-modal-hack"
 
 import { useChatBlockActions } from "../../store/hooks"
 
@@ -39,6 +40,7 @@ export const AIChatContextBar: Component<{ onSendShortcut?: (prompt: string) => 
       [shortcuts],
     )
 
+    const showSettingModal = useSettingModal()
     const contextMenuContent = (
       <DropdownMenuContent align="start">
         <DropdownMenuSub>
@@ -100,21 +102,21 @@ export const AIChatContextBar: Component<{ onSendShortcut?: (prompt: string) => 
           <div className="text-text-tertiary p-3 text-center text-xs">No shortcuts configured</div>
         ) : (
           enabledShortcuts.map((shortcut) => (
-            <DropdownMenuItem
-              key={shortcut.id}
-              onClick={() => onSendShortcut?.(shortcut.prompt)}
-              className="text-xs"
-              shortcut={shortcut.hotkey}
-            >
-              <div className="flex w-full items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <i className="i-mgc-magic-2-cute-re size-3.5" />
-                  <span className="truncate">{shortcut.name}</span>
-                </div>
-              </div>
+            <DropdownMenuItem key={shortcut.id} onClick={() => onSendShortcut?.(shortcut.prompt)}>
+              <i className="i-mgc-magic-2-cute-re mr-1.5 size-3.5" />
+              <span className="truncate">{shortcut.name}</span>
             </DropdownMenuItem>
           ))
         )}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onClick={() => {
+            showSettingModal("ai")
+          }}
+        >
+          <i className="i-mgc-settings-7-cute-re mr-1.5 size-3.5" />
+          <span>Manage Shortcut</span>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     )
 

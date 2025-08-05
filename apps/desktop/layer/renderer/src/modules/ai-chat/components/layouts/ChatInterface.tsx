@@ -26,6 +26,7 @@ import {
 
 import { convertLexicalToMarkdown } from "../../utils/lexical-markdown"
 import { ChatInput } from "./ChatInput"
+import { CollapsibleError } from "./CollapsibleError"
 import { WelcomeScreen } from "./WelcomeScreen"
 
 const SCROLL_BOTTOM_THRESHOLD = 50
@@ -187,6 +188,7 @@ export const ChatInterface = () => {
 
       {hasMessages && (
         <div className="absolute inset-x-0 bottom-0 mx-auto max-w-4xl px-6 pb-6">
+          {error && <CollapsibleError error={error} />}
           <ChatInput onSend={handleSendMessage} />
         </div>
       )}

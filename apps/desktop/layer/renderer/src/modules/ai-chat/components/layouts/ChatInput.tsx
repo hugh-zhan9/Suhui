@@ -11,9 +11,8 @@ import { memo, useCallback, useRef, useState } from "react"
 import { AIChatContextBar } from "~/modules/ai-chat/components/layouts/AIChatContextBar"
 
 import { MentionPlugin } from "../../editor"
-import { useChatActions, useChatError, useChatStatus } from "../../store/hooks"
+import { useChatActions, useChatStatus } from "../../store/hooks"
 import { AIChatSendButton } from "./AIChatSendButton"
-import { CollapsibleError } from "./CollapsibleError"
 
 const chatInputVariants = cva(
   [
@@ -40,7 +39,7 @@ interface ChatInputProps extends VariantProps<typeof chatInputVariants> {
 export const ChatInput = memo(({ onSend, variant }: ChatInputProps) => {
   const status = useChatStatus()
   const chatActions = useChatActions()
-  const error = useChatError()
+
   const stop = useCallback(() => {
     chatActions.stop()
   }, [chatActions])
@@ -85,43 +84,37 @@ export const ChatInput = memo(({ onSend, variant }: ChatInputProps) => {
   }, [])
 
   return (
-    <div className="w-full">
-      {/* Error Display */}
-      {error && <CollapsibleError error={error} />}
-
-      {/* Integrated Input Container with Context Bar */}
-      <div className={cn(chatInputVariants({ variant }))}>
-        {/* Input Area */}
-        <div className="relative z-10 flex items-end" onContextMenu={stopPropagation}>
-          <ScrollArea rootClassName="mx-5 my-3.5 mr-14 flex-1 overflow-auto">
-            <LexicalRichEditor
-              ref={editorRef}
-              placeholder="Message AI assistant..."
-              className="w-full"
-              onChange={handleEditorChange}
-              onKeyDown={handleKeyDown}
-              autoFocus
-              plugins={[MentionPlugin]}
-              namespace="AIChatRichEditor"
-            />
-          </ScrollArea>
-          <div className="absolute right-3 top-3">
-            <AIChatSendButton
-              onClick={isProcessing ? stop : handleSend}
-              disabled={!isProcessing && isEmpty}
-              isProcessing={isProcessing}
-              size="sm"
-            />
-          </div>
-        </div>
-
-        {/* Context Bar - Always shown, positioned below the input area */}
-        <div className="border-border/20 relative z-10 border-t bg-transparent">
-          <AIChatContextBar
-            className="border-0 bg-transparent px-4 py-2.5"
-            onSendShortcut={(prompt) => onSend(prompt, null)}
+    <div className={cn(chatInputVariants({ variant }))}>
+      {/* Input Area */}
+      <div className="relative z-10 flex items-end" onContextMenu={stopPropagation}>
+        <ScrollArea rootClassName="mx-5 my-3.5 mr-14 flex-1 overflow-auto">
+          <LexicalRichEditor
+            ref={editorRef}
+            placeholder="Message AI assistant..."
+            className="w-full"
+            onChange={handleEditorChange}
+            onKeyDown={handleKeyDown}
+            autoFocus
+            plugins={[MentionPlugin]}
+            namespace="AIChatRichEditor"
+          />
+        </ScrollArea>
+        <div className="absolute right-3 top-3">
+          <AIChatSendButton
+            onClick={isProcessing ? stop : handleSend}
+            disabled={!isProcessing && isEmpty}
+            isProcessing={isProcessing}
+            size="sm"
           />
         </div>
+      </div>
+
+      {/* Context Bar - Always shown, positioned below the input area */}
+      <div className="border-border/20 relative z-10 border-t bg-transparent">
+        <AIChatContextBar
+          className="border-0 bg-transparent px-4 py-2.5"
+          onSendShortcut={(prompt) => onSend(prompt, null)}
+        />
       </div>
     </div>
   )

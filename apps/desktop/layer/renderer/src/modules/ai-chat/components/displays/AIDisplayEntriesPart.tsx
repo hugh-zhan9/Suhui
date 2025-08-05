@@ -13,7 +13,7 @@ import { usePeekModal } from "~/hooks/biz/usePeekModal"
 import { FeedIcon } from "~/modules/feed/feed-icon"
 
 import type { AIDisplayEntriesTool } from "../../store/types"
-import { ErrorState, LoadingState } from "../shared/common-states"
+import { DisplayCardWrapper, withDisplayStateHandler } from "./share"
 import { CategoryTag, EmptyState, StatCard } from "./shared"
 
 type EntryData = AIDisplayEntriesTool["output"]["entries"]
@@ -235,18 +235,10 @@ const GroupedEntries = ({
   )
 
   const renderGroup = (groupData: EntryData) => {
-    switch (displayType) {
-      case "timeline": {
-        return (
-          <TimelineView data={groupData} showSummary={showSummary} showMetadata={showMetadata} />
-        )
-      }
-      default: {
-        return (
-          <EntriesGrid data={groupData} showSummary={showSummary} showMetadata={showMetadata} />
-        )
-      }
+    if (displayType === "timeline") {
+      return <TimelineView data={groupData} showSummary={showSummary} showMetadata={showMetadata} />
     }
+    return <EntriesGrid data={groupData} showSummary={showSummary} showMetadata={showMetadata} />
   }
 
   return (
@@ -270,83 +262,48 @@ const GroupedEntries = ({
   )
 }
 
-export const AIDisplayEntriesPart = memo(({ part }: { part: AIDisplayEntriesTool }) => {
-  // Handle error state
-  if (part.state === "output-error") {
-    return (
-      <ErrorState
-        title="Entries Error"
-        error="An error occurred while loading entries"
-        maxWidth="max-w-6xl"
-      />
-    )
-  }
+const AIDisplayEntriesPartBase = memo(
+  ({ output }: { output: NonNullable<AIDisplayEntriesTool["output"]> }) => {
+    const {
+      entries,
+      displayType = "grid",
+      showSummary = true,
+      showMetadata = true,
+      title,
+      groupBy = "none",
+    } = output
 
-  // Handle no output or invalid state
-  if (part.state !== "output-available" || !part.output) {
-    return (
-      <LoadingState
-        title="Loading Entries..."
-        description="Fetching entry data..."
-        maxWidth="max-w-6xl"
-      />
-    )
-  }
+    // Calculate statistics
+    const totalEntries = entries.length
+    const feedsCount = new Set(entries.map((e) => e.entry.feedId)).size
+    const authorsCount = new Set(entries.map((e) => e.entry.author).filter(Boolean)).size
+    const categoriesCount = new Set(entries.flatMap((e) => e.entry.categories || [])).size
 
-  // Extract output with proper typing
-  const output = part.output as NonNullable<AIDisplayEntriesTool["output"]>
+    const renderEntries = () => {
+      if (groupBy !== "none") {
+        return (
+          <GroupedEntries
+            data={entries}
+            groupBy={groupBy}
+            displayType={displayType}
+            showSummary={showSummary}
+            showMetadata={showMetadata}
+          />
+        )
+      }
 
-  const {
-    entries,
-    displayType = "grid",
-    showSummary = true,
-    showMetadata = true,
-    title,
-    groupBy = "none",
-  } = output
-
-  // Calculate statistics
-  const totalEntries = entries.length
-  const feedsCount = new Set(entries.map((e) => e.entry.feedId)).size
-  const authorsCount = new Set(entries.map((e) => e.entry.author).filter(Boolean)).size
-  const categoriesCount = new Set(entries.flatMap((e) => e.entry.categories || [])).size
-
-  const renderEntries = () => {
-    if (groupBy !== "none") {
-      return (
-        <GroupedEntries
-          data={entries}
-          groupBy={groupBy}
-          displayType={displayType}
-          showSummary={showSummary}
-          showMetadata={showMetadata}
-        />
-      )
-    }
-
-    switch (displayType) {
-      case "timeline": {
+      if (displayType === "timeline") {
         return <TimelineView data={entries} showSummary={showSummary} showMetadata={showMetadata} />
       }
-      default: {
-        return <EntriesGrid data={entries} showSummary={showSummary} showMetadata={showMetadata} />
-      }
+      return <EntriesGrid data={entries} showSummary={showSummary} showMetadata={showMetadata} />
     }
-  }
 
-  return (
-    <Card className="mb-2 w-full min-w-0">
-      <div className="w-[9999px] max-w-[calc(var(--ai-chat-layout-width,65ch)_-120px)]" />
-      <CardHeader>
-        <CardTitle className="text-text flex items-center gap-2 text-xl font-semibold">
-          <span className="text-lg">📰</span>
-          <span>{title || "Entries"}</span>
-        </CardTitle>
-        <CardDescription>
-          {formatDisplayType(displayType)} • {formatGroupBy(groupBy)} • {totalEntries} entries
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="@container space-y-6">
+    return (
+      <DisplayCardWrapper
+        title={title || "Entries"}
+        emoji="📰"
+        description={`${formatDisplayType(displayType)} • ${formatGroupBy(groupBy)} • ${totalEntries} entries`}
+      >
         {/* Statistics Overview */}
         <div className="@[600px]:grid-cols-4 @[400px]:grid-cols-2 grid grid-cols-1 gap-4">
           <StatCard title="Total Entries" value={totalEntries} emoji="📄" />
@@ -357,7 +314,13 @@ export const AIDisplayEntriesPart = memo(({ part }: { part: AIDisplayEntriesTool
 
         {/* Entries Display */}
         {renderEntries()}
-      </CardContent>
-    </Card>
-  )
-})
+      </DisplayCardWrapper>
+    )
+  },
+)
+
+export const AIDisplayEntriesPart = withDisplayStateHandler<AIDisplayEntriesTool["output"]>({
+  title: "Entries",
+  loadingDescription: "Fetching entry data...",
+  errorTitle: "Entries Error",
+})(AIDisplayEntriesPartBase)
