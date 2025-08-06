@@ -33,7 +33,7 @@ import { ChatInput } from "./ChatInput"
 import { CollapsibleError } from "./CollapsibleError"
 import { WelcomeScreen } from "./WelcomeScreen"
 
-const SCROLL_BOTTOM_THRESHOLD = 50
+const SCROLL_BOTTOM_THRESHOLD = window.innerHeight / 2
 
 const ChatInterfaceContent = () => {
   const hasMessages = useHasMessages()
