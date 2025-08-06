@@ -241,29 +241,10 @@ export const AIChatMessage: React.FC<AIChatMessageProps> = React.memo(({ message
   )
 })
 
-// Typing indicator component
-export const AIChatTypingIndicator: React.FC = () => {
+export const AIChatWaitingIndicator: React.FC = () => {
   return (
-    <m.div
-      className="flex justify-start"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      transition={{ duration: 0.2 }}
-    >
-      <div className="max-w-[70%] rounded-xl border border-gray-200/60 bg-gradient-to-br from-white/80 to-gray-50/90 px-3 py-2.5 shadow-lg shadow-black/5 backdrop-blur-sm dark:border-zinc-700/60 dark:from-zinc-800/80 dark:to-zinc-900/90 dark:shadow-black/20">
-        <div className="mb-2 flex items-center gap-2">
-          <div className="from-orange flex size-5 items-center justify-center rounded-full bg-gradient-to-r to-red-500">
-            <i className="i-mgc-ai-cute-re size-3 text-white" />
-          </div>
-          <span className="text-text-secondary text-xs font-medium">{APP_NAME} AI</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="bg-text-tertiary size-2 animate-bounce rounded-full [animation-delay:-0.3s]" />
-          <div className="bg-text-tertiary size-2 animate-bounce rounded-full [animation-delay:-0.15s]" />
-          <div className="bg-text-tertiary size-2 animate-bounce rounded-full" />
-        </div>
-      </div>
-    </m.div>
+    <span className="text-text-tertiary text-xs">
+      <i className="i-mgc-loading-3-cute-re size-3 animate-spin" />
+    </span>
   )
 }

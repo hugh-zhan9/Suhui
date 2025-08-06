@@ -13,7 +13,7 @@ import { useEventCallback } from "usehooks-ts"
 
 import {
   AIChatMessage,
-  AIChatTypingIndicator,
+  AIChatWaitingIndicator,
 } from "~/modules/ai-chat/components/message/AIChatMessage"
 import { useAutoScroll } from "~/modules/ai-chat/hooks/useAutoScroll"
 import { useLoadMessages } from "~/modules/ai-chat/hooks/useLoadMessages"
@@ -163,7 +163,7 @@ const ChatInterfaceContent = () => {
               ) : (
                 <div className="mx-auto max-w-4xl px-6 py-8">
                   <Messages />
-                  {status === "submitted" && <AIChatTypingIndicator />}
+                  {status === "submitted" && <AIChatWaitingIndicator />}
                 </div>
               )}
             </ScrollArea>
