@@ -67,6 +67,7 @@ export const WelcomeScreen = ({ onSend }: WelcomeScreenProps) => {
               className="bg-material-medium hover:bg-material-thick border-border text-text-secondary hover:text-text whitespace-nowrap rounded-full border px-4 py-2 text-xs transition-colors"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, y: 10 }}
               transition={{ delay: index * 0.1 }}
               onClick={() => onSend(shortcut.prompt, null)}
               title={shortcut.hotkey ? `${shortcut.name} (${shortcut.hotkey})` : shortcut.name}
@@ -83,6 +84,7 @@ export const WelcomeScreen = ({ onSend }: WelcomeScreenProps) => {
                 className="bg-material-medium hover:bg-material-thick border-border text-text-secondary hover:text-text whitespace-nowrap rounded-full border px-4 py-2 text-xs transition-colors"
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, y: 10 }}
                 transition={{ delay: (enabledShortcuts.length + index) * 0.1 }}
                 onClick={() => onSend(suggestion, null)}
               >

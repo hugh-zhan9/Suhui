@@ -5,9 +5,10 @@ import { springScrollTo } from "@follow/utils/scroller"
 import type { BizUIMessage } from "@folo-services/ai-tools"
 import { ErrorBoundary } from "@sentry/react"
 import type { EditorState, LexicalEditor } from "lexical"
+import { AnimatePresence } from "motion/react"
 import { nanoid } from "nanoid"
 import type { FC } from "react"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useEventCallback } from "usehooks-ts"
 
 import {
@@ -42,7 +43,7 @@ const ChatInterfaceContent = () => {
 
   const currentChatId = useCurrentChatId()
 
-  const scrollAreaRef = useRef<HTMLDivElement>(null)
+  const [scrollAreaRef, setScrollAreaRef] = useState<HTMLDivElement | null>(null)
   const [isAtBottom, setIsAtBottom] = useState(true)
 
   // Reset handlers when chatId changes
@@ -53,7 +54,7 @@ const ChatInterfaceContent = () => {
   const { isLoading: isLoadingHistory } = useLoadMessages(currentChatId || "", {
     onLoad: () => {
       nextFrame(() => {
-        const $scrollArea = scrollAreaRef.current
+        const $scrollArea = scrollAreaRef
         const scrollHeight = $scrollArea?.scrollHeight
 
         if (scrollHeight) {
@@ -66,10 +67,11 @@ const ChatInterfaceContent = () => {
     },
   })
 
-  const { resetScrollState } = useAutoScroll(scrollAreaRef.current, status === "streaming")
+  const { resetScrollState } = useAutoScroll(scrollAreaRef, status === "streaming")
 
   useEffect(() => {
-    const scrollElement = scrollAreaRef.current
+    const scrollElement = scrollAreaRef
+
     if (!scrollElement) return
 
     const handleScroll = () => {
@@ -86,14 +88,14 @@ const ChatInterfaceContent = () => {
     return () => {
       scrollElement.removeEventListener("scroll", handleScroll)
     }
-  }, [])
+  }, [scrollAreaRef])
 
   const scrollToBottom = useCallback(() => {
-    const scrollElement = scrollAreaRef.current
+    const scrollElement = scrollAreaRef
     if (!scrollElement) return
 
     springScrollTo(scrollElement.scrollHeight, scrollElement)
-  }, [])
+  }, [scrollAreaRef])
 
   const blockActions = useBlockActions()
   const handleSendMessage = useEventCallback(
@@ -145,26 +147,28 @@ const ChatInterfaceContent = () => {
   return (
     <div className="flex size-full flex-col">
       <div className="flex min-h-0 flex-1 flex-col">
-        {!hasMessages && !isLoadingHistory ? (
-          <WelcomeScreen onSend={handleSendMessage} />
-        ) : (
-          <ScrollArea
-            ref={scrollAreaRef}
-            rootClassName="flex-1"
-            viewportClassName={cn("pt-12 pb-32", error && "pb-48")}
-          >
-            {isLoadingHistory ? (
-              <div className="flex min-h-96 items-center justify-center">
-                <i className="i-mgc-loading-3-cute-re text-text size-8 animate-spin" />
-              </div>
-            ) : (
-              <div className="mx-auto max-w-4xl px-6 py-8">
-                <Messages />
-                {status === "submitted" && <AIChatTypingIndicator />}
-              </div>
-            )}
-          </ScrollArea>
-        )}
+        <AnimatePresence>
+          {!hasMessages && !isLoadingHistory ? (
+            <WelcomeScreen onSend={handleSendMessage} />
+          ) : (
+            <ScrollArea
+              ref={setScrollAreaRef}
+              rootClassName="flex-1"
+              viewportClassName={cn("pt-12 pb-32", error && "pb-48")}
+            >
+              {isLoadingHistory ? (
+                <div className="flex min-h-96 items-center justify-center">
+                  <i className="i-mgc-loading-3-cute-re text-text size-8 animate-spin" />
+                </div>
+              ) : (
+                <div className="mx-auto max-w-4xl px-6 py-8">
+                  <Messages />
+                  {status === "submitted" && <AIChatTypingIndicator />}
+                </div>
+              )}
+            </ScrollArea>
+          )}
+        </AnimatePresence>
       </div>
 
       {shouldShowScrollToBottom && (
@@ -180,9 +184,9 @@ const ChatInterfaceContent = () => {
 
               {/* Content */}
               <div className="relative z-10 flex items-center justify-center gap-2 p-3">
-                <i className="i-mingcute-arrow-down-circle-fill text-blue size-3" />
+                <i className="i-mingcute-arrow-down-circle-fill text-accent size-3" />
 
-                <span className="text-blue text-sm font-medium">Scroll to Bottom</span>
+                <span className="text-accent text-sm font-medium">Scroll to Bottom</span>
               </div>
             </button>
           </div>
