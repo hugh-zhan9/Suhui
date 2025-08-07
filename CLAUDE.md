@@ -10,18 +10,37 @@ Follow (Folo) is a modern RSS aggregator and content management platform with mu
 
 ### Applications (`apps/`)
 
-- **`apps/desktop/`** - Electron desktop application with main and renderer processes
+- **`apps/desktop/`** - Electron desktop application
+  - `layer/main/` - Electron main process
+  - `layer/renderer/` - Vite + React renderer (primary web app)
 - **`apps/mobile/`** - React Native mobile app for iOS and Android
-- **`apps/ssr/`** - Server-side rendered web application
-- **`apps/mobile/web-app/`** - HTML renderer for mobile web views
+  - `src/` - React Native source code
+  - `native/` - Native module implementations
+  - `web-app/` - HTML renderer for mobile web views
+  - `android/` - Android-specific configuration
+  - `ios/` - iOS-specific configuration
+- **`apps/ssr/`** - Server-side rendered web application (minimal, for external sharing)
 
 ### Packages (`packages/`)
 
-- **`packages/internal/`** - Internal shared packages (components, database, hooks, store, etc.)
-- **`packages/configs/`** - Shared configuration files (Tailwind, TypeScript)
-- **`packages/utils/`** - Utility functions and helpers
-- **`packages/readability/`** - Content readability parsing
-- **`packages/vite-plugin-route-builder/`** - Custom Vite plugin for route generation
+- **`packages/internal/`** - Core shared packages
+  - `atoms/` - Jotai atomic state definitions
+  - `components/` - Shared UI components
+  - `constants/` - Application constants
+  - `database/` - Drizzle ORM database layer
+  - `hooks/` - Shared React hooks
+  - `models/` - Data models and schemas
+  - `shared/` - Cross-platform shared utilities
+  - `store/` - Zustand stores
+  - `types/` - TypeScript type definitions
+  - `utils/` - Utility functions and helpers
+  - `tracker/` - Analytics and tracking
+  - `logger/` - Logging utilities
+  - `legal/` - Legal and compliance utilities
+- **`packages/configs/`** - Shared configuration files
+  - `tailwindcss/` - Tailwind CSS configurations
+  - TypeScript and build configurations
+- **`packages/readability/`** - Content readability parsing and extraction
 
 ## Essential Commands
 
@@ -67,19 +86,6 @@ pnpm run typecheck
 
 # Run tests
 pnpm run test
-```
-
-### Package Management
-
-```bash
-# Build shared packages
-pnpm run build:packages
-
-# Generate i18n templates
-pnpm run generator:i18n-template
-
-# Sync icons from SVG to React Native
-pnpm run icons:sync
 ```
 
 ## Architecture Guidelines
