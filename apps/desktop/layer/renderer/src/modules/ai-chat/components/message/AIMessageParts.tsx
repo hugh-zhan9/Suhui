@@ -1,7 +1,6 @@
 import "@xyflow/react/dist/style.css"
 
 import type { ToolUIPart } from "ai"
-import type { SerializedEditorState } from "lexical"
 import * as React from "react"
 
 import type {
@@ -62,7 +61,7 @@ export const AIMessageParts: React.FC<MessagePartsProps> = React.memo(({ message
         return (
           <AIRichTextMessage
             key={partKey}
-            data={part.data as { state: SerializedEditorState; text: string }}
+            data={part.data as { state: string; text: string }}
             className={isUser ? "text-white" : "text-text"}
           />
         )

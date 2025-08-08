@@ -42,6 +42,12 @@ const ChatInterfaceContent = () => {
   const chatActions = useChatActions()
   const error = useChatError()
 
+  useEffect(() => {
+    if (error) {
+      console.error("AIChat Error:", error)
+    }
+  }, [error])
+
   const currentChatId = useCurrentChatId()
 
   const [scrollAreaRef, setScrollAreaRef] = useState<HTMLDivElement | null>(null)
@@ -138,7 +144,7 @@ const ChatInterfaceContent = () => {
         parts.push({
           type: "data-rich-text",
           data: {
-            state: message.toJSON(),
+            state: JSON.stringify(message.toJSON()),
             text: convertLexicalToMarkdown(editor),
           },
         })

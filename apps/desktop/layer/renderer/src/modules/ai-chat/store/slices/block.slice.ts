@@ -140,10 +140,12 @@ export class BlockSliceAction {
     this.addBlock(fileBlock)
   }
 
-  updateFileAttachment(fileId: string, updatedAttachment: FileAttachment) {
+  updateFileAttachment(attachmentId: string, updatedAttachment: FileAttachment) {
     this.set(
       produce((state: BlockSlice) => {
-        const block = state.blocks.find((b) => b.id === fileId)
+        const block = state.blocks.find(
+          (b) => b.type === "fileAttachment" && b.attachment.id === attachmentId,
+        )
         if (block && block.type === "fileAttachment") {
           block.attachment = updatedAttachment
         }
@@ -171,13 +173,5 @@ export class BlockSliceAction {
 
   removeFileAttachment(fileId: string) {
     this.removeBlock(fileId)
-  }
-
-  getFileAttachments() {
-    return this.get().blocks.filter((block) => block.type === "fileAttachment")
-  }
-
-  hasFileAttachments() {
-    return this.get().blocks.some((block) => block.type === "fileAttachment")
   }
 }

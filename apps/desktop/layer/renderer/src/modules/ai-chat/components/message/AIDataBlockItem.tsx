@@ -95,8 +95,7 @@ export const AIDataBlockItem: React.FC<AIDataBlockItemProps> = React.memo(({ blo
       key={block.id}
       className={cn(
         "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5",
-        "border bg-gradient-to-r backdrop-blur-sm transition-all duration-200",
-        "hover:scale-105 hover:shadow-md",
+        "border bg-gradient-to-r backdrop-blur-sm",
         styles.container,
       )}
     >

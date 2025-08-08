@@ -9,6 +9,7 @@ import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin"
 import type { SerializedEditorState } from "lexical"
 import * as React from "react"
 
+import { FileAttachmentNode } from "../../editor"
 import { MentionNode } from "../../editor/plugins/mention/MentionNode"
 
 function onError(error: Error) {
@@ -17,7 +18,7 @@ function onError(error: Error) {
 
 interface AIRichTextMessageProps {
   data: {
-    state: SerializedEditorState
+    state: SerializedEditorState | string // Serialized editor state as a JSON string
     text: string
   }
   className?: string
@@ -31,9 +32,9 @@ export const AIRichTextMessage: React.FC<AIRichTextMessageProps> = React.memo(
         namespace: "AIRichTextDisplay",
         theme: defaultLexicalTheme,
         onError,
-        editable: false, // Read-only mode
-        editorState: JSON.stringify(data.state),
-        nodes: [...LexicalRichEditorNodes, MentionNode],
+        editable: false,
+        editorState: typeof data.state === "object" ? JSON.stringify(data.state) : data.state,
+        nodes: [...LexicalRichEditorNodes, MentionNode, FileAttachmentNode],
       }
     }
     return (

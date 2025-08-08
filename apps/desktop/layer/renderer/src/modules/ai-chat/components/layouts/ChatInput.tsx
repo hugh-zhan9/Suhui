@@ -10,7 +10,7 @@ import { memo, useCallback, useRef, useState } from "react"
 
 import { AIChatContextBar } from "~/modules/ai-chat/components/layouts/AIChatContextBar"
 
-import { MentionPlugin } from "../../editor"
+import { FileUploadPlugin, MentionPlugin } from "../../editor"
 import { useChatActions, useChatStatus } from "../../store/hooks"
 import { AIChatSendButton } from "./AIChatSendButton"
 
@@ -84,13 +84,7 @@ export const ChatInput = memo(({ onSend, variant }: ChatInputProps) => {
   }, [])
 
   return (
-    <div
-      className={cn(chatInputVariants({ variant }))}
-      onDragEnter={stopPropagation}
-      onDragOver={stopPropagation}
-      onDragLeave={stopPropagation}
-      onDrop={stopPropagation}
-    >
+    <div className={cn(chatInputVariants({ variant }))}>
       {/* Input Area */}
       <div className="relative z-10 flex items-end" onContextMenu={stopPropagation}>
         <ScrollArea rootClassName="mx-5 my-3.5 mr-14 flex-1 overflow-auto">
@@ -101,7 +95,7 @@ export const ChatInput = memo(({ onSend, variant }: ChatInputProps) => {
             onChange={handleEditorChange}
             onKeyDown={handleKeyDown}
             autoFocus
-            plugins={[MentionPlugin]}
+            plugins={[MentionPlugin, FileUploadPlugin]}
             namespace="AIChatRichEditor"
           />
         </ScrollArea>

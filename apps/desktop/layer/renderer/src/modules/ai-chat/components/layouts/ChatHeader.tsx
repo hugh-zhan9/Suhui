@@ -3,7 +3,7 @@ import { useCallback } from "react"
 import { useTranslation } from "react-i18next"
 
 import { useDialog } from "~/components/ui/modal/stacked/hooks"
-import { useChatActions, useCurrentTitle } from "~/modules/ai-chat/store/hooks"
+import { useBlockActions, useChatActions, useCurrentTitle } from "~/modules/ai-chat/store/hooks"
 import { useSettingModal } from "~/modules/settings/modal/use-setting-modal-hack"
 
 import { ChatMoreDropdown } from "./ChatMoreDropdown"
@@ -14,6 +14,7 @@ export const ChatHeader = () => {
 
   const settingModalPresent = useSettingModal()
   const chatActions = useChatActions()
+  const blockActions = useBlockActions()
   const { ask } = useDialog()
   const { t } = useTranslation("ai")
 
@@ -29,9 +30,10 @@ export const ChatHeader = () => {
       variant: "danger",
       onConfirm: () => {
         chatActions.newChat()
+        blockActions.clearBlocks()
       },
     })
-  }, [chatActions, currentTitle, ask, t])
+  }, [chatActions, currentTitle, ask, t, blockActions])
 
   const handleTitleSave = useCallback(
     async (newTitle: string) => {

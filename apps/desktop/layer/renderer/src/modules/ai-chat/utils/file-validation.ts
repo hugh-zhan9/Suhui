@@ -1,5 +1,6 @@
 const MAX_IMAGE_ALLOWED_SIZE = 3 * 1024 * 1024
 const MAX_DOCUMENT_ALLOWED_SIZE = 1 * 1024 * 1024
+export const SUPPORTED_MIME_ACCEPT = "image/*,.pdf,.txt,.md"
 export const SUPPORTED_FILE_TYPES = {
   // Images
   "image/png": { extension: "png", category: "image", maxSize: MAX_IMAGE_ALLOWED_SIZE },

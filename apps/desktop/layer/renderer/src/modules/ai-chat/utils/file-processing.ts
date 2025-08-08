@@ -232,9 +232,6 @@ export async function uploadFileAttachment(
       const response = await followApi.upload.uploadChatAttachment({ file: blob })
       const serverUrl = response.data.url
 
-      // Clear progress interval
-      clearInterval(progressInterval)
-
       // Update to 100% and completed status
       const completedAttachment: FileAttachment = {
         ...fileAttachment,
@@ -248,9 +245,9 @@ export async function uploadFileAttachment(
       onProgressUpdate?.(completedAttachment)
 
       return completedAttachment
-    } catch (uploadError) {
+    } finally {
+      // Clear progress interval
       clearInterval(progressInterval)
-      throw uploadError
     }
   } catch (error) {
     // Return attachment with error status

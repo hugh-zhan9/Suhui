@@ -15,6 +15,7 @@ export const ImageThumbnail: FC<{
 }> = ({ previewUrl, originalUrl, alt, filename, className }) => {
   const [imageError, setImageError] = React.useState(false)
   const { present } = useModalStack()
+
   return (
     <HoverCard.Root openDelay={300} closeDelay={100}>
       <HoverCard.Trigger

@@ -1,7 +1,9 @@
+import { nanoid } from "nanoid"
 import { useCallback } from "react"
 import { toast } from "sonner"
 
 import { useChatBlockActions } from "../store/hooks"
+import type { FileAttachment } from "../store/types"
 import type { ProcessFileOptions, ProcessFileResult } from "../utils/file-processing"
 import { processAndUploadFile } from "../utils/file-processing"
 
@@ -28,7 +30,7 @@ export interface FileUploadHandlers {
   /**
    * Upload a single file with progress tracking
    */
-  uploadFile: (file: File) => Promise<ProcessFileResult>
+  uploadFile: (file: File, id?: string) => Promise<ProcessFileResult>
   /**
    * Upload multiple files with progress tracking
    */
@@ -58,28 +60,81 @@ export function useFileUpload(options: UseFileUploadOptions = {}): FileUploadHan
   const blockActions = useChatBlockActions()
 
   const uploadFile = useCallback(
-    async (file: File): Promise<ProcessFileResult> => {
+    async (file: File, id?: string): Promise<ProcessFileResult> => {
+      // Create initial file attachment for immediate UI feedback
+      const initialFileAttachment: FileAttachment = {
+        id: id || nanoid(),
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        dataUrl: "", // Will be filled during processing
+        uploadStatus: "processing",
+        uploadProgress: 0,
+      }
+
+      // Add the initial block immediately for real-time UI feedback
+      blockActions.addFileAttachment(initialFileAttachment)
+
       try {
         const result = await processAndUploadFile(file, processOptions, (updatedAttachment) => {
-          // Update block during upload progress
-          blockActions.updateFileAttachment(updatedAttachment.id, updatedAttachment)
+          // Update the attachment with the same ID to maintain consistency
+          const syncedAttachment = {
+            ...updatedAttachment,
+            id: initialFileAttachment.id, // Keep the same ID
+          }
+          blockActions.updateFileAttachment(initialFileAttachment.id, syncedAttachment)
         })
 
         if (result.success && result.fileAttachment) {
-          // Add the completed file attachment to blocks
-          blockActions.addFileAttachment(result.fileAttachment)
+          // Update the final completed state with the same ID
+          const finalAttachment = {
+            ...result.fileAttachment,
+            id: initialFileAttachment.id, // Keep the same ID
+          }
+
+          blockActions.updateFileAttachment(initialFileAttachment.id, finalAttachment)
 
           if (showSuccessToast) {
             toast.success(`${successMessage}: ${file.name}`)
           }
-        } else if (showErrorToast && result.error) {
-          toast.error(`${errorMessagePrefix}: ${result.error}`)
-          console.error("File upload error:", result.error)
-        }
 
-        return result
+          // Return result with consistent ID
+          return {
+            ...result,
+            fileAttachment: finalAttachment,
+          }
+        } else {
+          // Update to error state
+          const errorAttachment: FileAttachment = {
+            ...initialFileAttachment,
+            uploadStatus: "error",
+            errorMessage: result.error || "Upload failed",
+            uploadProgress: undefined,
+          }
+
+          blockActions.updateFileAttachment(initialFileAttachment.id, errorAttachment)
+
+          if (showErrorToast && result.error) {
+            toast.error(`${errorMessagePrefix}: ${result.error}`)
+          }
+
+          return {
+            ...result,
+            fileAttachment: errorAttachment,
+          }
+        }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : "Unknown error"
+
+        // Update to error state
+        const errorAttachment: FileAttachment = {
+          ...initialFileAttachment,
+          uploadStatus: "error",
+          errorMessage,
+          uploadProgress: undefined,
+        }
+
+        blockActions.updateFileAttachment(initialFileAttachment.id, errorAttachment)
 
         if (showErrorToast) {
           toast.error(`${errorMessagePrefix}: ${errorMessage}`)
@@ -90,6 +145,7 @@ export function useFileUpload(options: UseFileUploadOptions = {}): FileUploadHan
         return {
           success: false,
           error: errorMessage,
+          fileAttachment: errorAttachment,
         }
       }
     },
