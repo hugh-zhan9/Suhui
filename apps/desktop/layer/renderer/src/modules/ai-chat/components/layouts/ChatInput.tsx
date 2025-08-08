@@ -84,7 +84,13 @@ export const ChatInput = memo(({ onSend, variant }: ChatInputProps) => {
   }, [])
 
   return (
-    <div className={cn(chatInputVariants({ variant }))}>
+    <div
+      className={cn(chatInputVariants({ variant }))}
+      onDragEnter={stopPropagation}
+      onDragOver={stopPropagation}
+      onDragLeave={stopPropagation}
+      onDrop={stopPropagation}
+    >
       {/* Input Area */}
       <div className="relative z-10 flex items-end" onContextMenu={stopPropagation}>
         <ScrollArea rootClassName="mx-5 my-3.5 mr-14 flex-1 overflow-auto">

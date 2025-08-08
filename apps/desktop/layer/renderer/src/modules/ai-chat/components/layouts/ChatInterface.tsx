@@ -8,7 +8,7 @@ import type { EditorState, LexicalEditor } from "lexical"
 import { AnimatePresence } from "motion/react"
 import { nanoid } from "nanoid"
 import type { FC } from "react"
-import { useCallback, useEffect, useState } from "react"
+import { Suspense, useCallback, useEffect, useState } from "react"
 import { useEventCallback } from "usehooks-ts"
 
 import {
@@ -28,6 +28,7 @@ import {
 } from "~/modules/ai-chat/store/hooks"
 
 import { convertLexicalToMarkdown } from "../../utils/lexical-markdown"
+import { GlobalFileDropZone } from "../file/GlobalFileDropZone"
 import { AIErrorFallback } from "./AIErrorFallback"
 import { ChatInput } from "./ChatInput"
 import { CollapsibleError } from "./CollapsibleError"
@@ -102,13 +103,29 @@ const ChatInterfaceContent = () => {
     (message: string | EditorState, editor: LexicalEditor | null) => {
       resetScrollState()
 
+      const blocks = [] as any[]
+
+      for (const block of blockActions.getBlocks()) {
+        if (block.type === "fileAttachment" && block.attachment.serverUrl) {
+          blocks.push({
+            ...block,
+            attachment: {
+              id: block.attachment.id,
+              name: block.attachment.name,
+              type: block.attachment.type,
+              size: block.attachment.size,
+              serverUrl: block.attachment.serverUrl,
+            },
+          })
+        } else {
+          blocks.push(block)
+        }
+      }
+
       const parts: BizUIMessage["parts"] = [
         {
           type: "data-block",
-          data: blockActions.getBlocks().map((b) => ({
-            type: b.type,
-            value: b.value,
-          })),
+          data: blocks,
         },
       ]
 
@@ -145,7 +162,7 @@ const ChatInterfaceContent = () => {
   const shouldShowScrollToBottom = hasMessages && !isAtBottom && !isLoadingHistory
 
   return (
-    <div className="flex size-full flex-col">
+    <GlobalFileDropZone className="flex size-full flex-col">
       <div className="flex min-h-0 flex-1 flex-col">
         <AnimatePresence>
           {!hasMessages && !isLoadingHistory ? (
@@ -203,7 +220,7 @@ const ChatInterfaceContent = () => {
         {error && <CollapsibleError error={error} />}
         <ChatInput onSend={handleSendMessage} variant={!hasMessages ? "minimal" : "default"} />
       </div>
-    </div>
+    </GlobalFileDropZone>
   )
 }
 
@@ -216,5 +233,9 @@ export const ChatInterface = () => (
 const Messages: FC = () => {
   const messages = useMessages()
 
-  return messages.map((message) => <AIChatMessage key={message.id} message={message} />)
+  return messages.map((message) => (
+    <Suspense key={message.id}>
+      <AIChatMessage message={message} />
+    </Suspense>
+  ))
 }
