@@ -10,6 +10,7 @@ import type { FC } from "react"
 import { Suspense, useEffect, useState } from "react"
 import { useEventCallback } from "usehooks-ts"
 
+import { useAISettingKey } from "~/atoms/settings/ai"
 import {
   AIChatMessage,
   AIChatWaitingIndicator,
@@ -73,7 +74,12 @@ const ChatInterfaceContent = () => {
     },
   })
 
-  const { resetScrollState } = useAutoScroll(scrollAreaRef, status === "streaming")
+  const autoScrollWhenStreaming = useAISettingKey("autoScrollWhenStreaming")
+
+  const { resetScrollState } = useAutoScroll(
+    scrollAreaRef,
+    autoScrollWhenStreaming && status === "streaming",
+  )
 
   useEffect(() => {
     const scrollElement = scrollAreaRef
