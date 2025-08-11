@@ -3,6 +3,7 @@ import { useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
+import { AIChatPanelStyle, setAIChatPanelStyle, useAIChatPanelStyle } from "~/atoms/settings/ai"
 import { RelativeDay } from "~/components/ui/datetime"
 import {
   DropdownMenu,
@@ -23,6 +24,7 @@ import { downloadMarkdown, exportChatToMarkdown } from "~/modules/ai-chat/utils/
 export const ChatMoreDropdown = () => {
   const currentTitle = useCurrentTitle()
   const currentChatId = useCurrentChatId()
+  const panelStyle = useAIChatPanelStyle()
 
   const chatActions = useChatActions()
   const { t } = useTranslation("ai")
@@ -90,6 +92,12 @@ export const ChatMoreDropdown = () => {
       console.error("Export error:", error)
     }
   }, [chatActions, currentTitle, t])
+
+  const handleToggleMode = useCallback(() => {
+    const newStyle =
+      panelStyle === AIChatPanelStyle.Fixed ? AIChatPanelStyle.Floating : AIChatPanelStyle.Fixed
+    setAIChatPanelStyle(newStyle)
+  }, [panelStyle])
 
   return (
     <DropdownMenu onOpenChange={handleDropdownOpen}>
@@ -168,6 +176,19 @@ export const ChatMoreDropdown = () => {
         <DropdownMenuItem onClick={handleExport}>
           <i className="i-mgc-download-2-cute-re mr-2 size-4" />
           <span>Export Chat</span>
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem onClick={handleToggleMode}>
+          <i
+            className={`mr-2 size-4 ${panelStyle === AIChatPanelStyle.Fixed ? "i-mingcute-rectangle-vertical-line" : "i-mingcute-pin-line"}`}
+          />
+          <span>
+            {panelStyle === AIChatPanelStyle.Fixed
+              ? "Switch to Floating Panel"
+              : "Switch to Fixed Panel"}
+          </span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
