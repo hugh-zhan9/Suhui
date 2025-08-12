@@ -174,7 +174,7 @@ export const ChatMoreDropdown = () => {
 
         <DropdownMenuItem onClick={handleToggleMode}>
           <i
-            className={`mr-2 size-4 ${panelStyle === AIChatPanelStyle.Fixed ? "i-mingcute-rectangle-vertical-line" : "i-mingcute-pin-line"}`}
+            className={`mr-2 size-4 ${panelStyle === AIChatPanelStyle.Fixed ? "i-mingcute-rectangle-vertical-line" : "i-mingcute-layout-right-line"}`}
           />
           <span>
             {panelStyle === AIChatPanelStyle.Fixed
