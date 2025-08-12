@@ -4,32 +4,38 @@ import type { AISettings } from "@follow/shared/settings/interface"
 import { jotaiStore } from "@follow/utils"
 import { atom, useAtomValue } from "jotai"
 
-export const createDefaultSettings = (): AISettings => defaultAISettings
+export interface WebAISettings extends AISettings {
+  panelStyle: AIChatPanelStyle
+}
+
+export const createDefaultSettings = (): WebAISettings => ({
+  ...defaultAISettings,
+  panelStyle: AIChatPanelStyle.Fixed,
+})
 
 export const {
   useSettingKey: useAISettingKey,
   useSettingSelector: useAISettingSelector,
   setSetting: setAISetting,
   clearSettings: clearAISettings,
-  initializeDefaultSettings: initializeDefaultAISettings,
+  initializeDefaultSettings,
   getSettings: getAISettings,
   useSettingValue: useAISettingValue,
   settingAtom: __aiSettingAtom,
 } = createSettingAtom("ai", createDefaultSettings)
 export const aiServerSyncWhiteListKeys = []
-// Local Setting for ai
 
+////////// AI Panel Style
 export enum AIChatPanelStyle {
   Fixed = "fixed",
   Floating = "floating",
 }
 
-const aiChatPanelStyleAtom = atom<AIChatPanelStyle>(AIChatPanelStyle.Floating)
-export const useAIChatPanelStyle = () => useAtomValue(aiChatPanelStyleAtom)
+export const useAIChatPanelStyle = () => useAISettingKey("panelStyle")
 export const setAIChatPanelStyle = (style: AIChatPanelStyle) => {
-  jotaiStore.set(aiChatPanelStyleAtom, style)
+  setAISetting("panelStyle", style)
 }
-export const getAIChatPanelStyle = () => jotaiStore.get(aiChatPanelStyleAtom)
+export const getAIChatPanelStyle = () => getAISettings().panelStyle
 
 // Floating panel state atoms
 interface FloatingPanelState {
@@ -54,3 +60,18 @@ export const setFloatingPanelState = (state: Partial<FloatingPanelState>) => {
   jotaiStore.set(floatingPanelStateAtom, { ...currentState, ...state })
 }
 export const getFloatingPanelState = () => jotaiStore.get(floatingPanelStateAtom)
+
+////////// AI Panel Visibility
+
+const aiPanelVisibilityAtom = atom<boolean>(false)
+export const useAIPanelVisibility = () => useAtomValue(aiPanelVisibilityAtom)
+export const setAIPanelVisibility = (visibility: boolean) => {
+  jotaiStore.set(aiPanelVisibilityAtom, visibility)
+}
+export const getAIPanelVisibility = () => jotaiStore.get(aiPanelVisibilityAtom)
+
+//// Enhance Init Ai Settings
+export const initializeDefaultAISettings = () => {
+  initializeDefaultSettings()
+  if (getAISettings().panelStyle === AIChatPanelStyle.Fixed) setAIPanelVisibility(true)
+}

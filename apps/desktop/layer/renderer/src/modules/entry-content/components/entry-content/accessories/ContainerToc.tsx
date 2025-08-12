@@ -3,13 +3,12 @@ import { CircleProgress } from "@follow/components/icons/Progress.js"
 import { MotionButtonBase } from "@follow/components/ui/button/index.js"
 import { RootPortal } from "@follow/components/ui/portal/index.jsx"
 import { useScrollViewElement } from "@follow/components/ui/scroll-area/hooks.js"
-import { EventBus } from "@follow/utils/event-bus"
 import { springScrollTo } from "@follow/utils/scroller"
 import { cn } from "@follow/utils/utils"
 import { useStore } from "jotai"
 import { memo, useEffect, useMemo, useState } from "react"
 
-import { AIChatPanelStyle, useAIChatPanelStyle } from "~/atoms/settings/ai"
+import { AIChatPanelStyle, setAIPanelVisibility, useAIChatPanelStyle } from "~/atoms/settings/ai"
 import type { TocRef } from "~/components/ui/markdown/components/Toc"
 import { Toc } from "~/components/ui/markdown/components/Toc"
 import { useFeature } from "~/hooks/biz/useFeature"
@@ -69,7 +68,7 @@ const BackTopIndicator: Component = memo(({ className }) => {
       {aiEnabled && !isAiPanelOpen && (
         <MotionButtonBase
           onClick={() => {
-            EventBus.dispatch("global:toggle-ai-chat-pinned")
+            setAIPanelVisibility(true)
           }}
           className={cn(
             "mt-1 flex flex-nowrap items-center gap-2 text-sm opacity-50 transition-all duration-500 hover:opacity-100",
