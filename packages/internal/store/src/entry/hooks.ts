@@ -140,7 +140,9 @@ export function useEntry<T>(
     return selector(entry)
   })
 }
-
+export const useHasEntry = (id: string) => {
+  return useEntryStore((state) => !!state.data[id])
+}
 export function useEntryList(ids: string[]): Array<EntryModel | null>
 export function useEntryList<T>(ids: string[], selector: (state: EntryModel) => T): T[] | undefined
 export function useEntryList(

@@ -10,9 +10,9 @@ function EntryHeaderImpl({ view, entryId, className, compact }: EntryHeaderProps
       entryId={entryId}
       className={className}
       compact={compact}
-      config={{ showActionsWhenWide: false }}
+      config={{ alwaysShowActions: true }}
     />
   )
 }
 
-export const EntryHeader = memo(EntryHeaderImpl)
+export const AIEntryHeader = memo(EntryHeaderImpl)

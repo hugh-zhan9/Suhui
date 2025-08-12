@@ -92,7 +92,7 @@ export const EntryLayoutContentWithAI = () => {
 export const EntryLayoutContent = () => {
   const aiEnabled = useFeature("ai")
   if (aiEnabled) {
-    return <EntryLayoutContentWithAI />
+    return null
   }
   return <EntryLayoutContentLegacy />
 }
@@ -175,6 +175,6 @@ const EntryGridContainer: FC<
       </m.div>
     )
   } else {
-    return <div className="flex min-w-0 flex-1 flex-col">{children}</div>
+    return <div className="relative flex min-w-0 flex-1 flex-col">{children}</div>
   }
 }

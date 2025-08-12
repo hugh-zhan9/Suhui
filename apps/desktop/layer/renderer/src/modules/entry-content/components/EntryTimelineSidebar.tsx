@@ -17,15 +17,15 @@ export const EntryTimelineSidebar = ({ entryId }: { entryId: string }) => {
     return null
   }
 
-  return <Timeline entryId={entryId} />
+  return <EntryTimeline entryId={entryId} />
 }
 
-const Timeline = ({ entryId }: { entryId: string }) => {
+export const EntryTimeline = ({ entryId }: { entryId: string }) => {
   const entryIds = useGetEntryIdInRange(entryId, [5, 5])
 
   return (
     <m.div
-      className="@lg:max-w-0 @6xl:max-w-[200px] @7xl:max-w-[200px] @[90rem]:max-w-[250px] absolute left-8 top-28 z-10"
+      className="@lg:hidden @6xl:block @6xl:max-w-[200px] @7xl:max-w-[200px] @[90rem]:max-w-[250px] absolute left-8 top-28 z-10"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1, transition: { delay: 0.5 } }}
     >
