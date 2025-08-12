@@ -34,18 +34,17 @@ const HeaderWrapper: Component = (props) => {
     <header className={"fixed inset-x-0 top-0 z-50 transition-all duration-300 ease-out"}>
       <div
         className={cn(
-          "mx-4 mt-4 transition-all duration-300 ease-out",
+          "mx-4 mt-4 max-w-5xl transition-all duration-300 ease-out lg:mx-auto",
           isCompact ? "mt-2" : "mt-4",
-          isHeaderElevated ? "mx-0 md:mx-4" : "px-4 sm:px-6 lg:px-8",
         )}
       >
         <m.div
           className={cn(
-            "rounded-xl border border-transparent px-4 transition-all duration-300 ease-out",
+            "rounded-full border border-transparent px-6 transition-all duration-300 ease-out",
             "relative flex items-center",
             isCompact ? "py-2" : "py-3",
             isHeaderElevated && [
-              "border-border/50 bg-background/80 px-4 shadow-sm backdrop-blur-xl md:px-0",
+              "border-border/50 bg-background/80 shadow-sm backdrop-blur-xl",
               "supports-[backdrop-filter]:bg-background/60",
             ],
           )}
