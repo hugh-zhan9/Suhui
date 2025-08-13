@@ -9,6 +9,10 @@ export const [, , useEntryTitleMeta, , getEntryTitleMeta, setEntryTitleMeta] = c
     null as Nullable<{
       entryTitle: string
       feedTitle: string
+
+      // id-set
+      feedId: string
+      entryId: string
     }>,
   ),
 )

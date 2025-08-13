@@ -129,7 +129,7 @@ const Renderer: React.FC<{
 
   const tocRef = useRef<TocRef | null>(null)
   const contentAccessories = useMemo(
-    () => (isInPeekModal ? undefined : <ContainerToc ref={tocRef} stickyClassName="top-28" />),
+    () => (isInPeekModal ? undefined : <ContainerToc ref={tocRef} stickyClassName="top-48" />),
     [isInPeekModal],
   )
 

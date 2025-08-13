@@ -149,7 +149,7 @@ export function useEntry<T>(
   })
 }
 export const useHasEntry = (id: string) => {
-  return useEntryStore((state) => getHasEntrySelector(state)(id))
+  return useEntryStore(useCallback((state) => getHasEntrySelector(state)(id), [id]))
 }
 export function useEntryList(ids: string[]): Array<EntryModel | null>
 export function useEntryList<T>(ids: string[], selector: (state: EntryModel) => T): T[] | undefined

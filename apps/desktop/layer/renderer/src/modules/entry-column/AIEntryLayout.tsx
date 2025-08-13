@@ -56,9 +56,9 @@ const AIEntryLayoutImpl = () => {
             <AnimatePresence mode="popLayout">
               {realEntryId && (
                 <m.div
-                  initial={{ y: "100%" }}
-                  animate={{ y: 0 }}
-                  exit={{ y: "100%" }}
+                  initial={{ y: 150, opacity: 0, scale: 0.98 }}
+                  animate={{ y: 0, opacity: 1, scale: 1 }}
+                  exit={{ y: 150, opacity: 0, scale: 0.98 }}
                   transition={Spring.presets.smooth}
                   className="bg-theme-background absolute inset-0 z-10 border-l"
                 >

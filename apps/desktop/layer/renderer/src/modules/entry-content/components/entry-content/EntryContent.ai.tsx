@@ -106,12 +106,7 @@ const EntryContentImpl: Component<EntryContentProps> = ({
   }, [animationController, entryId])
 
   return (
-    <m.div
-      initial={{ opacity: 0, y: 30 }}
-      animate={animationController}
-      transition={Spring.presets.smooth}
-      className={cn(className, "@container flex flex-col")}
-    >
+    <div className={cn(className, "@container flex flex-col")}>
       <EntryCommandShortcutRegister entryId={entryId} view={view} />
       <AIEntryHeader
         entryId={entryId}
@@ -130,37 +125,41 @@ const EntryContentImpl: Component<EntryContentProps> = ({
             scrollerRef={scrollerRef}
           />
         </RootPortal>
-        <EntryTimeline entryId={entryId} />
+        <EntryTimeline entryId={entryId} className="top-48" />
         <EntryScrollArea scrollerRef={scrollerRef}>
           {/* Indicator for the entry */}
-          <div className="select-text">
-            {!isZenMode && isInHasTimelineView && (
-              <>
-                <div className="absolute inset-y-0 left-0 z-[9] flex w-12 items-center justify-center opacity-40 duration-200 hover:opacity-100">
-                  <MotionButtonBase
-                    // -12： Visual center point
-                    className="absolute left-0 shrink-0 !-translate-y-12 cursor-pointer"
-                    onClick={() => {
-                      EventBus.dispatch(COMMAND_ID.timeline.switchToPrevious)
-                    }}
-                  >
-                    <i className="i-mgc-left-small-sharp text-text-secondary size-16" />
-                  </MotionButtonBase>
-                </div>
+          {!isZenMode && isInHasTimelineView && (
+            <>
+              <div className="absolute inset-y-0 left-0 z-[9] flex w-12 items-center justify-center opacity-40 duration-200 hover:opacity-100">
+                <MotionButtonBase
+                  // -12： Visual center point
+                  className="absolute left-0 shrink-0 !-translate-y-12 cursor-pointer"
+                  onClick={() => {
+                    EventBus.dispatch(COMMAND_ID.timeline.switchToPrevious)
+                  }}
+                >
+                  <i className="i-mgc-left-small-sharp text-text-secondary size-16" />
+                </MotionButtonBase>
+              </div>
 
-                <div className="absolute inset-y-0 right-0 z-[9] flex w-12 items-center justify-center opacity-40 duration-200 hover:opacity-100">
-                  <MotionButtonBase
-                    className="absolute right-0 shrink-0 !-translate-y-12 cursor-pointer"
-                    onClick={() => {
-                      EventBus.dispatch(COMMAND_ID.timeline.switchToNext)
-                    }}
-                  >
-                    <i className="i-mgc-right-small-sharp text-text-secondary size-16" />
-                  </MotionButtonBase>
-                </div>
-              </>
-            )}
-
+              <div className="absolute inset-y-0 right-0 z-[9] flex w-12 items-center justify-center opacity-40 duration-200 hover:opacity-100">
+                <MotionButtonBase
+                  className="absolute right-0 shrink-0 !-translate-y-12 cursor-pointer"
+                  onClick={() => {
+                    EventBus.dispatch(COMMAND_ID.timeline.switchToNext)
+                  }}
+                >
+                  <i className="i-mgc-right-small-sharp text-text-secondary size-16" />
+                </MotionButtonBase>
+              </div>
+            </>
+          )}
+          <m.div
+            className="select-text"
+            initial={{ opacity: 0, y: 30 }}
+            animate={animationController}
+            transition={Spring.presets.smooth}
+          >
             <article
               data-testid="entry-render"
               onContextMenu={stopPropagation}
@@ -195,13 +194,13 @@ const EntryContentImpl: Component<EntryContentProps> = ({
                 />
               )}
             </article>
-          </div>
+          </m.div>
         </EntryScrollArea>
         <SourceContentPanel src={safeUrl ?? "#"} />
       </Focusable>
 
       {/* <React.Suspense>{!isInPeekModal && <AISmartSidebar entryId={entryId} />}</React.Suspense> */}
-    </m.div>
+    </div>
   )
 }
 export const EntryContent = memo(EntryContentImpl)
@@ -218,7 +217,9 @@ const EntryScrollArea: Component<{
     <ScrollArea.ScrollArea
       focusable
       mask={false}
-      stopWheelPropagation={false}
+      viewportProps={{
+        onWheel: stopPropagation,
+      }}
       flex
       rootClassName={cn(
         "flex-1 min-h-0 overflow-y-auto print:h-auto print:overflow-visible",
