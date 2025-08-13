@@ -95,16 +95,27 @@ const BackTopIndicator: Component = memo(({ className }) => {
 })
 
 export const ContainerToc = memo(
-  ({ ref, ..._ }: ComponentType & { ref?: React.Ref<TocRef | null> }) => {
+  ({
+    ref,
+    className,
+    stickyClassName,
+  }: ComponentType & {
+    ref?: React.Ref<TocRef | null>
+    className?: string
+    stickyClassName?: string
+  }) => {
     const wrappedElement = useWrappedElement()
 
     return (
       <RootPortal to={wrappedElement!}>
         <div
-          className="@[770px]:block group absolute right-[-130px] top-0 hidden h-full w-[100px]"
+          className={cn(
+            "@[770px]:block group absolute right-[-130px] top-0 hidden h-full w-[100px]",
+            className,
+          )}
           data-hide-in-print
         >
-          <div className="sticky top-0">
+          <div className={cn("sticky top-0", stickyClassName)}>
             <Toc
               ref={ref}
               className={cn(

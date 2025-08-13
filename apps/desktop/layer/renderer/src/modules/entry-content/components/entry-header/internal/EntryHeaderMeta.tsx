@@ -1,21 +1,16 @@
 import { AnimatePresence, m } from "motion/react"
 import { memo } from "react"
 
-interface EntryTitleMeta {
-  title: string
-  description?: string
-}
+import { useEntryContentScrollToTop, useEntryTitleMeta } from "../../../atoms"
 
-interface EntryHeaderMetaProps {
-  entryTitleMeta: Nullable<EntryTitleMeta>
-  shouldShow: boolean
-}
-
-function EntryHeaderMetaImpl({ entryTitleMeta, shouldShow }: EntryHeaderMetaProps) {
+function EntryHeaderMetaImpl() {
+  const entryTitleMeta = useEntryTitleMeta()
+  const isAtTop = useEntryContentScrollToTop()
+  const shouldShowMeta = !isAtTop && !!entryTitleMeta?.title
   return (
     <div className="flex min-w-0 shrink grow">
       <AnimatePresence>
-        {shouldShow && entryTitleMeta && (
+        {shouldShowMeta && entryTitleMeta && (
           <m.div
             initial={{ opacity: 0.01, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
