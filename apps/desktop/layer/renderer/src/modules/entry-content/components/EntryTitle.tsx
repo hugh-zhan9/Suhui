@@ -97,27 +97,25 @@ export const EntryTitle = ({ entryId, compact }: EntryLinkProps) => {
         {aiEnabled && hideRecentReader ? (
           <div className="h-8" />
         ) : (
-          <div className="flex h-8 items-center">
+          <div className="-mb-2 mt-2 flex h-8 items-center">
             <EntryReadHistory entryId={entryId} />
           </div>
         )}
 
-        <div>
-          <a
-            href={populatedFullHref ?? "#"}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="cursor-link hover:multi-[scale-[1.01];opacity-95] inline-block select-text break-words text-[1.7rem] font-bold leading-normal duration-200"
-          >
-            <EntryTranslation
-              source={titleCase(entry.title ?? "")}
-              target={titleCase(translation?.title ?? "")}
-              className="text-text inline-block select-text hyphens-auto duration-200"
-              inline={false}
-              bilingual
-            />
-          </a>
-        </div>
+        <a
+          href={populatedFullHref ?? "#"}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="cursor-link hover:multi-[scale-[1.01];opacity-95] inline-block select-text break-words text-[1.7rem] font-bold leading-normal duration-200"
+        >
+          <EntryTranslation
+            source={titleCase(entry.title ?? "")}
+            target={titleCase(translation?.title ?? "")}
+            className="text-text inline-block select-text hyphens-auto duration-200"
+            inline={false}
+            bilingual
+          />
+        </a>
 
         {/* Meta Information with improved layout */}
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
