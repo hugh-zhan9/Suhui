@@ -1,5 +1,6 @@
 import { FeedViewType } from "@follow/constants"
 import { EntryService } from "@follow/database/services/entry"
+import { isBizId } from "@follow/utils"
 import { cloneDeep } from "es-toolkit"
 import { debounce } from "es-toolkit/compat"
 
@@ -543,7 +544,9 @@ class EntrySyncServices {
     return res
   }
 
-  async fetchEntryDetail(entryId: EntryId, isInbox?: boolean) {
+  async fetchEntryDetail(entryId: EntryId | undefined, isInbox?: boolean) {
+    if (!isBizId(entryId)) return null
+
     const currentEntry = getEntry(entryId)
     const res =
       currentEntry?.inboxHandle || isInbox
