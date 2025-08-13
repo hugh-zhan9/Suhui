@@ -120,7 +120,6 @@ const EntryContentImpl: Component<EntryContentProps> = ({
       {!isInPeekModal && (
         <EntryHeader
           entryId={entryId}
-          view={view}
           className={cn("@container h-[55px] shrink-0 px-3", classNames?.header)}
           compact={compact}
         />

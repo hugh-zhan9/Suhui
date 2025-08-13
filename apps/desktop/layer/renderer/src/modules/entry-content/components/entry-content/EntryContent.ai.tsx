@@ -133,7 +133,7 @@ const EntryContentImpl: Component<EntryContentProps> = ({
         <EntryTimeline entryId={entryId} />
         <EntryScrollArea scrollerRef={scrollerRef}>
           {/* Indicator for the entry */}
-          <div className="mt-12 select-text">
+          <div className="select-text">
             {!isZenMode && isInHasTimelineView && (
               <>
                 <div className="absolute inset-y-0 left-0 z-[9] flex w-12 items-center justify-center opacity-40 duration-200 hover:opacity-100">

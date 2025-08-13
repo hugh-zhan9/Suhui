@@ -13,7 +13,7 @@ function EntryHeaderReadHistoryImpl() {
   const { view } = useRouteParams()
   const isAtTop = useEntryContentScrollToTop()
   const isWide = views[view]?.wideMode
-  if (isAtTop) return null
+  if (!isAtTop) return null
 
   return (
     <div
