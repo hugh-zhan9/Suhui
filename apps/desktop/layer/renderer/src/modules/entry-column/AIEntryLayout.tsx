@@ -2,13 +2,14 @@ import { Spring } from "@follow/components/constants/spring.js"
 import { PanelSplitter } from "@follow/components/ui/divider/index.js"
 import { defaultUISettings } from "@follow/shared/settings/defaults"
 import { cn } from "@follow/utils"
-import { AnimatePresence, m } from "motion/react"
+import { AnimatePresence } from "motion/react"
 import { useMemo, useRef } from "react"
 import { useResizable } from "react-resizable-layout"
 import { useParams } from "react-router"
 
 import { AIChatPanelStyle, useAIChatPanelStyle } from "~/atoms/settings/ai"
 import { getUISettings, setUISetting } from "~/atoms/settings/ui"
+import { m } from "~/components/common/Motion"
 import { ROUTE_ENTRY_PENDING } from "~/constants"
 import { AIChatLayout } from "~/modules/app-layout/ai/AIChatLayout"
 import { EntryContent } from "~/modules/entry-content/components/entry-content"
@@ -56,6 +57,7 @@ const AIEntryLayoutImpl = () => {
             <AnimatePresence mode="popLayout">
               {realEntryId && (
                 <m.div
+                  lcpOptimization
                   initial={{ y: 150, opacity: 0, scale: 0.98 }}
                   animate={{ y: 0, opacity: 1, scale: 1 }}
                   exit={{ y: 150, opacity: 0, scale: 0.98 }}
