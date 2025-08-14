@@ -94,13 +94,14 @@ export const EntryTitle = ({ entryId, compact }: EntryLinkProps) => {
     <div className="group relative block min-w-0 rounded-lg">
       <div className="flex flex-col gap-3">
         {/* Recent Readers */}
-        {aiEnabled && hideRecentReader ? (
-          <div className="h-8" />
-        ) : (
-          <div className="-mb-2 mt-2 flex h-8 items-center">
-            <EntryReadHistory entryId={entryId} />
-          </div>
-        )}
+        {aiEnabled &&
+          (hideRecentReader ? (
+            <div className="h-8" />
+          ) : (
+            <div className="-mb-2 mt-2 flex h-8 items-center">
+              <EntryReadHistory entryId={entryId} />
+            </div>
+          ))}
 
         <a
           href={populatedFullHref ?? "#"}
