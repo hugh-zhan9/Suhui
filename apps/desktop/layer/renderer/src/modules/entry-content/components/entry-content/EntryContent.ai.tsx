@@ -17,6 +17,7 @@ import type { JSAnimation } from "motion/react"
 import { AnimatePresence, useAnimationControls } from "motion/react"
 import * as React from "react"
 import { memo, useEffect, useRef, useState } from "react"
+import { useHotkeys } from "react-hotkeys-hook"
 
 import { useEntryIsInReadability } from "~/atoms/readability"
 import { useIsZenMode } from "~/atoms/settings/ui"
@@ -24,16 +25,19 @@ import { Focusable, FocusablePresets } from "~/components/common/Focusable"
 import { m } from "~/components/common/Motion"
 import { useInPeekModal } from "~/components/ui/modal/inspire/InPeekModal"
 import { HotkeyScope } from "~/constants"
+import { useFeature } from "~/hooks/biz/useFeature"
 import { useNavigateEntry } from "~/hooks/biz/useNavigateEntry"
 import { useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
 import { useFeedSafeUrl } from "~/hooks/common/useFeedSafeUrl"
 import { useBlockActions } from "~/modules/ai-chat/store/hooks"
 import { BlockSliceAction } from "~/modules/ai-chat/store/slices/block.slice"
 import { COMMAND_ID } from "~/modules/command/commands/id"
+import { useCommandHotkey } from "~/modules/command/hooks/use-register-hotkey"
 import { useWheelGestureClose } from "~/modules/entry-column/hooks/useWheelGestureClose"
 
 import { ApplyEntryActions } from "../../ApplyEntryActions"
 import { useEntryContent } from "../../hooks"
+import { useEntryNavigationHints } from "../../hooks/useEntryNavigationHints"
 import { AIEntryHeader } from "../entry-header"
 import { EntryTimeline } from "../EntryTimelineSidebar"
 import { getEntryContentLayout } from "../layouts"
@@ -134,7 +138,7 @@ const EntryContentImpl: Component<EntryContentProps> = ({
         </RootPortal>
         <EntryTimeline entryId={entryId} className="top-48" />
         <EntryScrollArea scrollerRef={scrollerRef}>
-          <WheelGestureCloseHandler />
+          <EntryNavigationHandler entryId={entryId} />
           {/* Indicator for the entry */}
           {!isZenMode && isInHasTimelineView && (
             <>
@@ -250,11 +254,12 @@ const AdaptiveContentRenderer: React.FC<{
   return <LayoutComponent entryId={entryId} compact={compact} noMedia={noMedia} />
 }
 
-const WheelGestureCloseHandler = () => {
+const EntryNavigationHandler = ({ entryId }: { entryId: string }) => {
   const navigate = useNavigateEntry()
 
   const when = useGlobalFocusableScopeSelector(FocusablePresets.isEntryRender)
-  // Wheel gesture to close entry when at timeline scope
+
+  // Handle close gesture
   const handleCloseEntry = React.useCallback(() => {
     navigate({ entryId: null })
   }, [navigate])
@@ -264,34 +269,96 @@ const WheelGestureCloseHandler = () => {
     enabled: when,
     onClose: handleCloseEntry,
   })
-  return (
-    <AnimatePresence>
-      {showScrollHint && (
-        <m.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={Spring.presets.smooth}
-          className={clsx(
-            "pointer-events-none absolute !right-1/2 z-40 !translate-x-1/2",
-            "top-0",
-            "backdrop-blur-background rounded-full border px-3.5 py-2",
-            "border-border/40 bg-material-ultra-thin/70 shadow-[0_1px_2px_rgba(0,0,0,0.06),0_8px_24px_rgba(0,0,0,0.08)]",
-            "hover:bg-material-thin/70 hover:border-border/60 active:scale-[0.98]",
-          )}
-        >
-          <button
-            onClick={handleCloseEntry}
-            type="button"
-            className={"group pointer-events-auto flex items-center gap-2"}
-          >
-            <i className="i-mgc-up-cute-re text-text/90 mr-1 size-5" />
-            <span className="text-text/90 text-left text-[13px] font-medium">
-              Scroll up to exit
-            </span>
-          </button>
-        </m.div>
+
+  // Navigation hints for entry content
+  const {
+    showFirstEntryHint,
+    showScrollHint: showScrollThresholdHint,
+    showBottomHint,
+  } = useEntryNavigationHints({
+    enabled: when && !!entryId,
+    entryId,
+    scrollThreshold: 100,
+  })
+
+  const isZenMode = useIsZenMode()
+  // TODO: Here, do not rely on the AI switch, but should be deps on the new layout.
+  const isAiEnabled = useFeature("ai")
+
+  const useBackHandler = isZenMode || isAiEnabled
+
+  useCommandHotkey({
+    commandId: COMMAND_ID.layout.focusToTimeline,
+    when: when && !useBackHandler,
+    shortcut: "Backspace, Escape",
+  })
+
+  const navigateToTimeline = useNavigateEntry()
+  useHotkeys(
+    "Escape",
+    () => {
+      navigateToTimeline({ entryId: null })
+    },
+    { enabled: when && useBackHandler },
+  )
+
+  // Render hint button with different states
+  const renderHintButton = (icon: string, text: string, position: "top" | "bottom" = "top") => (
+    <m.div
+      initial={{ y: position === "top" ? -50 : 50 }}
+      animate={{ y: 0 }}
+      exit={{ y: position === "top" ? -50 : 50 }}
+      transition={Spring.presets.smooth}
+      className={clsx(
+        "pointer-events-none absolute z-40 flex justify-center",
+        position === "top" ? "inset-x-0 top-4" : "inset-x-0 bottom-24",
       )}
+    >
+      <m.button
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={handleCloseEntry}
+        type="button"
+        className={clsx(
+          "group pointer-events-auto flex items-center gap-2",
+          "rounded-full border px-3.5 py-2",
+          "border-border/40 bg-material-ultra-thin/70 shadow-[0_1px_2px_rgba(0,0,0,0.06),0_8px_24px_rgba(0,0,0,0.08)]",
+          "hover:bg-material-thin/70 hover:border-border/60 active:scale-[0.98]",
+          "backdrop-blur-background",
+        )}
+      >
+        <i className={clsx(icon, "text-text/90 mr-1 size-5")} />
+        <span className="text-text/90 text-left text-[13px] font-medium">{text}</span>
+      </m.button>
+    </m.div>
+  )
+
+  return (
+    <AnimatePresence mode="popLayout">
+      {/* First entry hint */}
+      {showFirstEntryHint &&
+        renderHintButton(
+          tw`i-mgc-up-cute-re`,
+          "Scroll up or click left-top back button to exit",
+          "top",
+        )}
+
+      {/* Scroll threshold hint or wheel gesture hint */}
+      {(showScrollThresholdHint || showScrollHint) &&
+        renderHintButton(
+          tw`i-mingcute-arrow-left-up-line`,
+          "Scroll up or click left-top back button to exit",
+          "top",
+        )}
+
+      {/* Bottom hint */}
+      {showBottomHint &&
+        renderHintButton(
+          tw`i-mingcute-arrow-to-down-line`,
+          "Press ESC or click left-top back button to exit",
+          "bottom",
+        )}
     </AnimatePresence>
   )
 }

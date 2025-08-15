@@ -64,28 +64,7 @@ const AIEntryLayoutImpl = () => {
                   transition={Spring.presets.smooth}
                   className="bg-theme-background absolute inset-0 z-10 border-l"
                 >
-                  {/* Scroll hint indicator */}
-                  {/* <div className="center z-50 pt-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => navigate({ entryId: null })}
-                      buttonClassName="transform cursor-pointer select-none"
-                      aria-label="Scroll up or click to exit"
-                    >
-                      <div className="text-text flex items-center gap-2 rounded-full font-medium">
-                        <i
-                          className={cn(
-                            "text-base",
-                            showScrollHint ? "i-mgc-up-cute-re" : "i-mgc-close-cute-re",
-                          )}
-                        />
-                        <span>{showScrollHint ? "Scroll up to exit" : "Click to exit"}</span>
-                      </div>
-                    </Button>
-                  </div> */}
-
-                  <EntryContent entryId={realEntryId} className="h-[calc(100%-2.25rem)]" />
+                  <EntryContent entryId={realEntryId} className="h-full" />
                 </m.div>
               )}
             </AnimatePresence>
