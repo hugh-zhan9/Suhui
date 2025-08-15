@@ -37,6 +37,7 @@ import { WrappedElementProvider } from "~/providers/wrapped-element-provider"
 
 import { AISummary } from "../../AISummary"
 import { ApplyEntryActions } from "../../ApplyEntryActions"
+import { NAVIGATION_HINTS_ICONS, NAVIGATION_HINTS_TEXT } from "../../constants/navigation-hints"
 import { useEntryContent, useEntryMediaInfo } from "../../hooks"
 import { useEntryNavigationHints } from "../../hooks/useEntryNavigationHints"
 import { EntryHeader } from "../entry-header"
@@ -330,7 +331,6 @@ const EntryNavigationHandler = ({ entryId }: { entryId: string }) => {
   const { showFirstEntryHint, showScrollHint, showBottomHint } = useEntryNavigationHints({
     enabled: when && !!entryId,
     entryId,
-    scrollThreshold: 100,
   })
 
   // Render hint button with different states
@@ -367,26 +367,22 @@ const EntryNavigationHandler = ({ entryId }: { entryId: string }) => {
       {/* First entry hint */}
       {showFirstEntryHint &&
         renderHintButton(
-          "i-mgc-arrow-up-cute-re",
-          "Scroll up or click left-top back button to exit",
+          NAVIGATION_HINTS_ICONS.ARROW_UP,
+          NAVIGATION_HINTS_TEXT.SCROLL_UP_EXIT,
           "top",
         )}
 
       {/* Scroll threshold hint */}
       {showScrollHint &&
         renderHintButton(
-          "i-mgc-arrow-up-cute-re",
-          "Scroll up or click left-top back button to exit",
+          NAVIGATION_HINTS_ICONS.ARROW_UP,
+          NAVIGATION_HINTS_TEXT.SCROLL_UP_EXIT,
           "top",
         )}
 
       {/* Bottom hint */}
       {showBottomHint &&
-        renderHintButton(
-          "i-mgc-close-cute-re",
-          "Press ESC or click left-top back button to exit",
-          "bottom",
-        )}
+        renderHintButton(NAVIGATION_HINTS_ICONS.CLOSE, NAVIGATION_HINTS_TEXT.ESC_EXIT, "bottom")}
     </AnimatePresence>
   )
 }

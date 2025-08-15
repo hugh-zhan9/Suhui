@@ -1,14 +1,16 @@
 import { useScrollViewElement } from "@follow/components/ui/scroll-area/hooks.js"
 import { throttle } from "es-toolkit"
-import { useEffect, useRef, useState } from "react"
+import { startTransition, useEffect, useRef, useState } from "react"
 import { useEventCallback } from "usehooks-ts"
+
+import { NAVIGATION_HINTS_CONSTANTS } from "../constants/navigation-hints"
 
 interface UseEntryNavigationHintsOptions {
   /** Whether hints are enabled */
   enabled: boolean
   /** Entry ID to track changes */
   entryId?: string
-  /** Scroll threshold to show hint (default: 100px) */
+  /** Scroll threshold to show hint */
   scrollThreshold?: number
 }
 
@@ -28,7 +30,7 @@ interface UseEntryNavigationHintsReturn {
 export const useEntryNavigationHints = ({
   enabled,
   entryId,
-  scrollThreshold = 100,
+  scrollThreshold = NAVIGATION_HINTS_CONSTANTS.DEFAULT_SCROLL_THRESHOLD,
 }: UseEntryNavigationHintsOptions): UseEntryNavigationHintsReturn => {
   const $scrollElement = useScrollViewElement()
 
@@ -45,6 +47,8 @@ export const useEntryNavigationHints = ({
   const firstHintTimerRef = useRef<ReturnType<typeof setTimeout>>(void 0)
   const scrollHintTimerRef = useRef<ReturnType<typeof setTimeout>>(void 0)
   const bottomHintTimerRef = useRef<ReturnType<typeof setTimeout>>(void 0)
+  const lastScrollTopRef = useRef(0)
+  const scrollDirectionRef = useRef<"up" | "down" | "none">("none")
 
   // Reset hints when entry changes
   useEffect(() => {
@@ -53,30 +57,38 @@ export const useEntryNavigationHints = ({
       hasShownFirstHintRef.current = false
       hasShownScrollHintRef.current = false
       hasShownBottomHintRef.current = false
+      lastScrollTopRef.current = 0
+      scrollDirectionRef.current = "none"
 
       // Clear existing timers
       if (firstHintTimerRef.current) clearTimeout(firstHintTimerRef.current)
       if (scrollHintTimerRef.current) clearTimeout(scrollHintTimerRef.current)
       if (bottomHintTimerRef.current) clearTimeout(bottomHintTimerRef.current)
 
-      // Reset all hint states
-      setShowFirstEntryHint(false)
-      setShowScrollHint(false)
-      setShowBottomHint(false)
+      // Reset all hint states with low priority
+      startTransition(() => {
+        setShowFirstEntryHint(false)
+        setShowScrollHint(false)
+        setShowBottomHint(false)
+      })
 
       if (enabled) {
         // Show first entry hint after a brief delay
         firstHintTimerRef.current = setTimeout(() => {
           if (!hasShownFirstHintRef.current) {
-            setShowFirstEntryHint(true)
+            startTransition(() => {
+              setShowFirstEntryHint(true)
+            })
             hasShownFirstHintRef.current = true
 
-            // Hide after 3 seconds
+            // Hide after configured duration
             firstHintTimerRef.current = setTimeout(() => {
-              setShowFirstEntryHint(false)
-            }, 3000)
+              startTransition(() => {
+                setShowFirstEntryHint(false)
+              })
+            }, NAVIGATION_HINTS_CONSTANTS.HINT_DISPLAY_DURATION)
           }
-        }, 500) // Small delay to allow content to load
+        }, NAVIGATION_HINTS_CONSTANTS.FIRST_HINT_DELAY) // Small delay to allow content to load
       }
     }
   }, [entryId, enabled])
@@ -91,35 +103,74 @@ export const useEntryNavigationHints = ({
       const { clientHeight } = $scrollElement
       const scrollBottom = scrollHeight - clientHeight - scrollTop
 
-      // Check if scrolled past threshold
-      if (scrollTop > scrollThreshold && !hasShownScrollHintRef.current) {
+      // Detect scroll direction
+      const lastScrollTop = lastScrollTopRef.current
+      if (scrollTop > lastScrollTop) {
+        scrollDirectionRef.current = "down"
+      } else if (scrollTop < lastScrollTop) {
+        scrollDirectionRef.current = "up"
+      }
+      lastScrollTopRef.current = scrollTop
+
+      // Check if scrolled past threshold and scrolling up
+      if (
+        scrollTop > scrollThreshold &&
+        !hasShownScrollHintRef.current &&
+        scrollDirectionRef.current === "up"
+      ) {
         hasShownScrollHintRef.current = true
-        setShowScrollHint(true)
+        startTransition(() => {
+          setShowScrollHint(true)
+        })
 
         // Clear previous timer
         if (scrollHintTimerRef.current) clearTimeout(scrollHintTimerRef.current)
 
-        // Hide after 3 seconds
+        // Hide after configured duration
         scrollHintTimerRef.current = setTimeout(() => {
-          setShowScrollHint(false)
-        }, 3000)
+          startTransition(() => {
+            setShowScrollHint(false)
+          })
+        }, NAVIGATION_HINTS_CONSTANTS.HINT_DISPLAY_DURATION)
       }
 
-      // Check if at bottom (within 50px threshold)
-      if (scrollBottom <= 50 && !hasShownBottomHintRef.current) {
+      // Check if at bottom (within configured threshold)
+      if (
+        scrollBottom <= NAVIGATION_HINTS_CONSTANTS.BOTTOM_THRESHOLD &&
+        !hasShownBottomHintRef.current
+      ) {
         hasShownBottomHintRef.current = true
-        setShowBottomHint(true)
+        startTransition(() => {
+          setShowBottomHint(true)
+        })
 
         // Clear previous timer
         if (bottomHintTimerRef.current) clearTimeout(bottomHintTimerRef.current)
 
-        // Hide after 3 seconds
+        // Hide after configured duration
         bottomHintTimerRef.current = setTimeout(() => {
-          setShowBottomHint(false)
+          startTransition(() => {
+            setShowBottomHint(false)
+          })
           hasShownBottomHintRef.current = false
-        }, 3000)
+        }, NAVIGATION_HINTS_CONSTANTS.HINT_DISPLAY_DURATION)
       }
-    }, 100),
+
+      // Hide bottom hint if user scrolls up from bottom
+      if (
+        scrollBottom > NAVIGATION_HINTS_CONSTANTS.BOTTOM_HIDE_THRESHOLD &&
+        hasShownBottomHintRef.current &&
+        scrollDirectionRef.current === "up"
+      ) {
+        // Clear timer if exists
+        if (bottomHintTimerRef.current) clearTimeout(bottomHintTimerRef.current)
+
+        startTransition(() => {
+          setShowBottomHint(false)
+        })
+        hasShownBottomHintRef.current = false
+      }
+    }, NAVIGATION_HINTS_CONSTANTS.SCROLL_THROTTLE_INTERVAL),
   )
 
   // Attach scroll listener

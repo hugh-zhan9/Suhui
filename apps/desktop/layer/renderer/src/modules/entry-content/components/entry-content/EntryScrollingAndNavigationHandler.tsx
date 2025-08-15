@@ -154,7 +154,7 @@ export const EntryScrollingAndNavigationHandler = ({
             "pointer-events-none absolute !right-1/2 z-40 !translate-x-1/2",
             "bottom-12",
             "backdrop-blur-background rounded-full border px-3.5 py-2",
-            "border-border/40 bg-material-ultra-thin/70 shadow-[0_1px_2px_rgba(0,0,0,0.06),0_8px_24px_rgba(0,0,0,0.08)]",
+            "border-border/40 bg-material-ultra-thick shadow-[0_1px_2px_rgba(0,0,0,0.06),0_8px_24px_rgba(0,0,0,0.08)]",
             "hover:bg-material-thin/70 hover:border-border/60 active:scale-[0.98]",
           )}
         >

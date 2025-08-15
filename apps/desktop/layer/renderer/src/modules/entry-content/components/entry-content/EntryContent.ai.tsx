@@ -36,6 +36,7 @@ import { useCommandHotkey } from "~/modules/command/hooks/use-register-hotkey"
 import { useWheelGestureClose } from "~/modules/entry-column/hooks/useWheelGestureClose"
 
 import { ApplyEntryActions } from "../../ApplyEntryActions"
+import { NAVIGATION_HINTS_ICONS, NAVIGATION_HINTS_TEXT } from "../../constants/navigation-hints"
 import { useEntryContent } from "../../hooks"
 import { useEntryNavigationHints } from "../../hooks/useEntryNavigationHints"
 import { AIEntryHeader } from "../entry-header"
@@ -278,7 +279,6 @@ const EntryNavigationHandler = ({ entryId }: { entryId: string }) => {
   } = useEntryNavigationHints({
     enabled: when && !!entryId,
     entryId,
-    scrollThreshold: 100,
   })
 
   const isZenMode = useIsZenMode()
@@ -323,7 +323,7 @@ const EntryNavigationHandler = ({ entryId }: { entryId: string }) => {
         className={clsx(
           "group pointer-events-auto flex items-center gap-2",
           "rounded-full border px-3.5 py-2",
-          "border-border/40 bg-material-ultra-thin/70 shadow-[0_1px_2px_rgba(0,0,0,0.06),0_8px_24px_rgba(0,0,0,0.08)]",
+          "border-border/40 bg-material-ultra-thick shadow-[0_1px_2px_rgba(0,0,0,0.06),0_8px_24px_rgba(0,0,0,0.08)]",
           "hover:bg-material-thin/70 hover:border-border/60 active:scale-[0.98]",
           "backdrop-blur-background",
         )}
@@ -339,24 +339,24 @@ const EntryNavigationHandler = ({ entryId }: { entryId: string }) => {
       {/* First entry hint */}
       {showFirstEntryHint &&
         renderHintButton(
-          tw`i-mgc-up-cute-re`,
-          "Scroll up or click left-top back button to exit",
+          NAVIGATION_HINTS_ICONS.ARROW_UP,
+          NAVIGATION_HINTS_TEXT.SCROLL_UP_EXIT,
           "top",
         )}
 
       {/* Scroll threshold hint or wheel gesture hint */}
       {(showScrollThresholdHint || showScrollHint) &&
         renderHintButton(
-          tw`i-mingcute-arrow-left-up-line`,
-          "Scroll up or click left-top back button to exit",
+          NAVIGATION_HINTS_ICONS.ARROW_LEFT_UP,
+          NAVIGATION_HINTS_TEXT.SCROLL_UP_EXIT,
           "top",
         )}
 
       {/* Bottom hint */}
       {showBottomHint &&
         renderHintButton(
-          tw`i-mingcute-arrow-to-down-line`,
-          "Press ESC or click left-top back button to exit",
+          NAVIGATION_HINTS_ICONS.ARROW_TO_DOWN,
+          NAVIGATION_HINTS_TEXT.ESC_EXIT,
           "bottom",
         )}
     </AnimatePresence>
