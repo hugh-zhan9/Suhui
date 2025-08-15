@@ -1,3 +1,4 @@
+import { useGlobalFocusableScopeSelector } from "@follow/components/common/Focusable/hooks.js"
 import { Spring } from "@follow/components/constants/spring.js"
 import { MotionButtonBase } from "@follow/components/ui/button/index.js"
 import { RootPortal } from "@follow/components/ui/portal/index.js"
@@ -11,23 +12,25 @@ import { useIsInbox } from "@follow/store/inbox/hooks"
 import { thenable } from "@follow/utils"
 import { stopPropagation } from "@follow/utils/dom"
 import { EventBus } from "@follow/utils/event-bus"
-import { cn } from "@follow/utils/utils"
+import { clsx, cn } from "@follow/utils/utils"
 import type { JSAnimation } from "motion/react"
-import { useAnimationControls } from "motion/react"
+import { AnimatePresence, useAnimationControls } from "motion/react"
 import * as React from "react"
 import { memo, useEffect, useRef, useState } from "react"
 
 import { useEntryIsInReadability } from "~/atoms/readability"
 import { useIsZenMode } from "~/atoms/settings/ui"
-import { Focusable } from "~/components/common/Focusable"
+import { Focusable, FocusablePresets } from "~/components/common/Focusable"
 import { m } from "~/components/common/Motion"
 import { useInPeekModal } from "~/components/ui/modal/inspire/InPeekModal"
 import { HotkeyScope } from "~/constants"
+import { useNavigateEntry } from "~/hooks/biz/useNavigateEntry"
 import { useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
 import { useFeedSafeUrl } from "~/hooks/common/useFeedSafeUrl"
 import { useBlockActions } from "~/modules/ai-chat/store/hooks"
 import { BlockSliceAction } from "~/modules/ai-chat/store/slices/block.slice"
 import { COMMAND_ID } from "~/modules/command/commands/id"
+import { useWheelGestureClose } from "~/modules/entry-column/hooks/useWheelGestureClose"
 
 import { ApplyEntryActions } from "../../ApplyEntryActions"
 import { useEntryContent } from "../../hooks"
@@ -131,6 +134,7 @@ const EntryContentImpl: Component<EntryContentProps> = ({
         </RootPortal>
         <EntryTimeline entryId={entryId} className="top-48" />
         <EntryScrollArea scrollerRef={scrollerRef}>
+          <WheelGestureCloseHandler />
           {/* Indicator for the entry */}
           {!isZenMode && isInHasTimelineView && (
             <>
@@ -244,4 +248,50 @@ const AdaptiveContentRenderer: React.FC<{
   const LayoutComponent = getEntryContentLayout(view)
 
   return <LayoutComponent entryId={entryId} compact={compact} noMedia={noMedia} />
+}
+
+const WheelGestureCloseHandler = () => {
+  const navigate = useNavigateEntry()
+
+  const when = useGlobalFocusableScopeSelector(FocusablePresets.isEntryRender)
+  // Wheel gesture to close entry when at timeline scope
+  const handleCloseEntry = React.useCallback(() => {
+    navigate({ entryId: null })
+  }, [navigate])
+
+  // Enable wheel gesture to close entry when focused on entry render
+  const { showScrollHint } = useWheelGestureClose({
+    enabled: when,
+    onClose: handleCloseEntry,
+  })
+  return (
+    <AnimatePresence>
+      {showScrollHint && (
+        <m.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={Spring.presets.smooth}
+          className={clsx(
+            "pointer-events-none absolute !right-1/2 z-40 !translate-x-1/2",
+            "top-0",
+            "backdrop-blur-background rounded-full border px-3.5 py-2",
+            "border-border/40 bg-material-ultra-thin/70 shadow-[0_1px_2px_rgba(0,0,0,0.06),0_8px_24px_rgba(0,0,0,0.08)]",
+            "hover:bg-material-thin/70 hover:border-border/60 active:scale-[0.98]",
+          )}
+        >
+          <button
+            onClick={handleCloseEntry}
+            type="button"
+            className={"group pointer-events-auto flex items-center gap-2"}
+          >
+            <i className="i-mgc-up-cute-re text-text/90 mr-1 size-5" />
+            <span className="text-text/90 text-left text-[13px] font-medium">
+              Scroll up to exit
+            </span>
+          </button>
+        </m.div>
+      )}
+    </AnimatePresence>
+  )
 }

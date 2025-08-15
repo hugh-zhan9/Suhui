@@ -1,10 +1,9 @@
 import { Spring } from "@follow/components/constants/spring.js"
-import { Button } from "@follow/components/ui/button/index.js"
 import { PanelSplitter } from "@follow/components/ui/divider/index.js"
 import { defaultUISettings } from "@follow/shared/settings/defaults"
 import { cn } from "@follow/utils"
 import { AnimatePresence } from "motion/react"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useMemo, useRef } from "react"
 import { useResizable } from "react-resizable-layout"
 import { useParams } from "react-router"
 
@@ -12,7 +11,6 @@ import { AIChatPanelStyle, useAIChatPanelStyle } from "~/atoms/settings/ai"
 import { getUISettings, setUISetting } from "~/atoms/settings/ui"
 import { m } from "~/components/common/Motion"
 import { ROUTE_ENTRY_PENDING } from "~/constants"
-import { useNavigateEntry } from "~/hooks/biz/useNavigateEntry"
 import { AIChatLayout } from "~/modules/app-layout/ai/AIChatLayout"
 import { EntryContent } from "~/modules/entry-content/components/entry-content"
 import { AppLayoutGridContainerProvider } from "~/providers/app-grid-layout-container-provider"
@@ -22,94 +20,10 @@ import { EntryColumn } from "./index"
 
 const AIEntryLayoutImpl = () => {
   const { entryId } = useParams()
-  const navigate = useNavigateEntry()
+
   const panelStyle = useAIChatPanelStyle()
 
   const realEntryId = entryId === ROUTE_ENTRY_PENDING ? "" : entryId
-
-  // Swipe/scroll to close functionality
-  const entryContentRef = useRef<HTMLDivElement>(null)
-  const accumulatedDelta = useRef(0)
-  const isScrollingAtTop = useRef(false)
-  const [showScrollHint, setShowScrollHint] = useState(false)
-
-  const handleCloseGesture = useCallback(() => {
-    navigate({ entryId: null })
-  }, [navigate])
-
-  const handleWheel = useCallback(
-    (e: WheelEvent) => {
-      if (!realEntryId || !entryContentRef.current) return
-
-      // Find the actual scroll viewport element with correct Radix UI attribute
-      const entryContentElement = entryContentRef.current.querySelector(
-        "[data-radix-scroll-area-viewport]",
-      ) as HTMLElement
-      const scrollElement = entryContentElement || entryContentRef.current
-
-      // Check if we're at the top of the content
-      const scrollTop = scrollElement?.scrollTop || 0
-      isScrollingAtTop.current = scrollTop === 0
-      setShowScrollHint(scrollTop === 0)
-
-      // Handle trackpad/mouse wheel: upward scroll (deltaY < 0) or downward swipe gesture
-      // On macOS trackpad, natural scrolling makes upward finger movement negative deltaY
-      if (e.deltaY < 0 && isScrollingAtTop.current) {
-        e.preventDefault()
-        accumulatedDelta.current += Math.abs(e.deltaY)
-
-        // Close when accumulated scroll exceeds threshold (150px for trackpad sensitivity)
-        if (accumulatedDelta.current > 1000) {
-          handleCloseGesture()
-          accumulatedDelta.current = 0
-        }
-      } else {
-        // Reset accumulation when scrolling down or not at top
-        accumulatedDelta.current = 0
-      }
-    },
-    [realEntryId, handleCloseGesture],
-  )
-
-  useEffect(() => {
-    if (!realEntryId || !entryContentRef.current) return
-
-    const element = entryContentRef.current
-
-    // Find the scroll area viewport element with correct Radix UI attribute
-    const scrollViewport = element.querySelector("[data-radix-scroll-area-viewport]") as HTMLElement
-
-    // Add wheel event listener to both the main container and scroll viewport
-    // This ensures the gesture works in both header area and scrollable content
-    const elementsToListen: HTMLElement[] = [element]
-    if (scrollViewport) {
-      elementsToListen.push(scrollViewport)
-    }
-
-    elementsToListen.forEach((el) => {
-      el.addEventListener("wheel", handleWheel, { passive: false })
-    })
-
-    // Initial scroll position check for hint visibility
-    const initialCheckScrollPosition = () => {
-      const scrollTop = scrollViewport?.scrollTop || element.scrollTop || 0
-      setShowScrollHint(scrollTop === 0)
-    }
-
-    // Check initial position
-    initialCheckScrollPosition()
-
-    // Add scroll listener for hint visibility
-    const scrollElement = scrollViewport || element
-    scrollElement.addEventListener("scroll", initialCheckScrollPosition, { passive: true })
-
-    return () => {
-      elementsToListen.forEach((el) => {
-        el.removeEventListener("wheel", handleWheel)
-      })
-      scrollElement.removeEventListener("scroll", initialCheckScrollPosition)
-    }
-  }, [realEntryId, handleWheel])
 
   // AI chat resizable panel configuration
   const aiColWidth = useMemo(() => getUISettings().aiColWidth, [])
@@ -140,20 +54,18 @@ const AIEntryLayoutImpl = () => {
             <EntryColumn key="entry-list" />
 
             {/* Entry content overlay with exit animation */}
-            <AnimatePresence mode="wait">
+            <AnimatePresence mode="popLayout">
               {realEntryId && (
                 <m.div
                   lcpOptimization
-                  ref={entryContentRef}
-                  key={realEntryId}
-                  initial={{ y: "100%" }}
-                  animate={{ y: 0 }}
-                  exit={{ y: "100%" }}
+                  initial={{ y: 150, opacity: 0, scale: 0.98 }}
+                  animate={{ y: 0, opacity: 1, scale: 1 }}
+                  exit={{ y: 150, opacity: 0, scale: 0.98 }}
                   transition={Spring.presets.smooth}
                   className="bg-theme-background absolute inset-0 z-10 border-l"
                 >
                   {/* Scroll hint indicator */}
-                  <div className="center z-50 pt-2">
+                  {/* <div className="center z-50 pt-2">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -171,7 +83,8 @@ const AIEntryLayoutImpl = () => {
                         <span>{showScrollHint ? "Scroll up to exit" : "Click to exit"}</span>
                       </div>
                     </Button>
-                  </div>
+                  </div> */}
+
                   <EntryContent entryId={realEntryId} className="h-[calc(100%-2.25rem)]" />
                 </m.div>
               )}
