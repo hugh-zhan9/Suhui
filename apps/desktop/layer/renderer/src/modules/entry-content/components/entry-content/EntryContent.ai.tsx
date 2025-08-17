@@ -1,4 +1,3 @@
-import { useGlobalFocusableScopeSelector } from "@follow/components/common/Focusable/hooks.js"
 import { Spring } from "@follow/components/constants/spring.js"
 import { MotionButtonBase } from "@follow/components/ui/button/index.js"
 import { RootPortal } from "@follow/components/ui/portal/index.js"
@@ -12,33 +11,26 @@ import { useIsInbox } from "@follow/store/inbox/hooks"
 import { thenable } from "@follow/utils"
 import { stopPropagation } from "@follow/utils/dom"
 import { EventBus } from "@follow/utils/event-bus"
-import { clsx, cn } from "@follow/utils/utils"
+import { cn } from "@follow/utils/utils"
 import type { JSAnimation } from "motion/react"
-import { AnimatePresence, useAnimationControls } from "motion/react"
+import { useAnimationControls } from "motion/react"
 import * as React from "react"
 import { memo, useEffect, useRef, useState } from "react"
-import { useHotkeys } from "react-hotkeys-hook"
 
 import { useEntryIsInReadability } from "~/atoms/readability"
 import { useIsZenMode } from "~/atoms/settings/ui"
-import { Focusable, FocusablePresets } from "~/components/common/Focusable"
+import { Focusable } from "~/components/common/Focusable"
 import { m } from "~/components/common/Motion"
 import { useInPeekModal } from "~/components/ui/modal/inspire/InPeekModal"
 import { HotkeyScope } from "~/constants"
-import { useFeature } from "~/hooks/biz/useFeature"
-import { useNavigateEntry } from "~/hooks/biz/useNavigateEntry"
 import { useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
 import { useFeedSafeUrl } from "~/hooks/common/useFeedSafeUrl"
 import { useBlockActions } from "~/modules/ai-chat/store/hooks"
 import { BlockSliceAction } from "~/modules/ai-chat/store/slices/block.slice"
 import { COMMAND_ID } from "~/modules/command/commands/id"
-import { useCommandHotkey } from "~/modules/command/hooks/use-register-hotkey"
-import { useWheelGestureClose } from "~/modules/entry-column/hooks/useWheelGestureClose"
 
 import { ApplyEntryActions } from "../../ApplyEntryActions"
-import { NAVIGATION_HINTS_ICONS, NAVIGATION_HINTS_TEXT } from "../../constants/navigation-hints"
 import { useEntryContent } from "../../hooks"
-import { useEntryNavigationHints } from "../../hooks/useEntryNavigationHints"
 import { AIEntryHeader } from "../entry-header"
 import { EntryTimeline } from "../EntryTimelineSidebar"
 import { getEntryContentLayout } from "../layouts"
@@ -139,7 +131,6 @@ const EntryContentImpl: Component<EntryContentProps> = ({
         </RootPortal>
         <EntryTimeline entryId={entryId} className="top-48" />
         <EntryScrollArea scrollerRef={scrollerRef}>
-          <EntryNavigationHandler entryId={entryId} />
           {/* Indicator for the entry */}
           {!isZenMode && isInHasTimelineView && (
             <>
@@ -253,112 +244,4 @@ const AdaptiveContentRenderer: React.FC<{
   const LayoutComponent = getEntryContentLayout(view)
 
   return <LayoutComponent entryId={entryId} compact={compact} noMedia={noMedia} />
-}
-
-const EntryNavigationHandler = ({ entryId }: { entryId: string }) => {
-  const navigate = useNavigateEntry()
-
-  const when = useGlobalFocusableScopeSelector(FocusablePresets.isEntryRender)
-
-  // Handle close gesture
-  const handleCloseEntry = React.useCallback(() => {
-    navigate({ entryId: null })
-  }, [navigate])
-
-  // Enable wheel gesture to close entry when focused on entry render
-  const { showScrollHint } = useWheelGestureClose({
-    enabled: when,
-    onClose: handleCloseEntry,
-  })
-
-  // Navigation hints for entry content
-  const {
-    showFirstEntryHint,
-    showScrollHint: showScrollThresholdHint,
-    showBottomHint,
-  } = useEntryNavigationHints({
-    enabled: when && !!entryId,
-    entryId,
-  })
-
-  const isZenMode = useIsZenMode()
-  // TODO: Here, do not rely on the AI switch, but should be deps on the new layout.
-  const isAiEnabled = useFeature("ai")
-
-  const useBackHandler = isZenMode || isAiEnabled
-
-  useCommandHotkey({
-    commandId: COMMAND_ID.layout.focusToTimeline,
-    when: when && !useBackHandler,
-    shortcut: "Backspace, Escape",
-  })
-
-  const navigateToTimeline = useNavigateEntry()
-  useHotkeys(
-    "Escape",
-    () => {
-      navigateToTimeline({ entryId: null })
-    },
-    { enabled: when && useBackHandler },
-  )
-
-  // Render hint button with different states
-  const renderHintButton = (icon: string, text: string, position: "top" | "bottom" = "top") => (
-    <m.div
-      initial={{ y: position === "top" ? -50 : 50 }}
-      animate={{ y: 0 }}
-      exit={{ y: position === "top" ? -50 : 50 }}
-      transition={Spring.presets.smooth}
-      className={clsx(
-        "pointer-events-none absolute z-40 flex justify-center",
-        position === "top" ? "inset-x-0 top-4" : "inset-x-0 bottom-24",
-      )}
-    >
-      <m.button
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        onClick={handleCloseEntry}
-        type="button"
-        className={clsx(
-          "group pointer-events-auto flex items-center gap-2",
-          "rounded-full border px-3.5 py-2",
-          "border-border/40 bg-material-ultra-thick shadow-[0_1px_2px_rgba(0,0,0,0.06),0_8px_24px_rgba(0,0,0,0.08)]",
-          "hover:bg-material-thin/70 hover:border-border/60 active:scale-[0.98]",
-          "backdrop-blur-background",
-        )}
-      >
-        <i className={clsx(icon, "text-text/90 mr-1 size-5")} />
-        <span className="text-text/90 text-left text-[13px] font-medium">{text}</span>
-      </m.button>
-    </m.div>
-  )
-
-  return (
-    <AnimatePresence mode="popLayout">
-      {/* First entry hint */}
-      {showFirstEntryHint &&
-        renderHintButton(
-          NAVIGATION_HINTS_ICONS.ARROW_UP,
-          NAVIGATION_HINTS_TEXT.SCROLL_UP_EXIT,
-          "top",
-        )}
-
-      {/* Scroll threshold hint or wheel gesture hint */}
-      {(showScrollThresholdHint || showScrollHint) &&
-        renderHintButton(
-          NAVIGATION_HINTS_ICONS.ARROW_LEFT_UP,
-          NAVIGATION_HINTS_TEXT.SCROLL_UP_EXIT,
-          "top",
-        )}
-
-      {/* Bottom hint */}
-      {showBottomHint &&
-        renderHintButton(
-          NAVIGATION_HINTS_ICONS.ARROW_TO_DOWN,
-          NAVIGATION_HINTS_TEXT.ESC_EXIT,
-          "bottom",
-        )}
-    </AnimatePresence>
-  )
 }
