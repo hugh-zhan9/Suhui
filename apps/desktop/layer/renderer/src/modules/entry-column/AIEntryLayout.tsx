@@ -158,7 +158,7 @@ const AIEntryLayoutImpl = () => {
                       variant="ghost"
                       size="sm"
                       onClick={() => navigate({ entryId: null })}
-                      buttonClassName="transform cursor-pointer select-none"
+                      buttonClassName="transform cursor-pointer select-none no-drag-region"
                       aria-label="Scroll up or click to exit"
                     >
                       <div className="text-text flex items-center gap-2 rounded-full font-medium">
