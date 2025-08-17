@@ -106,11 +106,11 @@ const VirtualGridImpl: FC<
   const columns = useMemo(() => {
     const width = containerWidth
     const rem = Number.parseFloat(getComputedStyle(document.documentElement).fontSize)
-    let columnCount = 2 // default (grid-cols-1)
-    if (width >= 32 * rem) columnCount = 3 // @lg (32rem)
-    if (width >= 48 * rem) columnCount = 4 // @3xl (48rem)
-    if (width >= 72 * rem) columnCount = 5 // @6xl (72rem)
-    if (width >= 80 * rem) columnCount = 6 // @8xl (80rem)
+    let columnCount = 1 // default (grid-cols-1)
+    if (width >= 32 * rem) columnCount = 2 // @lg (32rem)
+    if (width >= 48 * rem) columnCount = 3 // @3xl (48rem)
+    if (width >= 72 * rem) columnCount = 4 // @6xl (72rem)
+    if (width >= 80 * rem) columnCount = 5 // @8xl (80rem)
 
     return Array.from({ length: columnCount }).fill(width / columnCount) as number[]
   }, [containerWidth])
