@@ -26,13 +26,9 @@ export const SwitchToMasonryButton = () => {
   const masonryColumnValue = useMasonryColumnValue()
   if (isMobile) return null
   return (
-    <HoverCard>
+    <HoverCard openDelay={100}>
       <HoverCardTrigger>
-        <ActionButton
-          onClick={() => {
-            setUISetting("pictureViewMasonry", !isMasonry)
-          }}
-        >
+        <ActionButton>
           <i className={cn(!isMasonry ? "i-mgc-grid-cute-re" : "i-mgc-grid-2-cute-re")} />
         </ActionButton>
       </HoverCardTrigger>
