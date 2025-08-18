@@ -3,6 +3,8 @@
   "clear_chat": "清空对话",
   "clear_chat_message": "确定要清空所有历史记录吗？此操作将永久删除所有内容，包括所有聊天记录和数据，且无法撤销。",
   "conversation_starters": "对话建议",
+  "customize_shortcuts": "自定义快捷方式",
+  "customize_shortcuts_title": "自定义 AI 快捷方式",
   "delete_chat": "删除对话",
   "delete_chat_error": "删除对话失败",
   "delete_chat_message": "确定要删除\"{{title}}\"吗？此操作无法撤销。",

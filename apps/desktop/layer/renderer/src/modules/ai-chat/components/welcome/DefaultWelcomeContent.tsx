@@ -1,23 +1,21 @@
 import { AIShortcutButton } from "@follow/components/ui/ai-shortcut-button/index.js"
 import type { EditorState, LexicalEditor } from "lexical"
 import { m } from "motion/react"
+import { useTranslation } from "react-i18next"
+
+import { useSettingModal } from "~/modules/settings/modal/use-setting-modal-hack"
 
 interface DefaultWelcomeContentProps {
   onSend: (message: EditorState | string, editor: LexicalEditor | null) => void
   shortcuts: Array<{ id: string; name: string; prompt: string; enabled: boolean; hotkey?: string }>
 }
 
-const DEFAULT_SHORTCUTS = [
-  "Generate today daily report",
-  "Analyze my reading patterns",
-  "Summarize recent articles",
-  "What happened today",
-]
-
 export const DefaultWelcomeContent: React.FC<DefaultWelcomeContentProps> = ({
   onSend,
   shortcuts: enabledShortcuts,
 }) => {
+  const { t } = useTranslation("ai")
+  const showSettings = useSettingModal()
   return (
     <m.div
       initial={{ opacity: 0, y: 20, scale: 0.98 }}
@@ -38,17 +36,20 @@ export const DefaultWelcomeContent: React.FC<DefaultWelcomeContentProps> = ({
           </AIShortcutButton>
         ))}
 
-        {/* Default suggestions if no custom shortcuts or to fill remaining space */}
-        {enabledShortcuts.length < 4 &&
-          DEFAULT_SHORTCUTS.slice(0, 4 - enabledShortcuts.length).map((suggestion, index) => (
+        {/* Show customize button when no shortcuts are available */}
+        {enabledShortcuts.length === 0 && (
+          <>
             <AIShortcutButton
-              key={suggestion}
-              onClick={() => onSend(suggestion, null)}
-              animationDelay={(enabledShortcuts.length + index) * 0.1}
+              key="customize-shortcuts"
+              onClick={() => showSettings("ai")}
+              animationDelay={0}
+              variant="outline"
+              title={t("customize_shortcuts_title")}
             >
-              {suggestion}
+              {t("customize_shortcuts")}
             </AIShortcutButton>
-          ))}
+          </>
+        )}
       </div>
     </m.div>
   )
