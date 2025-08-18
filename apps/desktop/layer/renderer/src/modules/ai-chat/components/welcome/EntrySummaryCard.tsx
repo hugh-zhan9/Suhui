@@ -1,4 +1,5 @@
 import { Spring } from "@follow/components/constants/spring.js"
+import { AIShortcutButton } from "@follow/components/ui/ai-shortcut-button/index.js"
 import { AutoResizeHeight } from "@follow/components/ui/auto-resize-height/index.js"
 import { usePrefetchSummary } from "@follow/store/summary/hooks"
 import { cn } from "@follow/utils/utils"
@@ -143,23 +144,13 @@ export const EntrySummaryCard: React.FC<EntrySummaryCardProps> = ({
           </div>
           <div className="flex flex-wrap gap-2">
             {quickActions.map((action, index) => (
-              <m.button
+              <AIShortcutButton
                 key={action.id}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: index * 0.1, ...Spring.presets.snappy }}
                 onClick={() => onSend(action.prompt)}
-                className={cn(
-                  "inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all",
-                  "bg-material-medium hover:bg-material-thick",
-                  "border-border/50 hover:border-border border",
-                  "text-text hover:text-text",
-                  "hover:shadow-sm active:scale-95",
-                )}
+                animationDelay={index * 0.1}
               >
-                <i className={`${action.icon} text-xs`} />
                 {action.label}
-              </m.button>
+              </AIShortcutButton>
             ))}
           </div>
         </div>
