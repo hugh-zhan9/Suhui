@@ -18,7 +18,6 @@ export const WelcomeScreen = ({ onSend }: WelcomeScreenProps) => {
   const mainEntryId = useMainEntryId()
 
   const hasEntryContext = !!mainEntryId
-  const hasCustomPrompt = aiSettings.personalizePrompt?.trim()
   const enabledShortcuts = aiSettings.shortcuts?.filter((shortcut) => shortcut.enabled) || []
 
   return (
@@ -59,8 +58,6 @@ export const WelcomeScreen = ({ onSend }: WelcomeScreenProps) => {
                 key="default-welcome"
                 onSend={onSend}
                 shortcuts={enabledShortcuts}
-                hasCustomPrompt={!!hasCustomPrompt}
-                personalizePrompt={aiSettings.personalizePrompt}
               />
             )}
           </AnimatePresence>
