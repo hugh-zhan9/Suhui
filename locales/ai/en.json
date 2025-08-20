@@ -87,6 +87,11 @@
   "shortcuts.updated": "Shortcut updated successfully",
   "shortcuts.validation.required": "Name and prompt are required",
   "summary_not_available": "Summary not available",
+  "token_usage.description": "Monitor your AI token consumption and limits",
+  "token_usage.resets_at": "Resets at",
+  "token_usage.title": "Token Usage",
+  "token_usage.tokens_remaining": "tokens remaining",
+  "token_usage.tokens_used": "{{used}} / {{total}} tokens used",
   "welcome_description": "I'm here to help you with your reading needs. How can I assist you today?",
   "welcome_description_contextual": "Let's discuss this entry together"
 }
