@@ -111,6 +111,8 @@
   "discover.target.feeds": "订阅源",
   "discover.target.label": "搜索",
   "discover.target.lists": "列表",
+  "entry.click_to_return": "点击返回条目列表",
+  "entry.exit_detail": "退出详情",
   "entry_actions.copied_notify": "{{which}}已复制到剪贴板。",
   "entry_actions.copy_link": "复制链接",
   "entry_actions.copy_title": "复制标题",

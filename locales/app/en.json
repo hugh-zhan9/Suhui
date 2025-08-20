@@ -111,6 +111,8 @@
   "discover.target.feeds": "Feeds",
   "discover.target.label": "Search for",
   "discover.target.lists": "Lists",
+  "entry.click_to_return": "Click to return to entry list",
+  "entry.exit_detail": "Exit Detail View",
   "entry_actions.copied_notify": "{{which}} copied to clipboard.",
   "entry_actions.copy_link": "Copy Link",
   "entry_actions.copy_title": "Copy Title",
