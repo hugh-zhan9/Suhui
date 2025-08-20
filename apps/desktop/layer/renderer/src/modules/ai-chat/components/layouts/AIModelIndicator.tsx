@@ -60,6 +60,7 @@ export const AIModelIndicator = memo(({ className, onModelChange }: AIModelIndic
         "gap-1.5 px-2 py-1 text-xs",
         "bg-material-ultra-thin border-border/50",
         "text-text-secondary",
+
         className,
       )}
     >

@@ -121,7 +121,7 @@ export const ChatInput = memo(({ onSend, variant }: ChatInputProps) => {
             />
           </div>
           <AIModelIndicator
-            className="ml-3 self-start"
+            className="-mr-1.5 ml-3 translate-y-[2px] self-start"
             // Current not support switch model, will open this feature later
             onModelChange={noop}
           />
