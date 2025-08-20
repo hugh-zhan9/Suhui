@@ -55,18 +55,16 @@ const ChatInterfaceContent = () => {
   const mainEntryId = useMainEntryId()
   const actionLanguage = useActionLanguage()
 
-  // Prefetch summary for context-aware welcome screen
   usePrefetchSummary({
     entryId: mainEntryId || "",
-    target: "content", // Start with content, fallback to readability if needed
+    target: "content",
     actionLanguage,
-    enabled: !!mainEntryId && !hasMessages, // Only when showing welcome screen
+    enabled: !!mainEntryId && !hasMessages,
   })
 
   const [scrollAreaRef, setScrollAreaRef] = useState<HTMLDivElement | null>(null)
   const [isAtBottom, setIsAtBottom] = useState(true)
 
-  // Reset handlers when chatId changes
   useEffect(() => {
     setIsAtBottom(true)
   }, [currentChatId])

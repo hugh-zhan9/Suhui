@@ -76,8 +76,8 @@ const AIChatFloatingPanelInner: FC<AIChatFloatingPanelProps> = ({ className, ...
           onResizeStop={handleResize}
           minWidth={500}
           minHeight={600}
-          maxWidth={600}
-          maxHeight={Math.floor(window.innerHeight * 0.85)}
+          maxWidth={800}
+          maxHeight={Math.floor(window.innerHeight * 0.9)}
           enable={{
             top: true,
             right: true,

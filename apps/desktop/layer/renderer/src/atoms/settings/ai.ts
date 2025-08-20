@@ -2,6 +2,7 @@ import { createSettingAtom } from "@follow/atoms/helper/setting.js"
 import { defaultAISettings } from "@follow/shared/settings/defaults"
 import type { AISettings, MCPService } from "@follow/shared/settings/interface"
 import { jotaiStore } from "@follow/utils"
+import { clamp } from "es-toolkit"
 import { atom, useAtomValue } from "jotai"
 
 export interface WebAISettings extends AISettings {
@@ -45,11 +46,16 @@ interface FloatingPanelState {
   y: number
 }
 
+const DEFAULT_FLOATING_PANEL_WIDTH = 500
+const DEFAULT_FLOATING_PANEL_HEIGHT = clamp(window.innerHeight * 0.9, 600, 1000)
+const DEFAULT_FLOATING_PANEL_X = window.innerWidth - DEFAULT_FLOATING_PANEL_WIDTH - 20
+const DEFAULT_FLOATING_PANEL_Y = window.innerHeight - DEFAULT_FLOATING_PANEL_HEIGHT - 20
+
 const defaultFloatingPanelState: FloatingPanelState = {
-  width: 500,
-  height: 600,
-  x: window.innerWidth - 520, // 20px margin from right
-  y: window.innerHeight - 620, // 20px margin from bottom
+  width: DEFAULT_FLOATING_PANEL_WIDTH,
+  height: DEFAULT_FLOATING_PANEL_HEIGHT,
+  x: DEFAULT_FLOATING_PANEL_X,
+  y: DEFAULT_FLOATING_PANEL_Y,
 }
 
 const floatingPanelStateAtom = atom<FloatingPanelState>(defaultFloatingPanelState)

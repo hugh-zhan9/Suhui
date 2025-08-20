@@ -41,14 +41,15 @@ export const AIShortcutButton: React.FC<AIShortcutButtonProps> = ({
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, y: 10 }}
+      whileTap={{ scale: 0.95 }}
       transition={{ delay: animationDelay, ...Spring.presets.snappy }}
       onClick={onClick}
       disabled={disabled}
       title={title}
       className={cn(
         // Base styles
-        "inline-flex items-center gap-2 rounded-full font-medium transition-all",
-        "hover:shadow-sm active:scale-95",
+        "inline-flex items-center gap-2 rounded-full font-medium transition-shadow",
+        "hover:shadow-sm",
 
         // Size variants
         size === "sm" && "px-2.5 py-1.5 text-xs",
