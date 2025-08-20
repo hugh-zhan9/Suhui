@@ -2,15 +2,13 @@ import type { MCPService } from "@follow/shared/settings/interface"
 
 import { followApi } from "~/lib/api-client"
 
-// MCP Service API calls - these connect to the actual server endpoints via followClient
 export const createMCPConnection = async (connectionData: {
   name: string
   transportType: "streamable-http" | "sse"
   url: string
   headers?: Record<string, string>
-}): Promise<{ authorizationUrl?: string }> => {
-  const res = await followApi.mcp.createConnection(connectionData)
-  return { authorizationUrl: res.authorizationUrl }
+}) => {
+  return followApi.mcp.createConnection(connectionData)
 }
 
 export const fetchMCPConnections = async (): Promise<MCPService[]> => {
@@ -26,9 +24,8 @@ export const updateMCPConnection = async (
     url?: string
     headers?: Record<string, string>
   },
-): Promise<{ authorizationUrl?: string }> => {
-  const res = await followApi.mcp.updateConnection({ connectionId, ...updateData })
-  return { authorizationUrl: res.authorizationUrl }
+) => {
+  return followApi.mcp.updateConnection({ connectionId, ...updateData })
 }
 
 export const deleteMCPConnection = async (connectionId: string): Promise<void> => {
