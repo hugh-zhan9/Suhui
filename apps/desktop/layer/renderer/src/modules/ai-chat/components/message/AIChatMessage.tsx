@@ -126,24 +126,9 @@ export const AIChatMessage: React.FC<AIChatMessageProps> = React.memo(({ message
   }, [chatActions, messageId])
 
   return (
-    <m.div
+    <div
       onContextMenu={stopPropagation}
       className={`flex ${message.role === "user" ? "justify-end" : "justify-start"} group`}
-      initial={{
-        opacity: 0,
-        y: 20,
-        scale: 0.95,
-      }}
-      animate={{
-        opacity: 1,
-        y: 0,
-        scale: 1,
-      }}
-      transition={{
-        duration: 0.3,
-        ease: [0.25, 0.46, 0.45, 0.94],
-        delay: message.role === "user" ? 0.1 : 0.2,
-      }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -162,7 +147,7 @@ export const AIChatMessage: React.FC<AIChatMessageProps> = React.memo(({ message
             <div
               className={cn(
                 `text-text backdrop-blur-sm`,
-                message.role === "user" && "rounded-full bg-gray-100 px-4 py-2.5 dark:bg-gray-800",
+                message.role === "user" && "rounded-2xl bg-gray-100 px-4 py-2.5 dark:bg-gray-800",
               )}
             >
               <div className={`flex select-text flex-col gap-2 text-sm`}>
@@ -172,7 +157,7 @@ export const AIChatMessage: React.FC<AIChatMessageProps> = React.memo(({ message
 
             {/* Action buttons */}
             <m.div
-              className={`absolute bottom-0 flex ${message.role === "user" ? "right-0" : "left-0"} gap-1`}
+              className={`absolute bottom-1 flex ${message.role === "user" ? "right-0" : "left-0"} gap-1`}
               initial={{ opacity: 0 }}
               animate={{
                 opacity: isHovered ? 1 : 0,
@@ -184,7 +169,7 @@ export const AIChatMessage: React.FC<AIChatMessageProps> = React.memo(({ message
                   <button
                     type="button"
                     onClick={handleEdit}
-                    className="text-text hover:bg-fill-secondary flex items-center gap-1 rounded-md px-2 py-1 text-sm transition-colors"
+                    className="text-text hover:bg-fill-secondary flex items-center gap-1 rounded-md px-2 py-1 text-xs transition-colors"
                     title="Edit message"
                   >
                     <i className="i-mgc-edit-cute-re size-3" />
@@ -193,7 +178,7 @@ export const AIChatMessage: React.FC<AIChatMessageProps> = React.memo(({ message
                   <button
                     type="button"
                     onClick={handleRetry}
-                    className="text-text hover:bg-fill-secondary flex items-center gap-1 rounded-md px-2 py-1 text-sm transition-colors"
+                    className="text-text hover:bg-fill-secondary flex items-center gap-1 rounded-md px-2 py-1 text-xs transition-colors"
                     title="Retry"
                   >
                     <i className="i-mgc-refresh-2-cute-re size-3" />
@@ -217,7 +202,7 @@ export const AIChatMessage: React.FC<AIChatMessageProps> = React.memo(({ message
           </>
         )}
       </div>
-    </m.div>
+    </div>
   )
 })
 
@@ -228,9 +213,8 @@ export const AIChatWaitingIndicator: React.FC = () => {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 8 }}
       transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
-      className="sticky bottom-4 z-10 flex w-full justify-center pb-2"
     >
-      <div className="backdrop-blur-background border-border/50 bg-material-ultra-thin/70 text-text-secondary hover:bg-material-thin/70 flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs shadow-[0_1px_2px_rgba(0,0,0,0.06),0_8px_24px_rgba(0,0,0,0.08)] transition-colors">
+      <div className="text-text-secondary flex items-center gap-2 rounded-full text-xs">
         <i className="i-mgc-loading-3-cute-re size-3 animate-spin" />
         <span className="font-medium">Thinking…</span>
       </div>

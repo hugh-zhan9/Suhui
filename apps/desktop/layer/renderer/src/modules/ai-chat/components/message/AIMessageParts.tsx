@@ -33,8 +33,6 @@ interface MessagePartsProps {
 }
 
 export const AIMessageParts: React.FC<MessagePartsProps> = React.memo(({ message }) => {
-  const isUser = message.role === "user"
-
   return message.parts.map((part, index) => {
     const partKey = `${message.id}-${index}`
 
@@ -61,7 +59,7 @@ export const AIMessageParts: React.FC<MessagePartsProps> = React.memo(({ message
           <AIRichTextMessage
             key={partKey}
             data={part.data as { state: string; text: string }}
-            className={isUser ? "text-white" : "text-text"}
+            className="text-text"
           />
         )
       }

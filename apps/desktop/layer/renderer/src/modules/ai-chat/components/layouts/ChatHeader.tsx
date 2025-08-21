@@ -25,15 +25,8 @@ export const ChatHeader = () => {
       return
     }
 
-    ask({
-      title: t("clear_chat"),
-      message: t("clear_chat_message"),
-      variant: "danger",
-      onConfirm: () => {
-        chatActions.newChat()
-        blockActions.clearBlocks({ keepSpecialTypes: true })
-      },
-    })
+    chatActions.newChat()
+    blockActions.clearBlocks({ keepSpecialTypes: true })
   }, [chatActions, currentTitle, ask, t, blockActions])
 
   const handleTitleSave = useCallback(
