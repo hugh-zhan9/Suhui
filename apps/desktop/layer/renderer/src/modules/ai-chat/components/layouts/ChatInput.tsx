@@ -18,7 +18,7 @@ import { AIModelIndicator } from "./AIModelIndicator"
 
 const chatInputVariants = cva(
   [
-    "bg-background/60 focus-within:ring-accent/20 focus-within:border-accent/80 border-border/80",
+    "bg-background focus-within:ring-accent/20 focus-within:border-accent/80 border-border/80",
     "relative overflow-hidden rounded-2xl border backdrop-blur-xl duration-200 focus-within:ring-2",
   ],
   {

@@ -49,7 +49,7 @@ export const AIMessageParts: React.FC<MessagePartsProps> = React.memo(({ message
               className={"text-text"}
             />
           )
-        return <AIMarkdownMessage key={partKey} text={part.text} className={"text-white"} />
+        return <AIMarkdownMessage key={partKey} text={part.text} />
       }
 
       case "data-block": {

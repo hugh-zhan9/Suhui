@@ -212,13 +212,12 @@ const ChatInterfaceContent = () => {
             type="button"
             onClick={() => resetScrollState()}
             className={cn(
-              "backdrop-blur-background group flex items-center gap-2 rounded-full border px-3.5 py-2 transition-all",
-              "border-border/40 bg-material-ultra-thin shadow-[0_1px_2px_rgba(0,0,0,0.06),0_8px_24px_rgba(0,0,0,0.08)]",
-              "hover:bg-material-medium hover:border-border/60 active:scale-[0.98]",
+              "center bg-background group flex size-8 items-center gap-2 rounded-full border transition-all",
+              "border-border/40",
+              "hover:border-border/60 active:scale-[0.98]",
             )}
           >
-            <i className="i-mingcute-arrow-down-line text-text/90 size-3" />
-            <span className="text-text/90 text-[13px] font-medium">Scroll to Bottom</span>
+            <i className="i-mingcute-arrow-down-line text-text/90" />
           </button>
         </div>
       )}
