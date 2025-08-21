@@ -22,6 +22,7 @@ import {
   useTimelineColumnTempShow,
 } from "~/atoms/sidebar"
 import { FloatingLayerScope } from "~/constants"
+import { useFeature } from "~/hooks/biz/useFeature"
 import { useNavigateEntry } from "~/hooks/biz/useNavigateEntry"
 import { useRouteParams } from "~/hooks/biz/useRouteParams"
 import { useBatchUpdateSubscription } from "~/hooks/biz/useSubscriptionActions"
@@ -103,6 +104,7 @@ const FeedResponsiveResizerContainer = ({
     },
   })
 
+  const aiEnabled = useFeature("ai")
   const feedColumnShow = useTimelineColumnShow()
   const feedColumnTempShow = useTimelineColumnTempShow()
   const { entryId, isPendingEntry } = useRouteParams()
@@ -191,7 +193,7 @@ const FeedResponsiveResizerContainer = ({
         <Slot className={!feedColumnShow ? "!bg-sidebar" : ""}>{children}</Slot>
 
         {/* Semi-transparent overlay with exit hint when in wide mode with entry selected */}
-        {entryId && !isPendingEntry && (
+        {entryId && !isPendingEntry && aiEnabled && (
           <div
             className="absolute inset-0 z-20 cursor-pointer bg-white/50 backdrop-blur-[2px] transition-colors duration-200 hover:bg-white/70"
             onClick={() => navigate({ entryId: null })}
