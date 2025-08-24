@@ -111,6 +111,8 @@
   "discover.target.feeds": "フィード",
   "discover.target.label": "検索対象",
   "discover.target.lists": "リスト",
+  "entry.click_to_return": "クリックしてエントリリストに戻る",
+  "entry.exit_detail": "詳細を終了",
   "entry_actions.copied_notify": "{{which}} をクリップボードにコピーしました。",
   "entry_actions.copy_link": "リンクをコピー",
   "entry_actions.copy_title": "タイトルをコピー",

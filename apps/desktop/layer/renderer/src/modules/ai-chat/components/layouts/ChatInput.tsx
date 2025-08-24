@@ -4,19 +4,21 @@ import { ScrollArea } from "@follow/components/ui/scroll-area/ScrollArea.js"
 import { cn, stopPropagation } from "@follow/utils"
 import type { VariantProps } from "class-variance-authority"
 import { cva } from "class-variance-authority"
+import { noop } from "es-toolkit"
 import type { EditorState, LexicalEditor } from "lexical"
 import { $getRoot } from "lexical"
 import { memo, useCallback, useRef, useState } from "react"
 
 import { AIChatContextBar } from "~/modules/ai-chat/components/layouts/AIChatContextBar"
 
-import { MentionPlugin } from "../../editor"
+import { FileUploadPlugin, MentionPlugin } from "../../editor"
 import { useChatActions, useChatStatus } from "../../store/hooks"
 import { AIChatSendButton } from "./AIChatSendButton"
+import { AIModelIndicator } from "./AIModelIndicator"
 
 const chatInputVariants = cva(
   [
-    "bg-background/60 focus-within:ring-accent/20 focus-within:border-accent/80 border-border/80",
+    "bg-background focus-within:ring-accent/20 focus-within:border-accent/80 border-border/80",
     "relative overflow-hidden rounded-2xl border backdrop-blur-xl duration-200 focus-within:ring-2",
   ],
   {
@@ -95,7 +97,7 @@ export const ChatInput = memo(({ onSend, variant }: ChatInputProps) => {
             onChange={handleEditorChange}
             onKeyDown={handleKeyDown}
             autoFocus
-            plugins={[MentionPlugin]}
+            plugins={[MentionPlugin, FileUploadPlugin]}
             namespace="AIChatRichEditor"
           />
         </ScrollArea>
@@ -111,10 +113,19 @@ export const ChatInput = memo(({ onSend, variant }: ChatInputProps) => {
 
       {/* Context Bar - Always shown, positioned below the input area */}
       <div className="border-border/20 relative z-10 border-t bg-transparent">
-        <AIChatContextBar
-          className="border-0 bg-transparent px-4 py-2.5"
-          onSendShortcut={(prompt) => onSend(prompt, null)}
-        />
+        <div className="flex items-center justify-between px-4 py-2.5">
+          <div className="flex-1">
+            <AIChatContextBar
+              className="border-0 bg-transparent p-0"
+              onSendShortcut={(prompt) => onSend(prompt, null)}
+            />
+          </div>
+          <AIModelIndicator
+            className="-mr-1.5 ml-3 translate-y-[2px] self-start"
+            // Current not support switch model, will open this feature later
+            onModelChange={noop}
+          />
+        </div>
       </div>
     </div>
   )
