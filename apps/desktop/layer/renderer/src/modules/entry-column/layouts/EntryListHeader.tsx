@@ -24,7 +24,6 @@ import { useFeature } from "~/hooks/biz/useFeature"
 import { useFollow } from "~/hooks/biz/useFollow"
 import { getRouteParams, useRouteParams } from "~/hooks/biz/useRouteParams"
 import { useLoginModal } from "~/hooks/common"
-import { useSendAIShortcut } from "~/modules/ai-chat/hooks/useSendAIShortcut"
 import { COMMAND_ID } from "~/modules/command/commands/id"
 import { useRunCommandFn } from "~/modules/command/hooks/use-command"
 import { useCommandShortcut } from "~/modules/command/hooks/use-command-binding"
@@ -33,7 +32,6 @@ import { FeedIcon } from "~/modules/feed/feed-icon"
 import { useRefreshFeedMutation } from "~/queries/feed"
 import { useFeedHeaderIcon, useFeedHeaderTitle } from "~/store/feed/hooks"
 
-import { aiTimelineEnabledAtom } from "../atoms/ai-timeline"
 import { MarkAllReadButton } from "../components/mark-all-button"
 import { useIsPreviewFeed } from "../hooks/useIsPreviewFeed"
 import { useEntryRootState } from "../store/EntryColumnContext"
@@ -48,8 +46,6 @@ export const EntryListHeader: FC<{
   const { t } = useTranslation()
 
   const unreadOnly = useGeneralSettingKey("unreadOnly")
-  const [aiTimelineEnabled, setAiTimelineEnabled] = useAtom(aiTimelineEnabledAtom)
-  const aiEnabled = useFeature("ai")
 
   const { feedId, entryId, view, isCollection } = routerParams
   const isPreview = useIsPreviewFeed()
@@ -94,46 +90,8 @@ export const EntryListHeader: FC<{
 
   const { isScrolledBeyondThreshold } = useEntryRootState()
   const isScrolledBeyondThresholdValue = useAtomValue(isScrolledBeyondThreshold)
-  const { sendAIShortcut } = useSendAIShortcut()
-  const summarizeTimeline = useCallback(() => {
-    void sendAIShortcut({
-      shortcutId: DEFAULT_SUMMARIZE_TIMELINE_SHORTCUT_ID,
-      ensureNewChat: true,
-    })
-  }, [sendAIShortcut])
+
   const showEntryHeader = isWideMode && !!entryId && entryId !== ROUTE_ENTRY_PENDING
-  const showTimelineSummaryButton = isWideMode && aiEnabled
-  const showAiTimelineToggle = aiEnabled
-
-  const handleAiTimelineButtonClick = useCallback(() => {
-    setAiTimelineEnabled((prev) => !prev)
-  }, [setAiTimelineEnabled])
-
-  const renderAiTimelineButton = () => {
-    if (!showAiTimelineToggle) return null
-    return (
-      <ActionButton
-        tooltip={t("entry_list_header.ai_timeline")}
-        active={aiTimelineEnabled}
-        onClick={handleAiTimelineButtonClick}
-      >
-        {aiTimelineEnabled ? (
-          <i className="i-mgc-refresh-4-ai-cute-re text-purple-600 dark:text-purple-400" />
-        ) : (
-          <i className="i-mgc-refresh-4-ai-cute-re text-purple-600 dark:text-purple-400" />
-        )}
-      </ActionButton>
-    )
-  }
-
-  const renderTimelineSummaryButton = () => {
-    if (!showTimelineSummaryButton) return null
-    return (
-      <ActionButton tooltip={t("entry_list_header.timeline_summary")} onClick={summarizeTimeline}>
-        <i className="i-mgc-paint-brush-ai-cute-re text-purple-600 dark:text-purple-400" />
-      </ActionButton>
-    )
-  }
 
   return (
     <div
@@ -161,21 +119,12 @@ export const EntryListHeader: FC<{
             )}
             onClick={stopPropagation}
           >
-            {isWideMode &&
-              (showEntryHeader || showTimelineSummaryButton || showAiTimelineToggle) && (
+            {isWideMode && showEntryHeader && (
                 <>
-                  {showEntryHeader && <EntryHeader entryId={entryId} />}
-                  {(showAiTimelineToggle || showTimelineSummaryButton) && (
-                    <div className="flex items-center gap-2">
-                      {aiTimelineEnabled && renderAiTimelineButton()}
-                      {renderTimelineSummaryButton()}
-                    </div>
-                  )}
+                  <EntryHeader entryId={entryId} />
                   <DividerVertical className="mx-2 w-px" />
                 </>
               )}
-
-            {!isWideMode && aiTimelineEnabled && renderAiTimelineButton()}
 
             <AppendTaildingDivider>
               {view === FeedViewType.Pictures && <SwitchToMasonryButton />}

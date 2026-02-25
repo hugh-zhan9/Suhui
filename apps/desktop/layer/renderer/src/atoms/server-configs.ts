@@ -4,6 +4,7 @@ import PKG from "@pkg"
 import { atomWithStorage } from "jotai/utils"
 
 import { createAtomHooks } from "~/lib/jotai"
+import { isPaymentEnabledInLiteMode, LITE_MODE } from "~/lib/lite-mode"
 
 export const [, , useServerConfigs, , getServerConfigs, setServerConfigs] = createAtomHooks(
   atomWithStorage<Nullable<ExtractResponseData<GetStatusConfigsResponse>>>(
@@ -39,12 +40,18 @@ export const getIsInMASReview = () => {
 }
 
 export const useIsPaymentEnabled = () => {
+  if (LITE_MODE) {
+    return isPaymentEnabledInLiteMode()
+  }
   const serverConfigs = useServerConfigs()
   const isInMASReview = useIsInMASReview()
   return !isInMASReview && serverConfigs?.PAYMENT_ENABLED
 }
 
 export const getIsPaymentEnabled = () => {
+  if (LITE_MODE) {
+    return isPaymentEnabledInLiteMode()
+  }
   const serverConfigs = getServerConfigs()
   const isInMASReview = getIsInMASReview()
   return !isInMASReview && serverConfigs?.PAYMENT_ENABLED

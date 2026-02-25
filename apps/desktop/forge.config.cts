@@ -21,6 +21,9 @@ const platform = process.argv.find((arg) => arg.startsWith("--platform"))?.split
 const mode = process.argv.find((arg) => arg.startsWith("--mode"))?.split("=")[1]
 const isMicrosoftStore =
   process.argv.find((arg) => arg.startsWith("--ms"))?.split("=")[1] === "true"
+const isNoSignBuild = process.env.FOLO_NO_SIGN === "1"
+const enableFuses = !isNoSignBuild
+const noSignOutDir = "/tmp/folo-forge-out"
 
 const isStaging = mode === "staging"
 
@@ -36,7 +39,13 @@ const ymlMapsMap = {
   win32: "latest.yml",
 }
 
-const keepModules = new Set(["font-list", "vscode-languagedetection"])
+const keepModules = new Set([
+  "font-list",
+  "vscode-languagedetection",
+  "better-sqlite3",
+  "bindings",
+  "file-uri-to-path",
+])
 const keepLanguages = new Set(["en", "en_GB", "en-US", "en_US"])
 
 // remove folders & files not to be included in the app
@@ -96,6 +105,7 @@ const noopAfterCopy = (_buildPath, _electronVersion, _platform, _arch, callback)
 const ignorePattern = new RegExp(`^/node_modules/(?!${[...keepModules].join("|")})`)
 
 const config: ForgeConfig = {
+  ...(isNoSignBuild ? { outDir: noSignOutDir } : {}),
   packagerConfig: {
     name: isStaging ? "Folo Staging" : "Folo",
     appCategoryType: "public.app-category.news",
@@ -125,26 +135,29 @@ const config: ForgeConfig = {
     extendInfo: {
       ITSAppUsesNonExemptEncryption: false,
     },
-    osxSign: {
-      optionsForFile:
-        platform === "mas"
-          ? (filePath) => {
-              const entitlements = filePath.includes(".app/")
-                ? "build/entitlements.mas.child.plist"
-                : "build/entitlements.mas.plist"
-              return {
-                hardenedRuntime: false,
-                entitlements,
-              }
-            }
-          : () => ({
-              entitlements: "build/entitlements.mac.plist",
-            }),
-      keychain: process.env.OSX_SIGN_KEYCHAIN_PATH,
-      identity: process.env.OSX_SIGN_IDENTITY,
-      provisioningProfile: process.env.OSX_SIGN_PROVISIONING_PROFILE_PATH,
-    },
-    ...(process.env.APPLE_ID &&
+    osxSign: !isNoSignBuild
+      ? {
+          optionsForFile:
+            platform === "mas"
+              ? (filePath) => {
+                  const entitlements = filePath.includes(".app/")
+                    ? "build/entitlements.mas.child.plist"
+                    : "build/entitlements.mas.plist"
+                  return {
+                    hardenedRuntime: false,
+                    entitlements,
+                  }
+                }
+              : () => ({
+                  entitlements: "build/entitlements.mac.plist",
+                }),
+          keychain: process.env.OSX_SIGN_KEYCHAIN_PATH,
+          identity: process.env.OSX_SIGN_IDENTITY,
+          provisioningProfile: process.env.OSX_SIGN_PROVISIONING_PROFILE_PATH,
+        }
+      : undefined,
+    ...(!isNoSignBuild &&
+      process.env.APPLE_ID &&
       process.env.APPLE_PASSWORD &&
       process.env.APPLE_TEAM_ID && {
         osxNotarize: {
@@ -210,7 +223,7 @@ const config: ForgeConfig = {
       ? [
           new MakerAppX({
             publisher: "CN=7CBBEB6A-9B0E-4387-BAE3-576D0ACA279E",
-            packageDisplayName: "Folo - Follow everything in one place",
+            packageDisplayName: "FreeFolo - Follow everything in one place",
             devCert: "build/dev.pfx",
             assets: "static/appx",
             manifest: "build/appxmanifest.xml",
@@ -230,16 +243,19 @@ const config: ForgeConfig = {
         ]),
   ],
   plugins: [
-    // Fuses are used to enable/disable various Electron functionality
-    // at package time, before code signing the application
-    new FusesPlugin({
-      version: FuseVersion.V1,
-      [FuseV1Options.RunAsNode]: false,
-      [FuseV1Options.EnableNodeOptionsEnvironmentVariable]: false,
-      [FuseV1Options.EnableNodeCliInspectArguments]: false,
-      [FuseV1Options.EnableEmbeddedAsarIntegrityValidation]: true,
-      [FuseV1Options.OnlyLoadAppFromAsar]: true,
-    }),
+    ...(enableFuses
+      ? [
+          // Fuses modify Electron binary, keep them only when signing pipeline is enabled.
+          new FusesPlugin({
+            version: FuseVersion.V1,
+            [FuseV1Options.RunAsNode]: false,
+            [FuseV1Options.EnableNodeOptionsEnvironmentVariable]: false,
+            [FuseV1Options.EnableNodeCliInspectArguments]: false,
+            [FuseV1Options.EnableEmbeddedAsarIntegrityValidation]: true,
+            [FuseV1Options.OnlyLoadAppFromAsar]: true,
+          }),
+        ]
+      : []),
   ],
   publishers: [
     {

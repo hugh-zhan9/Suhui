@@ -25,11 +25,7 @@ queryClientContext.provide(queryClient)
 apiContext.provide(followApi)
 
 initializeApp().finally(() => {
-  import("./push-notification").then(({ registerWebPushNotifications }) => {
-    if (navigator.serviceWorker && WEB_BUILD) {
-      registerWebPushNotifications()
-    }
-  })
+
 
   // eslint-disable-next-line @eslint-react/dom/no-flush-sync
   flushSync(() => setAppIsReady(true))

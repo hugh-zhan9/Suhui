@@ -2,7 +2,6 @@ import { readFileSync } from "node:fs"
 import { fileURLToPath } from "node:url"
 
 import react from "@vitejs/plugin-react"
-import { codeInspectorPlugin } from "code-inspector-plugin"
 import { dirname, resolve } from "pathe"
 import { prerelease } from "semver"
 import type { UserConfig } from "vite"
@@ -35,7 +34,7 @@ export const viteRenderBaseConfig = {
     format: "es",
   },
   optimizeDeps: {
-    exclude: ["sqlocal", "wa-sqlite", "@follow-app/client-sdk"],
+    exclude: ["sqlocal", "@follow-app/client-sdk"],
   },
   resolve: {
     alias: {
@@ -63,10 +62,6 @@ export const viteRenderBaseConfig = {
       },
     },
     localesJsonPlugin(),
-    codeInspectorPlugin({
-      bundler: "vite",
-      hotKeys: ["altKey"],
-    }),
     react({
       // jsxImportSource: "@welldone-software/why-did-you-render", // <-----
     }),

@@ -4,56 +4,16 @@ import { Input, TextArea } from "@follow/components/ui/input/index.js"
 import { Label } from "@follow/components/ui/label/index.jsx"
 import { SegmentGroup, SegmentItem } from "@follow/components/ui/segment/index.jsx"
 import { Switch } from "@follow/components/ui/switch/index.jsx"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipPortal,
-  TooltipTrigger,
-} from "@follow/components/ui/tooltip/index.js"
 import { cn } from "@follow/utils/utils"
 import type { ChangeEventHandler, ReactNode } from "react"
-import { useCallback, useId, useState } from "react"
-import { useTranslation } from "react-i18next"
+import { useId, useState } from "react"
 import { titleCase } from "title-case"
 
-import { useIsPaymentEnabled } from "~/atoms/server-configs"
-
 import { SettingPaidLevels } from "./helper/setting-builder"
-import { useSetSettingTab } from "./modal/context"
 
 export const PaidBadge: Component<{
   paidLevel: SettingPaidLevels
-}> = ({ paidLevel }) => {
-  const { t } = useTranslation("settings")
-  const setTab = useSetSettingTab()
-  const isPaymentEnabled = useIsPaymentEnabled()
-
-  const handleClick = useCallback(
-    (e) => {
-      e.preventDefault()
-      setTab("plan")
-    },
-    [setTab],
-  )
-
-  if (!isPaymentEnabled) {
-    return null
-  }
-
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <i className="i-mgc-power block text-accent" onClick={handleClick} />
-      </TooltipTrigger>
-      <TooltipPortal>
-        <TooltipContent>
-          {paidLevel === SettingPaidLevels.FreeLimited && t("control.paid_badge.free_limited")}
-          {paidLevel === SettingPaidLevels.Basic && t("control.paid_badge.basic_or_higher")}
-        </TooltipContent>
-      </TooltipPortal>
-    </Tooltip>
-  )
-}
+}> = (_props) => null
 
 export const SettingCheckbox: Component<{
   label: string

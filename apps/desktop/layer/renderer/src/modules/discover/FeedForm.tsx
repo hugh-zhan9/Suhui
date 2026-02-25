@@ -13,19 +13,13 @@ import { LoadingCircle } from "@follow/components/ui/loading/index.jsx"
 import { RootPortal } from "@follow/components/ui/portal/index.js"
 import { ScrollArea } from "@follow/components/ui/scroll-area/index.js"
 import { Switch } from "@follow/components/ui/switch/index.jsx"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipPortal,
-  TooltipTrigger,
-} from "@follow/components/ui/tooltip/index.js"
-import { FeedViewType, UserRole } from "@follow/constants"
+import { FeedViewType } from "@follow/constants"
+import { entryActions } from "@follow/store/entry/store"
 import { useFeedByIdOrUrl } from "@follow/store/feed/hooks"
 import type { FeedModel } from "@follow/store/feed/types"
 import { useCategories, useSubscriptionByFeedId } from "@follow/store/subscription/hooks"
-import { subscriptionSyncService } from "@follow/store/subscription/store"
+import { subscriptionActions, subscriptionSyncService } from "@follow/store/subscription/store"
 import { whoami } from "@follow/store/user/getters"
-import { useIsLoggedIn, useUserRole } from "@follow/store/user/hooks"
 import { tracker } from "@follow/tracker"
 import { cn } from "@follow/utils/utils"
 import type { FeedAnalyticsModel, ParsedEntry } from "@follow-app/client-sdk"
@@ -37,13 +31,11 @@ import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { z } from "zod"
 
-import { useIsPaymentEnabled } from "~/atoms/server-configs"
 import { Autocomplete } from "~/components/ui/auto-completion"
 import { useCurrentModal, useIsInModal } from "~/components/ui/modal/stacked/hooks"
 import { getRouteParams } from "~/hooks/biz/useRouteParams"
 import { useI18n } from "~/hooks/common"
 import { toastFetchError } from "~/lib/error-parser"
-import { useSettingModal } from "~/modules/settings/modal/useSettingModal"
 import { feed as feedQuery, useFeedQuery } from "~/queries/feed"
 
 import { ViewSelectorRadioGroup } from "../shared/ViewSelectorRadioGroup"
@@ -58,33 +50,42 @@ const formSchema = z.object({
 })
 export type FeedFormDataValuesType = z.infer<typeof formSchema>
 
+const normalizePreviewEntries = (entries: ParsedEntry[] | undefined, fallbackFeedId: string) => {
+  return ((entries || []) as any[])
+    .map((item) => ({
+      id: item?.id ?? item?.entries?.id,
+      title: item?.title ?? item?.entries?.title,
+      url: item?.url ?? item?.entries?.url,
+      content: null,
+      readabilityContent: null,
+      description: item?.description ?? item?.entries?.description,
+      guid: item?.guid ?? item?.entries?.guid ?? item?.id ?? item?.entries?.id,
+      author: item?.author ?? item?.entries?.author ?? null,
+      authorUrl: item?.authorUrl ?? item?.entries?.authorUrl ?? null,
+      authorAvatar: item?.authorAvatar ?? item?.entries?.authorAvatar ?? null,
+      insertedAt: new Date(item?.insertedAt ?? item?.entries?.insertedAt ?? Date.now()),
+      publishedAt: new Date(item?.publishedAt ?? item?.entries?.publishedAt ?? Date.now()),
+      media: item?.media ?? item?.entries?.media ?? null,
+      categories: item?.categories ?? item?.entries?.categories ?? null,
+      attachments: item?.attachments ?? item?.entries?.attachments ?? null,
+      extra: (item?.extra ?? item?.entries?.extra)
+        ? {
+            links: (item?.extra ?? item?.entries?.extra)?.links ?? undefined,
+            title_keyword: (item?.extra ?? item?.entries?.extra)?.title_keyword ?? undefined,
+          }
+        : null,
+      language: item?.language ?? item?.entries?.language ?? null,
+      feedId: item?.feedId ?? item?.feeds?.id ?? fallbackFeedId ?? null,
+      inboxHandle: item?.feeds?.type === "inbox" ? item.feeds.id : null,
+      read: !!item?.read,
+      sources: Array.isArray(item?.from) ? item.from : null,
+      settings: item?.settings ?? null,
+    }))
+    .filter((entry) => !!entry.id && !!entry.guid)
+}
+
 export const PaidBadge = () => {
-  const { t } = useTranslation("settings")
-  const settingModalPresent = useSettingModal()
-  const isPaymentEnabled = useIsPaymentEnabled()
-
-  const handleClick = useCallback(
-    (e) => {
-      e.preventDefault()
-      settingModalPresent("plan")
-    },
-    [settingModalPresent],
-  )
-
-  if (!isPaymentEnabled) {
-    return null
-  }
-
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <i className="i-mgc-power block text-accent" onClick={handleClick} />
-      </TooltipTrigger>
-      <TooltipPortal>
-        <TooltipContent>{t("control.paid_badge.basic_or_higher")}</TooltipContent>
-      </TooltipPortal>
-    </Tooltip>
-  )
+  return null
 }
 
 export const FeedForm: Component<{
@@ -290,11 +291,35 @@ const FeedInnerForm = ({
         listId: undefined,
       } as const
 
+      // Always persist preview entries locally
+      const localEntries = normalizePreviewEntries(entries, feed.id)
+      if (localEntries.length > 0) {
+        try {
+          await entryActions.upsertMany(localEntries)
+        } catch (error) {
+          console.warn("Failed to persist preview entries:", error)
+        }
+      }
+
+      if (!userId) {
+        await subscriptionActions.upsertMany([
+          {
+            ...body,
+            type: "feed",
+            createdAt: new Date().toISOString(),
+            userId: "guest",
+            feedId: feed.id,
+            listId: null,
+            inboxId: null,
+          },
+        ])
+        return
+      }
+
       if (isSubscribed) {
         return subscriptionSyncService.edit(body)
-      } else {
-        return subscriptionSyncService.subscribe(body)
       }
+      return subscriptionSyncService.subscribe(body)
     },
     onSuccess: () => {
       const feedId = feed.id
@@ -318,8 +343,6 @@ const FeedInnerForm = ({
 
   const t = useI18n()
 
-  const isLoggedIn = useIsLoggedIn()
-
   const categories = useCategories()
 
   const suggestions = useMemo(
@@ -336,10 +359,6 @@ const FeedInnerForm = ({
   const fillDefaultTitle = useCallback(() => {
     form.setValue("title", feed.title || "")
   }, [feed.title, form])
-
-  const role = useUserRole()
-  const isPaymentEnabled = useIsPaymentEnabled()
-  const disabledForRole = role === UserRole.Free && isPaymentEnabled
 
   return (
     <div className="flex flex-1 flex-col gap-y-4">
@@ -422,7 +441,6 @@ const FeedInnerForm = ({
                       className="shrink-0"
                       checked={field.value}
                       onCheckedChange={field.onChange}
-                      disabled={disabledForRole}
                     />
                   </FormControl>
                 </div>
@@ -449,7 +467,6 @@ const FeedInnerForm = ({
                       className="shrink-0"
                       checked={field.value}
                       onCheckedChange={field.onChange}
-                      disabled={disabledForRole}
                     />
                   </FormControl>
                 </div>
@@ -479,7 +496,6 @@ const FeedInnerForm = ({
         <div className="flex items-center justify-end gap-4 pt-2">
           {isSubscribed && (
             <Button
-              disabled={!isLoggedIn}
               type="button"
               variant="ghost"
               onClick={() => {
@@ -490,7 +506,6 @@ const FeedInnerForm = ({
             </Button>
           )}
           <Button
-            disabled={!isLoggedIn}
             form="feed-form"
             type="submit"
             isLoading={followMutation.isPending}

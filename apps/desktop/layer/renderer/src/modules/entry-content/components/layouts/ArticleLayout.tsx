@@ -7,12 +7,6 @@ import { useIsInbox } from "@follow/store/inbox/hooks"
 import { cn } from "@follow/utils"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
-import {
-  AIChatPanelStyle,
-  setAIPanelVisibility,
-  useAIChatPanelStyle,
-  useAIPanelVisibility,
-} from "~/atoms/settings/ai"
 import { useUISettingKey } from "~/atoms/settings/ui"
 import { ErrorBoundary } from "~/components/common/ErrorBoundary"
 import { ShadowDOM } from "~/components/common/ShadowDOM"
@@ -20,22 +14,16 @@ import type { TocRef } from "~/components/ui/markdown/components/Toc"
 import { useInPeekModal } from "~/components/ui/modal/inspire/InPeekModal"
 import { readableContentMaxWidthClassName } from "~/constants/ui"
 import { useRenderStyle } from "~/hooks/biz/useRenderStyle"
-import type { TextSelectionEvent } from "~/lib/simple-text-selection"
-import { queueSelectedTextInsertion } from "~/modules/ai-chat/editor/plugins/selection/selectedTextBridge"
 import { EntryContentHTMLRenderer } from "~/modules/renderer/html"
 import { EntryContentMarkdownRenderer } from "~/modules/renderer/markdown"
 import { WrappedElementProvider } from "~/providers/wrapped-element-provider"
 
 import { useEntryContent, useEntryMediaInfo } from "../../hooks"
-import { AISummary } from "../AISummary"
 import { ContainerToc } from "../entry-content/accessories/ContainerToc"
 import { EntryRenderError } from "../entry-content/EntryRenderError"
 import { ReadabilityNotice } from "../entry-content/ReadabilityNotice"
 import { EntryAttachments } from "../EntryAttachments"
 import { EntryTitle } from "../EntryTitle"
-import { TextSelectionToolbar } from "../selection/TextSelectionToolbar"
-import { MediaTranscript, TranscriptToggle, useTranscription } from "./shared"
-import { ArticleAudioPlayer } from "./shared/AudioPlayer"
 import type { EntryLayoutProps } from "./types"
 
 export const ArticleLayout: React.FC<EntryLayoutProps> = ({
@@ -48,52 +36,11 @@ export const ArticleLayout: React.FC<EntryLayoutProps> = ({
     feedId: state.feedId,
     inboxId: state.inboxHandle,
   }))
-  const { data: transcriptionData } = useTranscription(entryId)
-
   const feed = useFeedById(entry?.feedId)
   const isInbox = useIsInbox(entry?.inboxId)
-  const [showTranscript, setShowTranscript] = useState(false)
-  const [textSelection, setTextSelection] = useState<TextSelectionEvent | null>(null)
 
   const { content } = useEntryContent(entryId)
   const customCSS = useUISettingKey("customCSS")
-
-  const handleTextSelect = useCallback((event: TextSelectionEvent) => {
-    setTextSelection(event)
-  }, [])
-  const handleSelectionClear = useCallback(() => {
-    setTextSelection(null)
-  }, [])
-
-  const aiChatPanelStyle = useAIChatPanelStyle()
-  const isAIPanelVisible = useAIPanelVisibility()
-
-  const shouldShowAISummary = aiChatPanelStyle === AIChatPanelStyle.Floating || !isAIPanelVisible
-
-  const handleAskAI = useCallback(
-    (selectionEvent?: TextSelectionEvent) => {
-      const pendingSelection = selectionEvent ?? textSelection
-      if (!pendingSelection?.selectedText) return
-
-      queueSelectedTextInsertion({
-        text: pendingSelection.selectedText,
-        sourceEntryId: entryId,
-        timestamp: pendingSelection.timestamp,
-      })
-      setAIPanelVisibility(true)
-      handleSelectionClear()
-    },
-    [entryId, handleSelectionClear, textSelection],
-  )
-
-  useEffect(() => {
-    if (!showTranscript) return
-    handleSelectionClear()
-  }, [showTranscript, handleSelectionClear])
-
-  useEffect(() => {
-    handleSelectionClear()
-  }, [entryId, handleSelectionClear])
 
   if (!entry) return null
 
@@ -101,55 +48,24 @@ export const ArticleLayout: React.FC<EntryLayoutProps> = ({
     <div className={cn(readableContentMaxWidthClassName, "mx-auto mt-1 px-4")}>
       <EntryTitle entryId={entryId} compact={compact} containerClassName="mt-12" />
 
-      <ArticleAudioPlayer entryId={entryId} />
-
-      {/* Content Type Toggle */}
-      <TranscriptToggle
-        showTranscript={showTranscript}
-        onToggle={setShowTranscript}
-        hasTranscript={!!transcriptionData}
-      />
-
       <WrappedElementProvider boundingDetection>
         <div className="mx-auto mb-32 mt-6 max-w-full cursor-auto text-[0.94rem]">
-          {shouldShowAISummary && <AISummary entryId={entryId} />}
           <ErrorBoundary fallback={EntryRenderError}>
             <ReadabilityNotice entryId={entryId} />
-            {showTranscript ? (
-              <MediaTranscript
-                className="prose !max-w-full dark:prose-invert"
-                srt={transcriptionData}
-                entryId={entryId}
-                type="transcription"
-              />
-            ) : (
-              <ShadowDOM
-                injectHostStyles={!isInbox}
-                textSelectionEnabled
-                onTextSelect={handleTextSelect}
-                onSelectionClear={handleSelectionClear}
-              >
-                {!!customCSS && <MemoedDangerousHTMLStyle>{customCSS}</MemoedDangerousHTMLStyle>}
+            <ShadowDOM injectHostStyles={!isInbox}>
+              {!!customCSS && <MemoedDangerousHTMLStyle>{customCSS}</MemoedDangerousHTMLStyle>}
 
-                <Renderer
-                  entryId={entryId}
-                  view={FeedViewType.Articles}
-                  feedId={feed?.id || ""}
-                  noMedia={noMedia}
-                  content={content}
-                  translation={translation}
-                />
-              </ShadowDOM>
-            )}
+              <Renderer
+                entryId={entryId}
+                view={FeedViewType.Articles}
+                feedId={feed?.id || ""}
+                noMedia={noMedia}
+                content={content}
+                translation={translation}
+              />
+            </ShadowDOM>
           </ErrorBoundary>
         </div>
-
-        <TextSelectionToolbar
-          selection={textSelection}
-          onRequestClose={handleSelectionClear}
-          onAskAI={handleAskAI}
-          entryId={entryId}
-        />
       </WrappedElementProvider>
 
       <EntryAttachments entryId={entryId} />
@@ -167,9 +83,6 @@ const Renderer: React.FC<{
     content?: string
     title?: string
   }
-  onTextSelect?: (event: TextSelectionEvent) => void
-  onSelectionClear?: (entryId: string) => void
-  textSelectionEnabled?: boolean
 }> = ({ entryId, view, feedId, noMedia = false, content = "", translation }) => {
   const mediaInfo = useEntryMediaInfo(entryId)
   const isMarkdownEntry = useMemo(() => {

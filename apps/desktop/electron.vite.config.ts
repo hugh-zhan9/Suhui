@@ -2,6 +2,7 @@ import { defineConfig } from "electron-vite"
 import { resolve } from "pathe"
 
 import { getGitHash } from "../../scripts/lib"
+import { createPlatformSpecificImportPlugin } from "./plugins/vite/specific-import"
 import rendererConfig from "./configs/vite.electron-render.config"
 
 export default defineConfig({
@@ -10,6 +11,9 @@ export default defineConfig({
       outDir: "dist/main",
       lib: {
         entry: "./layer/main/src/index.ts",
+      },
+      rollupOptions: {
+        external: ["bufferutil", "utf-8-validate", "better-sqlite3"],
       },
     },
     resolve: {
@@ -25,6 +29,23 @@ export default defineConfig({
       ELECTRON: "true",
       GIT_COMMIT_HASH: JSON.stringify(getGitHash()),
     },
+    plugins: [
+      createPlatformSpecificImportPlugin("main"),
+      {
+        name: "import-sql",
+        transform(code, id) {
+          if (id.endsWith(".sql")) {
+            const json = JSON.stringify(code)
+              .replaceAll("\u2028", "\\u2028")
+              .replaceAll("\u2029", "\\u2029")
+
+            return {
+              code: `export default ${json}`,
+            }
+          }
+        },
+      },
+    ],
   },
   preload: {
     build: {

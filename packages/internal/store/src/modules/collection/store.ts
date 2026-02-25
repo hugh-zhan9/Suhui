@@ -5,8 +5,7 @@ import { CollectionService } from "@follow/database/services/collection"
 import { api } from "../../context"
 import type { Hydratable, Resetable } from "../../lib/base"
 import { createTransaction, createZustandStore } from "../../lib/helper"
-import { getEntry } from "../entry/getter"
-import { invalidateEntriesQuery } from "../entry/hooks"
+
 
 interface CollectionState {
   collections: Record<string, CollectionSchema>
@@ -33,6 +32,7 @@ class CollectionSyncService {
     view: FeedViewType
     invalidate?: boolean
   }) {
+    const { getEntry } = await import("../entry/getter")
     const entry = getEntry(entryId)
     if (!entry) {
       return
@@ -61,6 +61,7 @@ class CollectionSyncService {
     await tx.run()
 
     if (invalidate) {
+      const { invalidateEntriesQuery } = await import("../entry/hooks")
       invalidateEntriesQuery({ collection: true })
     }
   }
@@ -85,7 +86,10 @@ class CollectionSyncService {
 
     await tx.run()
 
-    if (invalidate) invalidateEntriesQuery({ collection: true })
+    if (invalidate) {
+      const { invalidateEntriesQuery } = await import("../entry/hooks")
+      invalidateEntriesQuery({ collection: true })
+    }
   }
 }
 

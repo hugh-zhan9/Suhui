@@ -1,12 +1,6 @@
-import type { FirebaseAnalyticsTypes } from "@react-native-firebase/analytics"
-import type { PostHog } from "posthog-js"
-import type PostHogReactNative from "posthog-react-native"
-
-import { FirebaseAdapter, OpenPanelAdapter, PostHogAdapter } from "./adapters"
 import { ProxyAdapter } from "./adapters/proxy"
 import type { TrackerMapper } from "./enums"
 import { TrackerManager } from "./manager"
-import type { OpenPanel } from "./op"
 import type { Optional, Tracker } from "./types"
 
 class TrackManager extends TrackerManager {
@@ -39,22 +33,11 @@ class TrackManager extends TrackerManager {
     }
   }
 
-  setOpenPanelTracker(op: Optional<OpenPanel, "setHeaders">) {
-    const adapter = new OpenPanelAdapter({ instance: op })
-    this.addAdapter(adapter)
-  }
+  setOpenPanelTracker(op: any) {}
 
-  setFirebaseTracker(
-    tracker: Pick<FirebaseAnalyticsTypes.Module, "logEvent" | "setUserId" | "setUserProperties">,
-  ) {
-    const adapter = new FirebaseAdapter({ instance: tracker })
-    this.addAdapter(adapter)
-  }
+  setFirebaseTracker(tracker: any) {}
 
-  setPostHogTracker(posthog: PostHog | PostHogReactNative) {
-    const adapter = new PostHogAdapter({ instance: posthog })
-    this.addAdapter(adapter)
-  }
+  setPostHogTracker(posthog: any) {}
 
   setProxyTracker(config: {
     enabled: boolean

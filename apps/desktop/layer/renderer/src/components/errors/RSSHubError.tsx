@@ -14,7 +14,7 @@ const RSSHubErrorFallback: FC<AppErrorFallbackProps> = (props) => {
       <div className="m-auto max-w-prose text-center">
         <p className="center my-3 gap-2 font-bold">
           <i className="i-mgc-bug-cute-re text-red-500" />
-          RSSHub has a temporary problem, please contact the our team.
+          RSSHub service is unavailable in lite mode.
         </p>
         <div className="text-lg">{message}</div>
         {import.meta.env.DEV && stack ? (

@@ -2,7 +2,7 @@ import type { FeedViewType } from "@follow/constants"
 
 import { createSingleArgGetter, createStaticGetter } from "../../lib/helper"
 import { getSubscriptionByEntryId } from "../subscription/getter"
-import { useEntryStore } from "./store"
+import { useEntryStore } from "./base"
 
 export const getEntry = (id: string) => {
   return useEntryStore.getState().data[id]
@@ -30,6 +30,8 @@ export const getEntryIdsByViewSelector =
     if (!ids) return null
     return Array.from(ids)
       .filter((id) => {
+        // dynamic import to break circular dependency
+        const { getSubscriptionByEntryId } = require("../subscription/getter")
         const subscription = getSubscriptionByEntryId(id)
         if ((excludePrivate && subscription?.isPrivate) || subscription?.hideFromTimeline) {
           return false

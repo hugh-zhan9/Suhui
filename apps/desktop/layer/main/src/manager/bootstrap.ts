@@ -11,6 +11,7 @@ import { app, BrowserWindow, net, protocol, session } from "electron"
 import { join } from "pathe"
 
 import { WindowManager } from "~/manager/window"
+import { DBManager } from "~/manager/db"
 
 import { isMacOS } from "../env"
 import { migrateAuthCookiesToNewApiDomain } from "../lib/auth-cookie-migration"
@@ -30,7 +31,8 @@ const buildSafeHeaders = createBuildSafeHeaders(env.VITE_WEB_URL, [
 ])
 
 export class BootstrapManager {
-  public static start() {
+  public static async start() {
+    await DBManager.init()
     AppManager.init()
 
     const gotTheLock = app.requestSingleInstanceLock()
@@ -86,32 +88,6 @@ export class BootstrapManager {
         currentApiURL: env.VITE_API_URL,
       })
 
-      // Bypass CORS for PostHog analytics
-      session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
-        const url = new URL(details.url)
-
-        if (url.hostname === "us.i.posthog.com") {
-          const responseHeaders = details.responseHeaders || {}
-
-          responseHeaders["access-control-allow-origin"] = ["*"]
-          responseHeaders["access-control-allow-methods"] = [
-            "GET",
-            "POST",
-            "PUT",
-            "DELETE",
-            "OPTIONS",
-          ]
-          responseHeaders["access-control-allow-headers"] = ["*"]
-          responseHeaders["access-control-allow-credentials"] = ["true"]
-
-          callback({
-            cancel: false,
-            responseHeaders,
-          })
-        } else {
-          callback({ cancel: false })
-        }
-      })
 
       WindowManager.getMainWindowOrCreate()
 

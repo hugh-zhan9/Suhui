@@ -144,121 +144,19 @@ class SettingSyncQueue {
   }
 
   private async flush() {
-    if (navigator.onLine === false) {
-      return
-    }
-
-    const groupedTab = {} as Record<SettingSyncTab, any>
-
-    const referenceMap = {} as Record<SettingSyncTab, Set<SettingSyncQueueItem>>
-    for (const item of this.queue) {
-      if (!groupedTab[item.tab]) {
-        groupedTab[item.tab] = {}
-      }
-
-      referenceMap[item.tab] ||= new Set()
-      referenceMap[item.tab].add(item)
-
-      groupedTab[item.tab] = {
-        ...groupedTab[item.tab],
-        ...item.payload,
-      }
-    }
-
-    const promises = [] as Promise<any>[]
-    for (const tab in groupedTab) {
-      const json = omit(groupedTab[tab], omitKeys, settingWhiteListMap[tab])
-
-      if (isEmptyObject(json)) {
-        continue
-      }
-
-      const promise = followClient.api.settings
-        .update({
-          tab: tab as SettingsTab,
-          ...json,
-        })
-        .then(() => {
-          // remove from queue
-          for (const item of referenceMap[tab]) {
-            const index = this.queue.indexOf(item)
-            if (index !== -1) {
-              this.queue.splice(index, 1)
-            }
-          }
-        })
-      // TODO rollback or retry
-      promises.push(promise)
-    }
-
-    await Promise.all(promises)
+    // [Local Mode] No remote settings sync needed
+    // Clear the queue since settings are stored locally only
+    this.queue = []
   }
 
-  replaceRemote(tab?: SettingSyncTab) {
-    if (!tab) {
-      const promises = [] as Promise<any>[]
-      for (const tab in localSettingGetterMap) {
-        const payload = localSettingGetterMap[tab]()
-
-        const promise = followClient.api.settings.update({
-          tab: tab as SettingsTab,
-          ...payload,
-        })
-
-        promises.push(promise)
-      }
-
-      this.chain = this.chain.finally(() => Promise.all(promises))
-      return this.chain
-    } else {
-      const payload = localSettingGetterMap[tab]()
-
-      this.chain = this.chain.finally(() =>
-        followClient.api.settings.update({
-          tab: tab as SettingsTab,
-          ...payload,
-        }),
-      )
-
-      return this.chain
-    }
+  replaceRemote(_tab?: SettingSyncTab) {
+    // [Local Mode] No remote settings sync needed
+    return Promise.resolve()
   }
 
   async syncLocal() {
-    const remoteSettings = await settings.get().prefetch()
-
-    if (!remoteSettings) return
-
-    if (isEmptyObject(remoteSettings.settings)) return
-
-    for (const tab in remoteSettings.settings) {
-      const remoteSettingPayload = remoteSettings.settings[tab]
-      const updated = remoteSettings.updated[tab]
-
-      if (!updated) {
-        continue
-      }
-
-      const remoteUpdatedDate = new Date(updated).getTime()
-
-      const localSettings = localSettingGetterMap[tab]()
-      const localSettingsUpdated = localSettings.updated
-
-      if (!localSettingsUpdated || remoteUpdatedDate > localSettingsUpdated) {
-        // Use remote and update local
-        const nextPayload = omit(remoteSettingPayload, omitKeys, settingWhiteListMap[tab])
-
-        if (isEmptyObject(nextPayload)) {
-          continue
-        }
-
-        const setter = localSettingSetterMap[tab]
-
-        nextPayload.updated = remoteUpdatedDate
-
-        setter(nextPayload)
-      }
-    }
+    // [Local Mode] No remote settings to sync from
+    // Settings are stored locally only
   }
 }
 

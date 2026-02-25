@@ -14,6 +14,7 @@
   "scripts": {
     "analyze:web": "cross-env analyzer=1 WEB_BUILD=1 vite build",
     "build:electron": "electron-vite build && electron-forge make",
+    "build:electron:unsigned": "FOLO_NO_SIGN=1 electron-vite build && FOLO_NO_SIGN=1 electron-forge make",
     "build:electron-forge": "electron-forge make",
     "build:electron-forge:macos": "electron-forge make --arch=x64 --platform=darwin && electron-forge make --arch=arm64 --platform=darwin && tsx scripts/merge-yml.ts",
     "build:electron-forge:mas": "electron-forge make --arch=universal --platform=mas",
@@ -24,15 +25,24 @@
     "bump": "vv --minor",
     "dedupe:locales": "eslint --fix locales/**/*.json",
     "depcheck": "npx depcheck --quiet",
-    "dev": "turbo run @follow/web#dev @follow/ssr#dev",
+    "dev": "turbo run @follow/web#dev",
     "dev:debug": "export DEBUG=true && vite --debug",
     "dev:electron": "electron-vite dev",
-    "dev:server": "pnpm run --filter=ssr dev",
     "dev:web": "cross-env WEB_BUILD=1 vite",
     "hotfix": "vv -c bump.hotfix.config.js --patch",
     "publish": "electron-vite build && electron-forge publish",
     "start": "electron-vite preview",
     "update:main-hash": "tsx plugins/vite/generate-main-hash.ts"
+  },
+  "dependencies": {
+    "@protobufjs/aspromise": "1.1.2",
+    "@protobufjs/eventemitter": "1.1.0",
+    "@protobufjs/fetch": "1.1.0",
+    "@protobufjs/float": "1.0.2",
+    "@protobufjs/inquire": "1.1.0",
+    "@protobufjs/path": "1.1.2",
+    "@protobufjs/pool": "1.1.0",
+    "@protobufjs/utf8": "1.1.0"
   },
   "devDependencies": {
     "@electron-forge/cli": "7.11.1",
@@ -54,7 +64,6 @@
     "@pengx17/electron-forge-maker-appimage": "1.2.1",
     "@types/html-minifier-terser": "7.0.2",
     "@types/js-yaml": "4.0.9",
-    "@vitejs/plugin-legacy": "7.2.1",
     "@vitejs/plugin-react": "5.1.4",
     "async-es": "3.2.6",
     "autoprefixer": "10.4.24",

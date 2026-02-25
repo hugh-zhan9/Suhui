@@ -104,32 +104,120 @@ type FeedQueryParams = {
 class FeedSyncServices {
   async fetchFeedById({ id, url }: FeedQueryParams) {
     const isFeedId = isBizId(id)
+
+    // If we have a feed by id in the store, return it directly
+    if (isFeedId) {
+      const existing = get().feeds[id!]
+      if (existing) {
+        return {
+          feed: existing,
+          entries: [],
+          subscription: undefined,
+          analytics: undefined,
+        }
+      }
+    }
+
     if (!url && !isFeedId) {
       return null
     }
 
-    const res = await api().feeds.get({
-      id,
-      url,
-    })
+    // [Local Mode] Fetch RSS via local proxy and parse with DOMParser
+    const feedUrl = url || ""
+    const proxyUrl = `/api/rss-proxy?url=${encodeURIComponent(feedUrl)}`
+    const response = await fetch(proxyUrl)
+    if (!response.ok) {
+      throw new Error(`Failed to fetch feed: ${response.status}`)
+    }
+    const xmlText = await response.text()
+    const parser = new DOMParser()
+    const xml = parser.parseFromString(xmlText, "text/xml")
+
+    // Parse RSS or Atom
+    const channel = xml.querySelector("rss > channel")
+    const atomFeed = xml.querySelector("feed")
+    const feedTitle =
+      channel?.querySelector("title")?.textContent?.trim() ||
+      atomFeed?.querySelector("title")?.textContent?.trim() ||
+      "Untitled Feed"
+    const siteUrl =
+      channel?.querySelector("link")?.textContent?.trim() ||
+      atomFeed?.querySelector("link[rel='alternate']")?.getAttribute("href") ||
+      ""
+    const description =
+      channel?.querySelector("description")?.textContent?.trim() ||
+      atomFeed?.querySelector("subtitle")?.textContent?.trim() ||
+      ""
 
     const nonce = Math.random().toString(36).slice(2, 15)
+    const feedId = id && isFeedId ? id : nonce
 
-    const finalData = {
-      ...res.data.feed,
-      updatesPerWeek: res.data.analytics?.updatesPerWeek,
-      subscriptionCount: res.data.analytics?.subscriptionCount,
-      latestEntryPublishedAt: res.data.analytics?.latestEntryPublishedAt,
-    } as FeedModel
-    if (!finalData.id) {
-      finalData["nonce"] = nonce
+    const finalData: FeedModel = {
+      type: "feed",
+      id: feedId,
+      title: feedTitle,
+      url: feedUrl,
+      description: description || null,
+      image: null,
+      errorAt: null,
+      siteUrl: siteUrl || null,
+      ownerUserId: null,
+      errorMessage: null,
+      subscriptionCount: null,
+      updatesPerWeek: null,
+      latestEntryPublishedAt: null,
+      tipUserIds: null,
+      updatedAt: null,
+    }
+    if (!id || !isFeedId) {
+      ;(finalData as any)["nonce"] = nonce
     }
     feedActions.upsertMany([finalData])
 
-    const feed = !finalData.id ? { ...finalData, id: nonce } : finalData
+    // Parse entries for preview
+    const itemEls = channel
+      ? Array.from(channel.querySelectorAll("item"))
+      : Array.from(atomFeed?.querySelectorAll("entry") || [])
+    const entries = itemEls.slice(0, 10).map((el) => {
+      const entryId = Math.random().toString(36).slice(2, 15)
+      const entryTitle =
+        el.querySelector("title")?.textContent?.trim() || "Untitled"
+      const entryLink =
+        el.querySelector("link")?.textContent?.trim() ||
+        el.querySelector("link")?.getAttribute("href") ||
+        ""
+      const entryDesc =
+        el.querySelector("description")?.textContent?.trim() ||
+        el.querySelector("summary")?.textContent?.trim() ||
+        el.querySelector("content")?.textContent?.trim() ||
+        ""
+      const pubDateRaw =
+        el.querySelector("pubDate")?.textContent?.trim() ||
+        el.querySelector("published")?.textContent?.trim() ||
+        el.querySelector("updated")?.textContent?.trim() ||
+        ""
+      const pubDate = pubDateRaw ? new Date(pubDateRaw) : new Date()
+      return {
+        id: entryId,
+        title: entryTitle,
+        url: entryLink,
+        description: entryDesc,
+        guid: el.querySelector("guid")?.textContent?.trim() || entryId,
+        publishedAt: pubDate.toISOString(),
+        feedId,
+      }
+    })
+
     return {
-      ...res.data,
-      ...feed,
+      feed: finalData,
+      entries,
+      subscription: undefined,
+      analytics: {
+        updatesPerWeek: null,
+        subscriptionCount: null,
+        latestEntryPublishedAt: entries[0]?.publishedAt || null,
+        view: 1,
+      },
     }
   }
 

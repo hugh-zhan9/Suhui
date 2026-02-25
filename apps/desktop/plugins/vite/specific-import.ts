@@ -1,6 +1,6 @@
 import type { Plugin } from "vite"
 
-type Platform = "electron" | "web"
+type Platform = "electron" | "web" | "main"
 export function createPlatformSpecificImportPlugin(platform: Platform): Plugin {
   return {
     name: "platform-specific-import",
@@ -29,6 +29,18 @@ export function createPlatformSpecificImportPlugin(platform: Platform): Plugin {
               ".electron.js",
               ".electron.jsx",
               ...sharedExts,
+              ...allowExts,
+            ]
+
+            break
+          }
+          case "main": {
+            priorities = [
+              ".main",
+              ".main.ts",
+              ".main.tsx",
+              ".main.js",
+              ".main.jsx",
               ...allowExts,
             ]
 

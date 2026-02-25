@@ -1,15 +1,12 @@
 import { AutoResizeHeight } from "@follow/components/ui/auto-resize-height/index.js"
 import { MotionButtonBase } from "@follow/components/ui/button/index.js"
 import { cn } from "@follow/utils/utils"
-import { FollowAPIError } from "@follow-app/client-sdk"
 import type { ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 
-import { useIsPaymentEnabled } from "~/atoms/server-configs"
 import { CopyButton } from "~/components/ui/button/CopyButton"
 import { Markdown } from "~/components/ui/markdown/Markdown"
 import { useFeature } from "~/hooks/biz/useFeature"
-import { useSettingModal } from "~/modules/settings/modal/useSettingModal"
 
 interface AISummaryCardBaseProps {
   /** Summary content to display */
@@ -44,49 +41,7 @@ const DefaultLoadingState = () => (
   </div>
 )
 
-const DefaultEmptyState = ({
-  message,
-  shouldSuggestUpgrade,
-}: {
-  message: string
-  shouldSuggestUpgrade?: boolean
-}) => {
-  const settingModalPresent = useSettingModal()
-  const { t } = useTranslation("app")
-
-  if (shouldSuggestUpgrade) {
-    return (
-      <button
-        type="button"
-        onClick={() => settingModalPresent("plan")}
-        className="group/upgrade relative flex items-start gap-3 text-left"
-      >
-        {/* Icon with glow */}
-        <div className="relative flex-shrink-0">
-          <div className="center relative size-9 rounded-lg bg-gradient-to-br from-purple-500 to-blue-500">
-            <i className="i-mgc-power-mono text-xl text-white" />
-          </div>
-        </div>
-
-        <div className="flex-1 space-y-2">
-          {/* Title */}
-          <h3 className="text-sm font-medium leading-snug text-text">{message}</h3>
-
-          {/* Description */}
-          <p className="text-xs leading-relaxed text-text-tertiary">
-            {t("ai.summary_upgrade_required_description")}
-          </p>
-
-          {/* CTA */}
-          <div className="flex items-center gap-1 text-xs font-medium text-purple-600 dark:text-purple-400">
-            <span>{t("ai.summary_upgrade_view_plans")}</span>
-            <i className="i-mgc-right-cute-re text-sm" />
-          </div>
-        </div>
-      </button>
-    )
-  }
-
+const DefaultEmptyState = ({ message }: { message: string }) => {
   return (
     <div className="text-center">
       <p className="text-sm text-text-secondary">{message}</p>
@@ -105,14 +60,11 @@ export const AISummaryCardBase: React.FC<AISummaryCardBaseProps> = ({
   showCopyButton = true,
   showAskAIButton = false,
   onAskAI,
-  error,
 }) => {
   const { t } = useTranslation("app")
   const aiEnabled = useFeature("ai")
 
   const hasContent = !isLoading && content
-  const shouldSuggestUpgrade =
-    useIsPaymentEnabled() && error instanceof FollowAPIError ? error.status === 402 : undefined
 
   return (
     <div
@@ -219,11 +171,6 @@ export const AISummaryCardBase: React.FC<AISummaryCardBaseProps> = ({
           loadingComponent || <DefaultLoadingState />
         ) : hasContent ? (
           <Markdown className="prose-sm max-w-none prose-p:m-0">{String(content)}</Markdown>
-        ) : shouldSuggestUpgrade ? (
-          <DefaultEmptyState
-            message={t("ai.summary_upgrade_required_title")}
-            shouldSuggestUpgrade
-          />
         ) : (
           <DefaultEmptyState message={t("ai.summary_not_available")} />
         )}

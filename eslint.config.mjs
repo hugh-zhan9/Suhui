@@ -1,7 +1,5 @@
 // @ts-check
-import { fixupPluginRules } from "@eslint/compat"
 import { defineConfig } from "eslint-config-hyoban"
-import reactNative from "eslint-plugin-react-native"
 import path from "pathe"
 
 import checkI18nJson from "./plugins/eslint/eslint-check-i18n-json.js"
@@ -15,10 +13,6 @@ export default defineConfig(
     lessOpinionated: true,
     ignores: [
       "resources/**",
-      "apps/mobile/android/**",
-      "apps/mobile/ios/**",
-      "apps/mobile/.expo",
-      "apps/mobile/native/build/**",
       "**/generated-routes.ts",
     ],
     preferESM: false,
@@ -81,22 +75,7 @@ export default defineConfig(
       },
     },
   },
-  {
-    files: ["apps/ssr/**/*"],
-    settings: {
-      tailwindcss: {
-        config: path.join(import.meta.dirname, "apps/ssr/tailwind.config.ts"),
-      },
-    },
-  },
-  {
-    files: ["apps/mobile/**/*"],
-    settings: {
-      tailwindcss: {
-        config: path.join(import.meta.dirname, "apps/mobile/tailwind.config.ts"),
-      },
-    },
-  },
+
   {
     files: ["**/*.tsx"],
     rules: {
@@ -142,16 +121,6 @@ export default defineConfig(
           ],
         },
       ],
-    },
-  },
-  {
-    plugins: {
-      // @ts-expect-error
-      "react-native": fixupPluginRules(reactNative),
-    },
-    files: ["apps/mobile/**/*"],
-    rules: {
-      "react-native/no-inline-styles": "warn",
     },
   },
 )

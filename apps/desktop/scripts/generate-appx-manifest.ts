@@ -69,8 +69,8 @@ async function main() {
     const config: AppXManifestConfig = {
       packageName: "Folo",
       packageDisplayName: isStaging
-        ? "Folo Staging - Follow everything in one place"
-        : "Folo - Follow everything in one place",
+        ? "FreeFolo Staging - Follow everything in one place"
+        : "FreeFolo - Follow everything in one place",
       publisherDisplayName: "Natural Selection Labs",
       identityName: "NaturalSelectionLabs.Follow-Yourfavoritesinoneinbo",
       version: appxVersion,

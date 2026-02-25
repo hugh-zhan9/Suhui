@@ -32,14 +32,8 @@ const set = useUnreadStore.setState
 
 class UnreadSyncService {
   async resetFromRemote() {
-    const res = await api().reads.get({})
-
-    if (isEqual(res.data, get().data)) {
-      return res.data
-    }
-
-    await unreadActions.upsertMany(res.data, { reset: true })
-    return res.data
+    // [Local Mode] No remote reads API, return current local state
+    return get().data
   }
 
   private async updateUnreadStatus({
@@ -126,18 +120,9 @@ class UnreadSyncService {
     excludePrivate: boolean
   }) {
     const request = async () => {
-      const args: MarkAllAsReadRequest = {
-        view: view === FeedViewType.All ? undefined : view,
-        excludePrivate,
-        ...filter,
-        ...time,
-      }
-      if (view === FeedViewType.All) {
-        delete args.view
-      }
-      const res = await api().reads.markAllAsRead(args)
-
-      return res.data.read
+      // [Local Mode] No remote API call for mark-all-as-read
+      // Return empty object as the store/persist layers handle state locally
+      return {} as UnreadStoreModel
     }
 
     if (filter?.feedIdList) {
@@ -210,11 +195,8 @@ class UnreadSyncService {
     })
 
     tx.request(async () => {
-      if (read) {
-        await api().reads.markAsRead({ entryIds: [entryId], isInbox })
-      } else {
-        await api().reads.markAsUnread({ entryId, isInbox })
-      }
+      // [Local Mode] No remote API call for read/unread status
+      // The store and persist layers handle state locally
     })
 
     tx.rollback(() => {

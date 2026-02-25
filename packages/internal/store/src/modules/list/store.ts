@@ -7,7 +7,6 @@ import { createImmerSetter, createTransaction, createZustandStore } from "../../
 import { apiMorph } from "../../morph/api"
 import { storeDbMorph } from "../../morph/store-db"
 import { feedActions } from "../feed/store"
-import { subscriptionActions, subscriptionSyncService } from "../subscription/store"
 import type { CreateListModel, ListModel } from "./types"
 
 type ListId = string
@@ -102,6 +101,7 @@ class ListSyncServices {
       fee: 0,
     })
     await listActions.upsertMany([apiMorph.toList(res.data)])
+    const { subscriptionActions } = await import("../subscription/store")
     await subscriptionActions.upsertMany([
       {
         isPrivate: false,
@@ -144,6 +144,7 @@ class ListSyncServices {
 
     tx.persist(async () => {
       if (params.list.view === snapshot.view) return
+      const { subscriptionSyncService } = await import("../subscription/store")
       await subscriptionSyncService.changeListView({
         listId: params.listId,
         view: params.list.view,
@@ -171,6 +172,7 @@ class ListSyncServices {
     })
 
     tx.request(async () => {
+      const { subscriptionSyncService } = await import("../subscription/store")
       await subscriptionSyncService.unsubscribe([listId])
       await api().lists.delete({ listId })
     })

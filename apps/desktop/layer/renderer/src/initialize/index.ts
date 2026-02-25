@@ -7,7 +7,6 @@ import { repository } from "@pkg"
 import { enableMapSet } from "immer"
 
 import { initI18n } from "~/i18n"
-import { hydrateSessionsFromLocalDb } from "~/modules/ai-chat-session"
 import { settingSyncQueue } from "~/modules/settings/helper/sync-queue"
 import { ElectronCloseEvent, ElectronShowEvent } from "~/providers/invalidate-query-provider"
 
@@ -55,7 +54,6 @@ export const initializeApp = async () => {
   initializeDayjs()
   registerHistoryStack()
 
-  hydrateSessionsFromLocalDb()
   // Set Environment
   document.documentElement.dataset.buildType = ELECTRON_BUILD ? "electron" : "web"
 

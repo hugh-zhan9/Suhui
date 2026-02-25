@@ -66,40 +66,42 @@ class UserSyncService {
   })
 
   async whoami() {
-    const res = await api()
-      .auth.getSession()
-      .catch((err) => {
-        if (err?.message.includes("Failed to fetch")) {
-          throw err
-        }
-        return null
-      })
+    const defaultUser = {
+      id: "local_user_id",
+      name: "Local User",
+      email: "local@folo.is",
+      emailVerified: true,
+      image: "",
+      createdAt: new Date().toISOString() as any,
+      updatedAt: new Date().toISOString() as any,
+      role: UserRole.Pro,
+      roleEndAt: null,
+    } as unknown as AuthUser
 
-    if (!res) {
-      immerSet((state) => {
-        state.whoami = null
-        state.role = null
-        state.roleEndAt = null
-        state.rsshubSubscriptionLimit = null
-        state.feedSubscriptionLimit = null
-      })
-      return null
+    const res = {
+      session: {
+        id: "local_session_id",
+        userId: "local_user_id",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
+      },
+      user: defaultUser,
+      rsshubSubscriptionLimit: 9999,
+      feedSubscriptionLimit: 9999,
     }
 
-    if (!res.user) return res
     const user = apiMorph.toWhoami(res.user)
     immerSet((state) => {
       state.whoami = { ...user, emailVerified: res.user?.emailVerified ?? false }
       state.role = res.user?.role as UserRole | null
-      if (res.user?.roleEndAt) {
-        state.roleEndAt = new Date(res.user?.roleEndAt)
-      }
+      state.roleEndAt = null
       state.rsshubSubscriptionLimit = res.rsshubSubscriptionLimit ?? null
       state.feedSubscriptionLimit = res.feedSubscriptionLimit ?? null
     })
     userActions.upsertMany([user])
 
-    return res
+    return res as any
   }
 
   async updateProfile(data: Partial<UserProfileEditable>) {

@@ -2,7 +2,6 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { fileURLToPath } from "node:url"
 
 import type { env as EnvType } from "@follow/shared/env.desktop"
-import legacy from "@vitejs/plugin-legacy"
 import { minify as htmlMinify } from "html-minifier-terser"
 import { cyan, dim, green } from "kolorist"
 import { parseHTML } from "linkedom/worker"
@@ -84,6 +83,44 @@ const proxyConfig = {
   },
 }
 
+// Vite plugin: RSS proxy middleware for local-first development (bypass CORS)
+function rssProxyPlugin(): PluginOption {
+  return {
+    name: "rss-proxy",
+    configureServer(server: ViteDevServer) {
+      server.middlewares.use(async (req, res, next) => {
+        if (!req.url?.startsWith("/api/rss-proxy")) return next()
+
+        const urlObj = new URL(req.url, "http://localhost")
+        const feedUrl = urlObj.searchParams.get("url")
+        if (!feedUrl) {
+          res.statusCode = 400
+          res.end(JSON.stringify({ error: "Missing url parameter" }))
+          return
+        }
+
+        try {
+          const response = await fetch(feedUrl, {
+            headers: { "User-Agent": "Folo/1.0 RSS Reader" },
+          })
+          if (!response.ok) {
+            res.statusCode = response.status
+            res.end(JSON.stringify({ error: `Upstream returned ${response.status}` }))
+            return
+          }
+          const text = await response.text()
+          res.setHeader("Content-Type", "application/xml; charset=utf-8")
+          res.setHeader("Access-Control-Allow-Origin", "*")
+          res.end(text)
+        } catch (e: any) {
+          res.statusCode = 502
+          res.end(JSON.stringify({ error: e.message }))
+        }
+      })
+    },
+  }
+}
+
 export default ({ mode }) => {
   const env = loadEnv(mode, process.cwd())
   const typedEnv = env as typeof EnvType
@@ -137,7 +174,7 @@ export default ({ mode }) => {
     },
     plugins: [
       ...((viteRenderBaseConfig.plugins ?? []) as any),
-
+      rssProxyPlugin(),
       routeBuilderPlugin({
         pagePattern: "src/pages/**/*.tsx",
         outputPath: "src/generated-routes.ts",
@@ -210,16 +247,6 @@ export default ({ mode }) => {
             suppressWarnings: true,
             type: "module",
           },
-        }),
-      mode !== "development" &&
-        legacy({
-          targets: "defaults",
-          renderLegacyChunks: false,
-          modernTargets: ">0.3%, last 2 versions, Firefox ESR, not dead",
-          modernPolyfills: [
-            // https://unpkg.com/browse/core-js@3.39.0/modules/
-            "es.promise.with-resolvers",
-          ],
         }),
       htmlInjectPlugin(typedEnv),
       process.env.SSL ? mkcert() : false,

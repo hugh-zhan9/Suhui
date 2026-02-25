@@ -11,13 +11,7 @@ export const tracker = new TrackerPoints()
 
 export {
   type CaptureExceptionPayload,
-  FirebaseAdapter,
-  type FirebaseAdapterConfig,
   type IdentifyPayload,
-  OpenPanelAdapter,
-  type OpenPanelAdapterConfig,
-  PostHogAdapter,
-  type PostHogAdapterConfig,
   ProxyAdapter,
   type TrackerAdapter,
   type TrackPayload,

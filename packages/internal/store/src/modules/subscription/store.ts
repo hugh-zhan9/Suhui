@@ -7,9 +7,11 @@ import { api } from "../../context"
 import type { Hydratable, Resetable } from "../../lib/base"
 import { createImmerSetter, createTransaction, createZustandStore } from "../../lib/helper"
 import { apiMorph } from "../../morph/api"
-import { dbStoreMorph } from "../../morph/db-store"
+
 import { buildSubscriptionDbId, storeDbMorph } from "../../morph/store-db"
 import { invalidateEntriesQuery } from "../entry/hooks"
+import { entryActions } from "../entry/store"
+import { dbStoreMorph } from "../../morph/db-store"
 import { getFeedById } from "../feed/getter"
 import { feedActions } from "../feed/store"
 import { inboxActions } from "../inbox/store"
@@ -201,24 +203,19 @@ class SubscriptionActions implements Hydratable, Resetable {
 
 class SubscriptionSyncService {
   async fetch(view?: FeedViewType) {
-    const { data } = await api().subscriptions.get({
-      view: view !== undefined ? view : undefined,
-    })
+    // [Local Mode] Return subscriptions from the local Zustand store
+    const storeData = get().data
+    const allSubscriptions = Object.values(storeData)
+    const filtered = view !== undefined
+      ? allSubscriptions.filter((s: any) => s.view === view)
+      : allSubscriptions
 
-    const { subscriptions, collections } = apiMorph.toSubscription(data)
+    // Also gather associated feeds from the feed store
+    const feedStore = (await import("../feed/store")).useFeedStore.getState()
+    const feedIds = new Set(filtered.map((s: any) => s.feedId).filter(Boolean))
+    const feeds = Object.values(feedStore.feeds).filter((f: any) => feedIds.has(f.id))
 
-    feedActions.upsertMany(collections.feeds)
-    subscriptionActions.upsertMany(subscriptions, {
-      resetBeforeUpsert: typeof view === "number" ? view : true,
-    })
-    listActions.upsertMany(collections.lists)
-
-    inboxActions.upsertMany(collections.inboxes)
-
-    return {
-      subscriptions,
-      feeds: collections.feeds,
-    }
+    return { subscriptions: filtered, feeds }
   }
 
   async edit(subscription: SubscriptionModel) {
@@ -280,11 +277,84 @@ class SubscriptionSyncService {
   }
 
   async subscribe(subscription: SubscriptionForm) {
-    const data = await api().subscriptions.create(subscription)
+    let data: any = null
+    if (typeof window !== "undefined" && (window as any).electron?.ipcRenderer) {
+      // Local IPC mode
+      data = await (window as any).electron.ipcRenderer.invoke("db.addFeed", subscription)
+      if (!data) {
+        throw new Error("Failed to subscribe via local database")
+      }
+    } else {
+      // [Local Mode] Web fallback: fetch RSS via dev server proxy, parse locally
+      const proxyUrl = `/api/rss-proxy?url=${encodeURIComponent(subscription.url || "")}`
+      const response = await fetch(proxyUrl)
+      if (!response.ok) {
+        throw new Error(`Failed to fetch feed: ${response.status}`)
+      }
+      const xmlText = await response.text()
+      const parser = new DOMParser()
+      const xml = parser.parseFromString(xmlText, "text/xml")
+
+      // Parse RSS or Atom
+      const channel = xml.querySelector("rss > channel")
+      const atomFeed = xml.querySelector("feed")
+      const feedTitle =
+        channel?.querySelector("title")?.textContent?.trim() ||
+        atomFeed?.querySelector("title")?.textContent?.trim() ||
+        "Untitled Feed"
+      const siteUrl =
+        channel?.querySelector("link")?.textContent?.trim() ||
+        atomFeed?.querySelector("link[rel='alternate']")?.getAttribute("href") ||
+        ""
+      const description =
+        channel?.querySelector("description")?.textContent?.trim() ||
+        atomFeed?.querySelector("subtitle")?.textContent?.trim() ||
+        ""
+
+      // Use the feedId from the preview phase if already assigned
+      const feedId = (subscription as any).feedId || `local_feed_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+      const subId = `local_sub_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+
+      data = {
+        feed: {
+          type: "feed" as const,
+          id: feedId,
+          title: subscription.title || feedTitle,
+          url: subscription.url || "",
+          description: description || null,
+          image: null,
+          errorAt: null,
+          siteUrl: siteUrl || null,
+          ownerUserId: null,
+          errorMessage: null,
+          subscriptionCount: null,
+          updatesPerWeek: null,
+          latestEntryPublishedAt: null,
+          tipUserIds: null,
+          updatedAt: null,
+        },
+        subscription: {
+          id: subId,
+          feedId,
+          userId: "local_user_id",
+          view: subscription.view,
+          isPrivate: false,
+          title: subscription.title || feedTitle || null,
+          category: subscription.category || null,
+          type: "feed" as const,
+          createdAt: new Date().toISOString(),
+        },
+      }
+    }
 
     if (data.feed) {
       feedActions.upsertMany([data.feed])
       tracker.subscribe({ feedId: data.feed.id, view: subscription.view })
+    }
+
+    // Immediately hydrate entry store with entries returned from IPC (or from web fallback)
+    if (data.entries && data.entries.length > 0) {
+      entryActions.upsertManyInSession(data.entries.map((e: any) => dbStoreMorph.toEntryModel(e)))
     }
 
     if (data.list) {
@@ -305,20 +375,26 @@ class SubscriptionSyncService {
     }
 
     // Insert to subscription
-    await subscriptionActions.upsertMany([
-      {
-        ...subscription,
-        title: subscription.title ?? null,
-        category: subscription.category ?? null,
+    if (typeof window !== "undefined" && (window as any).electron?.ipcRenderer && data.subscription) {
+      // Local IPC mode: DB already persisted it, just update the in-memory store
+      subscriptionActions.upsertManyInSession([dbStoreMorph.toSubscriptionModel(data.subscription)])
+    } else {
+      // Web fallback: construct the object and try to persist via network
+      await subscriptionActions.upsertMany([
+        {
+          ...subscription,
+          title: subscription.title ?? null,
+          category: subscription.category ?? null,
 
-        type: data.list ? "list" : "feed",
-        createdAt: new Date().toISOString(),
-        feedId: data.feed?.id ?? null,
-        listId: data.list?.id ?? null,
-        inboxId: null,
-        userId: whoami()?.id ?? "",
-      },
-    ])
+          type: data.list ? "list" : "feed",
+          createdAt: new Date().toISOString(),
+          feedId: data.feed?.id ?? null,
+          listId: data.list?.id ?? null,
+          inboxId: null,
+          userId: whoami()?.id ?? "",
+        },
+      ])
+    }
 
     invalidateViews(subscription.view)
   }
@@ -360,11 +436,8 @@ class SubscriptionSyncService {
     })
 
     tx.request(async () => {
-      const feedIdList = feedSubscriptions.map((s) => s.feedId).filter((i) => typeof i === "string")
-      await api().subscriptions.delete({
-        feedIdList: feedIdList.length > 0 ? feedIdList : undefined,
-        listId: listSubscriptions.at(0)?.listId || undefined,
-      })
+      // [Local Mode] No remote API call needed for unsubscribe
+      // The store update above already removes the subscription from local state
     })
 
     tx.rollback((current) => {

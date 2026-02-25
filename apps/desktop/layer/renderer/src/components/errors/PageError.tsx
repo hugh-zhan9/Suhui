@@ -10,6 +10,7 @@ import { parseError, useResetErrorWhenRouteChange } from "./helper"
 const PageErrorFallback: FC<AppErrorFallbackProps> = (props) => {
   const { message, stack } = parseError(props.error)
   useResetErrorWhenRouteChange(props.resetError)
+
   return (
     <div className="pointer-events-auto flex w-full flex-col items-center justify-center rounded-md bg-theme-background p-2">
       <div className="m-auto max-w-prose text-center">
@@ -24,8 +25,7 @@ const PageErrorFallback: FC<AppErrorFallbackProps> = (props) => {
         ) : null}
 
         <p className="my-8">
-          {APP_NAME} has a temporary problem, click the button below to try reloading the app or
-          another solution?
+          当前处于精简模式，部分在线能力可能不可用。你可以继续离线使用，或点击下方按钮重试。
         </p>
 
         <div className="center gap-4">

@@ -1,6 +1,5 @@
 import { RootPortal } from "@follow/components/ui/portal/index.jsx"
 import { IN_ELECTRON, PROD } from "@follow/shared/constants"
-import { useWhoami } from "@follow/store/user/hooks"
 import { preventDefault } from "@follow/utils/dom"
 import type { PropsWithChildren } from "react"
 import * as React from "react"
@@ -9,14 +8,11 @@ import { Outlet } from "react-router"
 
 import { setMainContainerElement, setRootContainerElement } from "~/atoms/dom"
 import { useUISettingKey } from "~/atoms/settings/ui"
-import { useLoginModalShow } from "~/atoms/user"
 import { AppErrorBoundary } from "~/components/common/AppErrorBoundary"
 import { ErrorComponentType } from "~/components/errors/enum"
 import { PlainModal, PlainWithAnimationModal } from "~/components/ui/modal/stacked/custom-modal"
-import { DeclarativeModal } from "~/components/ui/modal/stacked/declarative-modal"
 import { ROOT_CONTAINER_ID } from "~/constants/dom"
 import { EnvironmentIndicator } from "~/modules/app/EnvironmentIndicator"
-import { LoginModalContent } from "~/modules/auth/LoginModalContent"
 import { DebugRegistry } from "~/modules/debug/registry"
 import { EntriesProvider } from "~/modules/entry-column/context/EntriesContext"
 import { CmdF } from "~/modules/panel/cmdf"
@@ -137,9 +133,6 @@ const errorTypes = [
  * // based on the route configuration in generated-routes.ts
  */
 export function MainDestopLayout() {
-  const isAuthFail = useLoginModalShow()
-  const user = useWhoami()
-
   const containerRef = useRef<HTMLDivElement | null>(null)
 
   // const { shouldShowNewUserGuide } = useNewUserGuideState()
@@ -190,22 +183,6 @@ export function MainDestopLayout() {
         </main>
       </EntriesProvider>
 
-      {isAuthFail && !user && (
-        <RootPortal>
-          <DeclarativeModal
-            id="login"
-            defaultOpen
-            CustomModalComponent={PlainModal}
-            overlay
-            title="Login"
-            canClose={true}
-            clickOutsideToDismiss={true}
-          >
-            <LoginModalContent canClose={true} runtime={IN_ELECTRON ? "app" : "browser"} />
-          </DeclarativeModal>
-        </RootPortal>
-      )}
-
       <SearchCmdK />
       <CmdNTrigger />
       {IN_ELECTRON && <CmdF />}
@@ -255,39 +232,3 @@ const RootContainer = ({
   )
 }
 
-DebugRegistry.add("App Tip Dialog", () => {
-  import("~/modules/app-tip/AppTipModalContent").then((m) => {
-    window.presentModal({
-      title: "App Tip",
-      content: () => <m.AppTipModalContent />,
-      CustomModalComponent: PlainWithAnimationModal,
-      modalContainerClassName: "flex items-center justify-center",
-      modalClassName: "w-full max-w-5xl",
-      canClose: true,
-      clickOutsideToDismiss: false,
-      overlay: false,
-    })
-  })
-})
-
-DebugRegistry.add("AI Onboarding", () => {
-  import("~/modules/ai-onboarding/ai-onboarding-modal-content").then((m) => {
-    window.presentModal({
-      title: "AI Onboarding",
-      content: ({ dismiss }) => (
-        <m.AiOnboardingModalContent
-          onClose={() => {
-            dismiss()
-          }}
-        />
-      ),
-
-      CustomModalComponent: PlainModal,
-      modalContainerClassName: "flex items-center justify-center",
-
-      canClose: false,
-      clickOutsideToDismiss: false,
-      overlay: true,
-    })
-  })
-})

@@ -1,1 +1,2 @@
-export { AIEnhancedTimelineLayout as Component } from "~/modules/app-layout/ai-enhanced-timeline"
+import { Outlet } from "react-router"
+export const Component = () => <Outlet />

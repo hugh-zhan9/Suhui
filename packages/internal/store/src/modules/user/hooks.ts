@@ -84,8 +84,8 @@ export function useIsNewUser(options?: GeneralQueryOptions) {
     enabled: options?.enabled,
     queryKey: isNewUserQueryKey,
     queryFn: async () => {
-      const subscriptions = await api().subscriptions.get({})
-      return subscriptions.data.length < 5
+      // Local mode default to false (not a new user) to skip onboarding / remote API
+      return false
     },
   })
   return !!data

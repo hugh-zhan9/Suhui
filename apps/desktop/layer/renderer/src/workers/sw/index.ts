@@ -4,11 +4,7 @@ import { ExpirationPlugin } from "workbox-expiration"
 import { registerRoute } from "workbox-routing"
 import { CacheFirst } from "workbox-strategies"
 
-import { registerPusher } from "./pusher"
-
 declare let self: ServiceWorkerGlobalScope
-
-registerPusher(self)
 
 registerRoute(
   ({ request }) => request.destination === "image",

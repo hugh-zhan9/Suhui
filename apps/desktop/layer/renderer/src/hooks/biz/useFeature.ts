@@ -1,5 +1,6 @@
 import { getDebugFeatureValue, useDebugFeatureValue } from "~/atoms/debug-feature"
 import { getServerConfigs, useServerConfigs } from "~/atoms/server-configs"
+import { isAIFeatureEnabledInLiteMode, LITE_MODE } from "~/lib/lite-mode"
 import { featureConfigMap } from "~/lib/features"
 
 // Define debug feature value structure
@@ -23,6 +24,10 @@ const checkFeatureEnabled = (
   debugFeatureValue: DebugFeatureValue,
   serverConfigs: ReturnType<typeof getServerConfigs>,
 ): boolean => {
+  if (LITE_MODE && feature === "ai") {
+    return isAIFeatureEnabledInLiteMode()
+  }
+
   const override = !!debugFeatureValue.__override
 
   if (override) {

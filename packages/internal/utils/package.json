@@ -26,9 +26,6 @@
     "test": "vitest",
     "typecheck": "tsc --noEmit"
   },
-  "peerDependencies": {
-    "react-native": ">=0.79.6"
-  },
   "dependencies": {
     "@follow/shared": "workspace:*",
     "@follow/types": "workspace:*",
@@ -45,7 +42,6 @@
   },
   "devDependencies": {
     "@follow/configs": "workspace:*",
-    "react-native": "0.81.5",
     "vite-tsconfig-paths": "6.1.1"
   }
 }

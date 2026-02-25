@@ -1,11 +1,9 @@
 import { env } from "@follow/shared/env.desktop"
-import { userActions } from "@follow/store/user/store"
 import { createDesktopAPIHeaders } from "@follow/utils/headers"
 import { FollowClient } from "@follow-app/client-sdk"
 import PKG from "@pkg"
 
 import { NetworkStatus, setApiStatus } from "~/atoms/network"
-import { setLoginModalShow } from "~/atoms/user"
 
 import { getClientId, getSessionId } from "./client-session"
 
@@ -57,13 +55,6 @@ followClient.addErrorInterceptor(async ({ error, response }) => {
 })
 
 followClient.addResponseInterceptor(async ({ response }) => {
-  if (response.status === 401) {
-    // Or we can present LoginModal here.
-    // router.navigate("/login")
-    // If any response status is 401, we can set auth fail. Maybe some bug, but if navigate to login page, had same issues
-    setLoginModalShow(true)
-    userActions.removeCurrentUser()
-  }
   try {
     const isJSON = response.headers.get("content-type")?.includes("application/json")
     if (!isJSON) return response

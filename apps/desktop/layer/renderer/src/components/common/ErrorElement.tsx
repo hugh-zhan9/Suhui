@@ -59,10 +59,7 @@ export function ErrorElement() {
         </pre>
       ) : null}
 
-      <p className="my-8">
-        {APP_NAME} has a temporary problem, click the button below to try reloading the app or
-        another solution?
-      </p>
+      <p className="my-8">当前处于精简模式，部分在线能力可能不可用。你可以继续使用本地功能。</p>
 
       <div className="center gap-4">
         <Button

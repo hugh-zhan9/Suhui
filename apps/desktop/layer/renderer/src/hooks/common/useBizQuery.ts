@@ -2,7 +2,6 @@ import type { QueryKey, UseQueryOptions, UseQueryResult } from "@tanstack/react-
 import { useQuery } from "@tanstack/react-query"
 import type { FetchError } from "ofetch"
 
-import { useLoginModalShow } from "~/atoms/user"
 import type { DefinedQuery } from "~/lib/defineQuery"
 
 // TODO split normal define query and infinite define query for better type checking
@@ -18,14 +17,13 @@ export function useAuthQuery<
   query: TQuery,
   options: Omit<UseQueryOptions<TQueryFnData, TError>, "queryKey" | "queryFn"> = {},
 ): CombinedObject<UseQueryResult<TData, TError>, { key: TQuery["key"]; fn: TQuery["fn"] }> {
-  const authFail = useLoginModalShow()
   // @ts-expect-error
   return Object.assign(
     {},
     useQuery({
       queryKey: query.key,
       queryFn: query.fn,
-      enabled: !authFail && options.enabled !== false,
+      enabled: options.enabled !== false,
       ...options,
     }),
     {

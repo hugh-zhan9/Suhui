@@ -11,6 +11,11 @@
   },
   "sideEffects": false,
   "exports": {
+    "./db.main": {
+      "types": "./src/db.main.ts",
+      "require": "./src/db.main.ts",
+      "import": "./src/db.main.ts"
+    },
     "./*": {
       "types": "./src/*.ts",
       "require": "./src/*.ts",

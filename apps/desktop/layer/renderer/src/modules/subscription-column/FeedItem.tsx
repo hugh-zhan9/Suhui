@@ -200,7 +200,9 @@ const FeedItemImpl = ({ view, feedId, className, isPreview }: FeedItemProps) => 
   })
   const follow = useFollow()
   const handleDoubleClick = useEventCallback(() => {
-    window.open(UrlBuilder.shareFeed(feedId, view), "_blank")
+    // [Local Mode] Open the feed's original site URL instead of remote share link
+    const targetUrl = feed?.siteUrl || feed?.url
+    if (targetUrl) window.open(targetUrl, "_blank")
   })
 
   if (!feed) return null

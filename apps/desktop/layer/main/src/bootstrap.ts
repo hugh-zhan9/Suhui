@@ -9,4 +9,6 @@ if (squirrelStartup) {
   app.quit()
 }
 
-BootstrapManager.start()
+BootstrapManager.start().catch((err) => {
+  console.error("Failed to start BootstrapManager:", err)
+})

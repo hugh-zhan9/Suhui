@@ -94,7 +94,7 @@ class FollowUpdater {
       })
     }
     updatePollingHandler()
-    this.pollingTimer = setInterval(updatePollingHandler, appUpdaterConfig.app.checkUpdateInterval)
+    this.pollingTimer = setInterval(updatePollingHandler, appUpdaterConfig.app.checkUpdateInterval) as unknown as NodeJS.Timeout
   }
 
   async checkForUpdates(options: UpdateCheckOptions = {}): Promise<UpdateCheckResult> {

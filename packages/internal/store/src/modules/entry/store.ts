@@ -14,7 +14,7 @@ import { storeDbMorph } from "../../morph/store-db"
 import { collectionActions } from "../collection/store"
 import { clearAllFeedUnreadDirty, clearFeedUnreadDirty } from "../feed/hooks"
 import { feedActions } from "../feed/store"
-import { getSubscriptionById } from "../subscription/getter"
+
 import { getDefaultCategory } from "../subscription/utils"
 import type {
   FeedIdOrInboxHandle,
@@ -32,35 +32,8 @@ type InboxId = string
 type Category = string
 type ListId = string
 
-interface EntryState {
-  data: Record<EntryId, EntryModel>
-  entryIdByView: Record<FeedViewType, Set<EntryId>>
-  entryIdByCategory: Record<Category, Set<EntryId>>
-  entryIdByFeed: Record<FeedId, Set<EntryId>>
-  entryIdByInbox: Record<InboxId, Set<EntryId>>
-  entryIdByList: Record<ListId, Set<EntryId>>
-  entryIdSet: Set<EntryId>
-}
-
-const defaultState: EntryState = {
-  data: {},
-  entryIdByView: {
-    [FeedViewType.All]: new Set(),
-    [FeedViewType.Articles]: new Set(),
-    [FeedViewType.Audios]: new Set(),
-    [FeedViewType.Notifications]: new Set(),
-    [FeedViewType.Pictures]: new Set(),
-    [FeedViewType.SocialMedia]: new Set(),
-    [FeedViewType.Videos]: new Set(),
-  },
-  entryIdByCategory: {},
-  entryIdByFeed: {},
-  entryIdByInbox: {},
-  entryIdByList: {},
-  entryIdSet: new Set(),
-}
-
-export const useEntryStore = createZustandStore<EntryState>("entry")(() => defaultState)
+import { type EntryState, defaultState, useEntryStore } from "./base"
+export { useEntryStore } from "./base"
 
 const get = useEntryStore.getState
 const immerSet = createImmerSetter(useEntryStore)
@@ -91,6 +64,7 @@ class EntryActions implements Hydratable, Resetable {
   }) {
     if (!feedId) return
 
+    const { getSubscriptionById } = require("../subscription/getter")
     const subscription = getSubscriptionById(feedId)
     const ignore =
       (hidePrivateSubscriptionsInTimeline && subscription?.isPrivate) ||
@@ -98,13 +72,14 @@ class EntryActions implements Hydratable, Resetable {
 
     if (!ignore) {
       if (typeof subscription?.view === "number") {
-        draft.entryIdByView[subscription.view].add(entryId)
+        draft.entryIdByView[subscription.view as FeedViewType].add(entryId)
       }
       draft.entryIdByView[FeedViewType.All].add(entryId)
     }
 
     // lists
     for (const s of sources ?? []) {
+      const { getSubscriptionById } = require("../subscription/getter")
       const subscription = getSubscriptionById(s)
       const ignore =
         (hidePrivateSubscriptionsInTimeline && subscription?.isPrivate) ||
@@ -112,7 +87,7 @@ class EntryActions implements Hydratable, Resetable {
 
       if (!ignore) {
         if (typeof subscription?.view === "number") {
-          draft.entryIdByView[subscription.view].add(entryId)
+          draft.entryIdByView[subscription.view as FeedViewType].add(entryId)
         }
         draft.entryIdByView[FeedViewType.All].add(entryId)
       }
@@ -129,6 +104,7 @@ class EntryActions implements Hydratable, Resetable {
     entryId: EntryId
   }) {
     if (!feedId) return
+    const { getSubscriptionById } = require("../subscription/getter")
     const subscription = getSubscriptionById(feedId)
     const category = subscription?.category || getDefaultCategory(subscription)
     if (!category) return
@@ -463,123 +439,78 @@ class EntryActions implements Hydratable, Resetable {
 
 class EntrySyncServices {
   async fetchEntries(props: FetchEntriesProps) {
-    const {
-      feedId,
-      inboxId,
-      listId,
-      view,
-      read,
-      limit,
-      pageParam,
-      isCollection,
-      feedIdList,
-      excludePrivate,
-      aiSort,
-    } = props
-    const params = getEntriesParams({
-      feedId,
-      inboxId,
-      listId,
-      view,
-      feedIdList,
+    // [Local Mode] Query entries from the local SQLite DB via IPC, then cache in store
+    const { feedId, feedIdList } = props
+
+    let entries: any[] = []
+
+    if (typeof window !== "undefined" && (window as any).electron?.ipcRenderer) {
+      const ipc = (window as any).electron.ipcRenderer
+      if (feedId) {
+        // feedId may be comma-separated (folder view)
+        const feedIds = feedId.includes(",") ? feedId.split(",") : [feedId]
+        const results = await Promise.all(
+          feedIds.map((id: string) => ipc.invoke("db.getEntries", id)),
+        )
+        entries = results.flat()
+      } else if (feedIdList && feedIdList.length > 0) {
+        const results = await Promise.all(
+          feedIdList.map((id: string) => ipc.invoke("db.getEntries", id)),
+        )
+        entries = results.flat()
+      } else {
+        // All entries (e.g., "All" view)
+        entries = await ipc.invoke("db.getEntries")
+      }
+    } else {
+      // Web fallback: read from in-memory store
+      const allEntries = Object.values(get().data) as any[]
+      if (feedId) {
+        const feedIds = new Set(feedId.split(","))
+        entries = allEntries.filter((e) => feedIds.has(e.feedId))
+      } else if (feedIdList && feedIdList.length > 0) {
+        const feedSet = new Set(feedIdList)
+        entries = allEntries.filter((e) => feedSet.has(e.feedId))
+      } else {
+        entries = allEntries
+      }
+    }
+
+    // Sort by publishedAt descending
+    entries.sort((a, b) => {
+      const dateA = a.publishedAt instanceof Date ? a.publishedAt.getTime() : Number(a.publishedAt ?? 0)
+      const dateB = b.publishedAt instanceof Date ? b.publishedAt.getTime() : Number(b.publishedAt ?? 0)
+      return dateB - dateA
     })
 
-    const res = params.inboxId
-      ? await api().entries.inbox.list({
-          publishedAfter: pageParam,
-          read,
-          limit,
-          isCollection,
-          inboxId: params.inboxId,
-          ...(aiSort && { aiSort }),
-          ...params,
-        })
-      : await api().entries.list(
-          {
-            publishedAfter: pageParam,
-            read,
-            limit,
-            isCollection,
-            excludePrivate,
-            ...(aiSort && { aiSort }),
-            ...params,
-          },
-          aiSort
-            ? {
-                timeout: 3 * 60 * 1000,
-              }
-            : undefined,
-        )
-
-    // Mark feed unread dirty, so re-fetch the unread data when view feed unread entires in the next time
-    if (read === false) {
-      if (typeof params.view === "number" && !params.feedId) {
-        clearAllFeedUnreadDirty()
-      }
-      if (params.feedId) {
-        clearFeedUnreadDirty(params.feedId as string)
-      }
-      if (params.feedIdList) {
-        params.feedIdList.forEach((feedId) => {
-          clearFeedUnreadDirty(feedId)
-        })
-      }
+    // Load into Zustand store so detail-view lookups via getEntry(id) work
+    if (entries.length > 0) {
+      entryActions.upsertManyInSession(entries)
     }
 
-    const entries = apiMorph.toEntryList(res.data)
-    const entriesInDB = await EntryService.getEntryMany(entries.map((e) => e.id))
-    for (const entry of entries) {
-      const entryInDB = entriesInDB.find((e) => e.id === entry.id)
-      if (entryInDB) {
-        entry.content = entryInDB.content
-        entry.readabilityContent = entryInDB.readabilityContent
-        entry.readabilityUpdatedAt = entryInDB.readabilityUpdatedAt
-      }
-    }
-
-    await entryActions.upsertMany(entries)
-
-    if (typeof view === "number") {
-      const { collections, entryIdsNotInCollections } = apiMorph.toCollections(res.data, view)
-      await collectionActions.upsertMany(collections, {
-        reset: params.isCollection && !pageParam,
-      })
-      await collectionActions.delete(entryIdsNotInCollections)
-    }
-
-    const dataFeeds = res.data?.map((e) => e.feeds).filter((f) => f.type === "feed")
-    const feeds = dataFeeds?.map((f) => apiMorph.toFeed(f)) ?? []
-    feedActions.upsertMany(feeds)
-
-    return res
+    return {
+      data: entries.map((e: any) => ({ entries: e, feeds: { id: e.feedId, type: "feed" } })),
+    } as any
   }
 
   async fetchEntryDetail(entryId: EntryId | undefined, isInbox?: boolean) {
-    if (!isBizId(entryId)) return null
+    if (!entryId) return null
 
-    const currentEntry = getEntry(entryId)
-    const res =
-      currentEntry?.inboxHandle || isInbox
-        ? await api().entries.inbox.get({ id: entryId })
-        : await api().entries.get({ id: entryId })
-    const entry = apiMorph.toEntry(res.data)
-    if (!currentEntry && entry) {
-      await entryActions.upsertMany([entry])
-    } else {
-      if (entry?.content && currentEntry?.content !== entry.content) {
-        await entryActions.updateEntryContent({ entryId, content: entry.content })
-      }
-      if (
-        entry?.readabilityContent &&
-        currentEntry?.readabilityContent !== entry.readabilityContent
-      ) {
-        await entryActions.updateEntryContent({
-          entryId,
-          readabilityContent: entry.readabilityContent,
-        })
+    // First check in-memory store (populated by fetchEntries)
+    const cached = getEntry(entryId)
+    if (cached) return cached
+
+    // Fallback: query DB directly via IPC
+    if (typeof window !== "undefined" && (window as any).electron?.ipcRenderer) {
+      const ipc = (window as any).electron.ipcRenderer
+      const entry = await ipc.invoke("db.getEntry", entryId)
+      if (entry) {
+        entryActions.upsertManyInSession([entry])
+        return entry
       }
     }
-    return entry
+
+    return null
   }
 
   async fetchEntryReadabilityContent(
@@ -620,40 +551,9 @@ class EntrySyncServices {
   }
 
   async fetchEntryContentByStream(remoteEntryIds?: string[]) {
-    if (!remoteEntryIds || remoteEntryIds.length === 0) return
-
-    const onlyNoStored = true
-
-    const nextIds = [] as string[]
-    if (onlyNoStored) {
-      for (const id of remoteEntryIds) {
-        const entry = getEntry(id)!
-        if (entry.content) {
-          continue
-        }
-
-        nextIds.push(id)
-      }
-    }
-
-    if (nextIds.length === 0) return
-
-    const readStream = async () => {
-      const response = await api().entries.stream({
-        ids: nextIds.slice(0, 30),
-      })
-
-      if (!response.ok) {
-        console.error("Failed to fetch stream:", response.statusText, await response.text())
-        return
-      }
-
-      await readNdjsonStream<{ id: string; content: string }>(response, async (json) => {
-        await entryActions.updateEntryContent({ entryId: json.id, content: json.content })
-      })
-    }
-
-    readStream()
+    // [Local Mode] Entry contents are fully fetched from local storage.
+    // No need to query remote stream API.
+    return
   }
 
   async fetchEntryReadHistory(entryId: EntryId, size: number) {

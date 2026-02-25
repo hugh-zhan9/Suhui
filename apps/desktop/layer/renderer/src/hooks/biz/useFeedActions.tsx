@@ -255,7 +255,12 @@ export const useFeedActions = ({
         }),
         disabled: isEntryList,
         shortcut: shortcuts[COMMAND_ID.subscription.openInBrowser],
-        click: () => window.open(UrlBuilder.shareFeed(feedId, view), "_blank"),
+        click: () => {
+          // [Local Mode] Open feed's original URL instead of remote share link
+          const f = getFeedById(feedId)
+          const targetUrl = f && ("siteUrl" in f ? f.siteUrl : null) || f?.url
+          if (targetUrl) window.open(targetUrl, "_blank")
+        },
       }),
       new MenuItemText({
         label: t("sidebar.feed_actions.open_site_in_browser", {
