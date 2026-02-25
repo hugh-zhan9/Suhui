@@ -1,12 +1,13 @@
-import * as https from "node:https"
 import * as http from "node:http"
+import * as https from "node:https"
+
+import { EntryService } from "@follow/database/services/entry"
+import { FeedService } from "@follow/database/services/feed"
+import { SubscriptionService } from "@follow/database/services/subscription"
 import type { IpcContext } from "electron-ipc-decorator"
 import { IpcMethod, IpcService } from "electron-ipc-decorator"
 
 import { DBManager } from "~/manager/db"
-import { FeedService } from "@follow/database/services/feed"
-import { SubscriptionService } from "@follow/database/services/subscription"
-import { EntryService } from "@follow/database/services/entry"
 
 /**
  * Fetches a URL using Node.js built-in http/https, follows up to 5 redirects.
@@ -44,7 +45,7 @@ function fetchUrl(url: string, redirectCount = 0): Promise<string> {
 
 /** Extract text content from the first matching XML tag */
 function extractTag(xml: string, tag: string): string {
-  const re = new RegExp(`<${tag}[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/${tag}>`, "i")
+  const re = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i")
   return xml.match(re)?.[1]?.trim() ?? ""
 }
 
@@ -62,8 +63,7 @@ function parseRss(xml: string) {
   const title = extractTag(xml, "title")
   const description = isAtom ? extractTag(xml, "subtitle") : extractTag(xml, "description")
   const siteUrl = isAtom
-    ? extractAttr(xml, 'link[^>]*rel="alternate"', "href") ||
-      extractAttr(xml, "link", "href")
+    ? extractAttr(xml, 'link[^>]*rel="alternate"', "href") || extractAttr(xml, "link", "href")
     : extractTag(xml, "link")
   const image =
     extractAttr(xml, "image", "url") ||
@@ -86,9 +86,8 @@ function parseRss(xml: string) {
 
   let match: RegExpExecArray | null
   while ((match = itemRe.exec(xml)) !== null) {
-    const itemXml = match[1]
-    const itemTitle =
-      extractTag(itemXml, "title") || extractTag(itemXml, "h1")
+    const itemXml = match[1] ?? ""
+    const itemTitle = extractTag(itemXml, "title") || extractTag(itemXml, "h1")
     const itemUrl =
       extractTag(itemXml, "link") ||
       extractAttr(itemXml, 'link[^>]*rel="alternate"', "href") ||
@@ -131,6 +130,71 @@ function parseRss(xml: string) {
 export class DbService extends IpcService {
   static override readonly groupName = "db"
 
+  private async buildPreviewData(feedUrl: string, preferredFeedId?: string) {
+    const xmlText = await fetchUrl(feedUrl)
+    const parsed = parseRss(xmlText)
+
+    const feedId =
+      preferredFeedId || `local_feed_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
+    const now = Date.now()
+
+    const feed = {
+      type: "feed" as const,
+      id: feedId,
+      url: feedUrl,
+      title: parsed.title || "Untitled Feed",
+      description: parsed.description || null,
+      image: parsed.image || null,
+      siteUrl: parsed.siteUrl || null,
+      errorAt: null,
+      ownerUserId: null,
+      errorMessage: null,
+      subscriptionCount: null,
+      updatesPerWeek: null,
+      latestEntryPublishedAt: null,
+      tipUserIds: null,
+      updatedAt: now,
+    }
+
+    const entries = parsed.items.slice(0, 50).map((item) => ({
+      id: `local_entry_${now}_${Math.random().toString(36).slice(2, 9)}`,
+      feedId,
+      title: item.title || "Untitled",
+      url: item.url || null,
+      content: item.content || null,
+      description: item.description || null,
+      guid: item.guid,
+      author: item.author || null,
+      authorUrl: null,
+      authorAvatar: null,
+      publishedAt: item.publishedAt,
+      insertedAt: now,
+      media: null,
+      categories: null,
+      attachments: null,
+      extra: null,
+      language: null,
+      inboxHandle: null,
+      readabilityContent: null,
+      readabilityUpdatedAt: null,
+      sources: null,
+      settings: null,
+      read: false,
+    }))
+
+    return {
+      feed,
+      entries,
+      subscription: undefined,
+      analytics: {
+        updatesPerWeek: null,
+        subscriptionCount: null,
+        latestEntryPublishedAt: entries[0]?.publishedAt || null,
+        view: 1,
+      },
+    }
+  }
+
   @IpcMethod()
   async executeRawSql(
     _context: IpcContext,
@@ -170,9 +234,11 @@ export class DbService extends IpcService {
   @IpcMethod()
   async getEntry(_context: IpcContext, entryId: string) {
     const db = DBManager.getDB()
-    return db.query.entriesTable.findFirst({
-      where: (entries, { eq }) => eq(entries.id, entryId),
-    }) ?? null
+    return (
+      db.query.entriesTable.findFirst({
+        where: (entries, { eq }) => eq(entries.id, entryId),
+      }) ?? null
+    )
   }
 
   @IpcMethod()
@@ -195,41 +261,30 @@ export class DbService extends IpcService {
   }
 
   @IpcMethod()
+  async previewFeed(_context: IpcContext, form: { url: string; feedId?: string }) {
+    return this.buildPreviewData(form.url, form.feedId)
+  }
+
+  @IpcMethod()
   async addFeed(
     _context: IpcContext,
     form: { url: string; view: number; category?: string; title?: string },
   ) {
     try {
       const feedUrl = form.url
-      console.log(`[DbService] Fetching RSS: ${feedUrl}`)
+      console.info(`[DbService] Fetching RSS: ${feedUrl}`)
 
-      // 1. Fetch & parse RSS using only Node.js built-ins
-      const xmlText = await fetchUrl(feedUrl)
-      const parsed = parseRss(xmlText)
-
-      const feedId = `local_feed_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
-
-      // 2. Build feed row
+      // 1. Build preview payload via local fetch/parse pipeline
+      const preview = await this.buildPreviewData(feedUrl)
       const feed = {
-        id: feedId,
-        url: feedUrl,
-        title: form.title || parsed.title || "Untitled Feed",
-        description: parsed.description || null,
-        image: parsed.image || null,
-        siteUrl: parsed.siteUrl || null,
-        errorAt: null,
-        ownerUserId: null,
-        errorMessage: null,
-        subscriptionCount: null,
-        updatesPerWeek: null,
-        latestEntryPublishedAt: null,
-        tipUserIds: null,
-        updatedAt: Date.now(),
+        ...preview.feed,
+        title: form.title || preview.feed.title,
       }
+      const feedId = feed.id
       await FeedService.upsertMany([feed] as any)
 
-      // 3. Build subscription row
-      const subId = `local_sub_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+      // 2. Build subscription row
+      const subId = `local_sub_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
       const subscription = {
         id: subId,
         feedId,
@@ -237,7 +292,7 @@ export class DbService extends IpcService {
         view: form.view,
         isPrivate: false,
         hideFromTimeline: false,
-        title: form.title || parsed.title || null,
+        title: form.title || preview.feed.title || null,
         category: form.category || null,
         type: "feed" as const,
         listId: null,
@@ -246,41 +301,14 @@ export class DbService extends IpcService {
       }
       await SubscriptionService.upsertMany([subscription] as any)
 
-      // 4. Build + persist entry rows (up to 50 latest)
-      const now = Date.now()
-      const entries = parsed.items.slice(0, 50).map((item) => ({
-        id: `local_entry_${now}_${Math.random().toString(36).substring(2, 9)}`,
-        feedId,
-        title: item.title || "Untitled",
-        url: item.url || null,
-        content: item.content || null,
-        description: item.description || null,
-        guid: item.guid,
-        author: item.author || null,
-        authorUrl: null,
-        authorAvatar: null,
-        publishedAt: item.publishedAt,
-        insertedAt: now,
-        media: null,
-        categories: null,
-        attachments: null,
-        extra: null,
-        language: null,
-        inboxHandle: null,
-        readabilityContent: null,
-        readabilityUpdatedAt: null,
-        sources: null,
-        settings: null,
-        read: false,
-      }))
+      // 3. Persist preview entries (up to 50 latest)
+      const { entries } = preview
 
       if (entries.length > 0) {
         await EntryService.upsertMany(entries as any)
       }
 
-      console.log(
-        `[DbService] Feed added: ${feed.title}, ${entries.length} entries persisted`,
-      )
+      console.info(`[DbService] Feed added: ${feed.title}, ${entries.length} entries persisted`)
 
       // 5. Return complete data so the renderer can hydrate the in-memory store immediately
       return {
@@ -290,7 +318,7 @@ export class DbService extends IpcService {
       }
     } catch (e: any) {
       console.error("[DbService] addFeed error:", e)
-      throw new Error("Failed to add feed: " + e.message)
+      throw new Error(`Failed to add feed: ${e.message}`)
     }
   }
 }

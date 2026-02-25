@@ -6,6 +6,7 @@ import { api } from "../../context"
 import type { Hydratable, Resetable } from "../../lib/base"
 import { createImmerSetter, createTransaction, createZustandStore } from "../../lib/helper"
 import { whoami } from "../user/getters"
+import { shouldUseElectronLocalPreview } from "./local-preview"
 import type { FeedModel } from "./types"
 
 interface FeedState {
@@ -122,8 +123,22 @@ class FeedSyncServices {
       return null
     }
 
-    // [Local Mode] Fetch RSS via local proxy and parse with DOMParser
+    // [Local Mode] Prefer Electron IPC local preview; fallback to web proxy.
     const feedUrl = url || ""
+    if (
+      shouldUseElectronLocalPreview(typeof window === "undefined" ? undefined : window, feedUrl)
+    ) {
+      const data = await (window as any).electron.ipcRenderer.invoke("db.previewFeed", {
+        url: feedUrl,
+        feedId: id && isFeedId ? id : undefined,
+      })
+      if (!data?.feed) {
+        throw new Error("Failed to preview feed via local database")
+      }
+      feedActions.upsertMany([data.feed])
+      return data
+    }
+
     const proxyUrl = `/api/rss-proxy?url=${encodeURIComponent(feedUrl)}`
     const response = await fetch(proxyUrl)
     if (!response.ok) {
@@ -180,8 +195,7 @@ class FeedSyncServices {
       : Array.from(atomFeed?.querySelectorAll("entry") || [])
     const entries = itemEls.slice(0, 10).map((el) => {
       const entryId = Math.random().toString(36).slice(2, 15)
-      const entryTitle =
-        el.querySelector("title")?.textContent?.trim() || "Untitled"
+      const entryTitle = el.querySelector("title")?.textContent?.trim() || "Untitled"
       const entryLink =
         el.querySelector("link")?.textContent?.trim() ||
         el.querySelector("link")?.getAttribute("href") ||

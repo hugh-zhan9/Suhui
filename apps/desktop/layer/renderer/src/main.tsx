@@ -2,7 +2,7 @@ import "./wdyr"
 import "@follow/components/tailwind"
 import "./styles/main.css"
 
-import { IN_ELECTRON, WEB_BUILD } from "@follow/shared/constants"
+import { IN_ELECTRON } from "@follow/shared/constants"
 import { apiContext, authClientContext, queryClientContext } from "@follow/store/context"
 import { getOS } from "@follow/utils/utils"
 import * as React from "react"
@@ -17,16 +17,39 @@ import { ElECTRON_CUSTOM_TITLEBAR_HEIGHT } from "./constants"
 import { initializeApp } from "./initialize"
 import { registerAppGlobalShortcuts } from "./initialize/global-shortcuts"
 import { followApi } from "./lib/api-client"
+import { ipcServices } from "./lib/client"
 import { queryClient } from "./lib/query-client"
+import type { RendererErrorPayload } from "./lib/renderer-error-log"
+import { buildRendererErrorPayload, buildRendererRejectionPayload } from "./lib/renderer-error-log"
 import { router } from "./router"
 
 authClientContext.provide(authClient)
 queryClientContext.provide(queryClient)
 apiContext.provide(followApi)
 
+const reportRendererError = (payload: RendererErrorPayload) => {
+  void ipcServices?.app
+    .reportRendererError(payload)
+    .catch((error) => console.error("[renderer-error] report failed", error))
+}
+
+window.addEventListener("error", (event) => {
+  reportRendererError(
+    buildRendererErrorPayload({
+      message: event.message,
+      filename: event.filename,
+      lineno: event.lineno,
+      colno: event.colno,
+      error: event.error,
+    }),
+  )
+})
+
+window.addEventListener("unhandledrejection", (event) => {
+  reportRendererError(buildRendererRejectionPayload({ reason: event.reason }))
+})
+
 initializeApp().finally(() => {
-
-
   // eslint-disable-next-line @eslint-react/dom/no-flush-sync
   flushSync(() => setAppIsReady(true))
 })

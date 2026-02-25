@@ -1,4 +1,5 @@
 ## [2026-02-25 13:20] [Refactor]
+
 - **Change**: 执行desktop-only物理瘦身：移除mobile/ssr，下线AI与会员/计费入口并更新构建配置
 - **Risk Analysis**: 主要风险在于桌面端仍保留部分AI实现代码但已去入口；若后续重新打开相关路由可能触发运行时异常。另外删除多端目录后，若外部脚本仍引用apps/mobile或apps/ssr路径会失败。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
@@ -959,8 +960,11 @@
 - `apps/desktop/layer/renderer/src/lib/lite-mode.test.ts`
 - `apps/desktop/layer/renderer/src/lib/lite-mode.ts`
 - `docs/`
-----------------------------------------
+
+---
+
 ## [2026-02-25 13:35] [Refactor]
+
 - **Change**: 清理desktop残留脚本：移除apps/desktop中的dev:server(SSR)命令
 - **Risk Analysis**: 风险较低，影响仅限开发脚本入口；如果团队仍依赖旧命令会提示脚本不存在，需要改用dev:web或dev:electron。
 - **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
@@ -1921,9 +1925,12 @@
 - `apps/desktop/layer/renderer/src/lib/lite-mode.test.ts`
 - `apps/desktop/layer/renderer/src/lib/lite-mode.ts`
 - `docs/`
-----------------------------------------
+
+---
+
 ## [2026-02-25 13:57] [Bugfix]
-- **Change**: 修复桌面端运行时报错ERR_MODULE_NOT_FOUND(@protobufjs/*)：补齐desktop依赖并调整构建插件
+
+- **Change**: 修复桌面端运行时报错ERR_MODULE_NOT_FOUND(@protobufjs/\*)：补齐desktop依赖并调整构建插件
 - **Risk Analysis**: 风险中等：修改了desktop打包依赖与render构建插件链，可能影响调试插件能力；但已验证应用可成功启动且不再出现protobuf模块缺失。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
 - **Changed Files**:
@@ -2884,8 +2891,11 @@
 - `apps/desktop/layer/renderer/src/lib/lite-mode.test.ts`
 - `apps/desktop/layer/renderer/src/lib/lite-mode.ts`
 - `docs/`
-----------------------------------------
+
+---
+
 ## [2026-02-25 14:23] [Bugfix]
+
 - **Change**: 移除未登录强制登录链路，新增本地可用兜底：401不再弹登录，订阅表单支持游客本地订阅，并将错误页文案改为精简模式提示。
 - **Risk Analysis**: 风险在于部分依赖服务端鉴权的能力将静默降级到本地数据，可能导致与云端状态不一致；另外主进程未读轮询仍会打印401日志，但不应阻断前端使用。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
@@ -2901,47 +2911,130 @@
 - `apps/desktop/layer/renderer/src/lib/lite-mode.test.ts`
 - `apps/desktop/layer/renderer/src/modules/discover/FeedForm.tsx`
 - `packages/internal/store/src/modules/entry/store.ts`
-----------------------------------------
+
+---
+
 ## [2026-02-25 14:27] [Bugfix]
+
 - **Change**: 修复游客订阅成功后仍弹 unknown error：预览条目入库改为安全映射并在失败时静默降级，不再影响订阅成功提示。
 - **Risk Analysis**: 风险较低，主要影响是预览条目字段异常时将跳过入库，可能导致刚订阅后首屏条目数量减少，但不会阻断订阅与后续使用。
 - **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
 - **Changed Files**:
 - `apps/desktop/layer/renderer/src/modules/discover/FeedForm.tsx`
-----------------------------------------
+
+---
+
 ## [2026-02-25 14:33] [Bugfix]
+
 - **Change**: 修复本地预览条目映射：兼容 ParsedEntry 扁平结构并回填 feedId，确保游客订阅后条目可被本地列表与详情链路识别。
 - **Risk Analysis**: 风险中低，若上游字段再次变化会导致部分条目被过滤；但不会影响订阅动作本身，最坏表现为条目不显示。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
 - **Changed Files**:
 - `apps/desktop/layer/renderer/src/modules/discover/FeedForm.tsx`
-----------------------------------------
+
+---
+
 ## [2026-02-25 19:02] [Bugfix]
+
 - **Change**: 修复桌面打包阻断：在 `entry/store.ts` 重新导出 `useEntryStore`，消除 `entry/hooks.ts` 的导入失败；并在打包时临时关闭本机代理环境变量，完成 `electron-forge make` 产物生成。
 - **Risk Analysis**: 导出修复为兼容性变更，风险较低；主要不确定性在于该文件近期重构较多，若后续继续拆分 entry 模块，仍可能出现导入路径漂移。构建命令层面仅影响本次会话环境变量，不改变仓库默认行为。
 - **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
 - **Changed Files**:
 - `packages/internal/store/src/modules/entry/store.ts`
+
 ## [2026-02-25 19:17] [Bugfix]
+
 - **Change**: 修复桌面打包后缺失 better-sqlite3 导致启动时报 ERR_MODULE_NOT_FOUND
 - **Risk Analysis**: 打包白名单扩展后会增大产物体积；若后续继续裁剪 node_modules，可能再次误删 native 运行时依赖，导致同类启动失败回归。
 - **Risk Level**: S1（高级: 关键流程失败、主要功能不可用或明显业务回归）
 - **Changed Files**:
 - `apps/desktop/forge.config.cts`
-----------------------------------------
+
+---
+
 ## [2026-02-25 19:21] [Bugfix]
+
 - **Change**: 新增 FOLO_NO_SIGN 无签名打包开关并提供 build:electron:unsigned 脚本，绕过本地签名链路问题用于开发验证
 - **Risk Analysis**: 无签名包在部分系统策略下会被 Gatekeeper 拦截，需用户手动移除隔离属性或通过右键打开；此外从 iCloud 路径直接运行仍可能出现完整性校验问题。
 - **Risk Level**: S1（高级: 关键流程失败、主要功能不可用或明显业务回归）
 - **Changed Files**:
 - `apps/desktop/forge.config.cts`
 - `apps/desktop/package.json`
-----------------------------------------
+
+---
+
 ## [2026-02-25 19:25] [Critical-Fix]
+
 - **Change**: 修复 macOS 启动即崩溃（Code Signature Invalid）：无签名构建关闭 Fuses、新增 FOLO_NO_SIGN 构建开关，并将可运行包从 iCloud 路径复制到 /tmp 后清理扩展属性并重签
 - **Risk Analysis**: 核心风险在于 iCloud 文件提供器会持续注入 FinderInfo/xattr 导致签名失效；若继续从 Mobile Documents 路径直接运行 .app，问题会复发。需要固定在本地非 iCloud 路径启动。
 - **Risk Level**: S0（阻断级: 可能导致服务不可用、数据损坏或严重安全问题）
 - **Changed Files**:
 - `apps/desktop/forge.config.cts`
 - `apps/desktop/package.json`
-----------------------------------------
+
+---
+
+## [2026-02-25 19:34] [Bugfix]
+
+- **Change**: 将订阅预览从 /api/rss-proxy 切换为本地 IPC：新增 db.previewFeed，FeedForm 预览优先走本地解析，保留 web fallback
+- **Risk Analysis**: 若在非 Electron 场景仍会回退 /api/rss-proxy；另外 packages/internal/store 现有与本次无关的 TS 错误仍在，可能影响全量 typecheck 结果但不影响本次预览链路。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/ipc/services/db.ts`
+- `packages/internal/store/src/modules/feed/store.ts`
+
+---
+
+## [2026-02-25 19:38] [Bugfix]
+
+- **Change**: 订阅表单的类型选择中隐藏视频选项，保留社交媒体/图片等视图
+- **Risk Analysis**: 仅影响 FeedForm 中的视图选择展示，不影响既有已订阅数据的 view 值；若旧数据包含视频视图，仍可能在其他页面看到对应条目。
+- **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/modules/discover/FeedForm.tsx`
+- `apps/desktop/layer/renderer/src/modules/shared/ViewSelectorRadioGroup.tsx`
+- `apps/desktop/layer/renderer/src/modules/shared/view-selector-utils.ts`
+- `apps/desktop/layer/renderer/src/modules/shared/ViewSelectorRadioGroup.test.ts`
+
+---
+
+## [2026-02-25 19:49] [Bugfix]
+
+- **Change**: 回退本地订阅预览链路改动以修复桌面端白屏风险，并保留订阅表单隐藏视频类型
+- **Risk Analysis**: 本次回退恢复到已验证可打包链路，主要风险是新增订阅预览将退回到原有逻辑；隐藏视频能力仍依赖渲染层过滤，若时间线配置变更可能出现显示回归。
+- **Risk Level**: S1（高级: 关键流程失败、主要功能不可用或明显业务回归）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/ipc/services/db.ts`
+- `packages/internal/store/src/modules/feed/store.ts`
+
+---
+
+## [2026-02-25 19:56] [Bugfix]
+
+- **Change**: 回退去视频逻辑并恢复本地预览IPC链路，解决页面白屏并保留本地RSS预览能力
+- **Risk Analysis**: 本次恢复了renderer到main的previewFeed调用，若个别订阅源返回异常XML可能在预览阶段报错；已保留本地代理回退路径，主要风险为订阅预览与最终入库字段不一致。
+- **Risk Level**: S1（高级: 关键流程失败、主要功能不可用或明显业务回归）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/ipc/services/db.ts`
+- `packages/internal/store/src/modules/feed/store.ts`
+- `packages/internal/store/src/modules/feed/local-preview.ts`
+- `apps/desktop/layer/renderer/src/modules/discover/local-preview.test.ts`
+
+---
+
+## [2026-02-25 20:05] [Bugfix]
+
+- **Change**: 新增渲染启动期异常落盘：window.error 与 unhandledrejection 通过IPC写入 main.log；同时保留本地RSS预览IPC链路
+- **Risk Analysis**: 该改动仅新增错误上报链路，不改变业务流程；风险在于异常对象序列化可能产生较长日志。已做降级处理，IPC失败仅控制台输出，不影响页面继续运行。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/ipc/services/app.ts`
+- `apps/desktop/layer/renderer/src/main.tsx`
+- `apps/desktop/layer/renderer/src/lib/renderer-error-log.ts`
+- `apps/desktop/layer/renderer/src/lib/renderer-error-log.test.ts`
+- `apps/desktop/layer/main/src/ipc/services/db.ts`
+- `packages/internal/store/src/modules/feed/store.ts`
+- `packages/internal/store/src/modules/feed/local-preview.ts`
+- `apps/desktop/layer/renderer/src/modules/discover/local-preview.test.ts`
+
+---

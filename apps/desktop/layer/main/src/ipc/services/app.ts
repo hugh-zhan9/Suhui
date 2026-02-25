@@ -30,6 +30,13 @@ interface SearchInput {
   options: Electron.FindInPageOptions
 }
 
+interface RendererErrorLogInput {
+  type: "window-error" | "unhandled-rejection"
+  message: string
+  location?: string
+  stack?: string
+}
+
 interface Sender extends Electron.WebContents {
   getOwnerBrowserWindow: () => Electron.BrowserWindow | null
 }
@@ -250,5 +257,13 @@ export class AppService extends IpcService {
   @IpcMethod()
   getCacheSize(_context: IpcContext) {
     return getCacheSize()
+  }
+
+  @IpcMethod()
+  reportRendererError(_context: IpcContext, input: RendererErrorLogInput): void {
+    logger.error("[renderer-error]", {
+      ...input,
+      phase: "startup",
+    })
   }
 }
