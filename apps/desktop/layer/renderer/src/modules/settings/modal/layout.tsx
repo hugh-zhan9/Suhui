@@ -1,5 +1,4 @@
 import { Spring } from "@follow/components/constants/spring.js"
-import { Folo } from "@follow/components/icons/folo.js"
 import { Logo } from "@follow/components/icons/logo.jsx"
 import { LetsIconsResizeDownRightLight } from "@follow/components/icons/resize.jsx"
 import { IN_ELECTRON } from "@follow/shared/constants"
@@ -121,8 +120,7 @@ export function SettingModalLayout(props: PropsWithChildren) {
               <div className="flex min-h-0 min-w-44 max-w-[20ch] flex-col rounded-l-xl border-r border-r-border bg-sidebar px-2 py-6 backdrop-blur-background">
                 <div className="mb-4 flex h-8 items-center gap-2 px-2 font-bold">
                   <Logo className="mr-1 size-6" />
-
-                  <Folo className="size-8" />
+                  <span className="text-base font-semibold leading-none">FreeFolo</span>
                 </div>
                 <nav className="flex grow flex-col">
                   <SidebarItems />

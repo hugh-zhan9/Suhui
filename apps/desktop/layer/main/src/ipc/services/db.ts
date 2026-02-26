@@ -387,8 +387,13 @@ export class DbService extends IpcService {
     _context: IpcContext,
     targets: { ids: string[]; feedIds: string[]; listIds: string[]; inboxIds: string[] },
   ) {
-    if (!targets.ids || targets.ids.length === 0) return
-    console.info(`[DbService] Deleting subscriptions: ${targets.ids.length}`)
+    const totalTargets =
+      (targets.ids?.length ?? 0) +
+      (targets.feedIds?.length ?? 0) +
+      (targets.listIds?.length ?? 0) +
+      (targets.inboxIds?.length ?? 0)
+    if (totalTargets === 0) return
+    console.info(`[DbService] Deleting subscriptions, targets=${totalTargets}`)
     try {
       await SubscriptionService.deleteByTargets(targets)
     } catch (e: any) {

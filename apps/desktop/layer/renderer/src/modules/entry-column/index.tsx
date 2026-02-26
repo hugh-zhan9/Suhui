@@ -173,7 +173,7 @@ function EntryColumnContent() {
           state.isLoading ? (
             <EntryItemSkeleton view={view} />
           ) : (
-            <EntryEmptyList />
+            <EntryEmptyList allRead />
           )
         ) : (
           <ListComponent

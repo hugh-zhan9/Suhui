@@ -3359,3 +3359,94 @@
 - `apps/desktop/layer/renderer/src/modules/subscription-column/subscription-list/unread-count.test.ts`
 - `issue.md`
 ----------------------------------------
+## [2026-02-26 19:19] [Refactor]
+- **Change**: 新增 macOS 本地打包与安装文档，固化无签名打包流程与产物路径。
+- **Risk Analysis**: 风险较低：仅新增文档，不改运行时代码；主要风险是版本号变化后文档中的示例文件名可能需要同步更新。
+- **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
+- **Changed Files**:
+- `docs/mac-local-packaging.md`
+----------------------------------------
+## [2026-02-26 19:29] [Bugfix]
+- **Change**: 修复取消订阅后切换 Tab 仍展示旧文章：对非激活订阅 feedId 做查询归一化，避免按已失效 feedId 继续读本地条目；同时更新未选中文章时的详情占位文案。
+- **Risk Analysis**: 风险中低：改动集中在 entry 查询参数归一化与文案展示，可能影响依赖 feedId 的边缘路由（如异常路由参数）行为；已通过相关 query-selection 最小测试验证。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/modules/entry-column/hooks/query-selection.ts`
+- `apps/desktop/layer/renderer/src/modules/entry-column/hooks/query-selection.test.ts`
+- `apps/desktop/layer/renderer/src/modules/entry-column/hooks/useEntriesByView.ts`
+- `apps/desktop/layer/renderer/src/components/errors/EntryNotFound.tsx`
+----------------------------------------
+## [2026-02-26 19:34] [Bugfix]
+- **Change**: 本地删除订阅时增加数据库级联清理：同步删除 entries、unread，以及 collections/summaries/translations 中关联记录，防止取消订阅后残留脏数据。
+- **Risk Analysis**: 风险中等：删除范围扩大到关联表，若未来存在跨订阅共享 entryId 的场景，需要确保共享关系不会被误删；当前按 feedId/inboxHandle 精确筛选并在删除前收集 entryId，风险可控。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `packages/internal/database/src/services/subscription.ts`
+- `packages/internal/database/src/services/unread.ts`
+- `apps/desktop/layer/main/src/ipc/services/db.ts`
+- `packages/internal/database/src/services/subscription.cleanup.test.ts`
+----------------------------------------
+## [2026-02-26 19:39] [Bugfix]
+- **Change**: 修复取消订阅后收藏仍显示旧数据：在 unsubscribe 完成后按移除的 feedId 清理 collection store，并失效收藏查询，确保收藏页立即同步。
+- **Risk Analysis**: 风险较低：仅在取消订阅后追加收藏清理分支；若未来存在跨 feed 共享收藏模型，需要重新评估按 feedId 清理策略。
+- **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
+- **Changed Files**:
+- `packages/internal/store/src/modules/subscription/store.ts`
+- `apps/desktop/layer/renderer/src/lib/subscription-unsubscribe-collection-cleanup.test.ts`
+----------------------------------------
+## [2026-02-26 19:41] [Bugfix]
+- **Change**: 修复空列表展示：当 Tab 无数据时，文章列表空态统一显示『全部已读』并居中，替代原先偏上/文案不一致的展示。
+- **Risk Analysis**: 风险较低：仅调整空态渲染文案与布局；可能影响原先依赖 zero_items 文案的场景，但当前需求明确以 all-read 为准。
+- **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/modules/entry-column/list.tsx`
+- `apps/desktop/layer/renderer/src/modules/entry-column/index.tsx`
+----------------------------------------
+## [2026-02-26 19:47] [Refactor]
+- **Change**: 精简设置-关于页面：移除服务条款、隐私政策及其下方资源/社媒区块；设置界面品牌展示由 Folo 调整为 FreeFolo。
+- **Risk Analysis**: 风险较低：仅设置页展示层改动，不涉及数据链路；主要风险是后续若恢复法律链接需重新补回入口。
+- **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/modules/settings/tabs/about.tsx`
+- `apps/desktop/layer/renderer/src/modules/settings/modal/layout.tsx`
+----------------------------------------
+## [2026-02-26 19:48] [Bugfix]
+- **Change**: 修复空数据场景仍显示‘标记以上为已读’：列表与网格视图均增加有数据才渲染 Footer 按钮的条件。
+- **Risk Analysis**: 风险较低：仅 Footer 显示条件收紧，不影响有数据场景的批量已读入口；可能影响依赖空列表 Footer 的旧交互预期。
+- **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/modules/entry-column/list.tsx`
+- `apps/desktop/layer/renderer/src/modules/entry-column/grid.tsx`
+----------------------------------------
+## [2026-02-26 19:52] [Refactor]
+- **Change**: 批量替换仓库内 GitHub 链接：将 https://github.com/RSSNext/follow 替换为 https://github.com/hugh-zhan9/FreeFoloRss，并将 https://github.com/RSSNext 替换为 https://github.com/hugh-zhan9。
+- **Risk Analysis**: 风险中等：全局替换会连带影响历史 changelog 和注释中的 RSSNext 资产链接，可能导致部分历史资源链接失效。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `package.json`
+- `apps/desktop/package.json`
+- `apps/desktop/layer/main/package.json`
+- `apps/desktop/layer/main/src/menu.ts`
+- `apps/desktop/layer/renderer/index.html`
+- `.github/ISSUE_TEMPLATE/config.yml`
+- `.github/ISSUE_TEMPLATE/i18n.yml`
+- `packages/internal/*/package.json`
+- `apps/desktop/changelog/*.md`
+- `packages/internal/constants/src/social.ts`
+- `packages/readability/src/index.ts`
+- `apps/desktop/layer/main/src/lib/proxy.test.ts`
+----------------------------------------
+## [2026-02-26 19:54] [Refactor]
+- **Change**: 移除设置页底部“喜欢我们的产品吗 / GitHub Star”引导文案与链接，保持本地 RSS 精简模式界面。
+- **Risk Analysis**: 风险低：仅删除设置页底部静态展示，不影响功能数据链路。
+- **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/modules/settings/modal/SettingModalContent.tsx`
+----------------------------------------
+## [2026-02-26 19:57] [Feature]
+- **Change**: 新增 GitHub Action：每次 push 自动安装依赖并构建 workspace packages（build:packages），支持手动触发。
+- **Risk Analysis**: 风险低：新增独立 CI 工作流，不影响现有桌面打包流程；可能增加 push 后 CI 运行时长。
+- **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
+- **Changed Files**:
+- `.github/workflows/deps-build-on-push.yml`
+----------------------------------------

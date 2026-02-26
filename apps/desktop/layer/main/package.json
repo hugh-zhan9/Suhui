@@ -4,9 +4,9 @@
   "private": true,
   "author": "FreeFolo Team",
   "license": "GPL-3.0-only",
-  "homepage": "https://github.com/RSSNext",
+  "homepage": "https://github.com/hugh-zhan9",
   "repository": {
-    "url": "https://github.com/RSSNext/follow",
+    "url": "https://github.com/hugh-zhan9/FreeFoloRss",
     "type": "git"
   },
   "exports": {

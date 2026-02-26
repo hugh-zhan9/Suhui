@@ -1,4 +1,5 @@
 import { FeedViewType } from "@follow/constants"
+import type { CollectionSchema } from "@follow/database/schemas/types"
 import { SubscriptionService } from "@follow/database/services/subscription"
 import { tracker } from "@follow/tracker"
 import { omit } from "es-toolkit"
@@ -9,6 +10,7 @@ import { createImmerSetter, createTransaction, createZustandStore } from "../../
 import { apiMorph } from "../../morph/api"
 
 import { buildSubscriptionDbId, storeDbMorph } from "../../morph/store-db"
+import { collectionActions, useCollectionStore } from "../collection/store"
 import { invalidateEntriesQuery } from "../entry/hooks"
 import { entryActions } from "../entry/store"
 import { dbStoreMorph } from "../../morph/db-store"
@@ -93,6 +95,18 @@ const invalidateViews = (...views: (FeedViewType | undefined)[]) => {
     views: Array.from(viewSet),
   })
 }
+
+export const getCollectionEntryIdsByFeedIds = (
+  collections: Record<string, CollectionSchema>,
+  feedIds: string[],
+) => {
+  if (feedIds.length === 0) return []
+  const feedIdSet = new Set(feedIds)
+  return Object.values(collections)
+    .filter((collection) => !!collection.feedId && feedIdSet.has(collection.feedId))
+    .map((collection) => collection.entryId)
+}
+
 export const useSubscriptionStore = createZustandStore<SubscriptionState>("subscription")(
   () => defaultState,
 )
@@ -491,6 +505,20 @@ class SubscriptionSyncService {
       new Set([...feedSubscriptions, ...listSubscriptions].map((i) => i.view)),
     )
     invalidateViews(...affectedViews)
+
+    const removedFeedIds = feedSubscriptions
+      .map((subscription) => subscription.feedId)
+      .filter((feedId): feedId is string => !!feedId)
+    if (removedFeedIds.length > 0) {
+      const collectionEntryIds = getCollectionEntryIdsByFeedIds(
+        useCollectionStore.getState().collections,
+        removedFeedIds,
+      )
+      if (collectionEntryIds.length > 0) {
+        await collectionActions.delete(collectionEntryIds)
+        invalidateEntriesQuery({ collection: true })
+      }
+    }
 
     feedSubscriptions.forEach((i) => {
       unreadActions.updateById(i.feedId, 0)

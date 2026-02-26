@@ -18,6 +18,21 @@ export const normalizePendingFeedId = (
   return feedId
 }
 
+export const normalizeFeedIdForActiveSubscription = ({
+  feedId,
+  pendingFeedId,
+  isSubscribed,
+}: {
+  feedId: string | undefined
+  pendingFeedId: string
+  isSubscribed: boolean
+}) => {
+  const normalizedFeedId = normalizePendingFeedId(feedId, pendingFeedId)
+  if (!normalizedFeedId) return undefined
+  if (!isSubscribed) return undefined
+  return normalizedFeedId
+}
+
 export const shouldFilterUnreadEntries = ({
   isCollection,
   unreadOnly,

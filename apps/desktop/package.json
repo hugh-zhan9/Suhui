@@ -5,9 +5,9 @@
   "private": true,
   "description": "FreeFolo desktop RSS reader",
   "author": "FreeFolo Team",
-  "homepage": "https://github.com/RSSNext",
+  "homepage": "https://github.com/hugh-zhan9",
   "repository": {
-    "url": "https://github.com/RSSNext/Folo",
+    "url": "https://github.com/hugh-zhan9/Folo",
     "type": "git"
   },
   "main": "./dist/main/index.js",

@@ -150,7 +150,7 @@ const VirtualGridImpl: FC<
   })
 
   const rowVirtualizer = useVirtualizer({
-    count: rows.length + (hasNextPage ? 1 : 0) + (Footer ? 1 : 0),
+    count: rows.length + (hasNextPage ? 1 : 0) + (Footer && entriesIds.length > 0 ? 1 : 0),
     estimateSize: () => {
       return columns[0]! / ratioMap[view] + (!isImageOnly ? 58 : 0)
     },
@@ -228,7 +228,7 @@ const VirtualGridImpl: FC<
     >
       {rowVirtualizer.getVirtualItems().map((virtualRow) => {
         const footerRowIndex = rows.length + (hasNextPage ? 1 : 0)
-        const isFooterRow = Footer && virtualRow.key === footerRowIndex
+        const isFooterRow = Footer && entriesIds.length > 0 && virtualRow.index === footerRowIndex
 
         if (isFooterRow && ready) {
           return (

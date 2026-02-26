@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest"
 
-import { normalizePendingFeedId, shouldUseLocalEntriesQuery } from "./query-selection"
+import {
+  normalizeFeedIdForActiveSubscription,
+  normalizePendingFeedId,
+  shouldUseLocalEntriesQuery,
+} from "./query-selection"
 
 describe("query selection", () => {
   it("收藏页应强制使用本地查询", () => {
@@ -18,5 +22,25 @@ describe("query selection", () => {
   it("应将 pending feedId 归一化为空，避免误当真实订阅查询", () => {
     expect(normalizePendingFeedId("pending", "pending")).toBeUndefined()
     expect(normalizePendingFeedId("feed_1", "pending")).toBe("feed_1")
+  })
+
+  it("已取消订阅的 feedId 应归一化为空，避免 tab 切换后继续展示旧文章", () => {
+    expect(
+      normalizeFeedIdForActiveSubscription({
+        feedId: "feed_1",
+        pendingFeedId: "pending",
+        isSubscribed: false,
+      }),
+    ).toBeUndefined()
+  })
+
+  it("仍处于订阅状态的 feedId 应保留", () => {
+    expect(
+      normalizeFeedIdForActiveSubscription({
+        feedId: "feed_1",
+        pendingFeedId: "pending",
+        isSubscribed: true,
+      }),
+    ).toBe("feed_1")
   })
 })

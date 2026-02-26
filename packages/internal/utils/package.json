@@ -4,9 +4,9 @@
   "private": true,
   "author": "Folo Team",
   "license": "MIT",
-  "homepage": "https://github.com/RSSNext",
+  "homepage": "https://github.com/hugh-zhan9",
   "repository": {
-    "url": "https://github.com/RSSNext/follow",
+    "url": "https://github.com/hugh-zhan9/FreeFoloRss",
     "type": "git"
   },
   "sideEffects": false,

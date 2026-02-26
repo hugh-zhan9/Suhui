@@ -1,5 +1,6 @@
 import { db } from "../db"
 import { unreadTable } from "../schemas"
+import { inArray } from "drizzle-orm"
 import type { UnreadSchema } from "../schemas/types"
 import type { Resetable } from "./internal/base"
 import { conflictUpdateAllExcept } from "./internal/utils"
@@ -29,6 +30,11 @@ class UnreadServiceStatic implements Resetable {
         target: [unreadTable.id],
         set: conflictUpdateAllExcept(unreadTable, ["id"]),
       })
+  }
+
+  async deleteByIds(ids: string[]) {
+    if (!ids || ids.length === 0) return
+    await db.delete(unreadTable).where(inArray(unreadTable.id, ids)).execute()
   }
 }
 

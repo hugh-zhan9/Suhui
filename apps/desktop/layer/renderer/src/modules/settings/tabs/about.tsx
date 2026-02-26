@@ -1,20 +1,15 @@
-import { Folo } from "@follow/components/icons/folo.js"
 import { Logo } from "@follow/components/icons/logo.jsx"
-import { Divider } from "@follow/components/ui/divider/Divider.js"
-import { SocialMediaLinks } from "@follow/constants"
 import { IN_ELECTRON, MODE, ModeEnum } from "@follow/shared/constants"
 import { getCurrentEnvironment } from "@follow/utils/environment"
-import { cn } from "@follow/utils/utils"
 import PKG, { repository } from "@pkg"
 import { useQuery } from "@tanstack/react-query"
 import { useEffect, useRef, useState } from "react"
-import { Trans, useTranslation } from "react-i18next"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
 import { PlainWithAnimationModal } from "~/components/ui/modal/stacked/custom-modal"
 import { useModalStack } from "~/components/ui/modal/stacked/hooks"
 import { ipcServices } from "~/lib/client"
-import { getNewIssueUrl } from "~/lib/issues"
 import { EnvironmentDebugModalContent } from "~/modules/app/EnvironmentIndicator"
 
 export const SettingAbout = () => {
@@ -97,11 +92,6 @@ export const SettingAbout = () => {
     }
   }
 
-  const handleOpenLegal = (type: "privacy" | "tos") => {
-    const path = type === "privacy" ? "privacy-policy" : "terms-of-service"
-    window.open(`https://folo.is/${path}`, "_blank")
-  }
-
   return (
     <div className="mx-auto mt-6 max-w-3xl space-y-8">
       {/* Header Section */}
@@ -109,9 +99,7 @@ export const SettingAbout = () => {
         <div className="mb-6 flex justify-center">
           <Logo className="size-20" />
         </div>
-        <h1 className="-mt-6 flex justify-center">
-          <Folo className="size-16" />
-        </h1>
+        <h1 className="-mt-4 text-center text-3xl font-semibold">FreeFolo</h1>
         {MODE !== ModeEnum.production && (
           <span className="block -translate-y-2 text-sm font-normal text-text-tertiary">
             {MODE}
@@ -191,91 +179,6 @@ export const SettingAbout = () => {
         </button>
       </div>
 
-      {/* Legal Section */}
-      <div className="-mx-3 !mt-4 space-y-1 px-2">
-        <Divider />
-        <button
-          type="button"
-          onClick={() => handleOpenLegal("tos")}
-          className="group flex w-full items-center justify-between rounded-lg p-3 text-left transition-all hover:bg-fill-secondary hover:shadow-sm"
-        >
-          <span className="text-sm">{t("about.termsOfService")}</span>
-          <i className="i-mgc-external-link-cute-re text-text-tertiary transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-accent" />
-        </button>
-        <button
-          type="button"
-          onClick={() => handleOpenLegal("privacy")}
-          className="group flex w-full items-center justify-between rounded-lg p-3 text-left transition-all hover:bg-fill-secondary hover:shadow-sm"
-        >
-          <span className="text-sm">{t("about.privacyPolicy")}</span>
-          <i className="i-mgc-external-link-cute-re text-text-tertiary transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-accent" />
-        </button>
-      </div>
-
-      {/* Resources Section */}
-      <div className="px-2">
-        <h2 className="mb-4 text-sm font-semibold text-text-secondary">{t("about.resources")}</h2>
-        <div className="space-y-4">
-          <p className="text-sm leading-relaxed text-text-secondary">
-            <Trans
-              ns="settings"
-              i18nKey="about.feedbackInfo"
-              values={{ appName: APP_NAME, commitSha: GIT_COMMIT_SHA.slice(0, 7).toUpperCase() }}
-              components={{
-                OpenIssueLink: (
-                  <a
-                    className="text-accent hover:underline"
-                    href={getNewIssueUrl({ template: "feature_request.yml" })}
-                    target="_blank"
-                  >
-                    open an issue
-                  </a>
-                ),
-              }}
-            />
-          </p>
-          <p className="text-sm leading-relaxed text-text-secondary">
-            {t("about.projectLicense", { appName: APP_NAME })}
-          </p>
-          <p className="text-sm leading-relaxed text-text-secondary">
-            <Trans
-              ns="settings"
-              i18nKey="about.iconLibrary"
-              components={{
-                IconLibraryLink: (
-                  <a
-                    className="text-accent hover:underline"
-                    href="https://mgc.mingcute.com/"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    MingCute Icons
-                  </a>
-                ),
-              }}
-            />
-          </p>
-        </div>
-      </div>
-
-      {/* Social Links */}
-      <div className="px-2">
-        <h2 className="mb-4 text-sm font-semibold text-text-secondary">{t("about.socialMedia")}</h2>
-        <div className="flex flex-wrap gap-6">
-          {SocialMediaLinks.map((link) => (
-            <a
-              href={link.url}
-              key={link.url}
-              className="flex items-center gap-2 text-sm transition-colors hover:text-accent"
-              target="_blank"
-              rel="noreferrer"
-            >
-              <i className={cn(link.iconClassName, "text-base")} />
-              <span>{link.label}</span>
-            </a>
-          ))}
-        </div>
-      </div>
     </div>
   )
 }

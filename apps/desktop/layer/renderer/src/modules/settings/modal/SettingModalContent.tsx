@@ -1,7 +1,6 @@
 import { ScrollArea } from "@follow/components/ui/scroll-area/index.js"
 import { useIsLoggedIn } from "@follow/store/user/hooks"
 import { clsx, cn } from "@follow/utils"
-import { repository } from "@pkg"
 import type { FC } from "react"
 import {
   Suspense,
@@ -12,7 +11,6 @@ import {
   useMemo,
   useState,
 } from "react"
-import { Trans } from "react-i18next"
 import { useLoaderData } from "react-router"
 
 import { ModalClose } from "~/components/ui/modal/stacked/components"
@@ -195,22 +193,6 @@ const Content: FC<{
         </SettingSectionHighlightIdContext>
 
         <div className="h-16" />
-        <p className="absolute inset-x-0 bottom-4 flex items-center justify-center gap-1 text-xs opacity-80">
-          <Trans
-            ns="settings"
-            i18nKey="common.give_star"
-            components={{
-              Link: (
-                <a
-                  href={`${repository.url}`}
-                  className="font-semibold text-accent"
-                  target="_blank"
-                />
-              ),
-              HeartIcon: <i className="i-mgc-heart-cute-fi" />,
-            }}
-          />
-        </p>
       </ScrollArea.ScrollArea>
     </Suspense>
   )

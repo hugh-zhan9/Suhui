@@ -2,15 +2,56 @@ import type { FeedViewType } from "@follow/constants"
 import { and, eq, inArray, notInArray, or, sql } from "drizzle-orm"
 
 import { db } from "../db"
-import { feedsTable, inboxesTable, listsTable, subscriptionsTable } from "../schemas"
+import {
+  collectionsTable,
+  entriesTable,
+  feedsTable,
+  inboxesTable,
+  listsTable,
+  subscriptionsTable,
+  summariesTable,
+  translationsTable,
+} from "../schemas"
 import type { SubscriptionSchema } from "../schemas/types"
 import type { Resetable } from "./internal/base"
+import { UnreadService } from "./unread"
 
 type DeleteTargets = {
   ids?: string[]
   feedIds?: string[]
   listIds?: string[]
   inboxIds?: string[]
+}
+
+type SubscriptionDeleteResult = {
+  feedId: string | null
+  listId: string | null
+  inboxId: string | null
+  type: "feed" | "list" | "inbox"
+}
+
+export const collectCleanupTargets = (results: SubscriptionDeleteResult[]) => {
+  const feedIds = new Set<string>()
+  const listIds = new Set<string>()
+  const inboxIds = new Set<string>()
+
+  for (const result of results) {
+    if (result.type === "feed" && result.feedId) {
+      feedIds.add(result.feedId)
+    }
+    if (result.type === "list" && result.listId) {
+      listIds.add(result.listId)
+    }
+    if (result.type === "inbox" && result.inboxId) {
+      inboxIds.add(result.inboxId)
+    }
+  }
+
+  return {
+    feedIds: Array.from(feedIds),
+    listIds: Array.from(listIds),
+    inboxIds: Array.from(inboxIds),
+  }
 }
 
 class SubscriptionServiceStatic implements Resetable {
@@ -97,25 +138,64 @@ class SubscriptionServiceStatic implements Resetable {
 
     if (!results || results.length === 0) return
 
-    // Cleanup
-    for (const result of results) {
-      const { type, feedId, listId, inboxId } = result
-      switch (type) {
-        case "feed": {
-          if (!feedId) break
-          await db.delete(feedsTable).where(eq(feedsTable.id, feedId)).execute()
-          break
-        }
-        case "list": {
-          if (!listId) break
-          await db.delete(listsTable).where(eq(listsTable.id, listId)).execute()
-          break
-        }
-        case "inbox": {
-          if (!inboxId) break
-          await db.delete(inboxesTable).where(eq(inboxesTable.id, inboxId)).execute()
-          break
-        }
+    const cleanup = collectCleanupTargets(results as SubscriptionDeleteResult[])
+
+    if (cleanup.feedIds.length > 0) {
+      const entries = await db.query.entriesTable.findMany({
+        where: inArray(entriesTable.feedId, cleanup.feedIds),
+        columns: { id: true },
+      })
+      const entryIds = entries.map((entry) => entry.id)
+
+      await db.delete(entriesTable).where(inArray(entriesTable.feedId, cleanup.feedIds)).execute()
+
+      if (entryIds.length > 0) {
+        await db.delete(collectionsTable).where(inArray(collectionsTable.entryId, entryIds)).execute()
+        await db.delete(summariesTable).where(inArray(summariesTable.entryId, entryIds)).execute()
+        await db.delete(translationsTable).where(inArray(translationsTable.entryId, entryIds)).execute()
+      }
+
+      await UnreadService.deleteByIds(cleanup.feedIds)
+
+      for (const feedId of cleanup.feedIds) {
+        await db.delete(feedsTable).where(eq(feedsTable.id, feedId)).execute()
+      }
+    }
+
+    if (cleanup.listIds.length > 0) {
+      await UnreadService.deleteByIds(cleanup.listIds)
+      for (const listId of cleanup.listIds) {
+        await db.delete(listsTable).where(eq(listsTable.id, listId)).execute()
+      }
+    }
+
+    if (cleanup.inboxIds.length > 0) {
+      const inboxEntries = await db.query.entriesTable.findMany({
+        where: inArray(entriesTable.inboxHandle, cleanup.inboxIds),
+        columns: { id: true },
+      })
+      const inboxEntryIds = inboxEntries.map((entry) => entry.id)
+
+      await db
+        .delete(entriesTable)
+        .where(inArray(entriesTable.inboxHandle, cleanup.inboxIds))
+        .execute()
+
+      if (inboxEntryIds.length > 0) {
+        await db
+          .delete(collectionsTable)
+          .where(inArray(collectionsTable.entryId, inboxEntryIds))
+          .execute()
+        await db.delete(summariesTable).where(inArray(summariesTable.entryId, inboxEntryIds)).execute()
+        await db
+          .delete(translationsTable)
+          .where(inArray(translationsTable.entryId, inboxEntryIds))
+          .execute()
+      }
+
+      await UnreadService.deleteByIds(cleanup.inboxIds)
+      for (const inboxId of cleanup.inboxIds) {
+        await db.delete(inboxesTable).where(eq(inboxesTable.id, inboxId)).execute()
       }
     }
   }

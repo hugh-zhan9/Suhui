@@ -262,8 +262,8 @@ const config: ForgeConfig = {
       name: "@electron-forge/publisher-github",
       config: {
         repository: {
-          owner: "RSSNext",
-          name: "follow",
+          owner: "hugh-zhan9",
+          name: "FreeFolo",
         },
         draft: true,
       },

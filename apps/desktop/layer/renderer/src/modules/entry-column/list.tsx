@@ -21,23 +21,25 @@ import { EntryItemSkeleton } from "./EntryItemSkeleton"
 
 export const EntryEmptyList = ({
   ref,
+  allRead = false,
   ...props
-}: HTMLMotionProps<"div"> & { ref?: React.Ref<HTMLDivElement | null> }) => {
+}: HTMLMotionProps<"div"> & { ref?: React.Ref<HTMLDivElement | null>; allRead?: boolean }) => {
   const unreadOnly = useGeneralSettingKey("unreadOnly")
   const { t } = useTranslation()
+  const showAllRead = allRead || unreadOnly
   return (
     <m.div
-      className="absolute -mt-6 flex size-full grow flex-col items-center justify-center gap-2 text-zinc-400"
+      className="absolute inset-0 flex size-full grow flex-col items-center justify-center gap-2 text-zinc-400"
       {...props}
       ref={ref}
     >
-      {unreadOnly ? (
+      {showAllRead ? (
         <>
-          <i className="i-mgc-celebrate-cute-re -mt-11 text-3xl" />
+          <i className="i-mgc-celebrate-cute-re text-3xl" />
           <span className="text-base">{t("entry_list.zero_unread")}</span>
         </>
       ) : (
-        <div className="flex -translate-y-6 flex-col items-center justify-center gap-2">
+        <div className="flex flex-col items-center justify-center gap-2">
           <EmptyIcon className="size-[30px]" />
           <span className="text-base">{t("words.zero_items")}</span>
         </div>
@@ -208,9 +210,10 @@ export const EntryList: FC<EntryListProps> = memo(
 
             const transform = `translateY(${virtualRow.start}px)`
             if (isLoaderRow) {
+              const hasEntries = entriesIds.length > 0
               const Content = hasNextPage ? (
                 <EntryItemSkeleton view={view} count={6} />
-              ) : Footer ? (
+              ) : Footer && hasEntries ? (
                 typeof Footer === "function" ? (
                   <Footer />
                 ) : (

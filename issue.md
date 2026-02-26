@@ -141,3 +141,5 @@
 33. ~~全部 Tab 未读数量与文章 Tab 明显不一致（示例：文章 17、全部 39），口径异常。~~  
 修复方式：`All/Articles` 未读统计改为“按当前有效订阅来源聚合”而非直接使用 `entryIdByView` 索引，避免把已取消订阅或陈旧来源条目计入。统计时按 `feedId/inboxId` 取条目并对条目 ID 去重后再计算未读。  
 改动范围：`apps/desktop/layer/renderer/src/lib/unread-by-view.ts`、`apps/desktop/layer/renderer/src/lib/unread-by-view.test.ts`、`apps/desktop/layer/renderer/src/modules/subscription-column/subscription-list/unread-count.test.ts`
+
+34. 设置里的 列表 菜单可以删掉了，本地RSS不需要相关的分享功能

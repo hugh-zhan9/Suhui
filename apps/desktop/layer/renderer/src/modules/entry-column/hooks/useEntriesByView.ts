@@ -12,7 +12,7 @@ import {
 import { entryActions, entrySyncServices, useEntryStore } from "@follow/store/entry/store"
 import type { UseEntriesReturn } from "@follow/store/entry/types"
 import { fallbackReturn } from "@follow/store/entry/utils"
-import { useFolderFeedsByFeedId } from "@follow/store/subscription/hooks"
+import { useFolderFeedsByFeedId, useIsSubscribed } from "@follow/store/subscription/hooks"
 import { unreadSyncService } from "@follow/store/unread/store"
 import { nextFrame } from "@follow/utils"
 import { isBizId } from "@follow/utils/utils"
@@ -28,7 +28,7 @@ import { useRouteParams } from "~/hooks/biz/useRouteParams"
 
 import { aiTimelineEnabledAtom } from "../atoms/ai-timeline"
 import {
-  normalizePendingFeedId,
+  normalizeFeedIdForActiveSubscription,
   shouldFilterUnreadEntries,
   shouldUseLocalEntriesQuery,
 } from "./query-selection"
@@ -49,9 +49,14 @@ const useRemoteEntries = (): UseEntriesReturn => {
     feedId,
     view,
   })
+  const isSubscribed = useIsSubscribed(feedId)
 
   const entriesOptions = useMemo(() => {
-    const normalizedFeedId = normalizePendingFeedId(feedId, ROUTE_FEED_PENDING)
+    const normalizedFeedId = normalizeFeedIdForActiveSubscription({
+      feedId,
+      pendingFeedId: ROUTE_FEED_PENDING,
+      isSubscribed,
+    })
     const params = {
       feedId: folderIds?.join(",") || normalizedFeedId,
       inboxId,
@@ -81,6 +86,7 @@ const useRemoteEntries = (): UseEntriesReturn => {
     hidePrivateSubscriptionsInTimeline,
     aiTimelineEnabled,
     aiEnabled,
+    isSubscribed,
   ])
   const query = useEntriesQuery(entriesOptions)
 
@@ -130,15 +136,25 @@ const useLocalEntries = (): UseEntriesReturn => {
     feedId,
     view,
   })
+  const isSubscribed = useIsSubscribed(feedId)
+  const activeFeedId = useMemo(
+    () =>
+      normalizeFeedIdForActiveSubscription({
+        feedId,
+        pendingFeedId: ROUTE_FEED_PENDING,
+        isSubscribed,
+      }),
+    [feedId, isSubscribed],
+  )
   const entryIdsByView = useEntryIdsByView(view, hidePrivateSubscriptionsInTimeline)
   const entryIdsByCollections = useCollectionEntryList(view)
-  const entryIdsByFeedId = useEntryIdsByFeedId(feedId)
+  const entryIdsByFeedId = useEntryIdsByFeedId(activeFeedId)
   const entryIdsByCategory = useEntryIdsByFeedIds(folderIds)
   const entryIdsByListId = useEntryIdsByListId(listId)
   const entryIdsByInboxId = useEntryIdsByInboxId(inboxId)
 
   const showEntriesByView =
-    (!feedId || feedId === ROUTE_FEED_PENDING) &&
+    !activeFeedId &&
     folderIds.length === 0 &&
     !isCollection &&
     !inboxId &&
@@ -217,7 +233,7 @@ const useLocalEntries = (): UseEntriesReturn => {
 
   useEffect(() => {
     setPage(0)
-  }, [view, feedId])
+  }, [view, activeFeedId])
 
   return {
     entriesIds: entries,

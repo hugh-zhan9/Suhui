@@ -6,9 +6,9 @@
   "description": "Follow everything in one place",
   "author": "Folo Team",
   "license": "AGPL-3.0-only",
-  "homepage": "https://github.com/RSSNext",
+  "homepage": "https://github.com/hugh-zhan9",
   "repository": {
-    "url": "https://github.com/RSSNext/follow",
+    "url": "https://github.com/hugh-zhan9/FreeFoloRss",
     "type": "git"
   },
   "scripts": {

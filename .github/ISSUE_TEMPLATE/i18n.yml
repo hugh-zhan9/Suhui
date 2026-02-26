@@ -8,7 +8,7 @@ body:
       value: |
         Thanks for taking the time to contribute to our internationalization efforts!
 
-        Before proceeding, please check our [i18n Contribution Guidelines](https://github.com/RSSNext/Follow/blob/dev/wiki/contribute-i18n.md) for detailed instructions.
+        Before proceeding, please check our [i18n Contribution Guidelines](https://github.com/hugh-zhan9/Follow/blob/dev/wiki/contribute-i18n.md) for detailed instructions.
   - type: dropdown
     id: type
     attributes:

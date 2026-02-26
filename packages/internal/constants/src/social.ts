@@ -2,7 +2,7 @@ export const SocialMediaLinks = [
   {
     iconClassName: "i-mgc-github-cute-fi text-[#000000] dark:text-[#ffffff]",
     label: "GitHub",
-    url: "https://github.com/RSSNext/Folo",
+    url: "https://github.com/hugh-zhan9/Folo",
   },
   {
     iconClassName: "i-mgc-discord-cute-fi text-[#5865F2] dark:brightness-125",
