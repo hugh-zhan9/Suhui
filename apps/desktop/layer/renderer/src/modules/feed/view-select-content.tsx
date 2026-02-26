@@ -1,14 +1,15 @@
 import { SelectContent, SelectItem } from "@follow/components/ui/select/index.jsx"
-import { getViewList } from "@follow/constants"
 import { cn } from "@follow/utils/utils"
 import { useTranslation } from "react-i18next"
+
+import { getLocalSupportedViewList } from "~/lib/local-views"
 
 export const ViewSelectContent = () => {
   const { t } = useTranslation()
 
   return (
     <SelectContent>
-      {getViewList().map((view, index) => (
+      {getLocalSupportedViewList().map((view, index) => (
         <SelectItem key={view.name} value={`${index}`}>
           <div className="flex items-center gap-2">
             <span className={cn(view.className, "flex")}>{view.icon}</span>

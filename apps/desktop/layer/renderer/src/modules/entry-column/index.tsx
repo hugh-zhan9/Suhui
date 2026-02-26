@@ -1,14 +1,12 @@
 import { FeedViewType, getView } from "@follow/constants"
 import { useTitle } from "@follow/hooks"
-import { useEntry } from "@follow/store/entry/hooks"
 import { useFeedById } from "@follow/store/feed/hooks"
 import { useSubscriptionByFeedId } from "@follow/store/subscription/hooks"
 import { unreadSyncService } from "@follow/store/unread/store"
-import { useIsLoggedIn } from "@follow/store/user/hooks"
 import { isBizId } from "@follow/utils/utils"
 import type { Range, Virtualizer } from "@tanstack/react-virtual"
 import { atom, useAtomValue } from "jotai"
-import { memo, useCallback, useEffect, useMemo, useRef } from "react"
+import { Component, memo, useCallback, useEffect, useMemo, useRef } from "react"
 import { useTranslation } from "react-i18next"
 
 import { useGeneralSettingKey } from "~/atoms/settings/general"
@@ -50,6 +48,13 @@ function EntryColumnContent() {
   }, [actions])
 
   const { entriesIds, groupedCounts } = state
+  console.log('[Antigravity] EntryColumnContent render:', {
+    entriesIdsLen: entriesIds.length,
+    isLoading: state.isLoading,
+    isFetching: state.isFetching,
+    type: state.type,
+    entriesIds: entriesIds.slice(0, 3),
+  })
   useSnapEntryIdList(entriesIds)
 
   const {
@@ -60,24 +65,19 @@ function EntryColumnContent() {
     isCollection,
   } = useRouteParams()
 
-  const entry = useEntry(activeEntryId, (state) => {
-    const { feedId } = state
-    return { feedId }
-  })
   const feed = useFeedById(routeFeedId)
   const title = useFeedHeaderTitle()
   useTitle(title)
-  const isLoggedIn = useIsLoggedIn()
+  // For local mode, we don't need isLoggedIn check to mark entries as read
 
   useEffect(() => {
     if (!activeEntryId) return
 
     if (isCollection || isPendingEntry) return
-    if (!entry?.feedId) return
 
-    if (!isLoggedIn) return
-    unreadSyncService.markEntryAsRead(activeEntryId)
-  }, [activeEntryId, entry?.feedId, isCollection, isPendingEntry, isLoggedIn])
+    // Mark as read for both local and remote feeds
+    unreadSyncService.markRead(activeEntryId)
+  }, [activeEntryId, isCollection, isPendingEntry])
 
   const isInteracted = useRef(false)
 
@@ -203,6 +203,28 @@ function EntryColumnContent() {
   )
 }
 
+class DebugErrorBoundary extends Component<any, { hasError: boolean; error: any }> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true, error };
+  }
+  override render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ color: 'red', padding: '20px', zIndex: 9999, flex: 1, backgroundColor: 'white', overflow: 'auto' }}>
+          <h2>React Render Crash</h2>
+          <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{this.state.error?.toString()}</pre>
+          <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: '12px' }}>{this.state.error?.stack}</pre>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function EntryColumnImpl() {
   return (
     <EntryRootStateContext
@@ -213,7 +235,9 @@ function EntryColumnImpl() {
         [],
       )}
     >
-      <EntryColumnContent />
+      <DebugErrorBoundary>
+        <EntryColumnContent />
+      </DebugErrorBoundary>
     </EntryRootStateContext>
   )
 }

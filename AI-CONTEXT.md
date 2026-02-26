@@ -1,7 +1,7 @@
 # AI-CONTEXT.md
 
-> 单一事实源（Single Source of Truth）  
-> 最后更新时间：2026-02-25（本次为“二次深度代码复核”更新）
+> 单一事实源（Single Source of Truth）
+> 最后更新时间：2026-02-26（基于当前代码与 issue 修复进展）
 
 ## 上下文委派策略
 
@@ -13,84 +13,96 @@
 ### 1) 端与工作区
 
 - 当前仅保留 Desktop：`apps/desktop`
-- `apps/mobile`、`apps/ssr` 已移除
-- `pnpm-workspace.yaml` 为 desktop-only + packages
+- 已移除：`apps/mobile`、`apps/ssr`
+- `pnpm-workspace.yaml` 为 desktop + packages
 
 ### 2) 产品目标
 
-- 目标：**Desktop 端完全本地 RSS 阅读器**
-- 不保留：登录强依赖、会员/计费、AI 在线能力、云端 API 强依赖
+- 目标：**Desktop 端完全本地 RSS 阅读器（FreeFolo）**
+- 已明确剔除：会员/计费、登录强依赖、在线 AI 主链路依赖
 
-### 3) 本地数据面（关键结论）
+### 3) 本地数据面
 
-- 主进程数据库：`better-sqlite3`，目标文件 `app.getPath("userData")/folo_local.db`
+- 主数据面：主进程 SQLite（`better-sqlite3`）
+  - DB 文件：`app.getPath("userData")/folo_local.db`
   - 入口：`apps/desktop/layer/main/src/manager/db.ts`
-  - 启动初始化：`apps/desktop/layer/main/src/manager/bootstrap.ts`
-- 渲染层数据库：`packages/internal/database/src/db.desktop.ts` 已改为 **IPC SQL 代理**（`db.executeRawSql`），不再直接使用旧 `wa-sqlite` 读写
-- 兼容迁移：保留 `migrateFromIndexedDB()`，可将旧 `WA_SQLITE`（IndexedDB）数据迁移到主进程 SQLite（`migration.migrateFromRenderer`）
+  - 初始化：`apps/desktop/layer/main/src/manager/bootstrap.ts`
+- 渲染层 DB：`packages/internal/database/src/db.desktop.ts`
+  - 已改为 IPC SQL 代理（`db.executeRawSql`）
+- 兼容迁移：保留 `migrateFromIndexedDB()`，用于历史 IndexedDB -> SQLite
 
-### 3.1 启动链路（代码确认）
+### 4) 启动与构建（当前可用）
 
-- 主进程入口：`apps/desktop/layer/main/src/bootstrap.ts` -> `BootstrapManager.start()`
-- 启动时会先执行 `DBManager.init()`（初始化/迁移主进程 SQLite）
-- 常用命令：
-  - 开发启动：`pnpm --filter Folo dev:electron`
-  - 预览启动：`pnpm --filter Folo start`
+- 开发启动：`pnpm --filter FreeFolo dev:electron`
+- 预览启动：`pnpm --filter FreeFolo start`
+- 打包：`pnpm --filter FreeFolo build:electron`  
+  无签名打包：`pnpm --filter FreeFolo build:electron:unsigned`
 
-### 4) 订阅与条目链路（当前实现）
+## 本地 RSS 主链路（已落地）
 
-- 订阅侧栏读取：
-  - `subscriptionSyncService.fetch()` 直接读本地 Zustand + 本地 feed store（非远端拉取）
-- 新增订阅：
-  - 优先 `window.electron.ipcRenderer.invoke("db.addFeed", form)`，主进程用 Node `http/https` + 轻量 XML 解析抓取并写本地 `feeds/subscriptions/entries`
-  - 非 Electron fallback 才走 `/api/rss-proxy`
-- 条目列表/详情：
-  - `entrySyncServices.fetchEntries()`、`fetchEntryDetail()` 已本地化
+### 1) 订阅
 
-### 5) 仍残留的远端调用（必须继续清理）
+- 新增订阅优先走 IPC：`db.addFeed`
+- 主进程抓取：Node `http/https`（支持重定向）
+- 解析：本地 XML 解析（不依赖 `linkedom/canvas`）
+- 去重：feed URL + 站点 host 双重判定
+- 入库：`feeds/subscriptions/entries`（本地）
 
-- `api().entries.stream`（`/entries/stream`）：用于“缺失 content 的条目正文补全”
-  - 触发点：`useEntriesByView` 中无条件调用 `useFetchEntryContentByStream(remoteQuery.entriesIds)`
-- `api().entries.readability`
-- `api().entries.readHistories`
-- `api().entries.inbox.delete`
-- 订阅模块仍有：
-  - `api().subscriptions.update`
-  - `api().subscriptions.batchUpdate`
-  - `api().categories.*`（分类操作路径）
-- 其他模块仍有大量 `api()/followClient.api` 调用（如 `feed/list/collection/inbox/action/translation/summary/discover/rsshub/wallet/messaging/trending`）
-  - 说明：当前“本地化已完成”主要集中在订阅与阅读主链路，非核心模块仍默认在线
+### 2) 条目读取与刷新
 
-## 运行时观测（本机）
+- 列表/详情：`entrySyncServices.fetchEntries/fetchEntryDetail` 本地化
+- 刷新：`db.refreshFeed` 本地拉取并写库
+- 刷新去重：稳定条目 ID（`feedId + guid/url/title+publishedAt`）
+- 刷新保留读状态：同身份条目继承既有 `read`
 
-- 观测到 `~/Library/Application Support/Folo/IndexedDB/...` 存在历史数据
-- 当前该路径下未发现 `folo_local.db`（说明该用户数据目录下主库未落盘或尚未走到对应初始化/路径）
-- 结论：**代码目标是单库 SQLite，但本机仍可能处于“旧 IndexedDB 数据 + 新链路并存/迁移中”状态**
+### 3) 已读/未读
 
-## 关键实现修正（与上一版差异）
+- 已读事件统一：点击/滚动/激活统一走 `markRead(entryId)`
+- 订阅右键动作双态：
+  - 有未读 -> 全部已读
+  - 全已读 -> 全部未读
+- 批量读状态后会失效 `queryKey=["entries"]`，保证 `仅显示未读` 立即刷新
 
-- `db.addFeed` 当前实现不是 `rss-parser`，而是：
-  - Node 内置 `http/https` 抓取 RSS（支持重定向）
-  - 主进程内的轻量 XML 解析（RSS/Atom）
-  - 默认最多写入 50 条最新 entries
-- 订阅成功后会把返回的 `entries` 立即注入 renderer 内存态（避免订阅后列表空白）
+### 4) 未读计数口径
+
+- `All/Articles` 未读数按“当前有效订阅来源”聚合统计
+- 不再直接依赖 `entryIdByView[All]`，避免陈旧来源导致虚高
+
+## 最近关键修复（issue 27-33）
+
+- Tab 切换空列表：清空路由残留 + 归一化 pending feedId
+- 新增订阅后重复（9 -> 18）：多层去重（参数/查询结果/最终 IDs）
+- 刷新后读状态回退：刷新链路保留 `read`
+- All 样式与 Articles 对齐
+- 标题未读数与 Tab 未读数口径统一
+- 右键“全部已读/全部未读”双态动作
+- 批量改读状态后 `unreadOnly` 列表自动刷新
+- All 未读虚高修复（按有效来源聚合）
+
+## 已知边界与残留在线能力
+
+- 当前主阅读链路已本地化，但仓库仍存在部分在线接口分支（非主链路）：
+  - `api().entries.readability`
+  - `api().entries.inbox.delete`
+  - 其他模块（如 translation/summary/discover 等）仍可能含远端调用
+- 第 22 条（TTS 本地化）目前仍为“评估完成、暂不实现”状态
 
 ## 模块定位（Desktop）
 
 - 订阅流：`apps/desktop/layer/renderer/src/modules/subscription-column`
 - 阅读列表：`apps/desktop/layer/renderer/src/modules/entry-column`
-- 详情阅读器：`apps/desktop/layer/renderer/src/modules/entry-content`
+- 详情阅读：`apps/desktop/layer/renderer/src/modules/entry-content`
 - 发现与订阅：`apps/desktop/layer/renderer/src/modules/discover`
-- 状态与持久化：`packages/internal/store/src`、`packages/internal/database/src`
-- 主进程数据库与 IPC：`apps/desktop/layer/main/src/manager/db.ts`、`apps/desktop/layer/main/src/ipc/services/db.ts`
+- 本地 store：`packages/internal/store/src`
+- 主进程 DB/IPC：`apps/desktop/layer/main/src/ipc/services/db.ts`
 
-## 执行优先级
+## 执行优先级（当前）
 
-1. 彻底去除 `followClient/api()` 在阅读主链路中的依赖（先清 `/entries/stream`）
-2. 收敛为单一数据面（`folo_local.db`）并验证迁移闭环
-3. 清理剩余在线能力入口与文案
+1. 保持“完全本地 RSS 可用性”稳定（订阅、刷新、阅读、已读计数）
+2. 继续收敛残留在线能力入口（按业务优先级逐步本地化）
+3. 如需 TTS，优先系统离线方案（第 22 条）
 
 ## 约束
 
 - 任何上下文同步请求：先改本文件，再同步指针文件
-- 目标冲突时，以“完全本地 RSS 可用性”优先
+- 若与其他文档冲突，以本文件为准

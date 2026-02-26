@@ -8,7 +8,7 @@ import {
 } from "@follow/components/ui/tooltip/index.js"
 import { EllipsisHorizontalTextWithTooltip } from "@follow/components/ui/typography/index.js"
 import { IN_ELECTRON } from "@follow/shared/constants"
-import { useCollectionEntry, useIsEntryStarred } from "@follow/store/collection/hooks"
+import { useCollectionEntry } from "@follow/store/collection/hooks"
 import { useEntry } from "@follow/store/entry/hooks"
 import type { EntryModel } from "@follow/store/entry/types"
 import { useFeedById } from "@follow/store/feed/hooks"
@@ -30,7 +30,7 @@ import { FeedIcon } from "~/modules/feed/feed-icon"
 import { FeedTitle } from "~/modules/feed/feed-title"
 import { getPreferredTitle } from "~/store/feed/hooks"
 
-import { StarIcon } from "../star-icon"
+import { EntryStarToggleButton } from "../components/EntryStarToggleButton"
 import { readableContentMaxWidth } from "../styles"
 import type { EntryItemStatelessProps, UniversalItemProps } from "../types"
 
@@ -71,7 +71,6 @@ export function AllItem({ entryId, translation, currentFeedTitle }: UniversalIte
   const entry = useEntry(entryId, entrySelector)
   const simple = true
 
-  const isInCollection = useIsEntryStarred(entryId)
   const collectionCreatedAt = useCollectionEntry(entryId)?.createdAt
 
   const isRead = useEntryIsRead(entryId)
@@ -158,7 +157,7 @@ export function AllItem({ entryId, translation, currentFeedTitle }: UniversalIte
           className={cn(
             "relative flex items-center",
             "text-text",
-            !!isInCollection && "pr-5",
+            "pr-8",
             entry?.title ? "font-medium" : "text-[13px]",
             isRead && dimRead && "text-text-secondary",
           )}
@@ -181,19 +180,9 @@ export function AllItem({ entryId, translation, currentFeedTitle }: UniversalIte
               />
             )}
           </EllipsisHorizontalTextWithTooltip>
-          {!!isInCollection && <StarIcon className="absolute right-0 top-0" />}
-        </div>
-        <div
-          className={cn(
-            "ml-4 truncate text-[13px]",
-            "text-text-secondary",
-            isRead && dimRead && "text-text-tertiary",
-          )}
-        >
-          <EntryTranslation
-            className={cn("hyphens-auto", lineClamp.description)}
-            source={entry?.description}
-            target={translation?.description}
+          <EntryStarToggleButton
+            entryId={entryId}
+            className="absolute right-0 top-1/2 -translate-y-1/2"
           />
         </div>
       </div>

@@ -1,14 +1,15 @@
-import { FeedViewType, getViewList } from "@follow/constants"
+import { FeedViewType } from "@follow/constants"
 import type { UISettings } from "@follow/shared/settings/interface"
 import { useSubscriptionStore } from "@follow/store/subscription/store"
 import { useMemo } from "react"
 
 import { useUISettingKey } from "~/atoms/settings/ui"
 import { ROUTE_VIEW_ALL } from "~/constants/app"
+import { getLocalSupportedViewList } from "~/lib/local-views"
 
 import { getTimelineIdByView, parseView } from "./useRouteParams"
 
-const ALL_TIMELINE_IDS = getViewList({ includeAll: true }).map((view) =>
+const ALL_TIMELINE_IDS = getLocalSupportedViewList({ includeAll: true }).map((view) =>
   getTimelineIdByView(view.view),
 )
 

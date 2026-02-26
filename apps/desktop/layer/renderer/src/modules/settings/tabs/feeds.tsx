@@ -22,7 +22,7 @@ import {
   TooltipTrigger,
 } from "@follow/components/ui/tooltip/index.js"
 import { EllipsisHorizontalTextWithTooltip } from "@follow/components/ui/typography/index.js"
-import { getView, getViewList } from "@follow/constants"
+import { getView } from "@follow/constants"
 import { getFeedById } from "@follow/store/feed/getter"
 import { useFeedById, usePrefetchFeedAnalytics } from "@follow/store/feed/hooks"
 import { getSubscriptionByFeedId } from "@follow/store/subscription/getter"
@@ -48,6 +48,7 @@ import {
 import { useDialog } from "~/components/ui/modal/stacked/hooks"
 import { useBatchUpdateSubscription } from "~/hooks/biz/useSubscriptionActions"
 import { useAuthQuery } from "~/hooks/common"
+import { getLocalSupportedViewList } from "~/lib/local-views"
 import { UrlBuilder } from "~/lib/url-builder"
 import { FeedIcon } from "~/modules/feed/feed-icon"
 import { useConfirmUnsubscribeSubscriptionModal } from "~/modules/modal/hooks/useConfirmUnsubscribeSubscriptionModal"
@@ -484,7 +485,7 @@ const ViewSelector: FC<{ selectedFeeds: Set<string> }> = ({ selectedFeeds }) => 
   const { t: tCommon } = useTranslation("common")
   const { mutate: batchUpdateSubscription } = useBatchUpdateSubscription()
   const { ask } = useDialog()
-  return getViewList().map((view) => {
+  return getLocalSupportedViewList().map((view) => {
     return (
       <DropdownMenuItem
         key={view.view}

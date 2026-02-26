@@ -16,12 +16,12 @@ import { clearAllFeedUnreadDirty, clearFeedUnreadDirty } from "../feed/hooks"
 import { feedActions } from "../feed/store"
 
 import { getDefaultCategory } from "../subscription/utils"
+import { getSubscriptionById } from "../subscription/getter"
 import type {
   FeedIdOrInboxHandle,
   InsertedBeforeTimeRangeFilter,
   PublishAtTimeRangeFilter,
 } from "../unread/types"
-import { userActions } from "../user/store"
 import { getEntry } from "./getter"
 import type { EntryModel, FetchEntriesProps, FetchEntriesPropsSettings } from "./types"
 import { getEntriesParams } from "./utils"
@@ -64,7 +64,6 @@ class EntryActions implements Hydratable, Resetable {
   }) {
     if (!feedId) return
 
-    const { getSubscriptionById } = require("../subscription/getter")
     const subscription = getSubscriptionById(feedId)
     const ignore =
       (hidePrivateSubscriptionsInTimeline && subscription?.isPrivate) ||
@@ -79,7 +78,6 @@ class EntryActions implements Hydratable, Resetable {
 
     // lists
     for (const s of sources ?? []) {
-      const { getSubscriptionById } = require("../subscription/getter")
       const subscription = getSubscriptionById(s)
       const ignore =
         (hidePrivateSubscriptionsInTimeline && subscription?.isPrivate) ||
@@ -104,7 +102,6 @@ class EntryActions implements Hydratable, Resetable {
     entryId: EntryId
   }) {
     if (!feedId) return
-    const { getSubscriptionById } = require("../subscription/getter")
     const subscription = getSubscriptionById(feedId)
     const category = subscription?.category || getDefaultCategory(subscription)
     if (!category) return
@@ -440,7 +437,7 @@ class EntryActions implements Hydratable, Resetable {
 class EntrySyncServices {
   async fetchEntries(props: FetchEntriesProps) {
     // [Local Mode] Query entries from the local SQLite DB via IPC, then cache in store
-    const { feedId, feedIdList } = props
+    const { feedId, feedIdList, read } = props
 
     let entries: any[] = []
 
@@ -448,14 +445,19 @@ class EntrySyncServices {
       const ipc = (window as any).electron.ipcRenderer
       if (feedId) {
         // feedId may be comma-separated (folder view)
-        const feedIds = feedId.includes(",") ? feedId.split(",") : [feedId]
+        const feedIds = Array.from(
+          new Set(
+            (feedId.includes(",") ? feedId.split(",") : [feedId]).map((id) => id.trim()).filter(Boolean),
+          ),
+        )
         const results = await Promise.all(
           feedIds.map((id: string) => ipc.invoke("db.getEntries", id)),
         )
         entries = results.flat()
       } else if (feedIdList && feedIdList.length > 0) {
+        const uniqueFeedIds = Array.from(new Set(feedIdList))
         const results = await Promise.all(
-          feedIdList.map((id: string) => ipc.invoke("db.getEntries", id)),
+          uniqueFeedIds.map((id: string) => ipc.invoke("db.getEntries", id)),
         )
         entries = results.flat()
       } else {
@@ -476,21 +478,77 @@ class EntrySyncServices {
       }
     }
 
-    // Sort by publishedAt descending
+    // Apply read/unread filter when explicitly requested (e.g. unreadOnly -> read=false).
+    if (typeof read === "boolean") {
+      entries = entries.filter((entry) => {
+        const rawRead = entry?.read
+        const normalizedRead =
+          typeof rawRead === "boolean" ? rawRead : rawRead === 1 || rawRead === "1"
+        return normalizedRead === read
+      })
+    }
+
+    // Guard against duplicate records when the same feed is requested multiple times.
+    const entryById = new Map<string, any>()
+    for (const entry of entries) {
+      const entryId = typeof entry?.id === "string" ? entry.id : undefined
+      if (!entryId) continue
+      if (!entryById.has(entryId)) {
+        entryById.set(entryId, entry)
+      }
+    }
+    entries = Array.from(entryById.values())
+
+    // Sort by publishedAt descending (raw rows may have Date or ISO string)
     entries.sort((a, b) => {
-      const dateA = a.publishedAt instanceof Date ? a.publishedAt.getTime() : Number(a.publishedAt ?? 0)
-      const dateB = b.publishedAt instanceof Date ? b.publishedAt.getTime() : Number(b.publishedAt ?? 0)
+      const dateA =
+        a.publishedAt instanceof Date
+          ? a.publishedAt.getTime()
+          : new Date(a.publishedAt ?? 0).getTime()
+      const dateB =
+        b.publishedAt instanceof Date
+          ? b.publishedAt.getTime()
+          : new Date(b.publishedAt ?? 0).getTime()
       return dateB - dateA
     })
 
-    // Load into Zustand store so detail-view lookups via getEntry(id) work
-    if (entries.length > 0) {
-      entryActions.upsertManyInSession(entries)
+    // Apply cursor-based pagination: skip entries on or after the cursor date
+    // pageParam is the publishedAt ISO string of the LAST entry on the previous page
+    const { pageParam, limit } = props as any
+    if (pageParam) {
+      const cursorTime = new Date(pageParam).getTime()
+      entries = entries.filter((e) => {
+        const t =
+          e.publishedAt instanceof Date
+            ? e.publishedAt.getTime()
+            : new Date(e.publishedAt ?? 0).getTime()
+        return t < cursorTime
+      })
     }
 
+    // Apply page size limit (default 20)
+    const pageSize = limit ?? 20
+    entries = entries.slice(0, pageSize)
+
+    // CRITICAL FIX: Convert raw DB rows to EntryModel before upserting into Zustand store
+    const entryModels = entries.map((e: any) => dbStoreMorph.toEntryModel(e))
+
+    // Load into Zustand store for detail-view lookups
+    if (entryModels.length > 0) {
+      try {
+        entryActions.upsertManyInSession(entryModels)
+      } catch (err) {
+        console.error("[Antigravity] upsertManyInSession error", err)
+      }
+    }
+
+    console.log("[Antigravity] fetchEntries returning page:", entryModels.length, "cursor:", pageParam ?? "initial")
+
     return {
-      data: entries.map((e: any) => ({ entries: e, feeds: { id: e.feedId, type: "feed" } })),
+      data: entryModels.map((e: any) => ({ entries: e, feeds: { id: e.feedId, type: "feed" } })),
     } as any
+
+
   }
 
   async fetchEntryDetail(entryId: EntryId | undefined, isInbox?: boolean) {
@@ -522,7 +580,7 @@ class EntrySyncServices {
     if (
       entry.readabilityContent &&
       entry.readabilityUpdatedAt &&
-      entry.readabilityUpdatedAt.getTime() > Date.now() - 1000 * 60 * 60 * 24 * 3
+      new Date(entry.readabilityUpdatedAt).getTime() > Date.now() - 1000 * 60 * 60 * 24 * 3
     ) {
       return entry
     }
@@ -556,15 +614,15 @@ class EntrySyncServices {
     return
   }
 
-  async fetchEntryReadHistory(entryId: EntryId, size: number) {
-    const res = await api().entries.readHistories({
-      id: entryId,
-      size,
-    })
-
-    await userActions.upsertMany(Object.values(res.data.users))
-
-    return res.data
+  async fetchEntryReadHistory(_entryId: EntryId, _size: number) {
+    // [Local Mode] No remote read-history endpoint. Keep the UI stable with local empty history.
+    return {
+      entryReadHistories: {
+        userIds: [],
+      },
+      total: 0,
+      users: {},
+    }
   }
 
   async deleteInboxEntry(entryId: string) {

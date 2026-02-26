@@ -2,6 +2,7 @@ import { useEntry } from "@follow/store/entry/hooks"
 import { useFeedById } from "@follow/store/feed/hooks"
 import { useInboxById } from "@follow/store/inbox/hooks"
 import { useEntryTranslation } from "@follow/store/translation/hooks"
+import { useIsEntryStarred } from "@follow/store/collection/hooks"
 import { cn, formatEstimatedMins, formatTimeToSeconds } from "@follow/utils"
 import { useMemo } from "react"
 import { titleCase } from "title-case"
@@ -10,9 +11,13 @@ import { useShallow } from "zustand/shallow"
 import { useShowAITranslation } from "~/atoms/ai-translation"
 import { useActionLanguage } from "~/atoms/settings/general"
 import { useUISettingKey } from "~/atoms/settings/ui"
+import { CommandActionButton } from "~/components/ui/button/CommandActionButton"
 import { RelativeTime } from "~/components/ui/datetime"
 import { useNavigateEntry } from "~/hooks/biz/useNavigateEntry"
+import { useRouteParams } from "~/hooks/biz/useRouteParams"
 import { useFeedSafeUrl } from "~/hooks/common/useFeedSafeUrl"
+import { COMMAND_ID } from "~/modules/command/commands/id"
+import { useRunCommandFn } from "~/modules/command/hooks/use-command"
 import type { FeedIconEntry } from "~/modules/feed/feed-icon"
 import { FeedIcon } from "~/modules/feed/feed-icon"
 import { getPreferredTitle } from "~/store/feed/hooks"
@@ -37,7 +42,7 @@ export const EntryTitle = ({
     entryId,
     useShallow((state) => {
       /// keep-sorted
-      const { author, authorAvatar, authorUrl, feedId, inboxHandle, publishedAt, title } = state
+      const { author, authorAvatar, authorUrl, feedId, inboxHandle, publishedAt, read, title } = state
 
       const attachments = state.attachments || []
       const { duration_in_seconds } =
@@ -59,6 +64,7 @@ export const EntryTitle = ({
         firstPhotoUrl,
         inboxId: inboxHandle,
         publishedAt,
+        read,
         title,
       }
     }),
@@ -80,6 +86,11 @@ export const EntryTitle = ({
   const dateFormat = useUISettingKey("dateFormat")
 
   const navigateEntry = useNavigateEntry()
+  const { view } = useRouteParams()
+  const isStarred = useIsEntryStarred(entryId)
+  const runCmdFn = useRunCommandFn()
+  const toggleStar = runCmdFn(COMMAND_ID.entry.star, [{ entryId, view }])
+  const toggleRead = runCmdFn(COMMAND_ID.entry.read, [{ entryId }])
 
   const iconEntry: FeedIconEntry = useMemo(
     () => ({
@@ -117,22 +128,38 @@ export const EntryTitle = ({
   ) : (
     <div className={cn("group relative block min-w-0", containerClassName)}>
       <div className="flex flex-col gap-3">
-        <LinkTarget
-          {...linkProps}
-          className={cn(
-            "inline-block cursor-link select-text break-words text-[1.7rem] font-bold leading-normal duration-200",
-            populatedFullHref
-              ? "cursor-link hover:multi-[scale-[1.01];opacity-95]"
-              : "cursor-default",
-          )}
-        >
-          <EntryTranslation
-            source={titleCase(entry.title ?? "")}
-            target={titleCase(translation?.title ?? "")}
-            className="autospace-normal inline-block select-text hyphens-auto text-text duration-200"
-            inline={false}
-          />
-        </LinkTarget>
+        <div className="flex items-start justify-between gap-2">
+          <LinkTarget
+            {...linkProps}
+            className={cn(
+              "inline-block cursor-link select-text break-words text-[1.7rem] font-bold leading-normal duration-200",
+              populatedFullHref
+                ? "cursor-link hover:multi-[scale-[1.01];opacity-95]"
+                : "cursor-default",
+            )}
+          >
+            <EntryTranslation
+              source={titleCase(entry.title ?? "")}
+              target={titleCase(translation?.title ?? "")}
+              className="autospace-normal inline-block select-text hyphens-auto text-text duration-200"
+              inline={false}
+            />
+          </LinkTarget>
+          <div className="mt-1 flex shrink-0 items-center gap-1">
+            <CommandActionButton
+              commandId={COMMAND_ID.entry.read}
+              active={!!entry.read}
+              onClick={toggleRead}
+              id={`${entryId}/${COMMAND_ID.entry.read}/detail-title`}
+            />
+            <CommandActionButton
+              commandId={COMMAND_ID.entry.star}
+              active={isStarred}
+              onClick={toggleStar}
+              id={`${entryId}/${COMMAND_ID.entry.star}/detail-title`}
+            />
+          </div>
+        </div>
 
         {/* Meta Information with improved layout */}
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">

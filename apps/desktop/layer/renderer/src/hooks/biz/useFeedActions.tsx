@@ -6,6 +6,7 @@ import { useFeedById } from "@follow/store/feed/hooks"
 import { useInboxById, useIsInbox } from "@follow/store/inbox/hooks"
 import { useListById, useOwnedListByView } from "@follow/store/list/hooks"
 import { listSyncServices } from "@follow/store/list/store"
+import { useEntryStore } from "@follow/store/entry/store"
 import {
   useCategoriesByView,
   useSubscriptionByFeedId,
@@ -34,8 +35,10 @@ import { useConfirmUnsubscribeSubscriptionModal } from "~/modules/modal/hooks/us
 import { useCategoryCreationModal } from "~/modules/settings/tabs/lists/hooks"
 import { ListCreationModalContent } from "~/modules/settings/tabs/lists/modals"
 import { useResetFeed } from "~/queries/feed"
+import { countUnreadBySourceIds } from "~/lib/unread-by-source"
 
 import { useBatchUpdateSubscription, useDeleteSubscription } from "./useSubscriptionActions"
+import { resolveMarkAllToggleAction } from "./mark-all-toggle"
 
 export const useFeedActions = ({
   feedId,
@@ -85,6 +88,11 @@ export const useFeedActions = ({
   const isMultipleSelection = feedIds && feedIds.length > 1 && feedIds.includes(feedId)
 
   const shortcuts = useCommandShortcuts()
+  const selectedSourceIds = useMemo(() => (isMultipleSelection ? feedIds || [] : [feedId]), [feedId, feedIds, isMultipleSelection])
+  const selectedUnreadCount = useEntryStore((state) =>
+    countUnreadBySourceIds(state as any, selectedSourceIds),
+  )
+  const markAllToggle = resolveMarkAllToggleAction(selectedUnreadCount)
 
   const items = useMemo(() => {
     const related = feed || inbox
@@ -94,10 +102,13 @@ export const useFeedActions = ({
 
     const items: MenuItemInput[] = [
       new MenuItemText({
-        label: t("sidebar.feed_actions.mark_all_as_read"),
+        label: t(markAllToggle.labelKey),
         shortcut: shortcuts[COMMAND_ID.subscription.markAllAsRead],
         disabled: isEntryList,
-        click: () => unreadSyncService.markFeedAsRead(isMultipleSelection ? feedIds : [feedId]),
+        click: () =>
+          markAllToggle.shouldMarkAsRead
+            ? unreadSyncService.markFeedAsRead(isMultipleSelection ? feedIds : [feedId])
+            : unreadSyncService.markFeedAsUnread(isMultipleSelection ? feedIds : [feedId]),
         supportMultipleSelection: true,
         requiresLogin: true,
       }),
@@ -307,6 +318,8 @@ export const useFeedActions = ({
     isInbox,
     isMultipleSelection,
     listByView,
+    markAllToggle.labelKey,
+    markAllToggle.shouldMarkAsRead,
     present,
     presentCategoryCreationModal,
     presentDeleteSubscription,
@@ -331,16 +344,24 @@ export const useListActions = ({ listId, view }: { listId: string; view?: FeedVi
   const { mutateAsync: deleteSubscription } = useDeleteSubscription({})
 
   const shortcuts = useCommandShortcuts()
+  const listUnreadCount = useEntryStore((state) =>
+    countUnreadBySourceIds(state as any, list?.feedIds || []),
+  )
+  const markAllToggle = resolveMarkAllToggleAction(listUnreadCount)
 
   const items = useMemo(() => {
     if (!list) return []
 
     const items: MenuItemInput[] = [
       new MenuItemText({
-        label: t("sidebar.feed_actions.mark_all_as_read"),
+        label: t(markAllToggle.labelKey),
         shortcut: shortcuts[COMMAND_ID.subscription.markAllAsRead],
         click: () => {
-          unreadSyncService.markFeedAsRead(list.feedIds)
+          if (markAllToggle.shouldMarkAsRead) {
+            unreadSyncService.markFeedAsRead(list.feedIds)
+          } else {
+            unreadSyncService.markListAsUnread(listId)
+          }
         },
         requiresLogin: true,
       }),
@@ -397,7 +418,18 @@ export const useListActions = ({ listId, view }: { listId: string; view?: FeedVi
     ]
 
     return items
-  }, [list, t, shortcuts, listId, present, deleteSubscription, subscription, view])
+  }, [
+    deleteSubscription,
+    list,
+    listId,
+    markAllToggle.labelKey,
+    markAllToggle.shouldMarkAsRead,
+    present,
+    shortcuts,
+    subscription,
+    t,
+    view,
+  ])
 
   return items
 }

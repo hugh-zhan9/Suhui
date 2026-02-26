@@ -109,9 +109,9 @@ const InstanceCard = memo(({ item }: { item: InstanceItem }) => {
     />
   )
 
-  const title = isOfficial ? "Folo Official" : ""
+  const title = isOfficial ? "FreeFolo Official" : ""
   const price = isOfficial ? 0 : instance.price
-  const description = isOfficial ? "Folo Built-in RSSHub" : instance.description
+  const description = isOfficial ? "FreeFolo Built-in RSSHub" : instance.description
 
   const usersStat = isOfficial ? "*" : instance.userCount || 0
   const limitStat = isOfficial

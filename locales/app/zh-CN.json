@@ -443,6 +443,7 @@
   "sidebar.feed_actions.feed_owned_by_you": "此订阅源归你所有",
   "sidebar.feed_actions.list_owned_by_you": "此列表归你所有",
   "sidebar.feed_actions.mark_all_as_read": "全部标记为已读",
+  "sidebar.feed_actions.mark_all_as_unread": "全部标记为未读",
   "sidebar.feed_actions.navigate_to_feed": "跳转至",
   "sidebar.feed_actions.navigate_to_list": "跳转至列表",
   "sidebar.feed_actions.new_inbox": "新建收件箱",

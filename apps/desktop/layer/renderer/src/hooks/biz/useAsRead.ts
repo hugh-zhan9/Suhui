@@ -8,17 +8,15 @@ const selector = (state: EntryModel) => state.read
 export function useEntryIsRead(entryId?: string) {
   const entryRead = useEntry(entryId, selector)
 
-  const isLoggedIn = useIsLoggedIn()
-
   return useRouteParamsSelector(
     (params) => {
-      if (!isLoggedIn) return true
+      // In local mode (not logged in), still use the actual read state from the store
       if (params.isCollection) {
         return true
       }
       if (entryRead === undefined) return false
       return entryRead
     },
-    [entryRead, isLoggedIn],
+    [entryRead],
   )
 }

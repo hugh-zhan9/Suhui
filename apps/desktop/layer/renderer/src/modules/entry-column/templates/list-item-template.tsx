@@ -1,6 +1,6 @@
 import { useMobile } from "@follow/components/hooks/useMobile.js"
 import { EllipsisHorizontalTextWithTooltip } from "@follow/components/ui/typography/index.js"
-import { useCollectionEntry, useIsEntryStarred } from "@follow/store/collection/hooks"
+import { useCollectionEntry } from "@follow/store/collection/hooks"
 import { useEntry } from "@follow/store/entry/hooks"
 import type { EntryModel } from "@follow/store/entry/types"
 import { useFeedById } from "@follow/store/feed/hooks"
@@ -23,7 +23,7 @@ import { FeedIcon } from "~/modules/feed/feed-icon"
 import { FeedTitle } from "~/modules/feed/feed-title"
 import { getPreferredTitle } from "~/store/feed/hooks"
 
-import { StarIcon } from "../star-icon"
+import { EntryStarToggleButton } from "../components/EntryStarToggleButton"
 import type { UniversalItemProps } from "../types"
 
 const entrySelector = (state: EntryModel) => {
@@ -62,7 +62,6 @@ export function ListItem({
   const isMobile = useMobile()
   const entry = useEntry(entryId, entrySelector)
 
-  const isInCollection = useIsEntryStarred(entryId)
   const collectionCreatedAt = useCollectionEntry(entryId)?.createdAt
 
   const isRead = useEntryIsRead(entryId)
@@ -185,7 +184,6 @@ export function ListItem({
           className={cn(
             "flex min-w-0 items-center gap-1 text-[10px] font-bold",
             "text-text-secondary",
-            isInCollection && "text-text-secondary",
             isRead && dimRead && "text-text-tertiary",
           )}
         >
@@ -196,14 +194,11 @@ export function ListItem({
               className="space-x-0.5"
             />
           </EllipsisHorizontalTextWithTooltip>
-          <span className="shrink-0">·</span>
-          <span className="shrink-0">{!!displayTime && <RelativeTime date={displayTime} />}</span>
         </div>
         <div
           className={cn(
-            "relative my-0.5 break-words",
+            "relative my-0.5 break-words pr-2",
             "text-text",
-            !!isInCollection && "pr-5",
             entry?.title ? "font-medium" : "text-[13px]",
             isRead && dimRead && "text-text-secondary",
           )}
@@ -221,7 +216,6 @@ export function ListItem({
               target={translation?.description}
             />
           )}
-          {!!isInCollection && <StarIcon className="absolute right-0 top-0" />}
         </div>
         {!simple && (
           <div
@@ -238,6 +232,10 @@ export function ListItem({
             />
           </div>
         )}
+      </div>
+      <div className="ml-2 flex shrink-0 flex-col items-end gap-1 text-[10px] font-bold text-text-secondary">
+        <span className="shrink-0">{!!displayTime && <RelativeTime date={displayTime} />}</span>
+        <EntryStarToggleButton entryId={entryId} />
       </div>
 
       {hasAudio && entry.firstAudio && (

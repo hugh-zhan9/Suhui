@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu/dropdown-menu"
 import { EntryActionDropdownItem, useSortedEntryActions } from "~/hooks/biz/useEntryActions"
+import { COMMAND_ID } from "~/modules/command/commands/id"
 import { useRequireLogin } from "~/hooks/common/useRequireLogin"
 import { useCommand } from "~/modules/command/hooks/use-command"
 import type { FollowCommandId } from "~/modules/command/types"
@@ -25,6 +26,7 @@ export const EntryHeaderActions = ({ entryId, view }: { entryId: string; view: F
   )
 
   return actionConfigs
+    .filter((item) => item.id !== COMMAND_ID.entry.star)
     .filter((item) => item instanceof MenuItemText || item instanceof EntryActionDropdownItem)
     .map((config) => {
       const clickHandler = resolveClick(config)

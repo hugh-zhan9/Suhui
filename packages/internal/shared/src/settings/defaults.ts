@@ -59,7 +59,7 @@ export const defaultUISettings: UISettings = {
   // Global UI
   uiTextSize: 16,
   // System
-  showDockBadge: true,
+  showDockBadge: false,
   // Misc
   modalOverlay: true,
   modalDraggable: true,

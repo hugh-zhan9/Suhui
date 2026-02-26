@@ -100,6 +100,11 @@ export const useSubscriptionStore = createZustandStore<SubscriptionState>("subsc
 const get = useSubscriptionStore.getState
 
 const immerSet = createImmerSetter(useSubscriptionStore)
+
+export const shouldUseLocalSubscriptionMutation = (win: any = globalThis.window) => {
+  return !!win?.electron?.ipcRenderer
+}
+
 class SubscriptionActions implements Hydratable, Resetable {
   async hydrate() {
     const subscriptions = await SubscriptionService.getSubscriptionAll()
@@ -260,6 +265,7 @@ class SubscriptionSyncService {
       })
     })
     tx.request(async () => {
+      if (shouldUseLocalSubscriptionMutation()) return
       await api().subscriptions.update({
         ...subscription,
         feedId: subscription.feedId ?? undefined,
@@ -352,6 +358,28 @@ class SubscriptionSyncService {
       tracker.subscribe({ feedId: data.feed.id, view: subscription.view })
     }
 
+    // Insert to subscription first so that entry hydration can bind to its view!
+    if (typeof window !== "undefined" && (window as any).electron?.ipcRenderer && data.subscription) {
+      // Local IPC mode: DB already persisted it, just update the in-memory store
+      subscriptionActions.upsertManyInSession([dbStoreMorph.toSubscriptionModel(data.subscription)])
+    } else {
+      // Web fallback: construct the object and try to persist via network
+      await subscriptionActions.upsertMany([
+        {
+          ...subscription,
+          title: subscription.title ?? null,
+          category: subscription.category ?? null,
+
+          type: data.list ? "list" : "feed",
+          createdAt: new Date().toISOString(),
+          feedId: data.feed?.id ?? null,
+          listId: data.list?.id ?? null,
+          inboxId: null,
+          userId: whoami()?.id ?? "",
+        },
+      ])
+    }
+
     // Immediately hydrate entry store with entries returned from IPC (or from web fallback)
     if (data.entries && data.entries.length > 0) {
       entryActions.upsertManyInSession(data.entries.map((e: any) => dbStoreMorph.toEntryModel(e)))
@@ -372,28 +400,6 @@ class SubscriptionSyncService {
 
     if (data.unread) {
       unreadActions.upsertMany(data.unread)
-    }
-
-    // Insert to subscription
-    if (typeof window !== "undefined" && (window as any).electron?.ipcRenderer && data.subscription) {
-      // Local IPC mode: DB already persisted it, just update the in-memory store
-      subscriptionActions.upsertManyInSession([dbStoreMorph.toSubscriptionModel(data.subscription)])
-    } else {
-      // Web fallback: construct the object and try to persist via network
-      await subscriptionActions.upsertMany([
-        {
-          ...subscription,
-          title: subscription.title ?? null,
-          category: subscription.category ?? null,
-
-          type: data.list ? "list" : "feed",
-          createdAt: new Date().toISOString(),
-          feedId: data.feed?.id ?? null,
-          listId: data.list?.id ?? null,
-          inboxId: null,
-          userId: whoami()?.id ?? "",
-        },
-      ])
     }
 
     invalidateViews(subscription.view)
@@ -465,8 +471,19 @@ class SubscriptionSyncService {
       })
     })
 
-    tx.persist(() => {
-      return SubscriptionService.delete(subscriptionList.map((i) => buildSubscriptionDbId(i)))
+    tx.persist(async () => {
+      const payload = {
+        ids: subscriptionList.map((i) => buildSubscriptionDbId(i)),
+        feedIds: subscriptionList.map((i) => i.feedId).filter((i): i is string => !!i),
+        listIds: subscriptionList.map((i) => i.listId).filter((i): i is string => !!i),
+        inboxIds: subscriptionList.map((i) => i.inboxId).filter((i): i is string => !!i),
+      }
+
+      if (typeof window !== "undefined" && (window as any).electron?.ipcRenderer) {
+        return (window as any).electron.ipcRenderer.invoke("db.deleteSubscriptionByTargets", payload)
+      } else {
+        return SubscriptionService.deleteByTargets(payload)
+      }
     })
 
     await tx.run()
@@ -522,6 +539,7 @@ class SubscriptionSyncService {
     })
 
     tx.request(async () => {
+      if (shouldUseLocalSubscriptionMutation()) return
       await api().subscriptions.batchUpdate({
         feedIds,
         category: newCategory,
@@ -584,6 +602,7 @@ class SubscriptionSyncService {
     })
 
     tx.request(async () => {
+      if (shouldUseLocalSubscriptionMutation()) return
       await api().subscriptions.update({
         view,
         listId,
@@ -630,6 +649,7 @@ class SubscriptionSyncService {
     })
 
     tx.request(async () => {
+      if (shouldUseLocalSubscriptionMutation()) return
       await api().categories.delete({
         feedIdList: feedIds,
         deleteSubscriptions: false,
@@ -710,6 +730,7 @@ class SubscriptionSyncService {
     })
 
     tx.request(async () => {
+      if (shouldUseLocalSubscriptionMutation()) return
       await api().categories.update({
         feedIdList: feedIds,
         category: newCategory,

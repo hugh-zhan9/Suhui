@@ -13,6 +13,8 @@ import { entryActions } from "../entry/store"
 import { setFeedUnreadDirty } from "../feed/hooks"
 import { getListFeedIds } from "../list/getters"
 import { getSubscribedFeedIdAndInboxHandlesByView } from "../subscription/getter"
+import { applyUnreadCountForAffectedEntries, applyUnreadDeltaForAffectedEntries } from "./local-unread"
+import { invalidateEntriesForUnreadMutation } from "./invalidate-entries"
 import type {
   FeedIdOrInboxHandle,
   InsertedBeforeTimeRangeFilter,
@@ -31,6 +33,8 @@ const get = useUnreadStore.getState
 const set = useUnreadStore.setState
 
 class UnreadSyncService {
+  private readonly markReadInFlight = new Set<string>()
+
   async resetFromRemote() {
     // [Local Mode] No remote reads API, return current local state
     return get().data
@@ -39,10 +43,12 @@ class UnreadSyncService {
   private async updateUnreadStatus({
     ids,
     time,
+    read,
     request,
   }: {
     ids: FeedIdOrInboxHandle[]
     time?: PublishAtTimeRangeFilter | InsertedBeforeTimeRangeFilter
+    read: boolean
     request: () => Promise<UnreadStoreModel>
   }) {
     if (!ids || ids.length === 0) return
@@ -57,12 +63,30 @@ class UnreadSyncService {
     tx.store(() => {
       affectedEntryIds = entryActions.markEntryReadStatusInSession({
         ids,
-        read: true,
+        read,
         time,
       })
 
-      if (!time) {
+      if (!time && read) {
         unreadActions.upsertManyInSession(newUnreadListWhenNoTimeFilter)
+      } else {
+        const currentCounts = Object.fromEntries(currentUnreadList.map((item) => [item.id, item.count]))
+        const affectedEntries = affectedEntryIds
+          .map((entryId) => getEntry(entryId))
+          .filter((entry): entry is NonNullable<typeof entry> => !!entry)
+          .map((entry) => ({ feedId: entry.feedId, inboxHandle: entry.inboxHandle }))
+
+        const nextUnreadList = read
+          ? applyUnreadDeltaForAffectedEntries({
+              currentCounts,
+              affectedEntries,
+            })
+          : applyUnreadCountForAffectedEntries({
+              currentCounts,
+              affectedEntries,
+              operation: "increment",
+            })
+        unreadActions.upsertManyInSession(nextUnreadList)
       }
     })
 
@@ -71,24 +95,43 @@ class UnreadSyncService {
     tx.rollback(async () => {
       entryActions.markEntryReadStatusInSession({
         entryIds: affectedEntryIds,
-        read: false,
+        read: !read,
       })
 
       unreadActions.upsertManyInSession(currentUnreadList)
     })
 
     tx.persist(async (_s, _c, res) => {
-      if (!time) {
+      if (!time && read) {
         await UnreadService.upsertMany(newUnreadListWhenNoTimeFilter)
       } else {
-        if (res) {
+        if (read && res) {
           await unreadActions.changeBatch(res, "decrement")
+        } else {
+          const currentCounts = Object.fromEntries(currentUnreadList.map((item) => [item.id, item.count]))
+          const affectedEntries = affectedEntryIds
+            .map((entryId) => getEntry(entryId))
+            .filter((entry): entry is NonNullable<typeof entry> => !!entry)
+            .map((entry) => ({ feedId: entry.feedId, inboxHandle: entry.inboxHandle }))
+
+          const nextUnreadList = read
+            ? applyUnreadDeltaForAffectedEntries({
+                currentCounts,
+                affectedEntries,
+              })
+            : applyUnreadCountForAffectedEntries({
+                currentCounts,
+                affectedEntries,
+                operation: "increment",
+              })
+
+          await UnreadService.upsertMany(nextUnreadList)
         }
       }
 
       await EntryService.patchMany({
         feedIds: ids,
-        entry: { read: true },
+        entry: { read },
         time,
       })
     })
@@ -100,6 +143,8 @@ class UnreadSyncService {
     })
 
     await tx.run()
+
+    await invalidateEntriesForUnreadMutation()
   }
 
   async markBatchAsRead({
@@ -126,23 +171,23 @@ class UnreadSyncService {
     }
 
     if (filter?.feedIdList) {
-      await this.updateUnreadStatus({ ids: filter.feedIdList, time, request })
+      await this.updateUnreadStatus({ ids: filter.feedIdList, time, read: true, request })
     } else if (filter?.feedId) {
-      await this.updateUnreadStatus({ ids: [filter.feedId], time, request })
+      await this.updateUnreadStatus({ ids: [filter.feedId], time, read: true, request })
     } else if (filter?.listId) {
       const feedIds = getListFeedIds(filter.listId)
       if (feedIds && feedIds.length > 0) {
-        await this.updateUnreadStatus({ ids: feedIds, time, request })
+        await this.updateUnreadStatus({ ids: feedIds, time, read: true, request })
       }
     } else if (filter?.inboxId) {
-      await this.updateUnreadStatus({ ids: [filter.inboxId], time, request })
+      await this.updateUnreadStatus({ ids: [filter.inboxId], time, read: true, request })
     } else {
       const feedIdAndInboxHandles = getSubscribedFeedIdAndInboxHandlesByView({
         view,
         excludePrivate,
         excludeHidden: true,
       })
-      await this.updateUnreadStatus({ ids: feedIdAndInboxHandles, time, request })
+      await this.updateUnreadStatus({ ids: feedIdAndInboxHandles, time, read: true, request })
     }
   }
 
@@ -166,6 +211,16 @@ class UnreadSyncService {
     })
   }
 
+  async markFeedAsUnread(feedId: string | string[]) {
+    const feedIds = Array.isArray(feedId) ? feedId : [feedId]
+    if (feedIds.length === 0) return
+    await this.updateUnreadStatus({
+      ids: feedIds,
+      read: false,
+      request: async () => ({} as UnreadStoreModel),
+    })
+  }
+
   async markListAsRead(listId: string, time?: PublishAtTimeRangeFilter) {
     await this.markBatchAsRead({
       view: undefined,
@@ -177,12 +232,21 @@ class UnreadSyncService {
     })
   }
 
+  async markListAsUnread(listId: string) {
+    const feedIds = getListFeedIds(listId)
+    if (!feedIds || feedIds.length === 0) return
+    await this.updateUnreadStatus({
+      ids: feedIds,
+      read: false,
+      request: async () => ({} as UnreadStoreModel),
+    })
+  }
+
   private async markEntryReadStatus({ entryId, read }: { entryId: string; read: boolean }) {
     const entry = getEntry(entryId)
     if (!entry || entry.read === read || (!entry.feedId && !entry.inboxHandle)) return
 
     const id: FeedIdOrInboxHandle = entry.inboxHandle || entry.feedId || ""
-    const isInbox = !!entry.inboxHandle
 
     const tx = createTransaction()
     tx.store(() => {
@@ -208,11 +272,20 @@ class UnreadSyncService {
       }
     })
 
-    tx.persist(() => {
-      return EntryService.patchMany({
-        entry: { read },
-        entryIds: [entryId],
-      })
+    tx.persist(async () => {
+      // [Local Mode] Persist via IPC to main process SQLite
+      if (typeof window !== "undefined" && (window as any).electron?.ipcRenderer) {
+        await (window as any).electron.ipcRenderer.invoke("db.updateReadStatus", {
+          entryIds: [entryId],
+          read,
+        })
+      } else {
+        // Fallback for web (no-op for now)
+        return EntryService.patchMany({
+          entry: { read },
+          entryIds: [entryId],
+        })
+      }
     })
 
     if (entry.feedId) {
@@ -221,12 +294,35 @@ class UnreadSyncService {
     await tx.run()
   }
 
+  private async emitMarkReadEvent({ entryId, read }: { entryId: string; read: boolean }) {
+    if (!entryId) return
+
+    const currentEntry = getEntry(entryId)
+    if (!currentEntry || currentEntry.read === read) return
+    if (this.markReadInFlight.has(entryId)) return
+
+    this.markReadInFlight.add(entryId)
+    try {
+      await this.markEntryReadStatus({ entryId, read })
+    } finally {
+      this.markReadInFlight.delete(entryId)
+    }
+  }
+
+  async markRead(entryId: string) {
+    return this.emitMarkReadEvent({ entryId, read: true })
+  }
+
+  async markUnread(entryId: string) {
+    return this.emitMarkReadEvent({ entryId, read: false })
+  }
+
   async markEntryAsRead(entryId: string) {
-    return this.markEntryReadStatus({ entryId, read: true })
+    return this.markRead(entryId)
   }
 
   async markEntryAsUnread(entryId: string) {
-    return this.markEntryReadStatus({ entryId, read: false })
+    return this.markUnread(entryId)
   }
 }
 

@@ -355,6 +355,10 @@ class WindowManagerStatic {
 
     this.bindEvents(window)
 
+    window.webContents.on('console-message', (event, level, message, line, sourceId) => {
+      console.log(`[Renderer] [${level}] ${message} (${sourceId}:${line})`)
+    })
+
     // HMR for renderer base on electron-vite cli.
     // Load the remote URL for development or the local html file for production.
     if (is.dev && process.env["ELECTRON_RENDERER_URL"]) {

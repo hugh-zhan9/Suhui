@@ -4,27 +4,15 @@ We welcome contributions to our internationalization efforts! This guide will he
 
 ## Pay Attention
 
-If it's a new language, please check for [existing issues](https://github.com/RSSNext/Follow/issues?q=sort%3Aupdated-desc+is%3Aissue+is%3Aopen+label%3Ai18n) before starting. If none exist, submit a new issue to avoid duplicating efforts.
+If it's a new language, please check existing i18n issues in your active repository first. If none exist, open a new issue to avoid duplicate work.
 
 ## Adding a New Language
 
 To add support for a new language:
 
-1. Run the following command in the project root:
-
-   ```bash
-   npm run generator:i18n-template
-   ```
-
-2. Select the desired locale from the list.
-
-3. The script will:
-   - Create new resource files for the selected locale
-   - Update the necessary configuration files
-
-4. Open your editor and navigate to the `locales/` directory. You'll find new JSON files for the selected locale.
-
-5. Translate the keys in these JSON files to the target language.
+1. Create locale files under `locales/` by copying from `locales/app/en.json` and other corresponding namespaces.
+2. Keep key structure exactly the same as English.
+3. Add translated values only; do not rename keys.
 
 ## Updating Existing Translations
 
@@ -45,9 +33,13 @@ To update or improve existing translations:
 
 After making changes:
 
-1. Run the application locally.
-2. Switch to the language you've edited.
-3. Navigate through the app to verify your translations in context.
+1. Run locale dedupe/format:
+
+   ```bash
+   pnpm run dedupe:locales
+   ```
+
+2. Run the app locally and switch to the edited language for UI verification.
 
 ## Submitting Your Contribution
 

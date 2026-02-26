@@ -12,7 +12,6 @@ import {
   SimpleIconsReadwise,
   SimpleIconsZotero,
 } from "@follow/components/ui/platform-icon/icons.js"
-import { IN_ELECTRON } from "@follow/shared/constants"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
@@ -23,7 +22,6 @@ import {
   useIntegrationSettingValue,
 } from "~/atoms/settings/integration"
 import { downloadJsonFile, selectJsonFile } from "~/lib/export"
-import { getFetchAdapter } from "~/modules/integration/fetch-adapter"
 
 import { createSetting } from "../../helper/builder"
 import { useSetSettingCanSync } from "../../modal/hooks"
@@ -373,36 +371,6 @@ export const SettingIntegration = () => {
           aria-label="Search integrations"
         />
       </div>
-
-      {/* General Section */}
-      <div>
-        <SettingSectionTitle title={t("integration.general")} />
-        <SettingBuilder
-          settings={[
-            defineSettingItem("saveSummaryAsDescription", {
-              label: t("integration.save_ai_summary_as_description.label"),
-            }),
-            // Only show browser fetch setting in Electron environment
-            ...(IN_ELECTRON
-              ? [
-                  defineSettingItem("useBrowserFetch", {
-                    label: t("integration.use_browser_fetch.label"),
-                    description: t("integration.use_browser_fetch.description"),
-                    onAfterChange: (value) => {
-                      if (value) {
-                        getFetchAdapter().preferClientFetch()
-                      } else {
-                        getFetchAdapter().preferElectronFetch()
-                      }
-                    },
-                  }),
-                ]
-              : []),
-          ]}
-        />
-      </div>
-
-      <Divider />
 
       {/* Built-in Integration Section */}
       {filteredIntegrations.length > 0 ? (

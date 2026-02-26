@@ -21,9 +21,7 @@ const useUpdateDockBadge = (setting: UISettings) => {
   const unreadCount = useUnreadAll()
 
   useEffect(() => {
-    if (setting.showDockBadge) {
-      ipcServices?.dock.pollingUpdateUnreadCount()
-    } else {
+    if (!setting.showDockBadge) {
       ipcServices?.dock.cancelPollingUpdateUnreadCount().then(() => {
         ipcServices?.dock.setDockBadge(0)
       })

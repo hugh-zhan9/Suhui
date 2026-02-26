@@ -62,9 +62,9 @@ export const EntryItemWrapper: FC<
       if (!hoverMarkUnread) return
       if (!document.hasFocus()) return
       if (asRead) return
-      if (!entry?.feedId) return
+      if (!entry?.id) return
 
-      unreadSyncService.markEntryAsRead(entry.id)
+      unreadSyncService.markRead(entry.id)
     },
     233,
     {
@@ -129,20 +129,21 @@ export const EntryItemWrapper: FC<
       e.preventDefault()
       e.stopPropagation()
 
+      if (entry?.id) {
+        unreadSyncService.markRead(entry.id)
+      }
+
       const shouldNavigate = getRouteParams().entryId !== entry?.id
 
       if (!shouldNavigate) return
-      if (!entry?.feedId) return
-      if (!asRead) {
-        unreadSyncService.markEntryAsRead(entry.id)
-      }
+      if (!entry?.id) return
 
       navigate({
         view,
         entryId: entry.id,
       })
     },
-    [asRead, entry?.id, entry?.feedId, navigate, view],
+    [entry?.id, navigate, view],
   )
   const { contextMenuProps, isContextMenuOpen, openContextMenuAt } = useEntryContextMenu({
     entryId,

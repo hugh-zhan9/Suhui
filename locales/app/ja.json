@@ -443,6 +443,7 @@
   "sidebar.feed_actions.feed_owned_by_you": "このフィードはあなたが所有しています",
   "sidebar.feed_actions.list_owned_by_you": "このリストはあなたが所収しています",
   "sidebar.feed_actions.mark_all_as_read": "すべてを既読にする",
+  "sidebar.feed_actions.mark_all_as_unread": "すべてを未読にする",
   "sidebar.feed_actions.navigate_to_feed": "フィードに移動",
   "sidebar.feed_actions.navigate_to_list": "リストに移動",
   "sidebar.feed_actions.new_inbox": "新規受信箱",

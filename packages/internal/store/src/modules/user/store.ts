@@ -25,6 +25,21 @@ export type UserStore = {
   feedSubscriptionLimit?: number | null
 }
 
+export const LOCAL_USER_ID = "local_user_id"
+
+export const buildLocalWhoamiUser = (persisted?: Partial<AuthUser>): AuthUser =>
+  ({
+    id: LOCAL_USER_ID,
+    name: persisted?.name || "Local User",
+    email: persisted?.email || "",
+    emailVerified: true,
+    image: persisted?.image || "",
+    createdAt: persisted?.createdAt || (new Date().toISOString() as any),
+    updatedAt: new Date().toISOString() as any,
+    role: UserRole.Pro,
+    roleEndAt: null,
+  }) as unknown as AuthUser
+
 const defaultState: UserStore = {
   users: {},
   whoami: null,
@@ -66,22 +81,16 @@ class UserSyncService {
   })
 
   async whoami() {
-    const defaultUser = {
-      id: "local_user_id",
-      name: "Local User",
-      email: "local@folo.is",
-      emailVerified: true,
-      image: "",
-      createdAt: new Date().toISOString() as any,
-      updatedAt: new Date().toISOString() as any,
-      role: UserRole.Pro,
-      roleEndAt: null,
-    } as unknown as AuthUser
+    const persisted =
+      (get().users[LOCAL_USER_ID] as unknown as Partial<AuthUser> | undefined) ||
+      (get().whoami as Partial<AuthUser> | null) ||
+      undefined
+    const defaultUser = buildLocalWhoamiUser(persisted)
 
     const res = {
       session: {
         id: "local_session_id",
-        userId: "local_user_id",
+        userId: LOCAL_USER_ID,
         createdAt: new Date(),
         updatedAt: new Date(),
         expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
@@ -117,10 +126,7 @@ class UserSyncService {
     })
 
     tx.request(async () => {
-      await authClient().updateUser({
-        ...data,
-        socialLinks: (data.socialLinks || null) as any,
-      })
+      // FreeFolo 本地模式：资料更新不再请求远端接口
     })
     tx.persist(async () => {
       const { whoami } = get()

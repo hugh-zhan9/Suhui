@@ -22,6 +22,10 @@ export const useCollectionStore = createZustandStore<CollectionState>("collectio
 const get = useCollectionStore.getState
 const set = useCollectionStore.setState
 
+export const shouldUseLocalCollectionMutation = (win: any = globalThis.window) => {
+  return !!win?.electron?.ipcRenderer
+}
+
 class CollectionSyncService {
   async starEntry({
     entryId,
@@ -49,6 +53,7 @@ class CollectionSyncService {
       ])
     })
     tx.request(async () => {
+      if (shouldUseLocalCollectionMutation()) return
       await api().collections.post({
         entryId,
         view,
@@ -74,6 +79,7 @@ class CollectionSyncService {
       collectionActions.delete(entryId)
     })
     tx.request(async () => {
+      if (shouldUseLocalCollectionMutation()) return
       await api().collections.delete({
         entryId,
       })

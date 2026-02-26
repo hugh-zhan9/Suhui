@@ -71,6 +71,11 @@ export class BootstrapManager {
 
       app.on("browser-window-created", (_, window) => {
         optimizer.watchWindowShortcuts(window)
+        window.webContents.on('console-message', (event, level, message, line, sourceId) => {
+           if (level >= 2) {
+             console.log(`[Renderer Error]`, message, line, sourceId);
+           }
+        });
       })
 
       electronApp.setAppUserModelId(`re.${LEGACY_APP_PROTOCOL}`)

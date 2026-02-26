@@ -12,7 +12,7 @@ import { stopPropagation } from "@follow/utils/dom"
 import { clsx, cn, isBizId } from "@follow/utils/utils"
 import { useAtom, useAtomValue } from "jotai"
 import type { FC } from "react"
-import { useCallback } from "react"
+import { useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router"
 
@@ -37,6 +37,7 @@ import { useIsPreviewFeed } from "../hooks/useIsPreviewFeed"
 import { useEntryRootState } from "../store/EntryColumnContext"
 import { AppendTaildingDivider } from "./AppendTaildingDivider"
 import { SwitchToMasonryButton } from "./buttons/SwitchToMasonryButton"
+import { shouldShowInlineStarInEntryListHeader } from "./entry-list-header-actions"
 
 export const EntryListHeader: FC<{
   refetch: () => void
@@ -68,6 +69,7 @@ export const EntryListHeader: FC<{
     </div>
   )
   const { mutateAsync: refreshFeed, isPending } = useRefreshFeedMutation(feedId)
+  const [isLocalRefreshing, setIsLocalRefreshing] = useState(false)
 
   const user = useWhoami()
   const isOnline = useIsOnline()
@@ -87,11 +89,31 @@ export const EntryListHeader: FC<{
   const feedColumnShow = useSubscriptionColumnShow()
   const toggleUnreadOnlyShortcut = useCommandShortcut(COMMAND_ID.timeline.unreadOnly)
   const runCmdFn = useRunCommandFn()
+  const handleRefetch = useCallback(async () => {
+    const ipc = (window as any)?.electron?.ipcRenderer
+    const canRefreshLocalFeed =
+      !!ipc && !!feedId && feed?.type === "feed" && !isBizId(feedId) && feedId !== ROUTE_ENTRY_PENDING
+
+    if (canRefreshLocalFeed) {
+      setIsLocalRefreshing(true)
+      try {
+        await ipc.invoke("db.refreshFeed", feedId)
+      } finally {
+        setIsLocalRefreshing(false)
+      }
+    }
+
+    await refetch()
+  }, [feed?.type, feedId, refetch])
 
   const { isScrolledBeyondThreshold } = useEntryRootState()
   const isScrolledBeyondThresholdValue = useAtomValue(isScrolledBeyondThreshold)
 
   const showEntryHeader = isWideMode && !!entryId && entryId !== ROUTE_ENTRY_PENDING
+  const showQuickStar = shouldShowInlineStarInEntryListHeader({
+    isWideMode,
+    hasEntry: !!entryId && entryId !== ROUTE_ENTRY_PENDING,
+  })
 
   return (
     <div
@@ -125,6 +147,7 @@ export const EntryListHeader: FC<{
                   <DividerVertical className="mx-2 w-px" />
                 </>
               )}
+            {!isWideMode && showQuickStar && null}
 
             <AppendTaildingDivider>
               {view === FeedViewType.Pictures && <SwitchToMasonryButton />}
@@ -146,10 +169,10 @@ export const EntryListHeader: FC<{
                 <ActionButton
                   tooltip={t("entry_list_header.refetch")}
                   onClick={() => {
-                    refetch()
+                    void handleRefetch()
                   }}
                 >
-                  <RotatingRefreshIcon isRefreshing={isRefreshing} />
+                  <RotatingRefreshIcon isRefreshing={isRefreshing || isLocalRefreshing} />
                 </ActionButton>
               ))}
             {!isCollection && (

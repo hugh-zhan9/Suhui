@@ -83,7 +83,7 @@ export const UserAvatar = ({
             role={role}
           />
         )}
-      {!hideName && <div>{renderUserData?.name || renderUserData?.handle}</div>}
+      {!hideName && <div>{renderUserData?.name}</div>}
     </div>
   )
 }

@@ -46,20 +46,24 @@ export const useEntryMarkReadHandler = (entriesIds: string[]) => {
 
 export function batchMarkRead(ids: string[]) {
   const batchLikeIds = [] as string[]
+  const dedupedInputIds = new Set<string>()
   const entriesId2Map = entryActions.getFlattenMapEntries()
   for (const id of ids) {
+    if (dedupedInputIds.has(id)) continue
+    dedupedInputIds.add(id)
+
     const entry = entriesId2Map[id]
 
     if (!entry) continue
     const isRead = entry.read
-    if (!isRead && entry.feedId) {
+    if (!isRead && (entry.feedId || entry.inboxHandle)) {
       batchLikeIds.push(id)
     }
   }
 
   if (batchLikeIds.length > 0) {
     for (const id of batchLikeIds) {
-      unreadSyncService.markEntryAsRead(id)
+      unreadSyncService.markRead(id)
     }
   }
 }

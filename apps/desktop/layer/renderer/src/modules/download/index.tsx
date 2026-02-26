@@ -35,13 +35,13 @@ export function DownloadPage() {
           <Logo className="size-12" />
           <Folo className="w-12 text-text" />
         </div>
-        <p className="text-base text-text-secondary">Follow everything in one place</p>
+        <p className="text-base text-text-secondary">Read everything in one place</p>
       </div>
 
       {/* Main Content */}
       <div className="w-full max-w-xs space-y-6 text-center">
         <div>
-          <h1 className="mb-3 text-xl font-semibold text-text">Download Folo</h1>
+          <h1 className="mb-3 text-xl font-semibold text-text">Download FreeFolo</h1>
           <p className="text-sm text-text-secondary">
             {isMobile
               ? mobilePlatform

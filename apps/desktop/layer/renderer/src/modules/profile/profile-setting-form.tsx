@@ -11,7 +11,7 @@ import {
 } from "@follow/components/ui/form/index.jsx"
 import { Input, TextArea } from "@follow/components/ui/input/index.js"
 import { useWhoami } from "@follow/store/user/hooks"
-import { userActions } from "@follow/store/user/store"
+import { userSyncService } from "@follow/store/user/store"
 import { cn } from "@follow/utils/utils"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation } from "@tanstack/react-query"
@@ -22,9 +22,8 @@ import { z } from "zod"
 
 import { AvatarUploadModal } from "~/components/ui/crop/AvatarUploadModal"
 import { useModalStack } from "~/components/ui/modal/stacked/hooks"
-import { updateUser } from "~/lib/auth"
 import { uploadAvatarBlob } from "~/lib/avatar-upload"
-import { toastFetchError } from "~/lib/error-parser"
+import { toLocalProfileUpdatePayload } from "~/lib/profile-payload"
 
 const socialLinksSchema = z.object({
   twitter: z.string().max(32).optional(),
@@ -36,7 +35,6 @@ const socialLinksSchema = z.object({
 })
 
 const formSchema = z.object({
-  handle: z.string().max(32).regex(/^\w+$/).optional(),
   name: z.string().min(3).max(50),
   image: z.string().url().or(z.literal("")).optional(),
   bio: z.string().max(256).optional(),
@@ -84,7 +82,6 @@ export const ProfileSettingForm = ({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      handle: user?.handle || undefined,
       name: user?.name || "",
       image: user?.image || "",
       bio: user?.bio || "",
@@ -102,21 +99,8 @@ export const ProfileSettingForm = ({
 
   const updateMutation = useMutation({
     mutationFn: (values: Partial<z.infer<typeof formSchema>>) =>
-      updateUser({
-        handle: values.handle,
-        image: values.image,
-        name: values.name,
-        bio: values.bio,
-        website: values.website,
-        socialLinks: values.socialLinks as any,
-      }),
-    onError: (error) => {
-      toastFetchError(error)
-    },
-    onSuccess: (_, variables) => {
-      if (user && variables) {
-        userActions.updateWhoami({ ...variables } as any)
-      }
+      userSyncService.updateProfile(toLocalProfileUpdatePayload(values)),
+    onSuccess: () => {
       toast(t("profile.updateSuccess"), {
         duration: 3000,
       })
@@ -132,7 +116,7 @@ export const ProfileSettingForm = ({
       const imageUrl = await uploadAvatarBlob(blob)
       form.setValue("image", imageUrl)
       toast.success(t("profile.avatar.uploadSuccess"))
-      updateMutation.mutate({ image: imageUrl })
+      updateMutation.mutate(toLocalProfileUpdatePayload({ image: imageUrl }))
     } catch (error) {
       console.error("Upload error:", error)
       toast.error(t("profile.avatar.uploadError"))
@@ -207,22 +191,6 @@ export const ProfileSettingForm = ({
           />
         )}
 
-        <FormField
-          control={form.control}
-          name="handle"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className={formItemLabelClassName}>{t("profile.handle.label")}</FormLabel>
-              <FormControl>
-                <Input {...field} />
-              </FormControl>
-              <FormDescription className={formItemLabelClassName}>
-                {t("profile.handle.description")}
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
         <FormField
           control={form.control}
           name="name"

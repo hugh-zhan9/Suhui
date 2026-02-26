@@ -11,7 +11,10 @@ class DbStoreMorph {
   toEntryModel(entry: EntrySchema): EntryModel {
     return {
       ...entry,
-    }
+      insertedAt: entry.insertedAt ? new Date(entry.insertedAt) : new Date(),
+      publishedAt: entry.publishedAt ? new Date(entry.publishedAt) : new Date(),
+      readabilityUpdatedAt: entry.readabilityUpdatedAt ? new Date(entry.readabilityUpdatedAt) : null,
+    } as unknown as EntryModel
   }
 }
 

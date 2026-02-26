@@ -49,6 +49,24 @@ export const invalidateEntriesQuery = ({
 
 const defaultStaleTime = 10 * (60 * 1000) // 10 minutes
 
+export const deriveEntriesIds = (query: {
+  data?: {
+    pages?: Array<{
+      data?: Array<{ entries?: { id?: unknown } }>
+    }>
+  }
+  isLoading: boolean
+  isError: boolean
+}) => {
+  if (!query.data || query.isError) {
+    return []
+  }
+
+  const rawIds = query.data?.pages?.flatMap((page) => page.data?.map((entry) => entry.entries?.id))
+  const ids = rawIds?.filter((id): id is string => typeof id === "string") || []
+  return Array.from(new Set(ids))
+}
+
 export const useEntriesQuery = (
   props?: Omit<FetchEntriesProps, "pageParam" | "read" | "excludePrivate"> &
     FetchEntriesPropsSettings,
@@ -110,7 +128,15 @@ export const useEntriesQuery = (
         excludePrivate: hidePrivateSubscriptionsInTimeline,
       }),
 
-    getNextPageParam: (lastPage) => (aiSort ? null : lastPage.data?.at(-1)?.entries.publishedAt),
+    getNextPageParam: (lastPage) => {
+      if (aiSort) return null
+      const lastEntry = lastPage.data?.at(-1)
+      if (!lastEntry) return undefined
+      const publishedAt = lastEntry.entries.publishedAt
+      if (!publishedAt) return undefined
+      // Serialize to ISO string to ensure it's always a valid cursor string
+      return publishedAt instanceof Date ? publishedAt.toISOString() : String(publishedAt)
+    },
     initialPageParam: undefined as undefined | string,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
@@ -125,14 +151,18 @@ export const useEntriesQuery = (
   })
 
   const entriesIds = useMemo(() => {
-    if (!query.data || query.isLoading || query.isError) {
+    if (!query.data || query.isError) {
+      console.log('[Antigravity] entriesIds blocked:', {
+        hasData: !!query.data,
+        isLoading: query.isLoading,
+        isError: query.isError,
+        pagesCount: query.data?.pages?.length,
+      })
       return []
     }
-    return (
-      query.data?.pages
-        ?.flatMap((page) => page.data?.map((entry) => entry.entries.id))
-        .filter((id) => typeof id === "string") || []
-    )
+    const rawIds = deriveEntriesIds(query as any)
+    console.log('[Antigravity] entriesIds raw:', rawIds?.length, rawIds?.slice(0,3))
+    return rawIds
   }, [query.data, query.isLoading, query.isError])
 
   useSyncUnreadWhenUnMatch(entriesIds)

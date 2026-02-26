@@ -4,8 +4,8 @@ import { MotionButtonBase } from "@follow/components/ui/button/index.js"
 import { LoadingCircle } from "@follow/components/ui/loading/index.jsx"
 import { useScrollViewElement } from "@follow/components/ui/scroll-area/hooks.js"
 import type { FeedViewType } from "@follow/constants"
-import { getViewList } from "@follow/constants"
 import { useRefValue } from "@follow/hooks"
+import { useEntryStore } from "@follow/store/entry/store"
 import { useOwnedListByView } from "@follow/store/list/hooks"
 import {
   useSubscriptionByFeedId,
@@ -13,7 +13,6 @@ import {
 } from "@follow/store/subscription/hooks"
 import { subscriptionActions, subscriptionSyncService } from "@follow/store/subscription/store"
 import { getDefaultCategory } from "@follow/store/subscription/utils"
-import { useSortedIdsByUnread, useUnreadByIds } from "@follow/store/unread/hooks"
 import { unreadSyncService } from "@follow/store/unread/store"
 import { stopPropagation } from "@follow/utils/dom"
 import { cn } from "@follow/utils/utils"
@@ -28,9 +27,12 @@ import { MenuItemSeparator, MenuItemText, useShowContextMenu } from "~/atoms/con
 import { useGeneralSettingSelector, useHideAllReadSubscriptions } from "~/atoms/settings/general"
 import { ROUTE_FEED_IN_FOLDER } from "~/constants"
 import { useAddFeedToFeedList } from "~/hooks/biz/useFeedActions"
+import { resolveMarkAllToggleAction } from "~/hooks/biz/mark-all-toggle"
 import { useNavigateEntry } from "~/hooks/biz/useNavigateEntry"
 import { getRouteParams, useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
 import { useContextMenu } from "~/hooks/common/useContextMenu"
+import { getLocalSupportedViewList } from "~/lib/local-views"
+import { countUnreadBySourceIds, sortSourceIdsByUnread } from "~/lib/unread-by-source"
 
 import { useModalStack } from "../../components/ui/modal/stacked/hooks"
 import { ListCreationModalContent } from "../settings/tabs/lists/modals"
@@ -55,7 +57,9 @@ function FeedCategoryImpl({
 }: FeedCategoryProps) {
   const { t } = useTranslation()
 
-  const sortByUnreadFeedList = useSortedIdsByUnread(ids)
+  const sortByUnreadFeedList = useEntryStore((state) =>
+    sortSourceIdsByUnread(state as any, ids),
+  )
 
   const navigate = useNavigateEntry()
 
@@ -146,7 +150,8 @@ function FeedCategoryImpl({
     }
   }
 
-  const unread = useUnreadByIds(ids)
+  const unread = useEntryStore((state) => countUnreadBySourceIds(state as any, ids))
+  const markAllToggle = resolveMarkAllToggleAction(unread)
 
   const isActive = useRouteParamsSelector(
     (routerParams) => routerParams.feedId === `${ROUTE_FEED_IN_FOLDER}${folderName}`,
@@ -193,9 +198,13 @@ function FeedCategoryImpl({
       await showContextMenu(
         [
           new MenuItemText({
-            label: t("sidebar.feed_column.context_menu.mark_as_read"),
+            label: t(markAllToggle.labelKey),
             click: () => {
-              unreadSyncService.markFeedAsRead(ids)
+              if (markAllToggle.shouldMarkAsRead) {
+                unreadSyncService.markFeedAsRead(ids)
+              } else {
+                unreadSyncService.markFeedAsUnread(ids)
+              }
             },
             requiresLogin: true,
           }),
@@ -234,7 +243,7 @@ function FeedCategoryImpl({
           MenuItemSeparator.default,
           new MenuItemText({
             label: t("sidebar.feed_column.context_menu.change_to_other_view"),
-            submenu: getViewList()
+            submenu: getLocalSupportedViewList()
               .filter((v) => v.view !== view && v.switchable)
               .map(
                 (v) =>
@@ -392,7 +401,7 @@ function FeedCategoryImpl({
 }
 
 function FilterReadFeedCategory(props: FeedCategoryProps) {
-  const unread = useUnreadByIds(props.data)
+  const unread = useEntryStore((state) => countUnreadBySourceIds(state as any, props.data))
   if (!unread) return null
   return <FeedCategoryImpl {...props} />
 }

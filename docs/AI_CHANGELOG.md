@@ -3038,3 +3038,324 @@
 - `apps/desktop/layer/renderer/src/modules/discover/local-preview.test.ts`
 
 ---
+## [2026-02-26 11:56] [Refactor]
+- **Change**: 统一已读事件入口：新增markRead/markUnread并将点击、滚动、激活三条链路改为统一调用，解除点击逻辑对导航条件的绑定。
+- **Risk Analysis**: 风险：1) 去重in-flight可能在极端并发下吞掉重复已读请求；2) 旧调用markEntryAsRead仍保留别名，兼容性风险低；3) 仅覆盖已读路径，未改动订阅拉取与详情渲染。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `packages/internal/store/src/modules/unread/store.ts`
+- `apps/desktop/layer/renderer/src/modules/entry-column/layouts/EntryItemWrapper.tsx`
+- `apps/desktop/layer/renderer/src/modules/entry-column/hooks/useEntryMarkReadHandler.tsx`
+- `apps/desktop/layer/renderer/src/modules/entry-column/index.tsx`
+- `apps/desktop/layer/renderer/src/modules/entry-column/hooks/useEntryMarkReadHandler.test.ts`
+----------------------------------------
+## [2026-02-26 11:57] [Refactor]
+- **Change**: 清理已读重构后的无用依赖：移除EntryColumn中未使用的useIsLoggedIn导入，避免静态检查噪音。
+- **Risk Analysis**: 风险低：仅删除未使用导入，不改变运行时行为。
+- **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/modules/entry-column/index.tsx`
+----------------------------------------
+## [2026-02-26 12:00] [Bugfix]
+- **Change**: 移除条目已读历史的远端接口调用：fetchEntryReadHistory改为本地空历史返回，避免请求 https://api.folo.is/entries/read-histories。
+- **Risk Analysis**: 风险：1) 最近阅读者头像区域将固定为空（本地模式预期）；2) 若后续引入本地读者历史表，需要补充返回结构与数据填充；3) 变更仅影响已读历史展示，不影响条目标记已读主流程。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `packages/internal/store/src/modules/entry/store.ts`
+- `apps/desktop/layer/renderer/src/lib/local-read-history.test.ts`
+----------------------------------------
+## [2026-02-26 13:46] [Bugfix]
+- **Change**: 重构本地RSS解析器：主进程从正则解析改为XML DOM解析并增加摘要清洗，去除标题前缀与HTML噪音，修复条目描述异常拼接。
+- **Risk Analysis**: 风险：1) 不同站点的非标准XML标签可能被忽略；2) 摘要清洗会丢弃部分格式化信息；3) 仅影响新增/预览抓取，不会自动修复已入库旧条目。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/ipc/services/rss-parser.ts`
+- `apps/desktop/layer/main/src/ipc/services/db.ts`
+- `apps/desktop/layer/main/src/ipc/services/rss-parser.test.ts`
+----------------------------------------
+## [2026-02-26 13:58] [Bugfix]
+- **Change**: 修复仅未读筛选失效：fetchEntries接入read参数过滤，unreadOnly场景仅返回未读条目；并修正发布时间排序/游标比较对字符串日期的兼容。
+- **Risk Analysis**: 风险：1) read字段存在异常值时可能被归一化为未读；2) 过滤逻辑影响全部列表查询路径，需要关注某些历史脏数据的展示数量变化；3) 排序改为Date解析，非标准日期将退化为NaN并可能排到末尾。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `packages/internal/store/src/modules/entry/store.ts`
+- `apps/desktop/layer/renderer/src/lib/unread-only-filter.test.ts`
+----------------------------------------
+## [2026-02-26 14:01] [Bugfix]
+- **Change**: 修复编辑订阅点击更新时报'无法处理的内容'：本地Electron模式下订阅编辑与列表视图变更不再请求远端subscriptions.update，改为仅本地事务与SQLite持久化。
+- **Risk Analysis**: 风险：1) 本地模式下不会再与云端同步订阅编辑（符合本地化目标）；2) Web非Electron模式仍走远端更新；3) 若未来恢复云同步，需要按登录态细化开关而非仅看Electron环境。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `packages/internal/store/src/modules/subscription/store.ts`
+- `apps/desktop/layer/renderer/src/lib/subscription-local-mode.test.ts`
+----------------------------------------
+## [2026-02-26 14:05] [Refactor]
+- **Change**: 彻底本地化订阅写操作：batchUpdateSubscription、deleteCategory、renameCategory 在Electron本地模式下全部跳过远端API，仅保留本地事务与SQLite持久化。
+- **Risk Analysis**: 风险：1) 本地模式不再同步分类/批量更新到云端（符合本地RSS目标）；2) 非Electron模式仍可走远端；3) 若后续恢复多端同步需引入显式同步开关而非环境判定。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `packages/internal/store/src/modules/subscription/store.ts`
+- `apps/desktop/layer/renderer/src/lib/subscription-local-branches.test.ts`
+----------------------------------------
+## [2026-02-26 14:28] [Bugfix]
+- **Change**: 修复四项本地阅读问题并完成问题清单闭环
+- **Risk Analysis**: 主要风险在于视图过滤可能影响旧路由与旧配置兼容，取消订阅扩大删除条件后可能误删同源数据。已通过针对性测试覆盖关键分支，但仍建议在桌面端做一次完整手工回归。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `packages/internal/database/src/services/subscription.ts`
+- `packages/internal/store/src/modules/subscription/store.ts`
+- `packages/internal/store/src/modules/entry/hooks.ts`
+- `packages/internal/store/src/modules/collection/store.ts`
+- `apps/desktop/layer/renderer/src/hooks/biz/useEntryActions.tsx`
+- `apps/desktop/layer/renderer/src/hooks/biz/useTimelineList.ts`
+- `apps/desktop/layer/renderer/src/modules/feed/view-select-content.tsx`
+- `apps/desktop/layer/renderer/src/modules/subscription-column/FeedItem.tsx`
+- `apps/desktop/layer/renderer/src/modules/subscription-column/FeedCategory.tsx`
+- `apps/desktop/layer/renderer/src/modules/settings/tabs/feeds.tsx`
+- `apps/desktop/layer/renderer/src/modules/trending/index.tsx`
+- `apps/desktop/layer/renderer/src/lib/local-views.ts`
+- `apps/desktop/layer/renderer/src/lib/local-views.test.ts`
+- `apps/desktop/layer/renderer/src/lib/subscription-unsubscribe-local-delete.test.ts`
+- `apps/desktop/layer/renderer/src/lib/entries-ids-stability.test.ts`
+- `apps/desktop/layer/renderer/src/lib/collection-local-mode.test.ts`
+- `issue.md`
+----------------------------------------
+## [2026-02-26 14:50] [Bugfix]
+- **Change**: 修复启动时报 linkedom 解析 canvas 失败导致主进程崩溃
+- **Risk Analysis**: 风险在于 RSS XML 解析从 DOMParser 改为字符串解析，复杂边缘 Feed 可能存在兼容性回归。已补测试并通过主进程构建验证；若出现个别源解析异常，可再按样例增强标签提取规则。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/ipc/services/rss-parser.ts`
+- `apps/desktop/layer/main/src/ipc/services/rss-parser-no-linkedom.test.ts`
+- `apps/desktop/layer/main/src/ipc/services/rss-parser.test.ts`
+- `docs/AI_CHANGELOG.md`
+----------------------------------------
+## [2026-02-26 15:21] [Bugfix]
+- **Change**: 修复本地阅读器的收藏展示异常、分类未读计数异常、重复订阅问题，并移除集成页冗余开关。
+- **Risk Analysis**: 收藏目录改为全量展示后会改变原有按视图筛选行为；站点去重按主机名判定，少量同域不同源可能被合并；分类未读改为按条目状态统计，若条目索引构建异常会造成计数偏差。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `packages/internal/store/src/modules/collection/hooks.ts`
+- `packages/internal/store/src/modules/collection/hooks.test.ts`
+- `apps/desktop/layer/renderer/src/modules/entry-content/components/entry-header/internal/EntryHeaderActionsContainer.tsx`
+- `apps/desktop/layer/renderer/src/modules/entry-content/actions/header-actions.tsx`
+- `apps/desktop/layer/renderer/src/modules/subscription-column/SubscriptionTabButton.tsx`
+- `apps/desktop/layer/renderer/src/lib/unread-by-view.ts`
+- `apps/desktop/layer/renderer/src/lib/unread-by-view.test.ts`
+- `apps/desktop/layer/main/src/ipc/services/rss-dedup.ts`
+- `apps/desktop/layer/main/src/ipc/services/rss-dedup.test.ts`
+- `apps/desktop/layer/main/src/ipc/services/db.ts`
+- `apps/desktop/layer/renderer/src/modules/settings/tabs/integration/index.tsx`
+- `issue.md`
+----------------------------------------
+## [2026-02-26 15:37] [Bugfix]
+- **Change**: 修复新增问题九到十三：本地刷新可用、收藏页可见、非宽屏快捷收藏、移除通用分组、订阅未读黄点。
+- **Risk Analysis**: 本地刷新新增主进程抓取路径，若订阅源异常或返回慢会导致刷新耗时增加；收藏页改为本地优先后可见性提升，但若本地条目未入库仍会为空；未读黄点改动为表现层，风险主要在样式一致性。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/modules/entry-column/hooks/useEntriesByView.ts`
+- `apps/desktop/layer/renderer/src/modules/entry-column/hooks/query-selection.ts`
+- `apps/desktop/layer/renderer/src/modules/entry-column/hooks/query-selection.test.ts`
+- `apps/desktop/layer/renderer/src/modules/entry-column/layouts/EntryListHeader.tsx`
+- `apps/desktop/layer/main/src/ipc/services/db.ts`
+- `apps/desktop/layer/main/src/ipc/services/rss-refresh.ts`
+- `apps/desktop/layer/main/src/ipc/services/rss-refresh.test.ts`
+- `apps/desktop/layer/renderer/src/modules/settings/tabs/integration/index.tsx`
+- `apps/desktop/layer/renderer/src/modules/subscription-column/UnreadNumber.tsx`
+- `issue.md`
+----------------------------------------
+## [2026-02-26 15:51] [Bugfix]
+- **Change**: 修复本地资料与品牌名问题：移除头像个人资料入口，显示名改为本地持久化，并统一桌面端应用名为FreeFolo
+- **Risk Analysis**: 风险主要在于设置页裁剪后可能影响依赖账号管理的旧入口；品牌名批量替换可能漏改少量非关键文案。核心阅读链路未改，回归风险中等。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/modules/user/ProfileButton.tsx`
+- `apps/desktop/layer/renderer/src/modules/user/UserAvatar.tsx`
+- `apps/desktop/layer/renderer/src/modules/profile/profile-setting-form.tsx`
+- `apps/desktop/layer/renderer/src/lib/profile-payload.ts`
+- `apps/desktop/layer/renderer/src/pages/settings/(settings)/profile.tsx`
+- `packages/internal/store/src/modules/user/store.ts`
+- `apps/desktop/package.json`
+- `apps/desktop/forge.config.cts`
+- `apps/desktop/layer/renderer/global.d.ts`
+- `apps/desktop/vite.config.ts`
+- `apps/desktop/layer/main/src/before-bootstrap.ts`
+- `apps/desktop/layer/main/src/ipc/services/db.ts`
+- `apps/desktop/layer/main/src/lib/api-client.ts`
+- `apps/desktop/layer/main/package.json`
+- `apps/desktop/layer/renderer/index.html`
+- `apps/desktop/layer/renderer/src/components/common/SharePanel.tsx`
+- `apps/desktop/layer/renderer/src/modules/download/index.tsx`
+- `apps/desktop/layer/renderer/src/pages/(main)/(layer)/(subview)/rsshub/index.tsx`
+- `apps/desktop/layer/renderer/src/lib/local-whoami.test.ts`
+- `apps/desktop/layer/renderer/src/lib/profile-payload.test.ts`
+- `apps/desktop/layer/renderer/src/lib/freefolo-branding.test.ts`
+- `issue.md`
+----------------------------------------
+## [2026-02-26 15:57] [Bugfix]
+- **Change**: 修复最小化后自动刷新抢前台与白屏问题：主窗口只在首次ready时show，Electron环境禁用动态模块错误自动reload
+- **Risk Analysis**: 风险主要在于首次显示时机调整：若未来有依赖readyToShowMainWindow重复show的流程，可能需要显式调用show；禁用自动reload后动态模块错误会停留在错误页，但可避免后台白屏打断。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/ipc/services/app.ts`
+- `apps/desktop/layer/main/src/ipc/services/ready-to-show.ts`
+- `apps/desktop/layer/main/src/ipc/services/ready-to-show.test.ts`
+- `apps/desktop/layer/renderer/src/components/common/ErrorElement.tsx`
+- `apps/desktop/layer/renderer/src/lib/error-auto-reload.ts`
+- `apps/desktop/layer/renderer/src/lib/error-auto-reload.test.ts`
+- `issue.md`
+----------------------------------------
+## [2026-02-26 16:22] [Bugfix]
+- **Change**: 修复收藏入口位置与收藏页未读过滤：列表栏位移除收藏按钮，收藏页始终展示全部收藏
+- **Risk Analysis**: 风险点在于用户已习惯列表栏位快捷收藏，移除后需要通过详情右上角操作；未读过滤忽略仅在收藏场景生效，可能改变少量用户对收藏页的既有预期。核心数据写入逻辑未改，风险中等。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/modules/entry-column/layouts/EntryListHeader.tsx`
+- `apps/desktop/layer/renderer/src/modules/entry-column/layouts/entry-list-header-actions.ts`
+- `apps/desktop/layer/renderer/src/modules/entry-column/hooks/query-selection.ts`
+- `apps/desktop/layer/renderer/src/modules/entry-column/hooks/useEntriesByView.ts`
+- `apps/desktop/layer/renderer/src/modules/entry-column/hooks/useLocalEntries.ts`
+- `apps/desktop/layer/renderer/src/modules/entry-column/hooks/query-selection.unread-collection.test.ts`
+- `apps/desktop/layer/renderer/src/modules/entry-column/layouts/entry-list-header-actions.test.ts`
+- `issue.md`
+----------------------------------------
+## [2026-02-26 16:47] [fix]
+- **Change**: 修复第18条收藏入口：详情右上角收藏按钮 + 列表每条右侧收藏按钮，收藏页保持不过滤未读。
+- **Risk Analysis**: UI入口位置调整，需验证不同视图下按钮不遮挡正文与时间列。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/modules/entry-column/components/EntryStarToggleButton.tsx`
+- `apps/desktop/layer/renderer/src/modules/entry-column/templates/list-item-template.tsx`
+- `apps/desktop/layer/renderer/src/modules/entry-column/Items/all-item.tsx`
+- `apps/desktop/layer/renderer/src/modules/entry-column/Items/social-media-item.tsx`
+- `apps/desktop/layer/renderer/src/modules/entry-content/components/EntryTitle.tsx`
+- `issue.md`
+----------------------------------------
+## [2026-02-26 17:10] [fix]
+- **Change**: 修复 issue 19/20/21/23/24，并对 issue 22 给出本地 TTS 方案评估（不实现）。
+- **Risk Analysis**: 主要风险在于列表样式调整与详情操作按钮新增，需在不同窗口宽度下人工验证布局；刷新去重策略依赖 guid/url 质量。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `packages/internal/store/src/modules/unread/store.ts`
+- `packages/internal/store/src/modules/unread/local-unread.ts`
+- `apps/desktop/layer/main/src/ipc/services/rss-refresh.ts`
+- `apps/desktop/layer/main/src/ipc/services/db.ts`
+- `packages/internal/shared/src/settings/defaults.ts`
+- `apps/desktop/layer/renderer/src/providers/setting-sync.tsx`
+- `apps/desktop/layer/renderer/src/modules/entry-content/components/EntryTitle.tsx`
+- `apps/desktop/layer/renderer/src/modules/entry-column/templates/list-item-template.tsx`
+- `apps/desktop/layer/renderer/src/modules/entry-column/Items/article-item.tsx`
+- `apps/desktop/layer/main/src/ipc/services/rss-refresh-entry-id.test.ts`
+- `issue.md`
+----------------------------------------
+## [2026-02-26 17:24] [fix]
+- **Change**: 修复 issue 25/26：统一订阅栏与分类 Dock 未读计数来源，并补齐 All/SocialMedia 列表右侧固定收藏与时间布局。
+- **Risk Analysis**: 未读数计算改为实时推导后，需关注大列表下性能；社交媒体列表去正文后信息密度下降，需结合实际阅读习惯评估。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/lib/unread-by-source.ts`
+- `apps/desktop/layer/renderer/src/lib/unread-by-source.test.ts`
+- `apps/desktop/layer/renderer/src/modules/subscription-column/FeedItem.tsx`
+- `apps/desktop/layer/renderer/src/modules/subscription-column/FeedCategory.tsx`
+- `apps/desktop/layer/renderer/src/modules/entry-column/Items/all-item.tsx`
+- `apps/desktop/layer/renderer/src/modules/entry-column/Items/social-media-item.tsx`
+- `issue.md`
+----------------------------------------
+## [2026-02-26 17:39] [fix]
+- **Change**: 修复 issue 27/28/29：切换 tab 空列表、刷新后已读丢失、All 样式与 Articles 不一致。
+- **Risk Analysis**: Tab 导航清空路由参数会改变部分用户的回到上次订阅行为；刷新保留 read 依赖身份键质量；All 统一样式后信息密度会更接近 Articles。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/modules/subscription-column/index.tsx`
+- `apps/desktop/layer/renderer/src/modules/subscription-column/timeline-switch.ts`
+- `apps/desktop/layer/renderer/src/modules/subscription-column/timeline-switch.test.ts`
+- `apps/desktop/layer/main/src/ipc/services/db.ts`
+- `apps/desktop/layer/main/src/ipc/services/rss-refresh.ts`
+- `apps/desktop/layer/main/src/ipc/services/rss-refresh-entry-id.test.ts`
+- `apps/desktop/layer/renderer/src/modules/entry-column/Items/getItemComponentByView.ts`
+- `apps/desktop/layer/renderer/src/modules/entry-column/Items/getSkeletonItemComponentByView.ts`
+- `apps/desktop/layer/renderer/src/modules/entry-column/Items/view-style.ts`
+- `apps/desktop/layer/renderer/src/modules/entry-column/Items/view-style.test.ts`
+- `issue.md`
+----------------------------------------
+## [2026-02-26 17:43] [fix]
+- **Change**: 修复 issue 30：tab 标题右侧未读数与 tab 图标未读数不一致。
+- **Risk Analysis**: 主要风险较低，变更集中在显示口径统一；需注意大数据量视图下实时统计性能。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/modules/subscription-column/subscription-list/ListHeader.tsx`
+- `apps/desktop/layer/renderer/src/modules/subscription-column/subscription-list/unread-count.ts`
+- `apps/desktop/layer/renderer/src/modules/subscription-column/subscription-list/unread-count.test.ts`
+- `issue.md`
+----------------------------------------
+## [2026-02-26 17:49] [fix]
+- **Change**: 修复 issue 27 二次回归：切换 tab 后文章列表为空（pending feedId 误入查询条件）。
+- **Risk Analysis**: 主要风险低，属于查询参数归一化；需关注其他依赖 feedId 的边界分支是否也需要同样归一化。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/modules/entry-column/hooks/useEntriesByView.ts`
+- `apps/desktop/layer/renderer/src/modules/entry-column/hooks/query-selection.ts`
+- `apps/desktop/layer/renderer/src/modules/entry-column/hooks/query-selection.test.ts`
+- `issue.md`
+----------------------------------------
+## [2026-02-26 18:05] [Bugfix]
+- **Change**: 修复切换分类后订阅文章翻倍重复的问题，统一查询链路去重。
+- **Risk Analysis**: 本次改动覆盖条目查询与去重逻辑，主要风险是去重策略过严导致少量合法重复内容被合并。当前按条目唯一标识去重，回归风险中等；若历史脏数据缺少唯一标识，可能出现被过滤。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `packages/internal/store/src/modules/entry/store.ts`
+- `packages/internal/store/src/modules/entry/hooks.ts`
+- `packages/internal/store/src/modules/entry/getter.ts`
+- `packages/internal/store/src/modules/entry/hooks.test.ts`
+- `packages/internal/store/src/modules/entry/getter.test.ts`
+- `packages/internal/store/vitest.config.ts`
+- `issue.md`
+----------------------------------------
+## [2026-02-26 18:15] [Bugfix]
+- **Change**: 修复订阅右键菜单双态已读/未读切换，并补齐批量标记未读本地能力。
+- **Risk Analysis**: 本次变更影响订阅侧批量读状态逻辑，主要风险是未读计数与条目读状态不同步。已通过本地未读计数增减测试与菜单决策测试覆盖关键分支，风险中等。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/hooks/biz/useFeedActions.tsx`
+- `apps/desktop/layer/renderer/src/hooks/biz/mark-all-toggle.ts`
+- `apps/desktop/layer/renderer/src/hooks/biz/mark-all-toggle.test.ts`
+- `apps/desktop/layer/renderer/src/modules/subscription-column/FeedCategory.tsx`
+- `packages/internal/store/src/modules/unread/store.ts`
+- `packages/internal/store/src/modules/unread/local-unread.ts`
+- `packages/internal/store/src/modules/unread/local-unread.test.ts`
+- `locales/app/en.json`
+- `locales/app/zh-CN.json`
+- `locales/app/zh-TW.json`
+- `locales/app/fr-FR.json`
+- `locales/app/ja.json`
+- `issue.md`
+----------------------------------------
+## [2026-02-26 18:21] [Bugfix]
+- **Change**: 修复批量标记未读后仅显示未读列表不刷新的问题，补齐 entries 查询失效触发。
+- **Risk Analysis**: 本次改动在未读状态写入后增加统一查询失效，主要风险是批量操作后触发额外重查导致瞬时请求增加。由于本地模式查询走本地数据源，性能风险可控，功能回归风险中等。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `packages/internal/store/src/modules/unread/store.ts`
+- `packages/internal/store/src/modules/unread/invalidate-entries.ts`
+- `packages/internal/store/src/modules/unread/invalidate-entries.test.ts`
+- `issue.md`
+----------------------------------------
+## [2026-02-26 18:30] [Bugfix]
+- **Change**: 修复批量已读/未读后列表不自动刷新的根因，改为直接失效 entries 查询键。
+- **Risk Analysis**: 此前失效调用未命中任何 entries 查询，导致仅显示未读依赖手动刷新。改为 queryKey 级别失效后会触发统一重查，风险是批量操作后短时查询次数增加，但在本地数据源下可接受。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `packages/internal/store/src/modules/unread/invalidate-entries.ts`
+- `packages/internal/store/src/modules/unread/invalidate-entries.test.ts`
+- `issue.md`
+----------------------------------------
+## [2026-02-26 18:50] [Bugfix]
+- **Change**: 修复 All 与 Articles 未读数量口径不一致问题，改为按当前有效订阅来源统计。
+- **Risk Analysis**: 此前使用 entryIdByView 直接计数会把陈旧来源条目纳入 All，导致未读虚高。改为按当前订阅来源聚合并去重后，数字与可见订阅一致。风险主要在统计路径变更带来的边界差异（如列表/收件箱来源），整体风险中等。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/lib/unread-by-view.ts`
+- `apps/desktop/layer/renderer/src/lib/unread-by-view.test.ts`
+- `apps/desktop/layer/renderer/src/modules/subscription-column/subscription-list/unread-count.test.ts`
+- `issue.md`
+----------------------------------------

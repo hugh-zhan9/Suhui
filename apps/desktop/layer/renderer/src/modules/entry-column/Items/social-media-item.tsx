@@ -1,20 +1,12 @@
-import { PassviseFragment } from "@follow/components/common/Fragment.js"
-import { AutoResizeHeight } from "@follow/components/ui/auto-resize-height/index.js"
 import { Skeleton } from "@follow/components/ui/skeleton/index.jsx"
-import { useIsEntryStarred } from "@follow/store/collection/hooks"
 import { useEntry } from "@follow/store/entry/hooks"
 import { useFeedById } from "@follow/store/feed/hooks"
-import { LRUCache } from "@follow/utils/lru-cache"
 import { cn } from "@follow/utils/utils"
-import { useLayoutEffect, useMemo, useRef, useState } from "react"
-import { useTranslation } from "react-i18next"
+import { useLayoutEffect, useMemo, useRef } from "react"
 
-import { useGeneralSettingKey } from "~/atoms/settings/general"
 import { RelativeTime } from "~/components/ui/datetime"
-import { HTML } from "~/components/ui/markdown/HTML"
 import { Media } from "~/components/ui/media/Media"
 import { useEntryIsRead } from "~/hooks/biz/useAsRead"
-import { useRenderStyle } from "~/hooks/biz/useRenderStyle"
 import { jotaiStore } from "~/lib/jotai"
 import { parseSocialMedia } from "~/lib/parsers"
 import type { FeedIconEntry } from "~/modules/feed/feed-icon"
@@ -22,12 +14,11 @@ import { FeedIcon } from "~/modules/feed/feed-icon"
 import { FeedTitle } from "~/modules/feed/feed-title"
 
 import { socialMediaContentWidthAtom } from "../atoms/social-media-content-width"
-import { StarIcon } from "../star-icon"
+import { EntryStarToggleButton } from "../components/EntryStarToggleButton"
 import { readableContentMaxWidth } from "../styles"
 import type { EntryItemStatelessProps, EntryListItemFC } from "../types"
-import { MediaGallery } from "./media-gallery"
 
-export const SocialMediaItem: EntryListItemFC = ({ entryId, translation }) => {
+export const SocialMediaItem: EntryListItemFC = ({ entryId }) => {
   const entry = useEntry(entryId, (state) => {
     /// keep-sorted
     const {
@@ -61,8 +52,6 @@ export const SocialMediaItem: EntryListItemFC = ({ entryId, translation }) => {
     }
   })
 
-  const isInCollection = useIsEntryStarred(entryId)
-
   const asRead = useEntryIsRead(entryId)
   const feed = useFeedById(entry?.feedId)
 
@@ -81,18 +70,11 @@ export const SocialMediaItem: EntryListItemFC = ({ entryId, translation }) => {
       jotaiStore.set(socialMediaContentWidthAtom, ref.current.offsetWidth)
     }
   }, [])
-  const autoExpandLongSocialMedia = useGeneralSettingKey("autoExpandLongSocialMedia")
-  const renderStyle = useRenderStyle({ baseFontSize: 14, baseLineHeight: 1.625 })
 
   const titleRef = useRef<HTMLDivElement>(null)
   if (!entry || !feed) return null
 
-  const content = entry.content || entry.description
-
   const parsed = parseSocialMedia(entry.authorUrl || entry.url || entry.guid)
-  const EntryContentWrapper = autoExpandLongSocialMedia
-    ? PassviseFragment
-    : CollapsedSocialMediaItem
 
   return (
     <div
@@ -105,7 +87,7 @@ export const SocialMediaItem: EntryListItemFC = ({ entryId, translation }) => {
     >
       <FeedIcon fallback target={feed} entry={iconEntry} size={32} className="mt-1" />
       <div ref={ref} className="ml-2 min-w-0 flex-1">
-        <div className="-mt-0.5 flex-1 text-sm">
+        <div className="-mt-0.5 flex min-w-0 items-center justify-between text-sm">
           <div className="flex select-none flex-wrap space-x-1 leading-6" ref={titleRef}>
             <span className="inline-flex min-w-0 items-center gap-1 text-base font-semibold">
               <FeedTitle feed={feed} title={entry.author || feed.title} />
@@ -123,29 +105,14 @@ export const SocialMediaItem: EntryListItemFC = ({ entryId, translation }) => {
                 @{parsed.meta.handle}
               </a>
             )}
-            <span className="text-zinc-500">·</span>
-            <span className="text-zinc-500">
+          </div>
+          <div className="ml-2 flex shrink-0 items-center gap-2 text-zinc-500">
+            <span className="text-xs">
               <RelativeTime date={entry.publishedAt} />
             </span>
-          </div>
-          <div className={cn("relative mt-1 text-base", isInCollection && "pr-5")}>
-            <EntryContentWrapper entryId={entryId}>
-              <HTML
-                as="div"
-                className={cn(
-                  "prose align-middle dark:prose-invert",
-                  "cursor-auto select-text text-sm leading-relaxed prose-blockquote:mt-0",
-                )}
-                noMedia
-                style={renderStyle}
-              >
-                {translation?.content || content}
-              </HTML>
-            </EntryContentWrapper>
-            {isInCollection && <StarIcon className="absolute right-0 top-0" />}
+            <EntryStarToggleButton entryId={entryId} />
           </div>
         </div>
-        <MediaGallery entryId={entryId} />
       </div>
     </div>
   )
@@ -231,53 +198,3 @@ export const SocialMediaItemSkeleton = (
     </div>
   </div>
 )
-
-const collapsedHeight = 300
-const collapsedItemCache = new LRUCache<string, boolean>(100)
-const CollapsedSocialMediaItem: Component<{
-  entryId: string
-}> = ({ children, entryId }) => {
-  const { t } = useTranslation()
-  const [isOverflow, setIsOverflow] = useState(false)
-  const [isShowMore, setIsShowMore] = useState(() => collapsedItemCache.get(entryId) ?? false)
-  const ref = useRef<HTMLDivElement>(null)
-
-  useLayoutEffect(() => {
-    if (ref.current) {
-      setIsOverflow(ref.current.scrollHeight > collapsedHeight)
-    }
-  }, [children])
-
-  return (
-    <AutoResizeHeight className="relative">
-      <div
-        className={cn(
-          "relative",
-          !isShowMore && "max-h-[300px] overflow-hidden",
-          isShowMore && "h-auto",
-          !isShowMore && isOverflow && "mask-b-2xl",
-        )}
-        ref={ref}
-      >
-        {children}
-      </div>
-      {isOverflow && !isShowMore && (
-        <div className="absolute inset-x-0 -bottom-2 flex select-none justify-center py-2 duration-200">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation()
-              setIsShowMore(true)
-              collapsedItemCache.put(entryId, true)
-            }}
-            aria-hidden
-            className="flex items-center justify-center text-xs duration-200 hover:text-text"
-          >
-            <i className="i-mingcute-arrow-to-down-line" />
-            <span className="ml-2">{t("words.show_more")}</span>
-          </button>
-        </div>
-      )}
-    </AutoResizeHeight>
-  )
-}

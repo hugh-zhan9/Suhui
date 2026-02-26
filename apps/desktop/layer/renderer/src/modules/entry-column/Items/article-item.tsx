@@ -11,7 +11,7 @@ import { readableContentMaxWidth } from "../styles"
 import type { EntryItemStatelessProps, UniversalItemProps } from "../types"
 
 export function ArticleItem({ entryId, translation }: UniversalItemProps) {
-  return <ListItem entryId={entryId} translation={translation} />
+  return <ListItem entryId={entryId} translation={translation} simple />
 }
 
 ArticleItem.wrapperClassName = cn(readableContentMaxWidth, "pl-4 pr-3")

@@ -443,6 +443,7 @@
   "sidebar.feed_actions.feed_owned_by_you": "此 RSS 摘要由你所擁有",
   "sidebar.feed_actions.list_owned_by_you": "此列表由你所擁有",
   "sidebar.feed_actions.mark_all_as_read": "全部標記為已讀",
+  "sidebar.feed_actions.mark_all_as_unread": "全部標記為未讀",
   "sidebar.feed_actions.navigate_to_feed": "導航到 RSS 摘要",
   "sidebar.feed_actions.navigate_to_list": "導航到列表",
   "sidebar.feed_actions.new_inbox": "新建收件匣",

@@ -12,7 +12,7 @@ function sortEntryIdsByPublishDate(a: string, b: string) {
   const entryA = getEntry(a)
   const entryB = getEntry(b)
   if (!entryA || !entryB) return 0
-  return entryB.publishedAt.getTime() - entryA.publishedAt.getTime()
+  return new Date(entryB.publishedAt).getTime() - new Date(entryA.publishedAt).getTime()
 }
 
 // Utility functions for creating getters
@@ -31,7 +31,6 @@ export const getEntryIdsByViewSelector =
     return Array.from(ids)
       .filter((id) => {
         // dynamic import to break circular dependency
-        const { getSubscriptionByEntryId } = require("../subscription/getter")
         const subscription = getSubscriptionByEntryId(id)
         if ((excludePrivate && subscription?.isPrivate) || subscription?.hideFromTimeline) {
           return false
@@ -51,9 +50,11 @@ export const getEntryIdsByFeedIdSelector =
 
 export const getEntryIdsByFeedIdsSelector =
   (state: StateType) => (feedIds: string[] | undefined) => {
-    const ids = feedIds?.flatMap((feedId) => Array.from(state.entryIdByFeed[feedId] || []))
+    if (!feedIds || feedIds.length === 0) return null
+    const uniqueFeedIds = Array.from(new Set(feedIds))
+    const ids = uniqueFeedIds.flatMap((feedId) => Array.from(state.entryIdByFeed[feedId] || []))
     if (!ids) return null
-    return Array.from(ids).sort((a, b) => sortEntryIdsByPublishDate(a, b))
+    return Array.from(new Set(ids)).sort((a, b) => sortEntryIdsByPublishDate(a, b))
   }
 
 export const getEntryIdsByInboxIdSelector = (state: StateType) => (inboxId: string | undefined) => {

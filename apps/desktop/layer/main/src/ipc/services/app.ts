@@ -17,6 +17,7 @@ import { logger, revealLogFile } from "~/logger"
 import { AppManager } from "~/manager/app"
 import { WindowManager } from "~/manager/window"
 import { cleanupOldRender, loadDynamicRenderEntry } from "~/updater/hot-updater"
+import { shouldShowMainWindowOnReady } from "./ready-to-show"
 
 import { downloadFile } from "../../lib/download"
 import { checkForAppUpdates, quitAndInstall } from "../../updater"
@@ -43,6 +44,7 @@ interface Sender extends Electron.WebContents {
 
 export class AppService extends IpcService {
   static override readonly groupName = "app"
+  private hasHandledReadyToShowMainWindow = false
 
   @IpcMethod()
   getAppVersion(): string {
@@ -198,12 +200,17 @@ export class AppService extends IpcService {
 
   @IpcMethod()
   readyToShowMainWindow(_context: IpcContext) {
-    const shouldShowWindow =
-      !app.getLoginItemSettings().wasOpenedAsHidden && !process.argv.includes(START_IN_TRAY_ARGS)
-    if (shouldShowWindow) {
-      const window = WindowManager.getMainWindow()
-      if (window) window.show()
+    const window = WindowManager.getMainWindow()
+    const shouldShowWindow = shouldShowMainWindowOnReady({
+      wasOpenedAsHidden: app.getLoginItemSettings().wasOpenedAsHidden,
+      startInTray: process.argv.includes(START_IN_TRAY_ARGS),
+      handledOnce: this.hasHandledReadyToShowMainWindow,
+    })
+
+    if (shouldShowWindow && window && !window.isDestroyed()) {
+      window.show()
     }
+    this.hasHandledReadyToShowMainWindow = true
   }
 
   @IpcMethod()

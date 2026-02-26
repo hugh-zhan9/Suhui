@@ -6,6 +6,7 @@ import { toast } from "sonner"
 
 import { removeAppSkeleton } from "~/lib/app"
 import { attachOpenInEditor } from "~/lib/dev"
+import { shouldAutoReloadDynamicImportError } from "~/lib/error-auto-reload"
 import { getNewIssueUrl } from "~/lib/issues"
 import { clearLocalPersistStoreData } from "~/store/utils/clear"
 
@@ -33,10 +34,12 @@ export function ErrorElement() {
   }, [error])
 
   const reloadRef = useRef(false)
-  if (
-    message.startsWith("Failed to fetch dynamically imported module") &&
-    window.sessionStorage.getItem("reload") !== "1"
-  ) {
+  const shouldAutoReload = shouldAutoReloadDynamicImportError({
+    message,
+    hasReloadedInSession: window.sessionStorage.getItem("reload") === "1",
+    inElectron: !!window.electron,
+  })
+  if (shouldAutoReload) {
     if (reloadRef.current) return null
     toast.info("Web app has been updated so it needs to be reloaded.")
     window.sessionStorage.setItem("reload", "1")

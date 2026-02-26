@@ -101,7 +101,7 @@ function rssProxyPlugin(): PluginOption {
 
         try {
           const response = await fetch(feedUrl, {
-            headers: { "User-Agent": "Folo/1.0 RSS Reader" },
+            headers: { "User-Agent": "FreeFolo/1.0 RSS Reader" },
           })
           if (!response.ok) {
             res.statusCode = response.status
@@ -213,7 +213,7 @@ export default ({ mode }) => {
 
           manifest: {
             theme_color: "#000000",
-            name: "Folo",
+            name: "FreeFolo",
             display: "standalone",
             background_color: "#ffffff",
             icons: [
@@ -332,7 +332,7 @@ export default ({ mode }) => {
 function checkBrowserSupport() {
   if (!("findLastIndex" in Array.prototype) || !("structuredClone" in window)) {
     window.alert(
-      "Folo is not compatible with your browser because your browser version is too old. You can download and use the Folo app or continue using it with the latest browser.",
+      "FreeFolo is not compatible with your browser because your browser version is too old. You can download and use the FreeFolo app or continue using it with the latest browser.",
     )
 
     window.location.href = "https://folo.is/download"

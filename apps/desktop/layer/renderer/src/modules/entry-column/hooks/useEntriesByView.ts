@@ -27,6 +27,11 @@ import { useFeature } from "~/hooks/biz/useFeature"
 import { useRouteParams } from "~/hooks/biz/useRouteParams"
 
 import { aiTimelineEnabledAtom } from "../atoms/ai-timeline"
+import {
+  normalizePendingFeedId,
+  shouldFilterUnreadEntries,
+  shouldUseLocalEntriesQuery,
+} from "./query-selection"
 import { useIsPreviewFeed } from "./useIsPreviewFeed"
 
 const useRemoteEntries = (): UseEntriesReturn => {
@@ -46,8 +51,9 @@ const useRemoteEntries = (): UseEntriesReturn => {
   })
 
   const entriesOptions = useMemo(() => {
+    const normalizedFeedId = normalizePendingFeedId(feedId, ROUTE_FEED_PENDING)
     const params = {
-      feedId: folderIds?.join(",") || feedId,
+      feedId: folderIds?.join(",") || normalizedFeedId,
       inboxId,
       listId,
       view,
@@ -59,7 +65,7 @@ const useRemoteEntries = (): UseEntriesReturn => {
       ...(aiTimelineEnabled && aiEnabled && { aiSort: true }),
     }
 
-    if (feedId && listId && isBizId(feedId)) {
+    if (normalizedFeedId && listId && isBizId(normalizedFeedId)) {
       delete params.listId
     }
 
@@ -156,7 +162,13 @@ const useLocalEntries = (): UseEntriesReturn => {
           .map((id) => {
             const entry = state.data[id]
             if (!entry) return null
-            if (unreadOnly && entry.read) {
+            if (
+              shouldFilterUnreadEntries({
+                isCollection: !!isCollection,
+                unreadOnly: Boolean(unreadOnly),
+              }) &&
+              entry.read
+            ) {
               return null
             }
             return entry.id
@@ -223,7 +235,7 @@ const useLocalEntries = (): UseEntriesReturn => {
 }
 
 export const useEntriesByView = ({ onReset }: { onReset?: () => void }) => {
-  const { view, listId } = useRouteParams()
+  const { view, listId, isCollection } = useRouteParams()
 
   const remoteQuery = useRemoteEntries()
   const localQuery = useLocalEntries()
@@ -237,7 +249,12 @@ export const useEntriesByView = ({ onReset }: { onReset?: () => void }) => {
   // then we have no way to incrementally update the data.
   // We need to add an interface to incrementally update the data based on the version hash.
 
-  const query = remoteQuery.isReady ? remoteQuery : localQuery
+  const query = shouldUseLocalEntriesQuery({
+    isCollection,
+    remoteReady: remoteQuery.isReady,
+  })
+    ? localQuery
+    : remoteQuery
   const entryIds: string[] = query.entriesIds
 
   const isFetchingFirstPage = remoteQuery.isFetching && !remoteQuery.isFetchingNextPage

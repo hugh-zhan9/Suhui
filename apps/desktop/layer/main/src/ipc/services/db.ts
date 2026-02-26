@@ -8,6 +8,9 @@ import type { IpcContext } from "electron-ipc-decorator"
 import { IpcMethod, IpcService } from "electron-ipc-decorator"
 
 import { DBManager } from "~/manager/db"
+import { findDuplicateFeed } from "./rss-dedup"
+import { parseRssFeed } from "./rss-parser"
+import { buildEntryIdentityKey, buildRefreshedFeed, buildStableLocalEntryId } from "./rss-refresh"
 
 /**
  * Fetches a URL using Node.js built-in http/https, follows up to 5 redirects.
@@ -20,7 +23,7 @@ function fetchUrl(url: string, redirectCount = 0): Promise<string> {
     }
     const lib = url.startsWith("https") ? https : http
     lib
-      .get(url, { headers: { "User-Agent": "Folo RSS Reader/1.0" } }, (res) => {
+      .get(url, { headers: { "User-Agent": "FreeFolo RSS Reader/1.0" } }, (res) => {
         if (
           res.statusCode &&
           res.statusCode >= 300 &&
@@ -43,96 +46,12 @@ function fetchUrl(url: string, redirectCount = 0): Promise<string> {
   })
 }
 
-/** Extract text content from the first matching XML tag */
-function extractTag(xml: string, tag: string): string {
-  const re = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i")
-  return xml.match(re)?.[1]?.trim() ?? ""
-}
-
-/** Extract attribute of the first matching tag */
-function extractAttr(xml: string, tag: string, attr: string): string {
-  const re = new RegExp(`<${tag}[^>]*${attr}="([^"]*)"`, "i")
-  return xml.match(re)?.[1]?.trim() ?? ""
-}
-
-/** Very simple RSS/Atom parser — returns feed metadata + items */
-function parseRss(xml: string) {
-  // Detect Atom vs RSS
-  const isAtom = /<feed[^>]*xmlns[^>]*http:\/\/www\.w3\.org\/2005\/Atom/.test(xml)
-
-  const title = extractTag(xml, "title")
-  const description = isAtom ? extractTag(xml, "subtitle") : extractTag(xml, "description")
-  const siteUrl = isAtom
-    ? extractAttr(xml, 'link[^>]*rel="alternate"', "href") || extractAttr(xml, "link", "href")
-    : extractTag(xml, "link")
-  const image =
-    extractAttr(xml, "image", "url") ||
-    extractTag(xml, "url") ||
-    extractAttr(xml, "logo", "href") ||
-    extractTag(xml, "logo")
-
-  // Split into items / entries
-  const itemTag = isAtom ? "entry" : "item"
-  const itemRe = new RegExp(`<${itemTag}[^>]*>([\\s\\S]*?)<\\/${itemTag}>`, "gi")
-  const items: {
-    title: string
-    url: string
-    content: string
-    description: string
-    guid: string
-    author: string
-    publishedAt: number
-  }[] = []
-
-  let match: RegExpExecArray | null
-  while ((match = itemRe.exec(xml)) !== null) {
-    const itemXml = match[1] ?? ""
-    const itemTitle = extractTag(itemXml, "title") || extractTag(itemXml, "h1")
-    const itemUrl =
-      extractTag(itemXml, "link") ||
-      extractAttr(itemXml, 'link[^>]*rel="alternate"', "href") ||
-      extractAttr(itemXml, "link", "href")
-    const itemContent =
-      extractTag(itemXml, "content:encoded") ||
-      extractTag(itemXml, "content") ||
-      extractTag(itemXml, "description")
-    const itemDescription = extractTag(itemXml, "description") || extractTag(itemXml, "summary")
-    const itemGuid =
-      extractTag(itemXml, "guid") ||
-      extractTag(itemXml, "id") ||
-      itemUrl ||
-      Math.random().toString(36)
-    const itemAuthor =
-      extractTag(itemXml, "dc:creator") ||
-      extractTag(itemXml, "author") ||
-      extractTag(itemXml, "name")
-    const pubDate =
-      extractTag(itemXml, "pubDate") ||
-      extractTag(itemXml, "published") ||
-      extractTag(itemXml, "updated")
-    const publishedAt = pubDate ? new Date(pubDate).getTime() : Date.now()
-
-    if (!itemUrl && !itemGuid) continue
-    items.push({
-      title: itemTitle || "",
-      url: itemUrl || "",
-      content: itemContent || "",
-      description: itemDescription || "",
-      guid: itemGuid || Math.random().toString(36),
-      author: itemAuthor || "",
-      publishedAt: Number.isNaN(publishedAt) ? Date.now() : publishedAt,
-    })
-  }
-
-  return { title, description, siteUrl, image, items }
-}
-
 export class DbService extends IpcService {
   static override readonly groupName = "db"
 
   private async buildPreviewData(feedUrl: string, preferredFeedId?: string) {
     const xmlText = await fetchUrl(feedUrl)
-    const parsed = parseRss(xmlText)
+    const parsed = parseRssFeed(xmlText)
 
     const feedId =
       preferredFeedId || `local_feed_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
@@ -157,7 +76,13 @@ export class DbService extends IpcService {
     }
 
     const entries = parsed.items.slice(0, 50).map((item) => ({
-      id: `local_entry_${now}_${Math.random().toString(36).slice(2, 9)}`,
+      id: buildStableLocalEntryId({
+        feedId,
+        guid: item.guid,
+        url: item.url,
+        title: item.title,
+        publishedAt: item.publishedAt,
+      }),
       feedId,
       title: item.title || "Untitled",
       url: item.url || null,
@@ -206,18 +131,18 @@ export class DbService extends IpcService {
     try {
       if (params && params.length > 0) {
         if (method === "get") {
-          return { rows: sqlite.prepare(sql).get(params) }
+          return { rows: sqlite.prepare(sql).raw().get(params) }
         } else if (method === "run") {
           return sqlite.prepare(sql).run(params)
         }
-        return { rows: sqlite.prepare(sql).all(params) }
+        return { rows: sqlite.prepare(sql).raw().all(params) }
       } else {
         if (method === "get") {
-          return { rows: sqlite.prepare(sql).get() }
+          return { rows: sqlite.prepare(sql).raw().get() }
         } else if (method === "run") {
           return sqlite.prepare(sql).run()
         }
-        return { rows: sqlite.prepare(sql).all() }
+        return { rows: sqlite.prepare(sql).raw().all() }
       }
     } catch (error: any) {
       console.error(`[DbService] Error executing SQL: ${sql} with params:`, params, error)
@@ -256,6 +181,19 @@ export class DbService extends IpcService {
   }
 
   @IpcMethod()
+  async updateReadStatus(
+    _context: IpcContext,
+    payload: { entryIds: string[]; read: boolean },
+  ) {
+    const { entryIds, read } = payload
+    if (!entryIds || entryIds.length === 0) return
+    await EntryService.patchMany({ entry: { read }, entryIds })
+    console.info(`[DbService] Updated read=${read} for ${entryIds.length} entries`)
+  }
+
+
+
+  @IpcMethod()
   async getUnreadCount(_context: IpcContext) {
     return 0
   }
@@ -273,18 +211,69 @@ export class DbService extends IpcService {
     try {
       const feedUrl = form.url
       console.info(`[DbService] Fetching RSS: ${feedUrl}`)
+      const db = DBManager.getDB()
+
+      const existingFeeds = await db.query.feedsTable.findMany({
+        columns: { id: true, url: true, siteUrl: true },
+      })
+
+      const preview = await this.buildPreviewData(feedUrl)
+      const duplicateFeed = findDuplicateFeed(existingFeeds as any, feedUrl, preview.feed.siteUrl)
+
+      if (duplicateFeed) {
+        const existingFeed = await db.query.feedsTable.findFirst({
+          where: (feeds, { eq }) => eq(feeds.id, duplicateFeed.id),
+        })
+        const existingSubscription = await db.query.subscriptionsTable.findFirst({
+          where: (subscriptions, { and, eq }) =>
+            and(eq(subscriptions.feedId, duplicateFeed.id), eq(subscriptions.type, "feed")),
+        })
+
+        const subscription =
+          existingSubscription ??
+          ({
+            id: `feed/${duplicateFeed.id}`,
+            feedId: duplicateFeed.id,
+            userId: "local_user_id",
+            view: form.view,
+            isPrivate: false,
+            hideFromTimeline: false,
+            title: form.title || existingFeed?.title || null,
+            category: form.category || null,
+            type: "feed" as const,
+            listId: null,
+            inboxId: null,
+            createdAt: new Date().toISOString(),
+          } as const)
+
+        if (!existingSubscription) {
+          await SubscriptionService.upsertMany([subscription] as any)
+        }
+
+        const entries = await db.query.entriesTable.findMany({
+          where: (entries, { eq }) => eq(entries.feedId, duplicateFeed.id),
+          orderBy: (entries, { desc }) => [desc(entries.publishedAt)],
+          limit: 50,
+        })
+
+        return {
+          feed: existingFeed,
+          subscription,
+          entries,
+        }
+      }
 
       // 1. Build preview payload via local fetch/parse pipeline
-      const preview = await this.buildPreviewData(feedUrl)
       const feed = {
         ...preview.feed,
         title: form.title || preview.feed.title,
+        updatedAt: preview.feed.updatedAt ? new Date(preview.feed.updatedAt) : new Date(),
       }
       const feedId = feed.id
       await FeedService.upsertMany([feed] as any)
 
       // 2. Build subscription row
-      const subId = `local_sub_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
+      const subId = `feed/${feedId}`
       const subscription = {
         id: subId,
         feedId,
@@ -305,7 +294,15 @@ export class DbService extends IpcService {
       const { entries } = preview
 
       if (entries.length > 0) {
-        await EntryService.upsertMany(entries as any)
+        const entriesToSave = entries.map((entry) => ({
+          ...entry,
+          publishedAt: new Date(entry.publishedAt),
+          insertedAt: new Date(entry.insertedAt),
+          readabilityUpdatedAt: entry.readabilityUpdatedAt
+            ? new Date(entry.readabilityUpdatedAt)
+            : null,
+        }))
+        await EntryService.upsertMany(entriesToSave as any)
       }
 
       console.info(`[DbService] Feed added: ${feed.title}, ${entries.length} entries persisted`)
@@ -319,6 +316,84 @@ export class DbService extends IpcService {
     } catch (e: any) {
       console.error("[DbService] addFeed error:", e)
       throw new Error(`Failed to add feed: ${e.message}`)
+    }
+  }
+
+  @IpcMethod()
+  async refreshFeed(_context: IpcContext, feedId: string) {
+    const db = DBManager.getDB()
+    const existingFeed = await db.query.feedsTable.findFirst({
+      where: (feeds, { eq }) => eq(feeds.id, feedId),
+    })
+    if (!existingFeed?.url) {
+      throw new Error(`Feed not found: ${feedId}`)
+    }
+
+    const preview = await this.buildPreviewData(existingFeed.url, feedId)
+    const refreshedFeed = buildRefreshedFeed(existingFeed as any, preview.feed as any)
+
+    await FeedService.upsertMany([refreshedFeed] as any)
+
+    const { entries } = preview
+    if (entries.length > 0) {
+      const existingEntries = await db.query.entriesTable.findMany({
+        where: (entriesTable, { eq }) => eq(entriesTable.feedId, feedId),
+        columns: {
+          id: true,
+          guid: true,
+          url: true,
+          title: true,
+          publishedAt: true,
+          read: true,
+        },
+      })
+      const existingIdByKey = new Map<string, string>()
+      const existingReadById = new Map<string, boolean>()
+      for (const existing of existingEntries) {
+        const key = buildEntryIdentityKey(existing as any)
+        if (!existingIdByKey.has(key)) {
+          existingIdByKey.set(key, existing.id)
+        }
+        const read =
+          typeof existing.read === "boolean"
+            ? existing.read
+            : existing.read === 1 || existing.read === "1"
+        existingReadById.set(existing.id, read)
+      }
+
+      const entriesToSave = entries.map((entry) => ({
+        ...entry,
+        id: existingIdByKey.get(buildEntryIdentityKey(entry as any)) || entry.id,
+        read:
+          existingReadById.get(existingIdByKey.get(buildEntryIdentityKey(entry as any)) || "") ??
+          entry.read,
+        publishedAt: new Date(entry.publishedAt),
+        insertedAt: new Date(entry.insertedAt),
+        readabilityUpdatedAt: entry.readabilityUpdatedAt
+          ? new Date(entry.readabilityUpdatedAt)
+          : null,
+      }))
+      await EntryService.upsertMany(entriesToSave as any)
+    }
+
+    return {
+      feed: refreshedFeed,
+      entriesCount: entries.length,
+    }
+  }
+
+  @IpcMethod()
+  async deleteSubscriptionByTargets(
+    _context: IpcContext,
+    targets: { ids: string[]; feedIds: string[]; listIds: string[]; inboxIds: string[] },
+  ) {
+    if (!targets.ids || targets.ids.length === 0) return
+    console.info(`[DbService] Deleting subscriptions: ${targets.ids.length}`)
+    try {
+      await SubscriptionService.deleteByTargets(targets)
+    } catch (e: any) {
+      console.error("[DbService] deleteSubscriptionByTargets error:", e)
+      throw new Error(`Failed to delete subscriptions: ${e.message}`)
     }
   }
 }

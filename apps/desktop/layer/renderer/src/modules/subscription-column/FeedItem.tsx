@@ -9,13 +9,13 @@ import {
   TooltipTrigger,
 } from "@follow/components/ui/tooltip/index.jsx"
 import { EllipsisHorizontalTextWithTooltip } from "@follow/components/ui/typography/index.js"
-import { FeedViewType, getViewList } from "@follow/constants"
+import { FeedViewType } from "@follow/constants"
 import { isOnboardingFeedUrl } from "@follow/store/constants/onboarding"
 import { useFeedById } from "@follow/store/feed/hooks"
 import { useInboxById } from "@follow/store/inbox/hooks"
 import { useListById } from "@follow/store/list/hooks"
 import { useSubscriptionByFeedId } from "@follow/store/subscription/hooks"
-import { useUnreadById, useUnreadByListId } from "@follow/store/unread/hooks"
+import { useEntryStore } from "@follow/store/entry/store"
 import { cn, isKeyForMultiSelectPressed } from "@follow/utils/utils"
 import { createElement, memo, use, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -33,6 +33,8 @@ import { useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
 import { useBatchUpdateSubscription } from "~/hooks/biz/useSubscriptionActions"
 import { useContextMenu } from "~/hooks/common/useContextMenu"
 import { getNewIssueUrl } from "~/lib/issues"
+import { getLocalSupportedViewList } from "~/lib/local-views"
+import { countUnreadBySourceId } from "~/lib/unread-by-source"
 import { UrlBuilder } from "~/lib/url-builder"
 import { FeedIcon } from "~/modules/feed/feed-icon"
 import { FeedTitle } from "~/modules/feed/feed-title"
@@ -117,7 +119,7 @@ const FeedItemImpl = ({ view, feedId, className, isPreview }: FeedItemProps) => 
     [feedId, navigate, setSelectedFeedIds, navigationView],
   )
 
-  const feedUnread = useUnreadById(feedId)
+  const feedUnread = useEntryStore((state) => countUnreadBySourceId(state as any, feedId))
 
   const isActive = useRouteParamsSelector((routerParams) => routerParams.feedId === feedId)
 
@@ -171,7 +173,7 @@ const FeedItemImpl = ({ view, feedId, className, isPreview }: FeedItemProps) => 
           MenuItemSeparator.default,
           new MenuItemText({
             label: t("sidebar.feed_column.context_menu.change_to_other_view"),
-            submenu: getViewList()
+            submenu: getLocalSupportedViewList()
               .filter((v) => v.view !== subscription.view && v.switchable)
               .map(
                 (v) =>
@@ -292,7 +294,7 @@ const FeedItemImpl = ({ view, feedId, className, isPreview }: FeedItemProps) => 
 }
 
 const FilterReadFeedItem: Component<FeedItemProps> = (props) => {
-  const feedUnread = useUnreadById(props.feedId)
+  const feedUnread = useEntryStore((state) => countUnreadBySourceId(state as any, props.feedId))
 
   if (!feedUnread) return null
   return createElement(FeedItemImpl, props)
@@ -328,7 +330,7 @@ const ListItemImpl: Component<ListItemProps> = ({
   const when = useGlobalFocusableScopeSelector(FocusablePresets.isSubscriptionList)
   useContextMenuActionShortCutTrigger(items, when && isActive)
 
-  const listUnread = useUnreadByListId(listId)
+  const listUnread = useEntryStore((state) => countUnreadBySourceId(state as any, listId))
 
   const [isContextMenuOpen, setIsContextMenuOpen] = useState(false)
   const subscription = useSubscriptionByFeedId(listId)!
@@ -417,7 +419,7 @@ const ListItemImpl: Component<ListItemProps> = ({
 export const ListItem = memo(ListItemImpl)
 
 const FilterReadListItem: Component<ListItemProps> = (props) => {
-  const listUnread = useUnreadByListId(props.listId)
+  const listUnread = useEntryStore((state) => countUnreadBySourceId(state as any, props.listId))
 
   if (!listUnread) return null
   return createElement(ListItem, props)
@@ -444,7 +446,7 @@ const InboxItemImpl: Component<InboxItemProps> = ({ view, inboxId, className, ic
   const when = useGlobalFocusableScopeSelector(FocusablePresets.isSubscriptionList)
   useContextMenuActionShortCutTrigger(items, when && isActive)
 
-  const inboxUnread = useUnreadById(inboxId)
+  const inboxUnread = useEntryStore((state) => countUnreadBySourceId(state as any, inboxId))
 
   const [isContextMenuOpen, setIsContextMenuOpen] = useState(false)
   const navigate = useNavigateEntry()

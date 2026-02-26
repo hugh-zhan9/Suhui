@@ -1,8 +1,8 @@
-# Follow App Layout Architecture Analysis
+# FreeFolo App Layout Architecture Analysis
 
 ## Overview
 
-The Follow application uses a sophisticated nested layout system built on React Router v7 with the `Outlet` component pattern. This architecture provides a flexible, hierarchical layout structure that supports multiple application modes while maintaining clean separation of concerns.
+The FreeFolo desktop application uses a nested layout system built on React Router v7 with the `Outlet` component pattern. This architecture provides a flexible, hierarchical structure for timeline, subview, and content layouts.
 
 ## Layout Hierarchy & Route Flow
 

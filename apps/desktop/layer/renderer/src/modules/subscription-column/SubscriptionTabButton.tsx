@@ -1,7 +1,7 @@
 import { useDroppable } from "@dnd-kit/core"
 import { ActionButton } from "@follow/components/ui/button/index.js"
 import { FeedViewType, getView } from "@follow/constants"
-import { useUnreadByView } from "@follow/store/unread/hooks"
+import { useEntryStore } from "@follow/store/entry/store"
 import { cn } from "@follow/utils/utils"
 import type { FC } from "react"
 import { startTransition, useCallback } from "react"
@@ -12,11 +12,16 @@ import { setUISetting, useUISettingKey } from "~/atoms/settings/ui"
 import { FocusablePresets } from "~/components/common/Focusable"
 import { useNavigateEntry } from "~/hooks/biz/useNavigateEntry"
 import { parseView, useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
+import { countUnreadByView } from "~/lib/unread-by-view"
 import { useTimelineList } from "~/hooks/biz/useTimelineList"
 import { useContextMenu } from "~/hooks/common/useContextMenu"
 
 import { resetSelectedFeedIds } from "./atom"
 import { useShowTimelineTabsSettingsModal } from "./TimelineTabsSettingsModal"
+
+const useTimelineUnreadByView = (view: FeedViewType) => {
+  return useEntryStore((state) => countUnreadByView(state, view))
+}
 
 export function SubscriptionTabButton({
   timelineId,
@@ -141,7 +146,7 @@ const ViewAllSwitchButton: FC<{
   shortcut: string
   navigateToTimeline: (timelineId: string) => void
 }> = ({ timelineId, isActive, setActive, shortcut, navigateToTimeline }) => {
-  const unreadByView = useUnreadByView(FeedViewType.All)
+  const unreadByView = useTimelineUnreadByView(FeedViewType.All)
   const { t } = useTranslation()
   const showSidebarUnreadCount = useUISettingKey("sidebarShowUnreadCount")
   const item = getView(FeedViewType.All)
@@ -195,7 +200,7 @@ const ViewSwitchButton: FC<{
   shortcut: string
   navigateToTimeline: (timelineId: string) => void
 }> = ({ view, timelineId, isActive, setActive, shortcut, navigateToTimeline }) => {
-  const unreadByView = useUnreadByView(view)
+  const unreadByView = useTimelineUnreadByView(view)
   const { t } = useTranslation()
   const showSidebarUnreadCount = useUISettingKey("sidebarShowUnreadCount")
   const item = getView(view)

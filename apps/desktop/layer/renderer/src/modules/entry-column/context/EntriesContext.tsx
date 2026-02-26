@@ -43,6 +43,8 @@ export const EntriesProvider: React.FC<React.PropsWithChildren> = ({ children })
     },
   })
 
+  console.log('[Antigravity] EntriesProvider entriesIds:', entries.entriesIds.length, entries.type)
+
   const { type: syncType } = entries
 
   const idToIndex = useMemo(() => {

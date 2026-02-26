@@ -442,6 +442,7 @@
   "sidebar.feed_actions.feed_owned_by_you": "Ce flux vous appartient",
   "sidebar.feed_actions.list_owned_by_you": "Cette liste vous appartient",
   "sidebar.feed_actions.mark_all_as_read": "Marquer comme lu",
+  "sidebar.feed_actions.mark_all_as_unread": "Marquer comme non lu",
   "sidebar.feed_actions.navigate_to_feed": "Naviguer vers le flux",
   "sidebar.feed_actions.navigate_to_list": "Naviguer vers la liste",
   "sidebar.feed_actions.new_inbox": "Nouvelle boîte de réception",

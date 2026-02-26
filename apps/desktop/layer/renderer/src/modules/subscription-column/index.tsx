@@ -20,7 +20,7 @@ import { useUISettingKey } from "~/atoms/settings/ui"
 import { setTimelineColumnShow, useSubscriptionColumnShow } from "~/atoms/sidebar"
 import { Focusable } from "~/components/common/Focusable"
 import { HotkeyScope } from "~/constants"
-import { useBackHome } from "~/hooks/biz/useNavigateEntry"
+import { useBackHome, useNavigateEntry } from "~/hooks/biz/useNavigateEntry"
 import { useReduceMotion } from "~/hooks/biz/useReduceMotion"
 import { parseView, useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
 import { useTimelineList } from "~/hooks/biz/useTimelineList"
@@ -33,6 +33,7 @@ import { useShouldFreeUpSpace } from "./hook"
 import { SubscriptionListGuard } from "./subscription-list/SubscriptionListGuard"
 import { SubscriptionColumnHeader } from "./SubscriptionColumnHeader"
 import { SubscriptionTabButton } from "./SubscriptionTabButton"
+import { buildTimelineSwitchNavigation } from "./timeline-switch"
 
 const lethargy = new Lethargy()
 
@@ -56,6 +57,7 @@ export function SubscriptionColumn({
   }))
 
   const [timelineId, setMemoizedTimelineId] = useState(routeParams.timelineId ?? timelineList[0])
+  const navigate = useNavigateEntry()
 
   useEffect(() => {
     if (routeParams.timelineId) setMemoizedTimelineId(routeParams.timelineId)
@@ -72,10 +74,10 @@ export function SubscriptionColumn({
         nextActive = args
       }
 
-      navigateBackHome(nextActive)
+      navigate(buildTimelineSwitchNavigation(nextActive))
       resetSelectedFeedIds()
     },
-    [navigateBackHome, timelineId, timelineList],
+    [navigate, timelineId, timelineList],
   )
 
   useWheel(

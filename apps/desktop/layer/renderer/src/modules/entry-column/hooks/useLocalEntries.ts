@@ -15,6 +15,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 
 import { useGeneralSettingKey } from "~/atoms/settings/general"
 import { ROUTE_FEED_PENDING } from "~/constants/app"
+import { shouldFilterUnreadEntries } from "./query-selection"
 
 interface UseLocalEntriesOptions {
   feedId?: string
@@ -78,7 +79,13 @@ export const useLocalEntries = ({
           .map((id) => {
             const entry = state.data[id]
             if (!entry) return null
-            if (unreadOnly && entry.read) {
+            if (
+              shouldFilterUnreadEntries({
+                isCollection: !!isCollection,
+                unreadOnly: Boolean(unreadOnly),
+              }) &&
+              entry.read
+            ) {
               return null
             }
             return entry.id

@@ -1,10 +1,17 @@
 import type { FeedViewType } from "@follow/constants"
-import { and, eq, inArray, notInArray, sql } from "drizzle-orm"
+import { and, eq, inArray, notInArray, or, sql } from "drizzle-orm"
 
 import { db } from "../db"
 import { feedsTable, inboxesTable, listsTable, subscriptionsTable } from "../schemas"
 import type { SubscriptionSchema } from "../schemas/types"
 import type { Resetable } from "./internal/base"
+
+type DeleteTargets = {
+  ids?: string[]
+  feedIds?: string[]
+  listIds?: string[]
+  inboxIds?: string[]
+}
 
 class SubscriptionServiceStatic implements Resetable {
   getSubscriptionAll() {
@@ -61,9 +68,23 @@ class SubscriptionServiceStatic implements Resetable {
 
   async delete(id: string | string[]) {
     const ids = Array.isArray(id) ? id : [id]
+    await this.deleteByTargets({ ids })
+  }
+
+  async deleteByTargets({ ids = [], feedIds = [], listIds = [], inboxIds = [] }: DeleteTargets) {
+    const conditions = [
+      ids.length > 0 ? inArray(subscriptionsTable.id, ids) : undefined,
+      feedIds.length > 0 ? inArray(subscriptionsTable.feedId, feedIds) : undefined,
+      listIds.length > 0 ? inArray(subscriptionsTable.listId, listIds) : undefined,
+      inboxIds.length > 0 ? inArray(subscriptionsTable.inboxId, inboxIds) : undefined,
+    ].filter(Boolean)
+
+    if (conditions.length === 0) return
+
+    const whereClause = conditions.length === 1 ? conditions[0]! : or(...conditions)
 
     const results = await db.query.subscriptionsTable.findMany({
-      where: inArray(subscriptionsTable.id, ids),
+      where: whereClause,
       columns: {
         feedId: true,
         listId: true,
@@ -72,7 +93,7 @@ class SubscriptionServiceStatic implements Resetable {
       },
     })
 
-    await db.delete(subscriptionsTable).where(inArray(subscriptionsTable.id, ids)).execute()
+    await db.delete(subscriptionsTable).where(whereClause).execute()
 
     if (!results || results.length === 0) return
 

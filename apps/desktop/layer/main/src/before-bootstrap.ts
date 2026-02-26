@@ -9,7 +9,7 @@ const __dirname = fileURLToPath(new URL(".", import.meta.url))
 ;(globalThis as any).__filename = __filename
 ;(globalThis as any).__dirname = __dirname
 
-if (import.meta.env.DEV) app.setPath("userData", path.join(app.getPath("appData"), "Folo(dev)"))
+if (import.meta.env.DEV) app.setPath("userData", path.join(app.getPath("appData"), "FreeFolo(dev)"))
 protocol.registerSchemesAsPrivileged([
   {
     scheme: "app",

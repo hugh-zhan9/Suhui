@@ -1,6 +1,6 @@
-# Folo Command Abstractions
+# FreeFolo Command Abstractions
 
-this module encapsulates the command abstractions specifically designed for the Folo feature, which is leveraged through CMD-K.
+This module encapsulates command abstractions used by FreeFolo via CMD-K.
 
 The architectural design of the API takes inspiration from the [VSCode Command Abstractions](https://code.visualstudio.com/api/references/contribution-points#contributes.commands).
 

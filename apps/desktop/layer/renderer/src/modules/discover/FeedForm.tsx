@@ -333,6 +333,7 @@ const FeedInnerForm = ({
       onSuccess?.()
     },
     onError(err) {
+      console.error("FeedForm Mutation Error:", err)
       toastFetchError(err)
     },
   })

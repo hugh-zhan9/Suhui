@@ -321,6 +321,7 @@ export const useEntryActions = ({ entryId, view }: { entryId: string; view: Feed
         onClick: runCmdFn(COMMAND_ID.entry.star, [{ entryId, view }]),
         active: isInCollection,
         shortcut: shortcuts[COMMAND_ID.entry.star],
+        requiresLogin: false,
         entryId,
       }),
       new EntryActionMenuItem({

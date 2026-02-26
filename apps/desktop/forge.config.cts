@@ -107,7 +107,7 @@ const ignorePattern = new RegExp(`^/node_modules/(?!${[...keepModules].join("|")
 const config: ForgeConfig = {
   ...(isNoSignBuild ? { outDir: noSignOutDir } : {}),
   packagerConfig: {
-    name: isStaging ? "Folo Staging" : "Folo",
+    name: isStaging ? "FreeFolo Staging" : "FreeFolo",
     appCategoryType: "public.app-category.news",
     buildVersion: process.env.BUILD_VERSION || undefined,
     appBundleId: "is.follow",
@@ -115,11 +115,11 @@ const config: ForgeConfig = {
     extraResource: ["./resources/app-update.yml"],
     protocols: [
       {
-        name: "Folo",
+        name: "FreeFolo",
         schemes: ["follow"],
       },
       {
-        name: "Folo",
+        name: "FreeFolo",
         schemes: ["folo"],
       },
     ],
@@ -213,7 +213,7 @@ const config: ForgeConfig = {
     }),
     new MakerPKG(
       {
-        name: "Folo",
+        name: "FreeFolo",
         keychain: process.env.KEYCHAIN_PATH,
       },
       ["mas"],
@@ -223,7 +223,7 @@ const config: ForgeConfig = {
       ? [
           new MakerAppX({
             publisher: "CN=7CBBEB6A-9B0E-4387-BAE3-576D0ACA279E",
-            packageDisplayName: "FreeFolo - Follow everything in one place",
+            packageDisplayName: "FreeFolo - RSS in one place",
             devCert: "build/dev.pfx",
             assets: "static/appx",
             manifest: "build/appxmanifest.xml",
@@ -236,7 +236,7 @@ const config: ForgeConfig = {
         ]
       : [
           new MakerSquirrel({
-            name: "Folo",
+            name: "FreeFolo",
             setupIcon: isStaging ? "resources/icon-staging.ico" : "resources/icon.ico",
             iconUrl: "https://app.folo.is/favicon.ico",
           }),
