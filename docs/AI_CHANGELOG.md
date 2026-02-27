@@ -3765,3 +3765,16 @@
 - `AI-CONTEXT.md`
 
 ---
+
+## [2026-02-27 13:49] [Bugfix]
+
+- **Change**: 恢复设置列表模块缺失文件，修复构建阶段对settings/tabs/lists/hooks与modals的导入失败问题
+- **Risk Analysis**: 低风险，属于文件恢复，主要影响设置列表与订阅菜单相关弹窗；已通过本地electron-vite构建验证
+- **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/modules/settings/tabs/lists/hooks.tsx`
+- `apps/desktop/layer/renderer/src/modules/settings/tabs/lists/index.tsx`
+- `apps/desktop/layer/renderer/src/modules/settings/tabs/lists/modals.tsx`
+- `apps/desktop/layer/renderer/src/pages/settings/(settings)/list.tsx`
+
+---
