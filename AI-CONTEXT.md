@@ -52,6 +52,8 @@
 - `build-desktop.yml` 中 `.pkg/.appx` 上传仅在 `store=true` 时启用，避免普通构建产生“文件不存在”告警
 - `Create Release Draft` 仅在 `macOS` runner 执行，避免多平台并发写同一 release 导致 finalize 失败
 - release 上传清单已收敛为 macOS 实际产物（`.dmg/.zip/.yml`）
+- 发布流程已移除 `npx changelogithub` 步骤，避免 git diff 过大导致 `ENOBUFS` 干扰发布
+- `Setup Version`、`Prepare Release Notes`、`Prepare Release Meta` 仅在 `macOS` 执行，减少非发布平台无效步骤
 - Release Note 由 `.github/scripts/generate-release-notes.mjs` 自动生成中文内容，不再从 `apps/desktop/changelog/*.md` 读取
 - Release Note 固定不包含 `Thanks` 与 `Contributors` 区块
 
@@ -85,7 +87,7 @@
 - `All/Articles` 未读数按“当前有效订阅来源”聚合统计
 - 不再直接依赖 `entryIdByView[All]`，避免陈旧来源导致虚高
 
-## 最近关键修复（issue 27-33）
+## 最近关键修复（issue 27-34）
 
 - Tab 切换空列表：清空路由残留 + 归一化 pending feedId
 - 新增订阅后重复（9 -> 18）：多层去重（参数/查询结果/最终 IDs）
@@ -95,6 +97,7 @@
 - 右键“全部已读/全部未读”双态动作
 - 批量改读状态后 `unreadOnly` 列表自动刷新
 - All 未读虚高修复（按有效来源聚合）
+- 移除设置中无关的“列表”菜单及其相关模块（发行前精简）
 
 ## 已知边界与残留在线能力
 

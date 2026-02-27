@@ -3732,3 +3732,14 @@
 - `AI-CONTEXT.md`
 
 ---
+
+## [2026-02-27 11:49] [Refactor]
+
+- **Change**: 精简发布工作流：删除changelogithub步骤，并将版本与发布说明生成步骤限制为仅macOS执行
+- **Risk Analysis**: 低风险，变更仅影响CI发布流程，减少无效步骤与ENOBUFS噪音；不影响应用运行时功能
+- **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
+- **Changed Files**:
+- `.github/workflows/build-desktop.yml`
+- `AI-CONTEXT.md`
+
+---
