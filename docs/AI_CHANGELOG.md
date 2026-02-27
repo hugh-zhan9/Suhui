@@ -3843,7 +3843,9 @@
 - `AI-CONTEXT.md`
 
 ---
+
 ## [2026-02-27 15:50] [Refactor]
+
 - **Change**: 移除仓库内全部GitHub Actions工作流配置
 - **Risk Analysis**: 删除workflow后远端将不再自动执行构建、发布与校验，后续只能依赖本地打包流程；风险是失去自动化回归与发布保护。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
@@ -3851,15 +3853,21 @@
 - `.github/workflows/build-desktop.yml`
 - `.github/workflows/lint.yml`
 - `.github/workflows/tag.yml`
-----------------------------------------
+
+---
+
 ## [2026-02-27 16:10] [Bugfix]
+
 - **Change**: 统一时间线数据源为本地查询并移除远端列表分支
 - **Risk Analysis**: 此前All/Articles优先走远端查询而收藏走本地，导致空态文案与真实可渲染条目不一致；改为统一本地后可避免远端状态干扰，风险是远端增量同步能力被彻底绕开。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
 - **Changed Files**:
 - `apps/desktop/layer/renderer/src/modules/entry-column/hooks/useEntriesByView.ts`
-----------------------------------------
+
+---
+
 ## [2026-02-27 16:43] [Bugfix]
+
 - **Change**: 修复发现弹窗与设置页裁剪问题
 - **Risk Analysis**: 风险主要在设置菜单过滤可能影响依赖路径枚举逻辑，已通过新增单测和桌面构建验证。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
@@ -3875,8 +3883,11 @@
 - `apps/desktop/layer/renderer/src/pages/settings/(settings)/notifications.tsx`
 - `issue.md`
 - `AI-CONTEXT.md`
-----------------------------------------
+
+---
+
 ## [2026-02-27 17:10] [Bugfix]
+
 - **Change**: 修复本地RSS新增订阅重复、取消订阅残留索引和All列表重复展示问题
 - **Risk Analysis**: 主要风险是条目索引重建可能影响大数据量下的交互性能，以及订阅弹窗幂等锁在极端失败重试场景下的行为。已通过针对性单测、store类型检查和桌面构建验证主链路可用。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
@@ -3888,8 +3899,11 @@
 - `apps/desktop/layer/renderer/src/modules/entry-column/hooks/entry-id-utils.test.ts`
 - `packages/internal/store/src/modules/entry/store.ts`
 - `packages/internal/store/src/modules/subscription/store.ts`
-----------------------------------------
+
+---
+
 ## [2026-02-27 17:18] [Bugfix]
+
 - **Change**: 修复编辑订阅切换视图未生效与取消订阅后All列表残留问题
 - **Risk Analysis**: 风险在于调整entry视图索引挂载条件可能影响依赖无订阅来源展示的边缘场景；已通过订阅编辑与取消订阅回归测试、类型检查及桌面构建验证。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
@@ -3898,24 +3912,33 @@
 - `packages/internal/store/src/modules/subscription/store.ts`
 - `apps/desktop/layer/renderer/src/lib/subscription-local-branches.test.ts`
 - `apps/desktop/layer/renderer/src/lib/subscription-unsubscribe-local-delete.test.ts`
-----------------------------------------
+
+---
+
 ## [2026-02-27 18:44] [Feature]
+
 - **Change**: 新增 RSSHub 主进程管理器骨架并补齐基础状态机单测
 - **Risk Analysis**: 风险在于默认 launch 与健康检查实现仍为占位，若提前接线会导致启动失败；当前通过独立单测验证状态流转，尚未接入业务链路。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
 - **Changed Files**:
 - `apps/desktop/layer/main/src/manager/rsshub.ts`
 - `apps/desktop/layer/main/src/manager/rsshub.test.ts`
-----------------------------------------
+
+---
+
 ## [2026-02-27 18:45] [Feature]
+
 - **Change**: 新增 RSSHub URL 改写模块并覆盖协议与错误码单测
 - **Risk Analysis**: 风险在于目前仅实现纯函数改写，尚未接入 DbService 实际网络请求链路；后续接线时需验证重定向和token透传不丢失。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
 - **Changed Files**:
 - `apps/desktop/layer/main/src/ipc/services/rsshub-url.ts`
 - `apps/desktop/layer/main/src/ipc/services/rsshub-url.test.ts`
-----------------------------------------
+
+---
+
 ## [2026-02-27 18:47] [Feature]
+
 - **Change**: 接入 DbService 的 RSSHub URL 改写链路并新增主进程 RSSHub IPC 接口
 - **Risk Analysis**: 风险在于当前默认 RSSHub sidecar 启动参数仍为占位路径，命中 RSSHub URL 时可能触发启动失败；已通过单测和类型检查保证纯逻辑与接口可用。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
@@ -3923,4 +3946,16 @@
 - `apps/desktop/layer/main/src/ipc/services/db.ts`
 - `apps/desktop/layer/main/src/ipc/services/rsshub-url.ts`
 - `apps/desktop/layer/main/src/ipc/services/rsshub-url.test.ts`
-----------------------------------------
+
+---
+
+## [2026-02-27 18:51] [Feature]
+
+- **Change**: 完善RSSHub管理器默认运行时能力并补充路径单测
+- **Risk Analysis**: 风险在于生产环境入口路径解析和健康检查超时策略可能在个别机器上触发误判；已通过单元测试覆盖路径分支并执行主进程类型检查与RSSHub相关测试，降低回归风险。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/manager/rsshub.ts`
+- `apps/desktop/layer/main/src/manager/rsshub.test.ts`
+
+---

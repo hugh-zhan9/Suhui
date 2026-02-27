@@ -1,11 +1,18 @@
-import { fork } from 'node:child_process'
-import { randomBytes } from 'node:crypto'
+import { fork } from "node:child_process"
+import { randomBytes } from "node:crypto"
+import * as http from "node:http"
+import * as net from "node:net"
 
-export type RsshubStatus = 'stopped' | 'starting' | 'running' | 'error' | 'cooldown'
+import { join } from "pathe"
+
+export type RsshubStatus = "stopped" | "starting" | "running" | "error" | "cooldown"
 
 export interface RsshubProcessLike {
-  kill(signal?: NodeJS.Signals | number): void
-  on(event: 'exit', listener: (code: number | null, signal: NodeJS.Signals | null) => void): void
+  kill: (signal?: NodeJS.Signals | number) => void
+  on: (
+    event: "exit",
+    listener: (code: number | null, signal: NodeJS.Signals | null) => void,
+  ) => void
   emitExit?: (code?: number, signal?: NodeJS.Signals | null) => void
 }
 
@@ -30,23 +37,89 @@ interface RsshubManagerDeps {
   schedule: (fn: () => void, delayMs: number) => void
 }
 
+const findAvailablePort = async () => {
+  return new Promise<number>((resolve, reject) => {
+    const server = net.createServer()
+    server.on("error", (error) => {
+      reject(error)
+    })
+    server.listen(0, "127.0.0.1", () => {
+      const address = server.address()
+      if (!address || typeof address === "string") {
+        server.close(() => reject(new Error("Failed to allocate port")))
+        return
+      }
+      const { port } = address
+      server.close((closeErr) => {
+        if (closeErr) {
+          reject(closeErr)
+          return
+        }
+        resolve(port)
+      })
+    })
+  })
+}
+
+export const createRsshubEntryPath = ({
+  isPackaged,
+  appPath,
+  resourcesPath,
+}: {
+  isPackaged: boolean
+  appPath: string
+  resourcesPath: string
+}) => {
+  if (isPackaged) {
+    return join(resourcesPath, "rsshub", "index.js")
+  }
+  return join(appPath, "resources", "rsshub", "index.js")
+}
+
 const defaultDeps = (): RsshubManagerDeps => ({
-  createPort: async () => 12010,
-  createToken: () => randomBytes(32).toString('hex'),
+  createPort: findAvailablePort,
+  createToken: () => randomBytes(32).toString("hex"),
   launch: async ({ port, token }) => {
-    const child = fork('resources/rsshub/index.js', [], {
+    const entryPath = createRsshubEntryPath({
+      isPackaged: !!process.env["ELECTRON_IS_PACKAGED"],
+      appPath: process.cwd(),
+      resourcesPath: process.resourcesPath || process.cwd(),
+    })
+    const child = fork(entryPath, [], {
       env: {
         ...process.env,
         PORT: String(port),
         RSSHUB_TOKEN: token,
-        NODE_ENV: process.env.NODE_ENV || 'production',
+        NODE_ENV: process.env.NODE_ENV || "production",
       },
-      stdio: 'pipe',
+      stdio: "pipe",
     })
 
     return child as unknown as RsshubProcessLike
   },
-  healthCheck: async () => false,
+  healthCheck: async ({ port, token }) => {
+    return new Promise((resolve) => {
+      const request = http.get(
+        `http://127.0.0.1:${port}/healthz`,
+        {
+          headers: {
+            "X-RSSHub-Token": token,
+          },
+        },
+        (res) => {
+          const ok = (res.statusCode ?? 500) >= 200 && (res.statusCode ?? 500) < 300
+          res.resume()
+          resolve(ok)
+        },
+      )
+
+      request.setTimeout(10_000, () => {
+        request.destroy(new Error("Health check timeout"))
+        resolve(false)
+      })
+      request.on("error", () => resolve(false))
+    })
+  },
   maxRetries: 3,
   retryDelaysMs: [1000, 2000, 4000],
   cooldownMs: 5 * 60 * 1000,
@@ -62,7 +135,7 @@ class RsshubManager {
     process: null,
     port: null,
     token: null,
-    status: 'stopped',
+    status: "stopped",
     retryCount: 0,
     cooldownUntil: null,
   }
@@ -78,7 +151,7 @@ class RsshubManager {
   }
 
   async ensureRunning(): Promise<number> {
-    if (this.state.status === 'running' && this.state.port) {
+    if (this.state.status === "running" && this.state.port) {
       return this.state.port
     }
 
@@ -91,16 +164,16 @@ class RsshubManager {
       return this.startPromise
     }
 
-    if (this.state.status === 'running' && this.state.port && this.state.token) {
+    if (this.state.status === "running" && this.state.port && this.state.token) {
       return { port: this.state.port, token: this.state.token }
     }
 
-    const cooldownUntil = this.state.cooldownUntil
-    if (this.state.status === 'cooldown' && cooldownUntil && this.deps.now() < cooldownUntil) {
-      throw new Error('RSSHub in cooldown')
+    const { cooldownUntil } = this.state
+    if (this.state.status === "cooldown" && cooldownUntil && this.deps.now() < cooldownUntil) {
+      throw new Error("RSSHub in cooldown")
     }
 
-    this.state.status = 'starting'
+    this.state.status = "starting"
     this.startPromise = this.startInternal()
 
     try {
@@ -115,7 +188,7 @@ class RsshubManager {
     const token = this.deps.createToken()
     const processRef = await this.deps.launch({ port, token })
 
-    processRef.on('exit', () => {
+    processRef.on("exit", () => {
       this.handleChildExit()
     })
 
@@ -125,12 +198,12 @@ class RsshubManager {
 
     const healthy = await this.deps.healthCheck({ port, token })
     if (!healthy) {
-      this.state.status = 'error'
+      this.state.status = "error"
       this.scheduleRetry()
-      throw new Error('RSSHub health check failed')
+      throw new Error("RSSHub health check failed")
     }
 
-    this.state.status = 'running'
+    this.state.status = "running"
     this.state.retryCount = 0
     this.state.cooldownUntil = null
 
@@ -139,14 +212,14 @@ class RsshubManager {
 
   async stop(): Promise<void> {
     if (this.state.process) {
-      this.state.process.kill('SIGTERM')
+      this.state.process.kill("SIGTERM")
     }
 
     this.state = {
       process: null,
       port: null,
       token: null,
-      status: 'stopped',
+      status: "stopped",
       retryCount: 0,
       cooldownUntil: null,
     }
@@ -158,20 +231,21 @@ class RsshubManager {
   }
 
   private handleChildExit() {
-    if (this.state.status === 'stopped') return
+    if (this.state.status === "stopped") return
 
-    this.state.status = 'error'
+    this.state.status = "error"
     this.scheduleRetry()
   }
 
   private scheduleRetry() {
     if (this.state.retryCount >= this.deps.maxRetries) {
-      this.state.status = 'cooldown'
+      this.state.status = "cooldown"
       this.state.cooldownUntil = this.deps.now() + this.deps.cooldownMs
       return
     }
 
-    const delay = this.deps.retryDelaysMs[this.state.retryCount] ?? this.deps.retryDelaysMs.at(-1) ?? 1000
+    const delay =
+      this.deps.retryDelaysMs[this.state.retryCount] ?? this.deps.retryDelaysMs.at(-1) ?? 1000
     this.state.retryCount += 1
 
     this.deps.schedule(() => {
