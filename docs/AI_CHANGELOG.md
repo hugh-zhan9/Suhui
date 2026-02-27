@@ -3665,3 +3665,15 @@
 - `apps/desktop/layer/main/src/ipc/services/rss-parser.ts`
 
 ---
+
+## [2026-02-27 10:52] [Bugfix]
+
+- **Change**: 修复桌面构建流程中商店产物上传条件与发布标签输出链路，避免普通构建告警并确保版本标签可创建
+- **Risk Analysis**: 中低风险，影响CI发布流程判断，不触及应用运行时代码；若条件写错可能导致商店包未上传，需要通过一次发布验证
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `.github/workflows/build-desktop.yml`
+- `.github/workflows/tag.yml`
+- `AI-CONTEXT.md`
+
+---

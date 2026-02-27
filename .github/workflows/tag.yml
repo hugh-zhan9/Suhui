@@ -14,9 +14,9 @@ jobs:
     name: Create Release Tag
     runs-on: ubuntu-latest
     outputs:
-      tag_version: ${{ steps.release_info.outputs.tag_version }}
-      platform: ${{ steps.release_info.outputs.platform }}
-      version: ${{ steps.release_info.outputs.version }}
+      tag_version: ${{ steps.extract_info.outputs.tag_version }}
+      platform: ${{ steps.extract_info.outputs.platform }}
+      version: ${{ steps.extract_info.outputs.version }}
 
     steps:
       - name: Checkout repository
@@ -36,32 +36,25 @@ jobs:
         run: .github/scripts/extract-release-info.mjs
         continue-on-error: true
 
-      - name: Expose release outputs
-        id: release_info
-        run: |
-          echo "tag_version=${tag_version:-}" >> "$GITHUB_OUTPUT"
-          echo "platform=${platform:-}" >> "$GITHUB_OUTPUT"
-          echo "version=${version:-}" >> "$GITHUB_OUTPUT"
-
       - name: Validate git configuration
-        if: steps.release_info.outputs.tag_version != ''
+        if: steps.extract_info.outputs.tag_version != ''
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Create and push tag
-        if: steps.release_info.outputs.tag_version != ''
+        if: steps.extract_info.outputs.tag_version != ''
         run: |
           git fetch --tags --force
-          echo "Creating tag: ${{ steps.release_info.outputs.tag_version }}"
-          if git rev-parse "${{ steps.release_info.outputs.tag_version }}" >/dev/null 2>&1; then
-            echo "Tag ${{ steps.release_info.outputs.tag_version }} already exists, skipping creation"
+          echo "Creating tag: ${{ steps.extract_info.outputs.tag_version }}"
+          if git rev-parse "${{ steps.extract_info.outputs.tag_version }}" >/dev/null 2>&1; then
+            echo "Tag ${{ steps.extract_info.outputs.tag_version }} already exists, skipping creation"
             exit 0
           fi
 
-          git tag "${{ steps.release_info.outputs.tag_version }}"
-          git push origin "${{ steps.release_info.outputs.tag_version }}"
-          echo "Successfully created and pushed tag: ${{ steps.release_info.outputs.tag_version }}"
+          git tag "${{ steps.extract_info.outputs.tag_version }}"
+          git push origin "${{ steps.extract_info.outputs.tag_version }}"
+          echo "Successfully created and pushed tag: ${{ steps.extract_info.outputs.tag_version }}"
 
   trigger_builds:
     name: Trigger Platform Builds

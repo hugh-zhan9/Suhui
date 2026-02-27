@@ -263,7 +263,7 @@ jobs:
 
       - name: Upload file (macos-mas-pkg)
         uses: actions/upload-artifact@v6
-        if: runner.os == 'macOS'
+        if: runner.os == 'macOS' && github.event.inputs.store == 'true'
         with:
           name: macos-mas-pkg
           path: |
@@ -310,7 +310,7 @@ jobs:
 
       - name: Upload file (windows-x64-appx)
         uses: actions/upload-artifact@v6
-        if: runner.os == 'windows'
+        if: runner.os == 'windows' && github.event.inputs.store == 'true'
         with:
           name: windows-x64-appx
           path: |
