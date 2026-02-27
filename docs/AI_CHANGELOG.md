@@ -3907,3 +3907,11 @@
 - `apps/desktop/layer/main/src/manager/rsshub.ts`
 - `apps/desktop/layer/main/src/manager/rsshub.test.ts`
 ----------------------------------------
+## [2026-02-27 18:45] [Feature]
+- **Change**: 新增 RSSHub URL 改写模块并覆盖协议与错误码单测
+- **Risk Analysis**: 风险在于目前仅实现纯函数改写，尚未接入 DbService 实际网络请求链路；后续接线时需验证重定向和token透传不丢失。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/ipc/services/rsshub-url.ts`
+- `apps/desktop/layer/main/src/ipc/services/rsshub-url.test.ts`
+----------------------------------------
