@@ -187,6 +187,10 @@ jobs:
       - name: Install dependencies
         run: pnpm i
 
+      - name: Rebuild better-sqlite3 (macOS)
+        if: runner.os == 'macOS'
+        run: pnpm rebuild better-sqlite3
+
       - name: Prebuild packages (Windows)
         if: runner.os == 'windows'
         run: pnpm run build:packages

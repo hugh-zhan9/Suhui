@@ -3821,3 +3821,14 @@
 - `.github/workflows/build-desktop.yml`
 
 ---
+
+## [2026-02-27 15:22] [Critical-Fix]
+
+- **Change**: 修复发布构建中better-sqlite3原生模块丢失问题
+- **Risk Analysis**: 此前保留模块逻辑在pnpm符号链接场景可能未物理复制原生文件，导致app.asar.unpacked缺失better_sqlite3.node；同时CI未显式重建原生模块。已改为强制解引用复制并在macOS先rebuild，风险是打包耗时会增加。
+- **Risk Level**: S1（高级: 关键流程失败、主要功能不可用或明显业务回归）
+- **Changed Files**:
+- `apps/desktop/forge.config.cts`
+- `.github/workflows/build-desktop.yml`
+
+---

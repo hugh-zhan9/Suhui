@@ -50,6 +50,21 @@ const keepModules = new Set([
 ])
 const keepLanguages = new Set(["en", "en_GB", "en-US", "en_US"])
 
+const resolveRetainedModuleSource = (moduleName: string) => {
+  const candidates = [
+    path.join(process.cwd(), "node_modules", moduleName),
+    path.join(process.cwd(), "../../node_modules", moduleName),
+  ]
+
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) {
+      return fs.realpathSync(candidate)
+    }
+  }
+
+  throw new Error(`Retained module not found: ${moduleName}`)
+}
+
 // remove folders & files not to be included in the app
 async function cleanSources(buildPath, _electronVersion, platform, _arch, callback) {
   // folders & files to be included in the app
@@ -83,20 +98,15 @@ async function cleanSources(buildPath, _electronVersion, platform, _arch, callba
 
   // copy needed node_modules to be included in the app
   await Promise.all(
-    Array.from(keepModules.values()).map((item) => {
-      // Check is exist
-      if (fs.existsSync(path.join(buildPath, "node_modules", item))) {
-        // eslint-disable-next-line array-callback-return
-        return
-      }
-      return cp(
-        path.join(process.cwd(), "../../node_modules", item),
-        path.join(buildPath, "node_modules", item),
-        {
-          recursive: true,
-          dereference: true,
-        },
-      )
+    Array.from(keepModules.values()).map(async (item) => {
+      const target = path.join(buildPath, "node_modules", item)
+      const source = resolveRetainedModuleSource(item)
+
+      await rimraf(target)
+      await cp(source, target, {
+        recursive: true,
+        dereference: true,
+      })
     }),
   )
 
