@@ -16,7 +16,7 @@ export type ParsedFeed = {
   items: ParsedItem[]
 }
 
-const normalizeWhitespace = (value: string) => value.replace(/\s+/g, " ").trim()
+const normalizeWhitespace = (value: string) => value.replaceAll(/\s+/g, " ").trim()
 
 const decodeEntities = (value: string) =>
   value
@@ -29,9 +29,9 @@ const decodeEntities = (value: string) =>
 
 const stripHtml = (value: string) =>
   value
-    .replace(/<script[\s\S]*?<\/script>/gi, " ")
-    .replace(/<style[\s\S]*?<\/style>/gi, " ")
-    .replace(/<[^>]+>/g, " ")
+    .replaceAll(/<script[\s\S]*?<\/script>/gi, " ")
+    .replaceAll(/<style[\s\S]*?<\/style>/gi, " ")
+    .replaceAll(/<[^>]+>/g, " ")
 
 const toPlainText = (value: string) => normalizeWhitespace(decodeEntities(stripHtml(value || "")))
 
@@ -42,7 +42,7 @@ const removeTitlePrefix = (title: string, text: string) => {
 
   if (normalizedText === normalizedTitle) return ""
 
-  const escapedTitle = normalizedTitle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+  const escapedTitle = normalizedTitle.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&")
   const prefix = new RegExp(`^${escapedTitle}[\\s:：\\-—|·,，。!?！？]*`, "i")
   return normalizeWhitespace(normalizedText.replace(prefix, ""))
 }
@@ -65,12 +65,12 @@ const pickTimestamp = (raw: string) => {
 
 const cleanupTagText = (value: string) => {
   return value
-    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
-    .replace(/<!--([\s\S]*?)-->/g, "")
+    .replaceAll(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
+    .replaceAll(/<!--([\s\S]*?)-->/g, "")
     .trim()
 }
 
-const escapeTagName = (name: string) => name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+const escapeTagName = (name: string) => name.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&")
 
 const findTagText = (xml: string, tagNames: string[]) => {
   for (const name of tagNames) {
@@ -94,16 +94,18 @@ const findBlocks = (xml: string, tagName: string) => {
 
 const parseAttributes = (raw: string) => {
   const attrs: Record<string, string> = {}
-  const re = /([:@A-Za-z0-9_-]+)\s*=\s*(["'])(.*?)\2/g
+  const re = /([:@\w-]+)\s*=\s*(["'])(.*?)\2/g
   let match: RegExpExecArray | null
   while ((match = re.exec(raw))) {
-    attrs[match[1]] = decodeEntities(match[3] || "")
+    const key = match[1]
+    if (!key) continue
+    attrs[key] = decodeEntities(match[3] || "")
   }
   return attrs
 }
 
 const findLinkHref = (xml: string, preferredRel?: string) => {
-  const re = /<link\b([^>]*)\/?>/gi
+  const re = /<link\b([^>]*)>/gi
   let firstHref = ""
   let match: RegExpExecArray | null
   while ((match = re.exec(xml))) {

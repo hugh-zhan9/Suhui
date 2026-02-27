@@ -3643,3 +3643,25 @@
 - `AI-CONTEXT.md`
 
 ---
+
+## [2026-02-27 10:45] [修复]
+
+- **Change**: 修复持续集成拦截问题，调整RSS解析正则并修改better-sqlite3类型声明为函数属性签名
+- **Risk Analysis**: 低风险，仅影响静态检查与类型声明，不改变运行时业务流程
+- **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
+- **Changed Files**:
+- `.github/workflows/lint.yml`
+- `apps/desktop/layer/main/src/ipc/services/rss-parser.ts`
+- `packages/internal/database/src/better-sqlite3.d.ts`
+
+---
+
+## [2026-02-27 10:46] [修复]
+
+- **Change**: 修复RSS解析正则的冗余量词问题，避免提交钩子拦截
+- **Risk Analysis**: 低风险，仅正则静态写法调整，不影响业务功能
+- **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/ipc/services/rss-parser.ts`
+
+---
