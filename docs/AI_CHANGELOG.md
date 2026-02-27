@@ -3721,3 +3721,14 @@
 - `.github/scripts/generate-release-notes.mjs`
 
 ---
+
+## [2026-02-27 11:36] [Bugfix]
+
+- **Change**: 修复发布流程并发写同一release导致finalize失败，限制仅macOS执行Create Release Draft并收敛上传清单
+- **Risk Analysis**: 中低风险，影响发布编排；若后续需要跨平台产物发布需新增聚合发布作业，目前优先保证mac发布稳定
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `.github/workflows/build-desktop.yml`
+- `AI-CONTEXT.md`
+
+---

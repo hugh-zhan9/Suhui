@@ -385,7 +385,7 @@ jobs:
           echo "release_tag=${release_tag}" >> "$GITHUB_OUTPUT"
 
       - name: Create Release Draft
-        if: env.RELEASE == 'true'
+        if: env.RELEASE == 'true' && runner.os == 'macOS'
         uses: softprops/action-gh-release@v2
         with:
           name: ${{ steps.release_meta.outputs.release_name }}
@@ -396,8 +396,4 @@ jobs:
           files: |
             apps/desktop/out/make/**/FreeFolo-*.dmg
             apps/desktop/out/make/**/FreeFolo-*.zip
-            apps/desktop/out/make/**/FreeFolo-*.exe
-            apps/desktop/out/make/**/FreeFolo-*.AppImage
             apps/desktop/out/make/**/*.yml
-            apps/desktop/dist/manifest.yml
-            apps/desktop/dist/*.tar.gz

@@ -50,6 +50,8 @@
 - `build-desktop.yml` 在 `workflow_dispatch` 场景支持 `release_version` 输入，优先用于 Release 的 `name/tag`
 - Release 附件匹配产物前缀为：`FreeFolo-*`（不再使用 `Folo-*`）
 - `build-desktop.yml` 中 `.pkg/.appx` 上传仅在 `store=true` 时启用，避免普通构建产生“文件不存在”告警
+- `Create Release Draft` 仅在 `macOS` runner 执行，避免多平台并发写同一 release 导致 finalize 失败
+- release 上传清单已收敛为 macOS 实际产物（`.dmg/.zip/.yml`）
 - Release Note 由 `.github/scripts/generate-release-notes.mjs` 自动生成中文内容，不再从 `apps/desktop/changelog/*.md` 读取
 - Release Note 固定不包含 `Thanks` 与 `Contributors` 区块
 
