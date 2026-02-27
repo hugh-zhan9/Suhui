@@ -29,7 +29,7 @@ import { ipcServices } from "~/lib/client"
 import { queryClient } from "~/lib/query-client"
 import { clearLocalPersistStoreData } from "~/store/utils/clear"
 
-import { SettingActionItem, SettingDescription } from "../control"
+import { SettingActionItem, SettingDescription, SettingSwitch } from "../control"
 import { createSetting } from "../helper/builder"
 import { SettingItemGroup } from "../section"
 import { getLocalRsshubStatusLabel, normalizeLocalRsshubState } from "./rsshub-local-state"
@@ -40,6 +40,10 @@ type LocalRsshubIpc = {
   getRsshubStatus?: () => Promise<unknown>
   toggleRsshub?: (enabled: boolean) => Promise<unknown>
   restartRsshub?: () => Promise<unknown>
+}
+type LocalRsshubSettingIpc = {
+  getRsshubAutoStart?: () => Promise<boolean>
+  setRsshubAutoStart?: (enabled: boolean) => Promise<unknown>
 }
 
 export const SettingDataControl = () => {
@@ -123,6 +127,7 @@ export const SettingDataControl = () => {
 
 const LocalRsshubSection = () => {
   const localRsshubIpc = ipcServices?.db as unknown as LocalRsshubIpc | undefined
+  const localRsshubSettingIpc = ipcServices?.setting as unknown as LocalRsshubSettingIpc | undefined
   const stateQuery = useQuery({
     queryKey: localRsshubQueryKey,
     queryFn: async () => {
@@ -140,6 +145,29 @@ const LocalRsshubSection = () => {
         return 1000
       }
       return 4000
+    },
+  })
+
+  const autoStartQuery = useQuery({
+    queryKey: ["rsshub", "local", "auto-start"],
+    queryFn: async () => {
+      return (await localRsshubSettingIpc?.getRsshubAutoStart?.()) ?? false
+    },
+    refetchOnMount: "always",
+  })
+
+  const autoStartMutation = useMutation({
+    mutationFn: async (enabled: boolean) => {
+      if (!localRsshubSettingIpc?.setRsshubAutoStart) {
+        throw new Error("IPC_NOT_AVAILABLE")
+      }
+      await localRsshubSettingIpc.setRsshubAutoStart(enabled)
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["rsshub", "local", "auto-start"] })
+    },
+    onError: () => {
+      toast.error("RSSHub 自动启动设置保存失败")
     },
   })
 
@@ -176,6 +204,8 @@ const LocalRsshubSection = () => {
   const state = normalizeLocalRsshubState(stateQuery.data)
   const isRunning = state.status === "running" || state.status === "starting"
   const busy = toggleMutation.isPending || restartMutation.isPending
+  const autoStartBusy = autoStartMutation.isPending
+  const autoStartEnabled = autoStartQuery.data ?? false
 
   return (
     <SettingItemGroup>
@@ -204,6 +234,13 @@ const LocalRsshubSection = () => {
         状态：{getLocalRsshubStatusLabel(state)}
         {state.retryCount > 0 ? `，失败重试次数：${state.retryCount}` : ""}
       </SettingDescription>
+      <SettingSwitch
+        className="mt-3"
+        label="启动应用时自动启动内置 RSSHub"
+        checked={autoStartEnabled}
+        disabled={autoStartBusy}
+        onCheckedChange={(checked) => autoStartMutation.mutate(checked)}
+      />
     </SettingItemGroup>
   )
 }

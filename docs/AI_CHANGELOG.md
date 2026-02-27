@@ -4004,3 +4004,18 @@
 - `apps/desktop/layer/renderer/src/modules/settings/tabs/rsshub-local-state.test.ts`
 
 ---
+
+## [2026-02-27 19:11] [Feature]
+
+- **Change**: 新增RSSHub自动启动配置并接入应用启动流程
+- **Risk Analysis**: 风险在于主进程启动阶段增加自动拉起逻辑可能影响启动稳定性；实现中采用布尔配置显式开启并在失败时记录日志不阻断主流程，新增单测覆盖配置归一化逻辑。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/manager/rsshub-autostart.ts`
+- `apps/desktop/layer/main/src/manager/rsshub-autostart.test.ts`
+- `apps/desktop/layer/main/src/ipc/services/setting.ts`
+- `apps/desktop/layer/main/src/manager/bootstrap.ts`
+- `apps/desktop/layer/main/src/lib/store.ts`
+- `apps/desktop/layer/renderer/src/modules/settings/tabs/data-control.tsx`
+
+---

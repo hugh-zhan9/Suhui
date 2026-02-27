@@ -4,6 +4,7 @@ import { app, nativeTheme } from "electron"
 import type { IpcContext } from "electron-ipc-decorator"
 import { IpcMethod, IpcService } from "electron-ipc-decorator"
 
+import { normalizeRsshubAutoStart, RSSHUB_AUTOSTART_STORE_KEY } from "~/manager/rsshub-autostart"
 import { WindowManager } from "~/manager/window"
 
 import { setProxyConfig, updateProxy } from "../../lib/proxy"
@@ -79,5 +80,15 @@ export class SettingService extends IpcService {
   @IpcMethod()
   getMessagingToken(_context: IpcContext): string | null {
     return store.get("notifications-credentials") as string | null
+  }
+
+  @IpcMethod()
+  getRsshubAutoStart(_context: IpcContext): boolean {
+    return normalizeRsshubAutoStart(store.get(RSSHUB_AUTOSTART_STORE_KEY))
+  }
+
+  @IpcMethod()
+  setRsshubAutoStart(_context: IpcContext, enabled: boolean): void {
+    store.set(RSSHUB_AUTOSTART_STORE_KEY, enabled)
   }
 }

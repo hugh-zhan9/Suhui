@@ -10,6 +10,7 @@ type StoreData = {
   minimizeToTray?: boolean | null
   proxy?: string | null
   qbittorrentSID?: string | null
+  rsshubAutoStart?: boolean | null
   user?: string | null
   windowState?: {
     height: number

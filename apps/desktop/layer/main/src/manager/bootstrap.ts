@@ -12,6 +12,7 @@ import { join } from "pathe"
 
 import { DBManager } from "~/manager/db"
 import { rsshubManager } from "~/manager/rsshub"
+import { normalizeRsshubAutoStart, RSSHUB_AUTOSTART_STORE_KEY } from "~/manager/rsshub-autostart"
 import { WindowManager } from "~/manager/window"
 
 import { migrateAuthCookiesToNewApiDomain } from "../lib/auth-cookie-migration"
@@ -92,6 +93,12 @@ export class BootstrapManager {
       await migrateAuthCookiesToNewApiDomain(session.defaultSession, {
         currentApiURL: env.VITE_API_URL,
       })
+
+      if (normalizeRsshubAutoStart(store.get(RSSHUB_AUTOSTART_STORE_KEY))) {
+        void rsshubManager.start().catch((error) => {
+          logger.error("[RSSHub] auto-start failed", error)
+        })
+      }
 
       WindowManager.getMainWindowOrCreate()
 
