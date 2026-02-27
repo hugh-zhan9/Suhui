@@ -104,9 +104,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
-        exclude:
-          - os: ${{ github.event.inputs.store == 'true' && 'ubuntu-latest' }}
+        os: [macos-latest]
 
     permissions:
       id-token: write
@@ -198,32 +196,15 @@ jobs:
       - name: Update main hash
         working-directory: apps/desktop
         run: pnpm update:main-hash
-      - name: Build - Vite
-        working-directory: apps/desktop
-        run: pnpm build:electron-vite ${{ env.PROD == 'false' && '--mode staging' || '' }}
-
-      - name: Build - Windows and Linux
-        if: runner.os == 'Linux' || (runner.os == 'Windows' && github.event.inputs.store != 'true')
-        working-directory: apps/desktop
-        run: pnpm build:electron-forge ${{ env.PROD == 'false' && '--mode=staging' || '' }}
-
-      - name: Build - macOS
+      - name: Build - macOS arm64 (same as local unsigned)
         if: runner.os == 'macOS' && github.event.inputs.store != 'true'
-        env:
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          OSX_SIGN_KEYCHAIN_PATH: ${{ runner.temp }}/app-signing.keychain-db
-          OSX_SIGN_IDENTITY: ${{ secrets.OSX_SIGN_IDENTITY }}
         uses: nick-fields/retry@v3
         with:
           max_attempts: 3
           timeout_minutes: 10
           command: |
             cd apps/desktop
-            npx electron-forge make --arch=x64 --platform=darwin ${{ env.PROD == 'false' && '--mode=staging' || '' }}
-            npx electron-forge make --arch=arm64 --platform=darwin ${{ env.PROD == 'false' && '--mode=staging' || '' }}
-            npx tsx scripts/merge-yml.ts
+            pnpm build:electron:unsigned
 
       - name: Ad-hoc sign macOS app (unsigned build only)
         if: runner.os == 'macOS' && github.event.inputs.store != 'true' && env.BUILD_CERTIFICATE_BASE64 == ''
@@ -232,7 +213,7 @@ jobs:
         run: |
           # 对所有打包产出的 .app 进行 Ad-hoc 本地自签名
           # 解决 macOS 26+ 对无签名 Electron 应用的运行时 KILL 问题
-          find apps/desktop/out -name "*.app" -maxdepth 6 | while read app; do
+          find /tmp/folo-forge-out -name "*.app" -maxdepth 6 | while read app; do
             echo "将对 $app 执行 Ad-hoc 签名…"
             codesign --force --deep --sign - "$app"
             echo "签名完成: $app"
@@ -253,7 +234,7 @@ jobs:
               echo "缺失原生模块: $binary_path"
               missing=1
             fi
-          done < <(find apps/desktop/out -type d -name "FreeFolo.app" -print)
+          done < <(find /tmp/folo-forge-out -type d -name "FreeFolo.app" -print)
 
           if [ "$found" -eq 0 ]; then
             echo "未找到打包后的 FreeFolo.app，终止发布。"
@@ -291,18 +272,8 @@ jobs:
         with:
           name: macos-arm64-dmg
           path: |
-            apps/desktop/out/make/**/*arm64.dmg
-            apps/desktop/out/make/**/latest-mac.yml
-          retention-days: 90
-
-      - name: Upload file (macos-x64-dmg)
-        uses: actions/upload-artifact@v6
-        if: runner.os == 'macOS'
-        with:
-          name: macos-x64-dmg
-          path: |
-            apps/desktop/out/make/**/*x64.dmg
-            apps/desktop/out/make/**/latest-mac.yml
+            /tmp/folo-forge-out/make/**/*arm64.dmg
+            /tmp/folo-forge-out/make/**/latest-mac.yml
           retention-days: 90
 
       - name: Upload file (macos-mas-pkg)

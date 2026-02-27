@@ -3832,3 +3832,14 @@
 - `.github/workflows/build-desktop.yml`
 
 ---
+
+## [2026-02-27 15:36] [Critical-Fix]
+
+- **Change**: 将CI发布流程收敛为仅macOS arm64并对齐本地无签名打包路径
+- **Risk Analysis**: 此前CI执行多平台与双架构打包，且产物校验目录与本地unsigned模式不一致，导致校验持续失败；现改为仅arm64并使用/tmp/folo-forge-out，风险是暂时不再产出Windows/Linux安装包。
+- **Risk Level**: S1（高级: 关键流程失败、主要功能不可用或明显业务回归）
+- **Changed Files**:
+- `.github/workflows/build-desktop.yml`
+- `AI-CONTEXT.md`
+
+---

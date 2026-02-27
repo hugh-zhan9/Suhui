@@ -60,6 +60,7 @@
 - Release Note 由 `.github/scripts/generate-release-notes.mjs` 自动生成中文内容，不再从 `apps/desktop/changelog/*.md` 读取
 - Release Note 固定不包含 `Thanks` 与 `Contributors` 区块
 - 无签名构建（无 Apple 证书）时，构建后自动对所有 `.app` 执行 Ad-hoc 本地签名（`codesign --force --deep --sign -`），解决 macOS 26+ 运行时代码签名校验失败导致应用被 KILL 的问题
+- 当前 CI 发布流程已收敛为仅 macOS arm64，构建命令与本地一致：`pnpm build:electron:unsigned`，产物目录为 `/tmp/folo-forge-out`
 
 ## 本地 RSS 主链路（已落地）
 
