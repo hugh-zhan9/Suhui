@@ -34,7 +34,7 @@ import { Autocomplete } from "~/components/ui/auto-completion"
 import { useCurrentModal, useIsInModal } from "~/components/ui/modal/stacked/hooks"
 import { getRouteParams } from "~/hooks/biz/useRouteParams"
 import { useI18n } from "~/hooks/common"
-import { toastFetchError } from "~/lib/error-parser"
+import { getFetchErrorMessage, toastFetchError } from "~/lib/error-parser"
 import { feed as feedQuery, useFeedQuery } from "~/queries/feed"
 
 import { ViewSelectorRadioGroup } from "../shared/ViewSelectorRadioGroup"
@@ -53,7 +53,7 @@ const buildFeedLifecycleLockKey = (url?: string, feedId?: string) => {
   if (!url) return feedId || ""
   try {
     const parsed = new URL(url)
-    return `${parsed.hostname.toLowerCase()}::${parsed.pathname}${parsed.search}` || feedId || url
+    return `${parsed.hostname.toLowerCase()}::${parsed.pathname}${parsed.search}`
   } catch {
     return feedId || url
   }
@@ -150,6 +150,9 @@ export const FeedForm: Component<{
               <div className="center grow flex-col gap-3">
                 <i className="i-mgc-close-cute-re size-7 text-red" />
                 <p>{t("feed_form.error_fetching_feed")}</p>
+                <p className="max-w-[460px] text-center text-sm text-text-secondary">
+                  {getFetchErrorMessage(feedQuery.error)}
+                </p>
               </div>
             )
           }
@@ -488,11 +491,7 @@ const FeedInnerForm = ({
               {t.common("words.cancel")}
             </Button>
           )}
-          <Button
-            form="feed-form"
-            type="submit"
-            isLoading={followMutation.isPending}
-          >
+          <Button form="feed-form" type="submit" isLoading={followMutation.isPending}>
             {isSubscribed ? t("feed_form.update") : t("feed_form.follow")}
           </Button>
         </div>

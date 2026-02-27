@@ -12,6 +12,7 @@ import { ipcServices } from "~/lib/client"
 import { DebugRegistry } from "~/modules/debug/registry"
 
 import {
+  getRsshubFriendlyMessage,
   getRsshubLocalErrorTitle,
   parseRsshubLocalError,
   shouldShowRsshubRestartAction,
@@ -58,7 +59,7 @@ export const getFetchErrorInfo = (
 
 export const getFetchErrorMessage = (error: Error) => {
   const { message } = getFetchErrorInfo(error)
-  return message
+  return getRsshubFriendlyMessage(message)
 }
 
 /**

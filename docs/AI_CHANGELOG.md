@@ -4031,3 +4031,16 @@
 - `apps/desktop/layer/renderer/src/lib/rsshub-local-error.test.ts`
 
 ---
+
+## [2026-02-27 19:34] [Bugfix]
+
+- **Change**: 订阅错误文案收口并统一RSSHub本地异常友好提示
+- **Risk Analysis**: 风险在于全局错误消息解析改动可能影响其他模块展示；已将RSSHub友好化限定在特定关键字匹配，保留原始错误兜底，并通过解析单测与现有RSSHub链路测试验证。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/lib/error-parser.ts`
+- `apps/desktop/layer/renderer/src/lib/rsshub-local-error.ts`
+- `apps/desktop/layer/renderer/src/lib/rsshub-local-error.test.ts`
+- `apps/desktop/layer/renderer/src/modules/discover/FeedForm.tsx`
+
+---

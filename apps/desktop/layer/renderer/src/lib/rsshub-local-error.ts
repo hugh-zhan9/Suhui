@@ -29,3 +29,9 @@ export const getRsshubLocalErrorTitle = (type: RsshubLocalErrorType) => {
 
 export const shouldShowRsshubRestartAction = (type: RsshubLocalErrorType) =>
   type === "unavailable" || type === "cooldown" || type === "healthcheck"
+
+export const getRsshubFriendlyMessage = (rawMessage: string) => {
+  const type = parseRsshubLocalError(rawMessage)
+  const title = getRsshubLocalErrorTitle(type)
+  return title || rawMessage
+}

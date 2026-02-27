@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  getRsshubFriendlyMessage,
   getRsshubLocalErrorTitle,
   parseRsshubLocalError,
   shouldShowRsshubRestartAction,
@@ -24,5 +25,10 @@ describe("rsshub local error parser", () => {
     expect(type).toBe("none")
     expect(getRsshubLocalErrorTitle(type)).toBe("")
     expect(shouldShowRsshubRestartAction(type)).toBe(false)
+  })
+
+  it("应输出友好错误文案", () => {
+    expect(getRsshubFriendlyMessage("RSSHub in cooldown")).toBe("内置 RSSHub 处于冷却中")
+    expect(getRsshubFriendlyMessage("HTTP 404")).toBe("HTTP 404")
   })
 })
