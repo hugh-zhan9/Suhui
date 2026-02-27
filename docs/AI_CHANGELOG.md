@@ -3789,3 +3789,14 @@
 - `AI-CONTEXT.md`
 
 ---
+
+## [2026-02-27 14:51] [Critical-Fix]
+
+- **Change**: 构建流水线新增本地数据库原生模块强校验并同步发布规则文档
+- **Risk Analysis**: 如果后续打包输出目录或应用名称调整，校验路径可能失效并导致发布被阻断；当前仅覆盖 macOS 非商店构建。
+- **Risk Level**: S1（高级: 关键流程失败、主要功能不可用或明显业务回归）
+- **Changed Files**:
+- `.github/workflows/build-desktop.yml`
+- `AI-CONTEXT.md`
+
+---

@@ -234,6 +234,32 @@ jobs:
             echo "签名完成: $app"
           done
 
+      - name: Verify better-sqlite3 binary in packaged app (macOS)
+        if: runner.os == 'macOS' && github.event.inputs.store != 'true'
+        run: |
+          set -euo pipefail
+          mapfile -t app_paths < <(find apps/desktop/out -type d -name "FreeFolo.app")
+          if [ "${#app_paths[@]}" -eq 0 ]; then
+            echo "未找到打包后的 FreeFolo.app，终止发布。"
+            exit 1
+          fi
+
+          missing=0
+          for app_path in "${app_paths[@]}"; do
+            binary_path="$app_path/Contents/Resources/app.asar.unpacked/node_modules/better-sqlite3/build/Release/better_sqlite3.node"
+            if [ -f "$binary_path" ]; then
+              echo "校验通过: $binary_path"
+            else
+              echo "缺失原生模块: $binary_path"
+              missing=1
+            fi
+          done
+
+          if [ "$missing" -ne 0 ]; then
+            echo "better-sqlite3 原生模块校验失败，终止发布。"
+            exit 1
+          fi
+
       - name: Build - Mac App Store
         if: runner.os == 'macOS' && github.event.inputs.store == 'true'
         env:

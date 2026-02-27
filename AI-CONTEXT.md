@@ -53,6 +53,7 @@
 - `build-desktop.yml` 中 `.pkg/.appx` 上传仅在 `store=true` 时启用，避免普通构建产生“文件不存在”告警
 - release 流程采用“构建与发布分离”：矩阵作业仅负责三端构建并上传 artifacts，`publish_release` 作业统一下载并一次性创建/更新 release
 - `Create Release Draft` 已设置 `continue-on-error: true`，即使 release 上传失败也不阻断整体构建流程
+- `build-desktop.yml` 在 macOS 非 store 打包后会强校验 `better_sqlite3.node` 是否存在于 `app.asar.unpacked`，缺失即失败，防止发布白屏包
 - release 上传清单包含 macOS/Windows/Linux 产物（`.dmg/.zip/.exe/.AppImage/.yml`）
 - 发布流程已移除 `npx changelogithub` 步骤，避免 git diff 过大导致 `ENOBUFS` 干扰发布
 - `Setup Version`、`Prepare Release Notes`、`Prepare Release Meta` 在 `publish_release` 作业中统一执行
