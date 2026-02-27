@@ -3698,3 +3698,26 @@
 - `AI-CONTEXT.md`
 
 ---
+
+## [2026-02-27 11:23] [Refactor]
+
+- **Change**: 重构发布说明生成逻辑：新增中文自动生成脚本并接入桌面发布流程，移除对changelog文件读取依赖
+- **Risk Analysis**: 中低风险，影响仅在发布文案生成环节；已通过单元测试与工作流语法校验，需下一次发布实际验证文案展示
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `.github/scripts/generate-release-notes.mjs`
+- `.github/scripts/generate-release-notes.test.mjs`
+- `.github/workflows/build-desktop.yml`
+- `AI-CONTEXT.md`
+
+---
+
+## [2026-02-27 11:24] [Bugfix]
+
+- **Change**: 修复发布说明脚本正则lint问题，改为非捕获分组以通过提交钩子校验
+- **Risk Analysis**: 低风险，仅静态规则兼容性修复，不影响发布说明业务逻辑
+- **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
+- **Changed Files**:
+- `.github/scripts/generate-release-notes.mjs`
+
+---
