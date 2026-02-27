@@ -123,4 +123,36 @@ describe("RsshubManager", () => {
     expect(manager.getState().port).toBeNull()
     expect(manager.getState().token).toBeNull()
   })
+
+  it("cooldown 到期后应自动触发一次重试", async () => {
+    vi.useFakeTimers()
+
+    const process = createMockProcess()
+    let healthCallCount = 0
+    const manager = createRsshubManager({
+      createPort: async () => 18084,
+      createToken: () => "token-5",
+      launch: async () => process,
+      healthCheck: async () => {
+        healthCallCount += 1
+        if (healthCallCount <= 2) return false
+        return true
+      },
+      maxRetries: 1,
+      retryDelaysMs: [100],
+      cooldownMs: 500,
+    })
+
+    await expect(manager.start()).rejects.toThrow("RSSHub health check failed")
+    await vi.advanceTimersByTimeAsync(100)
+
+    expect(manager.getState().status).toBe("cooldown")
+
+    await vi.advanceTimersByTimeAsync(500)
+
+    expect(manager.getState().status).toBe("running")
+    expect(manager.getState().port).toBe(18084)
+
+    vi.useRealTimers()
+  })
 })

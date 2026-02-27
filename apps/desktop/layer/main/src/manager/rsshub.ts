@@ -241,6 +241,13 @@ class RsshubManager {
     if (this.state.retryCount >= this.deps.maxRetries) {
       this.state.status = "cooldown"
       this.state.cooldownUntil = this.deps.now() + this.deps.cooldownMs
+      this.deps.schedule(() => {
+        if (this.state.status !== "cooldown") return
+        if (!this.state.cooldownUntil || this.deps.now() < this.state.cooldownUntil) return
+        void this.start().catch(() => {
+          // 失败由 start 内部状态机处理
+        })
+      }, this.deps.cooldownMs)
       return
     }
 

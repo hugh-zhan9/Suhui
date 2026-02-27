@@ -3981,3 +3981,14 @@
 - `apps/desktop/layer/main/src/manager/rsshub.test.ts`
 
 ---
+
+## [2026-02-27 18:56] [Feature]
+
+- **Change**: 补齐RSSHub冷却期到期自动重试并新增状态机单测
+- **Risk Analysis**: 风险在于自动重试可能在异常环境中造成额外启动尝试；实现中仅在cooldown到期后触发一次，并保留原有最大重试与冷却控制，已用假时钟单测覆盖完整路径。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/manager/rsshub.ts`
+- `apps/desktop/layer/main/src/manager/rsshub.test.ts`
+
+---
