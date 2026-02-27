@@ -1,7 +1,15 @@
+import { existsSync } from "node:fs"
+
+import { join } from "pathe"
 import { describe, expect, it, vi } from "vitest"
 
 import type { RsshubProcessLike } from "./rsshub"
-import { createRsshubEntryPath, createRsshubLaunchSpec, createRsshubManager } from "./rsshub"
+import {
+  createRsshubEntryPath,
+  createRsshubLaunchSpec,
+  createRsshubManager,
+  resolveRsshubRuntimeContext,
+} from "./rsshub"
 
 const createMockProcess = (): RsshubProcessLike => {
   let exitHandler: ((code: number | null, signal: NodeJS.Signals | null) => void) | null = null
@@ -21,6 +29,11 @@ const createMockProcess = (): RsshubProcessLike => {
 }
 
 describe("RsshubManager", () => {
+  it("仓库中应存在内置 RSSHub 入口脚本", () => {
+    const entryPath = join(process.cwd(), "apps/desktop/resources/rsshub/index.js")
+    expect(existsSync(entryPath)).toBe(true)
+  })
+
   it("spawn 模式应使用 Electron 内置 Node 启动并注入 ELECTRON_RUN_AS_NODE", () => {
     const spec = createRsshubLaunchSpec({
       mode: "spawn-node",
@@ -87,6 +100,38 @@ describe("RsshubManager", () => {
         resourcesPath: "/resources/path",
       }),
     ).toBe("/app/path/resources/rsshub/index.js")
+  })
+
+  it("应优先使用 electron app 上下文判定运行时路径", () => {
+    const packaged = resolveRsshubRuntimeContext({
+      env: {},
+      cwd: "/dev-cwd",
+      resourcesPath: "/Resources",
+      electronApp: {
+        isPackaged: true,
+        getAppPath: () => "/AppBundle/Contents/Resources/app.asar",
+      },
+    })
+    expect(packaged).toEqual({
+      isPackaged: true,
+      appPath: "/AppBundle/Contents/Resources/app.asar",
+      resourcesPath: "/Resources",
+    })
+
+    const dev = resolveRsshubRuntimeContext({
+      env: {},
+      cwd: "/workspace/apps/desktop",
+      resourcesPath: "/Resources",
+      electronApp: {
+        isPackaged: false,
+        getAppPath: () => "/workspace/apps/desktop",
+      },
+    })
+    expect(dev).toEqual({
+      isPackaged: false,
+      appPath: "/workspace/apps/desktop",
+      resourcesPath: "/Resources",
+    })
   })
 
   it("启动成功后应进入 running 状态并返回端口", async () => {

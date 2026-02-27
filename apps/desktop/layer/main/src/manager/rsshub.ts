@@ -40,6 +40,17 @@ interface RsshubManagerDeps {
 
 type RsshubLaunchMode = "fork" | "spawn-node"
 
+type RsshubRuntimeContext = {
+  isPackaged: boolean
+  appPath: string
+  resourcesPath: string
+}
+
+type ElectronAppContext = {
+  isPackaged: boolean
+  getAppPath: () => string
+}
+
 type RsshubLaunchSpec =
   | {
       kind: "fork"
@@ -106,6 +117,30 @@ export const createRsshubLaunchSpec = ({
   }
 }
 
+export const resolveRsshubRuntimeContext = ({
+  env,
+  cwd,
+  resourcesPath,
+  electronApp,
+}: {
+  env: Partial<NodeJS.ProcessEnv>
+  cwd: string
+  resourcesPath: string
+  electronApp?: ElectronAppContext | null
+}): RsshubRuntimeContext => {
+  const appPath = electronApp?.getAppPath?.() || cwd
+  const isPackaged =
+    typeof electronApp?.isPackaged === "boolean"
+      ? electronApp.isPackaged
+      : env["ELECTRON_IS_PACKAGED"] === "1" || env["ELECTRON_IS_PACKAGED"] === "true"
+
+  return {
+    isPackaged,
+    appPath,
+    resourcesPath,
+  }
+}
+
 const findAvailablePort = async () => {
   return new Promise<number>((resolve, reject) => {
     const server = net.createServer()
@@ -149,10 +184,23 @@ const defaultDeps = (): RsshubManagerDeps => ({
   createPort: findAvailablePort,
   createToken: () => randomBytes(32).toString("hex"),
   launch: async ({ port, token }) => {
-    const entryPath = createRsshubEntryPath({
-      isPackaged: !!process.env["ELECTRON_IS_PACKAGED"],
-      appPath: process.cwd(),
+    let electronApp: ElectronAppContext | null = null
+    try {
+      const electronModule = await import("electron")
+      electronApp = (electronModule as { app?: ElectronAppContext }).app || null
+    } catch {
+      electronApp = null
+    }
+    const runtimeContext = resolveRsshubRuntimeContext({
+      env: process.env,
+      cwd: process.cwd(),
       resourcesPath: process.resourcesPath || process.cwd(),
+      electronApp,
+    })
+    const entryPath = createRsshubEntryPath({
+      isPackaged: runtimeContext.isPackaged,
+      appPath: runtimeContext.appPath,
+      resourcesPath: runtimeContext.resourcesPath,
     })
 
     if (!existsSync(entryPath)) {

@@ -4116,3 +4116,16 @@
 - `apps/desktop/layer/main/src/manager/rsshub.test.ts`
 
 ---
+
+## [2026-02-27 20:05] [Feature]
+
+- **Change**: 补齐内置RSSHub入口脚本并接入打包资源，修正运行时打包路径判定
+- **Risk Analysis**: 主要风险是内置运行时当前仅提供健康检查与token校验，业务路由暂未实现会返回501；已通过管理器单测、main层tsc与forge配置加载校验确保启动链路和打包链路可用。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/resources/rsshub/index.js`
+- `apps/desktop/layer/main/src/manager/rsshub.ts`
+- `apps/desktop/layer/main/src/manager/rsshub.test.ts`
+- `apps/desktop/forge.config.cts`
+
+---
