@@ -109,7 +109,7 @@ jobs:
               ref: 'main',
               inputs: {
                 tag_version: 'true',
-                store: 'true',
+                store: 'false',
                 build_version: '${{ steps.desktop_build_version.outputs.build_version }}',
                 release_version: '${{ needs.create_tag.outputs.version }}'
               }
