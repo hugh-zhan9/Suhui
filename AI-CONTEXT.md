@@ -37,6 +37,7 @@
 - 预览启动：`pnpm --filter FreeFolo start`
 - 打包：`pnpm --filter FreeFolo build:electron`  
   无签名打包：`pnpm --filter FreeFolo build:electron:unsigned`
+- 桌面打包已强制 `asar` 解包所有 `*.node`，并在拷贝保留模块时启用符号链接解引用（`dereference`），用于确保 `better-sqlite3` 原生二进制被正确带入安装包
 
 ### 5) Release 规则（Desktop）
 

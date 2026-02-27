@@ -3778,3 +3778,14 @@
 - `apps/desktop/layer/renderer/src/pages/settings/(settings)/list.tsx`
 
 ---
+
+## [2026-02-27 14:32] [Critical-Fix]
+
+- **Change**: 修复安装包启动白屏根因：调整forge打包配置以解包node原生模块并复制真实依赖目录，确保better-sqlite3二进制随包分发
+- **Risk Analysis**: 中等风险，影响桌面打包流程；已通过本地unsigned完整打包并验证产物包含better_sqlite3.node，需在CI发布包复验启动
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/forge.config.cts`
+- `AI-CONTEXT.md`
+
+---

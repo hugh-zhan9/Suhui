@@ -94,6 +94,7 @@ async function cleanSources(buildPath, _electronVersion, platform, _arch, callba
         path.join(buildPath, "node_modules", item),
         {
           recursive: true,
+          dereference: true,
         },
       )
     }),
@@ -128,7 +129,9 @@ const config: ForgeConfig = {
       cleanSources,
       process.platform !== "win32" ? noopAfterCopy : setLanguages([...keepLanguages.values()]),
     ],
-    asar: true,
+    asar: {
+      unpack: "**/*.node",
+    },
     ignore: packagerIgnorePatterns,
 
     prune: false,
