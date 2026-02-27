@@ -4129,3 +4129,14 @@
 - `apps/desktop/forge.config.cts`
 
 ---
+
+## [2026-02-27 20:08] [Bugfix]
+
+- **Change**: 新增RSSHUB_ROUTE_NOT_IMPLEMENTED错误映射并输出中文友好文案
+- **Risk Analysis**: 主要风险是错误类型扩展后可能影响既有分支判断；当前仅新增识别和文案映射，不改变重启按钮触发条件，已通过对应单测回归验证。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/lib/rsshub-local-error.ts`
+- `apps/desktop/layer/renderer/src/lib/rsshub-local-error.test.ts`
+
+---
