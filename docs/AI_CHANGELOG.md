@@ -3992,3 +3992,15 @@
 - `apps/desktop/layer/main/src/manager/rsshub.test.ts`
 
 ---
+
+## [2026-02-27 19:05] [Feature]
+
+- **Change**: 设置页新增本地RSSHub运行状态面板与启停重启控制
+- **Risk Analysis**: 风险主要在于IPC类型声明与运行时方法对齐，已通过本地状态归一化避免空值异常，并加入状态映射单测；渲染侧使用query失效刷新，确保操作后状态及时同步。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/modules/settings/tabs/data-control.tsx`
+- `apps/desktop/layer/renderer/src/modules/settings/tabs/rsshub-local-state.ts`
+- `apps/desktop/layer/renderer/src/modules/settings/tabs/rsshub-local-state.test.ts`
+
+---

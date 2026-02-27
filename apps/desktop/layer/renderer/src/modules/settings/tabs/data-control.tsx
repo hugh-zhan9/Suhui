@@ -17,7 +17,7 @@ import { exportDB } from "@follow/database/db"
 import { ELECTRON_BUILD } from "@follow/shared/constants"
 import { env } from "@follow/shared/env.desktop"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
@@ -32,8 +32,15 @@ import { clearLocalPersistStoreData } from "~/store/utils/clear"
 import { SettingActionItem, SettingDescription } from "../control"
 import { createSetting } from "../helper/builder"
 import { SettingItemGroup } from "../section"
+import { getLocalRsshubStatusLabel, normalizeLocalRsshubState } from "./rsshub-local-state"
 
 const { SettingBuilder } = createSetting("general", useGeneralSettingValue, setGeneralSetting)
+const localRsshubQueryKey = ["rsshub", "local", "status"] as const
+type LocalRsshubIpc = {
+  getRsshubStatus?: () => Promise<unknown>
+  toggleRsshub?: (enabled: boolean) => Promise<unknown>
+  restartRsshub?: () => Promise<unknown>
+}
 
 export const SettingDataControl = () => {
   const { t } = useTranslation("settings")
@@ -82,6 +89,7 @@ export const SettingDataControl = () => {
           },
           ELECTRON_BUILD ? CleanElectronCache : CleanCacheStorage,
           ELECTRON_BUILD && AppCacheLimit,
+          ELECTRON_BUILD && LocalRsshubSection,
           {
             label: t("general.rebuild_database.label"),
             action: () => {
@@ -110,6 +118,93 @@ export const SettingDataControl = () => {
         ]}
       />
     </div>
+  )
+}
+
+const LocalRsshubSection = () => {
+  const localRsshubIpc = ipcServices?.db as unknown as LocalRsshubIpc | undefined
+  const stateQuery = useQuery({
+    queryKey: localRsshubQueryKey,
+    queryFn: async () => {
+      const data = await localRsshubIpc?.getRsshubStatus?.()
+      if (data && typeof data === "object") {
+        return normalizeLocalRsshubState(data)
+      }
+      return normalizeLocalRsshubState()
+    },
+    refetchOnMount: "always",
+    refetchInterval: (query) => {
+      const status = (query.state.data as ReturnType<typeof normalizeLocalRsshubState> | undefined)
+        ?.status
+      if (status === "starting" || status === "cooldown") {
+        return 1000
+      }
+      return 4000
+    },
+  })
+
+  const toggleMutation = useMutation({
+    mutationFn: async (enabled: boolean) => {
+      if (!localRsshubIpc?.toggleRsshub) {
+        throw new Error("IPC_NOT_AVAILABLE")
+      }
+      await localRsshubIpc.toggleRsshub(enabled)
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: localRsshubQueryKey })
+    },
+    onError: () => {
+      toast.error("RSSHub 开关操作失败")
+    },
+  })
+
+  const restartMutation = useMutation({
+    mutationFn: async () => {
+      if (!localRsshubIpc?.restartRsshub) {
+        throw new Error("IPC_NOT_AVAILABLE")
+      }
+      await localRsshubIpc.restartRsshub()
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: localRsshubQueryKey })
+    },
+    onError: () => {
+      toast.error("RSSHub 重启失败")
+    },
+  })
+
+  const state = normalizeLocalRsshubState(stateQuery.data)
+  const isRunning = state.status === "running" || state.status === "starting"
+  const busy = toggleMutation.isPending || restartMutation.isPending
+
+  return (
+    <SettingItemGroup>
+      <div className="mb-2 mt-4 flex items-center justify-between gap-4">
+        <div className="text-sm font-medium">内置 RSSHub</div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={busy}
+            onClick={() => toggleMutation.mutate(!isRunning)}
+          >
+            {isRunning ? "停止" : "启动"}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={busy || state.status === "starting"}
+            onClick={() => restartMutation.mutate()}
+          >
+            重启
+          </Button>
+        </div>
+      </div>
+      <SettingDescription>
+        状态：{getLocalRsshubStatusLabel(state)}
+        {state.retryCount > 0 ? `，失败重试次数：${state.retryCount}` : ""}
+      </SettingDescription>
+    </SettingItemGroup>
   )
 }
 
