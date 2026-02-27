@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest"
 
 import type { RsshubProcessLike } from "./rsshub"
-import { createRsshubEntryPath, createRsshubManager } from "./rsshub"
+import { createRsshubEntryPath, createRsshubLaunchSpec, createRsshubManager } from "./rsshub"
 
 const createMockProcess = (): RsshubProcessLike => {
   let exitHandler: ((code: number | null, signal: NodeJS.Signals | null) => void) | null = null
@@ -21,6 +21,56 @@ const createMockProcess = (): RsshubProcessLike => {
 }
 
 describe("RsshubManager", () => {
+  it("spawn 模式应使用 Electron 内置 Node 启动并注入 ELECTRON_RUN_AS_NODE", () => {
+    const spec = createRsshubLaunchSpec({
+      mode: "spawn-node",
+      entryPath: "/tmp/rsshub/index.js",
+      port: 5123,
+      token: "token-spawn",
+      baseEnv: { NODE_ENV: "production" },
+      execPath: "/Applications/FreeFolo.app/Contents/MacOS/FreeFolo",
+    })
+
+    expect(spec).toEqual({
+      kind: "spawn",
+      command: "/Applications/FreeFolo.app/Contents/MacOS/FreeFolo",
+      args: ["/tmp/rsshub/index.js"],
+      options: {
+        env: {
+          NODE_ENV: "production",
+          PORT: "5123",
+          RSSHUB_TOKEN: "token-spawn",
+          ELECTRON_RUN_AS_NODE: "1",
+        },
+        stdio: "pipe",
+      },
+    })
+  })
+
+  it("fork 模式不应注入 ELECTRON_RUN_AS_NODE", () => {
+    const spec = createRsshubLaunchSpec({
+      mode: "fork",
+      entryPath: "/tmp/rsshub/index.js",
+      port: 5124,
+      token: "token-fork",
+      baseEnv: { NODE_ENV: "production" },
+      execPath: "/Applications/FreeFolo.app/Contents/MacOS/FreeFolo",
+    })
+
+    expect(spec).toEqual({
+      kind: "fork",
+      modulePath: "/tmp/rsshub/index.js",
+      options: {
+        env: {
+          NODE_ENV: "production",
+          PORT: "5124",
+          RSSHUB_TOKEN: "token-fork",
+        },
+        stdio: "pipe",
+      },
+    })
+  })
+
   it("应根据打包环境生成 RSSHub 入口路径", () => {
     expect(
       createRsshubEntryPath({

@@ -4105,3 +4105,14 @@
 - `apps/desktop/layer/renderer/src/modules/discover/rsshub-recovery.test.ts`
 
 ---
+
+## [2026-02-27 19:59] [Feature]
+
+- **Change**: 新增RSSHub子进程启动策略规格，默认spawn+ELECTRON_RUN_AS_NODE并支持fork回退
+- **Risk Analysis**: 主要风险是不同平台spawn与fork行为差异可能导致子进程事件时序变化；已通过管理器单测覆盖启动规格并通过main层tsc构建验证类型与编译稳定性。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/manager/rsshub.ts`
+- `apps/desktop/layer/main/src/manager/rsshub.test.ts`
+
+---

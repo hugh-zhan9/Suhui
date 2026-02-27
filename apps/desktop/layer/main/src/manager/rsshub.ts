@@ -1,5 +1,6 @@
-import { fork } from "node:child_process"
+import { fork, spawn } from "node:child_process"
 import { randomBytes } from "node:crypto"
+import { existsSync } from "node:fs"
 import * as http from "node:http"
 import * as net from "node:net"
 
@@ -35,6 +36,74 @@ interface RsshubManagerDeps {
   cooldownMs: number
   now: () => number
   schedule: (fn: () => void, delayMs: number) => void
+}
+
+type RsshubLaunchMode = "fork" | "spawn-node"
+
+type RsshubLaunchSpec =
+  | {
+      kind: "fork"
+      modulePath: string
+      options: {
+        env: NodeJS.ProcessEnv
+        stdio: "pipe"
+      }
+    }
+  | {
+      kind: "spawn"
+      command: string
+      args: string[]
+      options: {
+        env: NodeJS.ProcessEnv
+        stdio: "pipe"
+      }
+    }
+
+export const createRsshubLaunchSpec = ({
+  mode,
+  entryPath,
+  port,
+  token,
+  baseEnv,
+  execPath,
+}: {
+  mode: RsshubLaunchMode
+  entryPath: string
+  port: number
+  token: string
+  baseEnv: NodeJS.ProcessEnv
+  execPath: string
+}): RsshubLaunchSpec => {
+  const env: NodeJS.ProcessEnv = {
+    ...baseEnv,
+    PORT: String(port),
+    RSSHUB_TOKEN: token,
+    NODE_ENV: baseEnv.NODE_ENV || "production",
+  }
+
+  if (mode === "spawn-node") {
+    return {
+      kind: "spawn",
+      command: execPath,
+      args: [entryPath],
+      options: {
+        env: {
+          ...env,
+          ELECTRON_RUN_AS_NODE: "1",
+        },
+        stdio: "pipe",
+      },
+    }
+  }
+
+  return {
+    kind: "fork",
+    modulePath: entryPath,
+    options: {
+      env,
+      stdio: "pipe",
+    },
+  }
 }
 
 const findAvailablePort = async () => {
@@ -85,15 +154,26 @@ const defaultDeps = (): RsshubManagerDeps => ({
       appPath: process.cwd(),
       resourcesPath: process.resourcesPath || process.cwd(),
     })
-    const child = fork(entryPath, [], {
-      env: {
-        ...process.env,
-        PORT: String(port),
-        RSSHUB_TOKEN: token,
-        NODE_ENV: process.env.NODE_ENV || "production",
-      },
-      stdio: "pipe",
+
+    if (!existsSync(entryPath)) {
+      throw new Error(`RSSHub runtime entry not found: ${entryPath}`)
+    }
+
+    const mode: RsshubLaunchMode =
+      process.env["FREEFOLO_RSSHUB_LAUNCH_MODE"] === "fork" ? "fork" : "spawn-node"
+    const spec = createRsshubLaunchSpec({
+      mode,
+      entryPath,
+      port,
+      token,
+      baseEnv: process.env,
+      execPath: process.execPath,
     })
+
+    const child =
+      spec.kind === "fork"
+        ? fork(spec.modulePath, [], spec.options)
+        : spawn(spec.command, spec.args, spec.options)
 
     return child as unknown as RsshubProcessLike
   },
