@@ -221,6 +221,19 @@ jobs:
             npx electron-forge make --arch=arm64 --platform=darwin ${{ env.PROD == 'false' && '--mode=staging' || '' }}
             npx tsx scripts/merge-yml.ts
 
+      - name: Ad-hoc sign macOS app (unsigned build only)
+        if: runner.os == 'macOS' && github.event.inputs.store != 'true' && env.BUILD_CERTIFICATE_BASE64 == ''
+        env:
+          BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+        run: |
+          # 对所有打包产出的 .app 进行 Ad-hoc 本地自签名
+          # 解决 macOS 26+ 对无签名 Electron 应用的运行时 KILL 问题
+          find apps/desktop/out -name "*.app" -maxdepth 6 | while read app; do
+            echo "将对 $app 执行 Ad-hoc 签名…"
+            codesign --force --deep --sign - "$app"
+            echo "签名完成: $app"
+          done
+
       - name: Build - Mac App Store
         if: runner.os == 'macOS' && github.event.inputs.store == 'true'
         env:
@@ -341,15 +354,40 @@ jobs:
             apps/desktop/dist/manifest.yml
             apps/desktop/dist/*.tar.gz
 
+  publish_release:
+    name: Publish Release Assets
+    needs: [prepare, release]
+    if: needs.prepare.outputs.should_package == 'true' && needs.prepare.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    env:
+      RELEASE_VERSION: ${{ needs.prepare.outputs.release_version }}
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Use Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v6
+        with:
+          path: ${{ runner.temp }}/release-assets
+
       - name: Setup Version
-        if: env.RELEASE == 'true' && runner.os == 'macOS'
         id: version
         uses: ./.github/actions/setup-version
         with:
           type: "desktop"
 
       - name: Prepare Release Notes
-        if: env.RELEASE == 'true' && runner.os == 'macOS'
         id: release_notes
         run: |
           release_notes_file="$RUNNER_TEMP/desktop-release-notes.md"
@@ -366,7 +404,6 @@ jobs:
           echo "body_path=${release_notes_file}" >> "$GITHUB_OUTPUT"
 
       - name: Prepare Release Meta
-        if: env.RELEASE == 'true' && runner.os == 'macOS'
         id: release_meta
         run: |
           if [ -n "${{ env.RELEASE_VERSION }}" ]; then
@@ -381,7 +418,6 @@ jobs:
           echo "release_tag=${release_tag}" >> "$GITHUB_OUTPUT"
 
       - name: Create Release Draft
-        if: env.RELEASE == 'true' && runner.os == 'macOS'
         continue-on-error: true
         uses: softprops/action-gh-release@v2
         with:
@@ -391,6 +427,8 @@ jobs:
           tag_name: ${{ steps.release_meta.outputs.release_tag }}
           body_path: ${{ steps.release_notes.outputs.body_path }}
           files: |
-            apps/desktop/out/make/**/FreeFolo-*.dmg
-            apps/desktop/out/make/**/FreeFolo-*.zip
-            apps/desktop/out/make/**/*.yml
+            ${{ runner.temp }}/release-assets/**/FreeFolo-*.dmg
+            ${{ runner.temp }}/release-assets/**/FreeFolo-*.zip
+            ${{ runner.temp }}/release-assets/**/FreeFolo-*.exe
+            ${{ runner.temp }}/release-assets/**/FreeFolo-*.AppImage
+            ${{ runner.temp }}/release-assets/**/*.yml

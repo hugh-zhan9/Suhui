@@ -3754,3 +3754,14 @@
 - `AI-CONTEXT.md`
 
 ---
+
+## [2026-02-27 13:34] [Refactor]
+
+- **Change**: 发布流程改为构建与发布分离：新增publish_release聚合作业统一上传三端产物到release，避免并发冲突并补全Windows/Linux资产
+- **Risk Analysis**: 中等风险，涉及CI发布编排重构；若artifact下载或文件匹配配置错误会导致release资产缺失，已做YAML与关键路径检查
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `.github/workflows/build-desktop.yml`
+- `AI-CONTEXT.md`
+
+---

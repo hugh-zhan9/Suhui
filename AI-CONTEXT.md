@@ -50,13 +50,14 @@
 - `build-desktop.yml` 在 `workflow_dispatch` 场景支持 `release_version` 输入，优先用于 Release 的 `name/tag`
 - Release 附件匹配产物前缀为：`FreeFolo-*`（不再使用 `Folo-*`）
 - `build-desktop.yml` 中 `.pkg/.appx` 上传仅在 `store=true` 时启用，避免普通构建产生“文件不存在”告警
-- `Create Release Draft` 仅在 `macOS` runner 执行，避免多平台并发写同一 release 导致 finalize 失败
+- release 流程采用“构建与发布分离”：矩阵作业仅负责三端构建并上传 artifacts，`publish_release` 作业统一下载并一次性创建/更新 release
 - `Create Release Draft` 已设置 `continue-on-error: true`，即使 release 上传失败也不阻断整体构建流程
-- release 上传清单已收敛为 macOS 实际产物（`.dmg/.zip/.yml`）
+- release 上传清单包含 macOS/Windows/Linux 产物（`.dmg/.zip/.exe/.AppImage/.yml`）
 - 发布流程已移除 `npx changelogithub` 步骤，避免 git diff 过大导致 `ENOBUFS` 干扰发布
-- `Setup Version`、`Prepare Release Notes`、`Prepare Release Meta` 仅在 `macOS` 执行，减少非发布平台无效步骤
+- `Setup Version`、`Prepare Release Notes`、`Prepare Release Meta` 在 `publish_release` 作业中统一执行
 - Release Note 由 `.github/scripts/generate-release-notes.mjs` 自动生成中文内容，不再从 `apps/desktop/changelog/*.md` 读取
 - Release Note 固定不包含 `Thanks` 与 `Contributors` 区块
+- 无签名构建（无 Apple 证书）时，构建后自动对所有 `.app` 执行 Ad-hoc 本地签名（`codesign --force --deep --sign -`），解决 macOS 26+ 运行时代码签名校验失败导致应用被 KILL 的问题
 
 ## 本地 RSS 主链路（已落地）
 
@@ -99,6 +100,7 @@
 - 批量改读状态后 `unreadOnly` 列表自动刷新
 - All 未读虚高修复（按有效来源聚合）
 - 移除设置中无关的“列表”菜单及其相关模块（发行前精简）
+- 无签名构建后增加 Ad-hoc 自签名步骤，修复 macOS 26（M5）上 `SIGKILL (Code Signature Invalid)` 崩溃
 
 ## 已知边界与残留在线能力
 
