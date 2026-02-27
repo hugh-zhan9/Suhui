@@ -18,7 +18,12 @@ import { useTranslation } from "react-i18next"
 import { z } from "zod"
 
 import { useModalStack } from "~/components/ui/modal/stacked/hooks"
+import { ipcServices } from "~/lib/client"
+import { toastFetchError } from "~/lib/error-parser"
+
 import { FeedForm } from "../discover/FeedForm"
+import type { RsshubRuntimeStatus } from "./rsshub-precheck"
+import { isRsshubRuntimeRunning, toRsshubRuntimeError } from "./rsshub-precheck"
 import { getSimpleDiscoverModes, shouldShowDiscoverJumpHint } from "./simple-discover-options"
 
 const formSchema = z.object({
@@ -57,8 +62,31 @@ export function SimpleDiscoverModal({ dismiss }: { dismiss: () => void }) {
   const watchedType = form.watch("type")
   const currentConfig = typeConfig[watchedType]
 
+  const ensureLocalRsshubReady = async () => {
+    const dbIpc = ipcServices?.db as
+      | {
+          getRsshubStatus?: () => Promise<{ status?: RsshubRuntimeStatus }>
+          restartRsshub?: () => Promise<unknown>
+        }
+      | undefined
+
+    const state = await dbIpc?.getRsshubStatus?.()
+    if (isRsshubRuntimeRunning(state?.status)) {
+      return
+    }
+
+    await dbIpc?.restartRsshub?.()
+    const stateAfterRestart = await dbIpc?.getRsshubStatus?.()
+    if (!isRsshubRuntimeRunning(stateAfterRestart?.status)) {
+      throw toRsshubRuntimeError(stateAfterRestart?.status || state?.status)
+    }
+  }
+
   const mutation = useMutation({
     mutationFn: async ({ keyword, type }: { keyword: string; type: string }) => {
+      if (type === "rsshub") {
+        await ensureLocalRsshubReady()
+      }
       present({
         title: t("feed_form.add_feed"),
         content: ({ dismiss: dismissFeedForm }) => (
@@ -72,6 +100,9 @@ export function SimpleDiscoverModal({ dismiss }: { dismiss: () => void }) {
         ),
       })
       return []
+    },
+    onError: (error) => {
+      toastFetchError(error as Error)
     },
   })
 

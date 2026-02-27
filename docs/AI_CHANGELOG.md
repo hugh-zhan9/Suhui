@@ -4066,3 +4066,15 @@
 - `apps/desktop/layer/renderer/src/lib/rsshub-local-error.test.ts`
 
 ---
+
+## [2026-02-27 19:41] [Feature]
+
+- **Change**: 新增SimpleDiscover的RSSHub预检查并自动重启一次
+- **Risk Analysis**: 风险在于提交订阅前新增预检查可能引入等待时间；实现仅在RSSHub类型输入时触发，失败路径走统一错误提示并可手动重启，普通RSS路径不受影响。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/modules/subscription-column/SimpleDiscoverModal.tsx`
+- `apps/desktop/layer/renderer/src/modules/subscription-column/rsshub-precheck.ts`
+- `apps/desktop/layer/renderer/src/modules/subscription-column/rsshub-precheck.test.ts`
+
+---
