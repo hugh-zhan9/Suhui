@@ -27,7 +27,11 @@ import { z } from "zod"
 import { useModalStack } from "~/components/ui/modal/stacked/hooks"
 import { useRequireLogin } from "~/hooks/common/useRequireLogin"
 import { followClient } from "~/lib/api-client"
+import { ipcServices } from "~/lib/client"
+import { toastFetchError } from "~/lib/error-parser"
 
+import type { RsshubRuntimeStatus } from "../subscription-column/rsshub-precheck"
+import { ensureRsshubRuntimeReady } from "../subscription-column/rsshub-precheck"
 import {
   getDiscoverSearchData,
   setDiscoverSearchData,
@@ -153,6 +157,18 @@ export function UnifiedDiscoverForm() {
         if (!validated.success) {
           throw new Error("Invalid RSSHub route")
         }
+
+        const dbIpc = ipcServices?.db as
+          | {
+              getRsshubStatus?: () => Promise<{ status?: RsshubRuntimeStatus }>
+              restartRsshub?: () => Promise<unknown>
+            }
+          | undefined
+        await ensureRsshubRuntimeReady({
+          getStatus: async () => dbIpc?.getRsshubStatus?.(),
+          restart: async () => dbIpc?.restartRsshub?.(),
+        })
+
         present({
           title: t("feed_form.add_feed"),
           content: () => <FeedForm url={keyword} onSuccess={dismissAll} />,
@@ -172,6 +188,9 @@ export function UnifiedDiscoverForm() {
       }))
 
       return data
+    },
+    onError: (error) => {
+      toastFetchError(error as Error)
     },
   })
 

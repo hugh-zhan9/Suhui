@@ -23,7 +23,7 @@ import { toastFetchError } from "~/lib/error-parser"
 
 import { FeedForm } from "../discover/FeedForm"
 import type { RsshubRuntimeStatus } from "./rsshub-precheck"
-import { isRsshubRuntimeRunning, toRsshubRuntimeError } from "./rsshub-precheck"
+import { ensureRsshubRuntimeReady } from "./rsshub-precheck"
 import { getSimpleDiscoverModes, shouldShowDiscoverJumpHint } from "./simple-discover-options"
 
 const formSchema = z.object({
@@ -70,16 +70,10 @@ export function SimpleDiscoverModal({ dismiss }: { dismiss: () => void }) {
         }
       | undefined
 
-    const state = await dbIpc?.getRsshubStatus?.()
-    if (isRsshubRuntimeRunning(state?.status)) {
-      return
-    }
-
-    await dbIpc?.restartRsshub?.()
-    const stateAfterRestart = await dbIpc?.getRsshubStatus?.()
-    if (!isRsshubRuntimeRunning(stateAfterRestart?.status)) {
-      throw toRsshubRuntimeError(stateAfterRestart?.status || state?.status)
-    }
+    await ensureRsshubRuntimeReady({
+      getStatus: async () => dbIpc?.getRsshubStatus?.(),
+      restart: async () => dbIpc?.restartRsshub?.(),
+    })
   }
 
   const mutation = useMutation({

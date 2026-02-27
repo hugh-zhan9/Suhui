@@ -4078,3 +4078,16 @@
 - `apps/desktop/layer/renderer/src/modules/subscription-column/rsshub-precheck.test.ts`
 
 ---
+
+## [2026-02-27 19:45] [Feature]
+
+- **Change**: 统一两个发现入口的RSSHub预检查与自动重启流程
+- **Risk Analysis**: 风险在于UnifiedDiscoverForm新增预检查后可能影响原搜索提交路径；实现仅在rsshub输入分支触发，普通rss与关键词搜索逻辑保持不变，并通过预检查单测覆盖重启分支。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/modules/discover/UnifiedDiscoverForm.tsx`
+- `apps/desktop/layer/renderer/src/modules/subscription-column/SimpleDiscoverModal.tsx`
+- `apps/desktop/layer/renderer/src/modules/subscription-column/rsshub-precheck.ts`
+- `apps/desktop/layer/renderer/src/modules/subscription-column/rsshub-precheck.test.ts`
+
+---
