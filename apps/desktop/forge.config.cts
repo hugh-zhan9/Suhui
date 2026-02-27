@@ -16,6 +16,8 @@ import yaml from "js-yaml"
 import path, { resolve } from "pathe"
 import { rimraf, rimrafSync } from "rimraf"
 
+import { packagerIgnorePatterns } from "./scripts/forge-ignore"
+
 const ResolvedMakerAppImage: typeof MakerAppImage = (MakerAppImage as any).default || MakerAppImage
 const platform = process.argv.find((arg) => arg.startsWith("--platform"))?.split("=")[1]
 const mode = process.argv.find((arg) => arg.startsWith("--mode"))?.split("=")[1]
@@ -102,8 +104,6 @@ async function cleanSources(buildPath, _electronVersion, platform, _arch, callba
 
 const noopAfterCopy = (_buildPath, _electronVersion, _platform, _arch, callback) => callback()
 
-const ignorePattern = new RegExp(`^/node_modules/(?!${[...keepModules].join("|")})`)
-
 const config: ForgeConfig = {
   ...(isNoSignBuild ? { outDir: noSignOutDir } : {}),
   packagerConfig: {
@@ -129,7 +129,7 @@ const config: ForgeConfig = {
       process.platform !== "win32" ? noopAfterCopy : setLanguages([...keepLanguages.values()]),
     ],
     asar: true,
-    ignore: [ignorePattern],
+    ignore: packagerIgnorePatterns,
 
     prune: false,
     extendInfo: {

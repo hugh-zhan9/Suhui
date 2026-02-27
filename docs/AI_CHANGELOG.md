@@ -3584,3 +3584,37 @@
 - `.github/workflows/translator.yml`
 
 ---
+
+## [2026-02-27 09:57] [Bugfix]
+
+- **Change**: 修复 CI lint 失败：将 tsslint project 路径从已删除的 apps/desktop/tsconfig.json 改为现存的 main/renderer tsconfig。
+- **Risk Analysis**: 风险较低，变更仅影响 tsslint 检查入口；潜在风险是 renderer/main 规则覆盖范围变化。已通过 CI=1 lint:tsl 本地验证。
+- **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
+- **Changed Files**:
+- `package.json`
+
+---
+
+## [2026-02-27 10:04] [Refactor]
+
+- **Change**: CI 构建开关改造：删除 deps-build-on-push，并在 build-desktop 增加仓库配置文件开关（desktop-build-config.json）决定 push 时是否打包。
+- **Risk Analysis**: 风险在于新增 prepare 任务后，若配置文件格式错误会影响 workflow 解析；已增加 JSON 语法校验并保持默认值为 true。tag/dispatch 仍可强制触发打包。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `.github/workflows/build-desktop.yml`
+- `.github/workflows/deps-build-on-push.yml`
+- `.github/desktop-build-config.json`
+
+---
+
+## [2026-02-27 10:24] [Bugfix]
+
+- **Change**: 修复本地无签名打包在 Finalizing package 长时间停滞：新增 forge ignore 规则，跳过 layer 下嵌套 node_modules/.vite 与 map 文件复制。
+- **Risk Analysis**: 主要风险是忽略规则过宽导致遗漏运行时必需文件。通过单测验证保留 better-sqlite3 等根依赖，并实测 build:electron:unsigned 完整成功，产物输出至 /tmp/folo-forge-out/make。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/forge.config.cts`
+- `apps/desktop/scripts/forge-ignore.ts`
+- `apps/desktop/scripts/forge-ignore.test.ts`
+
+---

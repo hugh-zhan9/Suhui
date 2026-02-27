@@ -23,7 +23,7 @@
     "icons:update": "echo \"desktop-only mode: icons update disabled\"",
     "lint": "pnpm run lint:tsl && eslint",
     "lint:fix": "eslint --fix",
-    "lint:tsl": "tsslint --project apps/desktop/tsconfig.json",
+    "lint:tsl": "tsslint --project apps/desktop/layer/main/tsconfig.json --project apps/desktop/layer/renderer/tsconfig.json",
     "mitproxy": "bash scripts/run-proxy.sh",
     "polyfill-optimize": "pnpx nolyfill install",
     "postinstall": "pnpm run build:packages",
