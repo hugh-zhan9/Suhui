@@ -114,6 +114,38 @@ async function cleanSources(buildPath, _electronVersion, platform, _arch, callba
 }
 
 const noopAfterCopy = (_buildPath, _electronVersion, _platform, _arch, callback) => callback()
+const getBetterSqliteBinaryPath = () =>
+  path.join(
+    resolveRetainedModuleSource("better-sqlite3"),
+    "build",
+    "Release",
+    "better_sqlite3.node",
+  )
+
+const replacePackagedBetterSqliteBinary = async (appPath: string) => {
+  const sourceBinary = getBetterSqliteBinaryPath()
+  const targetBinary = path.join(
+    appPath,
+    "Contents",
+    "Resources",
+    "app.asar.unpacked",
+    "node_modules",
+    "better-sqlite3",
+    "build",
+    "Release",
+    "better_sqlite3.node",
+  )
+
+  if (!fs.existsSync(sourceBinary)) {
+    throw new Error(`better-sqlite3 binary not found at ${sourceBinary}`)
+  }
+
+  if (!fs.existsSync(targetBinary)) {
+    throw new Error(`Packaged better-sqlite3 binary not found at ${targetBinary}`)
+  }
+
+  await cp(sourceBinary, targetBinary)
+}
 
 const config: ForgeConfig = {
   ...(isNoSignBuild ? { outDir: noSignOutDir } : {}),
@@ -283,6 +315,15 @@ const config: ForgeConfig = {
     },
   ],
   hooks: {
+    postPackage: async (_config, packageResult) => {
+      if (packageResult.platform !== "darwin") return
+
+      await Promise.all(
+        packageResult.outputPaths
+          .filter((outputPath) => outputPath.endsWith(".app"))
+          .map((appPath) => replacePackagedBetterSqliteBinary(appPath)),
+      )
+    },
     postMake: async (_config, makeResults) => {
       const yml: {
         version?: string
