@@ -3959,3 +3959,25 @@
 - `apps/desktop/layer/main/src/manager/rsshub.test.ts`
 
 ---
+
+## [2026-02-27 18:53] [Bugfix]
+
+- **Change**: 应用退出时主动停止RSSHub子进程并补充stop行为测试
+- **Risk Analysis**: 风险在于退出阶段新增异步stop可能影响原有退出时序；通过最小改动仅在before-quit调用且新增单测验证stop的终止与状态重置，主进程typecheck与相关测试已通过。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/manager/bootstrap.ts`
+- `apps/desktop/layer/main/src/manager/rsshub.test.ts`
+
+---
+
+## [2026-02-27 18:54] [Bugfix]
+
+- **Change**: 退出时停止RSSHub子进程并修正主进程日志输出规范
+- **Risk Analysis**: 风险在于before-quit阶段新增stop调用可能延长退出耗时；采用轻量级SIGTERM流程并通过单测验证stop状态重置，同时将console日志替换为logger以满足主进程规范。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/manager/bootstrap.ts`
+- `apps/desktop/layer/main/src/manager/rsshub.test.ts`
+
+---

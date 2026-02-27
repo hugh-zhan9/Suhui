@@ -103,4 +103,24 @@ describe("RsshubManager", () => {
 
     vi.useRealTimers()
   })
+
+  it("stop 应终止子进程并重置状态", async () => {
+    const process = createMockProcess()
+    const manager = createRsshubManager({
+      createPort: async () => 18083,
+      createToken: () => "token-4",
+      launch: async () => process,
+      healthCheck: async () => true,
+      maxRetries: 3,
+      retryDelaysMs: [1, 2, 3],
+    })
+
+    await manager.start()
+    await manager.stop()
+
+    expect(process.kill).toHaveBeenCalledWith("SIGTERM")
+    expect(manager.getState().status).toBe("stopped")
+    expect(manager.getState().port).toBeNull()
+    expect(manager.getState().token).toBeNull()
+  })
 })

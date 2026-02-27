@@ -10,8 +10,9 @@ import { parse } from "cookie-es"
 import { app, BrowserWindow, net, protocol, session } from "electron"
 import { join } from "pathe"
 
-import { WindowManager } from "~/manager/window"
 import { DBManager } from "~/manager/db"
+import { rsshubManager } from "~/manager/rsshub"
+import { WindowManager } from "~/manager/window"
 
 import { migrateAuthCookiesToNewApiDomain } from "../lib/auth-cookie-migration"
 import { handleUrlRouting } from "../lib/router"
@@ -70,11 +71,11 @@ export class BootstrapManager {
 
       app.on("browser-window-created", (_, window) => {
         optimizer.watchWindowShortcuts(window)
-        window.webContents.on('console-message', (event, level, message, line, sourceId) => {
-           if (level >= 2) {
-             console.log(`[Renderer Error]`, message, line, sourceId);
-           }
-        });
+        window.webContents.on("console-message", (_event, level, message, line, sourceId) => {
+          if (level >= 2) {
+            logger.error("[Renderer Error]", message, line, sourceId)
+          }
+        })
       })
 
       electronApp.setAppUserModelId(`re.${LEGACY_APP_PROTOCOL}`)
@@ -91,7 +92,6 @@ export class BootstrapManager {
       await migrateAuthCookiesToNewApiDomain(session.defaultSession, {
         currentApiURL: env.VITE_API_URL,
       })
-
 
       WindowManager.getMainWindowOrCreate()
 
@@ -110,6 +110,8 @@ export class BootstrapManager {
     })
 
     app.on("before-quit", async () => {
+      await rsshubManager.stop()
+
       const window = WindowManager.getMainWindow()
       if (!window || window.isDestroyed()) return
       const bounds = window.getBounds()
