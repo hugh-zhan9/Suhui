@@ -16,6 +16,9 @@ on:
         type: boolean
         description: "Whether to run desktop packaging"
         default: true
+      release_version:
+        type: string
+        description: "Release version label, e.g. FreeFolo-v0.0.1"
       tag_version:
         type: boolean
         description: "Tag Version"
@@ -47,6 +50,7 @@ jobs:
     outputs:
       should_package: ${{ steps.flags.outputs.should_package }}
       should_release: ${{ steps.flags.outputs.should_release }}
+      release_version: ${{ steps.flags.outputs.release_version }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -56,8 +60,10 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           INPUT_PACKAGE: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.package || '' }}
+          INPUT_RELEASE_VERSION: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.release_version || '' }}
           INPUT_TAG_VERSION: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag_version || '' }}
           REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
           enable_package_on_push=true
           config_file=".github/desktop-build-config.json"
@@ -77,8 +83,14 @@ jobs:
             should_release=true
           fi
 
+          release_version="$INPUT_RELEASE_VERSION"
+          if [ -z "$release_version" ] && [ "$REF_TYPE" = "tag" ] && [ -n "$REF_NAME" ]; then
+            release_version="$REF_NAME"
+          fi
+
           echo "should_package=$should_package" >> "$GITHUB_OUTPUT"
           echo "should_release=$should_release" >> "$GITHUB_OUTPUT"
+          echo "release_version=$release_version" >> "$GITHUB_OUTPUT"
 
   release:
     needs: prepare
@@ -87,6 +99,7 @@ jobs:
     env:
       PROD: ${{ needs.prepare.outputs.should_release == 'true' || github.event.inputs.store == 'true' }}
       RELEASE: ${{ needs.prepare.outputs.should_release }}
+      RELEASE_VERSION: ${{ needs.prepare.outputs.release_version }}
 
     strategy:
       fail-fast: false
@@ -320,10 +333,10 @@ jobs:
         uses: actions/attest-build-provenance@v3
         with:
           subject-path: |
-            apps/desktop/out/make/**/Folo-*.dmg
-            apps/desktop/out/make/**/Folo-*.zip
-            apps/desktop/out/make/**/Folo-*.exe
-            apps/desktop/out/make/**/Folo-*.AppImage
+            apps/desktop/out/make/**/FreeFolo-*.dmg
+            apps/desktop/out/make/**/FreeFolo-*.zip
+            apps/desktop/out/make/**/FreeFolo-*.exe
+            apps/desktop/out/make/**/FreeFolo-*.AppImage
             apps/desktop/out/make/**/*.yml
             apps/desktop/dist/manifest.yml
             apps/desktop/dist/*.tar.gz
@@ -359,20 +372,35 @@ jobs:
 
           echo "body_path=${release_notes_file}" >> "$GITHUB_OUTPUT"
 
+      - name: Prepare Release Meta
+        if: env.RELEASE == 'true'
+        id: release_meta
+        run: |
+          if [ -n "${{ env.RELEASE_VERSION }}" ]; then
+            release_name="FreeFolo ${{ env.RELEASE_VERSION }}"
+            release_tag="desktop/${{ env.RELEASE_VERSION }}"
+          else
+            release_name="FreeFolo v${{ steps.version.outputs.APP_VERSION }}"
+            release_tag="desktop/v${{ steps.version.outputs.APP_VERSION }}"
+          fi
+
+          echo "release_name=${release_name}" >> "$GITHUB_OUTPUT"
+          echo "release_tag=${release_tag}" >> "$GITHUB_OUTPUT"
+
       - name: Create Release Draft
         if: env.RELEASE == 'true'
         uses: softprops/action-gh-release@v2
         with:
-          name: Desktop v${{ steps.version.outputs.APP_VERSION }}
+          name: ${{ steps.release_meta.outputs.release_name }}
           draft: false
           prerelease: true
-          tag_name: desktop/v${{ steps.version.outputs.APP_VERSION }}
+          tag_name: ${{ steps.release_meta.outputs.release_tag }}
           body_path: ${{ steps.release_notes.outputs.body_path }}
           files: |
-            apps/desktop/out/make/**/Folo-*.dmg
-            apps/desktop/out/make/**/Folo-*.zip
-            apps/desktop/out/make/**/Folo-*.exe
-            apps/desktop/out/make/**/Folo-*.AppImage
+            apps/desktop/out/make/**/FreeFolo-*.dmg
+            apps/desktop/out/make/**/FreeFolo-*.zip
+            apps/desktop/out/make/**/FreeFolo-*.exe
+            apps/desktop/out/make/**/FreeFolo-*.AppImage
             apps/desktop/out/make/**/*.yml
             apps/desktop/dist/manifest.yml
             apps/desktop/dist/*.tar.gz

@@ -38,6 +38,17 @@
 - 打包：`pnpm --filter FreeFolo build:electron`  
   无签名打包：`pnpm --filter FreeFolo build:electron:unsigned`
 
+### 5) Release 规则（Desktop）
+
+- 发布触发提交信息必须匹配：`release(desktop): Release <版本号>`
+- 版本号支持两种格式：
+  - `FreeFolo-vX.Y.Z`（推荐）
+  - `vX.Y.Z`（兼容）
+- 当前推荐发布版本格式：`FreeFolo-v0.0.1`（示例）
+- `tag.yml` 会基于提交信息解析版本并创建标签：`desktop/<版本号>`
+- `build-desktop.yml` 在 `workflow_dispatch` 场景支持 `release_version` 输入，优先用于 Release 的 `name/tag`
+- Release 附件匹配产物前缀为：`FreeFolo-*`（不再使用 `Folo-*`）
+
 ## 本地 RSS 主链路（已落地）
 
 ### 1) 订阅

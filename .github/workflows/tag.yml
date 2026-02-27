@@ -117,7 +117,8 @@ jobs:
               inputs: {
                 tag_version: 'true',
                 store: 'true',
-                build_version: '${{ steps.desktop_build_version.outputs.build_version }}'
+                build_version: '${{ steps.desktop_build_version.outputs.build_version }}',
+                release_version: '${{ needs.create_tag.outputs.version }}'
               }
             });
             console.log('Desktop build triggered successfully');

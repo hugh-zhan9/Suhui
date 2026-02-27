@@ -3618,3 +3618,28 @@
 - `apps/desktop/scripts/forge-ignore.test.ts`
 
 ---
+
+## [2026-02-27 10:32] [Bugfix]
+
+- **Change**: 修复 CI 阻断：rss-parser 索引类型报错与 better-sqlite3 缺少声明；同时将 lint workflow 收敛为 desktop-only 检查，避免已下线 web/全仓格式检查干扰。
+- **Risk Analysis**: 风险在于 CI 覆盖范围从全仓收敛为桌面链路，可能漏检非桌面模块；但与当前 desktop-only 产品目标一致。已本地验证 @follow/database typecheck、@follow/electron-main build、FreeFolo build:electron-vite 与 forge-ignore 测试通过。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/ipc/services/rss-parser.ts`
+- `packages/internal/database/src/better-sqlite3.d.ts`
+- `.github/workflows/lint.yml`
+
+---
+
+## [2026-02-27 10:40] [Feature]
+
+- **Change**: 发布链路升级：支持 release(desktop): Release FreeFolo-vX.Y.Z 触发，tag/build 透传 release_version，并将 Release 附件匹配改为 FreeFolo-\*；同步规则到 AI-CONTEXT.md。
+- **Risk Analysis**: 风险在于 tag 名称与历史 desktop/vX.Y.Z 口径混用；已保留 vX.Y.Z 兼容解析并通过 YAML/正则回归验证。发布时应统一采用 FreeFolo-vX.Y.Z。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `.github/scripts/extract-release-info.mjs`
+- `.github/workflows/tag.yml`
+- `.github/workflows/build-desktop.yml`
+- `AI-CONTEXT.md`
+
+---

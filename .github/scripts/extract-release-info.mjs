@@ -10,7 +10,7 @@ import { appendFileSync } from "node:fs"
 
 // Configuration
 const RELEASE_PATTERNS = {
-  desktop: /release\(desktop\): Release (v\d+\.\d+\.\d+(-[0-9A-Z-.]+)?)/i,
+  desktop: /release\(desktop\): Release ((?:FreeFolo-v|v)\d+\.\d+\.\d+(?:-[0-9A-Z-.]+)?)/i,
   mobile: /release\(mobile\): Release (v\d+\.\d+\.\d+(-[0-9A-Z-.]+)?)/i,
 }
 
