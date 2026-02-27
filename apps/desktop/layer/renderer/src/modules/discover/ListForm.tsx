@@ -22,7 +22,7 @@ import { cn } from "@follow/utils/utils"
 import type { ListAnalyticsSchema } from "@follow-app/client-sdk"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation } from "@tanstack/react-query"
-import { useEffect, useRef } from "react"
+import { useCallback, useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
@@ -30,14 +30,13 @@ import { z } from "zod"
 
 import { useCurrentModal } from "~/components/ui/modal/stacked/hooks"
 import { useI18n } from "~/hooks/common"
-import { ipcServices } from "~/lib/client"
 import { getFetchErrorMessage, toastFetchError } from "~/lib/error-parser"
 import { getNewIssueUrl } from "~/lib/issues"
-import { parseRsshubLocalError, shouldShowRsshubRestartAction } from "~/lib/rsshub-local-error"
 
 import { useTOTPModalWrapper } from "../profile/hooks"
 import { ViewSelectorRadioGroup } from "../shared/ViewSelectorRadioGroup"
 import { FeedSummary } from "./FeedSummary"
+import { RsshubRecoveryAction } from "./rsshub-recovery-action"
 
 const formSchema = z.object({
   view: z.string(),
@@ -64,28 +63,9 @@ export const ListForm: Component<{
 
   const { t } = useTranslation()
   const errorMessage = feedQuery.error ? getFetchErrorMessage(feedQuery.error) : ""
-  const showRestartRsshub = shouldShowRsshubRestartAction(parseRsshubLocalError(errorMessage))
-
-  const restartRsshubMutation = useMutation({
-    mutationFn: async () => {
-      const dbIpc = ipcServices?.db as
-        | {
-            restartRsshub?: () => Promise<unknown>
-          }
-        | undefined
-      if (!dbIpc?.restartRsshub) {
-        throw new Error("IPC_NOT_AVAILABLE")
-      }
-      await dbIpc.restartRsshub()
-    },
-    onSuccess: async () => {
-      toast.success("已触发 RSSHub 重启，正在重试")
-      await feedQuery.refetch()
-    },
-    onError: () => {
-      toast.error("RSSHub 重启失败")
-    },
-  })
+  const handleRsshubRecovered = useCallback(async () => {
+    await feedQuery.refetch()
+  }, [feedQuery])
 
   useEffect(() => {
     if (!feedQuery.isLoading) {
@@ -127,16 +107,7 @@ export const ListForm: Component<{
           <p className="cursor-text select-text break-all px-8 text-center">{errorMessage}</p>
 
           <div className="flex items-center gap-4">
-            {showRestartRsshub ? (
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={restartRsshubMutation.isPending}
-                onClick={() => restartRsshubMutation.mutate()}
-              >
-                {restartRsshubMutation.isPending ? "重启中..." : "立即重启内置 RSSHub"}
-              </Button>
-            ) : null}
+            <RsshubRecoveryAction errorMessage={errorMessage} onRecovered={handleRsshubRecovered} />
 
             <Button
               variant="text"

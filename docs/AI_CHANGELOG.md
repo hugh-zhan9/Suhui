@@ -4091,3 +4091,17 @@
 - `apps/desktop/layer/renderer/src/modules/subscription-column/rsshub-precheck.test.ts`
 
 ---
+
+## [2026-02-27 19:53] [Refactor]
+
+- **Change**: 抽离RSSHub恢复按钮为复用组件并补充可测试逻辑
+- **Risk Analysis**: 主要风险是错误文案匹配条件变化导致按钮显示时机偏差，以及Feed/List回调重试路径不一致；已通过新增纯函数单测和桌面端构建验证降低回归风险。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/modules/discover/FeedForm.tsx`
+- `apps/desktop/layer/renderer/src/modules/discover/ListForm.tsx`
+- `apps/desktop/layer/renderer/src/modules/discover/rsshub-recovery-action.tsx`
+- `apps/desktop/layer/renderer/src/modules/discover/rsshub-recovery.ts`
+- `apps/desktop/layer/renderer/src/modules/discover/rsshub-recovery.test.ts`
+
+---

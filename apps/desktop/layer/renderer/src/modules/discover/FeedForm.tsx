@@ -34,13 +34,12 @@ import { Autocomplete } from "~/components/ui/auto-completion"
 import { useCurrentModal, useIsInModal } from "~/components/ui/modal/stacked/hooks"
 import { getRouteParams } from "~/hooks/biz/useRouteParams"
 import { useI18n } from "~/hooks/common"
-import { ipcServices } from "~/lib/client"
 import { getFetchErrorMessage, toastFetchError } from "~/lib/error-parser"
-import { parseRsshubLocalError, shouldShowRsshubRestartAction } from "~/lib/rsshub-local-error"
 import { feed as feedQuery, useFeedQuery } from "~/queries/feed"
 
 import { ViewSelectorRadioGroup } from "../shared/ViewSelectorRadioGroup"
 import { FeedSummary } from "./FeedSummary"
+import { RsshubRecoveryAction } from "./rsshub-recovery-action"
 
 const formSchema = z.object({
   view: z.string(),
@@ -84,32 +83,12 @@ export const FeedForm: Component<{
 
   const { t } = useTranslation()
   const errorMessage = feedQuery.error ? getFetchErrorMessage(feedQuery.error) : ""
-  const rsshubErrorType = parseRsshubLocalError(errorMessage)
-  const showRestartRsshub = shouldShowRsshubRestartAction(rsshubErrorType)
+  const handleRsshubRecovered = useCallback(async () => {
+    await feedQuery.refetch()
+  }, [feedQuery])
 
   const isInModal = useIsInModal()
   const placeholderRef = useRef<HTMLDivElement | null>(null)
-
-  const restartRsshubMutation = useMutation({
-    mutationFn: async () => {
-      const dbIpc = ipcServices?.db as
-        | {
-            restartRsshub?: () => Promise<unknown>
-          }
-        | undefined
-      if (!dbIpc?.restartRsshub) {
-        throw new Error("IPC_NOT_AVAILABLE")
-      }
-      await dbIpc.restartRsshub()
-    },
-    onSuccess: async () => {
-      toast.success("已触发 RSSHub 重启，正在重试")
-      await feedQuery.refetch()
-    },
-    onError: () => {
-      toast.error("RSSHub 重启失败")
-    },
-  })
 
   useEffect(() => {
     if (!feedQuery.isLoading) {
@@ -179,16 +158,10 @@ export const FeedForm: Component<{
                 <p className="max-w-[460px] text-center text-sm text-text-secondary">
                   {errorMessage}
                 </p>
-                {showRestartRsshub ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={restartRsshubMutation.isPending}
-                    onClick={() => restartRsshubMutation.mutate()}
-                  >
-                    {restartRsshubMutation.isPending ? "重启中..." : "立即重启内置 RSSHub"}
-                  </Button>
-                ) : null}
+                <RsshubRecoveryAction
+                  errorMessage={errorMessage}
+                  onRecovered={handleRsshubRecovered}
+                />
               </div>
             )
           }
@@ -210,11 +183,10 @@ export const FeedForm: Component<{
         feedQuery.error,
         feedQuery.isLoading,
         errorMessage,
+        handleRsshubRecovered,
         id,
         isInModal,
         onSuccess,
-        restartRsshubMutation.isPending,
-        showRestartRsshub,
         t,
         url,
       ])}
