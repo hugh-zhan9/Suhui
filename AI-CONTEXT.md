@@ -46,6 +46,7 @@
   - `vX.Y.Z`（兼容）
 - 当前推荐发布版本格式：`FreeFolo-v0.0.1`（示例）
 - `tag.yml` 会基于提交信息解析版本并创建标签：`desktop/<版本号>`
+- `tag.yml` 不再创建 `desktop-build/v*` 递增构建标签，仓库仅保留 release 版本标签
 - `build-desktop.yml` 在 `workflow_dispatch` 场景支持 `release_version` 输入，优先用于 Release 的 `name/tag`
 - Release 附件匹配产物前缀为：`FreeFolo-*`（不再使用 `Folo-*`）
 - `build-desktop.yml` 中 `.pkg/.appx` 上传仅在 `store=true` 时启用，避免普通构建产生“文件不存在”告警

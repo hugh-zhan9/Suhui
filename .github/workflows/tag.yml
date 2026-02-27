@@ -63,40 +63,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Configure Git
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: Resolve desktop build version
-        id: desktop_build_version
-        run: |
-          git fetch --tags --force
-          latest_tag="$(git tag -l 'desktop-build/v*' --sort=-v:refname | head -n 1)"
-          if [ -z "$latest_tag" ]; then
-            last_build=110
-          else
-            last_build="${latest_tag#desktop-build/v}"
-          fi
-
-          next_build=$((last_build + 1))
-          build_tag="desktop-build/v${next_build}"
-
-          if git rev-parse "$build_tag" >/dev/null 2>&1; then
-            echo "Build tag $build_tag already exists."
-            exit 1
-          fi
-
-          git tag "$build_tag"
-          git push origin "$build_tag"
-          echo "build_version=${next_build}" >> "$GITHUB_OUTPUT"
-          echo "Desktop build version: ${next_build}"
-
       - name: Trigger Desktop Build
         uses: actions/github-script@v8
         with:
@@ -110,7 +76,6 @@ jobs:
               inputs: {
                 tag_version: 'true',
                 store: 'false',
-                build_version: '${{ steps.desktop_build_version.outputs.build_version }}',
                 release_version: '${{ needs.create_tag.outputs.version }}'
               }
             });

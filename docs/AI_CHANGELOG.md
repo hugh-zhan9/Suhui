@@ -3687,3 +3687,14 @@
 - `.github/workflows/tag.yml`
 
 ---
+
+## [2026-02-27 11:16] [Refactor]
+
+- **Change**: 精简发布编排流程，移除desktop-build递增标签生成，仅保留release版本标签触发桌面构建
+- **Risk Analysis**: 低风险，影响仅限CI发布编排；若配置错误会导致发布触发失败，已做YAML语法与关键字段检查
+- **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
+- **Changed Files**:
+- `.github/workflows/tag.yml`
+- `AI-CONTEXT.md`
+
+---
