@@ -4019,3 +4019,15 @@
 - `apps/desktop/layer/renderer/src/modules/settings/tabs/data-control.tsx`
 
 ---
+
+## [2026-02-27 19:13] [Bugfix]
+
+- **Change**: 统一RSSHub本地异常提示并支持一键重启
+- **Risk Analysis**: 风险在于全局错误提示函数引入本地重启动作可能影响其他错误展示；通过仅匹配RSSHub关键错误码/文案触发并新增解析单测，确保非RSSHub错误路径保持原有行为。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/lib/error-parser.ts`
+- `apps/desktop/layer/renderer/src/lib/rsshub-local-error.ts`
+- `apps/desktop/layer/renderer/src/lib/rsshub-local-error.test.ts`
+
+---

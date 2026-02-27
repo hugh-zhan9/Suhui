@@ -8,7 +8,14 @@ import { toast } from "sonner"
 
 import { CopyButton } from "~/components/ui/button/CopyButton"
 import { Markdown } from "~/components/ui/markdown/Markdown"
+import { ipcServices } from "~/lib/client"
 import { DebugRegistry } from "~/modules/debug/registry"
+
+import {
+  getRsshubLocalErrorTitle,
+  parseRsshubLocalError,
+  shouldShowRsshubRestartAction,
+} from "./rsshub-local-error"
 
 export const getFetchErrorInfo = (
   error: Error,
@@ -111,6 +118,33 @@ export const toastFetchError = (
   // 2fa errors are handled by the form
   if (code === 4007 || code === 4008) {
     return
+  }
+
+  const rsshubType = parseRsshubLocalError(message || error.message || "")
+  if (rsshubType !== "none") {
+    const title = getRsshubLocalErrorTitle(rsshubType)
+    return toast.error(title, {
+      ..._toastOptions,
+      description: "可在设置页查看状态，或点击立即重启本地 RSSHub。",
+      action: shouldShowRsshubRestartAction(rsshubType)
+        ? {
+            label: "立即重启",
+            onClick: async () => {
+              try {
+                const dbIpc = ipcServices?.db as
+                  | {
+                      restartRsshub?: () => Promise<unknown>
+                    }
+                  | undefined
+                await dbIpc?.restartRsshub?.()
+                toast.success("已触发 RSSHub 重启")
+              } catch {
+                toast.error("RSSHub 重启失败")
+              }
+            },
+          }
+        : undefined,
+    })
   }
 
   const toastOptions: ExternalToast = {
