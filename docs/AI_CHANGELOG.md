@@ -4044,3 +4044,13 @@
 - `apps/desktop/layer/renderer/src/modules/discover/FeedForm.tsx`
 
 ---
+
+## [2026-02-27 19:36] [Feature]
+
+- **Change**: 订阅错误态新增一键重启本地RSSHub按钮并自动重试
+- **Risk Analysis**: 风险在于订阅错误视图中新增重启动作可能触发额外请求；实现仅在识别到RSSHub本地异常时显示按钮，重启成功后触发一次refetch，失败仅提示不影响原流程。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/modules/discover/FeedForm.tsx`
+
+---
