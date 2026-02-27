@@ -18,6 +18,8 @@ describe("rsshub local error parser", () => {
   it("应识别冷却与健康检查错误", () => {
     expect(parseRsshubLocalError("RSSHub in cooldown")).toBe("cooldown")
     expect(parseRsshubLocalError("RSSHub health check failed")).toBe("healthcheck")
+    expect(parseRsshubLocalError("内置 RSSHub 处于冷却中")).toBe("cooldown")
+    expect(parseRsshubLocalError("内置 RSSHub 启动检查失败")).toBe("healthcheck")
   })
 
   it("非 RSSHub 错误不触发重启按钮", () => {

@@ -3,9 +3,18 @@ export type RsshubLocalErrorType = "unavailable" | "cooldown" | "healthcheck" | 
 export const parseRsshubLocalError = (message: string): RsshubLocalErrorType => {
   if (!message) return "none"
 
-  if (message.includes("RSSHUB_LOCAL_UNAVAILABLE")) return "unavailable"
-  if (message.includes("RSSHub in cooldown")) return "cooldown"
-  if (message.includes("RSSHub health check failed")) return "healthcheck"
+  if (message.includes("RSSHUB_LOCAL_UNAVAILABLE") || message.includes("内置 RSSHub 当前未运行")) {
+    return "unavailable"
+  }
+  if (message.includes("RSSHub in cooldown") || message.includes("内置 RSSHub 处于冷却中")) {
+    return "cooldown"
+  }
+  if (
+    message.includes("RSSHub health check failed") ||
+    message.includes("内置 RSSHub 启动检查失败")
+  ) {
+    return "healthcheck"
+  }
 
   return "none"
 }

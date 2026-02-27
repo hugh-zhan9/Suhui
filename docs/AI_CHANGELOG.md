@@ -4054,3 +4054,15 @@
 - `apps/desktop/layer/renderer/src/modules/discover/FeedForm.tsx`
 
 ---
+
+## [2026-02-27 19:38] [Feature]
+
+- **Change**: List订阅错误态接入RSSHub一键重启与自动重试
+- **Risk Analysis**: 风险在于列表订阅错误页新增动作按钮可能改变原有交互顺序；实现仅在识别到RSSHub本地异常时展示，保持原重试与反馈入口不变，并复用已有重启逻辑降低行为偏差。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/modules/discover/ListForm.tsx`
+- `apps/desktop/layer/renderer/src/lib/rsshub-local-error.ts`
+- `apps/desktop/layer/renderer/src/lib/rsshub-local-error.test.ts`
+
+---
