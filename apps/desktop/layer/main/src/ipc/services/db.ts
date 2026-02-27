@@ -8,29 +8,38 @@ import type { IpcContext } from "electron-ipc-decorator"
 import { IpcMethod, IpcService } from "electron-ipc-decorator"
 
 import { DBManager } from "~/manager/db"
+import { rsshubManager } from "~/manager/rsshub"
 import { findDuplicateFeed } from "./rss-dedup"
 import { parseRssFeed } from "./rss-parser"
 import { buildEntryIdentityKey, buildRefreshedFeed, buildStableLocalEntryId } from "./rss-refresh"
+import { isRsshubUrlLike, resolveRsshubUrl } from "./rsshub-url"
 
 /**
  * Fetches a URL using Node.js built-in http/https, follows up to 5 redirects.
  */
-function fetchUrl(url: string, redirectCount = 0): Promise<string> {
+function fetchUrl(url: string, rsshubToken?: string | null, redirectCount = 0): Promise<string> {
   return new Promise((resolve, reject) => {
     if (redirectCount > 5) {
       reject(new Error("Too many redirects"))
       return
     }
     const lib = url.startsWith("https") ? https : http
+    const headers: Record<string, string> = {
+      "User-Agent": "FreeFolo RSS Reader/1.0",
+      Accept: "application/rss+xml, application/atom+xml, application/xml, */*",
+    }
+    if (rsshubToken) {
+      headers["X-RSSHub-Token"] = rsshubToken
+    }
     lib
-      .get(url, { headers: { "User-Agent": "FreeFolo RSS Reader/1.0" } }, (res) => {
+      .get(url, { headers }, (res) => {
         if (
           res.statusCode &&
           res.statusCode >= 300 &&
           res.statusCode < 400 &&
           res.headers.location
         ) {
-          resolve(fetchUrl(res.headers.location, redirectCount + 1))
+          resolve(fetchUrl(res.headers.location, rsshubToken, redirectCount + 1))
           return
         }
         if (res.statusCode && res.statusCode >= 400) {
@@ -50,7 +59,18 @@ export class DbService extends IpcService {
   static override readonly groupName = "db"
 
   private async buildPreviewData(feedUrl: string, preferredFeedId?: string) {
-    const xmlText = await fetchUrl(feedUrl)
+    const customHosts: string[] = []
+
+    if (isRsshubUrlLike(feedUrl, customHosts)) {
+      await rsshubManager.ensureRunning()
+    }
+
+    const { resolvedUrl, token } = resolveRsshubUrl({
+      url: feedUrl,
+      state: rsshubManager.getState(),
+      customHosts,
+    })
+    const xmlText = await fetchUrl(resolvedUrl, token)
     const parsed = parseRssFeed(xmlText)
 
     const feedId =
@@ -400,5 +420,29 @@ export class DbService extends IpcService {
       console.error("[DbService] deleteSubscriptionByTargets error:", e)
       throw new Error(`Failed to delete subscriptions: ${e.message}`)
     }
+  }
+
+  @IpcMethod()
+  async getRsshubStatus(_context: IpcContext) {
+    const state = rsshubManager.getState()
+    return {
+      status: state.status,
+      port: state.port,
+      retryCount: state.retryCount,
+      cooldownUntil: state.cooldownUntil,
+    }
+  }
+
+  @IpcMethod()
+  async toggleRsshub(_context: IpcContext, enabled: boolean) {
+    if (enabled) {
+      return rsshubManager.start()
+    }
+    return rsshubManager.stop()
+  }
+
+  @IpcMethod()
+  async restartRsshub(_context: IpcContext) {
+    return rsshubManager.restart()
   }
 }

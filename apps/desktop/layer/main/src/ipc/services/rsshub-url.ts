@@ -10,6 +10,20 @@ export type ResolveRsshubUrlInput = {
   customHosts: string[]
 }
 
+export const isRsshubUrlLike = (url: string, customHosts: string[]) => {
+  try {
+    const parsed = new URL(url)
+    const normalizedHost = parsed.hostname.toLowerCase()
+    const hostMatched =
+      normalizedHost === 'rsshub.app' || customHosts.map((i) => i.toLowerCase()).includes(normalizedHost)
+
+    if (hostMatched) return true
+    return parsed.protocol === 'rsshub:'
+  } catch {
+    return false
+  }
+}
+
 export const resolveRsshubUrl = ({ url, state, customHosts }: ResolveRsshubUrlInput) => {
   let isRsshubUrl = false
   let resolvedPath = ''

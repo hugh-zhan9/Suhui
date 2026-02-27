@@ -1,8 +1,14 @@
 import { describe, expect, it } from 'vitest'
 
-import { resolveRsshubUrl } from './rsshub-url'
+import { isRsshubUrlLike, resolveRsshubUrl } from './rsshub-url'
 
 describe('resolveRsshubUrl', () => {
+  it('应识别 rsshub.app 与 rsshub:// 形式', () => {
+    expect(isRsshubUrlLike('https://rsshub.app/github/trending', [])).toBe(true)
+    expect(isRsshubUrlLike('rsshub://github/trending?language=js', [])).toBe(true)
+    expect(isRsshubUrlLike('https://example.com/feed.xml', [])).toBe(false)
+  })
+
   it('非 RSSHub URL 应原样返回', () => {
     const result = resolveRsshubUrl({
       url: 'https://example.com/feed.xml',

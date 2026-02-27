@@ -3915,3 +3915,12 @@
 - `apps/desktop/layer/main/src/ipc/services/rsshub-url.ts`
 - `apps/desktop/layer/main/src/ipc/services/rsshub-url.test.ts`
 ----------------------------------------
+## [2026-02-27 18:47] [Feature]
+- **Change**: 接入 DbService 的 RSSHub URL 改写链路并新增主进程 RSSHub IPC 接口
+- **Risk Analysis**: 风险在于当前默认 RSSHub sidecar 启动参数仍为占位路径，命中 RSSHub URL 时可能触发启动失败；已通过单测和类型检查保证纯逻辑与接口可用。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/ipc/services/db.ts`
+- `apps/desktop/layer/main/src/ipc/services/rsshub-url.ts`
+- `apps/desktop/layer/main/src/ipc/services/rsshub-url.test.ts`
+----------------------------------------
