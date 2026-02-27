@@ -3800,3 +3800,24 @@
 - `AI-CONTEXT.md`
 
 ---
+
+## [2026-02-27 14:58] [Bugfix]
+
+- **Change**: 修复关闭窗口后进程驻留与Dock残留问题
+- **Risk Analysis**: 此前macOS关闭窗口会被强制hide且不会quit，导致用户误以为未退出；改为仅在开启托盘时隐藏，默认关闭即退出，风险是改变了mac传统保活行为。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/manager/window.ts`
+- `apps/desktop/layer/main/src/manager/bootstrap.ts`
+
+---
+
+## [2026-02-27 15:03] [Bugfix]
+
+- **Change**: 修复CI在macOS因mapfile不可用导致构建失败
+- **Risk Analysis**: GitHub macOS Runner使用Bash 3.2不支持mapfile，导致校验步骤127退出；改为find+while兼容写法，风险是若路径含换行字符会影响读取，但app路径实际可控。
+- **Risk Level**: S1（高级: 关键流程失败、主要功能不可用或明显业务回归）
+- **Changed Files**:
+- `.github/workflows/build-desktop.yml`
+
+---
