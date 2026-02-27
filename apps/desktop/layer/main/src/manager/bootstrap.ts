@@ -13,7 +13,6 @@ import { join } from "pathe"
 import { WindowManager } from "~/manager/window"
 import { DBManager } from "~/manager/db"
 
-import { isMacOS } from "../env"
 import { migrateAuthCookiesToNewApiDomain } from "../lib/auth-cookie-migration"
 import { handleUrlRouting } from "../lib/router"
 import { store } from "../lib/store"
@@ -126,9 +125,7 @@ export class BootstrapManager {
     })
 
     app.on("window-all-closed", () => {
-      if (!isMacOS) {
-        app.quit()
-      }
+      app.quit()
     })
 
     app.on("before-quit", () => {

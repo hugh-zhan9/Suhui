@@ -165,7 +165,7 @@ export const ProfileSettingForm = ({
             control={form.control}
             name="image"
             render={({ field }) => (
-              <div className="absolute right-0 flex -translate-y-full gap-4">
+              <div className="mb-2 flex justify-end gap-4 pr-1">
                 <FormItem className="w-full">
                   <FormControl>
                     <div className="flex items-center gap-4">

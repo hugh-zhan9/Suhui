@@ -34,6 +34,7 @@ vi.mock("@follow/store/context", () => ({
 }))
 
 import { subscriptionActions, subscriptionSyncService, useSubscriptionStore } from "@follow/store/subscription/store"
+import { useEntryStore } from "@follow/store/entry/store"
 
 const setMap = () => ({
   [FeedViewType.All]: new Set<string>(),
@@ -80,6 +81,50 @@ describe("subscription unsubscribe local delete", () => {
         type: "feed",
       },
     ])
+
+    useEntryStore.setState({
+      data: {
+        "entry-feed-a-1": {
+          id: "entry-feed-a-1",
+          feedId: "feed-a",
+          inboxHandle: null,
+          title: "Entry A1",
+          url: "https://example.com/a1",
+          content: null,
+          readabilityContent: null,
+          readabilityUpdatedAt: null,
+          description: null,
+          guid: null,
+          author: null,
+          authorUrl: null,
+          authorAvatar: null,
+          insertedAt: new Date(),
+          publishedAt: new Date(),
+          media: null,
+          categories: null,
+          attachments: null,
+          extra: null,
+          language: null,
+          read: false,
+          sources: null,
+          settings: null,
+        } as any,
+      },
+      entryIdByView: {
+        [FeedViewType.All]: new Set<string>(["entry-feed-a-1"]),
+        [FeedViewType.Articles]: new Set<string>(["entry-feed-a-1"]),
+        [FeedViewType.Audios]: new Set<string>(),
+        [FeedViewType.Notifications]: new Set<string>(),
+        [FeedViewType.Pictures]: new Set<string>(),
+        [FeedViewType.SocialMedia]: new Set<string>(),
+        [FeedViewType.Videos]: new Set<string>(),
+      },
+      entryIdByCategory: { "cat-a": new Set<string>(["entry-feed-a-1"]) },
+      entryIdByFeed: { "feed-a": new Set<string>(["entry-feed-a-1"]) },
+      entryIdByInbox: {},
+      entryIdByList: {},
+      entryIdSet: new Set<string>(["entry-feed-a-1"]),
+    })
   })
 
   it("取消订阅时应按 feedId 维度做本地数据库删除", async () => {
@@ -92,5 +137,8 @@ describe("subscription unsubscribe local delete", () => {
       listIds: [],
       inboxIds: [],
     })
+    expect(useEntryStore.getState().entryIdByView[FeedViewType.All].has("entry-feed-a-1")).toBe(
+      false,
+    )
   })
 })

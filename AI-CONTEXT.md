@@ -105,6 +105,11 @@
 - 移除设置中无关的“列表”菜单及其相关模块（发行前精简）
 - 无签名构建后增加 Ad-hoc 自签名步骤，修复 macOS 26（M5）上 `SIGKILL (Code Signature Invalid)` 崩溃
 
+## 最近补充修复（issue 35-36）
+
+- 添加订阅弹窗（`SimpleDiscoverModal`）仅保留 `RSS/RSSHub` 两类输入，已移除 `Search` 模式与 “Or go to Discover...” 引导文案
+- 设置页已删除 `feeds/list/notifications` 三个页面入口，并增加本地隐藏规则，防止后续被重新暴露
+
 ## 已知边界与残留在线能力
 
 - 当前主阅读链路已本地化，但仓库仍存在部分在线接口分支（非主链路）：

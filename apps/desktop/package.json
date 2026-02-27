@@ -35,6 +35,7 @@
     "update:main-hash": "tsx plugins/vite/generate-main-hash.ts"
   },
   "dependencies": {
+    "better-sqlite3": "12.6.2",
     "@protobufjs/aspromise": "1.1.2",
     "@protobufjs/eventemitter": "1.1.0",
     "@protobufjs/fetch": "1.1.0",

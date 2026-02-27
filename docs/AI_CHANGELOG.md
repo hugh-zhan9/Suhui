@@ -3843,3 +3843,59 @@
 - `AI-CONTEXT.md`
 
 ---
+## [2026-02-27 15:50] [Refactor]
+- **Change**: 移除仓库内全部GitHub Actions工作流配置
+- **Risk Analysis**: 删除workflow后远端将不再自动执行构建、发布与校验，后续只能依赖本地打包流程；风险是失去自动化回归与发布保护。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `.github/workflows/build-desktop.yml`
+- `.github/workflows/lint.yml`
+- `.github/workflows/tag.yml`
+----------------------------------------
+## [2026-02-27 16:10] [Bugfix]
+- **Change**: 统一时间线数据源为本地查询并移除远端列表分支
+- **Risk Analysis**: 此前All/Articles优先走远端查询而收藏走本地，导致空态文案与真实可渲染条目不一致；改为统一本地后可避免远端状态干扰，风险是远端增量同步能力被彻底绕开。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/modules/entry-column/hooks/useEntriesByView.ts`
+----------------------------------------
+## [2026-02-27 16:43] [Bugfix]
+- **Change**: 修复发现弹窗与设置页裁剪问题
+- **Risk Analysis**: 风险主要在设置菜单过滤可能影响依赖路径枚举逻辑，已通过新增单测和桌面构建验证。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/modules/subscription-column/SimpleDiscoverModal.tsx`
+- `apps/desktop/layer/renderer/src/modules/subscription-column/simple-discover-options.ts`
+- `apps/desktop/layer/renderer/src/modules/subscription-column/simple-discover-options.test.ts`
+- `apps/desktop/layer/renderer/src/modules/settings/local-hidden-settings.ts`
+- `apps/desktop/layer/renderer/src/modules/settings/local-hidden-settings.test.ts`
+- `apps/desktop/layer/renderer/src/modules/settings/hooks/use-setting-ctx.ts`
+- `apps/desktop/layer/renderer/src/pages/settings/(settings)/feeds.tsx`
+- `apps/desktop/layer/renderer/src/pages/settings/(settings)/list.tsx`
+- `apps/desktop/layer/renderer/src/pages/settings/(settings)/notifications.tsx`
+- `issue.md`
+- `AI-CONTEXT.md`
+----------------------------------------
+## [2026-02-27 17:10] [Bugfix]
+- **Change**: 修复本地RSS新增订阅重复、取消订阅残留索引和All列表重复展示问题
+- **Risk Analysis**: 主要风险是条目索引重建可能影响大数据量下的交互性能，以及订阅弹窗幂等锁在极端失败重试场景下的行为。已通过针对性单测、store类型检查和桌面构建验证主链路可用。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/modules/discover/FeedForm.tsx`
+- `apps/desktop/layer/renderer/src/modules/entry-column/hooks/useEntriesByView.ts`
+- `apps/desktop/layer/renderer/src/modules/entry-column/hooks/useLocalEntries.ts`
+- `apps/desktop/layer/renderer/src/modules/entry-column/hooks/entry-id-utils.ts`
+- `apps/desktop/layer/renderer/src/modules/entry-column/hooks/entry-id-utils.test.ts`
+- `packages/internal/store/src/modules/entry/store.ts`
+- `packages/internal/store/src/modules/subscription/store.ts`
+----------------------------------------
+## [2026-02-27 17:18] [Bugfix]
+- **Change**: 修复编辑订阅切换视图未生效与取消订阅后All列表残留问题
+- **Risk Analysis**: 风险在于调整entry视图索引挂载条件可能影响依赖无订阅来源展示的边缘场景；已通过订阅编辑与取消订阅回归测试、类型检查及桌面构建验证。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `packages/internal/store/src/modules/entry/store.ts`
+- `packages/internal/store/src/modules/subscription/store.ts`
+- `apps/desktop/layer/renderer/src/lib/subscription-local-branches.test.ts`
+- `apps/desktop/layer/renderer/src/lib/subscription-unsubscribe-local-delete.test.ts`
+----------------------------------------

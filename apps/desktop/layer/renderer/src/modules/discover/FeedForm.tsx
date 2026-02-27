@@ -14,7 +14,6 @@ import { RootPortal } from "@follow/components/ui/portal/index.js"
 import { ScrollArea } from "@follow/components/ui/scroll-area/index.js"
 import { Switch } from "@follow/components/ui/switch/index.jsx"
 import { FeedViewType } from "@follow/constants"
-import { entryActions } from "@follow/store/entry/store"
 import { useFeedByIdOrUrl } from "@follow/store/feed/hooks"
 import type { FeedModel } from "@follow/store/feed/types"
 import { useCategories, useSubscriptionByFeedId } from "@follow/store/subscription/hooks"
@@ -22,7 +21,7 @@ import { subscriptionActions, subscriptionSyncService } from "@follow/store/subs
 import { whoami } from "@follow/store/user/getters"
 import { tracker } from "@follow/tracker"
 import { cn } from "@follow/utils/utils"
-import type { FeedAnalyticsModel, ParsedEntry } from "@follow-app/client-sdk"
+import type { FeedAnalyticsModel } from "@follow-app/client-sdk"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation } from "@tanstack/react-query"
 import { useCallback, useEffect, useMemo, useRef } from "react"
@@ -50,38 +49,14 @@ const formSchema = z.object({
 })
 export type FeedFormDataValuesType = z.infer<typeof formSchema>
 
-const normalizePreviewEntries = (entries: ParsedEntry[] | undefined, fallbackFeedId: string) => {
-  return ((entries || []) as any[])
-    .map((item) => ({
-      id: item?.id ?? item?.entries?.id,
-      title: item?.title ?? item?.entries?.title,
-      url: item?.url ?? item?.entries?.url,
-      content: null,
-      readabilityContent: null,
-      description: item?.description ?? item?.entries?.description,
-      guid: item?.guid ?? item?.entries?.guid ?? item?.id ?? item?.entries?.id,
-      author: item?.author ?? item?.entries?.author ?? null,
-      authorUrl: item?.authorUrl ?? item?.entries?.authorUrl ?? null,
-      authorAvatar: item?.authorAvatar ?? item?.entries?.authorAvatar ?? null,
-      insertedAt: new Date(item?.insertedAt ?? item?.entries?.insertedAt ?? Date.now()),
-      publishedAt: new Date(item?.publishedAt ?? item?.entries?.publishedAt ?? Date.now()),
-      media: item?.media ?? item?.entries?.media ?? null,
-      categories: item?.categories ?? item?.entries?.categories ?? null,
-      attachments: item?.attachments ?? item?.entries?.attachments ?? null,
-      extra: (item?.extra ?? item?.entries?.extra)
-        ? {
-            links: (item?.extra ?? item?.entries?.extra)?.links ?? undefined,
-            title_keyword: (item?.extra ?? item?.entries?.extra)?.title_keyword ?? undefined,
-          }
-        : null,
-      language: item?.language ?? item?.entries?.language ?? null,
-      feedId: item?.feedId ?? item?.feeds?.id ?? fallbackFeedId ?? null,
-      inboxHandle: item?.feeds?.type === "inbox" ? item.feeds.id : null,
-      read: !!item?.read,
-      sources: Array.isArray(item?.from) ? item.from : null,
-      settings: item?.settings ?? null,
-    }))
-    .filter((entry) => !!entry.id && !!entry.guid)
+const buildFeedLifecycleLockKey = (url?: string, feedId?: string) => {
+  if (!url) return feedId || ""
+  try {
+    const parsed = new URL(url)
+    return `${parsed.hostname.toLowerCase()}::${parsed.pathname}${parsed.search}` || feedId || url
+  } catch {
+    return feedId || url
+  }
 }
 
 export const PaidBadge = () => {
@@ -291,16 +266,6 @@ const FeedInnerForm = ({
         listId: undefined,
       } as const
 
-      // Always persist preview entries locally
-      const localEntries = normalizePreviewEntries(entries, feed.id)
-      if (localEntries.length > 0) {
-        try {
-          await entryActions.upsertMany(localEntries)
-        } catch (error) {
-          console.warn("Failed to persist preview entries:", error)
-        }
-      }
-
       if (!userId) {
         await subscriptionActions.upsertMany([
           {
@@ -333,12 +298,29 @@ const FeedInnerForm = ({
       onSuccess?.()
     },
     onError(err) {
+      if (pendingFeedKeyRef.current) {
+        submitFeedLockRef.current.delete(pendingFeedKeyRef.current)
+      }
+      pendingFeedKeyRef.current = null
       console.error("FeedForm Mutation Error:", err)
       toastFetchError(err)
     },
+    onSettled: () => {
+      pendingFeedKeyRef.current = null
+    },
   })
 
+  const submitFeedLockRef = useRef(new Set<string>())
+  const pendingFeedKeyRef = useRef<string | null>(null)
+
   function onSubmit(values: z.infer<typeof formSchema>) {
+    const lockKey = buildFeedLifecycleLockKey(feed.url, feed.id)
+    if (!lockKey) return
+    if (submitFeedLockRef.current.has(lockKey)) {
+      return
+    }
+    submitFeedLockRef.current.add(lockKey)
+    pendingFeedKeyRef.current = lockKey
     followMutation.mutate(values)
   }
 

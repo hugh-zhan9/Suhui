@@ -16,6 +16,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { useGeneralSettingKey } from "~/atoms/settings/general"
 import { ROUTE_FEED_PENDING } from "~/constants/app"
 import { shouldFilterUnreadEntries } from "./query-selection"
+import { dedupeEntryIdsPreserveOrder } from "./entry-id-utils"
 
 interface UseLocalEntriesOptions {
   feedId?: string
@@ -75,7 +76,8 @@ export const useLocalEntries = ({
                 entryIdsByInboxId,
               ) ?? [])
 
-        return ids
+        return dedupeEntryIdsPreserveOrder(
+          ids
           .map((id) => {
             const entry = state.data[id]
             if (!entry) return null
@@ -90,7 +92,8 @@ export const useLocalEntries = ({
             }
             return entry.id
           })
-          .filter((id) => typeof id === "string")
+          .filter((id) => typeof id === "string"),
+        )
       },
       [
         entryIdsByCategory,
@@ -113,7 +116,7 @@ export const useLocalEntries = ({
   )
 
   const entries = useMemo(() => {
-    return allEntries?.slice(0, (page + 1) * pageSize) || []
+    return dedupeEntryIdsPreserveOrder(allEntries?.slice(0, (page + 1) * pageSize) || [])
   }, [allEntries, page, pageSize])
 
   const hasNext = useMemo(() => {

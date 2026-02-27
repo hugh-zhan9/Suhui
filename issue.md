@@ -146,3 +146,13 @@
 34. ~~设置里的 列表 菜单可以删掉了，本地RSS不需要相关的分享功能~~
     修复方式：移除设置中的 `列表(List)` 菜单入口及其对应的页面模块（本地RSS无需社交/列表相关功能）。  
     改动范围：`apps/desktop/layer/renderer/src/pages/settings/(settings)/list.tsx`、`apps/desktop/layer/renderer/src/modules/settings/tabs/lists`
+
+35. ~~添加订阅源的发现页面有三个tab，分别是 搜索，RSS，RSShub， 我这里只要保留RSS 和 RSShub, 搜索的逻辑删掉吧， 另外还有个 Or go to Discover.... 的一段话，也删除掉。再确认一下 RSSHub 的逻辑当前有实现吗？~~
+    修复方式：将 `SimpleDiscoverModal` 收敛为仅 `RSS/RSSHub` 两种模式，移除搜索模式及其发现搜索结果链路，同时删除 “Or go to Discover...” 引导文案。`RSSHub` 逻辑仍已实现：输入 `rsshub://` 路由后仍会走 `FeedForm` 预览与订阅流程。  
+    改动范围：`apps/desktop/layer/renderer/src/modules/subscription-column/SimpleDiscoverModal.tsx`、`apps/desktop/layer/renderer/src/modules/subscription-column/simple-discover-options.ts`、`apps/desktop/layer/renderer/src/modules/subscription-column/simple-discover-options.test.ts`
+
+36. ~~设置 - 订阅源， 设置 - 列表， 设置-通知，这三个页面删除掉。对应的逻辑也可以剔除了。~~
+    修复方式：物理删除三页路由文件（`feeds/list/notifications`），并在设置可见性过滤中加入本地隐藏规则，防止后续页面回流时再次暴露。  
+    改动范围：`apps/desktop/layer/renderer/src/pages/settings/(settings)/feeds.tsx`、`apps/desktop/layer/renderer/src/pages/settings/(settings)/list.tsx`、`apps/desktop/layer/renderer/src/pages/settings/(settings)/notifications.tsx`、`apps/desktop/layer/renderer/src/modules/settings/local-hidden-settings.ts`、`apps/desktop/layer/renderer/src/modules/settings/hooks/use-setting-ctx.ts`、`apps/desktop/layer/renderer/src/modules/settings/local-hidden-settings.test.ts`
+
+37. 

@@ -2,124 +2,30 @@ import { FeedViewType, getView } from "@follow/constants"
 import { useCollectionEntryList } from "@follow/store/collection/hooks"
 import { isOnboardingEntryUrl } from "@follow/store/constants/onboarding"
 import {
-  useEntriesQuery,
   useEntryIdsByFeedId,
   useEntryIdsByFeedIds,
   useEntryIdsByInboxId,
   useEntryIdsByListId,
   useEntryIdsByView,
 } from "@follow/store/entry/hooks"
-import { entryActions, entrySyncServices, useEntryStore } from "@follow/store/entry/store"
+import { entryActions, useEntryStore } from "@follow/store/entry/store"
 import type { UseEntriesReturn } from "@follow/store/entry/types"
 import { fallbackReturn } from "@follow/store/entry/utils"
 import { useFolderFeedsByFeedId, useIsSubscribed } from "@follow/store/subscription/hooks"
 import { unreadSyncService } from "@follow/store/unread/store"
-import { nextFrame } from "@follow/utils"
 import { isBizId } from "@follow/utils/utils"
-import { useMutation } from "@tanstack/react-query"
 import { debounce } from "es-toolkit/compat"
-import { useAtomValue } from "jotai"
 import { useCallback, useEffect, useMemo, useState } from "react"
 
 import { useGeneralSettingKey } from "~/atoms/settings/general"
 import { ROUTE_FEED_PENDING } from "~/constants/app"
-import { useFeature } from "~/hooks/biz/useFeature"
 import { useRouteParams } from "~/hooks/biz/useRouteParams"
 
-import { aiTimelineEnabledAtom } from "../atoms/ai-timeline"
 import {
   normalizeFeedIdForActiveSubscription,
   shouldFilterUnreadEntries,
-  shouldUseLocalEntriesQuery,
 } from "./query-selection"
-import { useIsPreviewFeed } from "./useIsPreviewFeed"
-
-const useRemoteEntries = (): UseEntriesReturn => {
-  const { feedId, view, inboxId, listId } = useRouteParams()
-  const isPreview = useIsPreviewFeed()
-
-  const unreadOnly = useGeneralSettingKey("unreadOnly")
-  const hidePrivateSubscriptionsInTimeline = useGeneralSettingKey(
-    "hidePrivateSubscriptionsInTimeline",
-  )
-  const aiTimelineEnabled = useAtomValue(aiTimelineEnabledAtom)
-  const aiEnabled = useFeature("ai")
-
-  const folderIds = useFolderFeedsByFeedId({
-    feedId,
-    view,
-  })
-  const isSubscribed = useIsSubscribed(feedId)
-
-  const entriesOptions = useMemo(() => {
-    const normalizedFeedId = normalizeFeedIdForActiveSubscription({
-      feedId,
-      pendingFeedId: ROUTE_FEED_PENDING,
-      isSubscribed,
-    })
-    const params = {
-      feedId: folderIds?.join(",") || normalizedFeedId,
-      inboxId,
-      listId,
-      view,
-      ...(unreadOnly === true && !isPreview && { unreadOnly: true }),
-      ...(hidePrivateSubscriptionsInTimeline === true && {
-        hidePrivateSubscriptionsInTimeline: true,
-      }),
-      ...(view === FeedViewType.All && { limit: 40 }),
-      ...(aiTimelineEnabled && aiEnabled && { aiSort: true }),
-    }
-
-    if (normalizedFeedId && listId && isBizId(normalizedFeedId)) {
-      delete params.listId
-    }
-
-    return params
-  }, [
-    feedId,
-    folderIds,
-    inboxId,
-    listId,
-    unreadOnly,
-    isPreview,
-    view,
-    hidePrivateSubscriptionsInTimeline,
-    aiTimelineEnabled,
-    aiEnabled,
-    isSubscribed,
-  ])
-  const query = useEntriesQuery(entriesOptions)
-
-  const [fetchedTime, setFetchedTime] = useState<number>()
-  useEffect(() => {
-    if (!query.isFetching) {
-      setFetchedTime(Date.now())
-    }
-  }, [query.isFetching])
-
-  const refetch = useCallback(async () => void query.refetch(), [query])
-  const fetchNextPage = useCallback(async () => void query.fetchNextPage(), [query])
-
-  if (!query.data || query.isLoading) {
-    return fallbackReturn
-  }
-  return {
-    entriesIds: query.entriesIds,
-    hasNext: query.hasNextPage,
-    refetch,
-
-    fetchNextPage,
-    isLoading: query.isFetching,
-    isRefetching: query.isRefetching,
-    isReady: query.isSuccess,
-    isFetchingNextPage: query.isFetchingNextPage,
-    isFetching: query.isFetching,
-    hasNextPage: query.hasNextPage,
-    error: query.isError ? query.error : null,
-    fetchedTime,
-    queryKey: query.queryKey,
-  }
-}
+import { dedupeEntryIdsPreserveOrder } from "./entry-id-utils"
 
 function getEntryIdsFromMultiplePlace(...entryIds: Array<string[] | undefined | null>) {
   return entryIds.find((ids) => ids?.length) ?? []
@@ -174,7 +80,8 @@ const useLocalEntries = (): UseEntriesReturn => {
                 entryIdsByInboxId,
               ) ?? [])
 
-        return ids
+        return dedupeEntryIdsPreserveOrder(
+          ids
           .map((id) => {
             const entry = state.data[id]
             if (!entry) return null
@@ -189,7 +96,8 @@ const useLocalEntries = (): UseEntriesReturn => {
             }
             return entry.id
           })
-          .filter((id) => typeof id === "string")
+          .filter((id) => typeof id === "string"),
+        )
       },
       [
         entryIdsByCategory,
@@ -213,7 +121,7 @@ const useLocalEntries = (): UseEntriesReturn => {
   )
 
   const entries = useMemo(() => {
-    return allEntries?.slice(0, (page + 1) * pageSize) || []
+    return dedupeEntryIdsPreserveOrder(allEntries?.slice(0, (page + 1) * pageSize) || [])
   }, [allEntries, page, pageSize])
 
   const hasNext = useMemo(() => {
@@ -253,35 +161,20 @@ const useLocalEntries = (): UseEntriesReturn => {
 export const useEntriesByView = ({ onReset }: { onReset?: () => void }) => {
   const { view, listId, isCollection } = useRouteParams()
 
-  const remoteQuery = useRemoteEntries()
   const localQuery = useLocalEntries()
+  const query = localQuery
+  const entryIds: string[] = useMemo(
+    () => dedupeEntryIdsPreserveOrder(query.entriesIds || []),
+    [query.entriesIds],
+  )
 
-  useFetchEntryContentByStream(remoteQuery.entriesIds)
-
-  // If remote data is not available, we use the local data, get the local data length
-  // FIXME: remote first, then local store data
-  // NOTE: We still can't use the store's data handling directly.
-  // Imagine that the local data may be persistent, and then if there are incremental updates to the data on the server side,
-  // then we have no way to incrementally update the data.
-  // We need to add an interface to incrementally update the data based on the version hash.
-
-  const query = shouldUseLocalEntriesQuery({
-    isCollection,
-    remoteReady: remoteQuery.isReady,
-  })
-    ? localQuery
-    : remoteQuery
-  const entryIds: string[] = query.entriesIds
-
-  const isFetchingFirstPage = remoteQuery.isFetching && !remoteQuery.isFetchingNextPage
+  const isFetchingFirstPage = query.isFetching && !query.isFetchingNextPage
 
   useEffect(() => {
     if (isFetchingFirstPage) {
-      nextFrame(() => {
-        onReset?.()
-      })
+      onReset?.()
     }
-  }, [isFetchingFirstPage, query.queryKey])
+  }, [isFetchingFirstPage, onReset, query.queryKey])
 
   const groupByDate = useGeneralSettingKey("groupByDate")
   const groupedCounts: number[] | undefined = useMemo(() => {
@@ -319,7 +212,7 @@ export const useEntriesByView = ({ onReset }: { onReset?: () => void }) => {
   return {
     ...query,
 
-    type: remoteQuery.isReady ? ("remote" as const) : ("local" as const),
+    type: "local" as const,
     refetch: useCallback(() => {
       const promise = query.refetch()
       unreadSyncService.resetFromRemote()
@@ -327,21 +220,8 @@ export const useEntriesByView = ({ onReset }: { onReset?: () => void }) => {
     }, [query]),
     entriesIds: entryIds,
     groupedCounts,
-    isFetching: remoteQuery.isFetching,
-    isFetchingNextPage: remoteQuery.isFetchingNextPage,
-    isLoading: remoteQuery.isLoading,
+    isFetching: query.isFetching,
+    isFetchingNextPage: query.isFetchingNextPage,
+    isLoading: query.isLoading,
   }
-}
-
-const useFetchEntryContentByStream = (remoteEntryIds?: string[]) => {
-  const { mutate: updateEntryContent } = useMutation({
-    mutationKey: ["stream-entry-content", remoteEntryIds],
-    mutationFn: (remoteEntryIds: string[]) =>
-      entrySyncServices.fetchEntryContentByStream(remoteEntryIds),
-  })
-
-  useEffect(() => {
-    if (!remoteEntryIds) return
-    updateEntryContent(remoteEntryIds)
-  }, [remoteEntryIds, updateEntryContent])
 }

@@ -4,7 +4,7 @@ import { SubscriptionService } from "@follow/database/services/subscription"
 import { tracker } from "@follow/tracker"
 import { omit } from "es-toolkit"
 
-import { api } from "../../context"
+import { api, queryClient } from "../../context"
 import type { Hydratable, Resetable } from "../../lib/base"
 import { createImmerSetter, createTransaction, createZustandStore } from "../../lib/helper"
 import { apiMorph } from "../../morph/api"
@@ -292,8 +292,11 @@ class SubscriptionSyncService {
     })
 
     await tx.run()
-
-    invalidateViews(subscription.view)
+    entryActions.rebuildIndexesInSession()
+    await queryClient().invalidateQueries({
+      queryKey: ["entries"],
+    })
+    invalidateViews(current.view, subscription.view)
   }
 
   async subscribe(subscription: SubscriptionForm) {
@@ -501,6 +504,11 @@ class SubscriptionSyncService {
     })
 
     await tx.run()
+    // Rebuild all entry indexes to purge stale in-memory mappings after unsubscribe.
+    entryActions.rebuildIndexesInSession()
+    await queryClient().invalidateQueries({
+      queryKey: ["entries"],
+    })
     const affectedViews = Array.from(
       new Set([...feedSubscriptions, ...listSubscriptions].map((i) => i.view)),
     )

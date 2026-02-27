@@ -49,6 +49,21 @@ class EntryActions implements Hydratable, Resetable {
     return state.data
   }
 
+  private dedupeEntriesById(entries: EntryModel[]) {
+    if (entries.length <= 1) return entries
+    const map = new Map<string, EntryModel>()
+    for (const entry of entries) {
+      if (!entry?.id) continue
+      map.set(entry.id, entry)
+    }
+    return Array.from(map.values())
+  }
+
+  private dedupeSources(sources?: string[] | null) {
+    if (!sources || sources.length <= 1) return sources ?? []
+    return Array.from(new Set(sources.filter((s): s is string => typeof s === "string" && !!s)))
+  }
+
   private addEntryIdToView({
     draft,
     feedId,
@@ -65,6 +80,7 @@ class EntryActions implements Hydratable, Resetable {
     if (!feedId) return
 
     const subscription = getSubscriptionById(feedId)
+    if (!subscription) return
     const ignore =
       (hidePrivateSubscriptionsInTimeline && subscription?.isPrivate) ||
       subscription?.hideFromTimeline
@@ -79,6 +95,7 @@ class EntryActions implements Hydratable, Resetable {
     // lists
     for (const s of sources ?? []) {
       const subscription = getSubscriptionById(s)
+      if (!subscription) continue
       const ignore =
         (hidePrivateSubscriptionsInTimeline && subscription?.isPrivate) ||
         subscription?.hideFromTimeline
@@ -170,9 +187,10 @@ class EntryActions implements Hydratable, Resetable {
   upsertManyInSession(entries: EntryModel[], options?: FetchEntriesPropsSettings) {
     if (entries.length === 0) return
     const { unreadOnly, hidePrivateSubscriptionsInTimeline } = options || {}
+    const dedupedEntries = this.dedupeEntriesById(entries)
 
     immerSet((draft) => {
-      for (const entry of entries) {
+      for (const entry of dedupedEntries) {
         draft.entryIdSet.add(entry.id)
         draft.data[entry.id] = entry
 
@@ -207,7 +225,68 @@ class EntryActions implements Hydratable, Resetable {
           entryId: entry.id,
         })
 
-        entry.sources
+        this.dedupeSources(entry.sources)
+          ?.filter((s) => !!s && s !== "feed")
+          .forEach((s) => {
+            this.addEntryIdToList({
+              draft,
+              listId: s,
+              entryId: entry.id,
+            })
+          })
+      }
+    })
+  }
+
+  rebuildIndexesInSession() {
+    immerSet((draft) => {
+      draft.entryIdByView = {
+        [FeedViewType.All]: new Set(),
+        [FeedViewType.Articles]: new Set(),
+        [FeedViewType.Audios]: new Set(),
+        [FeedViewType.Notifications]: new Set(),
+        [FeedViewType.Pictures]: new Set(),
+        [FeedViewType.SocialMedia]: new Set(),
+        [FeedViewType.Videos]: new Set(),
+      }
+      draft.entryIdByFeed = {}
+      draft.entryIdByInbox = {}
+      draft.entryIdByCategory = {}
+      draft.entryIdByList = {}
+      draft.entryIdSet = new Set(Object.keys(draft.data))
+
+      for (const entry of Object.values(draft.data)) {
+        if (!entry?.id) continue
+
+        const { feedId, inboxHandle } = entry
+        if (inboxHandle) {
+          this.addEntryIdToInbox({
+            draft,
+            inboxHandle,
+            entryId: entry.id,
+          })
+        } else {
+          this.addEntryIdToFeed({
+            draft,
+            feedId,
+            entryId: entry.id,
+          })
+        }
+
+        this.addEntryIdToView({
+          draft,
+          feedId,
+          entryId: entry.id,
+          sources: entry.sources,
+        })
+
+        this.addEntryIdToCategory({
+          draft,
+          feedId,
+          entryId: entry.id,
+        })
+
+        this.dedupeSources(entry.sources)
           ?.filter((s) => !!s && s !== "feed")
           .forEach((s) => {
             this.addEntryIdToList({

@@ -9,7 +9,7 @@ import { BrowserWindow, screen, shell } from "electron"
 import type { Event } from "electron/main"
 import path from "pathe"
 
-import { isMacOS, isWindows, isWindows11 } from "~/env"
+import { isWindows, isWindows11 } from "~/env"
 import { filePathToAppUrl, getIconPath } from "~/helper"
 import { t } from "~/lib/i18n"
 import { store } from "~/lib/store"
@@ -266,7 +266,7 @@ class WindowManagerStatic {
 
     window.on("close", (event) => {
       const minimizeToTray = getTrayConfig()
-      if (isMacOS || minimizeToTray) {
+      if (minimizeToTray) {
         event.preventDefault()
         if (window.isFullScreen()) {
           window.once("leave-full-screen", () => {
