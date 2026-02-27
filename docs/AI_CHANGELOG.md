@@ -3899,3 +3899,11 @@
 - `apps/desktop/layer/renderer/src/lib/subscription-local-branches.test.ts`
 - `apps/desktop/layer/renderer/src/lib/subscription-unsubscribe-local-delete.test.ts`
 ----------------------------------------
+## [2026-02-27 18:44] [Feature]
+- **Change**: 新增 RSSHub 主进程管理器骨架并补齐基础状态机单测
+- **Risk Analysis**: 风险在于默认 launch 与健康检查实现仍为占位，若提前接线会导致启动失败；当前通过独立单测验证状态流转，尚未接入业务链路。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/manager/rsshub.ts`
+- `apps/desktop/layer/main/src/manager/rsshub.test.ts`
+----------------------------------------
