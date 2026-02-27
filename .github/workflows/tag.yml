@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - mobile-main
 
 permissions:
   contents: write
@@ -18,7 +17,6 @@ jobs:
       tag_version: ${{ steps.release_info.outputs.tag_version }}
       platform: ${{ steps.release_info.outputs.platform }}
       version: ${{ steps.release_info.outputs.version }}
-      ref_name: ${{ steps.release_info.outputs.ref_name }}
 
     steps:
       - name: Checkout repository
@@ -44,7 +42,6 @@ jobs:
           echo "tag_version=${tag_version:-}" >> "$GITHUB_OUTPUT"
           echo "platform=${platform:-}" >> "$GITHUB_OUTPUT"
           echo "version=${version:-}" >> "$GITHUB_OUTPUT"
-          echo "ref_name=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
 
       - name: Validate git configuration
         if: steps.release_info.outputs.tag_version != ''
@@ -69,25 +66,22 @@ jobs:
   trigger_builds:
     name: Trigger Platform Builds
     needs: create_tag
-    if: needs.create_tag.outputs.tag_version != ''
+    if: needs.create_tag.outputs.tag_version != '' && needs.create_tag.outputs.platform == 'desktop'
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
-        if: needs.create_tag.outputs.platform == 'desktop' && needs.create_tag.outputs.ref_name == 'main'
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Configure Git
-        if: needs.create_tag.outputs.platform == 'desktop' && needs.create_tag.outputs.ref_name == 'main'
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Resolve desktop build version
         id: desktop_build_version
-        if: needs.create_tag.outputs.platform == 'desktop' && needs.create_tag.outputs.ref_name == 'main'
         run: |
           git fetch --tags --force
           latest_tag="$(git tag -l 'desktop-build/v*' --sort=-v:refname | head -n 1)"
@@ -111,7 +105,6 @@ jobs:
           echo "Desktop build version: ${next_build}"
 
       - name: Trigger Desktop Build
-        if: needs.create_tag.outputs.platform == 'desktop' && needs.create_tag.outputs.ref_name == 'main'
         uses: actions/github-script@v8
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -128,56 +121,3 @@ jobs:
               }
             });
             console.log('Desktop build triggered successfully');
-
-      - name: Trigger Mobile Preview Release Build
-        if: needs.create_tag.outputs.platform == 'mobile' && needs.create_tag.outputs.ref_name == 'mobile-main'
-        uses: actions/github-script@v8
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const response = await github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'build-android.yml',
-              ref: 'mobile-main',
-              inputs: {
-                profile: 'preview',
-                release: 'true'
-              }
-            });
-            console.log('Mobile preview release build triggered successfully');
-
-      - name: Trigger Mobile Production Android Build
-        if: needs.create_tag.outputs.platform == 'mobile' && needs.create_tag.outputs.ref_name == 'mobile-main'
-        uses: actions/github-script@v8
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const response = await github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'build-android.yml',
-              ref: 'mobile-main',
-              inputs: {
-                profile: 'production',
-                release: 'false'
-              }
-            });
-            console.log('Mobile production Android build triggered successfully');
-
-      - name: Trigger Mobile Production iOS Build
-        if: needs.create_tag.outputs.platform == 'mobile' && needs.create_tag.outputs.ref_name == 'mobile-main'
-        uses: actions/github-script@v8
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const response = await github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'build-ios.yml',
-              ref: 'mobile-main',
-              inputs: {
-                profile: 'production'
-              }
-            });
-            console.log('Mobile production iOS build triggered successfully');
