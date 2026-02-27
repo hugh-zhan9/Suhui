@@ -51,6 +51,7 @@
 - Release 附件匹配产物前缀为：`FreeFolo-*`（不再使用 `Folo-*`）
 - `build-desktop.yml` 中 `.pkg/.appx` 上传仅在 `store=true` 时启用，避免普通构建产生“文件不存在”告警
 - `Create Release Draft` 仅在 `macOS` runner 执行，避免多平台并发写同一 release 导致 finalize 失败
+- `Create Release Draft` 已设置 `continue-on-error: true`，即使 release 上传失败也不阻断整体构建流程
 - release 上传清单已收敛为 macOS 实际产物（`.dmg/.zip/.yml`）
 - 发布流程已移除 `npx changelogithub` 步骤，避免 git diff 过大导致 `ENOBUFS` 干扰发布
 - `Setup Version`、`Prepare Release Notes`、`Prepare Release Meta` 仅在 `macOS` 执行，减少非发布平台无效步骤

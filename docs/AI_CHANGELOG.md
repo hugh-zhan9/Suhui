@@ -3743,3 +3743,14 @@
 - `AI-CONTEXT.md`
 
 ---
+
+## [2026-02-27 11:57] [Bugfix]
+
+- **Change**: 发布草稿步骤改为失败不阻断：Create Release Draft 增加 continue-on-error，并同步上下文文档
+- **Risk Analysis**: 低风险，仅CI发布容错策略调整，不影响构建产物生成；风险在于release上传失败可能被忽略，需关注日志
+- **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
+- **Changed Files**:
+- `.github/workflows/build-desktop.yml`
+- `AI-CONTEXT.md`
+
+---
