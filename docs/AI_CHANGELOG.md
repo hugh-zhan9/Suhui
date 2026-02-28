@@ -4140,3 +4140,15 @@
 - `apps/desktop/layer/renderer/src/lib/rsshub-local-error.test.ts`
 
 ---
+
+## [2026-02-28 09:34] [Bugfix]
+
+- **Change**: 主进程透传RSSHUB错误码，避免未实现路由被降级成HTTP状态报错
+- **Risk Analysis**: 风险在于HTTP错误处理分支改为读取响应体，可能影响部分非UTF8错误体展示；当前仅在4xx/5xx路径执行，且保持默认HTTP状态兜底。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/ipc/services/db.ts`
+- `apps/desktop/layer/main/src/ipc/services/rss-http-error.ts`
+- `apps/desktop/layer/main/src/ipc/services/rss-http-error.test.ts`
+
+---

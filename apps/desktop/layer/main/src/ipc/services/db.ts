@@ -9,7 +9,9 @@ import { IpcMethod, IpcService } from "electron-ipc-decorator"
 
 import { DBManager } from "~/manager/db"
 import { rsshubManager } from "~/manager/rsshub"
+
 import { findDuplicateFeed } from "./rss-dedup"
+import { resolveHttpErrorMessage } from "./rss-http-error"
 import { parseRssFeed } from "./rss-parser"
 import { buildEntryIdentityKey, buildRefreshedFeed, buildStableLocalEntryId } from "./rss-refresh"
 import { isRsshubUrlLike, resolveRsshubUrl } from "./rsshub-url"
@@ -43,7 +45,16 @@ function fetchUrl(url: string, rsshubToken?: string | null, redirectCount = 0): 
           return
         }
         if (res.statusCode && res.statusCode >= 400) {
-          reject(new Error(`HTTP ${res.statusCode}`))
+          const chunks: Buffer[] = []
+          res.on("data", (chunk) => chunks.push(chunk))
+          res.on("end", () => {
+            reject(
+              new Error(
+                resolveHttpErrorMessage(res.statusCode, Buffer.concat(chunks).toString("utf-8")),
+              ),
+            )
+          })
+          res.on("error", reject)
           return
         }
         const chunks: Buffer[] = []
@@ -201,17 +212,12 @@ export class DbService extends IpcService {
   }
 
   @IpcMethod()
-  async updateReadStatus(
-    _context: IpcContext,
-    payload: { entryIds: string[]; read: boolean },
-  ) {
+  async updateReadStatus(_context: IpcContext, payload: { entryIds: string[]; read: boolean }) {
     const { entryIds, read } = payload
     if (!entryIds || entryIds.length === 0) return
     await EntryService.patchMany({ entry: { read }, entryIds })
     console.info(`[DbService] Updated read=${read} for ${entryIds.length} entries`)
   }
-
-
 
   @IpcMethod()
   async getUnreadCount(_context: IpcContext) {
