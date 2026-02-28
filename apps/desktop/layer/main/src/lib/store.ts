@@ -12,6 +12,8 @@ type StoreData = {
   qbittorrentSID?: string | null
   rsshubAutoStart?: boolean | null
   rsshubCustomUrl?: string | null
+  rsshubRuntimeMode?: "lite" | "official" | null
+  rsshubTwitterCookie?: string | null
   user?: string | null
   windowState?: {
     height: number

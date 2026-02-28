@@ -4,14 +4,17 @@ import * as https from "node:https"
 import { EntryService } from "@follow/database/services/entry"
 import { FeedService } from "@follow/database/services/feed"
 import { SubscriptionService } from "@follow/database/services/subscription"
+import { app } from "electron"
 import type { IpcContext } from "electron-ipc-decorator"
 import { IpcMethod, IpcService } from "electron-ipc-decorator"
 
 import { store } from "~/lib/store"
 import { DBManager } from "~/manager/db"
+import { loadLiteSupportedRoutes } from "~/manager/rsshub-lite-routes"
 import { rsshubManager } from "~/manager/rsshub"
 
 import { findDuplicateFeed } from "./rss-dedup"
+import { buildEntryMediaPayload } from "./rss-entry-media"
 import { resolveHttpErrorMessage } from "./rss-http-error"
 import { parseRssFeed } from "./rss-parser"
 import { buildEntryIdentityKey, buildRefreshedFeed, buildStableLocalEntryId } from "./rss-refresh"
@@ -43,7 +46,8 @@ function fetchUrl(url: string, rsshubToken?: string | null, redirectCount = 0): 
           res.statusCode < 400 &&
           res.headers.location
         ) {
-          resolve(fetchUrl(res.headers.location, rsshubToken, redirectCount + 1))
+          const resolvedLocation = new URL(res.headers.location, url).toString()
+          resolve(fetchUrl(resolvedLocation, rsshubToken, redirectCount + 1))
           return
         }
         if (res.statusCode && res.statusCode >= 400) {
@@ -108,37 +112,44 @@ export class DbService extends IpcService {
       updatedAt: now,
     }
 
-    const entries = parsed.items.slice(0, 50).map((item) => ({
-      id: buildStableLocalEntryId({
-        feedId,
-        guid: item.guid,
+    const entries = parsed.items.slice(0, 50).map((item) => {
+      const mediaPayload = buildEntryMediaPayload({
+        content: item.content,
         url: item.url,
-        title: item.title,
+      })
+
+      return {
+        id: buildStableLocalEntryId({
+          feedId,
+          guid: item.guid,
+          url: item.url,
+          title: item.title,
+          publishedAt: item.publishedAt,
+        }),
+        feedId,
+        title: item.title || "Untitled",
+        url: item.url || null,
+        content: item.content || null,
+        description: item.description || null,
+        guid: item.guid,
+        author: item.author || null,
+        authorUrl: null,
+        authorAvatar: null,
         publishedAt: item.publishedAt,
-      }),
-      feedId,
-      title: item.title || "Untitled",
-      url: item.url || null,
-      content: item.content || null,
-      description: item.description || null,
-      guid: item.guid,
-      author: item.author || null,
-      authorUrl: null,
-      authorAvatar: null,
-      publishedAt: item.publishedAt,
-      insertedAt: now,
-      media: null,
-      categories: null,
-      attachments: null,
-      extra: null,
-      language: null,
-      inboxHandle: null,
-      readabilityContent: null,
-      readabilityUpdatedAt: null,
-      sources: null,
-      settings: null,
-      read: false,
-    }))
+        insertedAt: now,
+        media: mediaPayload.media.length > 0 ? mediaPayload.media : null,
+        categories: null,
+        attachments: mediaPayload.attachments.length > 0 ? mediaPayload.attachments : null,
+        extra: null,
+        language: null,
+        inboxHandle: null,
+        readabilityContent: null,
+        readabilityUpdatedAt: null,
+        sources: null,
+        settings: null,
+        read: false,
+      }
+    })
 
     return {
       feed,
@@ -433,11 +444,18 @@ export class DbService extends IpcService {
   @IpcMethod()
   async getRsshubStatus(_context: IpcContext) {
     const state = rsshubManager.getState()
+    const liteSupportedRoutes = loadLiteSupportedRoutes({
+      isPackaged: app.isPackaged,
+      appPath: app.getAppPath(),
+      resourcesPath: process.resourcesPath,
+    })
     return {
       status: state.status,
       port: state.port,
       retryCount: state.retryCount,
       cooldownUntil: state.cooldownUntil,
+      runtimeMode: rsshubManager.getRuntimeMode(),
+      liteSupportedRoutes,
     }
   }
 

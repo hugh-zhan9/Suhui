@@ -13,6 +13,8 @@ import { join } from "pathe"
 import { DBManager } from "~/manager/db"
 import { rsshubManager } from "~/manager/rsshub"
 import { normalizeRsshubAutoStart, RSSHUB_AUTOSTART_STORE_KEY } from "~/manager/rsshub-autostart"
+import { shouldForwardRendererConsoleError } from "~/manager/renderer-console-filter"
+import { normalizeRsshubRuntimeMode, RSSHUB_RUNTIME_MODE_STORE_KEY } from "~/manager/rsshub-runtime-mode"
 import { WindowManager } from "~/manager/window"
 
 import { migrateAuthCookiesToNewApiDomain } from "../lib/auth-cookie-migration"
@@ -73,7 +75,13 @@ export class BootstrapManager {
       app.on("browser-window-created", (_, window) => {
         optimizer.watchWindowShortcuts(window)
         window.webContents.on("console-message", (_event, level, message, line, sourceId) => {
-          if (level >= 2) {
+          if (
+            shouldForwardRendererConsoleError({
+              level,
+              message,
+              sourceId,
+            })
+          ) {
             logger.error("[Renderer Error]", message, line, sourceId)
           }
         })
@@ -93,6 +101,9 @@ export class BootstrapManager {
       await migrateAuthCookiesToNewApiDomain(session.defaultSession, {
         currentApiURL: env.VITE_API_URL,
       })
+
+      const rsshubRuntimeMode = normalizeRsshubRuntimeMode(store.get(RSSHUB_RUNTIME_MODE_STORE_KEY))
+      await rsshubManager.setRuntimeMode(rsshubRuntimeMode)
 
       if (normalizeRsshubAutoStart(store.get(RSSHUB_AUTOSTART_STORE_KEY))) {
         void rsshubManager.start().catch((error) => {

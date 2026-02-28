@@ -1,6 +1,6 @@
 export type EmbeddedRsshubRoute = {
   route: string
-  type: "builtin" | "redirect"
+  type: "builtin" | "redirect" | "whitelist"
 }
 
 export const buildRsshubManifest = ({
@@ -8,7 +8,7 @@ export const buildRsshubManifest = ({
   runtimeType,
 }: {
   routes: EmbeddedRsshubRoute[]
-  runtimeType: "embedded-lite"
+  runtimeType: "embedded-lite" | "embedded-official" | "embedded-dual"
 }) => ({
   generatedAt: new Date().toISOString(),
   runtimeType,

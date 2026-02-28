@@ -4,6 +4,7 @@ import { cn } from "@follow/utils/utils"
 import { HTML } from "~/components/ui/markdown/HTML"
 import { readableContentMaxWidthClassName } from "~/constants/ui"
 import { useRenderStyle } from "~/hooks/biz/useRenderStyle"
+import { normalizeRssContentForRender } from "~/lib/rss-content-normalize"
 
 interface ContentBodyProps {
   entryId: string
@@ -35,7 +36,9 @@ export const ContentBody: React.FC<ContentBodyProps> = ({
 
   if (!entry) return null
 
-  const content = translation?.content || entry.content || entry.description
+  const content = normalizeRssContentForRender(
+    translation?.content || entry.content || entry.description,
+  )
 
   if (!content) return null
 

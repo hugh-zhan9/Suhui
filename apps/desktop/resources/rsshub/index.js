@@ -40,9 +40,9 @@ const unauthorized = (response) => {
   response.end("RSSHUB_TOKEN_REJECTED")
 }
 
-const notImplemented = (response, pathname) => {
+const notWhitelisted = (response, pathname) => {
   response.writeHead(501, { "content-type": "text/plain; charset=utf-8" })
-  response.end(`RSSHUB_ROUTE_NOT_IMPLEMENTED: ${pathname}`)
+  response.end(`RSSHUB_ROUTE_NOT_WHITELISTED: ${pathname}`)
 }
 
 const isAuthorized = (request, token) => {
@@ -107,7 +107,7 @@ export const startRsshubRuntime = ({
     }
 
     log(`501 ${pathname}`)
-    notImplemented(response, pathname)
+    notWhitelisted(response, pathname)
   })
 
   server.listen(port, host, () => {

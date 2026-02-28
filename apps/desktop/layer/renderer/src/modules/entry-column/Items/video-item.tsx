@@ -10,6 +10,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { RelativeTime } from "~/components/ui/datetime"
 import { Media } from "~/components/ui/media/Media"
 import { useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
+import { extractVideoUrlFromHtml } from "~/lib/extract-video-url"
 import { FeedIcon } from "~/modules/feed/feed-icon"
 import { FeedTitle } from "~/modules/feed/feed-title"
 
@@ -20,7 +21,7 @@ const ViewTag = IN_ELECTRON ? "webview" : "iframe"
 
 export function VideoItem({ entryId, translation }: UniversalItemProps) {
   const entry = useEntry(entryId, (state) => {
-    const { id, url } = state
+    const { id, url, content } = state
 
     const attachments = state.attachments || []
     const { duration_in_seconds } =
@@ -33,26 +34,28 @@ export function VideoItem({ entryId, translation }: UniversalItemProps) {
     const media = state.media || []
     const firstMedia = media[0]
 
-    return { attachments, duration, firstMedia, id, url, media }
+    return { attachments, duration, firstMedia, id, url, media, content }
   })
 
   const isActive = useRouteParamsSelector(({ entryId }) => entryId === entry?.id)
 
+  const inlineVideoUrl = useMemo(() => extractVideoUrlFromHtml(entry?.content), [entry?.content])
+
   const [miniIframeSrc] = useMemo(
     () => [
       transformVideoUrl({
-        url: entry?.url ?? "",
+        url: entry?.url || inlineVideoUrl || "",
         mini: true,
         isIframe: !IN_ELECTRON,
         attachments: entry?.attachments,
       }),
       transformVideoUrl({
-        url: entry?.url ?? "",
+        url: entry?.url || inlineVideoUrl || "",
         isIframe: !IN_ELECTRON,
         attachments: entry?.attachments,
       }),
     ],
-    [entry?.attachments, entry?.url],
+    [entry?.attachments, entry?.url, inlineVideoUrl],
   )
 
   const ref = useRef<HTMLDivElement>(null)

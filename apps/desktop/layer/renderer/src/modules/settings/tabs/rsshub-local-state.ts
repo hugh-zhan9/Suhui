@@ -1,10 +1,13 @@
 type RawLocalRsshubStatus = "stopped" | "starting" | "running" | "error" | "cooldown" | "unknown"
+type RawRsshubRuntimeMode = "lite" | "official"
 
 export type LocalRsshubState = {
   status: RawLocalRsshubStatus
   port: number | null
   retryCount: number
   cooldownUntil: number | null
+  runtimeMode: RawRsshubRuntimeMode
+  liteSupportedRoutes: string[]
 }
 
 const VALID_STATUS = new Set<RawLocalRsshubStatus>([
@@ -20,6 +23,7 @@ export const normalizeLocalRsshubState = (
   state?: Partial<LocalRsshubState> | null,
 ): LocalRsshubState => {
   const status = state?.status
+  const runtimeMode = state?.runtimeMode
   return {
     status: VALID_STATUS.has((status as RawLocalRsshubStatus) || "unknown")
       ? ((status as RawLocalRsshubStatus) ?? "unknown")
@@ -27,6 +31,10 @@ export const normalizeLocalRsshubState = (
     port: typeof state?.port === "number" ? state.port : null,
     retryCount: typeof state?.retryCount === "number" ? state.retryCount : 0,
     cooldownUntil: typeof state?.cooldownUntil === "number" ? state.cooldownUntil : null,
+    runtimeMode: runtimeMode === "official" ? "official" : "lite",
+    liteSupportedRoutes: Array.isArray(state?.liteSupportedRoutes)
+      ? state.liteSupportedRoutes.filter((route): route is string => typeof route === "string")
+      : [],
   }
 }
 

@@ -16,6 +16,41 @@ export const transformVideoUrl = ({
     | null
   lang?: string
 }): string | null => {
+  const parseYoutubeVideoId = (input: string) => {
+    try {
+      const parsed = new URL(input)
+      const host = parsed.hostname.toLowerCase()
+      if (host === "youtu.be") {
+        return parsed.pathname.replace(/^\/+/, "").split("/")[0] || null
+      }
+      if (host === "youtube.com" || host === "www.youtube.com" || host === "m.youtube.com") {
+        if (parsed.pathname.startsWith("/watch")) {
+          return parsed.searchParams.get("v")
+        }
+        if (parsed.pathname.startsWith("/shorts/")) {
+          return parsed.pathname.split("/")[2] || null
+        }
+        if (parsed.pathname.startsWith("/embed/")) {
+          return parsed.pathname.split("/")[2] || null
+        }
+      }
+      if (host === "www.youtube-nocookie.com" && parsed.pathname.startsWith("/embed/")) {
+        return parsed.pathname.split("/")[2] || null
+      }
+      return null
+    } catch {
+      return null
+    }
+  }
+
+  if (
+    url?.match(
+      /\/\/(?:www\.bilibili\.com\/blackboard\/html5mobileplayer\.html|www\.bilibili\.com\/blackboard\/newplayer\.html|player\.bilibili\.com\/player\.html)\?/,
+    )
+  ) {
+    return url
+  }
+
   if (url?.match(/\/\/www.bilibili.com\/video\/BV\w+/)) {
     const player = isIframe
       ? "https://player.bilibili.com/player.html"
@@ -30,9 +65,9 @@ export const transformVideoUrl = ({
     }).toString()}`
   }
 
-  if (url?.match(/\/\/www.youtube.com\/(watch\?v=|shorts\/)[-\w]+/)) {
-    const videoId = url.match(/\/\/www.youtube.com\/(?:watch\?v=|shorts\/)([-\w]+)/)?.[1]
-    return `https://www.youtube-nocookie.com/embed/${videoId}?${new URLSearchParams({
+  const youtubeVideoId = parseYoutubeVideoId(url)
+  if (youtubeVideoId) {
+    return `https://www.youtube-nocookie.com/embed/${youtubeVideoId}?${new URLSearchParams({
       controls: mini ? "0" : "1",
       autoplay: "1",
       mute: mini ? "1" : "0",

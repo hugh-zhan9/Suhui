@@ -4,7 +4,13 @@ import { app, nativeTheme } from "electron"
 import type { IpcContext } from "electron-ipc-decorator"
 import { IpcMethod, IpcService } from "electron-ipc-decorator"
 
+import { rsshubManager } from "~/manager/rsshub"
 import { normalizeRsshubAutoStart, RSSHUB_AUTOSTART_STORE_KEY } from "~/manager/rsshub-autostart"
+import {
+  normalizeRsshubRuntimeMode,
+  RSSHUB_RUNTIME_MODE_STORE_KEY,
+  type RsshubRuntimeMode,
+} from "~/manager/rsshub-runtime-mode"
 import { WindowManager } from "~/manager/window"
 
 import { setProxyConfig, updateProxy } from "../../lib/proxy"
@@ -105,5 +111,32 @@ export class SettingService extends IpcService {
       return
     }
     store.set("rsshubCustomUrl", trimmed)
+  }
+
+  @IpcMethod()
+  getRsshubRuntimeMode(_context: IpcContext): RsshubRuntimeMode {
+    return normalizeRsshubRuntimeMode(store.get(RSSHUB_RUNTIME_MODE_STORE_KEY))
+  }
+
+  @IpcMethod()
+  async setRsshubRuntimeMode(_context: IpcContext, mode: RsshubRuntimeMode): Promise<void> {
+    const normalizedMode = normalizeRsshubRuntimeMode(mode)
+    store.set(RSSHUB_RUNTIME_MODE_STORE_KEY, normalizedMode)
+    await rsshubManager.setRuntimeMode(normalizedMode)
+  }
+
+  @IpcMethod()
+  getRsshubTwitterCookie(_context: IpcContext): string {
+    return store.get("rsshubTwitterCookie") ?? ""
+  }
+
+  @IpcMethod()
+  setRsshubTwitterCookie(_context: IpcContext, cookie: string): void {
+    const trimmed = (cookie || "").trim()
+    if (!trimmed) {
+      store.delete("rsshubTwitterCookie")
+      return
+    }
+    store.set("rsshubTwitterCookie", trimmed)
   }
 }

@@ -17,4 +17,13 @@ describe("buildRsshubManifest", () => {
     expect(manifest.routes[0]?.route).toBe("/github/release/:owner/:repo")
     expect(typeof manifest.generatedAt).toBe("string")
   })
+
+  it("应支持 dual runtime 类型", () => {
+    const manifest = buildRsshubManifest({
+      routes: [{ route: "/github/release/:owner/:repo", type: "redirect" }],
+      runtimeType: "embedded-dual",
+    })
+
+    expect(manifest.runtimeType).toBe("embedded-dual")
+  })
 })

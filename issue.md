@@ -154,5 +154,3 @@
 36. ~~设置 - 订阅源， 设置 - 列表， 设置-通知，这三个页面删除掉。对应的逻辑也可以剔除了。~~
     修复方式：物理删除三页路由文件（`feeds/list/notifications`），并在设置可见性过滤中加入本地隐藏规则，防止后续页面回流时再次暴露。  
     改动范围：`apps/desktop/layer/renderer/src/pages/settings/(settings)/feeds.tsx`、`apps/desktop/layer/renderer/src/pages/settings/(settings)/list.tsx`、`apps/desktop/layer/renderer/src/pages/settings/(settings)/notifications.tsx`、`apps/desktop/layer/renderer/src/modules/settings/local-hidden-settings.ts`、`apps/desktop/layer/renderer/src/modules/settings/hooks/use-setting-ctx.ts`、`apps/desktop/layer/renderer/src/modules/settings/local-hidden-settings.test.ts`
-
-37. 

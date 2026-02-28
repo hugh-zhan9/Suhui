@@ -1,13 +1,17 @@
-import { existsSync } from "node:fs"
+import { existsSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs"
+import { tmpdir } from "node:os"
 
 import { join } from "pathe"
 import { describe, expect, it, vi } from "vitest"
 
 import type { RsshubProcessLike } from "./rsshub"
 import {
+  createRsshubRuntimeRoot,
   createRsshubEntryPath,
   createRsshubLaunchSpec,
   createRsshubManager,
+  pollHealthCheck,
+  resolveBundledChromeConfig,
   resolveRsshubRuntimeContext,
 } from "./rsshub"
 
@@ -29,8 +33,36 @@ const createMockProcess = (): RsshubProcessLike => {
 }
 
 describe("RsshubManager", () => {
+  it("health check 轮询应在后续成功时返回 true", async () => {
+    let attempts = 0
+    const ok = await pollHealthCheck({
+      attempts: 5,
+      intervalMs: 1,
+      check: async () => {
+        attempts += 1
+        return attempts >= 3
+      },
+    })
+    expect(ok).toBe(true)
+    expect(attempts).toBe(3)
+  })
+
+  it("health check 轮询应在超限后返回 false", async () => {
+    let attempts = 0
+    const ok = await pollHealthCheck({
+      attempts: 4,
+      intervalMs: 1,
+      check: async () => {
+        attempts += 1
+        return false
+      },
+    })
+    expect(ok).toBe(false)
+    expect(attempts).toBe(4)
+  })
+
   it("仓库中应存在内置 RSSHub 入口脚本", () => {
-    const entryPath = join(process.cwd(), "apps/desktop/resources/rsshub/index.js")
+    const entryPath = join(process.cwd(), "../../resources/rsshub/index.js")
     expect(existsSync(entryPath)).toBe(true)
   })
 
@@ -84,6 +116,24 @@ describe("RsshubManager", () => {
     })
   })
 
+  it("official 模式应注入 Twitter 本地凭据", () => {
+    const spec = createRsshubLaunchSpec({
+      mode: "spawn-node",
+      runtimeMode: "official",
+      entryPath: "/tmp/rsshub/official-entry.js",
+      port: 5125,
+      token: "token-official",
+      baseEnv: { NODE_ENV: "production" },
+      execPath: "/Applications/FreeFolo.app/Contents/MacOS/FreeFolo",
+      rsshubEnv: {
+        TWITTER_COOKIE: "auth_token=xxx; ct0=yyy",
+      },
+    } as any)
+
+    expect(spec.kind).toBe("spawn")
+    expect(spec.options.env.TWITTER_COOKIE).toBe("auth_token=xxx; ct0=yyy")
+  })
+
   it("应根据打包环境生成 RSSHub 入口路径", () => {
     expect(
       createRsshubEntryPath({
@@ -100,6 +150,65 @@ describe("RsshubManager", () => {
         resourcesPath: "/resources/path",
       }),
     ).toBe("/app/path/resources/rsshub/index.js")
+  })
+
+  it("应根据打包环境生成 RSSHub 运行根目录", () => {
+    expect(
+      createRsshubRuntimeRoot({
+        isPackaged: true,
+        appPath: "/app/path",
+        resourcesPath: "/resources/path",
+      }),
+    ).toBe("/resources/path/rsshub")
+
+    expect(
+      createRsshubRuntimeRoot({
+        isPackaged: false,
+        appPath: "/app/path",
+        resourcesPath: "/resources/path",
+      }),
+    ).toBe("/app/path/resources/rsshub")
+  })
+
+  it("应优先使用环境变量指定的 Chrome 路径", () => {
+    const chromePath = join(process.cwd(), "../../resources/rsshub/index.js")
+    const config = resolveBundledChromeConfig({
+      runtimeRoot: "/tmp/not-used",
+      env: {
+        FREEFOLO_RSSHUB_CHROME_PATH: chromePath,
+      },
+    })
+    expect(config.executablePath).toBe(chromePath)
+  })
+
+  it("应从 chrome-manifest 解析可执行路径与缓存目录", () => {
+    const runtimeRoot = mkdtempSync(join(tmpdir(), "rsshub-test-runtime-"))
+    try {
+      const binDir = join(runtimeRoot, "chrome/mac-136/chrome-mac/Chromium.app/Contents/MacOS")
+      const executablePath = join(binDir, "Chromium")
+      const cacheDir = join(runtimeRoot, "chrome")
+
+      mkdirSync(binDir, { recursive: true })
+      writeFileSync(executablePath, "")
+      writeFileSync(
+        join(runtimeRoot, "chrome-manifest.json"),
+        JSON.stringify({
+          version: 1,
+          buildId: "136.0.7103.49",
+          cacheDirRelative: "chrome",
+          executablePathRelative: "chrome/mac-136/chrome-mac/Chromium.app/Contents/MacOS/Chromium",
+        }),
+      )
+
+      const config = resolveBundledChromeConfig({
+        runtimeRoot,
+        env: {},
+      })
+      expect(config.executablePath).toBe(executablePath)
+      expect(config.cacheDir).toBe(cacheDir)
+    } finally {
+      rmSync(runtimeRoot, { recursive: true, force: true })
+    }
   })
 
   it("应优先使用 electron app 上下文判定运行时路径", () => {

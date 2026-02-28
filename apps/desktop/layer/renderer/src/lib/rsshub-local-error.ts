@@ -23,6 +23,9 @@ export const parseRsshubLocalError = (message: string): RsshubLocalErrorType => 
   if (message.includes("RSSHUB_ROUTE_NOT_IMPLEMENTED")) {
     return "route_not_implemented"
   }
+  if (message.includes("RSSHUB_ROUTE_NOT_WHITELISTED")) {
+    return "route_not_implemented"
+  }
 
   return "none"
 }
@@ -53,5 +56,27 @@ export const shouldShowRsshubRestartAction = (type: RsshubLocalErrorType) =>
 export const getRsshubFriendlyMessage = (rawMessage: string) => {
   const type = parseRsshubLocalError(rawMessage)
   const title = getRsshubLocalErrorTitle(type)
-  return title || rawMessage
+  if (title) return title
+
+  if (rawMessage.toLowerCase().includes("twitter api is not configured")) {
+    return "Twitter 路由需要凭据。请在 RSSHub 控制台配置 TWITTER_COOKIE 后重启内置 RSSHub。"
+  }
+
+  if (
+    rawMessage.includes("Could not find Chrome") ||
+    rawMessage.toLowerCase().includes("puppeteer browsers install chrome")
+  ) {
+    return "该 RSSHub 路由依赖浏览器运行环境（Chrome/Puppeteer），当前内置环境未安装。请改用无需浏览器的路由，或切换自定义 RSSHub 实例。"
+  }
+
+  if (
+    rawMessage.includes("RSSHUB_OFFICIAL_RUNTIME_ERROR") &&
+    rawMessage.toLowerCase().includes("<no response> fetch failed")
+  ) {
+    const sourceUrl = rawMessage.match(/\"(https?:\/\/[^\"]+)\"/)?.[1]
+    const sourceSuffix = sourceUrl ? `源站：${sourceUrl}。` : ""
+    return `该 RSSHub 源站当前不可达或拒绝访问（fetch failed）。${sourceSuffix}请稍后重试，或更换可用路由/自定义 RSSHub 实例。`
+  }
+
+  return rawMessage
 }

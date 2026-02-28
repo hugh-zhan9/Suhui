@@ -1,6 +1,7 @@
 import { Button } from "@follow/components/ui/button/index.js"
 import { Card, CardContent, CardHeader } from "@follow/components/ui/card/index.jsx"
 import { RelativeTime } from "@follow/components/ui/datetime/index.js"
+import { feedActions } from "@follow/store/feed/store"
 import { useIsSubscribed } from "@follow/store/subscription/hooks"
 import { getBackgroundGradient } from "@follow/utils/color"
 import { cn, formatNumber } from "@follow/utils/utils"
@@ -16,6 +17,8 @@ import { navigateEntry } from "~/hooks/biz/useNavigateEntry"
 import { useFeedSafeUrl } from "~/hooks/common/useFeedSafeUrl"
 
 import { FollowSummary } from "../feed/feed-summary"
+
+type SeedFeed = Parameters<typeof feedActions.upsertManyInSession>[0][number]
 
 export function FeedCardActions<T extends TrendingFeedItem | DiscoveryItem>({
   item,
@@ -47,6 +50,25 @@ export function FeedCardActions<T extends TrendingFeedItem | DiscoveryItem>({
           buttonClassName="rounded-lg px-3 font-medium text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/80 dark:hover:text-white"
           onClick={() => {
             if (!item.feed?.id) return
+            feedActions.upsertManyInSession([
+              {
+                type: "feed",
+                id: item.feed.id,
+                title: item.feed.title || "Untitled Feed",
+                url: item.feed.url || "",
+                description: item.feed.description || null,
+                image: item.feed.image || null,
+                siteUrl: item.feed.siteUrl || null,
+                ownerUserId: item.feed.ownerUserId || null,
+                errorAt: item.feed.errorAt || null,
+                errorMessage: item.feed.errorMessage || null,
+                subscriptionCount: item.feed.subscriptionCount || null,
+                updatesPerWeek: item.feed.updatesPerWeek || null,
+                latestEntryPublishedAt: item.feed.latestEntryPublishedAt || null,
+                tipUserIds: item.feed.tipUserIds || null,
+                updatedAt: item.feed.updatedAt || null,
+              } as SeedFeed,
+            ])
             navigateEntry({
               feedId: item.feed.id,
               view: item.analytics?.view ?? 0,

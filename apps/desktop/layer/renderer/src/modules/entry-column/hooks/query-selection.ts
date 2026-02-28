@@ -22,14 +22,16 @@ export const normalizeFeedIdForActiveSubscription = ({
   feedId,
   pendingFeedId,
   isSubscribed,
+  allowUnsubscribedFeed,
 }: {
   feedId: string | undefined
   pendingFeedId: string
   isSubscribed: boolean
+  allowUnsubscribedFeed: boolean
 }) => {
   const normalizedFeedId = normalizePendingFeedId(feedId, pendingFeedId)
   if (!normalizedFeedId) return undefined
-  if (!isSubscribed) return undefined
+  if (!isSubscribed && !allowUnsubscribedFeed) return undefined
   return normalizedFeedId
 }
 

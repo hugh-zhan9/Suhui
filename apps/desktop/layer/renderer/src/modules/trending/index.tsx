@@ -9,7 +9,7 @@ import { useTranslation } from "react-i18next"
 
 import { setUISetting, useUISettingKey } from "~/atoms/settings/ui"
 import { followClient } from "~/lib/api-client"
-import { getLocalSupportedViewList } from "~/lib/local-views"
+import { getTrendingSupportedViewList } from "~/lib/local-views"
 
 import { TrendingFeedCard } from "../discover/TrendingFeedCard"
 
@@ -45,7 +45,7 @@ const buildViewOptions = () => {
       icon: allView?.icon,
       className: allView?.className,
     },
-    ...getLocalSupportedViewList().map((view) => ({
+    ...getTrendingSupportedViewList().map((view) => ({
       label: view.name,
       value: `${view.view}`,
       icon: view.icon,
@@ -55,7 +55,7 @@ const buildViewOptions = () => {
 }
 
 export function Trending({
-  limit = 20,
+  limit = 50,
   narrow,
   center,
   hideHeader = false,

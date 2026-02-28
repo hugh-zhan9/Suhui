@@ -11,6 +11,8 @@ describe("rsshub local state", () => {
     expect(state.port).toBeNull()
     expect(state.retryCount).toBe(0)
     expect(state.cooldownUntil).toBeNull()
+    expect(state.runtimeMode).toBe("lite")
+    expect(state.liteSupportedRoutes).toEqual([])
   })
 
   it("应保留有效状态字段", () => {
@@ -19,11 +21,15 @@ describe("rsshub local state", () => {
       port: 12138,
       retryCount: 1,
       cooldownUntil: null,
+      runtimeMode: "official",
+      liteSupportedRoutes: ["/sspai/index"],
     })
 
     expect(state.status).toBe("running")
     expect(state.port).toBe(12138)
     expect(state.retryCount).toBe(1)
+    expect(state.runtimeMode).toBe("official")
+    expect(state.liteSupportedRoutes).toEqual(["/sspai/index"])
   })
 
   it("cooldown 状态应显示剩余秒数", () => {
@@ -33,6 +39,8 @@ describe("rsshub local state", () => {
       port: null,
       retryCount: 3,
       cooldownUntil: 3_200,
+      runtimeMode: "lite",
+      liteSupportedRoutes: [],
     }
 
     expect(getLocalRsshubStatusLabel(state, now)).toBe("冷却中（3秒后自动重试）")
@@ -44,6 +52,8 @@ describe("rsshub local state", () => {
       port: 17890,
       retryCount: 0,
       cooldownUntil: null,
+      runtimeMode: "lite",
+      liteSupportedRoutes: [],
     }
 
     expect(getLocalRsshubStatusLabel(state)).toBe("运行中（127.0.0.1:17890）")

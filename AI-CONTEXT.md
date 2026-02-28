@@ -38,6 +38,7 @@
 - 打包：`pnpm --filter FreeFolo build:electron`  
   无签名打包：`pnpm --filter FreeFolo build:electron:unsigned`
 - RSSHub 资源构建：`pnpm --filter FreeFolo build:rsshub`
+- RSSHub 模式切换：设置 -> 数据控制 -> 内置 RSSHub -> `Lite/Official`
 - 桌面打包已强制 `asar` 解包所有 `*.node`，并在拷贝保留模块时启用符号链接解引用（`dereference`），用于确保 `better-sqlite3` 原生二进制被正确带入安装包
 - `build:electron/build:electron:unsigned/build:electron-vite` 已前置执行 `build:rsshub`，自动生成 `apps/desktop/resources/rsshub/routes-manifest.json`
 
@@ -101,6 +102,12 @@
 - 主进程 `RsshubManager`：状态机、健康检查、退避、cooldown、手动重启
 - 启动策略：默认 `spawn + ELECTRON_RUN_AS_NODE=1`，可用环境变量切回 `fork`
 - 路径解析：优先 `app.isPackaged/getAppPath`，不依赖单一 `ELECTRON_IS_PACKAGED`
+- 运行模式：支持 `lite/official` 双模式，切换后自动重启内置 RSSHub
+  - `lite`：轻量内置（白名单/内置路由）
+  - `official`：官方 RSSHub 全量模式（本地内嵌官方运行时）
+- 设置页（数据控制）会展示 Lite 模式支持路由清单（来自 `routes-manifest.json` 的 whitelist 路由），用于告知能力边界
+- 头像菜单 `RSSHub` 子页面已改为“本地 RSSHub 控制台”，用于统一管理内置 RSSHub（启动/重启、模式切换、Lite 路由清单、自定义实例）
+- 设置页“内置 RSSHub”已简化为状态摘要 + 跳转按钮，避免双入口配置分裂
 - 打包资源：`apps/desktop/resources/rsshub` 已进入 `extraResource`
 - 运行时安全：仅 `127.0.0.1` + `X-RSSHub-Token` 鉴权（未通过返回 `RSSHUB_TOKEN_REJECTED`）
 - 错误透传：`RSSHUB_*` 从主进程透传到渲染层，前端可映射友好文案
@@ -111,12 +118,16 @@
   - `/rsshub/routes/:lang?`（内置路由清单 RSS）
   - `/github/release/:owner/:repo`（302 -> GitHub releases atom）
   - `/github/commit/:owner/:repo`（302 -> GitHub commits atom）
+- 构建清单：`routes-manifest.json` 已升级为 `embedded-dual`，包含 Lite 模式的 Top 路由白名单
+- 官方运行时依赖：`build:rsshub` 会在 `apps/desktop/resources/rsshub/official-runtime` 下准备 `rsshub@1.0.0-master.5ddd208` 及依赖（体积较大）
 - 缓存治理：运行时启动会执行缓存目录上限清理（默认 500MB，按文件 mtime LRU 删除）
 
 ### 2) 当前边界
 
-- 当前是“embedded-lite”运行时，不是完整官方 RSSHub 全路由执行引擎
-- 除上述内置路由外，其他路径返回 `RSSHUB_ROUTE_NOT_IMPLEMENTED`
+- `Lite` 模式为轻量内置路由，未内置路由返回：`RSSHUB_ROUTE_NOT_WHITELISTED`
+- Lite 模式不提供运行时白名单编辑器（避免“可配置但不可执行”的误导）；以“可见路由清单”作为能力说明
+- `Official` 模式走官方运行时全量执行链路；当上游路由不存在时返回：`RSSHUB_ROUTE_NOT_IMPLEMENTED`
+- `Official` 模式执行异常时返回：`RSSHUB_OFFICIAL_RUNTIME_ERROR: <message>`
 - 跨平台（Windows/Linux）完整验收仍需在目标环境实测
 
 ## 最近关键修复（issue 27-34）
@@ -131,6 +142,8 @@
 - All 未读虚高修复（按有效来源聚合）
 - 移除设置中无关的“列表”菜单及其相关模块（发行前精简）
 - 无签名构建后增加 Ad-hoc 自签名步骤，修复 macOS 26（M5）上 `SIGKILL (Code Signature Invalid)` 崩溃
+- 主进程已加入 renderer console 防回声过滤（忽略 `electron-log.js` 与重复 `[Renderer Error]` 消息），缓解日志风暴
+- 内置 RSSHub 健康检查已改为短时轮询探测（默认 20 次 * 250ms），避免子进程冷启动瞬时 `ECONNREFUSED` 造成误判启动失败
 
 ## 最近补充修复（issue 35-36）
 

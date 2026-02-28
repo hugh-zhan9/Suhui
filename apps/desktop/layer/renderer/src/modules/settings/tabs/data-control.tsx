@@ -21,6 +21,7 @@ import { useMutation, useQuery } from "@tanstack/react-query"
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
+import { useNavigate } from "react-router"
 import { toast } from "sonner"
 import { z } from "zod"
 
@@ -28,6 +29,7 @@ import { setGeneralSetting, useGeneralSettingValue } from "~/atoms/settings/gene
 import { useDialog, useModalStack } from "~/components/ui/modal/stacked/hooks"
 import { ipcServices } from "~/lib/client"
 import { queryClient } from "~/lib/query-client"
+import { LocalRsshubEntryButton } from "~/modules/rsshub/LocalRsshubConsole"
 import { clearLocalPersistStoreData } from "~/store/utils/clear"
 
 import { SettingActionItem, SettingDescription, SettingSwitch } from "../control"
@@ -36,17 +38,8 @@ import { SettingItemGroup } from "../section"
 import { getLocalRsshubStatusLabel, normalizeLocalRsshubState } from "./rsshub-local-state"
 
 const { SettingBuilder } = createSetting("general", useGeneralSettingValue, setGeneralSetting)
-const localRsshubQueryKey = ["rsshub", "local", "status"] as const
 type LocalRsshubIpc = {
   getRsshubStatus?: () => Promise<unknown>
-  toggleRsshub?: (enabled: boolean) => Promise<unknown>
-  restartRsshub?: () => Promise<unknown>
-}
-type LocalRsshubSettingIpc = {
-  getRsshubAutoStart?: () => Promise<boolean>
-  setRsshubAutoStart?: (enabled: boolean) => Promise<unknown>
-  getRsshubCustomUrl?: () => Promise<string>
-  setRsshubCustomUrl?: (url: string) => Promise<unknown>
 }
 
 export const SettingDataControl = () => {
@@ -129,10 +122,10 @@ export const SettingDataControl = () => {
 }
 
 const LocalRsshubSection = () => {
+  const navigate = useNavigate()
   const localRsshubIpc = ipcServices?.db as unknown as LocalRsshubIpc | undefined
-  const localRsshubSettingIpc = ipcServices?.setting as unknown as LocalRsshubSettingIpc | undefined
   const stateQuery = useQuery({
-    queryKey: localRsshubQueryKey,
+    queryKey: ["rsshub", "local", "status"],
     queryFn: async () => {
       const data = await localRsshubIpc?.getRsshubStatus?.()
       if (data && typeof data === "object") {
@@ -141,154 +134,21 @@ const LocalRsshubSection = () => {
       return normalizeLocalRsshubState()
     },
     refetchOnMount: "always",
-    refetchInterval: (query) => {
-      const status = (query.state.data as ReturnType<typeof normalizeLocalRsshubState> | undefined)
-        ?.status
-      if (status === "starting" || status === "cooldown") {
-        return 1000
-      }
-      return 4000
-    },
-  })
-
-  const autoStartQuery = useQuery({
-    queryKey: ["rsshub", "local", "auto-start"],
-    queryFn: async () => {
-      return (await localRsshubSettingIpc?.getRsshubAutoStart?.()) ?? false
-    },
-    refetchOnMount: "always",
-  })
-  const customUrlQuery = useQuery({
-    queryKey: ["rsshub", "local", "custom-url"],
-    queryFn: async () => {
-      return (await localRsshubSettingIpc?.getRsshubCustomUrl?.()) ?? ""
-    },
-    refetchOnMount: "always",
-  })
-
-  const autoStartMutation = useMutation({
-    mutationFn: async (enabled: boolean) => {
-      if (!localRsshubSettingIpc?.setRsshubAutoStart) {
-        throw new Error("IPC_NOT_AVAILABLE")
-      }
-      await localRsshubSettingIpc.setRsshubAutoStart(enabled)
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["rsshub", "local", "auto-start"] })
-    },
-    onError: () => {
-      toast.error("RSSHub 自动启动设置保存失败")
-    },
-  })
-
-  const toggleMutation = useMutation({
-    mutationFn: async (enabled: boolean) => {
-      if (!localRsshubIpc?.toggleRsshub) {
-        throw new Error("IPC_NOT_AVAILABLE")
-      }
-      await localRsshubIpc.toggleRsshub(enabled)
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: localRsshubQueryKey })
-    },
-    onError: () => {
-      toast.error("RSSHub 开关操作失败")
-    },
-  })
-
-  const restartMutation = useMutation({
-    mutationFn: async () => {
-      if (!localRsshubIpc?.restartRsshub) {
-        throw new Error("IPC_NOT_AVAILABLE")
-      }
-      await localRsshubIpc.restartRsshub()
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: localRsshubQueryKey })
-    },
-    onError: () => {
-      toast.error("RSSHub 重启失败")
-    },
-  })
-  const customUrlMutation = useMutation({
-    mutationFn: async (url: string) => {
-      if (!localRsshubSettingIpc?.setRsshubCustomUrl) {
-        throw new Error("IPC_NOT_AVAILABLE")
-      }
-      await localRsshubSettingIpc.setRsshubCustomUrl(url)
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["rsshub", "local", "custom-url"] })
-      toast.success("自定义 RSSHub 地址已保存")
-    },
-    onError: () => {
-      toast.error("保存自定义 RSSHub 地址失败")
-    },
   })
 
   const state = normalizeLocalRsshubState(stateQuery.data)
-  const isRunning = state.status === "running" || state.status === "starting"
-  const busy = toggleMutation.isPending || restartMutation.isPending
-  const autoStartBusy = autoStartMutation.isPending
-  const autoStartEnabled = autoStartQuery.data ?? false
-  const [customUrlInput, setCustomUrlInput] = useState("")
-  useEffect(() => {
-    setCustomUrlInput(customUrlQuery.data ?? "")
-  }, [customUrlQuery.data])
 
   return (
     <SettingItemGroup>
       <div className="mb-2 mt-4 flex items-center justify-between gap-4">
         <div className="text-sm font-medium">内置 RSSHub</div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={busy}
-            onClick={() => toggleMutation.mutate(!isRunning)}
-          >
-            {isRunning ? "停止" : "启动"}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={busy || state.status === "starting"}
-            onClick={() => restartMutation.mutate()}
-          >
-            重启
-          </Button>
-        </div>
+        <LocalRsshubEntryButton onClick={() => navigate("/rsshub")} />
       </div>
       <SettingDescription>
         状态：{getLocalRsshubStatusLabel(state)}
-        {state.retryCount > 0 ? `，失败重试次数：${state.retryCount}` : ""}
+        {state.runtimeMode === "official" ? "，模式：Official" : "，模式：Lite"}
       </SettingDescription>
-      <SettingSwitch
-        className="mt-3"
-        label="启动应用时自动启动内置 RSSHub"
-        checked={autoStartEnabled}
-        disabled={autoStartBusy}
-        onCheckedChange={(checked) => autoStartMutation.mutate(checked)}
-      />
-      <div className="mt-3 space-y-2">
-        <Label className="text-xs text-text-secondary">自定义 RSSHub 实例（可选）</Label>
-        <div className="flex items-center gap-2">
-          <Input
-            value={customUrlInput}
-            placeholder="https://rsshub.example.com"
-            onChange={(event) => setCustomUrlInput(event.target.value)}
-          />
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={customUrlMutation.isPending}
-            onClick={() => customUrlMutation.mutate(customUrlInput)}
-          >
-            保存
-          </Button>
-        </div>
-        <SettingDescription>命中该域名时将直连该实例，不走本地内置 RSSHub</SettingDescription>
-      </div>
+      <SettingDescription>详细配置请在头像菜单的 RSSHub 页面中操作。</SettingDescription>
     </SettingItemGroup>
   )
 }

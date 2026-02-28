@@ -1,6 +1,8 @@
 import { useEntry } from "@follow/store/entry/hooks"
 import { transformVideoUrl } from "@follow/utils/url-for-video"
 
+import { extractVideoUrlFromHtml } from "~/lib/extract-video-url"
+
 import { ArticleLayout } from "./ArticleLayout"
 import { PicturesLayout } from "./PicturesLayout"
 import type { EntryLayoutProps } from "./types"
@@ -12,19 +14,21 @@ export const MediaLayout: React.FC<EntryLayoutProps> = (props) => {
     id: state.id,
     url: state.url,
     attachments: state.attachments,
+    content: state.content,
   }))
 
   if (!entry) return null
 
   // Detect media types - more comprehensive video detection
   const hasVideoMedia = entry.media?.some((media) => media.type === "video")
+  const hasVideoInContent = !!extractVideoUrlFromHtml(entry.content)
   const hasVideoUrl =
     transformVideoUrl({
       url: entry.url ?? "",
       isIframe: true,
       attachments: entry.attachments,
     }) !== null
-  const hasVideo = hasVideoMedia || hasVideoUrl
+  const hasVideo = hasVideoMedia || hasVideoUrl || hasVideoInContent
   const hasImages = entry.media?.some((media) => media.type === "photo")
 
   // Video has absolute priority - show video whenever it exists, regardless of noMedia

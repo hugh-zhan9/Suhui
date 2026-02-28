@@ -30,6 +30,7 @@ describe("query selection", () => {
         feedId: "feed_1",
         pendingFeedId: "pending",
         isSubscribed: false,
+        allowUnsubscribedFeed: false,
       }),
     ).toBeUndefined()
   })
@@ -40,6 +41,18 @@ describe("query selection", () => {
         feedId: "feed_1",
         pendingFeedId: "pending",
         isSubscribed: true,
+        allowUnsubscribedFeed: false,
+      }),
+    ).toBe("feed_1")
+  })
+
+  it("未订阅但处于发现页预览态时应保留 feedId，用于展示预览文章列表", () => {
+    expect(
+      normalizeFeedIdForActiveSubscription({
+        feedId: "feed_1",
+        pendingFeedId: "pending",
+        isSubscribed: false,
+        allowUnsubscribedFeed: true,
       }),
     ).toBe("feed_1")
   })

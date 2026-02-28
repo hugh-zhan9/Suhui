@@ -32,7 +32,7 @@ export function PictureItem({ entryId, translation }: UniversalItemProps) {
   return (
     <GridItem entryId={entryId} translation={translation}>
       <div className="relative flex gap-2 overflow-x-auto">
-        {entryMedia ? (
+        {entryMedia.length > 0 ? (
           <SwipeMedia
             media={entryMedia}
             className={cn(
@@ -89,7 +89,6 @@ export const PictureWaterFallItem = memo(function PictureWaterFallItem({
 
   const media = entry?.media || []
 
-  if (media?.length === 0) return null
   if (!entry) return null
 
   return (
@@ -120,7 +119,7 @@ export const PictureWaterFallItem = memo(function PictureWaterFallItem({
             )}
           </MasonryItemFixedDimensionWrapper>
         ) : (
-          <div className="center aspect-video flex-col gap-1 rounded-md bg-material-medium text-xs text-text-secondary">
+          <div className="center aspect-square w-full flex-col gap-1 rounded-md bg-material-medium text-xs text-text-secondary">
             <i className="i-mgc-sad-cute-re size-6" />
             No media available
           </div>

@@ -14,6 +14,7 @@ import type { TocRef } from "~/components/ui/markdown/components/Toc"
 import { useInPeekModal } from "~/components/ui/modal/inspire/InPeekModal"
 import { readableContentMaxWidthClassName } from "~/constants/ui"
 import { useRenderStyle } from "~/hooks/biz/useRenderStyle"
+import { normalizeRssContentForRender } from "~/lib/rss-content-normalize"
 import { EntryContentHTMLRenderer } from "~/modules/renderer/html"
 import { EntryContentMarkdownRenderer } from "~/modules/renderer/markdown"
 import { WrappedElementProvider } from "~/providers/wrapped-element-provider"
@@ -120,7 +121,7 @@ const Renderer: React.FC<{
       style={stableRenderStyle}
       renderInlineStyle={readerRenderInlineStyle}
     >
-      {translation?.content || content}
+      {normalizeRssContentForRender(translation?.content || content)}
     </ContentRenderer>
   )
 }

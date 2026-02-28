@@ -1,4 +1,3 @@
-import { useMobile } from "@follow/components/hooks/useMobile.js"
 import { Button, MotionButtonBase } from "@follow/components/ui/button/index.js"
 import {
   Form,
@@ -9,8 +8,7 @@ import {
   FormMessage,
 } from "@follow/components/ui/form/index.jsx"
 import { Input } from "@follow/components/ui/input/index.js"
-import { SegmentGroup, SegmentItem } from "@follow/components/ui/segment/index.js"
-import { ResponsiveSelect } from "@follow/components/ui/select/responsive.js"
+import { FeedViewType } from "@follow/constants"
 import { cn } from "@follow/utils/utils"
 import type { DiscoveryItem } from "@follow-app/client-sdk"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -39,9 +37,7 @@ import {
 } from "./atoms/discover"
 import { DiscoverFeedCard } from "./DiscoverFeedCard"
 import { DiscoverImport } from "./DiscoverImport"
-import { DiscoverInboxList } from "./DiscoverInboxList"
 import { DiscoverTransform } from "./DiscoverTransform"
-import { DiscoverUser } from "./DiscoverUser"
 import { FeedForm } from "./FeedForm"
 
 // Auto-detect input type
@@ -58,7 +54,6 @@ function detectInputType(value: string): "rss" | "rsshub" | "search" {
 
 const searchSchema = z.object({
   keyword: z.string().min(1),
-  target: z.enum(["feeds", "lists"]),
 })
 
 const rssSchema = z.object({
@@ -101,7 +96,6 @@ export function UnifiedDiscoverForm() {
   const { t } = useTranslation()
   const { ensureLogin } = useRequireLogin()
   const { present, dismissAll } = useModalStack()
-  const isMobile = useMobile()
 
   // Auto-detect input type based on current value
   const detectedType = useMemo(() => {
@@ -116,14 +110,13 @@ export function UnifiedDiscoverForm() {
     resolver: zodResolver(searchSchema),
     defaultValues: {
       keyword: keywordFromSearch || "",
-      target: "feeds",
     },
     mode: "all",
   })
 
   const { watch, trigger } = form
-  const target = watch("target")
-  const atomKey = useRef(keywordFromSearch + target)
+  const keyword = watch("keyword")
+  const atomKey = useRef(keywordFromSearch || keyword || "")
 
   // Validate default value from search params
   useEffect(() => {
@@ -136,7 +129,7 @@ export function UnifiedDiscoverForm() {
   const discoverSearchData = useDiscoverSearchData()?.[atomKey.current] || []
 
   const mutation = useMutation({
-    mutationFn: async ({ keyword, target }: { keyword: string; target: "feeds" | "lists" }) => {
+    mutationFn: async ({ keyword }: { keyword: string }) => {
       const inputType = detectInputType(keyword)
 
       // For RSS/RSSHub, validate and show feed form modal directly
@@ -147,7 +140,13 @@ export function UnifiedDiscoverForm() {
         }
         present({
           title: t("feed_form.add_feed"),
-          content: () => <FeedForm url={keyword} onSuccess={dismissAll} />,
+          content: () => (
+            <FeedForm
+              url={keyword}
+              onSuccess={dismissAll}
+              defaultValues={{ view: FeedViewType.Articles.toString() }}
+            />
+          ),
         })
         return []
       }
@@ -171,7 +170,13 @@ export function UnifiedDiscoverForm() {
 
         present({
           title: t("feed_form.add_feed"),
-          content: () => <FeedForm url={keyword} onSuccess={dismissAll} />,
+          content: () => (
+            <FeedForm
+              url={keyword}
+              onSuccess={dismissAll}
+              defaultValues={{ view: FeedViewType.Articles.toString() }}
+            />
+          ),
         })
         return []
       }
@@ -179,7 +184,7 @@ export function UnifiedDiscoverForm() {
       // For search, perform discovery
       const { data } = await followClient.api.discover.discover({
         keyword: keyword.trim(),
-        target,
+        target: "feeds",
       })
 
       setDiscoverSearchData((prev) => ({
@@ -288,22 +293,13 @@ export function UnifiedDiscoverForm() {
     [atomKey],
   )
 
-  const handleTargetChange = useCallback(
-    (value: string) => {
-      form.setValue("target", value as "feeds" | "lists")
-    },
-    [form],
-  )
-
   function onSubmit(values: SearchFormData) {
     if (!ensureLogin()) {
       return
     }
-    atomKey.current = values.keyword + values.target
-    mutation.mutate({ keyword: values.keyword, target: values.target })
+    atomKey.current = values.keyword
+    mutation.mutate({ keyword: values.keyword })
   }
-
-  const showTargetSelector = detectedType === "search"
 
   return (
     <>
@@ -374,46 +370,6 @@ export function UnifiedDiscoverForm() {
                 </FormItem>
               )}
             />
-            {showTargetSelector && (
-              <FormField
-                control={form.control}
-                name="target"
-                render={({ field }) => (
-                  <FormItem className="mb-4">
-                    <div className="mb-2 flex items-center justify-between">
-                      <FormLabel className="text-headline font-medium text-text-secondary">
-                        {t("discover.target.label")}
-                      </FormLabel>
-                      <FormControl>
-                        <div className="flex">
-                          {isMobile ? (
-                            <ResponsiveSelect
-                              size="sm"
-                              value={field.value}
-                              onValueChange={handleTargetChange}
-                              items={[
-                                { label: t("discover.target.feeds"), value: "feeds" },
-                                { label: t("discover.target.lists"), value: "lists" },
-                              ]}
-                            />
-                          ) : (
-                            <SegmentGroup
-                              className="-mt-2 h-8"
-                              value={field.value}
-                              onValueChanged={handleTargetChange}
-                            >
-                              <SegmentItem value="feeds" label={t("discover.target.feeds")} />
-                              <SegmentItem value="lists" label={t("discover.target.lists")} />
-                            </SegmentGroup>
-                          )}
-                        </div>
-                      </FormControl>
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
             <div className="center flex flex-col gap-3" data-testid="discover-form-actions">
               <Button
                 disabled={!form.formState.isValid}
@@ -443,28 +399,6 @@ export function UnifiedDiscoverForm() {
                     present({
                       title: t("discover.tools.transform"),
                       content: () => <DiscoverTransform />,
-                      modalClassName: "max-w-2xl w-full",
-                    })
-                  }}
-                />
-                <ToolLink
-                  icon="i-mgc-inbox-cute-re"
-                  label={t("discover.tools.inbox")}
-                  onClick={() => {
-                    present({
-                      title: t("words.inbox"),
-                      content: () => <DiscoverInboxList />,
-                      modalClassName: "max-w-2xl w-full",
-                    })
-                  }}
-                />
-                <ToolLink
-                  icon="i-mgc-user-3-cute-re"
-                  label={t("discover.tools.user")}
-                  onClick={() => {
-                    present({
-                      title: t("words.user"),
-                      content: () => <DiscoverUser />,
                       modalClassName: "max-w-2xl w-full",
                     })
                   }}

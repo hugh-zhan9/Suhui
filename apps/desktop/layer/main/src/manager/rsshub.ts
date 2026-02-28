@@ -1,10 +1,12 @@
 import { fork, spawn } from "node:child_process"
 import { randomBytes } from "node:crypto"
-import { existsSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 import * as http from "node:http"
 import * as net from "node:net"
 
 import { join } from "pathe"
+
+import { normalizeRsshubRuntimeMode, type RsshubRuntimeMode } from "./rsshub-runtime-mode"
 
 export type RsshubStatus = "stopped" | "starting" | "running" | "error" | "cooldown"
 
@@ -70,26 +72,60 @@ type RsshubLaunchSpec =
       }
     }
 
+type RsshubChromeConfig = {
+  executablePath: string | null
+  cacheDir: string | null
+}
+
+export const pollHealthCheck = async ({
+  check,
+  attempts = 20,
+  intervalMs = 250,
+}: {
+  check: () => Promise<boolean>
+  attempts?: number
+  intervalMs?: number
+}) => {
+  for (let index = 0; index < attempts; index += 1) {
+    const ok = await check()
+    if (ok) {
+      return true
+    }
+    if (index < attempts - 1) {
+      await new Promise((resolve) => setTimeout(resolve, intervalMs))
+    }
+  }
+  return false
+}
+
 export const createRsshubLaunchSpec = ({
   mode,
+  runtimeMode,
   entryPath,
   port,
   token,
   baseEnv,
   execPath,
+  rsshubEnv,
 }: {
   mode: RsshubLaunchMode
+  runtimeMode: "lite" | "official"
   entryPath: string
   port: number
   token: string
   baseEnv: NodeJS.ProcessEnv
   execPath: string
+  rsshubEnv?: Partial<
+    Record<"TWITTER_COOKIE" | "PUPPETEER_EXECUTABLE_PATH" | "PUPPETEER_CACHE_DIR", string>
+  >
 }): RsshubLaunchSpec => {
   const env: NodeJS.ProcessEnv = {
     ...baseEnv,
     PORT: String(port),
     RSSHUB_TOKEN: token,
+    RSSHUB_RUNTIME_MODE: runtimeMode,
     NODE_ENV: baseEnv.NODE_ENV || "production",
+    ...(runtimeMode === "official" ? rsshubEnv : {}),
   }
 
   if (mode === "spawn-node") {
@@ -167,6 +203,24 @@ const findAvailablePort = async () => {
 
 export const createRsshubEntryPath = ({
   isPackaged,
+  runtimeMode,
+  appPath,
+  resourcesPath,
+}: {
+  isPackaged: boolean
+  runtimeMode: RsshubRuntimeMode
+  appPath: string
+  resourcesPath: string
+}) => {
+  const entryFileName = runtimeMode === "official" ? "official-entry.js" : "index.js"
+  if (isPackaged) {
+    return join(resourcesPath, "rsshub", entryFileName)
+  }
+  return join(appPath, "resources", "rsshub", entryFileName)
+}
+
+export const createRsshubRuntimeRoot = ({
+  isPackaged,
   appPath,
   resourcesPath,
 }: {
@@ -175,15 +229,72 @@ export const createRsshubEntryPath = ({
   resourcesPath: string
 }) => {
   if (isPackaged) {
-    return join(resourcesPath, "rsshub", "index.js")
+    return join(resourcesPath, "rsshub")
   }
-  return join(appPath, "resources", "rsshub", "index.js")
+  return join(appPath, "resources", "rsshub")
+}
+
+export const resolveBundledChromeConfig = ({
+  runtimeRoot,
+  env,
+}: {
+  runtimeRoot: string
+  env: Partial<NodeJS.ProcessEnv>
+}): RsshubChromeConfig => {
+  const overridePath = env["FREEFOLO_RSSHUB_CHROME_PATH"]?.trim()
+  if (overridePath) {
+    if (existsSync(overridePath)) {
+      return {
+        executablePath: overridePath,
+        cacheDir: null,
+      }
+    }
+    console.warn(`[rsshub] FREEFOLO_RSSHUB_CHROME_PATH not found: ${overridePath}`)
+  }
+
+  const manifestPath = join(runtimeRoot, "chrome-manifest.json")
+  if (existsSync(manifestPath)) {
+    try {
+      const manifest = JSON.parse(readFileSync(manifestPath, "utf-8")) as {
+        executablePathRelative?: string
+        cacheDirRelative?: string
+      }
+      const executablePath = manifest.executablePathRelative
+        ? join(runtimeRoot, manifest.executablePathRelative)
+        : null
+      const cacheDir = manifest.cacheDirRelative
+        ? join(runtimeRoot, manifest.cacheDirRelative)
+        : join(runtimeRoot, "chrome")
+
+      return {
+        executablePath: executablePath && existsSync(executablePath) ? executablePath : null,
+        cacheDir: existsSync(cacheDir) ? cacheDir : null,
+      }
+    } catch (error) {
+      console.warn("[rsshub] failed to parse chrome-manifest.json", error)
+    }
+  }
+
+  const fallbackCacheDir = join(runtimeRoot, "chrome")
+  return {
+    executablePath: null,
+    cacheDir: existsSync(fallbackCacheDir) ? fallbackCacheDir : null,
+  }
 }
 
 const defaultDeps = (): RsshubManagerDeps => ({
   createPort: findAvailablePort,
   createToken: () => randomBytes(32).toString("hex"),
   launch: async ({ port, token }) => {
+    const readTwitterCookieFromStore = async () => {
+      try {
+        const storeModule = await import("../lib/store")
+        return (storeModule.store.get("rsshubTwitterCookie") || "").trim()
+      } catch {
+        return ""
+      }
+    }
+
     let electronApp: ElectronAppContext | null = null
     try {
       const electronModule = await import("electron")
@@ -197,7 +308,14 @@ const defaultDeps = (): RsshubManagerDeps => ({
       resourcesPath: process.resourcesPath || process.cwd(),
       electronApp,
     })
+    const runtimeMode = normalizeRsshubRuntimeMode(process.env["FREEFOLO_RSSHUB_RUNTIME_MODE"])
     const entryPath = createRsshubEntryPath({
+      isPackaged: runtimeContext.isPackaged,
+      runtimeMode,
+      appPath: runtimeContext.appPath,
+      resourcesPath: runtimeContext.resourcesPath,
+    })
+    const runtimeRoot = createRsshubRuntimeRoot({
       isPackaged: runtimeContext.isPackaged,
       appPath: runtimeContext.appPath,
       resourcesPath: runtimeContext.resourcesPath,
@@ -209,13 +327,24 @@ const defaultDeps = (): RsshubManagerDeps => ({
 
     const mode: RsshubLaunchMode =
       process.env["FREEFOLO_RSSHUB_LAUNCH_MODE"] === "fork" ? "fork" : "spawn-node"
+    const chromeConfig = resolveBundledChromeConfig({
+      runtimeRoot,
+      env: process.env,
+    })
+
     const spec = createRsshubLaunchSpec({
       mode,
+      runtimeMode,
       entryPath,
       port,
       token,
       baseEnv: process.env,
       execPath: process.execPath,
+      rsshubEnv: {
+        TWITTER_COOKIE: await readTwitterCookieFromStore(),
+        PUPPETEER_EXECUTABLE_PATH: chromeConfig.executablePath || undefined,
+        PUPPETEER_CACHE_DIR: chromeConfig.cacheDir || undefined,
+      },
     })
 
     const child =
@@ -226,26 +355,31 @@ const defaultDeps = (): RsshubManagerDeps => ({
     return child as unknown as RsshubProcessLike
   },
   healthCheck: async ({ port, token }) => {
-    return new Promise((resolve) => {
-      const request = http.get(
-        `http://127.0.0.1:${port}/healthz`,
-        {
-          headers: {
-            "X-RSSHub-Token": token,
-          },
-        },
-        (res) => {
-          const ok = (res.statusCode ?? 500) >= 200 && (res.statusCode ?? 500) < 300
-          res.resume()
-          resolve(ok)
-        },
-      )
+    return pollHealthCheck({
+      attempts: 20,
+      intervalMs: 250,
+      check: async () =>
+        new Promise((resolve) => {
+          const request = http.get(
+            `http://127.0.0.1:${port}/healthz`,
+            {
+              headers: {
+                "X-RSSHub-Token": token,
+              },
+            },
+            (res) => {
+              const ok = (res.statusCode ?? 500) >= 200 && (res.statusCode ?? 500) < 300
+              res.resume()
+              resolve(ok)
+            },
+          )
 
-      request.setTimeout(10_000, () => {
-        request.destroy(new Error("Health check timeout"))
-        resolve(false)
-      })
-      request.on("error", () => resolve(false))
+          request.setTimeout(3_000, () => {
+            request.destroy(new Error("Health check timeout"))
+            resolve(false)
+          })
+          request.on("error", () => resolve(false))
+        }),
     })
   },
   maxRetries: 3,
@@ -259,6 +393,9 @@ const defaultDeps = (): RsshubManagerDeps => ({
 
 class RsshubManager {
   private readonly deps: RsshubManagerDeps
+  private runtimeMode: RsshubRuntimeMode = normalizeRsshubRuntimeMode(
+    process.env["FREEFOLO_RSSHUB_RUNTIME_MODE"],
+  )
   private state: RsshubManagerState = {
     process: null,
     port: null,
@@ -276,6 +413,25 @@ class RsshubManager {
 
   getState() {
     return { ...this.state }
+  }
+
+  getRuntimeMode(): RsshubRuntimeMode {
+    return this.runtimeMode
+  }
+
+  async setRuntimeMode(mode: RsshubRuntimeMode) {
+    const normalizedMode = normalizeRsshubRuntimeMode(mode)
+    if (normalizedMode === this.runtimeMode) {
+      return
+    }
+
+    const shouldRestart = this.state.status === "running" || this.state.status === "starting"
+    this.runtimeMode = normalizedMode
+    process.env["FREEFOLO_RSSHUB_RUNTIME_MODE"] = normalizedMode
+
+    if (shouldRestart) {
+      await this.restart()
+    }
   }
 
   async ensureRunning(): Promise<number> {

@@ -16,6 +16,7 @@ import { store } from "~/lib/store"
 import { getTrayConfig } from "~/lib/tray"
 import { refreshBound } from "~/lib/utils"
 import { logger } from "~/logger"
+import { shouldForwardRendererConsoleError } from "~/manager/renderer-console-filter"
 import { loadDynamicRenderEntry } from "~/updater/hot-updater"
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url))
@@ -355,8 +356,16 @@ class WindowManagerStatic {
 
     this.bindEvents(window)
 
-    window.webContents.on('console-message', (event, level, message, line, sourceId) => {
-      console.log(`[Renderer] [${level}] ${message} (${sourceId}:${line})`)
+    window.webContents.on("console-message", (_event, level, message, line, sourceId) => {
+      if (
+        shouldForwardRendererConsoleError({
+          level,
+          message,
+          sourceId,
+        })
+      ) {
+        console.error(`[Renderer] [${level}] ${message} (${sourceId}:${line})`)
+      }
     })
 
     // HMR for renderer base on electron-vite cli.

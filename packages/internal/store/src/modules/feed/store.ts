@@ -5,6 +5,7 @@ import { getDateISOString, isBizId } from "@follow/utils"
 import { api } from "../../context"
 import type { Hydratable, Resetable } from "../../lib/base"
 import { createImmerSetter, createTransaction, createZustandStore } from "../../lib/helper"
+import { useEntryStore } from "../entry/base"
 import { whoami } from "../user/getters"
 import { shouldUseElectronLocalPreview } from "./local-preview"
 import type { FeedModel } from "./types"
@@ -22,6 +23,34 @@ export const useFeedStore = createZustandStore<FeedState>("feed")(() => initialF
 const get = useFeedStore.getState
 const set = useFeedStore.setState
 const immerSet = createImmerSetter(useFeedStore)
+
+export const shouldSkipIdOnlyPreview = ({
+  id,
+  url,
+  hasExisting,
+}: {
+  id?: string
+  url?: string
+  hasExisting: boolean
+}) => {
+  return !!id && isBizId(id) && !url && !hasExisting
+}
+
+export const shouldReturnExistingFeedDirectly = ({
+  existing,
+  hasEntryCache,
+}: {
+  existing?: Pick<FeedModel, "url"> | null
+  hasEntryCache: boolean
+}) => {
+  return !!existing && (hasEntryCache || !existing.url)
+}
+
+const hasEntryCacheByFeedId = (feedId?: string) => {
+  if (!feedId) return false
+  const entrySet = useEntryStore.getState().entryIdByFeed[feedId]
+  return !!entrySet && entrySet.size > 0
+}
 // const get = useFeedStore.getState
 // const distanceTime = 1000 * 60 * 60 * 9
 class FeedActions implements Hydratable, Resetable {
@@ -107,9 +136,26 @@ class FeedSyncServices {
     const isFeedId = isBizId(id)
 
     // If we have a feed by id in the store, return it directly
+    const existing = isFeedId ? get().feeds[id!] : undefined
+    const hasEntryCache = hasEntryCacheByFeedId(id)
+    if (
+      shouldSkipIdOnlyPreview({
+        id,
+        url,
+        hasExisting: !!existing,
+      })
+    ) {
+      return null
+    }
+
     if (isFeedId) {
-      const existing = get().feeds[id!]
-      if (existing) {
+      // Preview feed in local mode needs entries; if no cached entries, prefer re-preview by feed url.
+      if (
+        shouldReturnExistingFeedDirectly({
+          existing,
+          hasEntryCache,
+        })
+      ) {
         return {
           feed: existing,
           entries: [],
@@ -119,12 +165,13 @@ class FeedSyncServices {
       }
     }
 
-    if (!url && !isFeedId) {
+    const feedUrl = url || (isFeedId ? existing?.url : undefined) || ""
+
+    if (!feedUrl && !isFeedId) {
       return null
     }
 
     // [Local Mode] Prefer Electron IPC local preview; fallback to web proxy.
-    const feedUrl = url || ""
     if (
       shouldUseElectronLocalPreview(typeof window === "undefined" ? undefined : window, feedUrl)
     ) {

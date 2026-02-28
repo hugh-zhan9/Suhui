@@ -23,6 +23,9 @@ describe("rsshub local error parser", () => {
     expect(parseRsshubLocalError("RSSHUB_ROUTE_NOT_IMPLEMENTED: /github/trending")).toBe(
       "route_not_implemented",
     )
+    expect(parseRsshubLocalError("RSSHUB_ROUTE_NOT_WHITELISTED: /github/topic/foo")).toBe(
+      "route_not_implemented",
+    )
   })
 
   it("非 RSSHub 错误不触发重启按钮", () => {
@@ -38,5 +41,22 @@ describe("rsshub local error parser", () => {
       "内置 RSSHub 暂未内置该路由，请先使用普通 RSS 订阅或等待后续版本",
     )
     expect(getRsshubFriendlyMessage("HTTP 404")).toBe("HTTP 404")
+    expect(getRsshubFriendlyMessage("twitter api is not configured")).toBe(
+      "Twitter 路由需要凭据。请在 RSSHub 控制台配置 TWITTER_COOKIE 后重启内置 RSSHub。",
+    )
+    expect(
+      getRsshubFriendlyMessage(
+        "RSSHUB_OFFICIAL_RUNTIME_ERROR: Could not find Chrome (ver. 136.0.7103.49)",
+      ),
+    ).toBe(
+      "该 RSSHub 路由依赖浏览器运行环境（Chrome/Puppeteer），当前内置环境未安装。请改用无需浏览器的路由，或切换自定义 RSSHub 实例。",
+    )
+    expect(
+      getRsshubFriendlyMessage(
+        `RSSHUB_OFFICIAL_RUNTIME_ERROR:[GET] "https://qipamaijia.com/": <no response> fetch failed`,
+      ),
+    ).toBe(
+      "该 RSSHub 源站当前不可达或拒绝访问（fetch failed）。源站：https://qipamaijia.com/。请稍后重试，或更换可用路由/自定义 RSSHub 实例。",
+    )
   })
 })

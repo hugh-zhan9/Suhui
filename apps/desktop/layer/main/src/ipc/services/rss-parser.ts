@@ -18,14 +18,37 @@ export type ParsedFeed = {
 
 const normalizeWhitespace = (value: string) => value.replaceAll(/\s+/g, " ").trim()
 
-const decodeEntities = (value: string) =>
+const decodeNumericEntities = (value: string) =>
   value
-    .replaceAll("&nbsp;", " ")
-    .replaceAll("&amp;", "&")
-    .replaceAll("&lt;", "<")
-    .replaceAll("&gt;", ">")
-    .replaceAll("&quot;", '"')
-    .replaceAll("&apos;", "'")
+    .replaceAll(/&#(\d+);/g, (_, dec) => {
+      const codePoint = Number.parseInt(dec, 10)
+      return Number.isNaN(codePoint) ? _ : String.fromCodePoint(codePoint)
+    })
+    .replaceAll(/&#x([0-9a-fA-F]+);/g, (_, hex) => {
+      const codePoint = Number.parseInt(hex, 16)
+      return Number.isNaN(codePoint) ? _ : String.fromCodePoint(codePoint)
+    })
+
+const decodeEntities = (value: string) =>
+  decodeNumericEntities(
+    value
+      .replaceAll("&nbsp;", " ")
+      .replaceAll("&amp;", "&")
+      .replaceAll("&lt;", "<")
+      .replaceAll("&gt;", ">")
+      .replaceAll("&quot;", '"')
+      .replaceAll("&apos;", "'"),
+  )
+
+const decodeEntitiesDeep = (value: string, maxDepth = 4) => {
+  let current = value || ""
+  for (let index = 0; index < maxDepth; index += 1) {
+    const next = decodeEntities(current)
+    if (next === current) break
+    current = next
+  }
+  return current
+}
 
 const stripHtml = (value: string) =>
   value
@@ -33,7 +56,8 @@ const stripHtml = (value: string) =>
     .replaceAll(/<style[\s\S]*?<\/style>/gi, " ")
     .replaceAll(/<[^>]+>/g, " ")
 
-const toPlainText = (value: string) => normalizeWhitespace(decodeEntities(stripHtml(value || "")))
+const toPlainText = (value: string) =>
+  normalizeWhitespace(decodeEntitiesDeep(stripHtml(value || "")))
 
 const removeTitlePrefix = (title: string, text: string) => {
   const normalizedTitle = normalizeWhitespace(title)
@@ -99,7 +123,7 @@ const parseAttributes = (raw: string) => {
   while ((match = re.exec(raw))) {
     const key = match[1]
     if (!key) continue
-    attrs[key] = decodeEntities(match[3] || "")
+    attrs[key] = decodeEntitiesDeep(match[3] || "")
   }
   return attrs
 }
@@ -127,9 +151,10 @@ const parseRss = (channelXml: string): ParsedFeed => {
 
   const items: ParsedItem[] = findBlocks(channelXml, "item").map((itemXml) => {
     const itemTitle = findTagText(itemXml, ["title"])
-    const rawDescription = findTagText(itemXml, ["description"])
+    const rawDescription = decodeEntitiesDeep(findTagText(itemXml, ["description"]))
     const rawContent =
-      findTagText(itemXml, ["content:encoded", "encoded", "content"]) || rawDescription
+      decodeEntitiesDeep(findTagText(itemXml, ["content:encoded", "encoded", "content"])) ||
+      rawDescription
 
     const url = findTagText(itemXml, ["link"])
     const guid =
@@ -161,8 +186,8 @@ const parseAtom = (feedXml: string): ParsedFeed => {
 
   const items: ParsedItem[] = findBlocks(feedXml, "entry").map((entryXml) => {
     const itemTitle = findTagText(entryXml, ["title"])
-    const rawSummary = findTagText(entryXml, ["summary"])
-    const rawContent = findTagText(entryXml, ["content"]) || rawSummary
+    const rawSummary = decodeEntitiesDeep(findTagText(entryXml, ["summary"]))
+    const rawContent = decodeEntitiesDeep(findTagText(entryXml, ["content"])) || rawSummary
     const url = findLinkHref(entryXml, "alternate") || findTagText(entryXml, ["link"])
     const guid =
       findTagText(entryXml, ["id", "guid"]) ||

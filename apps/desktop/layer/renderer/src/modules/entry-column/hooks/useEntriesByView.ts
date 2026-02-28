@@ -32,7 +32,7 @@ function getEntryIdsFromMultiplePlace(...entryIds: Array<string[] | undefined | 
 }
 
 const useLocalEntries = (): UseEntriesReturn => {
-  const { feedId, view, inboxId, listId, isCollection } = useRouteParams()
+  const { feedId, view, inboxId, listId, isCollection, isPendingEntry } = useRouteParams()
   const unreadOnly = useGeneralSettingKey("unreadOnly")
   const hidePrivateSubscriptionsInTimeline = useGeneralSettingKey(
     "hidePrivateSubscriptionsInTimeline",
@@ -43,14 +43,16 @@ const useLocalEntries = (): UseEntriesReturn => {
     view,
   })
   const isSubscribed = useIsSubscribed(feedId)
+  const allowUnsubscribedFeed = !isSubscribed && isPendingEntry
   const activeFeedId = useMemo(
     () =>
       normalizeFeedIdForActiveSubscription({
         feedId,
         pendingFeedId: ROUTE_FEED_PENDING,
         isSubscribed,
+        allowUnsubscribedFeed,
       }),
-    [feedId, isSubscribed],
+    [feedId, isSubscribed, allowUnsubscribedFeed],
   )
   const entryIdsByView = useEntryIdsByView(view, hidePrivateSubscriptionsInTimeline)
   const entryIdsByCollections = useCollectionEntryList(view)

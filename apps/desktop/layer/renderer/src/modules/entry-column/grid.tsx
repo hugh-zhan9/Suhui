@@ -22,6 +22,7 @@ import { MediaContainerWidthProvider } from "~/components/ui/media/MediaContaine
 import { EntryItemSkeleton } from "./EntryItemSkeleton"
 import { EntryItem } from "./item"
 import { PictureMasonry } from "./Items/picture-masonry"
+import { shouldRenderGridSkeleton } from "./grid-utils"
 import type { EntryListProps } from "./list"
 
 export const EntryColumnGrid: FC<EntryListProps> = (props) => {
@@ -78,7 +79,9 @@ const VirtualGrid: FC<EntryListProps> = (props) => {
 
   const measureRef = useRef<() => void>(undefined)
 
-  if (!containerWidth) return null
+  if (shouldRenderGridSkeleton(containerWidth)) {
+    return <EntryItemSkeleton view={props.view} count={8} />
+  }
 
   return <VirtualGridImpl {...props} containerWidth={containerWidth} measureRef={measureRef} />
 }

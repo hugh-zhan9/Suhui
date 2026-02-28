@@ -7,6 +7,7 @@ import { readableContentMaxWidthClassName } from "~/constants/ui"
 
 import { AuthorHeader } from "./shared/AuthorHeader"
 import { ContentBody } from "./shared/ContentBody"
+import { shouldDisableInlineMediaInSocialLayout } from "./social-media-layout-utils"
 import type { EntryLayoutProps } from "./types"
 
 export const SocialMediaLayout: React.FC<EntryLayoutProps> = ({
@@ -20,6 +21,11 @@ export const SocialMediaLayout: React.FC<EntryLayoutProps> = ({
 
   if (!entry || !feed) return null
 
+  const disableInlineMedia = shouldDisableInlineMediaInSocialLayout({
+    noMedia: !!noMedia,
+    mediaCount: entry?.media?.length ?? 0,
+  })
+
   return (
     <div className={cn(readableContentMaxWidthClassName, "mx-auto space-y-5 pt-12")}>
       {/* Single Author header without avatar */}
@@ -31,7 +37,7 @@ export const SocialMediaLayout: React.FC<EntryLayoutProps> = ({
         translation={translation}
         compact={compact}
         className="text-base leading-relaxed"
-        noMedia={true}
+        noMedia={disableInlineMedia}
       />
 
       {/* Media gallery */}

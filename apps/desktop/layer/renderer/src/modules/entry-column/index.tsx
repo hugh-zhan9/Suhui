@@ -1,5 +1,6 @@
 import { FeedViewType, getView } from "@follow/constants"
 import { useTitle } from "@follow/hooks"
+import { entryActions } from "@follow/store/entry/store"
 import { useFeedById } from "@follow/store/feed/hooks"
 import { useSubscriptionByFeedId } from "@follow/store/subscription/hooks"
 import { unreadSyncService } from "@follow/store/unread/store"
@@ -247,6 +248,20 @@ const AddFeedHelper = () => {
   const feedQuery = useFeedQuery({ id: feedId })
 
   const hasSubscription = useSubscriptionByFeedId(feedId || "")
+
+  useEffect(() => {
+    if (hasSubscription) return
+    const entries = feedQuery.data?.entries
+    if (!entries || entries.length === 0) return
+    entryActions.upsertManyInSession(
+      entries.map((e: any) => ({
+        ...e,
+        insertedAt: e.insertedAt ? new Date(e.insertedAt) : new Date(),
+        publishedAt: e.publishedAt ? new Date(e.publishedAt) : new Date(),
+        readabilityUpdatedAt: e.readabilityUpdatedAt ? new Date(e.readabilityUpdatedAt) : null,
+      })),
+    )
+  }, [feedQuery.data?.entries, hasSubscription])
 
   if (hasSubscription) {
     return null

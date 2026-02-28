@@ -1,4 +1,8 @@
 node_modules
+.tmp
+apps/desktop/resources/rsshub/official-runtime
+apps/desktop/resources/rsshub/chrome
+apps/desktop/resources/rsshub/chrome-manifest.json
 dist
 out
 .DS_Store
