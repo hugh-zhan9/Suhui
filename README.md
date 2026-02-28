@@ -47,6 +47,11 @@ pnpm --filter FreeFolo build:electron
 pnpm --filter FreeFolo build:electron:unsigned
 ```
 
+无签名构建默认产物目录：
+
+- `/tmp/folo-forge-out/make`
+- 示例：`/tmp/folo-forge-out/make/FreeFolo-1.3.1-macos-arm64.dmg`
+
 ## 目录速览
 
 - `apps/desktop/layer/main`: Electron 主进程（IPC、数据库、RSS 抓取/刷新）
@@ -61,6 +66,13 @@ pnpm --filter FreeFolo build:electron:unsigned
 - 上下文文档以 `AI-CONTEXT.md` 为准
 - `AGENTS.md` / `GEMINI.md` / `CLAUDE.md` 仅做指针，不维护独立规则
 - 命令、架构、端支持发生变化时，需同步更新 `README.md` 与 `CONTRIBUTING.md`
+
+## 相关文档
+
+- `AI-CONTEXT.md`：项目单一事实源（必须优先阅读）
+- `docs/mac-local-packaging.md`：macOS 本地打包与安装流程
+- `docs/rsshub-technical-design.md`：内嵌 RSSHub 技术方案
+- `docs/rsshub-dev-plan.md`：内嵌 RSSHub 开发计划与里程碑状态
 
 ## 许可证
 

@@ -40,30 +40,15 @@
 - RSSHub 资源构建：`pnpm --filter FreeFolo build:rsshub`
 - RSSHub 模式切换：设置 -> 数据控制 -> 内置 RSSHub -> `Lite/Official`
 - 桌面打包已强制 `asar` 解包所有 `*.node`，并在拷贝保留模块时启用符号链接解引用（`dereference`），用于确保 `better-sqlite3` 原生二进制被正确带入安装包
+- 桌面打包在 `postPackage` 阶段会再次覆盖产物内 `better_sqlite3.node`（以构建机当前二进制为准），降低跨机器启动失败概率
 - `build:electron/build:electron:unsigned/build:electron-vite` 已前置执行 `build:rsshub`，自动生成 `apps/desktop/resources/rsshub/routes-manifest.json`
+- 无签名打包产物目录：`/tmp/folo-forge-out/make`（常见产物：`FreeFolo-<version>-macos-arm64.dmg`）
 
 ### 5) Release 规则（Desktop）
 
-- 发布触发提交信息必须匹配：`release(desktop): Release <版本号>`
-- 版本号支持两种格式：
-  - `FreeFolo-vX.Y.Z`（推荐）
-  - `vX.Y.Z`（兼容）
-- 当前推荐发布版本格式：`FreeFolo-v0.0.1`（示例）
-- `tag.yml` 会基于提交信息解析版本并创建标签：`desktop/<版本号>`
-- `tag.yml` 不再创建 `desktop-build/v*` 递增构建标签，仓库仅保留 release 版本标签
-- `build-desktop.yml` 在 `workflow_dispatch` 场景支持 `release_version` 输入，优先用于 Release 的 `name/tag`
-- Release 附件匹配产物前缀为：`FreeFolo-*`（不再使用 `Folo-*`）
-- `build-desktop.yml` 中 `.pkg/.appx` 上传仅在 `store=true` 时启用，避免普通构建产生“文件不存在”告警
-- release 流程采用“构建与发布分离”：矩阵作业仅负责三端构建并上传 artifacts，`publish_release` 作业统一下载并一次性创建/更新 release
-- `Create Release Draft` 已设置 `continue-on-error: true`，即使 release 上传失败也不阻断整体构建流程
-- `build-desktop.yml` 在 macOS 非 store 打包后会强校验 `better_sqlite3.node` 是否存在于 `app.asar.unpacked`，缺失即失败，防止发布白屏包
-- release 上传清单包含 macOS/Windows/Linux 产物（`.dmg/.zip/.exe/.AppImage/.yml`）
-- 发布流程已移除 `npx changelogithub` 步骤，避免 git diff 过大导致 `ENOBUFS` 干扰发布
-- `Setup Version`、`Prepare Release Notes`、`Prepare Release Meta` 在 `publish_release` 作业中统一执行
-- Release Note 由 `.github/scripts/generate-release-notes.mjs` 自动生成中文内容，不再从 `apps/desktop/changelog/*.md` 读取
-- Release Note 固定不包含 `Thanks` 与 `Contributors` 区块
-- 无签名构建（无 Apple 证书）时，构建后自动对所有 `.app` 执行 Ad-hoc 本地签名（`codesign --force --deep --sign -`），解决 macOS 26+ 运行时代码签名校验失败导致应用被 KILL 的问题
-- 当前 CI 发布流程已收敛为仅 macOS arm64，构建命令与本地一致：`pnpm build:electron:unsigned`，产物目录为 `/tmp/folo-forge-out`
+- 当前仓库已移除 GitHub Actions 自动构建/发布 workflow（`.github/workflows` 为空）
+- 发布与安装验证以本地构建流程为准：`pnpm --filter FreeFolo build:electron:unsigned`
+- 历史 CI 发布规则与 release 编排保留在 `docs/AI_CHANGELOG.md` 作为演进记录，不再作为当前执行基线
 
 ## 本地 RSS 主链路（已落地）
 
@@ -102,6 +87,7 @@
 - 主进程 `RsshubManager`：状态机、健康检查、退避、cooldown、手动重启
 - 启动策略：默认 `spawn + ELECTRON_RUN_AS_NODE=1`，可用环境变量切回 `fork`
 - 路径解析：优先 `app.isPackaged/getAppPath`，不依赖单一 `ELECTRON_IS_PACKAGED`
+- 运行时入口脚本（`resources/rsshub/*.js`）已改为 Node 内置路径解析，避免打包环境出现 `pathe` 依赖缺失导致子进程启动失败
 - 运行模式：支持 `lite/official` 双模式，切换后自动重启内置 RSSHub
   - `lite`：轻量内置（白名单/内置路由）
   - `official`：官方 RSSHub 全量模式（本地内嵌官方运行时）
@@ -121,6 +107,7 @@
 - 构建清单：`routes-manifest.json` 已升级为 `embedded-dual`，包含 Lite 模式的 Top 路由白名单
 - 官方运行时依赖：`build:rsshub` 会在 `apps/desktop/resources/rsshub/official-runtime` 下准备 `rsshub@1.0.0-master.5ddd208` 及依赖（体积较大）
 - 缓存治理：运行时启动会执行缓存目录上限清理（默认 500MB，按文件 mtime LRU 删除）
+- 状态页冷却倒计时已增加秒级 UI tick，`cooldown` 状态下可实时刷新剩余秒数
 
 ### 2) 当前边界
 
@@ -155,6 +142,7 @@
 - 通用“标记已读”默认策略已切换为“单项内容进入视图时”（`render=true`、`scroll=false`），并对未改过设置的旧默认用户执行一次性迁移
 - 头像菜单已移除“登出”入口
 - 内置 RSSHub 在打包环境的路径识别已增强：当缺少 `electron app` 上下文和 `ELECTRON_IS_PACKAGED` 时，按路径特征兜底识别，避免误走开发路径导致启动失败
+- Discover 首页趋势模块默认拉取数量已调整为 `50`（`DiscoveryContent -> Trending limit=50`）
 - issue 第 39 条已按产品决策直接删除，不纳入修复范围
 
 ## 已知边界与残留在线能力

@@ -1,7 +1,15 @@
 # FreeFolo 内嵌 RSSHub 技术设计文档
 
-> 版本：1.0 | 最后更新：2026-02-27
-> 关联文档：[开发计划](./rsshub-dev-plan.md) | [总方案](./rsshub-embedded-design.md)
+> 版本：1.1 | 最后更新：2026-02-28
+> 关联文档：[开发计划](./rsshub-dev-plan.md) | [总方案](./rsshub-embedded-design.md) | [AI 上下文](../AI-CONTEXT.md)
+
+## 0. 当前实现对齐说明
+
+- 当前代码已支持 `Lite/Official` 双模式：
+  - Lite：轻量内置路由（白名单）
+  - Official：内嵌官方运行时（全量链路）
+- 启动策略默认：`spawn + ELECTRON_RUN_AS_NODE=1`，可通过环境变量切回 `fork`
+- 运行时入口脚本已按打包环境适配（避免 `pathe` 缺失导致子进程启动失败）
 
 ---
 
@@ -26,13 +34,15 @@ Renderer（订阅表单）
   → IPC（db.previewFeed / db.addFeed）
     → Main（DbService.resolveRsshubUrl）
       → RsshubManager.ensureRunning()
-        → child_process.fork(resources/rsshub/index.js)
+        → spawn(ELECTRON_RUN_AS_NODE=1) / fork(resources/rsshub/index.js)
           ↳ RSSHub 子进程（127.0.0.1:PORT）
       → fetchUrl(localUrl, token)
 ```
 
 **关键约束**：
-- 使用 `child_process.fork()` 而非 `spawn("node", ...)`，复用 Electron 内置 Node.js，**无需目标机器安装 Node**
+
+- 默认使用 `spawn(process.execPath, ...) + ELECTRON_RUN_AS_NODE=1`，复用 Electron 内置 Node.js，**无需目标机器安装 Node**
+- 保留 `fork()` 作为兼容策略（实验与回退）
 - 子进程崩溃不影响主进程，指数退避自动重启
 - 仅绑定 `127.0.0.1`，随机 token 鉴权，防止本机其他进程滥用
 
@@ -60,6 +70,7 @@ const rsshubBundlePath = path.join(rsshubDir, "index.js")
 ```
 
 **RSSHub bundle 目录结构**：
+
 ```
 resources/rsshub/
   index.js          ← esbuild 精简打包产物（目标 < 30MB）
@@ -80,7 +91,7 @@ type RsshubStatus = "stopped" | "starting" | "running" | "error" | "cooldown"
 interface RsshubManagerState {
   process: ChildProcess | null
   port: number | null
-  token: string | null        // 随机访问 token，每次重启刷新
+  token: string | null // 随机访问 token，每次重启刷新
   status: RsshubStatus
   retryCount: number
   cooldownUntil: number | null // timestamp（ms），冷却期结束时间
@@ -89,11 +100,11 @@ interface RsshubManagerState {
 class RsshubManager {
   async start(): Promise<{ port: number; token: string }>
   async stop(): Promise<void>
-  async restart(): Promise<void>              // 供渲染层手动触发
-  ensureRunning(): Promise<number>            // 幂等，已运行直接返回 port
+  async restart(): Promise<void> // 供渲染层手动触发
+  ensureRunning(): Promise<number> // 幂等，已运行直接返回 port
   getState(): Pick<RsshubManagerState, "status" | "port" | "token">
   private healthCheck(port: number, token: string): Promise<boolean>
-  private scheduleRetry(): void               // 指数退避
+  private scheduleRetry(): void // 指数退避
 }
 
 export const rsshubManager = new RsshubManager()
@@ -140,11 +151,11 @@ stopped
 
 ### 5.1 命中规则
 
-| 条件 | 示例 |
-|------|------|
+| 条件                        | 示例                                             |
+| --------------------------- | ------------------------------------------------ |
 | `hostname === "rsshub.app"` | `https://rsshub.app/github/trending?since=daily` |
-| `protocol === "rsshub:"` | `rsshub://github/trending?since=daily` |
-| 用户自定义域名 | 设置中配置 |
+| `protocol === "rsshub:"`    | `rsshub://github/trending?since=daily`           |
+| 用户自定义域名              | 设置中配置                                       |
 
 ### 5.2 改写逻辑
 
@@ -163,7 +174,9 @@ function resolveRsshubUrl(url: string): { resolvedUrl: string; token: string | n
       // rsshub://ns/route?q=1 → /ns/route?q=1
       resolvedPath = `/${parsed.hostname}${parsed.pathname}${parsed.search}${parsed.hash}`
     }
-  } catch { /* 非合法 URL，原样返回 */ }
+  } catch {
+    /* 非合法 URL，原样返回 */
+  }
 
   if (!isRsshubUrl) return { resolvedUrl: url, token: null }
 
@@ -186,11 +199,11 @@ const xmlText = await fetchUrl(resolvedUrl, token)
 
 ### 5.3 结构化错误码
 
-| 错误码 | 触发条件 |
-|--------|---------|
-| `RSSHUB_LOCAL_UNAVAILABLE` | 命中 RSSHub URL 但服务 status ≠ "running" |
-| `RSSHUB_HEALTHCHECK_TIMEOUT` | 健康探针 10s 内未返回 200 |
-| `RSSHUB_TOKEN_REJECTED` | 子进程中间件校验 token 失败（HTTP 403）|
+| 错误码                       | 触发条件                                  |
+| ---------------------------- | ----------------------------------------- |
+| `RSSHUB_LOCAL_UNAVAILABLE`   | 命中 RSSHub URL 但服务 status ≠ "running" |
+| `RSSHUB_HEALTHCHECK_TIMEOUT` | 健康探针 10s 内未返回 200                 |
+| `RSSHUB_TOKEN_REJECTED`      | 子进程中间件校验 token 失败（HTTP 403）   |
 
 ### 5.4 fetchUrl 扩展
 
@@ -198,7 +211,7 @@ const xmlText = await fetchUrl(resolvedUrl, token)
 function fetchUrl(url: string, rsshubToken?: string | null, redirectCount = 0): Promise<string> {
   const headers: Record<string, string> = {
     "User-Agent": "FreeFolo RSS Reader/1.0",
-    "Accept": "application/rss+xml, application/atom+xml, application/xml, */*",
+    Accept: "application/rss+xml, application/atom+xml, application/xml, */*",
   }
   if (rsshubToken) headers["X-RSSHub-Token"] = rsshubToken
   // ...原有逻辑不变
@@ -242,15 +255,15 @@ getState(): Pick<RsshubManagerState, "status" | "port">  // 移除 token
 
 ## 七、安全边界与资源控制
 
-| 措施 | 实现 |
-|------|------|
+| 措施           | 实现                                                                                     |
+| -------------- | ---------------------------------------------------------------------------------------- |
 | **随机 Token** | `crypto.randomBytes(32).toString('hex')`，注入子进程环境变量，请求头校验，不匹配返回 403 |
-| **仅本机访问** | 绑定 `127.0.0.1`，禁止 `0.0.0.0` |
-| **请求超时** | 本地 RSSHub 请求 20s 超时 |
-| **并发上限** | 子进程最大 8 个并发请求 |
-| **Token 轮换** | 每次重启生成新 Token，旧 Token 失效 |
-| **日志轮转** | 单文件 10MB，保留最近 5 个 |
-| **缓存上限** | 500MB，超限 LRU 淘汰（用户可配置）|
+| **仅本机访问** | 绑定 `127.0.0.1`，禁止 `0.0.0.0`                                                         |
+| **请求超时**   | 本地 RSSHub 请求 20s 超时                                                                |
+| **并发上限**   | 子进程最大 8 个并发请求                                                                  |
+| **Token 轮换** | 每次重启生成新 Token，旧 Token 失效                                                      |
+| **日志轮转**   | 单文件 10MB，保留最近 5 个                                                               |
+| **缓存上限**   | 500MB，超限 LRU 淘汰（用户可配置）                                                       |
 
 ---
 
@@ -278,12 +291,12 @@ getState(): Pick<RsshubManagerState, "status" | "port">  // 移除 token
 
 ## 九、三平台兼容性
 
-| 问题 | macOS | Windows | Linux |
-|------|:-----:|:-------:|:-----:|
-| `fork()` 运行时 | Electron 内置 Node，无需系统 Node ✅ | 同左 ✅ | 同左 ✅ |
-| `extraResource` 路径 | `process.resourcesPath/rsshub/` ✅ | `path.join` 自动分隔符 ✅ | 同左 ✅ |
-| 端口冲突 | portfinder 自动避让 ✅ | 同左 ✅ | 同左 ✅ |
-| 防火墙 localhost | 无 ✅ | Defender 可能弹框 ⚠️ | 无 ✅ |
+| 问题                 |                macOS                 |          Windows          |  Linux  |
+| -------------------- | :----------------------------------: | :-----------------------: | :-----: |
+| `fork()` 运行时      | Electron 内置 Node，无需系统 Node ✅ |          同左 ✅          | 同左 ✅ |
+| `extraResource` 路径 |  `process.resourcesPath/rsshub/` ✅  | `path.join` 自动分隔符 ✅ | 同左 ✅ |
+| 端口冲突             |        portfinder 自动避让 ✅        |          同左 ✅          | 同左 ✅ |
+| 防火墙 localhost     |                无 ✅                 |   Defender 可能弹框 ⚠️    |  无 ✅  |
 
 **Windows**：绑定 `127.0.0.1` 可大概率避免防火墙弹框；若仍弹框，安装器预注册防火墙例外。
 
@@ -301,10 +314,19 @@ getState(): Pick<RsshubManagerState, "status" | "port">  // 移除 token
 ```
 
 **路由白名单**（`scripts/rsshub-routes.ts`）：
+
 ```typescript
 export const BUNDLED_ROUTES = [
-  "github", "bilibili", "weibo", "zhihu", "sspai",
-  "v2ex", "hackernews", "reddit", "youtube", "telegram",
+  "github",
+  "bilibili",
+  "weibo",
+  "zhihu",
+  "sspai",
+  "v2ex",
+  "hackernews",
+  "reddit",
+  "youtube",
+  "telegram",
   // ...共 30 个
 ]
 ```
@@ -347,13 +369,13 @@ Renderer
 
 主进程日志字段（结构化日志，便于调试）：
 
-| 字段 | 说明 |
-|------|------|
-| `rsshub.status` | 当前状态（stopped/starting/running/error/cooldown）|
-| `rsshub.port` | 当前监听端口 |
-| `rsshub.retryCount` | 当前重试次数 |
-| `rsshub.lastError` | 最近一次错误摘要 |
-| `rsshub.cooldownUntil` | 冷却期结束时间戳（cooldown 态时）|
+| 字段                   | 说明                                                |
+| ---------------------- | --------------------------------------------------- |
+| `rsshub.status`        | 当前状态（stopped/starting/running/error/cooldown） |
+| `rsshub.port`          | 当前监听端口                                        |
+| `rsshub.retryCount`    | 当前重试次数                                        |
+| `rsshub.lastError`     | 最近一次错误摘要                                    |
+| `rsshub.cooldownUntil` | 冷却期结束时间戳（cooldown 态时）                   |
 
 设置页诊断面板展示：`status`、`port`、`retryCount`、`lastError`。
 
@@ -365,4 +387,3 @@ Renderer
 - [ ] **Top 路由白名单 v1 列表**：确认 30 个路由的最终名单
 - [ ] **资源配额默认值**：并发 8、超时 20s、缓存 500MB — 是否需要用户可调
 - [ ] **Windows 防火墙**：127.0.0.1 绑定是否足够，还是需要安装器预注册例外
-
