@@ -24,6 +24,34 @@ const buildRoutesRss = (baseUrl) => {
 }
 
 export const handleKnownRoute = (pathname, baseUrl) => {
+  const githubReleaseMatch = pathname.match(/^\/github\/release\/([^/]+)\/([^/]+)$/)
+  if (githubReleaseMatch) {
+    const owner = githubReleaseMatch[1]
+    const repo = githubReleaseMatch[2]
+    return {
+      statusCode: 302,
+      headers: {
+        location: `https://github.com/${owner}/${repo}/releases.atom`,
+      },
+      contentType: "text/plain; charset=utf-8",
+      body: "",
+    }
+  }
+
+  const githubCommitMatch = pathname.match(/^\/github\/commit\/([^/]+)\/([^/]+)$/)
+  if (githubCommitMatch) {
+    const owner = githubCommitMatch[1]
+    const repo = githubCommitMatch[2]
+    return {
+      statusCode: 302,
+      headers: {
+        location: `https://github.com/${owner}/${repo}/commits.atom`,
+      },
+      contentType: "text/plain; charset=utf-8",
+      body: "",
+    }
+  }
+
   if (pathname === "/rsshub/routes" || pathname.startsWith("/rsshub/routes/")) {
     return {
       statusCode: 200,

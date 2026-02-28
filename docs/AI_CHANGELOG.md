@@ -4181,3 +4181,15 @@
 - `apps/desktop/resources/rsshub/runtime-routes.test.ts`
 
 ---
+
+## [2026-02-28 09:45] [Feature]
+
+- **Change**: 内置RSSHub新增GitHub release/commit路由映射与302跳转能力
+- **Risk Analysis**: 主要风险是302转发依赖外站可用性，若目标站点限流会回退为HTTP错误；当前仅新增两条显式路由并保留原有未知路由处理，已通过路由单测验证匹配与location拼接。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/resources/rsshub/runtime-routes.js`
+- `apps/desktop/resources/rsshub/runtime-routes.test.ts`
+- `apps/desktop/resources/rsshub/index.js`
+
+---

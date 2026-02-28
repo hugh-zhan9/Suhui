@@ -16,4 +16,18 @@ describe("rsshub runtime routes", () => {
     const result = handleKnownRoute("/github/trending", "http://127.0.0.1:12000")
     expect(result).toBeNull()
   })
+
+  it("应支持 github release 路由映射到官方 atom", () => {
+    const result = handleKnownRoute("/github/release/vercel/next.js", "http://127.0.0.1:12000")
+    expect(result).not.toBeNull()
+    expect(result?.statusCode).toBe(302)
+    expect(result?.headers?.location).toBe("https://github.com/vercel/next.js/releases.atom")
+  })
+
+  it("应支持 github commit 路由映射到官方 atom", () => {
+    const result = handleKnownRoute("/github/commit/vercel/next.js", "http://127.0.0.1:12000")
+    expect(result).not.toBeNull()
+    expect(result?.statusCode).toBe(302)
+    expect(result?.headers?.location).toBe("https://github.com/vercel/next.js/commits.atom")
+  })
 })

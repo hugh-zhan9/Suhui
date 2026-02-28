@@ -76,6 +76,7 @@ export const startRsshubRuntime = ({
     if (knownRouteResult) {
       response.writeHead(knownRouteResult.statusCode, {
         "content-type": knownRouteResult.contentType,
+        ...knownRouteResult.headers,
       })
       response.end(knownRouteResult.body)
       return
