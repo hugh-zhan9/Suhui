@@ -12,6 +12,7 @@ import { applyAfterReadyCallbacks } from "./initialize/queue"
 import { removeAppSkeleton } from "./lib/app"
 import { ipcServices } from "./lib/client"
 import { appLog } from "./lib/log"
+import { useSettingSync } from "./hooks/biz/useSettingSync"
 import { Titlebar } from "./modules/app/Titlebar"
 import { RootProviders } from "./providers/root-providers"
 
@@ -38,6 +39,7 @@ function App() {
 
 const AppLayer = () => {
   const appIsReady = useAppIsReady()
+  useSettingSync()
 
   const onceReady = useRef(false)
   useLayoutEffect(() => {

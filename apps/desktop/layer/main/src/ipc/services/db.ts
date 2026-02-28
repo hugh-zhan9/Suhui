@@ -11,6 +11,8 @@ import { IpcMethod, IpcService } from "electron-ipc-decorator"
 import { store } from "~/lib/store"
 import { DBManager } from "~/manager/db"
 import { rsshubManager } from "~/manager/rsshub"
+import { drainPendingOps } from "~/manager/sync-applier"
+import { syncLogger } from "~/manager/sync-logger"
 import { loadLiteSupportedRoutes } from "~/manager/rsshub-lite-routes"
 
 import { findDuplicateFeed } from "./rss-dedup"
@@ -230,6 +232,13 @@ export class DbService extends IpcService {
     const { entryIds, read } = payload
     if (!entryIds || entryIds.length === 0) return
     await EntryService.patchMany({ entry: { read }, entryIds })
+    for (const entryId of entryIds) {
+      syncLogger.record({
+        type: read ? "entry.mark_read" : "entry.mark_unread",
+        entityType: "entry",
+        entityId: entryId,
+      })
+    }
     console.info(`[DbService] Updated read=${read} for ${entryIds.length} entries`)
   }
 
@@ -288,6 +297,12 @@ export class DbService extends IpcService {
 
         if (!existingSubscription) {
           await SubscriptionService.upsertMany([subscription] as any)
+          syncLogger.record({
+            type: "subscription.add",
+            entityType: "subscription",
+            entityId: subscription.id,
+            payload: subscription,
+          })
         }
 
         const entries = await db.query.entriesTable.findMany({
@@ -329,6 +344,12 @@ export class DbService extends IpcService {
         createdAt: new Date().toISOString(),
       }
       await SubscriptionService.upsertMany([subscription] as any)
+      syncLogger.record({
+        type: "subscription.add",
+        entityType: "subscription",
+        entityId: subscription.id,
+        payload: subscription,
+      })
 
       // 3. Persist preview entries (up to 50 latest)
       const { entries } = preview
@@ -416,6 +437,11 @@ export class DbService extends IpcService {
       await EntryService.upsertMany(entriesToSave as any)
     }
 
+    // 尝试重试由于前置依赖缺失而 pending 的同步操作（后台执行）
+    drainPendingOps().catch(err => {
+      console.error("[DbService] error draining pending ops after refresh:", err)
+    })
+
     return {
       feed: refreshedFeed,
       entriesCount: entries.length,
@@ -434,8 +460,26 @@ export class DbService extends IpcService {
       (targets.inboxIds?.length ?? 0)
     if (totalTargets === 0) return
     console.info(`[DbService] Deleting subscriptions, targets=${totalTargets}`)
+    const db = DBManager.getDB()
+    const idsToDelete = [...(targets.ids || [])]
+    if (targets.feedIds?.length) {
+      const subs = await db.query.subscriptionsTable.findMany({
+        where: (subscriptions, { inArray }) => inArray(subscriptions.feedId, targets.feedIds),
+        columns: { id: true },
+      })
+      idsToDelete.push(...subs.map(s => s.id))
+    }
+
     try {
       await SubscriptionService.deleteByTargets(targets)
+
+      for (const id of new Set(idsToDelete)) {
+        syncLogger.record({
+          type: "subscription.remove",
+          entityType: "subscription",
+          entityId: id,
+        })
+      }
     } catch (e: any) {
       console.error("[DbService] deleteSubscriptionByTargets error:", e)
       throw new Error(`Failed to delete subscriptions: ${e.message}`)

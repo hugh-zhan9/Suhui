@@ -13,6 +13,7 @@ export const useEntryMarkReadHandler = (entriesIds: string[]) => {
   const scrollMarkUnread = useGeneralSettingKey("scrollMarkUnread")
   const feedView = useRouteParamsSelector((params) => params.view)
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const processedEntryIds = useMemo(() => new Set<string>(), [entriesIds])
 
   const handleRenderAsRead = useEventCallback(
@@ -33,7 +34,14 @@ export const useEntryMarkReadHandler = (entriesIds: string[]) => {
   )
 
   return useMemo(() => {
-    if (getView(feedView)?.wideMode && renderAsRead) {
+    const viewDef = getView(feedView)
+    // For grid modes like Pictures, we never want to auto-mark-read on scroll
+    // Users explicitly request that only clicking the picture to enter the article details does so
+    if (viewDef?.gridMode) {
+      return
+    }
+
+    if (viewDef?.wideMode && renderAsRead) {
       return handleRenderAsRead
     }
 

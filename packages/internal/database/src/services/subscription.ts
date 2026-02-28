@@ -14,6 +14,7 @@ import {
 } from "../schemas"
 import type { SubscriptionSchema } from "../schemas/types"
 import type { Resetable } from "./internal/base"
+import { recordSyncOp } from "./internal/sync-proxy"
 import { UnreadService } from "./unread"
 
 type DeleteTargets = {
@@ -86,10 +87,21 @@ class SubscriptionServiceStatic implements Resetable {
       .update(subscriptionsTable)
       .set(subscription)
       .where(eq(subscriptionsTable.id, subscription.id))
+    
+    recordSyncOp("subscription.update", "subscription", subscription.id, subscription)
   }
 
   async patchMany({ feedIds, data }: { feedIds: string[]; data: Partial<SubscriptionSchema> }) {
+    const subs = await db.query.subscriptionsTable.findMany({
+      where: inArray(subscriptionsTable.feedId, feedIds),
+      columns: { id: true },
+    })
+    
     await db.update(subscriptionsTable).set(data).where(inArray(subscriptionsTable.feedId, feedIds))
+
+    for (const sub of subs) {
+      recordSyncOp("subscription.update", "subscription", sub.id, data)
+    }
   }
 
   async deleteNotExists(existsIds: string[], view?: FeedViewType) {

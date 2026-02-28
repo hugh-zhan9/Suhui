@@ -16,6 +16,7 @@ import { normalizeRsshubAutoStart, RSSHUB_AUTOSTART_STORE_KEY } from "~/manager/
 import { shouldForwardRendererConsoleError } from "~/manager/renderer-console-filter"
 import { normalizeRsshubRuntimeMode, RSSHUB_RUNTIME_MODE_STORE_KEY } from "~/manager/rsshub-runtime-mode"
 import { WindowManager } from "~/manager/window"
+import { SyncManager } from "~/manager/sync"
 
 import { migrateAuthCookiesToNewApiDomain } from "../lib/auth-cookie-migration"
 import { handleUrlRouting } from "../lib/router"
@@ -36,6 +37,7 @@ const buildSafeHeaders = createBuildSafeHeaders(env.VITE_WEB_URL, [
 export class BootstrapManager {
   public static async start() {
     await DBManager.init()
+    await SyncManager.init()
     AppManager.init()
 
     const gotTheLock = app.requestSingleInstanceLock()
@@ -125,9 +127,35 @@ export class BootstrapManager {
       if (DEV) {
         this.installDevTools()
       }
+
+      // 延迟 5s 执行首次并设置定时同步以免阻塞启动
+      setTimeout(() => {
+        SyncManager.gitSync().catch(err => logger.error("[Sync] auto sync on start failed:", err))
+        setInterval(() => {
+          SyncManager.gitSync().catch(err => logger.error("[Sync] periodic sync failed:", err))
+        }, 10 * 60 * 1000)
+      }, 5000)
     })
 
-    app.on("before-quit", async () => {
+    let isSyncingAndQuitting = false
+
+    app.on("before-quit", async (e) => {
+      // 拦截关闭，等同步完再真退
+      if (!isSyncingAndQuitting && SyncManager.hasSyncRepo()) {
+        e.preventDefault()
+        isSyncingAndQuitting = true
+        
+        try {
+          await SyncManager.gitSync()
+          logger.info("[Sync] auto sync on quit complete.")
+        } catch (err) {
+          logger.error("[Sync] auto sync on quit failed:", err)
+        }
+
+        app.quit()
+        return
+      }
+
       await rsshubManager.stop()
 
       const window = WindowManager.getMainWindow()

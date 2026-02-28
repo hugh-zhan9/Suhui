@@ -50,7 +50,9 @@ export const EntryListHeader: FC<{
 
   const { feedId, entryId, view, isCollection } = routerParams
   const isPreview = useIsPreviewFeed()
-  const isWideMode = !!getView(view)?.wideMode
+  const viewDefinition = getView(view)
+  const isWideMode = !!viewDefinition?.wideMode
+  const isGridMode = !!viewDefinition?.gridMode
 
   const headerTitle = useFeedHeaderTitle()
   const feedIcon = useFeedHeaderIcon()
@@ -109,7 +111,7 @@ export const EntryListHeader: FC<{
   const { isScrolledBeyondThreshold } = useEntryRootState()
   const isScrolledBeyondThresholdValue = useAtomValue(isScrolledBeyondThreshold)
 
-  const showEntryHeader = isWideMode && !!entryId && entryId !== ROUTE_ENTRY_PENDING
+  const showEntryHeader = isWideMode && !isGridMode && !!entryId && entryId !== ROUTE_ENTRY_PENDING
   const showQuickStar = shouldShowInlineStarInEntryListHeader({
     isWideMode,
     hasEntry: !!entryId && entryId !== ROUTE_ENTRY_PENDING,

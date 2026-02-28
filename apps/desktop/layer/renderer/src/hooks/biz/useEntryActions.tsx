@@ -417,12 +417,6 @@ export const useEntryActions = ({ entryId, view }: { entryId: string; view: Feed
       }),
 
       new EntryActionMenuItem({
-        id: COMMAND_ID.entry.tts,
-        onClick: runCmdFn(COMMAND_ID.entry.tts, [{ entryId }]),
-        shortcut: shortcuts[COMMAND_ID.entry.tts],
-        entryId,
-      }),
-      new EntryActionMenuItem({
         id: COMMAND_ID.entry.readability,
         onClick: runCmdFn(COMMAND_ID.entry.readability, [{ entryId, entryUrl: entry.url! }]),
         hide: !!entry.readability || (view && getView(view)?.wideMode) || !entry.url,

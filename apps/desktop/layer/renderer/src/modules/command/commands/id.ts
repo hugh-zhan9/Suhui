@@ -11,7 +11,6 @@ export const COMMAND_ID = {
     imageGallery: "entry:image-gallery",
     copyLink: "entry:copy-link",
     copyTitle: "entry:copy-title",
-    tts: "entry:tts",
     exportAsPDF: "entry:export-as-pdf",
     delete: "entry:delete",
     share: "entry:share",

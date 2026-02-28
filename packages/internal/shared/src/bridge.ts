@@ -79,6 +79,9 @@ interface RenderGlobalContext {
   updateDownloaded: () => void
 
   refreshSession: () => void
+
+  // settings sync
+  syncSettingUpdate: (key: string, payload: Record<string, any>) => void
 }
 
 export const registerGlobalContext = (context: Partial<RenderGlobalContext>) => {

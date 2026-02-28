@@ -57,12 +57,7 @@ const warningActionButton: Partial<
       info: string
     }
   >
-> = {
-  [COMMAND_ID.entry.tts]: {
-    show: !IN_ELECTRON,
-    info: "entry_actions.warn_info_for_desktop",
-  },
-}
+> = {}
 
 export const SortableActionButton = ({ id }: { id: UniqueIdentifier }) => {
   const cmd = getCommand(id as FollowCommandId)

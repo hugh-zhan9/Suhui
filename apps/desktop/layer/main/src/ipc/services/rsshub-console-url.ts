@@ -1,13 +1,7 @@
-export const buildLocalRsshubConsoleUrl = ({
-  port,
-  token: _token,
-}: {
-  port: number | null
-  token: string | null
-}) => {
-  if (!port) {
-    return null
+export function buildLocalRsshubConsoleUrl({ port, token }: { port: number; token?: string }) {
+  const url = new URL(`http://127.0.0.1:${port}`)
+  if (token) {
+    url.searchParams.set("token", token)
   }
-
-  return `http://127.0.0.1:${port}/`
+  return url.toString()
 }

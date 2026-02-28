@@ -4675,3 +4675,67 @@
 - `apps/desktop/layer/main/src/manager/rsshub.test.ts`
 
 ---
+## [2026-02-28 19:58] [Bugfix]
+- **Change**: 修复图片视图下由于漏斗过滤或滚动产生的批量误标记已读Bug
+- **Risk Analysis**: 移除了相关的交集观察器自动触发条件，改为仅在用户直接点击卡片查看详情时才会触发已读操作，彻底阻绝因为组件卸载和重绘而导致的批量已读数据污染问题
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/ipc/index.ts`
+- `apps/desktop/layer/main/src/ipc/services/db.ts`
+- `apps/desktop/layer/main/src/ipc/services/rsshub-console-url.test.ts`
+- `apps/desktop/layer/main/src/ipc/services/rsshub-console-url.ts`
+- `apps/desktop/layer/main/src/manager/bootstrap.ts`
+- `apps/desktop/layer/renderer/src/App.tsx`
+- `apps/desktop/layer/renderer/src/hooks/biz/useEntryActions.tsx`
+- `apps/desktop/layer/renderer/src/modules/command/commands/entry.tsx`
+- `apps/desktop/layer/renderer/src/modules/command/commands/id.ts`
+- `apps/desktop/layer/renderer/src/modules/command/hooks/use-command-binding.ts`
+- `apps/desktop/layer/renderer/src/modules/customize-toolbar/dnd.tsx`
+- `apps/desktop/layer/renderer/src/modules/entry-column/Items/picture-masonry.tsx`
+- `apps/desktop/layer/renderer/src/modules/entry-column/hooks/useEntryMarkReadHandler.tsx`
+- `apps/desktop/layer/renderer/src/modules/entry-column/layouts/EntryListHeader.tsx`
+- `apps/desktop/layer/renderer/src/modules/entry-content/components/layouts/VideosLayout.tsx`
+- `apps/desktop/layer/renderer/src/modules/player/entry-tts.ts`
+- `apps/desktop/resources/rsshub/runtime-auth.js`
+- `apps/desktop/resources/rsshub/runtime-auth.test.ts`
+- `packages/internal/database/src/drizzle/meta/_journal.json`
+- `packages/internal/database/src/drizzle/migrations.js`
+- `packages/internal/database/src/schemas/index.ts`
+- `packages/internal/database/src/services/collection.ts`
+- `packages/internal/database/src/services/subscription.ts`
+- `packages/internal/shared/src/bridge.ts`
+- `.idea/`
+- `"apps/desktop/layer/main/src/ipc/services/rsshub-console-url 2.ts"`
+- `apps/desktop/layer/main/src/ipc/services/sync.ts`
+- `apps/desktop/layer/main/src/manager/git-runner.ts`
+- `"apps/desktop/layer/main/src/manager/renderer-console-filter 2.ts"`
+- `"apps/desktop/layer/main/src/manager/renderer-console-filter.test 2.ts"`
+- `"apps/desktop/layer/main/src/manager/rsshub-lite-routes 2.ts"`
+- `"apps/desktop/layer/main/src/manager/rsshub-lite-routes.test 2.ts"`
+- `"apps/desktop/layer/main/src/manager/rsshub-lite-whitelist 2.ts"`
+- `"apps/desktop/layer/main/src/manager/rsshub-lite-whitelist.test 2.ts"`
+- `apps/desktop/layer/main/src/manager/sync-applier.ts`
+- `apps/desktop/layer/main/src/manager/sync-export.test.ts`
+- `apps/desktop/layer/main/src/manager/sync-export.ts`
+- `apps/desktop/layer/main/src/manager/sync-import.test.ts`
+- `apps/desktop/layer/main/src/manager/sync-import.ts`
+- `apps/desktop/layer/main/src/manager/sync-logger.test.ts`
+- `apps/desktop/layer/main/src/manager/sync-logger.ts`
+- `apps/desktop/layer/main/src/manager/sync-snapshot.ts`
+- `apps/desktop/layer/main/src/manager/sync.test.ts`
+- `apps/desktop/layer/main/src/manager/sync.ts`
+- `apps/desktop/layer/renderer/src/hooks/biz/useSettingSync.ts`
+- `"apps/desktop/layer/renderer/src/modules/rsshub/LocalRsshubConsole 2.tsx"`
+- `apps/desktop/layer/renderer/src/modules/settings/tabs/sync.tsx`
+- `apps/desktop/layer/renderer/src/pages/settings/(settings)/sync.tsx`
+- `"apps/desktop/resources/rsshub/official-entry 3.js"`
+- `"apps/desktop/resources/rsshub/official-entry.test 2.ts"`
+- `docs/sync-dev-plan.md`
+- `docs/sync-technical-design.md`
+- `packages/internal/database/src/drizzle/0038_fine_the_stranger.sql`
+- `packages/internal/database/src/drizzle/0039_warm_gabe_jones.sql`
+- `packages/internal/database/src/drizzle/meta/0038_snapshot.json`
+- `packages/internal/database/src/drizzle/meta/0039_snapshot.json`
+- `packages/internal/database/src/schemas/sync.ts`
+- `packages/internal/database/src/services/internal/sync-proxy.ts`
+----------------------------------------

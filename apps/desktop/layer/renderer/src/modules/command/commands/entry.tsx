@@ -25,7 +25,6 @@ import { getRouteParams } from "~/hooks/biz/useRouteParams"
 import { copyToClipboard } from "~/lib/clipboard"
 import { markAllByRoute } from "~/modules/entry-column/hooks/useMarkAll"
 import { useGalleryModal } from "~/modules/entry-content/hooks"
-import { playEntryTts } from "~/modules/player/entry-tts"
 
 import { useRegisterFollowCommand } from "../hooks/use-register-command"
 import type { Command, CommandCategory } from "../types"
@@ -327,25 +326,6 @@ export const useRegisterEntryCommands = () => {
         },
       },
       {
-        id: COMMAND_ID.entry.tts,
-        label: {
-          title: t("entry_content.header.play_tts"),
-          description: t("entry_content.header.play_tts_description"),
-        },
-        category,
-        icon: <i className="i-mgc-voice-cute-re" />,
-        run: async ({ entryId }) => {
-          if (getAudioPlayerAtomValue().entryId === entryId) {
-            AudioPlayer.togglePlayAndPause()
-            return
-          }
-
-          await playEntryTts(entryId, {
-            toastTitle: t("entry_content.header.play_tts"),
-          })
-        },
-      },
-      {
         id: COMMAND_ID.entry.readability,
         category,
         label: {
@@ -432,11 +412,6 @@ export type ImageGalleryCommand = Command<{
   fn: (data: { entryId: string }) => void
 }>
 
-export type TTSCommand = Command<{
-  id: typeof COMMAND_ID.entry.tts
-  fn: (data: { entryId: string }) => void
-}>
-
 export type ReadabilityCommand = Command<{
   id: typeof COMMAND_ID.entry.readability
   fn: (data: { entryId: string; entryUrl: string }) => void
@@ -456,5 +431,4 @@ export type EntryCommand =
   | ReadBelowCommand
   | ToggleAITranslationCommand
   | ImageGalleryCommand
-  | TTSCommand
   | ReadabilityCommand

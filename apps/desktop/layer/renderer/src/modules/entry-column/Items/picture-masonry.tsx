@@ -36,7 +36,6 @@ import { MediaContainerWidthProvider } from "~/components/ui/media/MediaContaine
 import type { StoreImageType } from "~/store/image"
 import { imageActions } from "~/store/image"
 
-import { batchMarkRead } from "../hooks/useEntryMarkReadHandler"
 import { PictureWaterFallItem } from "./picture-item"
 
 // grid grid-cols-1 @lg:grid-cols-2 @3xl:grid-cols-3 @6xl:grid-cols-4 @7xl:grid-cols-5 px-4 gap-1.5
@@ -120,7 +119,7 @@ export const PictureMasonry: FC<MasonryProps> = (props) => {
     // }
 
     return result
-  }, [cacheMap, data, props.hasNextPage])
+  }, [cacheMap, data])
 
   const [masonryItemsRadio, setMasonryItemsRadio] = useState<Record<string, number>>({})
   const maybeLoadMore = useInfiniteLoader(props.endReached, {
@@ -139,79 +138,6 @@ export const PictureMasonry: FC<MasonryProps> = (props) => {
   )
   const scrollElement = useScrollViewElement()
 
-  const [intersectionObserver, setIntersectionObserver] = useState<IntersectionObserver>(null!)
-  const renderMarkRead = useGeneralSettingKey("renderMarkUnread")
-  const scrollMarkRead = useGeneralSettingKey("scrollMarkUnread")
-
-  const dataRef = useRefValue(data)
-  useEffect(() => {
-    if (!renderMarkRead && !scrollMarkRead) return
-    if (!scrollElement) return
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        renderInViewMarkRead(entries)
-        scrollOutViewMarkRead(entries)
-
-        function scrollOutViewMarkRead(entries: IntersectionObserverEntry[]) {
-          if (!scrollMarkRead) return
-          if (!scrollElement) return
-          let minimumIndex = Number.MAX_SAFE_INTEGER
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              return
-            }
-            const $target = entry.target as HTMLDivElement
-            const $targetScrollTop = $target.getBoundingClientRect().top
-
-            if ($targetScrollTop < 0) {
-              const { index } = (entry.target as HTMLDivElement).dataset
-              if (!index) return
-              const currentIndex = Number.parseInt(index)
-              // if index is 0, or not a number, then skip
-              if (!currentIndex) return
-              // It is possible that the end coordinates beyond the overscan range are still being calculated and the position is not actually determined. Filtering here
-              if (currentIndex > (currentRange.current?.end ?? 0)) {
-                return
-              }
-
-              minimumIndex = Math.min(minimumIndex, currentIndex)
-            }
-          })
-
-          if (minimumIndex !== Number.MAX_SAFE_INTEGER) {
-            batchMarkRead(dataRef.current.slice(0, minimumIndex))
-          }
-        }
-
-        function renderInViewMarkRead(entries: IntersectionObserverEntry[]) {
-          if (!renderMarkRead) return
-          const entryIds: string[] = []
-          entries.forEach((entry) => {
-            if (
-              entry.isIntersecting &&
-              entry.intersectionRatio >= 0.8 &&
-              entry.boundingClientRect.top >= entry.rootBounds!.top
-            ) {
-              entryIds.push((entry.target as HTMLDivElement).dataset.entryId as string)
-            }
-          })
-
-          batchMarkRead(entryIds)
-        }
-      },
-      {
-        rootMargin: "0px",
-        threshold: [0, 1],
-        root: scrollElement,
-      },
-    )
-    setIntersectionObserver(observer)
-    return () => {
-      observer.disconnect()
-    }
-  }, [scrollElement, renderMarkRead, scrollMarkRead, dataRef])
-
   const [firstScreenReady, setFirstScreenReady] = useState(false)
   useEffect(() => {
     if (firstScreenReady) return
@@ -221,7 +147,7 @@ export const PictureMasonry: FC<MasonryProps> = (props) => {
     return () => {
       clearTimeout(timer)
     }
-  }, [])
+  }, [firstScreenReady])
 
   const isImageOnly = useUISettingKey("pictureViewImageOnly")
   const [masonryForceRerender, setMasonrtForceRerender] = useState(0)
@@ -236,7 +162,7 @@ export const PictureMasonry: FC<MasonryProps> = (props) => {
           {/* eslint-disable-next-line @eslint-react/no-context-provider */}
           <MasonryItemsAspectRatioContext.Provider value={masonryItemsRadio}>
             <MasonryItemsAspectRatioSetterContext value={setMasonryItemsRadio}>
-              <MasonryIntersectionContext value={intersectionObserver}>
+              <MasonryIntersectionContext value={null as unknown as IntersectionObserver}>
                 <MasonryForceRerenderContext value={masonryForceRerender}>
                   <MediaContainerWidthProvider width={currentItemWidth}>
                     <FirstScreenReadyContext value={firstScreenReady}>

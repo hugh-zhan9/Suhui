@@ -5,6 +5,7 @@ import { collectionsTable } from "../schemas"
 import type { CollectionSchema } from "../schemas/types"
 import type { Resetable } from "./internal/base"
 import { conflictUpdateAllExcept } from "./internal/utils"
+import { recordSyncOp } from "./internal/sync-proxy"
 
 class CollectionServiceStatic implements Resetable {
   async reset() {
@@ -25,15 +26,19 @@ class CollectionServiceStatic implements Resetable {
         target: [collectionsTable.entryId],
         set: conflictUpdateAllExcept(collectionsTable, ["entryId"]),
       })
+
+    collections.forEach(c => recordSyncOp("collection.add", "collection", c.entryId, c))
   }
 
   async delete(entryId: string) {
     await db.delete(collectionsTable).where(eq(collectionsTable.entryId, entryId))
+    recordSyncOp("collection.remove", "collection", entryId)
   }
 
   async deleteMany(entryId: string[]) {
     if (entryId.length === 0) return
     await db.delete(collectionsTable).where(inArray(collectionsTable.entryId, entryId))
+    entryId.forEach(id => recordSyncOp("collection.remove", "collection", id))
   }
 
   getCollectionMany(entryId: string[]) {
