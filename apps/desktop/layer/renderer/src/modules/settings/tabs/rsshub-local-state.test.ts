@@ -13,6 +13,7 @@ describe("rsshub local state", () => {
 
     expect(state.status).toBe("unknown")
     expect(state.port).toBeNull()
+    expect(state.consoleUrl).toBeNull()
     expect(state.retryCount).toBe(0)
     expect(state.cooldownUntil).toBeNull()
     expect(state.runtimeMode).toBe("lite")
@@ -23,6 +24,7 @@ describe("rsshub local state", () => {
     const state = normalizeLocalRsshubState({
       status: "running",
       port: 12138,
+      consoleUrl: "http://127.0.0.1:12138/?token=abc",
       retryCount: 1,
       cooldownUntil: null,
       runtimeMode: "official",
@@ -31,6 +33,7 @@ describe("rsshub local state", () => {
 
     expect(state.status).toBe("running")
     expect(state.port).toBe(12138)
+    expect(state.consoleUrl).toBe("http://127.0.0.1:12138/?token=abc")
     expect(state.retryCount).toBe(1)
     expect(state.runtimeMode).toBe("official")
     expect(state.liteSupportedRoutes).toEqual(["/sspai/index"])
@@ -41,6 +44,7 @@ describe("rsshub local state", () => {
     const state: LocalRsshubState = {
       status: "cooldown",
       port: null,
+      consoleUrl: null,
       retryCount: 3,
       cooldownUntil: 3_200,
       runtimeMode: "lite",
@@ -54,6 +58,7 @@ describe("rsshub local state", () => {
     const state: LocalRsshubState = {
       status: "running",
       port: 17890,
+      consoleUrl: null,
       retryCount: 0,
       cooldownUntil: null,
       runtimeMode: "lite",
@@ -67,6 +72,7 @@ describe("rsshub local state", () => {
     const state: LocalRsshubState = {
       status: "cooldown",
       port: null,
+      consoleUrl: null,
       retryCount: 0,
       cooldownUntil: Date.now() + 5_000,
       runtimeMode: "lite",
@@ -79,6 +85,7 @@ describe("rsshub local state", () => {
     const state: LocalRsshubState = {
       status: "running",
       port: 49548,
+      consoleUrl: null,
       retryCount: 0,
       cooldownUntil: null,
       runtimeMode: "official",

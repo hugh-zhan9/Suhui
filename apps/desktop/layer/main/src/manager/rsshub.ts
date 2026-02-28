@@ -1,6 +1,6 @@
 import { fork, spawn } from "node:child_process"
 import { randomBytes } from "node:crypto"
-import { existsSync, readFileSync } from "node:fs"
+import { existsSync, mkdirSync, readFileSync } from "node:fs"
 import * as http from "node:http"
 import * as net from "node:net"
 
@@ -52,6 +52,7 @@ type RsshubRuntimeContext = {
 type ElectronAppContext = {
   isPackaged: boolean
   getAppPath: () => string
+  getPath?: (name: string) => string
 }
 
 type RsshubLaunchSpec =
@@ -61,6 +62,7 @@ type RsshubLaunchSpec =
       options: {
         env: NodeJS.ProcessEnv
         stdio: "pipe"
+        cwd?: string
       }
     }
   | {
@@ -70,6 +72,7 @@ type RsshubLaunchSpec =
       options: {
         env: NodeJS.ProcessEnv
         stdio: "pipe"
+        cwd?: string
       }
     }
 
@@ -108,6 +111,7 @@ export const createRsshubLaunchSpec = ({
   baseEnv,
   execPath,
   rsshubEnv,
+  workingDirectory,
 }: {
   mode: RsshubLaunchMode
   runtimeMode: "lite" | "official"
@@ -117,8 +121,17 @@ export const createRsshubLaunchSpec = ({
   baseEnv: NodeJS.ProcessEnv
   execPath: string
   rsshubEnv?: Partial<
-    Record<"TWITTER_COOKIE" | "PUPPETEER_EXECUTABLE_PATH" | "PUPPETEER_CACHE_DIR", string>
+    Record<
+      | "TWITTER_COOKIE"
+      | "PUPPETEER_EXECUTABLE_PATH"
+      | "PUPPETEER_CACHE_DIR"
+      | "RSSHUB_LOG_DIR"
+      | "RSSHUB_CACHE_DIR"
+      | "NO_LOGFILES",
+      string
+    >
   >
+  workingDirectory?: string
 }): RsshubLaunchSpec => {
   const env: NodeJS.ProcessEnv = {
     ...baseEnv,
@@ -140,6 +153,7 @@ export const createRsshubLaunchSpec = ({
           ELECTRON_RUN_AS_NODE: "1",
         },
         stdio: "pipe",
+        ...(workingDirectory ? { cwd: workingDirectory } : {}),
       },
     }
   }
@@ -150,6 +164,7 @@ export const createRsshubLaunchSpec = ({
     options: {
       env,
       stdio: "pipe",
+      ...(workingDirectory ? { cwd: workingDirectory } : {}),
     },
   }
 }
@@ -208,6 +223,35 @@ const findAvailablePort = async () => {
       })
     })
   })
+}
+
+const isPortAvailable = async (port: number) => {
+  return new Promise<boolean>((resolve) => {
+    const server = net.createServer()
+
+    server.once("error", () => {
+      resolve(false)
+    })
+
+    server.listen(port, "127.0.0.1", () => {
+      server.close((closeErr) => {
+        if (closeErr) {
+          resolve(false)
+          return
+        }
+        resolve(true)
+      })
+    })
+  })
+}
+
+export const createRsshubPortAllocator = (preferredPort = 12000) => {
+  return async () => {
+    if (preferredPort > 0 && (await isPortAvailable(preferredPort))) {
+      return preferredPort
+    }
+    return findAvailablePort()
+  }
 }
 
 export const createRsshubEntryPath = ({
@@ -292,7 +336,7 @@ export const resolveBundledChromeConfig = ({
 }
 
 const defaultDeps = (): RsshubManagerDeps => ({
-  createPort: findAvailablePort,
+  createPort: createRsshubPortAllocator(),
   createToken: () => randomBytes(32).toString("hex"),
   launch: async ({ port, token }) => {
     const readTwitterCookieFromStore = async () => {
@@ -340,6 +384,11 @@ const defaultDeps = (): RsshubManagerDeps => ({
       runtimeRoot,
       env: process.env,
     })
+    const runtimeDataRoot = join(
+      electronApp?.getPath?.("userData") || process.cwd(),
+      "rsshub-runtime",
+    )
+    mkdirSync(runtimeDataRoot, { recursive: true })
 
     const spec = createRsshubLaunchSpec({
       mode,
@@ -353,7 +402,11 @@ const defaultDeps = (): RsshubManagerDeps => ({
         TWITTER_COOKIE: await readTwitterCookieFromStore(),
         PUPPETEER_EXECUTABLE_PATH: chromeConfig.executablePath || undefined,
         PUPPETEER_CACHE_DIR: chromeConfig.cacheDir || undefined,
+        RSSHUB_LOG_DIR: join(runtimeDataRoot, "logs"),
+        RSSHUB_CACHE_DIR: join(runtimeDataRoot, "cache"),
+        NO_LOGFILES: "1",
       },
+      workingDirectory: runtimeDataRoot,
     })
 
     const child =

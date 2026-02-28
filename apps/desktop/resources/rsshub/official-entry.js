@@ -4,7 +4,11 @@ import { createServer } from "node:http"
 import { dirname, join } from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
 
+import { hasValidToken } from "./runtime-auth.js"
 import { cleanupCacheDir, getDirectorySize } from "./runtime-cache.js"
+import { buildConsoleHomeHtml } from "./runtime-console.js"
+import { resolveRuntimeDir } from "./runtime-paths.js"
+import { flattenOfficialNamespaces } from "./runtime-route-index.js"
 import { handleKnownRoute } from "./runtime-routes.js"
 
 const MAX_LOG_BYTES = 10 * 1024 * 1024
@@ -38,11 +42,6 @@ const createLogger = (logDir) => {
 const unauthorized = (response) => {
   response.writeHead(403, { "content-type": "text/plain; charset=utf-8" })
   response.end("RSSHUB_TOKEN_REJECTED")
-}
-
-const isAuthorized = (request, token) => {
-  if (!token) return true
-  return request.headers["x-rsshub-token"] === token
 }
 
 const escapeXml = (value) =>
@@ -94,6 +93,7 @@ export const toRssXml = (data, requestUrl) => {
 }
 
 let rsshubRequest = null
+let officialRouteIndex = null
 
 export const readRsshubErrorMessage = (payload) => {
   if (!payload || typeof payload !== "object") return ""
@@ -126,21 +126,53 @@ const loadRsshubRequest = async () => {
   return rsshubRequest
 }
 
+const loadOfficialRouteIndex = async () => {
+  if (officialRouteIndex) return officialRouteIndex
+
+  await loadRsshubRequest()
+  const runtimeRoot = dirname(fileURLToPath(import.meta.url))
+  const registryPath = join(
+    runtimeRoot,
+    "official-runtime",
+    "node_modules",
+    "rsshub",
+    "dist-lib",
+    "registry-9NzXdQYf.mjs",
+  )
+  if (!existsSync(registryPath)) {
+    throw new Error(`RSSHUB_OFFICIAL_REGISTRY_MISSING: ${registryPath}`)
+  }
+
+  const registryModule = await import(pathToFileURL(registryPath).href)
+  officialRouteIndex = flattenOfficialNamespaces(registryModule?.namespaces || {})
+  return officialRouteIndex
+}
+
 export const startRsshubOfficialRuntime = ({
   port = Number.parseInt(process.env["PORT"] || "0", 10),
   token = process.env["RSSHUB_TOKEN"] || "",
   host = "127.0.0.1",
-  logDir = process.env["RSSHUB_LOG_DIR"] || join(dirname(fileURLToPath(import.meta.url)), "logs"),
-  cacheDir = process.env["RSSHUB_CACHE_DIR"] ||
-    join(dirname(fileURLToPath(import.meta.url)), "cache"),
+  logDir,
+  cacheDir,
   maxCacheBytes = Number.parseInt(
     process.env["RSSHUB_CACHE_MAX_BYTES"] || `${500 * 1024 * 1024}`,
     10,
   ),
 } = {}) => {
-  const log = createLogger(logDir)
-  mkdirSync(cacheDir, { recursive: true })
-  const deletedFiles = cleanupCacheDir(cacheDir, maxCacheBytes)
+  const resolvedLogDir = resolveRuntimeDir({
+    envValue: logDir || process.env["RSSHUB_LOG_DIR"],
+    fallbackName: "logs",
+    moduleUrl: import.meta.url,
+  })
+  const resolvedCacheDir = resolveRuntimeDir({
+    envValue: cacheDir || process.env["RSSHUB_CACHE_DIR"],
+    fallbackName: "cache",
+    moduleUrl: import.meta.url,
+  })
+
+  const log = createLogger(resolvedLogDir)
+  mkdirSync(resolvedCacheDir, { recursive: true })
+  const deletedFiles = cleanupCacheDir(resolvedCacheDir, maxCacheBytes)
   if (deletedFiles.length > 0) {
     log(`cache cleanup deleted ${deletedFiles.length} files`)
   }
@@ -151,7 +183,7 @@ export const startRsshubOfficialRuntime = ({
       : new URL("http://127.0.0.1/")
     const { pathname } = requestUrl
 
-    if (!isAuthorized(request, token)) {
+    if (!hasValidToken({ requestUrl: request.url || "", headers: request.headers, token })) {
       log(`403 ${pathname}`)
       unauthorized(response)
       return
@@ -163,16 +195,47 @@ export const startRsshubOfficialRuntime = ({
       return
     }
 
+    if (pathname === "/") {
+      response.writeHead(200, { "content-type": "text/html; charset=utf-8" })
+      response.end(
+        buildConsoleHomeHtml({
+          baseUrl: `http://${host}:${port}`,
+          token,
+          mode: "official",
+        }),
+      )
+      return
+    }
+
     if (pathname === "/status") {
       response.writeHead(200, { "content-type": "application/json; charset=utf-8" })
       response.end(
         JSON.stringify({
           ok: true,
-          cacheSizeBytes: getDirectorySize(cacheDir),
+          cacheSizeBytes: getDirectorySize(resolvedCacheDir),
           cacheLimitBytes: maxCacheBytes,
           mode: "official",
         }),
       )
+      return
+    }
+
+    if (pathname === "/routes-index") {
+      try {
+        const items = await loadOfficialRouteIndex()
+        response.writeHead(200, { "content-type": "application/json; charset=utf-8" })
+        response.end(
+          JSON.stringify({
+            mode: "official",
+            total: items.length,
+            items,
+          }),
+        )
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error)
+        response.writeHead(500, { "content-type": "text/plain; charset=utf-8" })
+        response.end(`RSSHUB_OFFICIAL_RUNTIME_ERROR: ${message}`)
+      }
       return
     }
 

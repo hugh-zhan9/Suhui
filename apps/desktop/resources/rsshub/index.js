@@ -1,11 +1,15 @@
 import { appendFileSync, existsSync, mkdirSync, renameSync, statSync } from "node:fs"
 import { createServer } from "node:http"
 // eslint-disable-next-line no-restricted-imports
-import { dirname, join } from "node:path"
+import { join } from "node:path"
 import { fileURLToPath } from "node:url"
 
+import { hasValidToken } from "./runtime-auth.js"
 import { cleanupCacheDir, getDirectorySize } from "./runtime-cache.js"
-import { handleKnownRoute } from "./runtime-routes.js"
+import { buildConsoleHomeHtml } from "./runtime-console.js"
+import { resolveRuntimeDir } from "./runtime-paths.js"
+import { buildLiteRouteIndex } from "./runtime-route-index.js"
+import { BUILT_IN_ROUTES, handleKnownRoute } from "./runtime-routes.js"
 
 const MAX_LOG_BYTES = 10 * 1024 * 1024
 const MAX_LOG_FILES = 5
@@ -45,26 +49,33 @@ const notWhitelisted = (response, pathname) => {
   response.end(`RSSHUB_ROUTE_NOT_WHITELISTED: ${pathname}`)
 }
 
-const isAuthorized = (request, token) => {
-  if (!token) return true
-  return request.headers["x-rsshub-token"] === token
-}
+const BUILT_IN_ROUTE_INDEX = buildLiteRouteIndex(BUILT_IN_ROUTES)
 
 export const startRsshubRuntime = ({
   port = Number.parseInt(process.env["PORT"] || "0", 10),
   token = process.env["RSSHUB_TOKEN"] || "",
   host = "127.0.0.1",
-  logDir = process.env["RSSHUB_LOG_DIR"] || join(dirname(fileURLToPath(import.meta.url)), "logs"),
-  cacheDir = process.env["RSSHUB_CACHE_DIR"] ||
-    join(dirname(fileURLToPath(import.meta.url)), "cache"),
+  logDir,
+  cacheDir,
   maxCacheBytes = Number.parseInt(
     process.env["RSSHUB_CACHE_MAX_BYTES"] || `${500 * 1024 * 1024}`,
     10,
   ),
 } = {}) => {
-  const log = createLogger(logDir)
-  mkdirSync(cacheDir, { recursive: true })
-  const deletedFiles = cleanupCacheDir(cacheDir, maxCacheBytes)
+  const resolvedLogDir = resolveRuntimeDir({
+    envValue: logDir || process.env["RSSHUB_LOG_DIR"],
+    fallbackName: "logs",
+    moduleUrl: import.meta.url,
+  })
+  const resolvedCacheDir = resolveRuntimeDir({
+    envValue: cacheDir || process.env["RSSHUB_CACHE_DIR"],
+    fallbackName: "cache",
+    moduleUrl: import.meta.url,
+  })
+
+  const log = createLogger(resolvedLogDir)
+  mkdirSync(resolvedCacheDir, { recursive: true })
+  const deletedFiles = cleanupCacheDir(resolvedCacheDir, maxCacheBytes)
   if (deletedFiles.length > 0) {
     log(`cache cleanup deleted ${deletedFiles.length} files`)
   }
@@ -72,7 +83,7 @@ export const startRsshubRuntime = ({
   const server = createServer((request, response) => {
     const pathname = request.url ? new URL(request.url, "http://127.0.0.1").pathname : "/"
 
-    if (!isAuthorized(request, token)) {
+    if (!hasValidToken({ requestUrl: request.url || "", headers: request.headers, token })) {
       log(`403 ${pathname}`)
       unauthorized(response)
       return
@@ -84,13 +95,37 @@ export const startRsshubRuntime = ({
       return
     }
 
+    if (pathname === "/") {
+      response.writeHead(200, { "content-type": "text/html; charset=utf-8" })
+      response.end(
+        buildConsoleHomeHtml({
+          baseUrl: `http://${host}:${port}`,
+          token,
+          mode: "lite",
+        }),
+      )
+      return
+    }
+
     if (pathname === "/status") {
       response.writeHead(200, { "content-type": "application/json; charset=utf-8" })
       response.end(
         JSON.stringify({
           ok: true,
-          cacheSizeBytes: getDirectorySize(cacheDir),
+          cacheSizeBytes: getDirectorySize(resolvedCacheDir),
           cacheLimitBytes: maxCacheBytes,
+        }),
+      )
+      return
+    }
+
+    if (pathname === "/routes-index") {
+      response.writeHead(200, { "content-type": "application/json; charset=utf-8" })
+      response.end(
+        JSON.stringify({
+          mode: "lite",
+          total: BUILT_IN_ROUTE_INDEX.length,
+          items: BUILT_IN_ROUTE_INDEX,
         }),
       )
       return

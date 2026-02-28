@@ -10,14 +10,15 @@ import { IpcMethod, IpcService } from "electron-ipc-decorator"
 
 import { store } from "~/lib/store"
 import { DBManager } from "~/manager/db"
-import { loadLiteSupportedRoutes } from "~/manager/rsshub-lite-routes"
 import { rsshubManager } from "~/manager/rsshub"
+import { loadLiteSupportedRoutes } from "~/manager/rsshub-lite-routes"
 
 import { findDuplicateFeed } from "./rss-dedup"
 import { buildEntryMediaPayload } from "./rss-entry-media"
 import { resolveHttpErrorMessage } from "./rss-http-error"
 import { parseRssFeed } from "./rss-parser"
 import { buildEntryIdentityKey, buildRefreshedFeed, buildStableLocalEntryId } from "./rss-refresh"
+import { buildLocalRsshubConsoleUrl } from "./rsshub-console-url"
 import { extractRsshubCustomHosts } from "./rsshub-custom-host"
 import { resolveRsshubUrl, shouldUseLocalRsshubRuntime } from "./rsshub-url"
 
@@ -452,6 +453,7 @@ export class DbService extends IpcService {
     return {
       status: state.status,
       port: state.port,
+      consoleUrl: buildLocalRsshubConsoleUrl({ port: state.port, token: state.token }),
       retryCount: state.retryCount,
       cooldownUntil: state.cooldownUntil,
       runtimeMode: rsshubManager.getRuntimeMode(),

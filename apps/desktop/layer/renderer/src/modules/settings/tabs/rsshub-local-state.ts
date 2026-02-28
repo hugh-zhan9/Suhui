@@ -4,6 +4,7 @@ type RawRsshubRuntimeMode = "lite" | "official"
 export type LocalRsshubState = {
   status: RawLocalRsshubStatus
   port: number | null
+  consoleUrl: string | null
   retryCount: number
   cooldownUntil: number | null
   runtimeMode: RawRsshubRuntimeMode
@@ -29,6 +30,10 @@ export const normalizeLocalRsshubState = (
       ? ((status as RawLocalRsshubStatus) ?? "unknown")
       : "unknown",
     port: typeof state?.port === "number" ? state.port : null,
+    consoleUrl:
+      typeof state?.consoleUrl === "string" && state.consoleUrl.length > 0
+        ? state.consoleUrl
+        : null,
     retryCount: typeof state?.retryCount === "number" ? state.retryCount : 0,
     cooldownUntil: typeof state?.cooldownUntil === "number" ? state.cooldownUntil : null,
     runtimeMode: runtimeMode === "official" ? "official" : "lite",

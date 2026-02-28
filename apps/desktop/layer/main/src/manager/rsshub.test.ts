@@ -1,4 +1,5 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs"
+import * as net from "node:net"
 import { tmpdir } from "node:os"
 
 import { join } from "pathe"
@@ -9,6 +10,7 @@ import {
   createRsshubEntryPath,
   createRsshubLaunchSpec,
   createRsshubManager,
+  createRsshubPortAllocator,
   createRsshubRuntimeRoot,
   pollHealthCheck,
   resolveBundledChromeConfig,
@@ -59,6 +61,29 @@ describe("RsshubManager", () => {
     })
     expect(ok).toBe(false)
     expect(attempts).toBe(4)
+  })
+
+  it("端口分配应优先使用固定端口 12000", async () => {
+    const allocate = createRsshubPortAllocator(12000)
+    const port = await allocate()
+    expect(port).toBe(12000)
+  })
+
+  it("固定端口被占用时应回退随机端口", async () => {
+    const occupiedServer = await new Promise<net.Server>((resolve, reject) => {
+      const server = net.createServer()
+      server.once("error", reject)
+      server.listen(12000, "127.0.0.1", () => resolve(server))
+    })
+
+    try {
+      const allocate = createRsshubPortAllocator(12000)
+      const port = await allocate()
+      expect(port).not.toBe(12000)
+      expect(port).toBeGreaterThan(0)
+    } finally {
+      await new Promise<void>((resolve) => occupiedServer.close(() => resolve()))
+    }
   })
 
   it("spawn 模式应使用 Electron 内置 Node 启动并注入 ELECTRON_RUN_AS_NODE", () => {
@@ -126,11 +151,19 @@ describe("RsshubManager", () => {
       execPath: "/Applications/FreeFolo.app/Contents/MacOS/FreeFolo",
       rsshubEnv: {
         TWITTER_COOKIE: "auth_token=xxx; ct0=yyy",
+        RSSHUB_LOG_DIR: "/tmp/freefolo/rsshub/logs",
+        RSSHUB_CACHE_DIR: "/tmp/freefolo/rsshub/cache",
+        NO_LOGFILES: "1",
       },
+      workingDirectory: "/tmp/freefolo/rsshub",
     } as any)
 
     expect(spec.kind).toBe("spawn")
     expect(spec.options.env.TWITTER_COOKIE).toBe("auth_token=xxx; ct0=yyy")
+    expect(spec.options.env.RSSHUB_LOG_DIR).toBe("/tmp/freefolo/rsshub/logs")
+    expect(spec.options.env.RSSHUB_CACHE_DIR).toBe("/tmp/freefolo/rsshub/cache")
+    expect(spec.options.env.NO_LOGFILES).toBe("1")
+    expect(spec.options.cwd).toBe("/tmp/freefolo/rsshub")
   })
 
   it("应根据打包环境生成 RSSHub 入口路径", () => {

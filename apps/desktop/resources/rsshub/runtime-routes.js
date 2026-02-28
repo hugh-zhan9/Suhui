@@ -1,4 +1,4 @@
-const BUILT_IN_ROUTES = [
+export const BUILT_IN_ROUTES = [
   "/rsshub/routes/:lang?",
   "/github/trending",
   "/weibo/user/:uid",

@@ -85,6 +85,7 @@
 ### 1) 已完成
 
 - 主进程 `RsshubManager`：状态机、健康检查、退避、cooldown、手动重启
+- 端口策略：优先固定 `127.0.0.1:12000`，若端口占用则自动回退随机可用端口
 - 启动策略：默认 `spawn + ELECTRON_RUN_AS_NODE=1`，可用环境变量切回 `fork`
 - 路径解析：优先 `app.isPackaged/getAppPath`，不依赖单一 `ELECTRON_IS_PACKAGED`
 - 运行时入口脚本（`resources/rsshub/*.js`）已改为 Node 内置路径解析，避免打包环境出现 `pathe` 依赖缺失导致子进程启动失败
@@ -95,7 +96,7 @@
 - 头像菜单 `RSSHub` 子页面已改为“本地 RSSHub 控制台”，用于统一管理内置 RSSHub（启动/重启、模式切换、Lite 路由清单、自定义实例）
 - 设置页“内置 RSSHub”已简化为状态摘要 + 跳转按钮，避免双入口配置分裂
 - 打包资源：`apps/desktop/resources/rsshub` 已进入 `extraResource`
-- 运行时安全：仅 `127.0.0.1` + `X-RSSHub-Token` 鉴权（未通过返回 `RSSHUB_TOKEN_REJECTED`）
+- 运行时安全：当前本地模式已关闭 token 鉴权限制（`runtime-auth` 恒放行），控制台地址不再附带 token 参数
 - 错误透传：`RSSHUB_*` 从主进程透传到渲染层，前端可映射友好文案
 - 自定义实例：设置页可配置 `rsshubCustomUrl`，命中该域名走直连，不拉起本地实例
 - 运行时能力：
@@ -115,6 +116,7 @@
 - Lite 模式不提供运行时白名单编辑器（避免“可配置但不可执行”的误导）；以“可见路由清单”作为能力说明
 - `Official` 模式走官方运行时全量执行链路；当上游路由不存在时返回：`RSSHUB_ROUTE_NOT_IMPLEMENTED`
 - `Official` 模式执行异常时返回：`RSSHUB_OFFICIAL_RUNTIME_ERROR: <message>`
+- `/api/radar/rules` 当前返回 RSS/XML（非 JSON rules 列表）；依赖 Radar JSON 规则的外部服务需做兼容转换
 - 跨平台（Windows/Linux）完整验收仍需在目标环境实测
 
 ## 最近关键修复（issue 27-34）

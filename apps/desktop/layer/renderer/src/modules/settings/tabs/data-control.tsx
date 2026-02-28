@@ -17,11 +17,9 @@ import { exportDB } from "@follow/database/db"
 import { ELECTRON_BUILD } from "@follow/shared/constants"
 import { env } from "@follow/shared/env.desktop"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useMutation, useQuery } from "@tanstack/react-query"
-import { useEffect, useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
-import { useNavigate } from "react-router"
 import { toast } from "sonner"
 import { z } from "zod"
 
@@ -32,7 +30,7 @@ import { queryClient } from "~/lib/query-client"
 import { LocalRsshubEntryButton } from "~/modules/rsshub/LocalRsshubConsole"
 import { clearLocalPersistStoreData } from "~/store/utils/clear"
 
-import { SettingActionItem, SettingDescription, SettingSwitch } from "../control"
+import { SettingActionItem, SettingDescription } from "../control"
 import { createSetting } from "../helper/builder"
 import { SettingItemGroup } from "../section"
 import { getLocalRsshubStatusLabel, normalizeLocalRsshubState } from "./rsshub-local-state"
@@ -40,6 +38,9 @@ import { getLocalRsshubStatusLabel, normalizeLocalRsshubState } from "./rsshub-l
 const { SettingBuilder } = createSetting("general", useGeneralSettingValue, setGeneralSetting)
 type LocalRsshubIpc = {
   getRsshubStatus?: () => Promise<unknown>
+}
+type LocalAppIpc = {
+  openExternal?: (url: string) => Promise<void>
 }
 
 export const SettingDataControl = () => {
@@ -122,8 +123,8 @@ export const SettingDataControl = () => {
 }
 
 const LocalRsshubSection = () => {
-  const navigate = useNavigate()
   const localRsshubIpc = ipcServices?.db as unknown as LocalRsshubIpc | undefined
+  const localAppIpc = ipcServices?.app as unknown as LocalAppIpc | undefined
   const stateQuery = useQuery({
     queryKey: ["rsshub", "local", "status"],
     queryFn: async () => {
@@ -137,12 +138,27 @@ const LocalRsshubSection = () => {
   })
 
   const state = normalizeLocalRsshubState(stateQuery.data)
+  const handleOpenConsole = async () => {
+    if (!state.consoleUrl) {
+      toast.error("内置 RSSHub 尚未就绪，请先启动后再打开控制台")
+      return
+    }
+    if (!localAppIpc?.openExternal) {
+      toast.error("当前环境不支持打开系统浏览器")
+      return
+    }
+    try {
+      await localAppIpc.openExternal(state.consoleUrl)
+    } catch {
+      toast.error("打开控制台失败，请稍后重试")
+    }
+  }
 
   return (
     <SettingItemGroup>
       <div className="mb-2 mt-4 flex items-center justify-between gap-4">
         <div className="text-sm font-medium">内置 RSSHub</div>
-        <LocalRsshubEntryButton onClick={() => navigate("/rsshub")} />
+        <LocalRsshubEntryButton onClick={() => void handleOpenConsole()} />
       </div>
       <SettingDescription>
         状态：{getLocalRsshubStatusLabel(state)}

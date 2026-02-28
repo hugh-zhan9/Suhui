@@ -4587,3 +4587,91 @@
 - `apps/desktop/layer/renderer/src/modules/discover/discovery-content-limit.test.ts`
 
 ---
+
+## [2026-02-28 15:52] [Bugfix]
+
+- **Change**: 修复内置RSSHub控制台鉴权与入口：支持query token并让设置页按钮直开带token地址
+- **Risk Analysis**: 主要风险是将token放入URL query可能出现在浏览器历史中；当前仅本机127.0.0.1且随机token，风险可控。另一个风险是状态未就绪时按钮体验变化，已增加显式错误提示并保留状态判定。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/resources/rsshub/runtime-auth.js`
+- `apps/desktop/resources/rsshub/runtime-auth.test.ts`
+- `apps/desktop/resources/rsshub/index.js`
+- `apps/desktop/resources/rsshub/official-entry.js`
+- `apps/desktop/layer/main/src/ipc/services/rsshub-console-url.ts`
+- `apps/desktop/layer/main/src/ipc/services/rsshub-console-url.test.ts`
+- `apps/desktop/layer/main/src/ipc/services/db.ts`
+- `apps/desktop/layer/renderer/src/modules/settings/tabs/rsshub-local-state.ts`
+- `apps/desktop/layer/renderer/src/modules/settings/tabs/rsshub-local-state.test.ts`
+- `apps/desktop/layer/renderer/src/modules/settings/tabs/data-control.tsx`
+
+---
+
+## [2026-02-28 16:03] [Bugfix]
+
+- **Change**: 修复内置RSSHub日志目录退化为根目录导致启动报ENOENT问题
+- **Risk Analysis**: 风险主要在于调整了RSSHub子进程环境变量注入与运行时目录解析，可能影响既有自定义目录行为；已保持环境变量优先并增加回退逻辑与单测覆盖。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/resources/rsshub/runtime-paths.js`
+- `apps/desktop/resources/rsshub/runtime-paths.test.ts`
+- `apps/desktop/resources/rsshub/index.js`
+- `apps/desktop/resources/rsshub/official-entry.js`
+- `apps/desktop/layer/main/src/manager/rsshub.ts`
+- `apps/desktop/layer/main/src/manager/rsshub.test.ts`
+
+---
+
+## [2026-02-28 16:16] [Critical-Fix]
+
+- **Change**: 修复Official模式下日志写入根目录导致mkdir /logs失败：强制子进程cwd到可写目录并关闭官方文件日志
+- **Risk Analysis**: 风险在于调整子进程工作目录可能影响少量依赖相对路径读取的路由；已保持入口脚本绝对路径加载且通过rsshub manager单测验证启动参数。关闭官方文件日志会减少官方runtime日志文件，但不影响功能。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/manager/rsshub.ts`
+- `apps/desktop/layer/main/src/manager/rsshub.test.ts`
+
+---
+
+## [2026-02-28 16:24] [Bugfix]
+
+- **Change**: 修复Official模式根路径访问报Unexpected token<错误：新增本地控制台首页并拦截/路径
+- **Risk Analysis**: 风险较低，新增仅影响/根路径展示，不改变现有/rsshub路由与鉴权流程；仍保留token校验，避免本机未授权访问。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/resources/rsshub/runtime-console.js`
+- `apps/desktop/resources/rsshub/runtime-console.test.ts`
+- `apps/desktop/resources/rsshub/index.js`
+- `apps/desktop/resources/rsshub/official-entry.js`
+
+---
+
+## [2026-02-28 16:41] [Feature]
+
+- **Change**: 升级本地RSSHub控制台为可搜索路由+参数生成器，并关闭本地token鉴权限制
+- **Risk Analysis**: 主要风险是Official模式首次加载路由索引时会动态读取官方runtime命名空间，可能带来首次打开控制台延迟；已通过缓存与本地JSON接口减少重复开销。关闭token鉴权会降低本机访问门槛，但仍限制在127.0.0.1监听范围。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/resources/rsshub/runtime-route-index.js`
+- `apps/desktop/resources/rsshub/runtime-route-index.test.ts`
+- `apps/desktop/resources/rsshub/runtime-console.js`
+- `apps/desktop/resources/rsshub/runtime-console.test.ts`
+- `apps/desktop/resources/rsshub/runtime-auth.js`
+- `apps/desktop/resources/rsshub/runtime-auth.test.ts`
+- `apps/desktop/resources/rsshub/index.js`
+- `apps/desktop/resources/rsshub/official-entry.js`
+- `apps/desktop/layer/main/src/ipc/services/rsshub-console-url.ts`
+- `apps/desktop/layer/main/src/ipc/services/rsshub-console-url.test.ts`
+
+---
+
+## [2026-02-28 16:48] [Bugfix]
+
+- **Change**: 内置RSSHub优先固定12000端口，冲突时自动回退随机端口
+- **Risk Analysis**: 端口分配策略由纯随机改为固定优先，风险是12000被系统策略限制时可能回退路径触发次数增加；已新增单测覆盖固定端口与占用回退两种场景，并通过manager测试集验证。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/manager/rsshub.ts`
+- `apps/desktop/layer/main/src/manager/rsshub.test.ts`
+
+---
