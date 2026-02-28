@@ -4169,3 +4169,15 @@
 - `apps/desktop/layer/renderer/src/modules/settings/tabs/data-control.tsx`
 
 ---
+
+## [2026-02-28 09:43] [Feature]
+
+- **Change**: 内置RSSHub新增/rsshub/routes路由清单输出，避免全量501
+- **Risk Analysis**: 风险在于运行时资源脚本新增路由分发后可能影响未知路径处理顺序；当前仅拦截/rsshub/routes前缀，其余路径保持原501行为，并已通过新增单测验证。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/resources/rsshub/index.js`
+- `apps/desktop/resources/rsshub/runtime-routes.js`
+- `apps/desktop/resources/rsshub/runtime-routes.test.ts`
+
+---

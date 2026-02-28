@@ -4,6 +4,8 @@ import { fileURLToPath } from "node:url"
 
 import { dirname, join } from "pathe"
 
+import { handleKnownRoute } from "./runtime-routes.js"
+
 const MAX_LOG_BYTES = 10 * 1024 * 1024
 const MAX_LOG_FILES = 5
 
@@ -67,6 +69,15 @@ export const startRsshubRuntime = ({
     if (pathname === "/healthz") {
       response.writeHead(200, { "content-type": "application/json; charset=utf-8" })
       response.end(JSON.stringify({ ok: true }))
+      return
+    }
+
+    const knownRouteResult = handleKnownRoute(pathname, `http://${host}:${port}`)
+    if (knownRouteResult) {
+      response.writeHead(knownRouteResult.statusCode, {
+        "content-type": knownRouteResult.contentType,
+      })
+      response.end(knownRouteResult.body)
       return
     }
 
