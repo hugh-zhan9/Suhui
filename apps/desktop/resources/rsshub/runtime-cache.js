@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, rmSync, statSync } from "node:fs"
-
-import { join } from "pathe"
+// eslint-disable-next-line no-restricted-imports
+import { join } from "node:path"
 
 const walkFiles = (dir, files = []) => {
   if (!existsSync(dir)) return files

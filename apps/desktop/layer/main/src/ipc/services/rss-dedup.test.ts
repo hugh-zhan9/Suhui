@@ -12,12 +12,12 @@ describe("rss dedup", () => {
     expect(duplicate?.id).toBe("f1")
   })
 
-  it("不同 rss 路径但同站点 host 视为重复", () => {
+  it("不同 feed url 即使同 host 也不应视为重复", () => {
     const duplicate = findDuplicateFeed(
       [{ id: "f1", url: "https://example.com/feed.xml", siteUrl: "https://example.com" }],
       "https://example.com/rss",
       "https://example.com/posts",
     )
-    expect(duplicate?.id).toBe("f1")
+    expect(duplicate).toBeUndefined()
   })
 })

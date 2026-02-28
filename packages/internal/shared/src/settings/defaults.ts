@@ -23,9 +23,9 @@ export const defaultGeneralSettings: GeneralSettings = {
   // view
   unreadOnly: false,
   // mark unread
-  scrollMarkUnread: true,
+  scrollMarkUnread: false,
   hoverMarkUnread: false,
-  renderMarkUnread: false,
+  renderMarkUnread: true,
   // timeline
   groupByDate: false,
   autoExpandLongSocialMedia: false,

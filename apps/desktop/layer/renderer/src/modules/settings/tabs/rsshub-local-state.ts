@@ -67,3 +67,10 @@ export const getLocalRsshubStatusLabel = (state: LocalRsshubState, now = Date.no
     }
   }
 }
+
+export const getLocalRsshubUiTickMs = (state: LocalRsshubState) => {
+  if (state.status === "cooldown") {
+    return 1000
+  }
+  return null
+}

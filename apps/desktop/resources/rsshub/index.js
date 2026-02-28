@@ -1,8 +1,8 @@
 import { appendFileSync, existsSync, mkdirSync, renameSync, statSync } from "node:fs"
 import { createServer } from "node:http"
+// eslint-disable-next-line no-restricted-imports
+import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
-
-import { dirname, join } from "pathe"
 
 import { cleanupCacheDir, getDirectorySize } from "./runtime-cache.js"
 import { handleKnownRoute } from "./runtime-routes.js"

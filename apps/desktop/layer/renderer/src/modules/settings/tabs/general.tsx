@@ -3,7 +3,6 @@ import { useTypeScriptHappyCallback } from "@follow/hooks"
 import { ACTION_LANGUAGE_MAP } from "@follow/shared"
 import { IN_ELECTRON } from "@follow/shared/constants"
 import { cn } from "@follow/utils/utils"
-import { useQuery } from "@tanstack/react-query"
 import dayjs from "dayjs"
 import { useAtom } from "jotai"
 import { useEffect } from "react"
@@ -20,13 +19,12 @@ import {
   useGeneralSettingValue,
 } from "~/atoms/settings/general"
 import { useDialog } from "~/components/ui/modal/stacked/hooks"
-import { useProxyValue, useSetProxy } from "~/hooks/biz/useProxySetting"
 import { useMinimizeToTrayValue, useSetMinimizeToTray } from "~/hooks/biz/useTraySetting"
 import { fallbackLanguage } from "~/i18n"
 import { ipcServices } from "~/lib/client"
 import { setTranslationCache } from "~/modules/entry-content/atoms"
 
-import { PaidBadge, SettingDescription, SettingInput, SettingSwitch } from "../control"
+import { PaidBadge, SettingDescription, SettingSwitch } from "../control"
 import { createSetting } from "../helper/builder"
 import { SettingPaidLevels } from "../helper/setting-builder"
 import {
@@ -157,13 +155,6 @@ export const SettingGeneral = () => {
             description: t("general.mark_as_read.render.description"),
           }),
 
-          { type: "title", value: "TTS" },
-
-          IN_ELECTRON && VoiceSelector,
-
-          { type: "title", value: t("general.network") },
-          IN_ELECTRON && NettingSetting,
-
           { type: "title", value: t("general.advanced") },
 
           defineSettingItem("enhancedSettings", {
@@ -186,41 +177,6 @@ export const SettingGeneral = () => {
             },
           }),
         ]}
-      />
-    </div>
-  )
-}
-
-const VoiceSelector = () => {
-  const { t } = useTranslation("settings")
-
-  const { data } = useQuery({
-    queryFn: () => ipcServices?.reader.getVoices(),
-    queryKey: ["voices"],
-    meta: {
-      persist: true,
-    },
-  })
-
-  const voice = useGeneralSettingKey("voice")
-
-  return (
-    <div className="-mt-1 mb-3 flex items-center justify-between">
-      <span className="shrink-0 text-sm font-medium">{t("general.voices")}</span>
-      <ResponsiveSelect
-        size="sm"
-        triggerClassName="w-48"
-        defaultValue={voice}
-        value={voice}
-        onValueChange={(value) => {
-          setGeneralSetting("voice", value)
-        }}
-        items={
-          data?.map((item) => ({
-            label: item.FriendlyName,
-            value: item.ShortName,
-          })) ?? []
-        }
       />
     </div>
   )
@@ -351,25 +307,6 @@ const ActionLanguageSelector = () => {
         ]}
       />
     </div>
-  )
-}
-
-const NettingSetting = () => {
-  const { t } = useTranslation("settings")
-  const proxyConfig = useProxyValue()
-  const setProxyConfig = useSetProxy()
-
-  return (
-    <SettingItemGroup>
-      <SettingInput
-        type="text"
-        label={t("general.proxy.label")}
-        labelClassName="w-[150px]"
-        value={proxyConfig}
-        onChange={(event) => setProxyConfig(event.target.value.trim())}
-      />
-      <SettingDescription>{t("general.proxy.description")}</SettingDescription>
-    </SettingItemGroup>
   )
 }
 

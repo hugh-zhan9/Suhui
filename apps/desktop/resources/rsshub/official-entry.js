@@ -1,8 +1,8 @@
 import { appendFileSync, existsSync, mkdirSync, renameSync, statSync } from "node:fs"
 import { createServer } from "node:http"
+// eslint-disable-next-line no-restricted-imports
+import { dirname, join } from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
-
-import { dirname, join } from "pathe"
 
 import { cleanupCacheDir, getDirectorySize } from "./runtime-cache.js"
 import { handleKnownRoute } from "./runtime-routes.js"
@@ -97,7 +97,7 @@ let rsshubRequest = null
 
 export const readRsshubErrorMessage = (payload) => {
   if (!payload || typeof payload !== "object") return ""
-  const error = payload.error
+  const { error } = payload
   if (!error || typeof error !== "object") return ""
   if (typeof error.message === "string") return error.message.trim()
   return ""
@@ -107,7 +107,14 @@ const loadRsshubRequest = async () => {
   if (rsshubRequest) return rsshubRequest
 
   const runtimeRoot = dirname(fileURLToPath(import.meta.url))
-  const pkgPath = join(runtimeRoot, "official-runtime", "node_modules", "rsshub", "dist-lib", "pkg.mjs")
+  const pkgPath = join(
+    runtimeRoot,
+    "official-runtime",
+    "node_modules",
+    "rsshub",
+    "dist-lib",
+    "pkg.mjs",
+  )
 
   if (!existsSync(pkgPath)) {
     throw new Error(`RSSHUB_OFFICIAL_RUNTIME_MISSING: ${pkgPath}`)
@@ -139,8 +146,10 @@ export const startRsshubOfficialRuntime = ({
   }
 
   const server = createServer(async (request, response) => {
-    const requestUrl = request.url ? new URL(request.url, "http://127.0.0.1") : new URL("http://127.0.0.1/")
-    const pathname = requestUrl.pathname
+    const requestUrl = request.url
+      ? new URL(request.url, "http://127.0.0.1")
+      : new URL("http://127.0.0.1/")
+    const { pathname } = requestUrl
 
     if (!isAuthorized(request, token)) {
       log(`403 ${pathname}`)

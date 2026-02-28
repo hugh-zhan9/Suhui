@@ -79,11 +79,6 @@ export const SettingAppearance = () => {
             label: t("appearance.unread_count.sidebar.title"),
             description: t("appearance.unread_count.sidebar.description"),
           }),
-          defineItem("hideExtraBadge", {
-            label: t("appearance.hide_extra_badge.label"),
-            description: t("appearance.hide_extra_badge.description"),
-            hide: isMobile,
-          }),
           {
             type: "title",
             value: t("appearance.reading_view.title"),

@@ -154,3 +154,19 @@
 36. ~~设置 - 订阅源， 设置 - 列表， 设置-通知，这三个页面删除掉。对应的逻辑也可以剔除了。~~
     修复方式：物理删除三页路由文件（`feeds/list/notifications`），并在设置可见性过滤中加入本地隐藏规则，防止后续页面回流时再次暴露。  
     改动范围：`apps/desktop/layer/renderer/src/pages/settings/(settings)/feeds.tsx`、`apps/desktop/layer/renderer/src/pages/settings/(settings)/list.tsx`、`apps/desktop/layer/renderer/src/pages/settings/(settings)/notifications.tsx`、`apps/desktop/layer/renderer/src/modules/settings/local-hidden-settings.ts`、`apps/desktop/layer/renderer/src/modules/settings/hooks/use-setting-ctx.ts`、`apps/desktop/layer/renderer/src/modules/settings/local-hidden-settings.test.ts`
+
+37. ~~设置-外观-隐藏徽章 按钮删除。 通用-tss这恶搞配置删除掉，通用-网络，代理 配置删除掉。~~  
+    修复方式：设置页外观已移除“隐藏徽章”开关；设置页通用已移除 `TTS` 配置块与“网络/代理”配置块，仅保留本地 RSS 必需项。  
+    改动范围：`apps/desktop/layer/renderer/src/modules/settings/tabs/appearance.tsx`、`apps/desktop/layer/renderer/src/modules/settings/tabs/general.tsx`
+
+38. ~~设置-通用 标记已读选项，默认选择为：单项内容进入视图时， 这些内设置信息都要持久化落库。~~  
+    修复方式：将默认策略调整为 `renderMarkUnread=true`、`scrollMarkUnread=false`（即“单项内容进入视图时”）；并加入一次性迁移逻辑，仅对未改过设置的旧默认用户执行迁移，设置仍通过本地 settings store 持久化。  
+    改动范围：`packages/internal/shared/src/settings/defaults.ts`、`apps/desktop/layer/renderer/src/atoms/settings/general.ts`、`apps/desktop/layer/renderer/src/lib/mark-read-defaults.test.ts`
+
+39. ~~点击头像弹出的界面，有个登出按钮，这个按钮删除掉。~~  
+    修复方式：头像下拉菜单移除“登出”入口及对应 `signOut` 调用。  
+    改动范围：`apps/desktop/layer/renderer/src/modules/user/ProfileButton.tsx`
+
+40. ~~打包成app 后，内置RSSHUB启动失败。~~  
+    修复方式：增强内置 RSSHub 运行时上下文识别逻辑；当缺失 `electron app` 上下文和 `ELECTRON_IS_PACKAGED` 环境变量时，按路径特征兜底识别打包态，避免错误走开发路径导致入口脚本定位失败。  
+    改动范围：`apps/desktop/layer/main/src/manager/rsshub.ts`、`apps/desktop/layer/main/src/manager/rsshub.test.ts`

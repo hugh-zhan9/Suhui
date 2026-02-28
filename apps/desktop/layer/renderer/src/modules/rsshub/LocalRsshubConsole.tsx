@@ -11,6 +11,7 @@ import { SettingDescription, SettingSwitch } from "~/modules/settings/control"
 import { SettingItemGroup } from "~/modules/settings/section"
 import {
   getLocalRsshubStatusLabel,
+  getLocalRsshubUiTickMs,
   normalizeLocalRsshubState,
 } from "~/modules/settings/tabs/rsshub-local-state"
 
@@ -185,6 +186,17 @@ export const LocalRsshubConsole = ({ compact = false }: { compact?: boolean }) =
   })
 
   const state = normalizeLocalRsshubState(stateQuery.data)
+  const [statusNow, setStatusNow] = useState(() => Date.now())
+  useEffect(() => {
+    const tickMs = getLocalRsshubUiTickMs(state)
+    if (!tickMs) return
+    const timer = window.setInterval(() => {
+      setStatusNow(Date.now())
+    }, tickMs)
+    return () => {
+      window.clearInterval(timer)
+    }
+  }, [state.status])
   const isRunning = state.status === "running" || state.status === "starting"
   const busy = toggleMutation.isPending || restartMutation.isPending
   const autoStartBusy = autoStartMutation.isPending
@@ -223,7 +235,7 @@ export const LocalRsshubConsole = ({ compact = false }: { compact?: boolean }) =
         </div>
       </div>
       <SettingDescription>
-        状态：{getLocalRsshubStatusLabel(state)}
+        状态：{getLocalRsshubStatusLabel(state, statusNow)}
         {state.retryCount > 0 ? `，失败重试次数：${state.retryCount}` : ""}
       </SettingDescription>
       <div className="mt-3 space-y-2">
@@ -250,7 +262,7 @@ export const LocalRsshubConsole = ({ compact = false }: { compact?: boolean }) =
           Lite 为轻量内置路由；Official 为官方 RSSHub 全量模式（切换后自动重启内置服务）
         </SettingDescription>
         {runtimeMode === "lite" && (
-          <div className="rounded-md border border-stroke bg-theme-background/40 p-3 text-xs">
+          <div className="border-stroke bg-theme-background/40 rounded-md border p-3 text-xs">
             <div className="mb-2 font-medium text-text">
               Lite 模式支持路由（{state.liteSupportedRoutes.length}）
             </div>

@@ -20,7 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu/dropdown-menu"
 import { useSettingModal } from "~/modules/settings/modal/use-setting-modal-hack"
-import { signOut, useSession } from "~/queries/auth"
+import { useSession } from "~/queries/auth"
 
 import type { LoginProps } from "./LoginButton"
 import { LoginButton } from "./LoginButton"
@@ -121,13 +121,6 @@ export const ProfileButton: FC<ProfileButtonProps> = memo((props) => {
             <DropdownMenuSeparator />
           </>
         )}
-        <DropdownMenuItem
-          className="pl-3"
-          onClick={signOut}
-          icon={<i className="i-mgc-exit-cute-re" />}
-        >
-          {t("user_button.log_out")}
-        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )

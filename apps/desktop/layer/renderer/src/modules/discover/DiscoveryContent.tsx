@@ -93,7 +93,7 @@ export function DiscoveryContent() {
       <div className="min-h-[400px]">
         {/* Content */}
         {activeView === "trending" ? (
-          <Trending center limit={20} hideHeader />
+          <Trending center limit={50} hideHeader />
         ) : (
           <Recommendations />
         )}

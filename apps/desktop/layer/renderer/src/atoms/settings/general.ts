@@ -20,7 +20,7 @@ const {
   useSettingKeys: useGeneralSettingKeysInternal,
   setSetting: setGeneralSetting,
   clearSettings: clearGeneralSettings,
-  initializeDefaultSettings: initializeDefaultGeneralSettings,
+  initializeDefaultSettings: initializeDefaultGeneralSettingsInternal,
   getSettings: getGeneralSettingsInternal,
   useSettingValue: useGeneralSettingValueInternal,
 
@@ -83,8 +83,27 @@ export const generalServerSyncWhiteListKeys: (keyof GeneralSettings)[] = [
   "appLaunchOnStartup",
   "sendAnonymousData",
   "language",
-  "voice",
 ]
+
+const migrateLegacyMarkReadDefault = () => {
+  const settings = getGeneralSettingsInternal() as GeneralSettings & { updated?: number }
+  const shouldMigrate =
+    !settings.updated &&
+    settings.scrollMarkUnread === true &&
+    settings.hoverMarkUnread === false &&
+    settings.renderMarkUnread === false
+  if (!shouldMigrate) {
+    return
+  }
+
+  setGeneralSetting("scrollMarkUnread", false)
+  setGeneralSetting("renderMarkUnread", true)
+}
+
+const initializeDefaultGeneralSettings = () => {
+  initializeDefaultGeneralSettingsInternal()
+  migrateLegacyMarkReadDefault()
+}
 
 export const enhancedGeneralSettingKeys = new Set<keyof GeneralSettings>([
   "groupByDate",

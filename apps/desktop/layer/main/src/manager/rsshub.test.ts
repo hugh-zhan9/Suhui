@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs"
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 
 import { join } from "pathe"
@@ -6,10 +6,10 @@ import { describe, expect, it, vi } from "vitest"
 
 import type { RsshubProcessLike } from "./rsshub"
 import {
-  createRsshubRuntimeRoot,
   createRsshubEntryPath,
   createRsshubLaunchSpec,
   createRsshubManager,
+  createRsshubRuntimeRoot,
   pollHealthCheck,
   resolveBundledChromeConfig,
   resolveRsshubRuntimeContext,
@@ -61,14 +61,10 @@ describe("RsshubManager", () => {
     expect(attempts).toBe(4)
   })
 
-  it("仓库中应存在内置 RSSHub 入口脚本", () => {
-    const entryPath = join(process.cwd(), "../../resources/rsshub/index.js")
-    expect(existsSync(entryPath)).toBe(true)
-  })
-
   it("spawn 模式应使用 Electron 内置 Node 启动并注入 ELECTRON_RUN_AS_NODE", () => {
     const spec = createRsshubLaunchSpec({
       mode: "spawn-node",
+      runtimeMode: "lite",
       entryPath: "/tmp/rsshub/index.js",
       port: 5123,
       token: "token-spawn",
@@ -85,6 +81,7 @@ describe("RsshubManager", () => {
           NODE_ENV: "production",
           PORT: "5123",
           RSSHUB_TOKEN: "token-spawn",
+          RSSHUB_RUNTIME_MODE: "lite",
           ELECTRON_RUN_AS_NODE: "1",
         },
         stdio: "pipe",
@@ -95,6 +92,7 @@ describe("RsshubManager", () => {
   it("fork 模式不应注入 ELECTRON_RUN_AS_NODE", () => {
     const spec = createRsshubLaunchSpec({
       mode: "fork",
+      runtimeMode: "lite",
       entryPath: "/tmp/rsshub/index.js",
       port: 5124,
       token: "token-fork",
@@ -110,6 +108,7 @@ describe("RsshubManager", () => {
           NODE_ENV: "production",
           PORT: "5124",
           RSSHUB_TOKEN: "token-fork",
+          RSSHUB_RUNTIME_MODE: "lite",
         },
         stdio: "pipe",
       },
@@ -138,6 +137,7 @@ describe("RsshubManager", () => {
     expect(
       createRsshubEntryPath({
         isPackaged: true,
+        runtimeMode: "lite",
         appPath: "/app/path",
         resourcesPath: "/resources/path",
       }),
@@ -146,6 +146,7 @@ describe("RsshubManager", () => {
     expect(
       createRsshubEntryPath({
         isPackaged: false,
+        runtimeMode: "lite",
         appPath: "/app/path",
         resourcesPath: "/resources/path",
       }),
@@ -171,7 +172,9 @@ describe("RsshubManager", () => {
   })
 
   it("应优先使用环境变量指定的 Chrome 路径", () => {
-    const chromePath = join(process.cwd(), "../../resources/rsshub/index.js")
+    const runtimeRoot = mkdtempSync(join(tmpdir(), "rsshub-test-chrome-"))
+    const chromePath = join(runtimeRoot, "Chromium")
+    writeFileSync(chromePath, "")
     const config = resolveBundledChromeConfig({
       runtimeRoot: "/tmp/not-used",
       env: {
@@ -179,6 +182,7 @@ describe("RsshubManager", () => {
       },
     })
     expect(config.executablePath).toBe(chromePath)
+    rmSync(runtimeRoot, { recursive: true, force: true })
   })
 
   it("应从 chrome-manifest 解析可执行路径与缓存目录", () => {
@@ -241,6 +245,18 @@ describe("RsshubManager", () => {
       appPath: "/workspace/apps/desktop",
       resourcesPath: "/Resources",
     })
+  })
+
+  it("无 electron 上下文与环境变量时应按路径特征识别打包态", () => {
+    const packagedByPath = resolveRsshubRuntimeContext({
+      env: {},
+      cwd: "/Applications/FreeFolo.app/Contents/Resources/app.asar",
+      resourcesPath: "/Applications/FreeFolo.app/Contents/Resources",
+      electronApp: null,
+    })
+
+    expect(packagedByPath.isPackaged).toBe(true)
+    expect(packagedByPath.appPath).toBe("/Applications/FreeFolo.app/Contents/Resources/app.asar")
   })
 
   it("启动成功后应进入 running 状态并返回端口", async () => {

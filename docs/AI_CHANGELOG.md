@@ -4214,7 +4214,9 @@
 - `AI-CONTEXT.md`
 
 ---
+
 ## [2026-02-28 10:01] [Feature]
+
 - **Change**: 新增RSSHub运行模式基础能力，补充lite/official规范化与启动参数注入
 - **Risk Analysis**: 主要风险在于新增环境变量可能影响现有启动脚本兼容性；已通过rsshub管理器单测验证spawn与fork两种模式参数，当前仍保持默认lite行为不变。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
@@ -4223,8 +4225,11 @@
 - `apps/desktop/layer/main/src/manager/rsshub-runtime-mode.test.ts`
 - `apps/desktop/layer/main/src/manager/rsshub.ts`
 - `apps/desktop/layer/main/src/manager/rsshub.test.ts`
-----------------------------------------
+
+---
+
 ## [2026-02-28 10:18] [Feature]
+
 - **Change**: 完成RSSHub双模式切换主链路，新增official入口与白名单构建资源并接入设置项
 - **Risk Analysis**: 风险主要在于official模式当前仅实现白名单网关与状态管理，非内置路由会返回明确错误；已通过主进程与渲染层单测、tsc与electron-vite构建验证，确保lite模式不回归且切换链路可用。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
@@ -4250,8 +4255,11 @@
 - `apps/desktop/scripts/rsshub-manifest.test.ts`
 - `apps/desktop/scripts/rsshub-routes.ts`
 - `apps/desktop/resources/rsshub/routes-manifest.json`
-----------------------------------------
+
+---
+
 ## [2026-02-28 10:38] [Feature]
+
 - **Change**: 将Official模式改为本地官方RSSHub全量执行，Lite模式保留轻量内置路由并完善构建依赖准备
 - **Risk Analysis**: 主要风险是打包体积与构建耗时显著上升（官方运行时约626MB），以及官方路由在上游站点异常时返回错误；已通过官方入口冒烟、单测、主进程构建与unsigned打包验证，确保模式切换链路可用且错误可见。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
@@ -4268,8 +4276,11 @@
 - `apps/desktop/layer/renderer/src/lib/rsshub-local-error.ts`
 - `apps/desktop/layer/renderer/src/lib/rsshub-local-error.test.ts`
 - `apps/desktop/resources/rsshub/routes-manifest.json`
-----------------------------------------
+
+---
+
 ## [2026-02-28 10:56] [Refactor]
+
 - **Change**: 调整 Lite 模式配置策略为只读展示支持路由清单
 - **Risk Analysis**: 主要风险是设置页状态结构新增字段后可能出现兼容问题，已通过本地单测与 electron-vite 构建验证；主风险点在于打包环境下 routes-manifest 路径解析，已按 isPackaged 分支处理并在缺失时降级为空列表。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
@@ -4281,8 +4292,11 @@
 - `apps/desktop/layer/renderer/src/modules/settings/tabs/rsshub-local-state.ts`
 - `apps/desktop/layer/renderer/src/modules/settings/tabs/rsshub-local-state.test.ts`
 - `AI-CONTEXT.md`
-----------------------------------------
+
+---
+
 ## [2026-02-28 11:13] [Refactor]
+
 - **Change**: 重构 RSSHub 页面为本地控制台并修复渲染日志风暴
 - **Risk Analysis**: 主要风险在于将头像 RSSHub 页面从远端实例管理切换为本地控制台后，历史远端入口不可用；该变更符合离线化目标。日志过滤器可能漏掉部分真正错误，已仅拦截 electron-log 回流和二次包装消息并保留原始错误转发。已通过相关单测与 electron-vite 构建验证。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
@@ -4294,8 +4308,11 @@
 - `apps/desktop/layer/main/src/manager/renderer-console-filter.test.ts`
 - `apps/desktop/layer/main/src/manager/bootstrap.ts`
 - `apps/desktop/layer/main/src/manager/window.ts`
-----------------------------------------
+
+---
+
 ## [2026-02-28 11:16] [Bugfix]
+
 - **Change**: 修复内置RSSHub启动误判失败并收敛日志回声
 - **Risk Analysis**: 主要风险为健康检查轮询时间增加可能延长失败反馈，但可显著降低冷启动误判；日志过滤仅跳过回流消息，不影响真实异常上报。已通过单测、构建及开发态启动验证。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
@@ -4310,8 +4327,11 @@
 - `apps/desktop/layer/renderer/src/pages/(main)/(layer)/(subview)/rsshub/index.tsx`
 - `apps/desktop/layer/renderer/src/modules/settings/tabs/data-control.tsx`
 - `AI-CONTEXT.md`
-----------------------------------------
+
+---
+
 ## [2026-02-28 11:41] [Bugfix]
+
 - **Change**: 支持 RSSHub 官方模式的 Twitter 本地凭据配置并修复内容渲染问题
 - **Risk Analysis**: 主要风险在于 RSSHub 启动环境变量注入与渲染层 noMedia 策略变更可能影响部分社交源展示；已通过针对性单测与 electron-vite 构建验证，且仅在 official 模式注入 Twitter 凭据以降低范围。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
@@ -4328,8 +4348,11 @@
 - `apps/desktop/layer/renderer/src/modules/entry-content/components/layouts/SocialMediaLayout.tsx`
 - `apps/desktop/layer/renderer/src/modules/entry-content/components/layouts/social-media-layout-utils.ts`
 - `apps/desktop/layer/renderer/src/modules/entry-content/components/layouts/SocialMediaLayout.test.ts`
-----------------------------------------
+
+---
+
 ## [2026-02-28 11:48] [Bugfix]
+
 - **Change**: 修复 RSSHub 条目正文标签原文显示与图片超链接渲染异常
 - **Risk Analysis**: 风险主要在于对正文做多层实体解码可能影响少量纯文本实体展示；已通过启发式条件仅对可识别 HTML 的内容替换，并补充解析层与渲染层测试覆盖，降低误伤。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
@@ -4340,16 +4363,22 @@
 - `apps/desktop/layer/renderer/src/lib/rss-content-normalize.test.ts`
 - `apps/desktop/layer/renderer/src/modules/entry-content/components/layouts/shared/ContentBody.tsx`
 - `apps/desktop/layer/renderer/src/modules/entry-content/components/layouts/ArticleLayout.tsx`
-----------------------------------------
+
+---
+
 ## [2026-02-28 11:53] [Bugfix]
+
 - **Change**: 恢复本地视图中的图片与视频Tab入口
 - **Risk Analysis**: 风险主要在于恢复后会影响时间线Tab默认可见集合与分类入口，但底层列表与详情组件原本仍保留该能力；已通过视图单测与桌面构建验证。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
 - **Changed Files**:
 - `apps/desktop/layer/renderer/src/lib/local-views.ts`
 - `apps/desktop/layer/renderer/src/lib/local-views.test.ts`
-----------------------------------------
+
+---
+
 ## [2026-02-28 12:27] [Bugfix]
+
 - **Change**: 修复视频订阅无可用视频提示并优化图片订阅首屏白块问题
 - **Risk Analysis**: 风险在于正文视频URL提取可能匹配到非视频iframe，已限制提取标签并保持原有transformVideoUrl链路；列表白块改为骨架仅影响首屏过渡，不改变数据逻辑。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
@@ -4361,8 +4390,11 @@
 - `apps/desktop/layer/renderer/src/modules/entry-column/grid-utils.ts`
 - `apps/desktop/layer/renderer/src/modules/entry-column/grid-utils.test.ts`
 - `apps/desktop/layer/renderer/src/modules/entry-column/grid.tsx`
-----------------------------------------
+
+---
+
 ## [2026-02-28 12:34] [Bugfix]
+
 - **Change**: 适配 B站 weekly 视频播放链接并定位历史空条目根因
 - **Risk Analysis**: 风险主要在于扩大视频URL匹配可能把非播放器URL误判为可播放；当前仅增加 bilibili 官方播放器URL白名单并保持原有规则优先级，风险较低。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
@@ -4370,8 +4402,11 @@
 - `packages/internal/utils/src/url-for-video.ts`
 - `apps/desktop/layer/renderer/src/lib/url-for-video-compat.test.ts`
 - `apps/desktop/layer/main/src/ipc/services/rss-parser.test.ts`
-----------------------------------------
+
+---
+
 ## [2026-02-28 12:51] [Bugfix]
+
 - **Change**: 修复RSSHub视频与图片展示链路并增强B站预览报错可读性
 - **Risk Analysis**: 主要风险在于主进程新增媒体抽取可能改变部分正文仅文本订阅的媒体判定；已通过主进程与渲染层单测覆盖YouTube短链、转义iframe、媒体抽取，并完成electron-vite构建验证。B站user/video路由依赖Chrome仍不可用，但现在会给出明确提示，避免误判为本地接口故障。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
@@ -4386,8 +4421,11 @@
 - `apps/desktop/layer/renderer/src/modules/entry-column/Items/picture-item.tsx`
 - `apps/desktop/layer/renderer/src/lib/rsshub-local-error.ts`
 - `apps/desktop/layer/renderer/src/lib/rsshub-local-error.test.ts`
-----------------------------------------
+
+---
+
 ## [2026-02-28 13:02] [Feature]
+
 - **Change**: 内置RSSHub集成打包Chrome依赖并在official模式自动注入Puppeteer可执行路径
 - **Risk Analysis**: 主要风险在于构建阶段新增浏览器下载会增加耗时与网络依赖；已提供FREEFOLO_SKIP_RSSHUB_CHROME_PROVISION跳过开关，并通过main层单测与build:rsshub、build:electron-vite验证。运行期通过chrome-manifest定位可执行文件，若缺失仍可回退到缓存目录策略，不影响Lite模式。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
@@ -4396,8 +4434,11 @@
 - `apps/desktop/scripts/build-rsshub.ts`
 - `apps/desktop/layer/main/src/manager/rsshub.ts`
 - `apps/desktop/layer/main/src/manager/rsshub.test.ts`
-----------------------------------------
+
+---
+
 ## [2026-02-28 13:08] [Bugfix]
+
 - **Change**: 修复RSSHub周榜视频链接未被识别导致视频卡片无媒体的问题
 - **Risk Analysis**: 主要风险是链接识别规则扩大后可能误判普通链接为视频。已通过主进程媒体提取测试与渲染层视频URL提取测试覆盖a标签和纯文本场景，回归风险中低。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
@@ -4406,8 +4447,11 @@
 - `apps/desktop/layer/main/src/ipc/services/rss-entry-media.test.ts`
 - `apps/desktop/layer/renderer/src/lib/extract-video-url.ts`
 - `apps/desktop/layer/renderer/src/lib/extract-video-url.test.ts`
-----------------------------------------
+
+---
+
 ## [2026-02-28 13:37] [Bugfix]
+
 - **Change**: 修复发现页预览跳转生成Untitled Feed的问题并增加id-only预览保护
 - **Risk Analysis**: 主要风险在于Discover预览写入store后可能覆盖同id已有字段。当前仅在预览点击时写入并保持字段保守赋值，同时新增id-only预览守卫与单测，风险中低。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
@@ -4415,8 +4459,11 @@
 - `apps/desktop/layer/renderer/src/modules/discover/DiscoverFeedCard.tsx`
 - `packages/internal/store/src/modules/feed/store.ts`
 - `packages/internal/store/src/modules/feed/store.preview-guard.test.ts`
-----------------------------------------
+
+---
+
 ## [2026-02-28 13:47] [Bugfix]
+
 - **Change**: 修复预览订阅无条目展示问题：补齐预览拉取条件与条目注入逻辑
 - **Risk Analysis**: 风险在于预览场景下触发更多本地预览请求，可能增加首次打开延迟。已通过新增守卫单测与桌面构建验证，逻辑仅在无条目缓存时触发，风险中低。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
@@ -4424,15 +4471,21 @@
 - `packages/internal/store/src/modules/feed/store.ts`
 - `packages/internal/store/src/modules/feed/store.preview-guard.test.ts`
 - `apps/desktop/layer/renderer/src/modules/entry-column/index.tsx`
-----------------------------------------
+
+---
+
 ## [2026-02-28 13:50] [Refactor]
+
 - **Change**: 精简发现页入口：移除目标切换与收件箱/用户入口，并统一新增订阅默认为文章视图
 - **Risk Analysis**: 风险主要在发现页搜索结果范围由可选feeds/lists变为仅feeds，可能影响原先依赖list搜索的使用习惯。已通过桌面构建验证，RSS/RSSHub新增链路保持可用。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
 - **Changed Files**:
 - `apps/desktop/layer/renderer/src/modules/discover/UnifiedDiscoverForm.tsx`
-----------------------------------------
+
+---
+
 ## [2026-02-28 13:55] [Bugfix]
+
 - **Change**: 修复发现页预览未订阅订阅源时文章列表为空的问题
 - **Risk Analysis**: 风险主要在未订阅场景下的 feedId 归一化策略。已将放开条件严格限制为预览态（isPendingEntry），避免恢复已取消订阅场景的旧文章泄漏；并通过单测覆盖预览保留与非预览清空两类行为。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
@@ -4440,8 +4493,11 @@
 - `apps/desktop/layer/renderer/src/modules/entry-column/hooks/query-selection.ts`
 - `apps/desktop/layer/renderer/src/modules/entry-column/hooks/query-selection.test.ts`
 - `apps/desktop/layer/renderer/src/modules/entry-column/hooks/useEntriesByView.ts`
-----------------------------------------
+
+---
+
 ## [2026-02-28 13:59] [Bugfix]
+
 - **Change**: 删除发现页趋势中的音频与通知两个视图标签
 - **Risk Analysis**: 风险主要在本地视图列表复用范围。已将过滤限定到 Trending 专用函数，不影响其他页面；并补充单测确保仅趋势页移除 Audios/Notifications。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
@@ -4449,8 +4505,11 @@
 - `apps/desktop/layer/renderer/src/lib/local-views.ts`
 - `apps/desktop/layer/renderer/src/lib/local-views.test.ts`
 - `apps/desktop/layer/renderer/src/modules/trending/index.tsx`
-----------------------------------------
+
+---
+
 ## [2026-02-28 14:12] [Bugfix]
+
 - **Change**: 调整趋势页默认返回条数为50，并优化RSSHub官方运行时无响应错误文案
 - **Risk Analysis**: 风险在于趋势页单次拉取条数提升可能增加首屏请求负载；同时错误文案映射只针对 RSSHUB_OFFICIAL_RUNTIME_ERROR 且包含 no response fetch failed 场景，不影响其他错误分支。已通过相关单测和桌面构建验证。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
@@ -4458,12 +4517,73 @@
 - `apps/desktop/layer/renderer/src/modules/trending/index.tsx`
 - `apps/desktop/layer/renderer/src/lib/rsshub-local-error.ts`
 - `apps/desktop/layer/renderer/src/lib/rsshub-local-error.test.ts`
-----------------------------------------
+
+---
+
 ## [2026-02-28 14:13] [Bugfix]
+
 - **Change**: RSSHub官方运行时无响应报错增加源站URL展示
 - **Risk Analysis**: 风险较低，改动仅限错误文案映射分支。通过正则提取错误字符串中的URL，若提取失败则保持原有友好文案，不影响其他错误类型。已通过对应单测验证。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
 - **Changed Files**:
 - `apps/desktop/layer/renderer/src/lib/rsshub-local-error.ts`
 - `apps/desktop/layer/renderer/src/lib/rsshub-local-error.test.ts`
-----------------------------------------
+
+---
+
+## [2026-02-28 14:43] [Bugfix]
+
+- **Change**: 修复 issue37/38/40/41：精简设置项、调整已读默认策略并迁移、移除头像登出、增强打包态 RSSHub 路径识别
+- **Risk Analysis**: 主要风险是设置项下线后用户旧配置仍在存储但不再可见，以及打包态路径兜底识别可能误判开发环境。已通过 RSSHub 管理器单测与桌面端 electron-vite 构建验证，并新增默认策略测试覆盖。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/modules/settings/tabs/appearance.tsx`
+- `apps/desktop/layer/renderer/src/modules/settings/tabs/general.tsx`
+- `packages/internal/shared/src/settings/defaults.ts`
+- `apps/desktop/layer/renderer/src/atoms/settings/general.ts`
+- `apps/desktop/layer/renderer/src/modules/user/ProfileButton.tsx`
+- `apps/desktop/layer/main/src/manager/rsshub.ts`
+- `apps/desktop/layer/main/src/manager/rsshub.test.ts`
+- `apps/desktop/layer/renderer/src/lib/mark-read-defaults.test.ts`
+- `issue.md`
+- `AI-CONTEXT.md`
+
+---
+
+## [2026-02-28 14:50] [Bugfix]
+
+- **Change**: 修复RSS订阅去重误判：仅按feed URL判重，避免同域不同源被错误复用导致条目缺失
+- **Risk Analysis**: 主要风险是同一站点下历史上依赖host去重的场景会允许重复订阅，但该行为符合本地RSS预期且可由用户自行管理。已通过rss-dedup单测和electron-main构建验证。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/ipc/services/rss-dedup.ts`
+- `apps/desktop/layer/main/src/ipc/services/rss-dedup.test.ts`
+
+---
+
+## [2026-02-28 15:03] [Bugfix]
+
+- **Change**: 修复内置RSSHub打包环境启动失败并补齐状态倒计时实时刷新
+- **Risk Analysis**: 主要风险在于运行时路径与Node内置path替换可能影响日志/缓存目录定位，以及新增UI秒级tick可能引入额外重渲染。已通过针对性单测、electron-vite构建和runtime入口导入校验验证，风险可控。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/resources/rsshub/index.js`
+- `apps/desktop/resources/rsshub/official-entry.js`
+- `apps/desktop/resources/rsshub/runtime-cache.js`
+- `apps/desktop/resources/rsshub/runtime-entry-deps.test.ts`
+- `apps/desktop/layer/renderer/src/modules/settings/tabs/rsshub-local-state.ts`
+- `apps/desktop/layer/renderer/src/modules/settings/tabs/rsshub-local-state.test.ts`
+- `apps/desktop/layer/renderer/src/modules/rsshub/LocalRsshubConsole.tsx`
+
+---
+
+## [2026-02-28 15:14] [Bugfix]
+
+- **Change**: 将Discover趋势页默认拉取数量从20调整为50并补充回归测试
+- **Risk Analysis**: 风险主要在于Discover首屏请求量增加可能导致加载时延上升；该变更仅影响趋势模块默认limit，不影响分类与RSSHub路由查询。已通过定向单测验证配置生效。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/modules/discover/DiscoveryContent.tsx`
+- `apps/desktop/layer/renderer/src/modules/discover/discovery-content-limit.test.ts`
+
+---

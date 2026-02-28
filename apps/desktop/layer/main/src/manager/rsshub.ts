@@ -6,7 +6,8 @@ import * as net from "node:net"
 
 import { join } from "pathe"
 
-import { normalizeRsshubRuntimeMode, type RsshubRuntimeMode } from "./rsshub-runtime-mode"
+import type { RsshubRuntimeMode } from "./rsshub-runtime-mode"
+import { normalizeRsshubRuntimeMode } from "./rsshub-runtime-mode"
 
 export type RsshubStatus = "stopped" | "starting" | "running" | "error" | "cooldown"
 
@@ -165,10 +166,18 @@ export const resolveRsshubRuntimeContext = ({
   electronApp?: ElectronAppContext | null
 }): RsshubRuntimeContext => {
   const appPath = electronApp?.getAppPath?.() || cwd
+  const envPackaged = env["ELECTRON_IS_PACKAGED"]
+  const hasBundlePathHint = [appPath, cwd].some(
+    (path) =>
+      path.includes(".app/Contents/Resources/app.asar") ||
+      (path.includes("app.asar") && !path.includes("default_app.asar")),
+  )
   const isPackaged =
     typeof electronApp?.isPackaged === "boolean"
       ? electronApp.isPackaged
-      : env["ELECTRON_IS_PACKAGED"] === "1" || env["ELECTRON_IS_PACKAGED"] === "true"
+      : typeof envPackaged === "string"
+        ? envPackaged === "1" || envPackaged === "true"
+        : hasBundlePathHint
 
   return {
     isPackaged,

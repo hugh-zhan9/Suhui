@@ -18,31 +18,13 @@ const normalizeUrl = (value?: string | null) => {
   }
 }
 
-const getHost = (value?: string | null) => {
-  if (!value) return null
-  try {
-    return new URL(value).hostname.toLowerCase()
-  } catch {
-    return null
-  }
-}
-
 export const findDuplicateFeed = (
   existingFeeds: FeedLike[],
   nextFeedUrl: string,
-  nextSiteUrl?: string | null,
+  _nextSiteUrl?: string | null,
 ) => {
   const nextFeedNormalized = normalizeUrl(nextFeedUrl)
-  const nextHost = getHost(nextSiteUrl) ?? getHost(nextFeedUrl)
+  if (!nextFeedNormalized) return
 
-  return existingFeeds.find((feed) => {
-    const feedUrlNormalized = normalizeUrl(feed.url)
-    if (feedUrlNormalized && nextFeedNormalized && feedUrlNormalized === nextFeedNormalized) {
-      return true
-    }
-
-    const feedHost = getHost(feed.siteUrl) ?? getHost(feed.url)
-    return !!feedHost && !!nextHost && feedHost === nextHost
-  })
+  return existingFeeds.find((feed) => normalizeUrl(feed.url) === nextFeedNormalized)
 }
-

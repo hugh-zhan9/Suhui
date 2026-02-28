@@ -143,12 +143,19 @@
 - 移除设置中无关的“列表”菜单及其相关模块（发行前精简）
 - 无签名构建后增加 Ad-hoc 自签名步骤，修复 macOS 26（M5）上 `SIGKILL (Code Signature Invalid)` 崩溃
 - 主进程已加入 renderer console 防回声过滤（忽略 `electron-log.js` 与重复 `[Renderer Error]` 消息），缓解日志风暴
-- 内置 RSSHub 健康检查已改为短时轮询探测（默认 20 次 * 250ms），避免子进程冷启动瞬时 `ECONNREFUSED` 造成误判启动失败
+- 内置 RSSHub 健康检查已改为短时轮询探测（默认 20 次 \* 250ms），避免子进程冷启动瞬时 `ECONNREFUSED` 造成误判启动失败
 
-## 最近补充修复（issue 35-36）
+## 最近补充修复（issue 35-41）
 
 - 添加订阅弹窗（`SimpleDiscoverModal`）仅保留 `RSS/RSSHub` 两类输入，已移除 `Search` 模式与 “Or go to Discover...” 引导文案
 - 设置页已删除 `feeds/list/notifications` 三个页面入口，并增加本地隐藏规则，防止后续被重新暴露
+- 设置页进一步精简：
+  - 外观移除“隐藏徽章”开关
+  - 通用移除 `TTS` 与“网络/代理”配置块
+- 通用“标记已读”默认策略已切换为“单项内容进入视图时”（`render=true`、`scroll=false`），并对未改过设置的旧默认用户执行一次性迁移
+- 头像菜单已移除“登出”入口
+- 内置 RSSHub 在打包环境的路径识别已增强：当缺少 `electron app` 上下文和 `ELECTRON_IS_PACKAGED` 时，按路径特征兜底识别，避免误走开发路径导致启动失败
+- issue 第 39 条已按产品决策直接删除，不纳入修复范围
 
 ## 已知边界与残留在线能力
 

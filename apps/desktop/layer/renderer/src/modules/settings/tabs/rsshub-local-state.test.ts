@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest"
 
 import type { LocalRsshubState } from "./rsshub-local-state"
-import { getLocalRsshubStatusLabel, normalizeLocalRsshubState } from "./rsshub-local-state"
+import {
+  getLocalRsshubStatusLabel,
+  getLocalRsshubUiTickMs,
+  normalizeLocalRsshubState,
+} from "./rsshub-local-state"
 
 describe("rsshub local state", () => {
   it("应将缺失状态归一化为 unknown", () => {
@@ -57,5 +61,29 @@ describe("rsshub local state", () => {
     }
 
     expect(getLocalRsshubStatusLabel(state)).toBe("运行中（127.0.0.1:17890）")
+  })
+
+  it("cooldown 状态应启用 1s UI 刷新节拍", () => {
+    const state: LocalRsshubState = {
+      status: "cooldown",
+      port: null,
+      retryCount: 0,
+      cooldownUntil: Date.now() + 5_000,
+      runtimeMode: "lite",
+      liteSupportedRoutes: [],
+    }
+    expect(getLocalRsshubUiTickMs(state)).toBe(1000)
+  })
+
+  it("非 cooldown 状态不应启用额外 UI 刷新节拍", () => {
+    const state: LocalRsshubState = {
+      status: "running",
+      port: 49548,
+      retryCount: 0,
+      cooldownUntil: null,
+      runtimeMode: "official",
+      liteSupportedRoutes: [],
+    }
+    expect(getLocalRsshubUiTickMs(state)).toBeNull()
   })
 })
