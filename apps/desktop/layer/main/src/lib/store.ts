@@ -11,6 +11,7 @@ type StoreData = {
   proxy?: string | null
   qbittorrentSID?: string | null
   rsshubAutoStart?: boolean | null
+  rsshubCustomUrl?: string | null
   user?: string | null
   windowState?: {
     height: number

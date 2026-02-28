@@ -1,5 +1,5 @@
 export type RsshubStateSnapshot = {
-  status: 'stopped' | 'starting' | 'running' | 'error' | 'cooldown'
+  status: "stopped" | "starting" | "running" | "error" | "cooldown"
   port: number | null
   token: string | null
 }
@@ -15,10 +15,25 @@ export const isRsshubUrlLike = (url: string, customHosts: string[]) => {
     const parsed = new URL(url)
     const normalizedHost = parsed.hostname.toLowerCase()
     const hostMatched =
-      normalizedHost === 'rsshub.app' || customHosts.map((i) => i.toLowerCase()).includes(normalizedHost)
+      normalizedHost === "rsshub.app" ||
+      customHosts.map((i) => i.toLowerCase()).includes(normalizedHost)
 
     if (hostMatched) return true
-    return parsed.protocol === 'rsshub:'
+    return parsed.protocol === "rsshub:"
+  } catch {
+    return false
+  }
+}
+
+export const shouldUseLocalRsshubRuntime = (url: string, customHosts: string[]) => {
+  try {
+    const parsed = new URL(url)
+    const normalizedHost = parsed.hostname.toLowerCase()
+    const normalizedCustomHosts = customHosts.map((i) => i.toLowerCase())
+    if (normalizedCustomHosts.includes(normalizedHost)) {
+      return false
+    }
+    return normalizedHost === "rsshub.app" || parsed.protocol === "rsshub:"
   } catch {
     return false
   }
@@ -26,18 +41,21 @@ export const isRsshubUrlLike = (url: string, customHosts: string[]) => {
 
 export const resolveRsshubUrl = ({ url, state, customHosts }: ResolveRsshubUrlInput) => {
   let isRsshubUrl = false
-  let resolvedPath = ''
+  let isCustomRsshubHost = false
+  let resolvedPath = ""
 
   try {
     const parsed = new URL(url)
     const normalizedHost = parsed.hostname.toLowerCase()
-    const hostMatched =
-      normalizedHost === 'rsshub.app' || customHosts.map((i) => i.toLowerCase()).includes(normalizedHost)
+    const normalizedCustomHosts = customHosts.map((i) => i.toLowerCase())
+    const isOfficialHost = normalizedHost === "rsshub.app"
+    isCustomRsshubHost = normalizedCustomHosts.includes(normalizedHost)
+    const hostMatched = isOfficialHost || isCustomRsshubHost
 
     if (hostMatched) {
       isRsshubUrl = true
       resolvedPath = `${parsed.pathname}${parsed.search}${parsed.hash}`
-    } else if (parsed.protocol === 'rsshub:') {
+    } else if (parsed.protocol === "rsshub:") {
       isRsshubUrl = true
       resolvedPath = `/${parsed.hostname}${parsed.pathname}${parsed.search}${parsed.hash}`
     }
@@ -49,8 +67,12 @@ export const resolveRsshubUrl = ({ url, state, customHosts }: ResolveRsshubUrlIn
     return { resolvedUrl: url, token: null }
   }
 
-  if (state.status !== 'running' || !state.port) {
-    throw new Error('RSSHUB_LOCAL_UNAVAILABLE: 内置 RSSHub 当前未运行')
+  if (isCustomRsshubHost) {
+    return { resolvedUrl: url, token: null }
+  }
+
+  if (state.status !== "running" || !state.port) {
+    throw new Error("RSSHUB_LOCAL_UNAVAILABLE: 内置 RSSHub 当前未运行")
   }
 
   return {

@@ -91,4 +91,19 @@ export class SettingService extends IpcService {
   setRsshubAutoStart(_context: IpcContext, enabled: boolean): void {
     store.set(RSSHUB_AUTOSTART_STORE_KEY, enabled)
   }
+
+  @IpcMethod()
+  getRsshubCustomUrl(_context: IpcContext): string {
+    return store.get("rsshubCustomUrl") ?? ""
+  }
+
+  @IpcMethod()
+  setRsshubCustomUrl(_context: IpcContext, url: string): void {
+    const trimmed = (url || "").trim()
+    if (!trimmed) {
+      store.delete("rsshubCustomUrl")
+      return
+    }
+    store.set("rsshubCustomUrl", trimmed)
+  }
 }

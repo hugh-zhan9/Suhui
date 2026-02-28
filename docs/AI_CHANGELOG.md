@@ -4152,3 +4152,20 @@
 - `apps/desktop/layer/main/src/ipc/services/rss-http-error.test.ts`
 
 ---
+
+## [2026-02-28 09:41] [Feature]
+
+- **Change**: 新增自定义RSSHub实例配置并接入主进程直连逻辑，避免误拉起本地实例
+- **Risk Analysis**: 主要风险是设置页新增输入状态可能与查询回填时序产生覆盖；主进程改写逻辑已通过单测覆盖官方域名/rsshub协议/自定义域名三类路径，并完成桌面构建验证。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/ipc/services/rsshub-url.ts`
+- `apps/desktop/layer/main/src/ipc/services/rsshub-url.test.ts`
+- `apps/desktop/layer/main/src/ipc/services/db.ts`
+- `apps/desktop/layer/main/src/ipc/services/rsshub-custom-host.ts`
+- `apps/desktop/layer/main/src/ipc/services/rsshub-custom-host.test.ts`
+- `apps/desktop/layer/main/src/lib/store.ts`
+- `apps/desktop/layer/main/src/ipc/services/setting.ts`
+- `apps/desktop/layer/renderer/src/modules/settings/tabs/data-control.tsx`
+
+---

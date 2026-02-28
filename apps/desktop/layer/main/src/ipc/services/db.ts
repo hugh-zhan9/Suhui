@@ -7,6 +7,7 @@ import { SubscriptionService } from "@follow/database/services/subscription"
 import type { IpcContext } from "electron-ipc-decorator"
 import { IpcMethod, IpcService } from "electron-ipc-decorator"
 
+import { store } from "~/lib/store"
 import { DBManager } from "~/manager/db"
 import { rsshubManager } from "~/manager/rsshub"
 
@@ -14,7 +15,8 @@ import { findDuplicateFeed } from "./rss-dedup"
 import { resolveHttpErrorMessage } from "./rss-http-error"
 import { parseRssFeed } from "./rss-parser"
 import { buildEntryIdentityKey, buildRefreshedFeed, buildStableLocalEntryId } from "./rss-refresh"
-import { isRsshubUrlLike, resolveRsshubUrl } from "./rsshub-url"
+import { extractRsshubCustomHosts } from "./rsshub-custom-host"
+import { resolveRsshubUrl, shouldUseLocalRsshubRuntime } from "./rsshub-url"
 
 /**
  * Fetches a URL using Node.js built-in http/https, follows up to 5 redirects.
@@ -70,9 +72,9 @@ export class DbService extends IpcService {
   static override readonly groupName = "db"
 
   private async buildPreviewData(feedUrl: string, preferredFeedId?: string) {
-    const customHosts: string[] = []
+    const customHosts = extractRsshubCustomHosts(store.get("rsshubCustomUrl"))
 
-    if (isRsshubUrlLike(feedUrl, customHosts)) {
+    if (shouldUseLocalRsshubRuntime(feedUrl, customHosts)) {
       await rsshubManager.ensureRunning()
     }
 

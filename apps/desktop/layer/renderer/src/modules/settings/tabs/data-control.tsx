@@ -18,6 +18,7 @@ import { ELECTRON_BUILD } from "@follow/shared/constants"
 import { env } from "@follow/shared/env.desktop"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQuery } from "@tanstack/react-query"
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
@@ -44,6 +45,8 @@ type LocalRsshubIpc = {
 type LocalRsshubSettingIpc = {
   getRsshubAutoStart?: () => Promise<boolean>
   setRsshubAutoStart?: (enabled: boolean) => Promise<unknown>
+  getRsshubCustomUrl?: () => Promise<string>
+  setRsshubCustomUrl?: (url: string) => Promise<unknown>
 }
 
 export const SettingDataControl = () => {
@@ -155,6 +158,13 @@ const LocalRsshubSection = () => {
     },
     refetchOnMount: "always",
   })
+  const customUrlQuery = useQuery({
+    queryKey: ["rsshub", "local", "custom-url"],
+    queryFn: async () => {
+      return (await localRsshubSettingIpc?.getRsshubCustomUrl?.()) ?? ""
+    },
+    refetchOnMount: "always",
+  })
 
   const autoStartMutation = useMutation({
     mutationFn: async (enabled: boolean) => {
@@ -200,12 +210,31 @@ const LocalRsshubSection = () => {
       toast.error("RSSHub 重启失败")
     },
   })
+  const customUrlMutation = useMutation({
+    mutationFn: async (url: string) => {
+      if (!localRsshubSettingIpc?.setRsshubCustomUrl) {
+        throw new Error("IPC_NOT_AVAILABLE")
+      }
+      await localRsshubSettingIpc.setRsshubCustomUrl(url)
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["rsshub", "local", "custom-url"] })
+      toast.success("自定义 RSSHub 地址已保存")
+    },
+    onError: () => {
+      toast.error("保存自定义 RSSHub 地址失败")
+    },
+  })
 
   const state = normalizeLocalRsshubState(stateQuery.data)
   const isRunning = state.status === "running" || state.status === "starting"
   const busy = toggleMutation.isPending || restartMutation.isPending
   const autoStartBusy = autoStartMutation.isPending
   const autoStartEnabled = autoStartQuery.data ?? false
+  const [customUrlInput, setCustomUrlInput] = useState("")
+  useEffect(() => {
+    setCustomUrlInput(customUrlQuery.data ?? "")
+  }, [customUrlQuery.data])
 
   return (
     <SettingItemGroup>
@@ -241,6 +270,25 @@ const LocalRsshubSection = () => {
         disabled={autoStartBusy}
         onCheckedChange={(checked) => autoStartMutation.mutate(checked)}
       />
+      <div className="mt-3 space-y-2">
+        <Label className="text-xs text-text-secondary">自定义 RSSHub 实例（可选）</Label>
+        <div className="flex items-center gap-2">
+          <Input
+            value={customUrlInput}
+            placeholder="https://rsshub.example.com"
+            onChange={(event) => setCustomUrlInput(event.target.value)}
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={customUrlMutation.isPending}
+            onClick={() => customUrlMutation.mutate(customUrlInput)}
+          >
+            保存
+          </Button>
+        </div>
+        <SettingDescription>命中该域名时将直连该实例，不走本地内置 RSSHub</SettingDescription>
+      </div>
     </SettingItemGroup>
   )
 }
