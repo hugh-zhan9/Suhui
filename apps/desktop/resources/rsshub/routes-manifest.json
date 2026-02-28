@@ -1,0 +1,18 @@
+{
+  "generatedAt": "2026-02-28T01:51:54.206Z",
+  "runtimeType": "embedded-lite",
+  "routes": [
+    {
+      "route": "/rsshub/routes/:lang?",
+      "type": "builtin"
+    },
+    {
+      "route": "/github/release/:owner/:repo",
+      "type": "redirect"
+    },
+    {
+      "route": "/github/commit/:owner/:repo",
+      "type": "redirect"
+    }
+  ]
+}

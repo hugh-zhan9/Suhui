@@ -4193,3 +4193,24 @@
 - `apps/desktop/resources/rsshub/index.js`
 
 ---
+
+## [2026-02-28 09:52] [Feature]
+
+- **Change**: 补齐内嵌RSSHub剩余能力：缓存LRU清理、状态诊断、构建脚本与manifest自动生成
+- **Risk Analysis**: 主要风险是构建脚本前置后若运行时资源缺失会直接阻断桌面构建；该行为是有意的fail-fast，已通过新增单测与build:electron-vite实测验证可用。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/resources/rsshub/index.js`
+- `apps/desktop/resources/rsshub/runtime-cache.js`
+- `apps/desktop/resources/rsshub/runtime-cache.test.ts`
+- `apps/desktop/resources/rsshub/runtime-routes.js`
+- `apps/desktop/resources/rsshub/runtime-routes.test.ts`
+- `apps/desktop/scripts/build-rsshub.ts`
+- `apps/desktop/scripts/rsshub-manifest.ts`
+- `apps/desktop/scripts/rsshub-manifest.test.ts`
+- `apps/desktop/scripts/rsshub-routes.ts`
+- `apps/desktop/resources/rsshub/routes-manifest.json`
+- `apps/desktop/package.json`
+- `AI-CONTEXT.md`
+
+---

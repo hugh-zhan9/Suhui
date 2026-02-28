@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url"
 
 import { dirname, join } from "pathe"
 
+import { cleanupCacheDir, getDirectorySize } from "./runtime-cache.js"
 import { handleKnownRoute } from "./runtime-routes.js"
 
 const MAX_LOG_BYTES = 10 * 1024 * 1024
@@ -54,8 +55,19 @@ export const startRsshubRuntime = ({
   token = process.env["RSSHUB_TOKEN"] || "",
   host = "127.0.0.1",
   logDir = process.env["RSSHUB_LOG_DIR"] || join(dirname(fileURLToPath(import.meta.url)), "logs"),
+  cacheDir = process.env["RSSHUB_CACHE_DIR"] ||
+    join(dirname(fileURLToPath(import.meta.url)), "cache"),
+  maxCacheBytes = Number.parseInt(
+    process.env["RSSHUB_CACHE_MAX_BYTES"] || `${500 * 1024 * 1024}`,
+    10,
+  ),
 } = {}) => {
   const log = createLogger(logDir)
+  mkdirSync(cacheDir, { recursive: true })
+  const deletedFiles = cleanupCacheDir(cacheDir, maxCacheBytes)
+  if (deletedFiles.length > 0) {
+    log(`cache cleanup deleted ${deletedFiles.length} files`)
+  }
 
   const server = createServer((request, response) => {
     const pathname = request.url ? new URL(request.url, "http://127.0.0.1").pathname : "/"
@@ -69,6 +81,18 @@ export const startRsshubRuntime = ({
     if (pathname === "/healthz") {
       response.writeHead(200, { "content-type": "application/json; charset=utf-8" })
       response.end(JSON.stringify({ ok: true }))
+      return
+    }
+
+    if (pathname === "/status") {
+      response.writeHead(200, { "content-type": "application/json; charset=utf-8" })
+      response.end(
+        JSON.stringify({
+          ok: true,
+          cacheSizeBytes: getDirectorySize(cacheDir),
+          cacheLimitBytes: maxCacheBytes,
+        }),
+      )
       return
     }
 

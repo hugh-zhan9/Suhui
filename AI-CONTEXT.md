@@ -1,7 +1,7 @@
 # AI-CONTEXT.md
 
 > 单一事实源（Single Source of Truth）
-> 最后更新时间：2026-02-26（基于当前代码与 issue 修复进展）
+> 最后更新时间：2026-02-28（基于当前代码与 issue 修复进展）
 
 ## 上下文委派策略
 
@@ -37,7 +37,9 @@
 - 预览启动：`pnpm --filter FreeFolo start`
 - 打包：`pnpm --filter FreeFolo build:electron`  
   无签名打包：`pnpm --filter FreeFolo build:electron:unsigned`
+- RSSHub 资源构建：`pnpm --filter FreeFolo build:rsshub`
 - 桌面打包已强制 `asar` 解包所有 `*.node`，并在拷贝保留模块时启用符号链接解引用（`dereference`），用于确保 `better-sqlite3` 原生二进制被正确带入安装包
+- `build:electron/build:electron:unsigned/build:electron-vite` 已前置执行 `build:rsshub`，自动生成 `apps/desktop/resources/rsshub/routes-manifest.json`
 
 ### 5) Release 规则（Desktop）
 
@@ -91,6 +93,31 @@
 
 - `All/Articles` 未读数按“当前有效订阅来源”聚合统计
 - 不再直接依赖 `entryIdByView[All]`，避免陈旧来源导致虚高
+
+## 内嵌 RSSHub 状态（当前）
+
+### 1) 已完成
+
+- 主进程 `RsshubManager`：状态机、健康检查、退避、cooldown、手动重启
+- 启动策略：默认 `spawn + ELECTRON_RUN_AS_NODE=1`，可用环境变量切回 `fork`
+- 路径解析：优先 `app.isPackaged/getAppPath`，不依赖单一 `ELECTRON_IS_PACKAGED`
+- 打包资源：`apps/desktop/resources/rsshub` 已进入 `extraResource`
+- 运行时安全：仅 `127.0.0.1` + `X-RSSHub-Token` 鉴权（未通过返回 `RSSHUB_TOKEN_REJECTED`）
+- 错误透传：`RSSHUB_*` 从主进程透传到渲染层，前端可映射友好文案
+- 自定义实例：设置页可配置 `rsshubCustomUrl`，命中该域名走直连，不拉起本地实例
+- 运行时能力：
+  - `/healthz`
+  - `/status`（缓存占用诊断）
+  - `/rsshub/routes/:lang?`（内置路由清单 RSS）
+  - `/github/release/:owner/:repo`（302 -> GitHub releases atom）
+  - `/github/commit/:owner/:repo`（302 -> GitHub commits atom）
+- 缓存治理：运行时启动会执行缓存目录上限清理（默认 500MB，按文件 mtime LRU 删除）
+
+### 2) 当前边界
+
+- 当前是“embedded-lite”运行时，不是完整官方 RSSHub 全路由执行引擎
+- 除上述内置路由外，其他路径返回 `RSSHUB_ROUTE_NOT_IMPLEMENTED`
+- 跨平台（Windows/Linux）完整验收仍需在目标环境实测
 
 ## 最近关键修复（issue 27-34）
 

@@ -13,14 +13,15 @@
   "main": "./dist/main/index.js",
   "scripts": {
     "analyze:web": "cross-env analyzer=1 WEB_BUILD=1 vite build",
-    "build:electron": "electron-vite build && electron-forge make",
-    "build:electron:unsigned": "FOLO_NO_SIGN=1 electron-vite build && FOLO_NO_SIGN=1 electron-forge make",
+    "build:electron": "pnpm build:rsshub && electron-vite build && electron-forge make",
     "build:electron-forge": "electron-forge make",
     "build:electron-forge:macos": "electron-forge make --arch=x64 --platform=darwin && electron-forge make --arch=arm64 --platform=darwin && tsx scripts/merge-yml.ts",
     "build:electron-forge:mas": "electron-forge make --arch=universal --platform=mas",
     "build:electron-forge:ms": "tsx scripts/generate-appx-manifest.ts && electron-forge make --platform=win32 --ms=true",
-    "build:electron-vite": "electron-vite build",
+    "build:electron-vite": "pnpm build:rsshub && electron-vite build",
+    "build:electron:unsigned": "pnpm build:rsshub && FOLO_NO_SIGN=1 electron-vite build && FOLO_NO_SIGN=1 electron-forge make",
     "build:render": "vite build -c vite.config.electron-render.ts",
+    "build:rsshub": "tsx scripts/build-rsshub.ts",
     "build:web": "rm -rf out/web && cross-env WEB_BUILD=1 vite build",
     "bump": "vv --minor",
     "dedupe:locales": "eslint --fix locales/**/*.json",
@@ -35,7 +36,6 @@
     "update:main-hash": "tsx plugins/vite/generate-main-hash.ts"
   },
   "dependencies": {
-    "better-sqlite3": "12.6.2",
     "@protobufjs/aspromise": "1.1.2",
     "@protobufjs/eventemitter": "1.1.0",
     "@protobufjs/fetch": "1.1.0",
@@ -43,7 +43,8 @@
     "@protobufjs/inquire": "1.1.0",
     "@protobufjs/path": "1.1.2",
     "@protobufjs/pool": "1.1.0",
-    "@protobufjs/utf8": "1.1.0"
+    "@protobufjs/utf8": "1.1.0",
+    "better-sqlite3": "12.6.2"
   },
   "devDependencies": {
     "@electron-forge/cli": "7.11.1",
