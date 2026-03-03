@@ -24,7 +24,7 @@ declare global {
 }
 
 export const initializeApp = async () => {
-  appLog(`${APP_NAME}: Follow everything in one place`, repository.url)
+  appLog(`${APP_NAME}: 溯源而读，回归纯粹`, repository.url)
 
   const dataHydratedTime = await apm("hydrateDatabaseToStore", () => {
     return hydrateDatabaseToStore({

@@ -10,7 +10,7 @@ describe("rsshub runtime console home", () => {
       mode: "official",
     })
 
-    expect(html).toContain("FreeFolo RSSHub")
+    expect(html).toContain("溯洄 RSSHub")
     expect(html).toContain("/status")
     expect(html).toContain("/rsshub/routes/en")
     expect(html).toContain("/routes-index")

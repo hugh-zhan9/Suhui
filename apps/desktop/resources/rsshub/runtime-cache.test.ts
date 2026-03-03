@@ -9,7 +9,7 @@ import { cleanupCacheDir, getDirectorySize } from "./runtime-cache.js"
 const testRoots: string[] = []
 
 const createTempDir = () => {
-  const root = join(tmpdir(), `freefolo-rsshub-cache-${Date.now()}-${Math.random()}`)
+  const root = join(tmpdir(), `suhui-rsshub-cache-${Date.now()}-${Math.random()}`)
   mkdirSync(root, { recursive: true })
   testRoots.push(root)
   return root

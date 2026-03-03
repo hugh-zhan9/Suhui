@@ -20,7 +20,7 @@ const buildRoutesRss = (baseUrl) => {
     return `<item><title>${escapeXml(route)}</title><link>${escapeXml(link)}</link><guid>${escapeXml(route)}</guid><pubDate>${now}</pubDate><description>Built-in route</description></item>`
   }).join("")
 
-  return `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>FreeFolo Built-in RSSHub Routes</title><link>${escapeXml(baseUrl)}</link><description>Available routes in embedded runtime</description><lastBuildDate>${now}</lastBuildDate>${items}</channel></rss>`
+  return `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>溯洄 (SuHui) 内置 RSSHub 路由</title><link>${escapeXml(baseUrl)}</link><description>溯洄本地运行时可用的路由列表</description><lastBuildDate>${now}</lastBuildDate>${items}</channel></rss>`
 }
 
 export const handleKnownRoute = (pathname, baseUrl) => {

@@ -50,8 +50,8 @@ export class GitRunner {
       // 检查是否已经有 username，没有则为当前仓库局部配置
       const name = await this.run("git config user.name").catch(() => "")
       if (!name) {
-        await this.run('git config user.name "FreeFolo Sync"')
-        await this.run('git config user.email "sync@freefolo.local"')
+        await this.run('git config user.name "溯洄 Sync"')
+        await this.run('git config user.email "sync@suhui.local"')
       }
     } catch (e) {
       console.warn("[GitRunner] failed to ensure author config", e)

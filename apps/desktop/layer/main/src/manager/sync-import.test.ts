@@ -7,7 +7,7 @@ import { randomUUID } from "node:crypto"
 // TDD: 先写测试，后写实现
 
 function makeTmpDir() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), "freefolo-sync-import-test-"))
+  return fs.mkdtempSync(path.join(os.tmpdir(), "suhui-sync-import-test-"))
 }
 
 describe("importState", () => {

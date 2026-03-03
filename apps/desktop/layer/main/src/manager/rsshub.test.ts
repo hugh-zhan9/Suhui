@@ -94,12 +94,12 @@ describe("RsshubManager", () => {
       port: 5123,
       token: "token-spawn",
       baseEnv: { NODE_ENV: "production" },
-      execPath: "/Applications/FreeFolo.app/Contents/MacOS/FreeFolo",
+      execPath: "/Applications/溯洄.app/Contents/MacOS/溯洄",
     })
 
     expect(spec).toEqual({
       kind: "spawn",
-      command: "/Applications/FreeFolo.app/Contents/MacOS/FreeFolo",
+      command: "/Applications/溯洄.app/Contents/MacOS/溯洄",
       args: ["/tmp/rsshub/index.js"],
       options: {
         env: {
@@ -122,7 +122,7 @@ describe("RsshubManager", () => {
       port: 5124,
       token: "token-fork",
       baseEnv: { NODE_ENV: "production" },
-      execPath: "/Applications/FreeFolo.app/Contents/MacOS/FreeFolo",
+      execPath: "/Applications/溯洄.app/Contents/MacOS/溯洄",
     })
 
     expect(spec).toEqual({
@@ -148,22 +148,22 @@ describe("RsshubManager", () => {
       port: 5125,
       token: "token-official",
       baseEnv: { NODE_ENV: "production" },
-      execPath: "/Applications/FreeFolo.app/Contents/MacOS/FreeFolo",
+      execPath: "/Applications/溯洄.app/Contents/MacOS/溯洄",
       rsshubEnv: {
         TWITTER_COOKIE: "auth_token=xxx; ct0=yyy",
-        RSSHUB_LOG_DIR: "/tmp/freefolo/rsshub/logs",
-        RSSHUB_CACHE_DIR: "/tmp/freefolo/rsshub/cache",
+        RSSHUB_LOG_DIR: "/tmp/suhui/rsshub/logs",
+        RSSHUB_CACHE_DIR: "/tmp/suhui/rsshub/cache",
         NO_LOGFILES: "1",
       },
-      workingDirectory: "/tmp/freefolo/rsshub",
+      workingDirectory: "/tmp/suhui/rsshub",
     } as any)
 
     expect(spec.kind).toBe("spawn")
     expect(spec.options.env.TWITTER_COOKIE).toBe("auth_token=xxx; ct0=yyy")
-    expect(spec.options.env.RSSHUB_LOG_DIR).toBe("/tmp/freefolo/rsshub/logs")
-    expect(spec.options.env.RSSHUB_CACHE_DIR).toBe("/tmp/freefolo/rsshub/cache")
+    expect(spec.options.env.RSSHUB_LOG_DIR).toBe("/tmp/suhui/rsshub/logs")
+    expect(spec.options.env.RSSHUB_CACHE_DIR).toBe("/tmp/suhui/rsshub/cache")
     expect(spec.options.env.NO_LOGFILES).toBe("1")
-    expect(spec.options.cwd).toBe("/tmp/freefolo/rsshub")
+    expect(spec.options.cwd).toBe("/tmp/suhui/rsshub")
   })
 
   it("应根据打包环境生成 RSSHub 入口路径", () => {
@@ -283,13 +283,13 @@ describe("RsshubManager", () => {
   it("无 electron 上下文与环境变量时应按路径特征识别打包态", () => {
     const packagedByPath = resolveRsshubRuntimeContext({
       env: {},
-      cwd: "/Applications/FreeFolo.app/Contents/Resources/app.asar",
-      resourcesPath: "/Applications/FreeFolo.app/Contents/Resources",
+      cwd: "/Applications/溯洄.app/Contents/Resources/app.asar",
+      resourcesPath: "/Applications/溯洄.app/Contents/Resources",
       electronApp: null,
     })
 
     expect(packagedByPath.isPackaged).toBe(true)
-    expect(packagedByPath.appPath).toBe("/Applications/FreeFolo.app/Contents/Resources/app.asar")
+    expect(packagedByPath.appPath).toBe("/Applications/溯洄.app/Contents/Resources/app.asar")
   })
 
   it("启动成功后应进入 running 状态并返回端口", async () => {

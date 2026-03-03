@@ -41,7 +41,7 @@ export function DownloadPage() {
       {/* Main Content */}
       <div className="w-full max-w-xs space-y-6 text-center">
         <div>
-          <h1 className="mb-3 text-xl font-semibold text-text">Download FreeFolo</h1>
+          <h1 className="mb-3 text-xl font-semibold text-text">Download 溯洄</h1>
           <p className="text-sm text-text-secondary">
             {isMobile
               ? mobilePlatform

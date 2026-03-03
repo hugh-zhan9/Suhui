@@ -2,11 +2,11 @@
   "name": "@follow/electron-main",
   "type": "module",
   "private": true,
-  "author": "FreeFolo Team",
+  "author": "溯洄 Team",
   "license": "GPL-3.0-only",
   "homepage": "https://github.com/hugh-zhan9",
   "repository": {
-    "url": "https://github.com/hugh-zhan9/FreeFoloRss",
+    "url": "https://github.com/hugh-zhan9/溯洄Rss",
     "type": "git"
   },
   "exports": {

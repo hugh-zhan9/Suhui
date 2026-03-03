@@ -1,6 +1,6 @@
-# FreeFolo Command Abstractions
+# 溯洄 Command Abstractions
 
-This module encapsulates command abstractions used by FreeFolo via CMD-K.
+This module encapsulates command abstractions used by 溯洄 via CMD-K.
 
 The architectural design of the API takes inspiration from the [VSCode Command Abstractions](https://code.visualstudio.com/api/references/contribution-points#contributes.commands).
 

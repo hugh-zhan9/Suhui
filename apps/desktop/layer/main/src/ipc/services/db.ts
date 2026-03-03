@@ -35,7 +35,7 @@ function fetchUrl(url: string, rsshubToken?: string | null, redirectCount = 0): 
     }
     const lib = url.startsWith("https") ? https : http
     const headers: Record<string, string> = {
-      "User-Agent": "FreeFolo RSS Reader/1.0",
+      "User-Agent": "溯洄 RSS Reader/1.0",
       Accept: "application/rss+xml, application/atom+xml, application/xml, */*",
     }
     if (rsshubToken) {

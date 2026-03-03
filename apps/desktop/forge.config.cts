@@ -150,7 +150,7 @@ const replacePackagedBetterSqliteBinary = async (appPath: string) => {
 const config: ForgeConfig = {
   ...(isNoSignBuild ? { outDir: noSignOutDir } : {}),
   packagerConfig: {
-    name: isStaging ? "FreeFolo Staging" : "FreeFolo",
+    name: isStaging ? "溯洄 Staging" : "溯洄",
     appCategoryType: "public.app-category.news",
     buildVersion: process.env.BUILD_VERSION || undefined,
     appBundleId: "is.follow",
@@ -158,11 +158,11 @@ const config: ForgeConfig = {
     extraResource: ["./resources/app-update.yml", "./resources/rsshub"],
     protocols: [
       {
-        name: "FreeFolo",
+        name: "溯洄",
         schemes: ["follow"],
       },
       {
-        name: "FreeFolo",
+        name: "溯洄",
         schemes: ["folo"],
       },
     ],
@@ -258,7 +258,7 @@ const config: ForgeConfig = {
     }),
     new MakerPKG(
       {
-        name: "FreeFolo",
+        name: "溯洄",
         keychain: process.env.KEYCHAIN_PATH,
       },
       ["mas"],
@@ -268,7 +268,7 @@ const config: ForgeConfig = {
       ? [
           new MakerAppX({
             publisher: "CN=7CBBEB6A-9B0E-4387-BAE3-576D0ACA279E",
-            packageDisplayName: "FreeFolo - RSS in one place",
+            packageDisplayName: "溯洄 - 溯源而读，回归纯粹",
             devCert: "build/dev.pfx",
             assets: "static/appx",
             manifest: "build/appxmanifest.xml",
@@ -281,7 +281,7 @@ const config: ForgeConfig = {
         ]
       : [
           new MakerSquirrel({
-            name: "FreeFolo",
+            name: "溯洄",
             setupIcon: isStaging ? "resources/icon-staging.ico" : "resources/icon.ico",
             iconUrl: "https://app.folo.is/favicon.ico",
           }),
@@ -308,7 +308,7 @@ const config: ForgeConfig = {
       config: {
         repository: {
           owner: "hugh-zhan9",
-          name: "FreeFolo",
+          name: "溯洄",
         },
         draft: true,
       },

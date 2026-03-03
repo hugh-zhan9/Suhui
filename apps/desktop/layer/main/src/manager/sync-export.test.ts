@@ -6,7 +6,7 @@ import * as path from "node:path"
 // 此测试先挂起（RED），按 TDD 规范编写 exportState 逻辑测试。
 
 function makeTmpDir() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), "freefolo-sync-export-test-"))
+  return fs.mkdtempSync(path.join(os.tmpdir(), "suhui-sync-export-test-"))
 }
 
 describe("exportState", () => {
