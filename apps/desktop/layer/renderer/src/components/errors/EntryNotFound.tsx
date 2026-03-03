@@ -1,4 +1,3 @@
-import { Logo } from "@follow/components/icons/logo.jsx"
 import type { FC } from "react"
 
 import { CustomSafeError } from "../../errors/CustomSafeError"
@@ -13,11 +12,9 @@ const EntryNotFoundErrorFallback: FC<AppErrorFallbackProps> = ({ resetError, err
   useResetErrorWhenRouteChange(resetError)
   return (
     <div className="flex w-full flex-1 flex-col items-center justify-center rounded-md bg-theme-background p-2">
-      <div className="center m-auto flex max-w-prose flex-col gap-4 text-center">
-        <div className="center mb-8 flex">
-          <Logo className="size-20" />
-        </div>
-        <p className="font-semibold">FreeFolo - 免费的离线 Folo RSS阅读器</p>
+      <div className="m-auto flex max-w-prose flex-col items-center justify-center gap-3 text-center">
+        <p className="text-lg font-bold">溯洄 (SuHui)</p>
+        <p className="text-[14px] font-medium text-zinc-500 dark:text-zinc-400">溯源而读，回归纯粹</p>
       </div>
     </div>
   )

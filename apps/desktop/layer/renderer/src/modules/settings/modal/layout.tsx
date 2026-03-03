@@ -1,5 +1,4 @@
 import { Spring } from "@follow/components/constants/spring.js"
-import { Logo } from "@follow/components/icons/logo.jsx"
 import { LetsIconsResizeDownRightLight } from "@follow/components/icons/resize.jsx"
 import { IN_ELECTRON } from "@follow/shared/constants"
 import { useIsLoggedIn } from "@follow/store/user/hooks"
@@ -29,6 +28,8 @@ import type { SettingPageConfig } from "../utils"
 import { DisableWhy } from "../utils"
 import { SettingModalContentPortalableContext, useSetSettingTab, useSettingTab } from "./context"
 import { defaultCtx, SettingContext } from "./hooks"
+
+const APP_ICON_SRC = "icon.png?v=20260303"
 
 export function SettingModalLayout(props: PropsWithChildren) {
   const { children } = props
@@ -119,8 +120,15 @@ export function SettingModalLayout(props: PropsWithChildren) {
             <div className="flex h-0 flex-1" ref={elementRef}>
               <div className="flex min-h-0 min-w-44 max-w-[20ch] flex-col rounded-l-xl border-r border-r-border bg-sidebar px-2 py-6 backdrop-blur-background">
                 <div className="mb-4 flex h-8 items-center gap-2 px-2 font-bold">
-                  <Logo className="mr-1 size-6" />
-                  <span className="text-base font-semibold leading-none">FreeFolo</span>
+                  <img
+                    src={APP_ICON_SRC}
+                    alt="溯洄图标"
+                    className="mr-1 size-6 rounded-md"
+                    onError={(event) => {
+                      event.currentTarget.src = "icon.svg"
+                    }}
+                  />
+                  <span className="text-base font-semibold leading-none">溯洄</span>
                 </div>
                 <nav className="flex grow flex-col">
                   <SidebarItems />

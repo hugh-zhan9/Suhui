@@ -201,7 +201,7 @@ export const registerAppMenu = () => {
           click: () => {
             WindowManager.createWindow({
               extraPath: `#add?url=${encodeURIComponent(
-                "https://github.com/hugh-zhan9/FreeFoloRss/releases.atom",
+                "https://github.com/hugh-zhan9/溯洄Rss/releases.atom",
               )}`,
               width: 800,
               height: 600,

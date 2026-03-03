@@ -50,7 +50,7 @@ const ensureOfficialRuntime = () => {
     join(tempInstallDir, "package.json"),
     JSON.stringify(
       {
-        name: "freefolo-rsshub-official-runtime",
+        name: "suhui-rsshub-official-runtime",
         private: true,
         version: "0.0.0",
       },

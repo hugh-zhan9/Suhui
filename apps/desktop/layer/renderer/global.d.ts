@@ -6,7 +6,7 @@ declare global {
     api?: { canWindowBlur: boolean }
     platform: NodeJS.Platform
   }
-  export const APP_NAME = "FreeFolo"
+  export const APP_NAME = "溯洄"
 }
 
 declare module "virtual:pwa-register/react" {

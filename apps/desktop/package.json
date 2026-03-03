@@ -1,10 +1,10 @@
 {
-  "name": "FreeFolo",
+  "name": "suhui",
   "type": "module",
   "version": "1.3.1",
   "private": true,
-  "description": "FreeFolo desktop RSS reader",
-  "author": "FreeFolo Team",
+  "description": "溯洄 (SuHui) - 本地优先、隐私至上的 RSS 阅读器",
+  "author": "溯洄团队",
   "homepage": "https://github.com/hugh-zhan9",
   "repository": {
     "url": "https://github.com/hugh-zhan9/Folo",
@@ -96,6 +96,6 @@
     "vite-plugin-route-builder": "0.4.1",
     "vite-tsconfig-paths": "6.1.1"
   },
-  "productName": "FreeFolo",
+  "productName": "溯洄",
   "mainHash": "906a0b82e00829115764f36a38132f3774120c4bea764e3b1be8949f447ccb06"
 }

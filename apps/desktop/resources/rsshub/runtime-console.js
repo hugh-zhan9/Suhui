@@ -16,7 +16,7 @@ export const buildConsoleHomeHtml = ({ baseUrl, token: _token, mode }) => {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>FreeFolo RSSHub 控制台</title>
+  <title>溯洄 (SuHui) RSSHub 控制台</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 24px; color: #111; background: #fafafa; }
     code { background: #f4f4f5; padding: 2px 6px; border-radius: 6px; }
@@ -42,7 +42,7 @@ export const buildConsoleHomeHtml = ({ baseUrl, token: _token, mode }) => {
 </head>
 <body>
   <div class="card">
-    <h2>FreeFolo RSSHub 本地控制台</h2>
+    <h2>溯洄 (SuHui) RSSHub 本地控制台</h2>
     <p class="muted">当前模式：<code>${escapeHtml(mode)}</code></p>
     <ul>
       <li><a href="${escapeHtml(statusUrl)}" target="_blank" rel="noreferrer">查看服务状态 /status</a></li>

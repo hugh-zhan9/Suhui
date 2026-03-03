@@ -1,8 +1,8 @@
-# FreeFolo App Layout Architecture Analysis
+# 溯洄 App Layout Architecture Analysis
 
 ## Overview
 
-The FreeFolo desktop application uses a nested layout system built on React Router v7 with the `Outlet` component pattern. This architecture provides a flexible, hierarchical structure for timeline, subview, and content layouts.
+The 溯洄 desktop application uses a nested layout system built on React Router v7 with the `Outlet` component pattern. This architecture provides a flexible, hierarchical structure for timeline, subview, and content layouts.
 
 ## Layout Hierarchy & Route Flow
 

@@ -7,7 +7,7 @@ export class DBManager {
   public static async init() {
     // 决定 SQLite 文件放在用户的 appData 目录下
     const userDataPath = app.getPath("userData")
-    const dbPath = join(userDataPath, "folo_local.db")
+    const dbPath = join(userDataPath, "suhui_local.db")
     
     console.log(`[DBManager] Initializing Main DB at: ${dbPath}`)
     initializeMainDB(dbPath)

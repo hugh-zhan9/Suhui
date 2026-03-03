@@ -14,7 +14,7 @@ import * as path from "node:path"
 // ======== helpers ========
 
 function makeTmpDir() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), "freefolo-sync-test-"))
+  return fs.mkdtempSync(path.join(os.tmpdir(), "suhui-sync-test-"))
 }
 
 // 隔离依赖，防止 Vite 误解析底层 Drizzle schema 导致 Parse error

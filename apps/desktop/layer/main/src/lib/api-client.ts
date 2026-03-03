@@ -43,7 +43,7 @@ followClient.addRequestInterceptor(async (ctx) => {
     cookie.name.includes(BETTER_AUTH_COOKIE_NAME_SESSION_TOKEN),
   )
   const headerCookie = sessionCookie ? `${sessionCookie.name}=${sessionCookie.value}` : ""
-  const userAgent = window?.webContents.getUserAgent() || `FreeFolo/${PKG.version}`
+  const userAgent = window?.webContents.getUserAgent() || `溯洄/${PKG.version}`
 
   options.headers = {
     ...header,

@@ -69,15 +69,15 @@ async function main() {
     const config: AppXManifestConfig = {
       packageName: "Folo",
       packageDisplayName: isStaging
-        ? "FreeFolo Staging - Follow everything in one place"
-        : "FreeFolo - Follow everything in one place",
+        ? "溯洄 Staging - 溯源而读，回归纯粹"
+        : "溯洄 - 溯源而读，回归纯粹",
       publisherDisplayName: "Natural Selection Labs",
       identityName: "NaturalSelectionLabs.Follow-Yourfavoritesinoneinbo",
       version: appxVersion,
       publisher: "CN=7CBBEB6A-9B0E-4387-BAE3-576D0ACA279E",
       packageBackgroundColor: "#FF5C00",
       protocols: ["folo", "follow"],
-      description: "Follow everything in one place.",
+      description: "溯源而读，回归纯粹.",
       appBundleId: "is.follow",
     }
 

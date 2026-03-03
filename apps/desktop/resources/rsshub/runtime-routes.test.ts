@@ -9,7 +9,7 @@ describe("rsshub runtime routes", () => {
     expect(result?.statusCode).toBe(200)
     expect(result?.contentType).toContain("application/rss+xml")
     expect(result?.body).toContain("<rss")
-    expect(result?.body).toContain("FreeFolo Built-in RSSHub Routes")
+    expect(result?.body).toContain("溯洄 Built-in RSSHub Routes")
   })
 
   it("未知路由应返回 null 交由上层处理", () => {
