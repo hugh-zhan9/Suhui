@@ -33,3 +33,10 @@ apps/desktop/build/appxmanifest.xml
 
 .claude/settings.local.json
 .serena
+
+# Web 构建产物（根目录 index.html 由 build:web 生成，不应提交）
+/index.html
+
+# RSSHub 构建产物（由 build:rsshub 脚本自动生成）
+apps/desktop/resources/rsshub/routes-manifest.json
+apps/desktop/resources/rsshub/logs/
