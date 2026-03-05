@@ -5009,3 +5009,48 @@
 - `apps/desktop/layer/renderer/src/styles/main.css`
 
 ---
+
+## [2026-03-05 16:05] [fix]
+
+- **Change**: 增强订阅预览错误透传，定位 db.previewFeed 真实失败原因
+- **Risk Analysis**: 仅增加错误包装与日志，不改变订阅成功路径；风险低
+- **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/ipc/services/db.ts`
+- `packages/internal/store/src/modules/feed/store.ts`
+
+---
+
+## [2026-03-05 16:10] [fix]
+
+- **Change**: 修复订阅预览 User-Agent 含中文导致的请求头非法问题
+- **Risk Analysis**: 将请求头改为 ASCII，兼容 Node HTTP 规范；风险低
+- **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/ipc/services/db.ts`
+- `apps/desktop/layer/main/src/lib/api-client.ts`
+
+---
+
+## [2026-03-05 16:18] [fix]
+
+- **Change**: 订阅抓取重定向策略增强：上限提升并识别循环跳转
+- **Risk Analysis**: 提高兼容性并避免无意义重试；仅影响抓取重定向分支，风险低
+- **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/ipc/services/db.ts`
+
+---
+
+## [2026-03-05 16:35] [fix]
+
+- **Change**: 修复 RSSHub 开关失败时状态机和错误透传
+- **Risk Analysis**: 启动失败时补全状态回滚与重试，并将真实错误传递到前端提示；风险低
+- **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/manager/rsshub.ts`
+- `apps/desktop/layer/main/src/ipc/services/db.ts`
+- `apps/desktop/layer/renderer/src/modules/rsshub/LocalRsshubConsole.tsx`
+- `apps/desktop/layer/renderer/src/modules/rsshub/LocalRsshubConsole 2.tsx`
+
+---
