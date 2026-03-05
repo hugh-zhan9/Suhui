@@ -116,6 +116,11 @@ export const toastFetchError = (
     }
   }
 
+  // 对普通 Error 对象兜底：前三个分支均未读 message，这里补上
+  if (!message) {
+    message = error.message || ""
+  }
+
   // 2fa errors are handled by the form
   if (code === 4007 || code === 4008) {
     return

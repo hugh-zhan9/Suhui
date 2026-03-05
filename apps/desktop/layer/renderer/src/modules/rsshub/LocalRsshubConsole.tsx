@@ -114,8 +114,9 @@ export const LocalRsshubConsole = ({ compact = false }: { compact?: boolean }) =
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: localRsshubQueryKey })
     },
-    onError: () => {
-      toast.error("RSSHub 开关操作失败")
+    onError: (error) => {
+      const message = error instanceof Error ? error.message : String(error)
+      toast.error(`RSSHub 开关操作失败：${message}`)
     },
   })
 

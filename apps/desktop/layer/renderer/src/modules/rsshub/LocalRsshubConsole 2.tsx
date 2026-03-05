@@ -113,8 +113,9 @@ export const LocalRsshubConsole = ({ compact = false }: { compact?: boolean }) =
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: localRsshubQueryKey })
     },
-    onError: () => {
-      toast.error("RSSHub 开关操作失败")
+    onError: (error) => {
+      const message = error instanceof Error ? error.message : String(error)
+      toast.error(`RSSHub 开关操作失败：${message}`)
     },
   })
 
@@ -250,7 +251,7 @@ export const LocalRsshubConsole = ({ compact = false }: { compact?: boolean }) =
           Lite 为轻量内置路由；Official 为官方 RSSHub 全量模式（切换后自动重启内置服务）
         </SettingDescription>
         {runtimeMode === "lite" && (
-          <div className="rounded-md border border-stroke bg-theme-background/40 p-3 text-xs">
+          <div className="border-stroke bg-theme-background/40 rounded-md border p-3 text-xs">
             <div className="mb-2 font-medium text-text">
               Lite 模式支持路由（{state.liteSupportedRoutes.length}）
             </div>
