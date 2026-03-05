@@ -18,6 +18,8 @@ export interface RsshubProcessLike {
     listener: (code: number | null, signal: NodeJS.Signals | null) => void,
   ) => void
   emitExit?: (code?: number, signal?: NodeJS.Signals | null) => void
+  stdout?: NodeJS.ReadableStream | null
+  stderr?: NodeJS.ReadableStream | null
 }
 
 export interface RsshubManagerState {
@@ -379,7 +381,7 @@ const defaultDeps = (): RsshubManagerDeps => ({
     }
 
     const mode: RsshubLaunchMode =
-      process.env["FREEFOLO_RSSHUB_LAUNCH_MODE"] === "fork" ? "fork" : "spawn-node"
+      process.env["FREEFOLO_RSSHUB_LAUNCH_MODE"] === "spawn-node" ? "spawn-node" : "fork"
     const chromeConfig = resolveBundledChromeConfig({
       runtimeRoot,
       env: process.env,
@@ -532,28 +534,55 @@ class RsshubManager {
   private async startInternal(): Promise<{ port: number; token: string }> {
     const port = await this.deps.createPort()
     const token = this.deps.createToken()
-    const processRef = await this.deps.launch({ port, token })
+    let processRef: RsshubProcessLike | null = null
 
-    processRef.on("exit", () => {
-      this.handleChildExit()
-    })
+    try {
+      processRef = await this.deps.launch({ port, token })
 
-    this.state.process = processRef
-    this.state.port = port
-    this.state.token = token
+      if (processRef.stdout) {
+        processRef.stdout.on("data", (d: Buffer) => {
+          console.info("[rsshub-child]", String(d).trim())
+        })
+      }
+      if (processRef.stderr) {
+        processRef.stderr.on("data", (d: Buffer) => {
+          console.error("[rsshub-child:err]", String(d).trim())
+        })
+      }
 
-    const healthy = await this.deps.healthCheck({ port, token })
-    if (!healthy) {
+      processRef.on("exit", () => {
+        this.handleChildExit()
+      })
+
+      this.state.process = processRef
+      this.state.port = port
+      this.state.token = token
+
+      const healthy = await this.deps.healthCheck({ port, token })
+      if (!healthy) {
+        throw new Error("RSSHub health check failed")
+      }
+
+      this.state.status = "running"
+      this.state.retryCount = 0
+      this.state.cooldownUntil = null
+
+      return { port, token }
+    } catch (error) {
+      if (processRef) {
+        try {
+          processRef.kill("SIGTERM")
+        } catch {
+          // noop
+        }
+      }
+      this.state.process = null
+      this.state.port = null
+      this.state.token = null
       this.state.status = "error"
       this.scheduleRetry()
-      throw new Error("RSSHub health check failed")
+      throw error instanceof Error ? error : new Error(String(error))
     }
-
-    this.state.status = "running"
-    this.state.retryCount = 0
-    this.state.cooldownUntil = null
-
-    return { port, token }
   }
 
   async stop(): Promise<void> {
@@ -568,6 +597,21 @@ class RsshubManager {
       status: "stopped",
       retryCount: 0,
       cooldownUntil: null,
+    }
+  }
+
+  /**
+   * 重置冷却状态，允许用户主动触发重试而不必等待 cooldownMs。
+   * 仅在状态为 cooldown 时生效，其他状态下为 noop。
+   */
+  resetCooldown(): void {
+    if (this.state.status === "cooldown") {
+      this.state = {
+        ...this.state,
+        status: "stopped",
+        retryCount: 0,
+        cooldownUntil: null,
+      }
     }
   }
 

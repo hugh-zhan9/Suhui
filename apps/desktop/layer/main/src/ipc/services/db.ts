@@ -11,9 +11,9 @@ import { IpcMethod, IpcService } from "electron-ipc-decorator"
 import { store } from "~/lib/store"
 import { DBManager } from "~/manager/db"
 import { rsshubManager } from "~/manager/rsshub"
+import { loadLiteSupportedRoutes } from "~/manager/rsshub-lite-routes"
 import { drainPendingOps } from "~/manager/sync-applier"
 import { syncLogger } from "~/manager/sync-logger"
-import { loadLiteSupportedRoutes } from "~/manager/rsshub-lite-routes"
 
 import { findDuplicateFeed } from "./rss-dedup"
 import { buildEntryMediaPayload } from "./rss-entry-media"
@@ -27,15 +27,21 @@ import { resolveRsshubUrl, shouldUseLocalRsshubRuntime } from "./rsshub-url"
 /**
  * Fetches a URL using Node.js built-in http/https, follows up to 5 redirects.
  */
-function fetchUrl(url: string, rsshubToken?: string | null, redirectCount = 0): Promise<string> {
+function fetchUrl(
+  url: string,
+  rsshubToken?: string | null,
+  redirectCount = 0,
+  redirectVisited = new Set<string>(),
+): Promise<string> {
   return new Promise((resolve, reject) => {
-    if (redirectCount > 5) {
+    if (redirectCount > 12) {
       reject(new Error("Too many redirects"))
       return
     }
     const lib = url.startsWith("https") ? https : http
     const headers: Record<string, string> = {
-      "User-Agent": "溯洄 RSS Reader/1.0",
+      // Node.js request header values must be ASCII-only.
+      "User-Agent": "Suhui-RSS-Reader/1.0",
       Accept: "application/rss+xml, application/atom+xml, application/xml, */*",
     }
     if (rsshubToken) {
@@ -50,7 +56,13 @@ function fetchUrl(url: string, rsshubToken?: string | null, redirectCount = 0): 
           res.headers.location
         ) {
           const resolvedLocation = new URL(res.headers.location, url).toString()
-          resolve(fetchUrl(resolvedLocation, rsshubToken, redirectCount + 1))
+          if (redirectVisited.has(resolvedLocation)) {
+            reject(new Error(`Redirect loop detected: ${resolvedLocation}`))
+            return
+          }
+          const nextVisited = new Set(redirectVisited)
+          nextVisited.add(resolvedLocation)
+          resolve(fetchUrl(resolvedLocation, rsshubToken, redirectCount + 1, nextVisited))
           return
         }
         if (res.statusCode && res.statusCode >= 400) {
@@ -249,7 +261,21 @@ export class DbService extends IpcService {
 
   @IpcMethod()
   async previewFeed(_context: IpcContext, form: { url: string; feedId?: string }) {
-    return this.buildPreviewData(form.url, form.feedId)
+    const inputUrl = (form?.url || "").trim()
+    if (!inputUrl) {
+      throw new Error("[db.previewFeed] feed url is required")
+    }
+    try {
+      return await this.buildPreviewData(inputUrl, form.feedId)
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error)
+      console.error("[db.previewFeed] failed", {
+        url: inputUrl,
+        feedId: form?.feedId,
+        reason,
+      })
+      throw new Error(`[db.previewFeed] failed for ${inputUrl}: ${reason}`)
+    }
   }
 
   @IpcMethod()
@@ -438,7 +464,7 @@ export class DbService extends IpcService {
     }
 
     // 尝试重试由于前置依赖缺失而 pending 的同步操作（后台执行）
-    drainPendingOps().catch(err => {
+    drainPendingOps().catch((err) => {
       console.error("[DbService] error draining pending ops after refresh:", err)
     })
 
@@ -467,7 +493,7 @@ export class DbService extends IpcService {
         where: (subscriptions, { inArray }) => inArray(subscriptions.feedId, targets.feedIds),
         columns: { id: true },
       })
-      idsToDelete.push(...subs.map(s => s.id))
+      idsToDelete.push(...subs.map((s) => s.id))
     }
 
     try {
@@ -497,7 +523,10 @@ export class DbService extends IpcService {
     return {
       status: state.status,
       port: state.port,
-      consoleUrl: buildLocalRsshubConsoleUrl({ port: state.port, token: state.token }),
+      consoleUrl:
+        state.port != null
+          ? buildLocalRsshubConsoleUrl({ port: state.port, token: state.token ?? undefined })
+          : null,
       retryCount: state.retryCount,
       cooldownUntil: state.cooldownUntil,
       runtimeMode: rsshubManager.getRuntimeMode(),
@@ -507,10 +536,17 @@ export class DbService extends IpcService {
 
   @IpcMethod()
   async toggleRsshub(_context: IpcContext, enabled: boolean) {
-    if (enabled) {
-      return rsshubManager.start()
+    try {
+      if (enabled) {
+        // 用户主动开启时重置冷却状态，允许立即重试
+        rsshubManager.resetCooldown()
+        return await rsshubManager.start()
+      }
+      return await rsshubManager.stop()
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error)
+      throw new Error(`RSSHub toggle failed: ${reason}`)
     }
-    return rsshubManager.stop()
   }
 
   @IpcMethod()
