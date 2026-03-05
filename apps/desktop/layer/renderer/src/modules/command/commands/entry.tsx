@@ -11,8 +11,8 @@ import { useMutation } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
-import { AudioPlayer, getAudioPlayerAtomValue } from "~/atoms/player"
 import { showPopover } from "~/atoms/popover"
+import { getGeneralSettings } from "~/atoms/settings/general"
 import {
   getShowSourceContent,
   toggleShowSourceContent,
@@ -22,6 +22,7 @@ import { SharePanel } from "~/components/common/SharePanel"
 import { toggleEntryReadability } from "~/hooks/biz/useEntryActions"
 import { navigateEntry } from "~/hooks/biz/useNavigateEntry"
 import { getRouteParams } from "~/hooks/biz/useRouteParams"
+import { ipcServices } from "~/lib/client"
 import { copyToClipboard } from "~/lib/clipboard"
 import { markAllByRoute } from "~/modules/entry-column/hooks/useMarkAll"
 import { useGalleryModal } from "~/modules/entry-content/hooks"
@@ -168,7 +169,7 @@ export const useRegisterEntryCommands = () => {
         label: t("entry_actions.export_as_pdf"),
         icon: <i className="i-mgc-pdf-cute-re" />,
         category,
-        run: ({ entryId }) => {
+        run: async ({ entryId }) => {
           const entry = getEntry(entryId)
 
           if (!entry) {
@@ -176,7 +177,26 @@ export const useRegisterEntryCommands = () => {
             return
           }
 
-          window.print()
+          // 读取设置中配置的默认路径，有路径则静默写入，无路径则弹对话框
+          const { pdfSavePath } = getGeneralSettings()
+          const contentHtml = entry.readabilityContent || entry.content || ""
+          if (!contentHtml.trim()) {
+            toast.error("Failed to export as pdf: content is empty", { duration: 3000 })
+            return
+          }
+          const result = await ipcServices?.app.exportEntryAsPDF({
+            title: entry.title ?? undefined,
+            savePath: pdfSavePath || undefined,
+            contentHtml,
+            author: entry.author ?? undefined,
+            publishedAt: entry.publishedAt
+              ? new Date(entry.publishedAt).toLocaleString()
+              : undefined,
+            url: entry.url ?? undefined,
+          })
+          if (result?.success) {
+            toast.success(t("entry_actions.export_as_pdf_success"), { duration: 2000 })
+          }
         },
       },
       {

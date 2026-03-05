@@ -17,10 +17,10 @@ import { logger, revealLogFile } from "~/logger"
 import { AppManager } from "~/manager/app"
 import { WindowManager } from "~/manager/window"
 import { cleanupOldRender, loadDynamicRenderEntry } from "~/updater/hot-updater"
-import { shouldShowMainWindowOnReady } from "./ready-to-show"
 
 import { downloadFile } from "../../lib/download"
 import { checkForAppUpdates, quitAndInstall } from "../../updater"
+import { shouldShowMainWindowOnReady } from "./ready-to-show"
 
 interface WindowActionInput {
   action: "close" | "minimize" | "maximum"
@@ -36,6 +36,16 @@ interface RendererErrorLogInput {
   message: string
   location?: string
   stack?: string
+}
+
+interface ExportEntryAsPDFInput {
+  title?: string
+  savePath?: string
+  contentHtml?: string
+  sourceName?: string
+  author?: string
+  publishedAt?: string
+  url?: string
 }
 
 interface Sender extends Electron.WebContents {
@@ -272,5 +282,151 @@ export class AppService extends IpcService {
       ...input,
       phase: "startup",
     })
+  }
+
+  @IpcMethod()
+  async showFolderDialog(context: IpcContext): Promise<string | null> {
+    const senderWindow = (context.sender as Sender).getOwnerBrowserWindow()
+    if (!senderWindow) return null
+
+    const result = await dialog.showOpenDialog(senderWindow, {
+      properties: ["openDirectory", "createDirectory"],
+    })
+    return result.canceled ? null : (result.filePaths[0] ?? null)
+  }
+
+  private escapeHtml(value?: string): string {
+    if (!value) return ""
+    return value
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#39;")
+  }
+
+  private buildEntryPrintHtml(input: ExportEntryAsPDFInput): string {
+    const title = this.escapeHtml(input.title || "article")
+    const sourceName = this.escapeHtml(input.sourceName || "")
+    const author = this.escapeHtml(input.author || "")
+    const publishedAt = this.escapeHtml(input.publishedAt || "")
+    const url = this.escapeHtml(input.url || "")
+    const content = input.contentHtml || ""
+
+    return `<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${title}</title>
+    <style>
+      :root { color-scheme: light; }
+      html, body { margin: 0; padding: 0; background: #fff; color: #111; }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB",
+          "Microsoft YaHei", "Noto Sans CJK SC", "Source Han Sans SC", "Segoe UI",
+          system-ui, sans-serif;
+        line-height: 1.7;
+        font-size: 16px;
+      }
+      main { max-width: 820px; margin: 0 auto; padding: 32px 24px 48px; }
+      h1 { margin: 0 0 12px; font-size: 34px; line-height: 1.3; font-weight: 700; }
+      .meta { color: #666; font-size: 14px; margin-bottom: 24px; }
+      .meta span { margin-right: 12px; }
+      .content img, .content video, .content iframe { max-width: 100%; height: auto; }
+      .content pre, .content code { white-space: pre-wrap; word-break: break-word; }
+      .content table { border-collapse: collapse; max-width: 100%; overflow-x: auto; display: block; }
+      .content a { color: #0a7a43; text-decoration: none; }
+      .source-link { margin-top: 20px; font-size: 13px; color: #666; word-break: break-all; }
+      @page { margin: 14mm 10mm 14mm; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>${title}</h1>
+      <div class="meta">
+        ${sourceName ? `<span>${sourceName}</span>` : ""}
+        ${author ? `<span>${author}</span>` : ""}
+        ${publishedAt ? `<span>${publishedAt}</span>` : ""}
+      </div>
+      <article class="content">${content}</article>
+      ${url ? `<div class="source-link">原文链接：${url}</div>` : ""}
+    </main>
+  </body>
+</html>`
+  }
+
+  @IpcMethod()
+  async exportEntryAsPDF(
+    context: IpcContext,
+    input: ExportEntryAsPDFInput,
+  ): Promise<{ success: boolean; canceled?: boolean }> {
+    const senderWindow = (context.sender as Sender).getOwnerBrowserWindow()
+    if (!senderWindow) return { success: false }
+
+    // 清洗标题为安全文件名：兼容中英文标点与常见非法字符
+    const normalizedTitle = (input.title || "article")
+      .normalize("NFKC")
+      .replaceAll(/[/\\?%*:|"<>]/g, "_")
+      .replaceAll("：", "_")
+      .replaceAll(/\s+/g, " ")
+      .trim()
+      .replaceAll(/[. ]+$/g, "")
+    const safeName =
+      Array.from(normalizedTitle)
+        .filter((char) => {
+          const code = char.codePointAt(0) ?? 0
+          return !(code <= 0x1f || code === 0x7f)
+        })
+        .join("") || "article"
+
+    let filePath: string
+
+    if (input.savePath) {
+      // 配置了默认路径：直接写入，不弹对话框
+      filePath = path.join(input.savePath, `${safeName}.pdf`)
+    } else {
+      // 未配置默认路径：弹出系统「另存为」对话框
+      const result = await dialog.showSaveDialog(senderWindow, {
+        defaultPath: path.join(app.getPath("downloads"), `${safeName}.pdf`),
+        filters: [{ name: "PDF Files", extensions: ["pdf"] }],
+      })
+      if (result.canceled || !result.filePath) return { success: false, canceled: true }
+      filePath = result.filePath
+    }
+
+    const printWindow = new BrowserWindow({
+      show: false,
+      width: 1200,
+      height: 1600,
+      webPreferences: {
+        sandbox: true,
+        contextIsolation: true,
+        nodeIntegration: false,
+      },
+    })
+
+    try {
+      if (!input.contentHtml || !input.contentHtml.trim()) {
+        return { success: false }
+      }
+
+      const printHtml = this.buildEntryPrintHtml(input)
+      await printWindow.loadURL(`data:text/html;charset=UTF-8,${encodeURIComponent(printHtml)}`)
+      await printWindow.webContents.executeJavaScript(
+        "document.fonts ? document.fonts.ready.then(() => true) : Promise.resolve(true)",
+      )
+
+      const pdfBuffer = await printWindow.webContents.printToPDF({
+        printBackground: true,
+        preferCSSPageSize: true,
+      })
+      await fsp.writeFile(filePath, pdfBuffer)
+    } finally {
+      if (!printWindow.isDestroyed()) {
+        printWindow.destroy()
+      }
+    }
+    return { success: true }
   }
 }

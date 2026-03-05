@@ -1,21 +1,26 @@
+import { ActionButton } from "@follow/components/ui/button/action-button.js"
+import { useIsEntryStarred } from "@follow/store/collection/hooks"
 import { useEntry } from "@follow/store/entry/hooks"
 import { useFeedById } from "@follow/store/feed/hooks"
 import { useInboxById } from "@follow/store/inbox/hooks"
+import { useSubscriptionByFeedId } from "@follow/store/subscription/hooks"
 import { useEntryTranslation } from "@follow/store/translation/hooks"
-import { useIsEntryStarred } from "@follow/store/collection/hooks"
 import { cn, formatEstimatedMins, formatTimeToSeconds } from "@follow/utils"
 import { useMemo } from "react"
+import { toast } from "sonner"
 import { titleCase } from "title-case"
 import { useShallow } from "zustand/shallow"
 
 import { useShowAITranslation } from "~/atoms/ai-translation"
-import { useActionLanguage } from "~/atoms/settings/general"
+import { getGeneralSettings, useActionLanguage } from "~/atoms/settings/general"
 import { useUISettingKey } from "~/atoms/settings/ui"
 import { CommandActionButton } from "~/components/ui/button/CommandActionButton"
 import { RelativeTime } from "~/components/ui/datetime"
+import { isPDFExportSupportedView } from "~/hooks/biz/export-as-pdf"
 import { useNavigateEntry } from "~/hooks/biz/useNavigateEntry"
 import { useRouteParams } from "~/hooks/biz/useRouteParams"
 import { useFeedSafeUrl } from "~/hooks/common/useFeedSafeUrl"
+import { ipcServices } from "~/lib/client"
 import { COMMAND_ID } from "~/modules/command/commands/id"
 import { useRunCommandFn } from "~/modules/command/hooks/use-command"
 import type { FeedIconEntry } from "~/modules/feed/feed-icon"
@@ -42,7 +47,18 @@ export const EntryTitle = ({
     entryId,
     useShallow((state) => {
       /// keep-sorted
-      const { author, authorAvatar, authorUrl, feedId, inboxHandle, publishedAt, read, title } = state
+      const {
+        author,
+        authorAvatar,
+        authorUrl,
+        content,
+        feedId,
+        inboxHandle,
+        publishedAt,
+        read,
+        readabilityContent,
+        title,
+      } = state
 
       const attachments = state.attachments || []
       const { duration_in_seconds } =
@@ -59,12 +75,14 @@ export const EntryTitle = ({
         author,
         authorAvatar,
         authorUrl,
+        content,
         estimatedMins,
         feedId,
         firstPhotoUrl,
         inboxId: inboxHandle,
         publishedAt,
         read,
+        readabilityContent,
         title,
       }
     }),
@@ -74,6 +92,7 @@ export const EntryTitle = ({
 
   const feed = useFeedById(entry?.feedId)
   const inbox = useInboxById(entry?.inboxId)
+  const subscription = useSubscriptionByFeedId(entry?.feedId)
   const populatedFullHref = useFeedSafeUrl(entryId)
   const enableTranslation = useShowAITranslation()
   const actionLanguage = useActionLanguage()
@@ -86,11 +105,14 @@ export const EntryTitle = ({
   const dateFormat = useUISettingKey("dateFormat")
 
   const navigateEntry = useNavigateEntry()
-  const { view } = useRouteParams()
+  const { view, entryId: routeEntryId } = useRouteParams()
   const isStarred = useIsEntryStarred(entryId)
   const runCmdFn = useRunCommandFn()
   const toggleStar = runCmdFn(COMMAND_ID.entry.star, [{ entryId, view }])
   const toggleRead = runCmdFn(COMMAND_ID.entry.read, [{ entryId }])
+  const exportView = subscription?.view ?? view
+  const isCurrentEntryInRoute = routeEntryId === entryId
+  const canShowExportAsPDF = isCurrentEntryInRoute && isPDFExportSupportedView(exportView)
 
   const iconEntry: FeedIconEntry = useMemo(
     () => ({
@@ -112,6 +134,30 @@ export const EntryTitle = ({
     ? { href: populatedFullHref, target: "_blank", rel: "noopener noreferrer" }
     : {}
   if (!entry) return null
+
+  const exportAsPDF = async () => {
+    if (!isCurrentEntryInRoute) {
+      return
+    }
+    const contentHtml = entry.readabilityContent || entry.content || ""
+    if (!contentHtml.trim()) {
+      toast.error("导出失败：正文为空", { duration: 2000 })
+      return
+    }
+    const { pdfSavePath } = getGeneralSettings()
+    const result = await ipcServices?.app.exportEntryAsPDF({
+      title: entry.title ?? undefined,
+      savePath: pdfSavePath || undefined,
+      contentHtml,
+      sourceName: getPreferredTitle(feed || inbox, titleEntry) ?? undefined,
+      author: entry.author ?? undefined,
+      publishedAt: entry.publishedAt ? new Date(entry.publishedAt).toLocaleString() : undefined,
+      url: populatedFullHref ?? undefined,
+    })
+    if (result?.success) {
+      toast.success("导出 PDF 成功", { duration: 2000 })
+    }
+  }
 
   return compact ? (
     <div className="-mx-6 flex cursor-button items-center gap-2 rounded-lg p-6 transition-colors @sm:-mx-3 @sm:p-3">
@@ -152,6 +198,14 @@ export const EntryTitle = ({
               onClick={toggleRead}
               id={`${entryId}/${COMMAND_ID.entry.read}/detail-title`}
             />
+            {canShowExportAsPDF && (
+              <ActionButton
+                tooltip="导出 PDF"
+                icon={<i className="i-mgc-pdf-cute-re" />}
+                onClick={exportAsPDF}
+                id={`${entryId}/${COMMAND_ID.entry.exportAsPDF}/detail-title`}
+              />
+            )}
             <CommandActionButton
               commandId={COMMAND_ID.entry.star}
               active={isStarred}

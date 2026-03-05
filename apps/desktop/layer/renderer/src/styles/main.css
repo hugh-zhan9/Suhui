@@ -4,11 +4,20 @@
 @import "./cursor.css";
 
 @media print {
-  * {
+  html,
+  body,
+  #root {
+    height: auto !important;
     overflow: visible !important;
-    page-break-after: avoid;
-    page-break-before: avoid;
-    break-inside: avoid;
-    height: max-content;
+  }
+
+  [data-hide-in-print] {
+    display: none !important;
+  }
+
+  .prose * {
+    break-inside: auto;
+    page-break-before: auto;
+    page-break-after: auto;
   }
 }

@@ -4675,7 +4675,9 @@
 - `apps/desktop/layer/main/src/manager/rsshub.test.ts`
 
 ---
+
 ## [2026-02-28 19:58] [Bugfix]
+
 - **Change**: 修复图片视图下由于漏斗过滤或滚动产生的批量误标记已读Bug
 - **Risk Analysis**: 移除了相关的交集观察器自动触发条件，改为仅在用户直接点击卡片查看详情时才会触发已读操作，彻底阻绝因为组件卸载和重绘而导致的批量已读数据污染问题
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
@@ -4738,8 +4740,11 @@
 - `packages/internal/database/src/drizzle/meta/0039_snapshot.json`
 - `packages/internal/database/src/schemas/sync.ts`
 - `packages/internal/database/src/services/internal/sync-proxy.ts`
-----------------------------------------
+
+---
+
 ## [2026-03-03 09:58] [Critical-Fix]
+
 - **Change**: 基于最新打包产物恢复 desktop 关键构建与RSSHub运行时文件，直接回填到main分支
 - **Risk Analysis**: 主要风险是回填对象来自构建产物而非TS源码，后续再次构建时可能被源码覆盖；另外仅同步了确认差异的rsshub文件，若产物含未识别差异可能残留行为偏差。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
@@ -4751,8 +4756,11 @@
 - `apps/desktop/resources/rsshub/runtime-console.test.ts`
 - `apps/desktop/resources/rsshub/runtime-routes.js`
 - `apps/desktop/resources/rsshub/runtime-routes.test.ts`
-----------------------------------------
+
+---
+
 ## [2026-03-03 10:08] [Refactor]
+
 - **Change**: 全量统一 desktop 品牌为溯洄（名称、slogan、链接、数据库命名）并同步打包图标资源
 - **Risk Analysis**: 风险在于品牌替换范围较大，可能影响更新请求头、发布链接和第三方兼容性；已通过品牌一致性测试与dev重启验证，仍建议你做一次关键页面手工回归。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
@@ -4774,8 +4782,11 @@
 - `apps/desktop/resources/icon-staging.ico`
 - `apps/desktop/resources/icon-tray-staging.ico`
 - `apps/desktop/resources/icon-tray.ico`
-----------------------------------------
+
+---
+
 ## [2026-03-03 10:12] [Bugfix]
+
 - **Change**: 修复设置界面品牌展示：替换关于页与设置侧栏品牌图标，更新关于页标题为溯洄(SuHui)并将版权文案替换为溯源而读，回归纯粹
 - **Risk Analysis**: 风险较低，主要影响设置页视觉与静态文案；已通过品牌测试覆盖，未改动业务逻辑。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
@@ -4783,16 +4794,22 @@
 - `apps/desktop/layer/renderer/src/modules/settings/tabs/about.tsx`
 - `apps/desktop/layer/renderer/src/modules/settings/modal/layout.tsx`
 - `apps/desktop/layer/renderer/src/lib/freefolo-branding.test.ts`
-----------------------------------------
+
+---
+
 ## [2026-03-03 10:18] [Bugfix]
+
 - **Change**: 按打包产物样式修复主界面占位文案：移除上方图标，改为溯洄(SuHui)+slogan两行，第二行小号浅灰
 - **Risk Analysis**: 风险低，仅影响主界面空内容占位视觉；已通过品牌测试并在dev热更新验证。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
 - **Changed Files**:
 - `apps/desktop/layer/renderer/src/components/errors/EntryNotFound.tsx`
 - `apps/desktop/layer/renderer/src/lib/freefolo-branding.test.ts`
-----------------------------------------
+
+---
+
 ## [2026-03-03 10:25] [Bugfix]
+
 - **Change**: 微调主界面占位文案样式并修复设置图标资源路径：第二行文案放大并加深，补充renderer/public/icon.png
 - **Risk Analysis**: 风险低，仅影响前端静态样式与资源路径；已通过品牌测试验证。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
@@ -4800,8 +4817,11 @@
 - `apps/desktop/layer/renderer/src/components/errors/EntryNotFound.tsx`
 - `apps/desktop/layer/renderer/public/icon.png`
 - `apps/desktop/layer/renderer/src/lib/freefolo-branding.test.ts`
-----------------------------------------
+
+---
+
 ## [2026-03-03 10:29] [Bugfix]
+
 - **Change**: 修复主界面占位文案与设置页图标显示问题：主界面去除旧图标并改为两行品牌文案，第二行字号与颜色按反馈加大加深；设置页图标改为带版本参数并增加加载失败回退。
 - **Risk Analysis**: 风险主要在前端样式与静态资源路径：如果运行环境对查询参数缓存策略异常，可能出现图标仍命中旧缓存；同时文案样式调整可能与个别主题对比度产生轻微差异。已通过品牌测试用例覆盖关键文案和资源引用。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
@@ -4811,8 +4831,11 @@
 - `apps/desktop/layer/renderer/src/modules/settings/tabs/about.tsx`
 - `apps/desktop/layer/renderer/src/modules/settings/modal/layout.tsx`
 - `apps/desktop/layer/renderer/src/lib/freefolo-branding.test.ts`
-----------------------------------------
+
+---
+
 ## [2026-03-03 10:35] [Bugfix]
+
 - **Change**: 修复应用左上角头部仍显示旧品牌的问题，替换订阅栏头部旧Logo/Folo为新图标与“溯洄（SuHui）”，并将界面内溯洄文案统一为全角括号写法。
 - **Risk Analysis**: 风险在于移除了头部原右键复制Logo菜单逻辑，若仍需该能力需后续以新图标能力补回；其余风险主要是文本匹配与UI展示差异。已通过品牌测试覆盖头部与文案关键断言。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
@@ -4822,15 +4845,21 @@
 - `apps/desktop/layer/renderer/src/components/errors/EntryNotFound.tsx`
 - `apps/desktop/layer/renderer/src/modules/entry-content/components/EntryPlaceholderLogo.tsx`
 - `apps/desktop/layer/renderer/src/lib/freefolo-branding.test.ts`
-----------------------------------------
+
+---
+
 ## [2026-03-03 10:36] [Bugfix]
+
 - **Change**: 修复 mac 下左上角品牌区域被条件分支隐藏的问题，订阅栏头部在 darwin 也显示溯洄图标与名称，并为 mac 增加左侧留白避免与交通灯重叠。
 - **Risk Analysis**: 风险在于不同窗口尺寸下左侧留白（ml-20）可能需要微调；功能风险较低，主要是布局表现风险。已通过品牌测试回归。
 - **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
 - **Changed Files**:
 - `apps/desktop/layer/renderer/src/modules/subscription-column/SubscriptionColumnHeader.tsx`
-----------------------------------------
+
+---
+
 ## [2026-03-03 10:40] [Bugfix]
+
 - **Change**: 将品牌展示写法统一为‘溯洄 (SuHui)’，并按反馈微调主页副标题样式为16px中灰色（比标题略小但非小一号）。
 - **Risk Analysis**: 风险主要是视觉层面的跨主题对比差异（text-text-secondary在不同主题深浅不同），功能风险低。已通过品牌测试回归。
 - **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
@@ -4840,8 +4869,11 @@
 - `apps/desktop/layer/renderer/src/modules/settings/tabs/about.tsx`
 - `apps/desktop/layer/renderer/src/modules/subscription-column/SubscriptionColumnHeader.tsx`
 - `apps/desktop/layer/renderer/src/lib/freefolo-branding.test.ts`
-----------------------------------------
+
+---
+
 ## [2026-03-03 10:45] [Bugfix]
+
 - **Change**: 修复主页副标题颜色与浏览器标签图标：副标题改为明确灰色（zinc-500/dark:zinc-400），并将 index.html favicon 与 shortcut icon 切换到新 icon.png（带版本参数）。
 - **Risk Analysis**: 风险主要是浏览器缓存与系统图标缓存导致短时不生效；样式风险较低，仅影响主页占位副标题颜色。已通过品牌测试回归。
 - **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
@@ -4849,24 +4881,33 @@
 - `apps/desktop/layer/renderer/src/modules/entry-content/components/EntryPlaceholderLogo.tsx`
 - `apps/desktop/layer/renderer/index.html`
 - `apps/desktop/layer/renderer/src/lib/freefolo-branding.test.ts`
-----------------------------------------
+
+---
+
 ## [2026-03-03 10:48] [Refactor]
+
 - **Change**: 按需求精简设置-关于页面：移除 App/Renderer 版本、复制环境、检查更新、更新日志相关 UI 与逻辑，仅保留品牌图标、名称、副标题与非生产环境标识。
 - **Risk Analysis**: 风险主要是功能移除带来的行为变化（无法从关于页触发更新检查/查看日志）；不涉及数据与核心流程，回归风险较低。已通过品牌测试覆盖。
 - **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
 - **Changed Files**:
 - `apps/desktop/layer/renderer/src/modules/settings/tabs/about.tsx`
 - `apps/desktop/layer/renderer/src/lib/freefolo-branding.test.ts`
-----------------------------------------
+
+---
+
 ## [2026-03-03 10:49] [Refactor]
+
 - **Change**: 按截图复刻主页占位文案视觉：增强标题层级（半粗+深灰+紧致字距）、副标题改为更小中灰，并增大两行间距。
 - **Risk Analysis**: 风险主要是视觉主观性：不同显示器和主题下对比度感知会有差异；功能风险低，仅影响主页占位展示。
 - **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
 - **Changed Files**:
 - `apps/desktop/layer/renderer/src/modules/entry-content/components/EntryPlaceholderLogo.tsx`
 - `apps/desktop/layer/renderer/src/lib/freefolo-branding.test.ts`
-----------------------------------------
+
+---
+
 ## [2026-03-03 11:10] [Bugfix]
+
 - **Change**: 修复 mac 顶栏布局：在 darwin 下隐藏主页头部的应用图标和标题，仅保留右侧操作区；同时将应用内图标资源引用改为相对路径以避免打包后 file 协议下闪烁，并统一主页兜底副标题为浅灰色。
 - **Risk Analysis**: 风险主要在路径变更（相对路径）对 web/dev 场景的兼容性；已通过品牌测试且重新打包验证产物生成。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
@@ -4876,4 +4917,95 @@
 - `apps/desktop/layer/renderer/src/modules/settings/tabs/about.tsx`
 - `apps/desktop/layer/renderer/src/components/errors/EntryNotFound.tsx`
 - `apps/desktop/layer/renderer/src/lib/freefolo-branding.test.ts`
-----------------------------------------
+
+---
+
+## [2026-03-05 11:30] [Bugfix]
+
+- **Change**: 详情页头部新增导出PDF按钮显示逻辑，并限制仅文章/图片视图可见，社交媒体与视频隐藏
+- **Risk Analysis**: 本次改动涉及入口可见性与动作过滤，主要风险是自定义工具栏场景下按钮重复或误隐藏；已通过在头部动作中过滤重复命令并增加视图判断测试降低风险。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/hooks/biz/export-as-pdf.ts`
+- `apps/desktop/layer/renderer/src/hooks/biz/useEntryActions.tsx`
+- `apps/desktop/layer/renderer/src/hooks/biz/useEntryActions.export-pdf.test.ts`
+- `apps/desktop/layer/renderer/src/modules/entry-content/actions/header-actions.tsx`
+- `apps/desktop/layer/renderer/src/modules/entry-content/components/entry-header/internal/EntryHeaderActionsContainer.tsx`
+
+---
+
+## [2026-03-05 11:42] [Bugfix]
+
+- **Change**: 修复导出PDF按钮在All视图下误隐藏，改为按当前entry所属订阅视图判断显示
+- **Risk Analysis**: 风险在于依赖subscription元数据，若本地条目缺少feedId或subscription缺失将回退route view，可能与极少数异常数据不完全一致。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/hooks/biz/useEntryActions.tsx`
+- `apps/desktop/layer/renderer/src/modules/entry-content/components/entry-header/internal/EntryHeaderActionsContainer.tsx`
+
+---
+
+## [2026-03-05 11:48] [Bugfix]
+
+- **Change**: 调整导出PDF可见性：All视图也允许显示，以解决文章详情页无按钮的问题
+- **Risk Analysis**: 风险是All视图中若订阅元数据缺失，少量非文章条目可能显示导出按钮；但社交媒体/视频视图仍被明确禁止。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/hooks/biz/export-as-pdf.ts`
+- `apps/desktop/layer/renderer/src/hooks/biz/useEntryActions.export-pdf.test.ts`
+
+---
+
+## [2026-03-05 11:54] [Bugfix]
+
+- **Change**: 将详情页导出入口改为独立ActionButton渲染，避免依赖命令注册导致按钮被隐藏
+- **Risk Analysis**: 风险是按钮可见性与命令注册解耦后，若命令缺失会点击无效但按钮可见；当前命令已注册，风险可控。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/modules/entry-content/components/entry-header/internal/EntryHeaderActionsContainer.tsx`
+
+---
+
+## [2026-03-05 12:02] [Bugfix]
+
+- **Change**: 将导出PDF按钮放到文章详情页EntryTitle的已读/未读按钮旁，并改为独立按钮直接触发导出
+- **Risk Analysis**: 风险在于按钮行为不再依赖命令注册，若IPC不可用会点击无效；已复用现有导出接口，影响范围限定在详情页标题动作区。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/modules/entry-content/components/EntryTitle.tsx`
+
+---
+
+## [2026-03-05 14:28] [Bugfix]
+
+- **Change**: 修复PDF导出与页面不一致：收敛全局打印样式并正确隐藏data-hide-in-print元素
+- **Risk Analysis**: 风险在于打印样式调整可能影响少量复杂内容分页，但比原先全局height强制更稳定，预计整体一致性显著提升。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/styles/main.css`
+
+---
+
+## [2026-03-05 14:32] [Bugfix]
+
+- **Change**: 修复PDF导出文件名清洗规则，支持全角冒号及更完整非法字符处理
+- **Risk Analysis**: 风险较低，仅影响导出文件名生成；可能与用户历史同名文件策略产生不同命名结果。
+- **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/ipc/services/app.ts`
+
+---
+
+## [2026-03-05 14:46] [Critical-Fix]
+
+- **Change**: 重构PDF导出链路为专用文章渲染窗口，避免整窗打印导致内容不一致，并强制中文字体回退
+- **Risk Analysis**: 风险在于新导出模板与原阅读样式存在轻微视觉差异；但可确保仅导出当前文章正文且中文可读，优先满足正确性。
+- **Risk Level**: S1（高级: 关键流程失败、主要功能不可用或明显业务回归）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/ipc/services/app.ts`
+- `apps/desktop/layer/renderer/src/modules/command/commands/entry.tsx`
+- `apps/desktop/layer/renderer/src/modules/entry-content/components/EntryTitle.tsx`
+- `apps/desktop/layer/renderer/src/providers/setting-sync.tsx`
+- `apps/desktop/layer/renderer/src/styles/main.css`
+
+---

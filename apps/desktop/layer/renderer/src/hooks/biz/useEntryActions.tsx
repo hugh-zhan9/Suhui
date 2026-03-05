@@ -8,6 +8,7 @@ import { entrySyncServices } from "@follow/store/entry/store"
 import type { EntryModel } from "@follow/store/entry/types"
 import { useFeedById } from "@follow/store/feed/hooks"
 import { useIsInbox } from "@follow/store/inbox/hooks"
+import { useSubscriptionByFeedId } from "@follow/store/subscription/hooks"
 import { useUserRole } from "@follow/store/user/hooks"
 import { doesTextContainHTML } from "@follow/utils/utils"
 import { useMemo } from "react"
@@ -30,6 +31,7 @@ import { isMutationCommandId } from "~/modules/command/mutation-command-ids"
 import type { FollowCommandId, UnknownCommand } from "~/modules/command/types"
 import { useToolbarOrderMap } from "~/modules/customize-toolbar/hooks"
 
+import { isPDFExportSupportedView } from "./export-as-pdf"
 import { useRouteParams } from "./useRouteParams"
 
 export const enableEntryReadability = async ({ id, url }: { id: string; url: string }) => {
@@ -234,11 +236,13 @@ export const HIDE_ACTIONS_IN_ENTRY_CONTEXT_MENU: FollowCommandId[] = [
 export const HIDE_ACTIONS_IN_ENTRY_TOOLBAR_ACTIONS: FollowCommandId[] = [
   ...HIDE_ACTIONS_IN_ENTRY_CONTEXT_MENU,
 ]
+
 export const useEntryActions = ({ entryId, view }: { entryId: string; view: FeedViewType }) => {
   const entry = useEntry(entryId, entrySelector)
   const { isCollection, entryId: routeEntryId } = useRouteParams()
   const isInCollection = useIsEntryStarred(entryId)
   const isEntryInReadability = useEntryIsInReadability(entryId)
+  const subscription = useSubscriptionByFeedId(entry?.feedId)
 
   const feed = useFeedById(entry?.feedId, (feed) => {
     return {
@@ -265,6 +269,7 @@ export const useEntryActions = ({ entryId, view }: { entryId: string; view: Feed
 
   const isCurrentVisitEntry = routeEntryId === entryId
   const isOnboardingEntry = isOnboardingEntryUrl(entry?.url)
+  const exportView = subscription?.view ?? view
 
   const actionConfigs: EntryActionItem[] = useMemo(() => {
     if (!hasEntry) return []
@@ -340,7 +345,7 @@ export const useEntryActions = ({ entryId, view }: { entryId: string; view: Feed
       }),
       new EntryActionMenuItem({
         id: COMMAND_ID.entry.exportAsPDF,
-        hide: !isCurrentVisitEntry,
+        hide: !isCurrentVisitEntry || !isPDFExportSupportedView(exportView),
         onClick: runCmdFn(COMMAND_ID.entry.exportAsPDF, [{ entryId }]),
         entryId,
       }),
@@ -477,6 +482,7 @@ export const useEntryActions = ({ entryId, view }: { entryId: string; view: Feed
     isInbox,
     shortcuts,
     view,
+    exportView,
     isInCollection,
     isCurrentVisitEntry,
     isShowSourceContent,

@@ -28,9 +28,18 @@ class LifecycleManagerStatic {
   }
 
   private onActivate() {
-    const mainWindow = WindowManager.getMainWindowOrCreate()
-    mainWindow.show()
-    mainWindow.focus()
+    const activateWindow = () => {
+      const mainWindow = WindowManager.getMainWindowOrCreate()
+      mainWindow.show()
+      mainWindow.focus()
+    }
+
+    if (!app.isReady()) {
+      app.once("ready", activateWindow)
+      return
+    }
+
+    activateWindow()
   }
 
   public onReady(callback: () => void) {
