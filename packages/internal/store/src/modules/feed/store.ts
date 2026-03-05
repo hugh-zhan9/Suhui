@@ -148,20 +148,18 @@ class FeedSyncServices {
       return null
     }
 
-    if (isFeedId) {
-      // Preview feed in local mode needs entries; if no cached entries, prefer re-preview by feed url.
-      if (
-        shouldReturnExistingFeedDirectly({
-          existing,
-          hasEntryCache,
-        })
-      ) {
-        return {
-          feed: existing,
-          entries: [],
-          subscription: undefined,
-          analytics: undefined,
-        }
+    if (
+      isFeedId && // Preview feed in local mode needs entries; if no cached entries, prefer re-preview by feed url.
+      shouldReturnExistingFeedDirectly({
+        existing,
+        hasEntryCache,
+      })
+    ) {
+      return {
+        feed: existing,
+        entries: [],
+        subscription: undefined,
+        analytics: undefined,
       }
     }
 
@@ -175,10 +173,21 @@ class FeedSyncServices {
     if (
       shouldUseElectronLocalPreview(typeof window === "undefined" ? undefined : window, feedUrl)
     ) {
-      const data = await (window as any).electron.ipcRenderer.invoke("db.previewFeed", {
-        url: feedUrl,
-        feedId: id && isFeedId ? id : undefined,
-      })
+      let data: any
+      try {
+        data = await (window as any).electron.ipcRenderer.invoke("db.previewFeed", {
+          url: feedUrl,
+          feedId: id && isFeedId ? id : undefined,
+        })
+      } catch (error) {
+        const reason = error instanceof Error ? error.message : String(error)
+        console.error("[feedSyncServices.fetchFeedById] db.previewFeed failed", {
+          feedUrl,
+          feedId: id,
+          reason,
+        })
+        throw new Error(`本地预览订阅失败: ${reason}`)
+      }
       if (!data?.feed) {
         throw new Error("Failed to preview feed via local database")
       }

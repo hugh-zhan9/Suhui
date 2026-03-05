@@ -12,7 +12,6 @@ import { FeedViewType } from "@follow/constants"
 import { cn } from "@follow/utils/utils"
 import type { DiscoveryItem } from "@follow-app/client-sdk"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { repository } from "@pkg"
 import { useMutation } from "@tanstack/react-query"
 import { produce } from "immer"
 import type { ChangeEvent, CompositionEvent } from "react"
@@ -336,20 +335,6 @@ export function UnifiedDiscoverForm() {
                       <>
                         <span>•</span>
                         <span>{t("discover.tips.search_keyword")}</span>
-                      </>
-                    )}
-                    {detectedType === "rss" && (
-                      <>
-                        <span>•</span>
-                        <a
-                          href={`${repository.url}/wiki/Folo-Flavored-Feed-Spec`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1 rounded-full border border-accent px-2 py-px text-accent hover:bg-accent/10"
-                        >
-                          <i className="i-mgc-book-6-cute-re" />
-                          <span>Folo Flavored Feed Spec</span>
-                        </a>
                       </>
                     )}
                     {detectedType === "rsshub" && (
