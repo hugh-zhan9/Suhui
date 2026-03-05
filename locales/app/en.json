@@ -118,6 +118,7 @@
   "entry_actions.delete": "Delete",
   "entry_actions.deleted": "Deleted.",
   "entry_actions.export_as_pdf": "Export as PDF",
+  "entry_actions.export_as_pdf_success": "PDF saved successfully.",
   "entry_actions.failed_to_delete": "Failed to delete.",
   "entry_actions.failed_to_login_to_qbittorrent": "Failed to login to qBittorrent",
   "entry_actions.failed_to_save_to_cubox": "Failed to save to Cubox.",

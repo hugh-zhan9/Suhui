@@ -35,6 +35,10 @@ export interface GeneralSettings {
 
   // @mobile
   openLinksInExternalApp: boolean
+
+  // PDF Export (Desktop only)
+  // 空字符串表示每次导出时弹出文件对话框，非空则直接写入到该目录
+  pdfSavePath: string
 }
 
 export type AccentColor =

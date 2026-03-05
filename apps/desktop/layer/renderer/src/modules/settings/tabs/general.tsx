@@ -1,3 +1,5 @@
+import { Button } from "@follow/components/ui/button/index.js"
+import { Input } from "@follow/components/ui/input/index.js"
 import { ResponsiveSelect } from "@follow/components/ui/select/responsive.js"
 import { useTypeScriptHappyCallback } from "@follow/hooks"
 import { ACTION_LANGUAGE_MAP } from "@follow/shared"
@@ -84,6 +86,7 @@ export const SettingGeneral = () => {
             },
           }),
           IN_ELECTRON && MinimizeToTraySetting,
+          IN_ELECTRON && PDFSavePathSetting,
           LanguageSelector,
 
           {
@@ -323,6 +326,49 @@ const MinimizeToTraySetting = () => {
         label={t("general.minimize_to_tray.label")}
       />
       <SettingDescription>{t("general.minimize_to_tray.description")}</SettingDescription>
+    </SettingItemGroup>
+  )
+}
+
+const PDFSavePathSetting = () => {
+  const { t } = useTranslation("settings")
+  const pdfSavePath = useGeneralSettingKey("pdfSavePath")
+
+  const handleChoose = async () => {
+    const dir = await ipcServices?.app.showFolderDialog()
+    if (dir) {
+      setGeneralSetting("pdfSavePath", dir)
+    }
+  }
+
+  const handleClear = () => {
+    setGeneralSetting("pdfSavePath", "")
+  }
+
+  return (
+    <SettingItemGroup>
+      <div className="mt-4 flex items-center justify-between gap-3">
+        <div className="flex shrink-0 flex-col gap-1">
+          <span className="text-sm font-medium">{t("general.pdf_save_path.label")}</span>
+        </div>
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <Input
+            value={pdfSavePath}
+            readOnly
+            placeholder={t("general.pdf_save_path.placeholder")}
+            className="min-w-0 flex-1 cursor-default truncate text-xs"
+          />
+          <Button size="sm" variant="outline" onClick={handleChoose}>
+            {t("general.pdf_save_path.choose")}
+          </Button>
+          {pdfSavePath && (
+            <Button size="sm" variant="ghost" onClick={handleClear}>
+              {t("general.pdf_save_path.clear")}
+            </Button>
+          )}
+        </div>
+      </div>
+      <SettingDescription>{t("general.pdf_save_path.description")}</SettingDescription>
     </SettingItemGroup>
   )
 }

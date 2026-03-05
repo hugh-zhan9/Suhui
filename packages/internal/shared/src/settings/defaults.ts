@@ -41,6 +41,9 @@ export const defaultGeneralSettings: GeneralSettings = {
 
   // @mobile
   openLinksInExternalApp: false,
+
+  // PDF Export (Desktop only)，默认空 = 每次导出时弹文件对话框
+  pdfSavePath: "",
 }
 
 export const defaultUISettings: UISettings = {
