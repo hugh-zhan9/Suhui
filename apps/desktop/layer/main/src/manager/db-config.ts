@@ -22,3 +22,17 @@ export const parseDbConn = (raw?: string): DbConnInfo => {
   }
   return { host, port, database }
 }
+
+export const buildPgConfig = (env: NodeJS.ProcessEnv) => {
+  const conn = parseDbConn(env.DB_CONN)
+  if ("connectionString" in conn) {
+    return { connectionString: conn.connectionString }
+  }
+  return {
+    host: conn.host,
+    port: conn.port,
+    database: conn.database,
+    user: env.DB_USER,
+    password: env.DB_PASSWORD,
+  }
+}
