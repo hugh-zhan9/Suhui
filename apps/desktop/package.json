@@ -33,6 +33,7 @@
     "hotfix": "vv -c bump.hotfix.config.js --patch",
     "publish": "electron-vite build && electron-forge publish",
     "start": "electron-vite preview",
+    "test:packaging": "node --test apps/desktop/scripts/packaging/better-sqlite3-package.test.ts",
     "update:main-hash": "tsx plugins/vite/generate-main-hash.ts"
   },
   "dependencies": {
