@@ -5054,3 +5054,17 @@
 - `apps/desktop/layer/renderer/src/modules/rsshub/LocalRsshubConsole 2.tsx`
 
 ---
+
+## [2026-03-10 18:21] [Bugfix]
+
+- **Change**: 打包阶段确保 better_sqlite3.node 进入 app.asar.unpacked，并新增打包产物检查测试
+- **Risk Analysis**: 风险：仅影响打包流程，若构建机缺少 better_sqlite3.node 会在打包阶段报错；运行时逻辑未变。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/forge.config.cts`
+- `apps/desktop/scripts/packaging/better-sqlite3-package.test.ts`
+- `apps/desktop/package.json`
+- `docs/plans/2026-03-10-better-sqlite3-packaging-design.md`
+- `docs/plans/2026-03-10-better-sqlite3-packaging.md`
+
+---
