@@ -178,6 +178,12 @@ importers:
       '@protobufjs/utf8':
         specifier: 1.1.0
         version: 1.1.0
+      better-sqlite3:
+        specifier: 12.6.2
+        version: 12.6.2
+      dotenv:
+        specifier: 17.2.3
+        version: 17.2.3
     devDependencies:
       '@electron-forge/cli':
         specifier: 7.11.1
@@ -1139,7 +1145,7 @@ importers:
         version: '@hyoban/sqlocal@0.14.1-fork.4(bufferutil@4.1.0)(drizzle-orm@0.45.1(@opentelemetry/api@1.9.0)(better-sqlite3@12.6.2)(expo-sqlite@16.0.10(expo@54.0.33)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0))(react@19.1.0))(kysely@0.28.11)(pg@8.16.3))(kysely@0.28.11)'
       wa-sqlite:
         specifier: git+https://github.com/rhashimoto/wa-sqlite.git#v1.0.8
-        version: https://codeload.github.com/rhashimoto/wa-sqlite/tar.gz/03c00ed67cd934bd664ae310234bba317928f851
+        version: git+https://git@github.com:rhashimoto/wa-sqlite.git#03c00ed67cd934bd664ae310234bba317928f851
     devDependencies:
       '@follow/configs':
         specifier: workspace:*
@@ -7443,8 +7449,8 @@ packages:
     resolution: {integrity: sha512-uBq4egWHTcTt33a72vpSG0z3HnPuIl6NqYcTrKEg2azoEyl2hpW0zqlxysq2pK9HlDIHyHyakeYaYnSAwd8bow==}
     engines: {node: '>=12'}
 
-  dotenv@17.3.1:
-    resolution: {integrity: sha512-IO8C/dzEb6O3F9/twg6ZLXz164a2fhTnEWb95H23Dm4OuN+92NmEAlTrupP9VW6Jm3sO26tQlqyvyi4CsnY9GA==}
+  dotenv@17.2.3:
+    resolution: {integrity: sha512-JVUnt+DUIzu87TABbhPmNfVdBDt18BLOWjMUFJMSi/Qqg7NTYtabbvSNJGOJ7afbRuv9D/lngizHtP7QyLQ+9w==}
     engines: {node: '>=12'}
 
   dotenv@9.0.2:
@@ -8606,11 +8612,13 @@ packages:
   git-raw-commits@5.0.0:
     resolution: {integrity: sha512-I2ZXrXeOc0KrCvC7swqtIFXFN+rbjnC7b2T943tvemIOVNl+XP8YnA9UVwqFhzzLClnSA60KR/qEjLpXzs73Qg==}
     engines: {node: '>=18'}
+    deprecated: This package is no longer maintained. For the JavaScript API, please use @conventional-changelog/git-client instead.
     hasBin: true
 
   git-semver-tags@8.0.0:
     resolution: {integrity: sha512-N7YRIklvPH3wYWAR2vysaqGLPRcpwQ0GKdlqTiVN5w1UmCdaeY3K8s6DMKRCh54DDdzyt/OAB6C8jgVtb7Y2Fg==}
     engines: {node: '>=18'}
+    deprecated: This package is no longer maintained. For the JavaScript API, please use @conventional-changelog/git-client instead.
     hasBin: true
 
   github-from-package@0.0.0:
@@ -13116,8 +13124,8 @@ packages:
   vscode-uri@3.1.0:
     resolution: {integrity: sha512-/BpdSx+yCQGnCvecbyXdxHDkuk55/G3xwnC0GqY4gmQ3j+A+g8kzzgB4Nk/SINjqn6+waqw3EgbVF2QKExkRxQ==}
 
-  wa-sqlite@https://codeload.github.com/rhashimoto/wa-sqlite/tar.gz/03c00ed67cd934bd664ae310234bba317928f851:
-    resolution: {tarball: https://codeload.github.com/rhashimoto/wa-sqlite/tar.gz/03c00ed67cd934bd664ae310234bba317928f851}
+  wa-sqlite@git+https://git@github.com:rhashimoto/wa-sqlite.git#03c00ed67cd934bd664ae310234bba317928f851:
+    resolution: {commit: 03c00ed67cd934bd664ae310234bba317928f851, repo: git@github.com:rhashimoto/wa-sqlite.git, type: git}
     version: 1.0.8
 
   walker@1.0.8:
@@ -20052,7 +20060,7 @@ snapshots:
       chokidar: 5.0.0
       confbox: 0.2.4
       defu: 6.1.4
-      dotenv: 17.3.1
+      dotenv: 17.2.3
       exsolve: 1.0.8
       giget: 2.0.0
       jiti: 2.6.1
@@ -20988,7 +20996,7 @@ snapshots:
 
   dotenv@16.6.1: {}
 
-  dotenv@17.3.1: {}
+  dotenv@17.2.3: {}
 
   dotenv@9.0.2: {}
 
@@ -27652,7 +27660,7 @@ snapshots:
 
   vscode-uri@3.1.0: {}
 
-  wa-sqlite@https://codeload.github.com/rhashimoto/wa-sqlite/tar.gz/03c00ed67cd934bd664ae310234bba317928f851: {}
+  wa-sqlite@git+https://git@github.com:rhashimoto/wa-sqlite.git#03c00ed67cd934bd664ae310234bba317928f851: {}
 
   walker@1.0.8:
     dependencies:

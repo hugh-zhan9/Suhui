@@ -45,7 +45,8 @@
     "@protobufjs/path": "1.1.2",
     "@protobufjs/pool": "1.1.0",
     "@protobufjs/utf8": "1.1.0",
-    "better-sqlite3": "12.6.2"
+    "better-sqlite3": "12.6.2",
+    "dotenv": "17.2.3"
   },
   "devDependencies": {
     "@electron-forge/cli": "7.11.1",
