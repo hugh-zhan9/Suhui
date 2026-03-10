@@ -122,6 +122,39 @@ const getBetterSqliteBinaryPath = () =>
     "better_sqlite3.node",
   )
 
+const ensureBetterSqliteBinary = async (buildPath: string, platform: string) => {
+  if (platform !== "darwin") return
+
+  const sourceBinary = getBetterSqliteBinaryPath()
+  const targetBinary = path.join(
+    buildPath,
+    "node_modules",
+    "better-sqlite3",
+    "build",
+    "Release",
+    "better_sqlite3.node",
+  )
+
+  await fs.promises.mkdir(path.dirname(targetBinary), { recursive: true })
+  await cp(sourceBinary, targetBinary)
+}
+
+const cleanSourcesAndEnsureBinary = async (
+  buildPath,
+  electronVersion,
+  platform,
+  arch,
+  callback,
+) => {
+  try {
+    await cleanSources(buildPath, electronVersion, platform, arch, () => {})
+    await ensureBetterSqliteBinary(buildPath, platform)
+    callback()
+  } catch (error) {
+    callback(error)
+  }
+}
+
 const replacePackagedBetterSqliteBinary = async (appPath: string) => {
   const sourceBinary = getBetterSqliteBinaryPath()
   const targetBinary = path.join(
@@ -168,7 +201,7 @@ const config: ForgeConfig = {
     ],
 
     afterCopy: [
-      cleanSources,
+      cleanSourcesAndEnsureBinary,
       process.platform !== "win32" ? noopAfterCopy : setLanguages([...keepLanguages.values()]),
     ],
     asar: {
