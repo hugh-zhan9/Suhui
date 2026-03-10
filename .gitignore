@@ -40,3 +40,4 @@ apps/desktop/build/appxmanifest.xml
 # RSSHub 构建产物（由 build:rsshub 脚本自动生成）
 apps/desktop/resources/rsshub/routes-manifest.json
 apps/desktop/resources/rsshub/logs/
+.worktrees/
