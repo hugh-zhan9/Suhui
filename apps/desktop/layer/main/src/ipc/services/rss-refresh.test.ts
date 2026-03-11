@@ -35,6 +35,6 @@ describe("rss refresh helper", () => {
     expect(feed.description).toBe("desc")
     expect(feed.image).toBe("https://example.com/logo.png")
     expect(feed.siteUrl).toBe("https://example.com/home")
+    expect(typeof feed.updatedAt).toBe("number")
   })
 })
-

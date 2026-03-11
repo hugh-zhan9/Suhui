@@ -5147,6 +5147,27 @@
 
 ---
 
+## [2026-03-11 15:45] [Bugfix]
+- **Change**: 迁移到 Postgres 时对 JSON 字段统一按 JSON 文本写入，避免数组被 pg 当作原生数组导致解析失败，并补充测试覆盖
+- **Risk Analysis**: 迁移期间 JSON 字段可能含有非常规文本被转为 null，影响极少量字段展示；已通过最小化规则并保留合法 JSON 文本降低风险
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/manager/sqlite-postgres-migration.ts`
+- `apps/desktop/layer/main/src/manager/sqlite-postgres-migration.test.ts`
+
+---
+
+## [2026-03-11 16:07] [Bugfix]
+- **Change**: 修复 Postgres IPC 代理映射：保留 fields 元数据并在返回为对象行时按字段顺序转换为数组，保证前端 pg-proxy 能正确还原数据
+- **Risk Analysis**: 若 fields 顺序与期望不一致可能导致列映射错位；目前使用 pg 返回字段顺序，风险可控
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/ipc/services/db-execute-result.ts`
+- `apps/desktop/layer/main/src/ipc/services/db-execute-result.test.ts`
+- `apps/desktop/layer/main/src/ipc/services/db.ts`
+
+---
+
 ## [2026-03-11 17:04] [Refactor]
 
 - **Change**: RSSHub URL 解析改为外部基址并增加未配置错误
@@ -5169,6 +5190,17 @@
 - `apps/desktop/layer/main/src/manager/bootstrap.ts`
 - `apps/desktop/layer/main/src/ipc/services/rsshub-external.ts`
 - `apps/desktop/layer/main/src/ipc/services/rsshub-external.test.ts`
+
+---
+
+## [2026-03-11 17:25] [Feature]
+- **Change**: 为 db.previewFeed 增加请求前后诊断日志，并支持输出代理、DNS 解析与重定向信息
+- **Risk Analysis**: 诊断日志会增加 DNS 查询与日志输出，可能在网络异常时带来额外延迟或噪声，但仅在预览订阅时触发。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/ipc/services/db.ts`
+- `apps/desktop/layer/main/src/ipc/services/preview-feed-diagnostics.ts`
+- `apps/desktop/layer/main/src/ipc/services/preview-feed-diagnostics.test.ts`
 
 ---
 
@@ -5197,3 +5229,21 @@
 - `apps/desktop/resources/rsshub`
 
 ---
+
+## [2026-03-11 18:00] [Bugfix]
+- **Change**: 统一 RSS 条目与刷新 feed 时间字段为毫秒数，修复 Postgres bigint 写入 Date 导致的刷新失败
+- **Risk Analysis**: 变更涉及时间字段的类型转换，若上游传入非标准时间字符串可能被解析为 null 或当前时间，可能影响极少量条目的时间显示
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/ipc/services/rss-refresh.ts`
+- `apps/desktop/layer/main/src/ipc/services/db.ts`
+- `apps/desktop/layer/main/src/ipc/services/rss-time.ts`
+- `apps/desktop/layer/main/src/ipc/services/rss-refresh.test.ts`
+- `apps/desktop/layer/main/src/ipc/services/rss-time.test.ts`
+## [2026-03-11 19:37] [Refactor]
+- **Change**: 合并冲突并整合外部 RSSHub 预览与诊断日志逻辑
+- **Risk Analysis**: 合并后的预览流程涉及外部 RSSHub 与诊断输出，若拼接或诊断启用逻辑不当可能导致预览失败或日志噪声增加
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/ipc/services/db.ts`
+----------------------------------------

@@ -17,4 +17,26 @@ describe("db execute mapping", () => {
     const result = mapExecuteResult("run", { rowCount: 3, rows: [] })
     expect(result).toEqual({ rowsAffected: 3 })
   })
+
+  it("preserves pg fields metadata when provided", () => {
+    const result = mapExecuteResult("all", {
+      rows: [[1, "title"]],
+      fields: [{ name: "id" }, { name: "title" }],
+    })
+    expect(result).toEqual({
+      rows: [[1, "title"]],
+      fields: [{ name: "id" }, { name: "title" }],
+    })
+  })
+
+  it("converts object rows to arrays when fields provided", () => {
+    const result = mapExecuteResult("all", {
+      rows: [{ id: 1, title: "title" }],
+      fields: [{ name: "id" }, { name: "title" }],
+    })
+    expect(result).toEqual({
+      rows: [[1, "title"]],
+      fields: [{ name: "id" }, { name: "title" }],
+    })
+  })
 })
