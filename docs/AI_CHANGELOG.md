@@ -5171,3 +5171,16 @@
 - `apps/desktop/layer/main/src/ipc/services/rsshub-external.test.ts`
 
 ---
+
+## [2026-03-11 17:34] [Refactor]
+
+- **Change**: 渲染层改为外部 RSSHub 配置与引导流程
+- **Risk Analysis**: 可能影响 RSSHub 订阅引导与错误提示流程，若配置弹窗或设置保存异常会导致订阅体验受损
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/lib/rsshub-local-error.ts`
+- `apps/desktop/layer/renderer/src/modules/subscription-column/rsshub-precheck.ts`
+- `apps/desktop/layer/renderer/src/modules/discover/rsshub-recovery-action.tsx`
+- `apps/desktop/layer/renderer/src/modules/settings/tabs/data-control.tsx`
+
+---
