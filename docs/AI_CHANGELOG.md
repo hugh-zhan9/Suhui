@@ -5117,3 +5117,15 @@
 - `README.md`
 
 ---
+
+## [2026-03-11 11:30] [Refactor]
+
+- **Change**: 新增 PostgreSQL 18 docker-compose.yaml（不指定 POSTGRES_DB）
+- **Risk Analysis**: 新增配置文件不影响运行时代码，风险极低。
+- **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
+- **Changed Files**:
+- `docker-compose.yaml`
+- `docs/plans/2026-03-11-docker-compose-postgres.md`
+- `docs/plans/2026-03-11-docker-compose-postgres-design.md`
+
+---
