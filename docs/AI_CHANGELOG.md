@@ -5184,3 +5184,16 @@
 - `apps/desktop/layer/renderer/src/modules/settings/tabs/data-control.tsx`
 
 ---
+
+## [2026-03-11 17:37] [Refactor]
+
+- **Change**: 移除内置 RSSHub 构建脚本与打包资源
+- **Risk Analysis**: 可能影响打包流程与产物完整性，若仍有依赖内置 RSSHub 的路径未清理会导致构建或运行异常
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/package.json`
+- `apps/desktop/forge.config.cts`
+- `apps/desktop/scripts/build-rsshub.ts`
+- `apps/desktop/resources/rsshub`
+
+---
