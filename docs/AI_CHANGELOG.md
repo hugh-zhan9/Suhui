@@ -5146,3 +5146,15 @@
 - `docs/plans/2026-03-11-postgres-auto-create-migrate.md`
 
 ---
+
+## [2026-03-11 18:47] [Bugfix]
+
+- **Change**: 本地刷新后同步条目到前端，避免重启后才出现
+- **Risk Analysis**: 刷新后额外拉取本地条目，增加一次本地读取，可能带来轻微性能开销
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/modules/entry-column/layouts/EntryListHeader.tsx`
+- `apps/desktop/layer/renderer/src/modules/entry-column/layouts/entry-refresh.ts`
+- `apps/desktop/layer/renderer/src/modules/entry-column/layouts/entry-refresh.test.ts`
+
+---
