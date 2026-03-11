@@ -322,7 +322,7 @@ const useRegisterObsidianCommands = () => {
               title: entry.title || "",
               content: markdownContent,
               author: entry.author || "",
-              publishedAt: entry.publishedAt.toISOString() || "",
+              publishedAt: new Date(entry.publishedAt).toISOString() || "",
               vaultPath: obsidianVaultPath,
             })
           },
@@ -541,7 +541,7 @@ const useRegisterZoteroCommands = () => {
   // GET https://api.zotero.org/items/new?itemType=webpage
   const buildZoteroWebpageRequestBody = (entry: EntryModel) => {
     // Zotero API only support ISO 8601 format and without millsecond
-    const accessDate = `${entry.insertedAt.toISOString().slice(0, 19)}Z`
+    const accessDate = `${new Date(entry.insertedAt).toISOString().slice(0, 19)}Z`
     // should return an array, because this API endpoint also support multi-item upload
     return [
       {

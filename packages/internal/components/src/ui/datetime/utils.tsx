@@ -1,6 +1,6 @@
 import dayjs from "dayjs"
 
-export const getUpdateInterval = (date: string | Date, relativeBeforeDay?: number) => {
+export const getUpdateInterval = (date: string | number | Date, relativeBeforeDay?: number) => {
   if (!relativeBeforeDay) return null
   const diffInSeconds = Math.abs(dayjs(date).diff(new Date(), "second"))
   if (diffInSeconds <= 60) {
