@@ -15,6 +15,9 @@ import { store, StoreKey } from "~/lib/store"
 import { registerAppTray } from "~/lib/tray"
 import { logger, revealLogFile } from "~/logger"
 import { AppManager } from "~/manager/app"
+import type { DbConfigView } from "~/manager/db-config-view"
+import { buildDbConfigView } from "~/manager/db-config-view"
+import { getDesktopEnvInfo } from "~/manager/env-loader"
 import { WindowManager } from "~/manager/window"
 import { cleanupOldRender, loadDynamicRenderEntry } from "~/updater/hot-updater"
 
@@ -59,6 +62,14 @@ export class AppService extends IpcService {
   @IpcMethod()
   getAppVersion(): string {
     return app.getVersion()
+  }
+
+  @IpcMethod()
+  getDbConfig(): DbConfigView {
+    return buildDbConfigView({
+      env: process.env,
+      envInfo: getDesktopEnvInfo(),
+    })
   }
 
   @IpcMethod()
