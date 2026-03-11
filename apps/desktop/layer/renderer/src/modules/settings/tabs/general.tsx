@@ -5,6 +5,7 @@ import { useTypeScriptHappyCallback } from "@follow/hooks"
 import { ACTION_LANGUAGE_MAP } from "@follow/shared"
 import { IN_ELECTRON } from "@follow/shared/constants"
 import { cn } from "@follow/utils/utils"
+import { useQuery } from "@tanstack/react-query"
 import dayjs from "dayjs"
 import { useAtom } from "jotai"
 import { useEffect } from "react"
@@ -25,6 +26,7 @@ import { useMinimizeToTrayValue, useSetMinimizeToTray } from "~/hooks/biz/useTra
 import { fallbackLanguage } from "~/i18n"
 import { ipcServices } from "~/lib/client"
 import { setTranslationCache } from "~/modules/entry-content/atoms"
+import { formatDisplayList, formatDisplayValue } from "~/modules/settings/utils/db-config-display"
 
 import { PaidBadge, SettingDescription, SettingSwitch } from "../control"
 import { createSetting } from "../helper/builder"
@@ -88,6 +90,12 @@ export const SettingGeneral = () => {
           IN_ELECTRON && MinimizeToTraySetting,
           IN_ELECTRON && PDFSavePathSetting,
           LanguageSelector,
+
+          {
+            type: "title",
+            value: t("general.data_source.title"),
+          },
+          DataSourceSection,
 
           {
             type: "title",
@@ -182,6 +190,55 @@ export const SettingGeneral = () => {
         ]}
       />
     </div>
+  )
+}
+
+type DbConfigView = {
+  dbType: "sqlite" | "postgres"
+  dbConn: string
+  dbUser: string
+  dbPasswordMasked: string
+  envSource?: string
+  envCandidates: string[]
+}
+
+const DataSourceSection = () => {
+  const { t } = useTranslation("settings")
+  const query = useQuery({
+    queryKey: ["db", "config"],
+    queryFn: async () => {
+      const config = await ipcServices?.app.getDbConfig?.()
+      return (config ?? null) as DbConfigView | null
+    },
+    refetchOnMount: "always",
+  })
+
+  const config = query.data
+  const fallback = t("general.data_source.not_set")
+
+  return (
+    <SettingItemGroup>
+      <SettingDescription>
+        {t("general.data_source.db_type")}: {formatDisplayValue(config?.dbType, fallback)}
+      </SettingDescription>
+      <SettingDescription>
+        {t("general.data_source.db_conn")}: {formatDisplayValue(config?.dbConn, fallback)}
+      </SettingDescription>
+      <SettingDescription>
+        {t("general.data_source.db_user")}: {formatDisplayValue(config?.dbUser, fallback)}
+      </SettingDescription>
+      <SettingDescription>
+        {t("general.data_source.db_password")}:{" "}
+        {formatDisplayValue(config?.dbPasswordMasked, fallback)}
+      </SettingDescription>
+      <SettingDescription>
+        {t("general.data_source.env_source")}: {formatDisplayValue(config?.envSource, fallback)}
+      </SettingDescription>
+      <SettingDescription>
+        {t("general.data_source.env_candidates")}:{" "}
+        {formatDisplayList(config?.envCandidates ?? [], fallback)}
+      </SettingDescription>
+    </SettingItemGroup>
   )
 }
 
