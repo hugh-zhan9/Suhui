@@ -4,7 +4,11 @@ import os from "node:os"
 import { join } from "pathe"
 import { describe, expect, it, vi } from "vitest"
 
-import { hasSqliteData, isPostgresEmpty } from "./sqlite-postgres-migration"
+import {
+  hasSqliteData,
+  isPostgresEmpty,
+  migrateSqliteToPostgres,
+} from "./sqlite-postgres-migration"
 
 describe("sqlite -> postgres migration helpers", () => {
   it("detects postgres empty by counts", async () => {
@@ -32,5 +36,29 @@ describe("sqlite -> postgres migration helpers", () => {
     })
 
     expect(hasSqliteData(dbPath, sqliteFactory as any)).toBe(true)
+  })
+
+  it("skips missing tables during migration", async () => {
+    const pool = {
+      query: vi.fn(async () => ({ rows: [] })),
+    }
+    const sqlite = {
+      prepare: vi.fn((sql: string) => {
+        if (sql.includes("sqlite_master")) {
+          return { get: () => null }
+        }
+        return {
+          all: () => {
+            throw new Error("should not select missing tables")
+          },
+          get: () => null,
+        }
+      }),
+      close: vi.fn(),
+    }
+
+    await expect(
+      migrateSqliteToPostgres("/tmp/empty.db", pool as any, () => sqlite as any),
+    ).resolves.toBeUndefined()
   })
 })
