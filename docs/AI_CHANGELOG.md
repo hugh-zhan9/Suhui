@@ -5157,3 +5157,17 @@
 - `apps/desktop/layer/main/src/ipc/services/rsshub-url.test.ts`
 
 ---
+
+## [2026-03-11 17:17] [Refactor]
+
+- **Change**: 移除内置 RSSHub 主进程管理并改为外部解析辅助
+- **Risk Analysis**: 可能影响 RSSHub 订阅预览与设置页相关 IPC，若外部解析接入或调用路径遗漏会导致订阅失败
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/ipc/services/db.ts`
+- `apps/desktop/layer/main/src/ipc/services/setting.ts`
+- `apps/desktop/layer/main/src/manager/bootstrap.ts`
+- `apps/desktop/layer/main/src/ipc/services/rsshub-external.ts`
+- `apps/desktop/layer/main/src/ipc/services/rsshub-external.test.ts`
+
+---
