@@ -8,14 +8,12 @@ import { toast } from "sonner"
 
 import { CopyButton } from "~/components/ui/button/CopyButton"
 import { Markdown } from "~/components/ui/markdown/Markdown"
-import { ipcServices } from "~/lib/client"
 import { DebugRegistry } from "~/modules/debug/registry"
 
 import {
   getRsshubFriendlyMessage,
   getRsshubLocalErrorTitle,
   parseRsshubLocalError,
-  shouldShowRsshubRestartAction,
 } from "./rsshub-local-error"
 
 export const getFetchErrorInfo = (
@@ -131,25 +129,10 @@ export const toastFetchError = (
     const title = getRsshubLocalErrorTitle(rsshubType)
     return toast.error(title, {
       ..._toastOptions,
-      description: "可在设置页查看状态，或点击立即重启本地 RSSHub。",
-      action: shouldShowRsshubRestartAction(rsshubType)
-        ? {
-            label: "立即重启",
-            onClick: async () => {
-              try {
-                const dbIpc = ipcServices?.db as
-                  | {
-                      restartRsshub?: () => Promise<unknown>
-                    }
-                  | undefined
-                await dbIpc?.restartRsshub?.()
-                toast.success("已触发 RSSHub 重启")
-              } catch {
-                toast.error("RSSHub 重启失败")
-              }
-            },
-          }
-        : undefined,
+      description:
+        rsshubType === "external_unconfigured"
+          ? "请在设置页配置外部 RSSHub 实例。"
+          : "请检查 RSSHub 实例配置或更换实例。",
     })
   }
 

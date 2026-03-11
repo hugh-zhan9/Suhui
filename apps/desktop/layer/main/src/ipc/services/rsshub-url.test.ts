@@ -1,22 +1,8 @@
 import { describe, expect, it } from "vitest"
 
-import { isRsshubUrlLike, resolveRsshubUrl, shouldUseLocalRsshubRuntime } from "./rsshub-url"
+import { isRsshubUrlLike, resolveRsshubUrl } from "./rsshub-url"
 
 describe("resolveRsshubUrl", () => {
-  it("应正确判断是否需要拉起本地 RSSHub 运行时", () => {
-    expect(
-      shouldUseLocalRsshubRuntime("https://rsshub.app/github/trending", ["rsshub.myself.dev"]),
-    ).toBe(true)
-    expect(shouldUseLocalRsshubRuntime("rsshub://github/trending", ["rsshub.myself.dev"])).toBe(
-      true,
-    )
-    expect(
-      shouldUseLocalRsshubRuntime("https://rsshub.myself.dev/github/trending", [
-        "rsshub.myself.dev",
-      ]),
-    ).toBe(false)
-  })
-
   it("应识别 rsshub.app 与 rsshub:// 形式", () => {
     expect(isRsshubUrlLike("https://rsshub.app/github/trending", [])).toBe(true)
     expect(isRsshubUrlLike("rsshub://github/trending?language=js", [])).toBe(true)
@@ -26,54 +12,73 @@ describe("resolveRsshubUrl", () => {
   it("非 RSSHub URL 应原样返回", () => {
     const result = resolveRsshubUrl({
       url: "https://example.com/feed.xml",
-      state: { status: "running", port: 12000, token: "t1" },
       customHosts: [],
+      customBaseUrl: "",
+      allowPublicFallback: false,
     })
 
     expect(result).toEqual({ resolvedUrl: "https://example.com/feed.xml", token: null })
   })
 
-  it("rsshub.app URL 应改写到本地端口并保留参数", () => {
+  it("配置外部 RSSHub 后应改写到自定义地址并保留参数", () => {
     const result = resolveRsshubUrl({
       url: "https://rsshub.app/github/trending?since=daily#top",
-      state: { status: "running", port: 12001, token: "t2" },
       customHosts: [],
+      customBaseUrl: "https://rsshub.myself.dev",
+      allowPublicFallback: false,
     })
 
     expect(result).toEqual({
-      resolvedUrl: "http://127.0.0.1:12001/github/trending?since=daily#top",
-      token: "t2",
+      resolvedUrl: "https://rsshub.myself.dev/github/trending?since=daily#top",
+      token: null,
     })
   })
 
-  it("rsshub:// 协议应正确改写为路径", () => {
+  it("rsshub:// 协议应改写到外部 RSSHub", () => {
     const result = resolveRsshubUrl({
       url: "rsshub://github/trending?language=js",
-      state: { status: "running", port: 12002, token: "t3" },
       customHosts: [],
+      customBaseUrl: "https://rsshub.myself.dev",
+      allowPublicFallback: false,
     })
 
     expect(result).toEqual({
-      resolvedUrl: "http://127.0.0.1:12002/github/trending?language=js",
-      token: "t3",
+      resolvedUrl: "https://rsshub.myself.dev/github/trending?language=js",
+      token: null,
     })
   })
 
-  it("命中 RSSHub URL 但服务不可用应抛结构化错误", () => {
+  it("未配置外部 RSSHub 时应抛结构化错误", () => {
     expect(() =>
       resolveRsshubUrl({
         url: "https://rsshub.app/github/trending",
-        state: { status: "error", port: null, token: null },
         customHosts: [],
+        customBaseUrl: "",
+        allowPublicFallback: false,
       }),
-    ).toThrowError(/RSSHUB_LOCAL_UNAVAILABLE/)
+    ).toThrowError(/RSSHUB_EXTERNAL_UNCONFIGURED/)
+  })
+
+  it("允许使用官方默认时应回退到 rsshub.app", () => {
+    const result = resolveRsshubUrl({
+      url: "https://rsshub.app/github/trending?since=daily",
+      customHosts: [],
+      customBaseUrl: "",
+      allowPublicFallback: true,
+    })
+
+    expect(result).toEqual({
+      resolvedUrl: "https://rsshub.app/github/trending?since=daily",
+      token: null,
+    })
   })
 
   it("命中自定义 RSSHub 域名时应保持原始地址，不依赖本地实例状态", () => {
     const result = resolveRsshubUrl({
       url: "https://rsshub.myself.dev/github/trending?since=daily",
-      state: { status: "error", port: null, token: null },
       customHosts: ["rsshub.myself.dev"],
+      customBaseUrl: "",
+      allowPublicFallback: false,
     })
 
     expect(result).toEqual({

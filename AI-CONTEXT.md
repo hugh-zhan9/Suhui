@@ -37,11 +37,8 @@
 - 预览启动：`pnpm --filter FreeFolo start`
 - 打包：`pnpm --filter FreeFolo build:electron`  
   无签名打包：`pnpm --filter FreeFolo build:electron:unsigned`
-- RSSHub 资源构建：`pnpm --filter FreeFolo build:rsshub`
-- RSSHub 模式切换：设置 -> 数据控制 -> 内置 RSSHub -> `Lite/Official`
 - 桌面打包已强制 `asar` 解包所有 `*.node`，并在拷贝保留模块时启用符号链接解引用（`dereference`），用于确保 `better-sqlite3` 原生二进制被正确带入安装包
 - 桌面打包在 `postPackage` 阶段会再次覆盖产物内 `better_sqlite3.node`（以构建机当前二进制为准），降低跨机器启动失败概率
-- `build:electron/build:electron:unsigned/build:electron-vite` 已前置执行 `build:rsshub`，自动生成 `apps/desktop/resources/rsshub/routes-manifest.json`
 - 无签名打包产物目录：`/tmp/folo-forge-out/make`（常见产物：`FreeFolo-<version>-macos-arm64.dmg`）
 
 ### 5) Release 规则（Desktop）
@@ -80,44 +77,20 @@
 - `All/Articles` 未读数按“当前有效订阅来源”聚合统计
 - 不再直接依赖 `entryIdByView[All]`，避免陈旧来源导致虚高
 
-## 内嵌 RSSHub 状态（当前）
+## 外部 RSSHub 模式（当前）
 
 ### 1) 已完成
 
-- 主进程 `RsshubManager`：状态机、健康检查、退避、cooldown、手动重启
-- 端口策略：优先固定 `127.0.0.1:12000`，若端口占用则自动回退随机可用端口
-- 启动策略：默认 `spawn + ELECTRON_RUN_AS_NODE=1`，可用环境变量切回 `fork`
-- 路径解析：优先 `app.isPackaged/getAppPath`，不依赖单一 `ELECTRON_IS_PACKAGED`
-- 运行时入口脚本（`resources/rsshub/*.js`）已改为 Node 内置路径解析，避免打包环境出现 `pathe` 依赖缺失导致子进程启动失败
-- 运行模式：支持 `lite/official` 双模式，切换后自动重启内置 RSSHub
-  - `lite`：轻量内置（白名单/内置路由）
-  - `official`：官方 RSSHub 全量模式（本地内嵌官方运行时）
-- 设置页（数据控制）会展示 Lite 模式支持路由清单（来自 `routes-manifest.json` 的 whitelist 路由），用于告知能力边界
-- 头像菜单 `RSSHub` 子页面已改为“本地 RSSHub 控制台”，用于统一管理内置 RSSHub（启动/重启、模式切换、Lite 路由清单、自定义实例）
-- 设置页“内置 RSSHub”已简化为状态摘要 + 跳转按钮，避免双入口配置分裂
-- 打包资源：`apps/desktop/resources/rsshub` 已进入 `extraResource`
-- 运行时安全：当前本地模式已关闭 token 鉴权限制（`runtime-auth` 恒放行），控制台地址不再附带 token 参数
-- 错误透传：`RSSHUB_*` 从主进程透传到渲染层，前端可映射友好文案
-- 自定义实例：设置页可配置 `rsshubCustomUrl`，命中该域名走直连，不拉起本地实例
-- 运行时能力：
-  - `/healthz`
-  - `/status`（缓存占用诊断）
-  - `/rsshub/routes/:lang?`（内置路由清单 RSS）
-  - `/github/release/:owner/:repo`（302 -> GitHub releases atom）
-  - `/github/commit/:owner/:repo`（302 -> GitHub commits atom）
-- 构建清单：`routes-manifest.json` 已升级为 `embedded-dual`，包含 Lite 模式的 Top 路由白名单
-- 官方运行时依赖：`build:rsshub` 会在 `apps/desktop/resources/rsshub/official-runtime` 下准备 `rsshub@1.0.0-master.5ddd208` 及依赖（体积较大）
-- 缓存治理：运行时启动会执行缓存目录上限清理（默认 500MB，按文件 mtime LRU 删除）
-- 状态页冷却倒计时已增加秒级 UI tick，`cooldown` 状态下可实时刷新剩余秒数
+- 已移除内嵌 RSSHub 运行时与 Lite/Official 模式
+- `rsshub://` 与 `https://rsshub.app/...` 订阅统一改写为外部 RSSHub 实例地址
+- 未配置外部 RSSHub 时抛 `RSSHUB_EXTERNAL_UNCONFIGURED`，前端弹出配置引导
+- 可选择使用官方默认 `https://rsshub.app` 作为外部实例地址
+- 设置页与 RSSHub 子页面统一为“外部 RSSHub 配置”
 
 ### 2) 当前边界
 
-- `Lite` 模式为轻量内置路由，未内置路由返回：`RSSHUB_ROUTE_NOT_WHITELISTED`
-- Lite 模式不提供运行时白名单编辑器（避免“可配置但不可执行”的误导）；以“可见路由清单”作为能力说明
-- `Official` 模式走官方运行时全量执行链路；当上游路由不存在时返回：`RSSHUB_ROUTE_NOT_IMPLEMENTED`
-- `Official` 模式执行异常时返回：`RSSHUB_OFFICIAL_RUNTIME_ERROR: <message>`
-- `/api/radar/rules` 当前返回 RSS/XML（非 JSON rules 列表）；依赖 Radar JSON 规则的外部服务需做兼容转换
-- 跨平台（Windows/Linux）完整验收仍需在目标环境实测
+- 依赖外部 RSSHub 实例可用性；`rsshub.app` 公共实例可能限流/403
+- 无内置运行时，不再提供 Lite 白名单/本地控制台/运行状态
 
 ## 最近关键修复（issue 27-34）
 

@@ -20,9 +20,10 @@ import { z } from "zod"
 import { useModalStack } from "~/components/ui/modal/stacked/hooks"
 import { ipcServices } from "~/lib/client"
 import { toastFetchError } from "~/lib/error-parser"
+import { parseRsshubLocalError } from "~/lib/rsshub-local-error"
 
 import { FeedForm } from "../discover/FeedForm"
-import type { RsshubRuntimeStatus } from "./rsshub-precheck"
+import { ExternalRsshubConfigModal } from "../rsshub/external-config-modal"
 import { ensureRsshubRuntimeReady } from "./rsshub-precheck"
 import { getSimpleDiscoverModes, shouldShowDiscoverJumpHint } from "./simple-discover-options"
 
@@ -62,37 +63,75 @@ export function SimpleDiscoverModal({ dismiss }: { dismiss: () => void }) {
   const watchedType = form.watch("type")
   const currentConfig = typeConfig[watchedType]
 
-  const ensureLocalRsshubReady = async () => {
-    const dbIpc = ipcServices?.db as
+  const openFeedForm = (feedUrl: string) => {
+    present({
+      title: t("feed_form.add_feed"),
+      content: ({ dismiss: dismissFeedForm }) => (
+        <FeedForm
+          url={feedUrl}
+          onSuccess={() => {
+            dismissFeedForm()
+            dismiss()
+          }}
+        />
+      ),
+    })
+  }
+
+  const openExternalRsshubModal = async (feedUrl: string) => {
+    const settingIpc = ipcServices?.setting as
       | {
-          getRsshubStatus?: () => Promise<{ status?: RsshubRuntimeStatus }>
-          restartRsshub?: () => Promise<unknown>
+          getRsshubCustomUrl?: () => Promise<string>
+          setRsshubCustomUrl?: (url: string) => Promise<void> | void
         }
       | undefined
-
-    await ensureRsshubRuntimeReady({
-      getStatus: async () => dbIpc?.getRsshubStatus?.(),
-      restart: async () => dbIpc?.restartRsshub?.(),
+    if (!settingIpc?.setRsshubCustomUrl) {
+      throw new Error("RSSHUB_EXTERNAL_UNCONFIGURED: 未配置外部 RSSHub 实例")
+    }
+    const currentUrl = (await settingIpc.getRsshubCustomUrl?.()) ?? ""
+    present({
+      title: "配置外部 RSSHub",
+      content: ({ dismiss: dismissModal }) => (
+        <ExternalRsshubConfigModal
+          initialUrl={currentUrl}
+          onCancel={dismissModal}
+          onSave={async (url) => {
+            await settingIpc.setRsshubCustomUrl?.(url)
+            dismissModal()
+            openFeedForm(feedUrl)
+          }}
+          onUsePublic={async () => {
+            await settingIpc.setRsshubCustomUrl?.("https://rsshub.app")
+            dismissModal()
+            openFeedForm(feedUrl)
+          }}
+        />
+      ),
     })
   }
 
   const mutation = useMutation({
     mutationFn: async ({ keyword, type }: { keyword: string; type: string }) => {
       if (type === "rsshub") {
-        await ensureLocalRsshubReady()
+        try {
+          const settingIpc = ipcServices?.setting as
+            | {
+                getRsshubCustomUrl?: () => Promise<string>
+              }
+            | undefined
+          await ensureRsshubRuntimeReady({
+            getCustomUrl: async () => settingIpc?.getRsshubCustomUrl?.(),
+          })
+        } catch (error) {
+          const reason = error instanceof Error ? error.message : String(error)
+          if (parseRsshubLocalError(reason) === "external_unconfigured") {
+            await openExternalRsshubModal(keyword)
+            return []
+          }
+          throw error
+        }
       }
-      present({
-        title: t("feed_form.add_feed"),
-        content: ({ dismiss: dismissFeedForm }) => (
-          <FeedForm
-            url={keyword}
-            onSuccess={() => {
-              dismissFeedForm()
-              dismiss()
-            }}
-          />
-        ),
-      })
+      openFeedForm(keyword)
       return []
     },
     onError: (error) => {

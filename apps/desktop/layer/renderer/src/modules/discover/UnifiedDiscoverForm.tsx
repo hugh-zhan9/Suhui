@@ -26,8 +26,9 @@ import { useRequireLogin } from "~/hooks/common/useRequireLogin"
 import { followClient } from "~/lib/api-client"
 import { ipcServices } from "~/lib/client"
 import { toastFetchError } from "~/lib/error-parser"
+import { parseRsshubLocalError } from "~/lib/rsshub-local-error"
 
-import type { RsshubRuntimeStatus } from "../subscription-column/rsshub-precheck"
+import { ExternalRsshubConfigModal } from "../rsshub/external-config-modal"
 import { ensureRsshubRuntimeReady } from "../subscription-column/rsshub-precheck"
 import {
   getDiscoverSearchData,
@@ -156,16 +157,68 @@ export function UnifiedDiscoverForm() {
           throw new Error("Invalid RSSHub route")
         }
 
-        const dbIpc = ipcServices?.db as
-          | {
-              getRsshubStatus?: () => Promise<{ status?: RsshubRuntimeStatus }>
-              restartRsshub?: () => Promise<unknown>
+        try {
+          const settingIpc = ipcServices?.setting as
+            | {
+                getRsshubCustomUrl?: () => Promise<string>
+              }
+            | undefined
+          await ensureRsshubRuntimeReady({
+            getCustomUrl: async () => settingIpc?.getRsshubCustomUrl?.(),
+          })
+        } catch (error) {
+          const reason = error instanceof Error ? error.message : String(error)
+          if (parseRsshubLocalError(reason) === "external_unconfigured") {
+            const settingIpc = ipcServices?.setting as
+              | {
+                  getRsshubCustomUrl?: () => Promise<string>
+                  setRsshubCustomUrl?: (url: string) => Promise<void> | void
+                }
+              | undefined
+            if (settingIpc?.setRsshubCustomUrl) {
+              const currentUrl = (await settingIpc.getRsshubCustomUrl?.()) ?? ""
+              present({
+                title: "配置外部 RSSHub",
+                content: ({ dismiss: dismissModal }) => (
+                  <ExternalRsshubConfigModal
+                    initialUrl={currentUrl}
+                    onCancel={dismissModal}
+                    onSave={async (url) => {
+                      await settingIpc.setRsshubCustomUrl?.(url)
+                      dismissModal()
+                      present({
+                        title: t("feed_form.add_feed"),
+                        content: () => (
+                          <FeedForm
+                            url={keyword}
+                            onSuccess={dismissAll}
+                            defaultValues={{ view: FeedViewType.Articles.toString() }}
+                          />
+                        ),
+                      })
+                    }}
+                    onUsePublic={async () => {
+                      await settingIpc.setRsshubCustomUrl?.("https://rsshub.app")
+                      dismissModal()
+                      present({
+                        title: t("feed_form.add_feed"),
+                        content: () => (
+                          <FeedForm
+                            url={keyword}
+                            onSuccess={dismissAll}
+                            defaultValues={{ view: FeedViewType.Articles.toString() }}
+                          />
+                        ),
+                      })
+                    }}
+                  />
+                ),
+              })
+              return []
             }
-          | undefined
-        await ensureRsshubRuntimeReady({
-          getStatus: async () => dbIpc?.getRsshubStatus?.(),
-          restart: async () => dbIpc?.restartRsshub?.(),
-        })
+          }
+          throw error
+        }
 
         present({
           title: t("feed_form.add_feed"),

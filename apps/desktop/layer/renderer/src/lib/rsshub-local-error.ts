@@ -1,4 +1,5 @@
 export type RsshubLocalErrorType =
+  | "external_unconfigured"
   | "unavailable"
   | "cooldown"
   | "healthcheck"
@@ -8,6 +9,9 @@ export type RsshubLocalErrorType =
 export const parseRsshubLocalError = (message: string): RsshubLocalErrorType => {
   if (!message) return "none"
 
+  if (message.includes("RSSHUB_EXTERNAL_UNCONFIGURED")) {
+    return "external_unconfigured"
+  }
   if (message.includes("RSSHUB_LOCAL_UNAVAILABLE") || message.includes("内置 RSSHub 当前未运行")) {
     return "unavailable"
   }
@@ -32,17 +36,20 @@ export const parseRsshubLocalError = (message: string): RsshubLocalErrorType => 
 
 export const getRsshubLocalErrorTitle = (type: RsshubLocalErrorType) => {
   switch (type) {
+    case "external_unconfigured": {
+      return "请先配置外部 RSSHub 实例"
+    }
     case "unavailable": {
-      return "内置 RSSHub 当前未运行"
+      return "RSSHub 服务当前不可用"
     }
     case "cooldown": {
-      return "内置 RSSHub 处于冷却中"
+      return "RSSHub 处于冷却中"
     }
     case "healthcheck": {
-      return "内置 RSSHub 启动检查失败"
+      return "RSSHub 启动检查失败"
     }
     case "route_not_implemented": {
-      return "内置 RSSHub 暂未内置该路由，请先使用普通 RSS 订阅或等待后续版本"
+      return "RSSHub 暂未实现该路由，请确认路由是否存在或更换实例。"
     }
     default: {
       return ""
@@ -59,23 +66,23 @@ export const getRsshubFriendlyMessage = (rawMessage: string) => {
   if (title) return title
 
   if (rawMessage.toLowerCase().includes("twitter api is not configured")) {
-    return "Twitter 路由需要凭据。请在 RSSHub 控制台配置 TWITTER_COOKIE 后重启内置 RSSHub。"
+    return "Twitter 路由需要凭据。请在 RSSHub 实例配置 TWITTER_COOKIE 后重启服务。"
   }
 
   if (
     rawMessage.includes("Could not find Chrome") ||
     rawMessage.toLowerCase().includes("puppeteer browsers install chrome")
   ) {
-    return "该 RSSHub 路由依赖浏览器运行环境（Chrome/Puppeteer），当前内置环境未安装。请改用无需浏览器的路由，或切换自定义 RSSHub 实例。"
+    return "该 RSSHub 路由依赖浏览器运行环境（Chrome/Puppeteer），当前实例未安装。请改用无需浏览器的路由，或更换 RSSHub 实例。"
   }
 
   if (
     rawMessage.includes("RSSHUB_OFFICIAL_RUNTIME_ERROR") &&
     rawMessage.toLowerCase().includes("<no response> fetch failed")
   ) {
-    const sourceUrl = rawMessage.match(/\"(https?:\/\/[^\"]+)\"/)?.[1]
+    const sourceUrl = rawMessage.match(/"(https?:\/\/[^"]+)"/)?.[1]
     const sourceSuffix = sourceUrl ? `源站：${sourceUrl}。` : ""
-    return `该 RSSHub 源站当前不可达或拒绝访问（fetch failed）。${sourceSuffix}请稍后重试，或更换可用路由/自定义 RSSHub 实例。`
+    return `该 RSSHub 源站当前不可达或拒绝访问（fetch failed）。${sourceSuffix}请稍后重试，或更换可用路由/实例。`
   }
 
   return rawMessage
