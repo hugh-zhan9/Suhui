@@ -19,6 +19,7 @@ export default defineProject({
     alias: {
       "@pkg": resolve(__dirname, "./package.json"),
       "@locales": resolve(__dirname, "../../../../locales"),
+      "~": resolve(__dirname, "./src"),
     },
   },
 
