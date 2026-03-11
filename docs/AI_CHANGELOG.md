@@ -5146,3 +5146,14 @@
 - `docs/plans/2026-03-11-postgres-auto-create-migrate.md`
 
 ---
+
+## [2026-03-11 17:04] [Refactor]
+
+- **Change**: RSSHub URL 解析改为外部基址并增加未配置错误
+- **Risk Analysis**: 可能影响 RSSHub 订阅改写逻辑，若外部地址拼接或回退条件处理不当会导致订阅失败
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/ipc/services/rsshub-url.ts`
+- `apps/desktop/layer/main/src/ipc/services/rsshub-url.test.ts`
+
+---
