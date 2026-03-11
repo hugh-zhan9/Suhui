@@ -15,6 +15,7 @@ import { loadLiteSupportedRoutes } from "~/manager/rsshub-lite-routes"
 import { drainPendingOps } from "~/manager/sync-applier"
 import { syncLogger } from "~/manager/sync-logger"
 
+import { mapExecuteResult } from "./db-execute-result"
 import { findDuplicateFeed } from "./rss-dedup"
 import { buildEntryMediaPayload } from "./rss-entry-media"
 import { resolveHttpErrorMessage } from "./rss-http-error"
@@ -180,14 +181,25 @@ export class DbService extends IpcService {
   }
 
   @IpcMethod()
+  async getDialect() {
+    return DBManager.getDialect()
+  }
+
+  @IpcMethod()
   async executeRawSql(
     _context: IpcContext,
     sql: string,
     params?: unknown[],
     method?: "run" | "all" | "get" | "values",
   ) {
-    const sqlite = DBManager.getSqlite()
     try {
+      if (DBManager.getDialect() === "postgres") {
+        const pgPool = DBManager.getPgPool()
+        const result = await pgPool.query(sql, (params as any[]) ?? [])
+        return mapExecuteResult(method, result)
+      }
+
+      const sqlite = DBManager.getSqlite()
       if (params && params.length > 0) {
         if (method === "get") {
           return { rows: sqlite.prepare(sql).raw().get(params) }
@@ -195,14 +207,14 @@ export class DbService extends IpcService {
           return sqlite.prepare(sql).run(params)
         }
         return { rows: sqlite.prepare(sql).raw().all(params) }
-      } else {
-        if (method === "get") {
-          return { rows: sqlite.prepare(sql).raw().get() }
-        } else if (method === "run") {
-          return sqlite.prepare(sql).run()
-        }
-        return { rows: sqlite.prepare(sql).raw().all() }
       }
+
+      if (method === "get") {
+        return { rows: sqlite.prepare(sql).raw().get() }
+      } else if (method === "run") {
+        return sqlite.prepare(sql).run()
+      }
+      return { rows: sqlite.prepare(sql).raw().all() }
     } catch (error: any) {
       console.error(`[DbService] Error executing SQL: ${sql} with params:`, params, error)
       return { rows: [] }

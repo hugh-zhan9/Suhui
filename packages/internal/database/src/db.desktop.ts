@@ -1,24 +1,53 @@
+import type { PgRemoteDatabase } from "drizzle-orm/pg-proxy"
 import type { SqliteRemoteDatabase } from "drizzle-orm/sqlite-proxy"
-import { drizzle } from "drizzle-orm/sqlite-proxy"
-import * as schema from "./schemas"
-import { migrateFromIndexedDB } from "./migrate-indexed-db"
+import { drizzle as drizzleSqlite } from "drizzle-orm/sqlite-proxy"
 
-export let db: SqliteRemoteDatabase<typeof schema>
+import { migrateFromIndexedDB } from "./migrate-indexed-db"
+import * as schema from "./schemas"
+
+export let db: SqliteRemoteDatabase<typeof schema> | PgRemoteDatabase<typeof schema>
 
 export async function initializeDB() {
-  // Start migration in background (don't block initial load if possible, 
+  const { electron } = window as any
+  if (!electron || !electron.ipcRenderer) {
+    console.warn("[Local-First] IPC Renderer not found. Backend DB may not be accessible.")
+    return
+  }
+
+  let dbType: "sqlite" | "postgres" = "sqlite"
+  try {
+    dbType = await electron.ipcRenderer.invoke("db.getDialect")
+  } catch (error) {
+    console.warn("[Local-First] Failed to get DB dialect, defaulting to sqlite.", error)
+  }
+
+  if (dbType === "postgres") {
+    const { drizzle } = await import("drizzle-orm/pg-proxy")
+    db = drizzle(
+      async (sql, params, method) => {
+        try {
+          const mappedMethod = method === "execute" ? "run" : "all"
+          return await electron.ipcRenderer.invoke("db.executeRawSql", sql, params, mappedMethod)
+        } catch (error) {
+          console.error(`[IPC DB Proxy] Error executing SQL: ${sql} with params:${params}`, error)
+          return { rows: [] }
+        }
+      },
+      {
+        schema,
+        logger: false,
+      },
+    )
+    return
+  }
+
+  // Start migration in background (don't block initial load if possible,
   // but better to run before the first query? Actually hydrate will run later)
   void migrateFromIndexedDB()
-  
-  db = drizzle(
+
+  db = drizzleSqlite(
     async (sql, params, method) => {
       try {
-        const electron = (window as any).electron
-        if (!electron || !electron.ipcRenderer) {
-           console.warn("[Local-First] IPC Renderer not found. Backend DB may not be accessible.")
-           return { rows: [] }
-        }
-        
         const result = await electron.ipcRenderer.invoke("db.executeRawSql", sql, params, method)
         return result
       } catch (error) {
