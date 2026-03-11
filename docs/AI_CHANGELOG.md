@@ -5129,3 +5129,20 @@
 - `docs/plans/2026-03-11-docker-compose-postgres-design.md`
 
 ---
+
+## [2026-03-11 14:27] [Feature]
+
+- **Change**: 新增 Postgres 自动建库与 SQLite 自动迁移流程，并补充 Docker 与 README 说明
+- **Risk Analysis**: 风险在于自动迁移对大数据量可能耗时且表缺失/类型不一致导致迁移失败；已加空库检测与表存在检查，风险中等。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/manager/db.ts`
+- `apps/desktop/layer/main/src/manager/postgres-bootstrap.ts`
+- `apps/desktop/layer/main/src/manager/postgres-bootstrap.test.ts`
+- `apps/desktop/layer/main/src/manager/sqlite-postgres-migration.ts`
+- `apps/desktop/layer/main/src/manager/sqlite-postgres-migration.test.ts`
+- `README.md`
+- `docker-compose.yaml`
+- `docs/plans/2026-03-11-postgres-auto-create-migrate.md`
+
+---
