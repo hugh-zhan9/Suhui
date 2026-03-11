@@ -1,9 +1,10 @@
 import { Button } from "@follow/components/ui/button/index.js"
-import { useMutation } from "@tanstack/react-query"
 import { toast } from "sonner"
 
+import { useModalStack } from "~/components/ui/modal/stacked/hooks"
 import { ipcServices } from "~/lib/client"
 
+import { ExternalRsshubConfigModal } from "../rsshub/external-config-modal"
 import { canRecoverRsshubByError } from "./rsshub-recovery"
 
 export const RsshubRecoveryAction = ({
@@ -14,38 +15,48 @@ export const RsshubRecoveryAction = ({
   onRecovered?: () => Promise<void> | void
 }) => {
   const showAction = canRecoverRsshubByError(errorMessage)
+  const { present } = useModalStack()
 
-  const restartRsshubMutation = useMutation({
-    mutationFn: async () => {
-      const dbIpc = ipcServices?.db as
-        | {
-            restartRsshub?: () => Promise<unknown>
-          }
-        | undefined
-      if (!dbIpc?.restartRsshub) {
-        throw new Error("IPC_NOT_AVAILABLE")
-      }
-      await dbIpc.restartRsshub()
-    },
-    onSuccess: async () => {
-      toast.success("已触发 RSSHub 重启，正在重试")
-      await onRecovered?.()
-    },
-    onError: () => {
-      toast.error("RSSHub 重启失败")
-    },
-  })
+  const openConfigModal = async () => {
+    const settingIpc = ipcServices?.setting as
+      | {
+          getRsshubCustomUrl?: () => Promise<string>
+          setRsshubCustomUrl?: (url: string) => Promise<void> | void
+        }
+      | undefined
+    if (!settingIpc?.setRsshubCustomUrl) {
+      toast.error("配置 RSSHub 失败：IPC 不可用")
+      return
+    }
+    const currentUrl = (await settingIpc.getRsshubCustomUrl?.()) ?? ""
+    present({
+      title: "配置外部 RSSHub",
+      content: ({ dismiss }) => (
+        <ExternalRsshubConfigModal
+          initialUrl={currentUrl}
+          onCancel={dismiss}
+          onSave={async (url) => {
+            await settingIpc.setRsshubCustomUrl?.(url)
+            toast.success("外部 RSSHub 已更新")
+            dismiss()
+            await onRecovered?.()
+          }}
+          onUsePublic={async () => {
+            await settingIpc.setRsshubCustomUrl?.("https://rsshub.app")
+            toast.success("已使用官方 RSSHub")
+            dismiss()
+            await onRecovered?.()
+          }}
+        />
+      ),
+    })
+  }
 
   if (!showAction) return null
 
   return (
-    <Button
-      size="sm"
-      variant="outline"
-      disabled={restartRsshubMutation.isPending}
-      onClick={() => restartRsshubMutation.mutate()}
-    >
-      {restartRsshubMutation.isPending ? "重启中..." : "立即重启内置 RSSHub"}
+    <Button size="sm" variant="outline" onClick={() => void openConfigModal()}>
+      配置外部 RSSHub
     </Button>
   )
 }

@@ -1,4 +1,4 @@
-import { parseRsshubLocalError, shouldShowRsshubRestartAction } from "../../lib/rsshub-local-error"
+import { parseRsshubLocalError } from "../../lib/rsshub-local-error"
 
 export const canRecoverRsshubByError = (errorMessage: string) =>
-  shouldShowRsshubRestartAction(parseRsshubLocalError(errorMessage))
+  parseRsshubLocalError(errorMessage) === "external_unconfigured"
