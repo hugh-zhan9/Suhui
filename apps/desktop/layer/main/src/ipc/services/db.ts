@@ -4,14 +4,11 @@ import * as https from "node:https"
 import { EntryService } from "@follow/database/services/entry"
 import { FeedService } from "@follow/database/services/feed"
 import { SubscriptionService } from "@follow/database/services/subscription"
-import { app } from "electron"
 import type { IpcContext } from "electron-ipc-decorator"
 import { IpcMethod, IpcService } from "electron-ipc-decorator"
 
 import { store } from "~/lib/store"
 import { DBManager } from "~/manager/db"
-import { rsshubManager } from "~/manager/rsshub"
-import { loadLiteSupportedRoutes } from "~/manager/rsshub-lite-routes"
 import { drainPendingOps } from "~/manager/sync-applier"
 import { syncLogger } from "~/manager/sync-logger"
 
@@ -21,9 +18,7 @@ import { buildEntryMediaPayload } from "./rss-entry-media"
 import { resolveHttpErrorMessage } from "./rss-http-error"
 import { parseRssFeed } from "./rss-parser"
 import { buildEntryIdentityKey, buildRefreshedFeed, buildStableLocalEntryId } from "./rss-refresh"
-import { buildLocalRsshubConsoleUrl } from "./rsshub-console-url"
-import { extractRsshubCustomHosts } from "./rsshub-custom-host"
-import { resolveRsshubUrl, shouldUseLocalRsshubRuntime } from "./rsshub-url"
+import { resolvePreviewFeedUrl } from "./rsshub-external"
 
 /**
  * Fetches a URL using Node.js built-in http/https, follows up to 5 redirects.
@@ -91,19 +86,17 @@ function fetchUrl(
 export class DbService extends IpcService {
   static override readonly groupName = "db"
 
-  private async buildPreviewData(feedUrl: string, preferredFeedId?: string) {
-    const customHosts = extractRsshubCustomHosts(store.get("rsshubCustomUrl"))
-
-    if (shouldUseLocalRsshubRuntime(feedUrl, customHosts)) {
-      await rsshubManager.ensureRunning()
-    }
-
-    const { resolvedUrl, token } = resolveRsshubUrl({
-      url: feedUrl,
-      state: rsshubManager.getState(),
-      customHosts,
+  private async buildPreviewData(
+    feedUrl: string,
+    preferredFeedId?: string,
+    allowPublicFallback = false,
+  ) {
+    const customBaseUrl = store.get("rsshubCustomUrl") ?? ""
+    const resolvedUrl = resolvePreviewFeedUrl(feedUrl, {
+      customBaseUrl,
+      allowPublicFallback,
     })
-    const xmlText = await fetchUrl(resolvedUrl, token)
+    const xmlText = await fetchUrl(resolvedUrl)
     const parsed = parseRssFeed(xmlText)
 
     const feedId =
@@ -272,13 +265,16 @@ export class DbService extends IpcService {
   }
 
   @IpcMethod()
-  async previewFeed(_context: IpcContext, form: { url: string; feedId?: string }) {
+  async previewFeed(
+    _context: IpcContext,
+    form: { url: string; feedId?: string; allowPublicRsshub?: boolean },
+  ) {
     const inputUrl = (form?.url || "").trim()
     if (!inputUrl) {
       throw new Error("[db.previewFeed] feed url is required")
     }
     try {
-      return await this.buildPreviewData(inputUrl, form.feedId)
+      return await this.buildPreviewData(inputUrl, form.feedId, form?.allowPublicRsshub === true)
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error)
       console.error("[db.previewFeed] failed", {
@@ -522,47 +518,5 @@ export class DbService extends IpcService {
       console.error("[DbService] deleteSubscriptionByTargets error:", e)
       throw new Error(`Failed to delete subscriptions: ${e.message}`)
     }
-  }
-
-  @IpcMethod()
-  async getRsshubStatus(_context: IpcContext) {
-    const state = rsshubManager.getState()
-    const liteSupportedRoutes = loadLiteSupportedRoutes({
-      isPackaged: app.isPackaged,
-      appPath: app.getAppPath(),
-      resourcesPath: process.resourcesPath,
-    })
-    return {
-      status: state.status,
-      port: state.port,
-      consoleUrl:
-        state.port != null
-          ? buildLocalRsshubConsoleUrl({ port: state.port, token: state.token ?? undefined })
-          : null,
-      retryCount: state.retryCount,
-      cooldownUntil: state.cooldownUntil,
-      runtimeMode: rsshubManager.getRuntimeMode(),
-      liteSupportedRoutes,
-    }
-  }
-
-  @IpcMethod()
-  async toggleRsshub(_context: IpcContext, enabled: boolean) {
-    try {
-      if (enabled) {
-        // 用户主动开启时重置冷却状态，允许立即重试
-        rsshubManager.resetCooldown()
-        return await rsshubManager.start()
-      }
-      return await rsshubManager.stop()
-    } catch (error) {
-      const reason = error instanceof Error ? error.message : String(error)
-      throw new Error(`RSSHub toggle failed: ${reason}`)
-    }
-  }
-
-  @IpcMethod()
-  async restartRsshub(_context: IpcContext) {
-    return rsshubManager.restart()
   }
 }

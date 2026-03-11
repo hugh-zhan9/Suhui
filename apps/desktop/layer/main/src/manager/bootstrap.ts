@@ -11,12 +11,9 @@ import { app, BrowserWindow, net, protocol, session } from "electron"
 import { join } from "pathe"
 
 import { DBManager } from "~/manager/db"
-import { rsshubManager } from "~/manager/rsshub"
-import { normalizeRsshubAutoStart, RSSHUB_AUTOSTART_STORE_KEY } from "~/manager/rsshub-autostart"
 import { shouldForwardRendererConsoleError } from "~/manager/renderer-console-filter"
-import { normalizeRsshubRuntimeMode, RSSHUB_RUNTIME_MODE_STORE_KEY } from "~/manager/rsshub-runtime-mode"
-import { WindowManager } from "~/manager/window"
 import { SyncManager } from "~/manager/sync"
+import { WindowManager } from "~/manager/window"
 
 import { migrateAuthCookiesToNewApiDomain } from "../lib/auth-cookie-migration"
 import { handleUrlRouting } from "../lib/router"
@@ -104,15 +101,6 @@ export class BootstrapManager {
         currentApiURL: env.VITE_API_URL,
       })
 
-      const rsshubRuntimeMode = normalizeRsshubRuntimeMode(store.get(RSSHUB_RUNTIME_MODE_STORE_KEY))
-      await rsshubManager.setRuntimeMode(rsshubRuntimeMode)
-
-      if (normalizeRsshubAutoStart(store.get(RSSHUB_AUTOSTART_STORE_KEY))) {
-        void rsshubManager.start().catch((error) => {
-          logger.error("[RSSHub] auto-start failed", error)
-        })
-      }
-
       WindowManager.getMainWindowOrCreate()
 
       app.on("open-url", (_, url) => {
@@ -130,10 +118,13 @@ export class BootstrapManager {
 
       // 延迟 5s 执行首次并设置定时同步以免阻塞启动
       setTimeout(() => {
-        SyncManager.gitSync().catch(err => logger.error("[Sync] auto sync on start failed:", err))
-        setInterval(() => {
-          SyncManager.gitSync().catch(err => logger.error("[Sync] periodic sync failed:", err))
-        }, 10 * 60 * 1000)
+        SyncManager.gitSync().catch((err) => logger.error("[Sync] auto sync on start failed:", err))
+        setInterval(
+          () => {
+            SyncManager.gitSync().catch((err) => logger.error("[Sync] periodic sync failed:", err))
+          },
+          10 * 60 * 1000,
+        )
       }, 5000)
     })
 
@@ -144,7 +135,7 @@ export class BootstrapManager {
       if (!isSyncingAndQuitting && SyncManager.hasSyncRepo()) {
         e.preventDefault()
         isSyncingAndQuitting = true
-        
+
         try {
           await SyncManager.gitSync()
           logger.info("[Sync] auto sync on quit complete.")
@@ -155,8 +146,6 @@ export class BootstrapManager {
         app.quit()
         return
       }
-
-      await rsshubManager.stop()
 
       const window = WindowManager.getMainWindow()
       if (!window || window.isDestroyed()) return
