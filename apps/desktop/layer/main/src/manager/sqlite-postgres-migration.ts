@@ -36,7 +36,7 @@ export const isPostgresEmpty = async (pool: Pool) => {
 }
 
 type SqliteReader = {
-  prepare: (sql: string) => { get: () => unknown }
+  prepare: (sql: string) => { get?: (param?: unknown) => unknown; all?: () => unknown[] }
   close: () => void
 }
 
@@ -76,8 +76,15 @@ const insertRows = async (pool: Pool, table: string, rows: Record<string, unknow
   await pool.query(sql, values)
 }
 
-const fetchRows = (sqlite: BDatabase, table: string) =>
-  sqlite.prepare(`SELECT * FROM ${table}`).all() as Record<string, unknown>[]
+const tableExists = (sqlite: SqliteReader, table: string) => {
+  const row = sqlite
+    .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?")
+    .get?.(table)
+  return !!row
+}
+
+const fetchRows = (sqlite: SqliteReader, table: string) =>
+  (sqlite.prepare(`SELECT * FROM ${table}`).all?.() ?? []) as Record<string, unknown>[]
 
 const mapRow = (table: string, row: Record<string, unknown>) => {
   const mapped = { ...row }
@@ -130,8 +137,13 @@ const mapRow = (table: string, row: Record<string, unknown>) => {
   return mapped
 }
 
-export const migrateSqliteToPostgres = async (dbPath: string, pool: Pool) => {
-  const sqlite = new BDatabase(dbPath, { readonly: true })
+export const migrateSqliteToPostgres = async (
+  dbPath: string,
+  pool: Pool,
+  sqliteFactory: (path: string) => SqliteReader = (path) =>
+    new BDatabase(path, { readonly: true }) as unknown as SqliteReader,
+) => {
+  const sqlite = sqliteFactory(dbPath)
   try {
     await pool.query("BEGIN")
     const orderedTables = [
@@ -152,6 +164,7 @@ export const migrateSqliteToPostgres = async (dbPath: string, pool: Pool) => {
       "pending_sync_ops",
     ]
     for (const table of orderedTables) {
+      if (!tableExists(sqlite, table)) continue
       const rows = fetchRows(sqlite, table)
       const mapped = rows.map((row) => mapRow(table, row))
       if (mapped.length === 0) continue

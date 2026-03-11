@@ -32,12 +32,27 @@ DB_PASSWORD=your_password
 
 - `DB_CONN` 支持 `host:port/dbname` 或完整 DSN（包含 `://`）
 - `.env` 优先级：`resources/.env` → `userData/.env`（后者覆盖前者）
+- Postgres 模式下如果目标库不存在，应用启动时会自动创建
+- 当 Postgres 为空且检测到本地 SQLite 有数据时，会自动迁移到 Postgres
 
 `userData` 路径（应用名：`溯洄`）：
 
 - macOS：`~/Library/Application Support/溯洄`
 - Windows：`%APPDATA%\\溯洄`
 - Linux：`~/.config/溯洄`
+
+## Docker 安装 PostgreSQL（可选）
+
+仓库内提供 `docker-compose.yaml`（PostgreSQL 18，数据目录挂载到 `/var/lib/postgresql`，适配 18+ 目录结构）。
+
+```bash
+docker compose up -d
+```
+
+注意：
+
+- 请修改 `docker-compose.yaml` 中的 `POSTGRES_PASSWORD`
+- 默认库为 `postgres`，应用会在启动时自动创建 `suhui` 库
 
 ## 环境要求
 
