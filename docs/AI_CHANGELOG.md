@@ -5158,3 +5158,28 @@
 - `apps/desktop/layer/renderer/src/modules/entry-column/layouts/entry-refresh.test.ts`
 
 ---
+
+## [2026-03-11 20:25] [Bugfix]
+
+- **Change**: 收敛数据库类型为 Postgres-only，并将条目/订阅时间字段统一为 number，修复 typecheck
+- **Risk Analysis**: 类型收敛可能影响未来 SQLite 路径；时间字段从 Date 切到 number 若有未覆盖的 UI/集成入口可能需要补充转换
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/hooks/biz/useEntryActions.tsx`
+- `apps/desktop/layer/renderer/src/modules/command/commands/integration.tsx`
+- `apps/desktop/layer/renderer/src/modules/integration/custom-integration-manager.ts`
+- `apps/desktop/layer/renderer/src/store/search/index.ts`
+- `packages/internal/components/src/ui/datetime/index.tsx`
+- `packages/internal/components/src/ui/datetime/utils.tsx`
+- `packages/internal/database/src/db.ts`
+- `packages/internal/database/src/schemas/index.ts`
+- `packages/internal/database/src/services/entry.ts`
+- `packages/internal/database/src/types.ts`
+- `packages/internal/store/src/modules/entry/store.ts`
+- `packages/internal/store/src/modules/entry/types.ts`
+- `packages/internal/store/src/modules/feed/store.ts`
+- `packages/internal/store/src/modules/feed/types.ts`
+- `packages/internal/store/src/morph/api.ts`
+- `packages/internal/store/src/morph/db-store.ts`
+
+---
