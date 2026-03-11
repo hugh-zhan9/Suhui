@@ -10,11 +10,15 @@ if (squirrelStartup) {
   app.quit()
 }
 
-loadDesktopEnv({
+const envInfo = loadDesktopEnv({
   userDataPath: app.getPath("userData"),
   resourcesPath: process.resourcesPath,
 })
-;(globalThis as any).__followDbType = resolveDbType(process.env)
+const dbType = resolveDbType(process.env)
+console.info("[main] db_type:", dbType)
+console.info("[main] env_source:", envInfo.active ?? "none")
+console.info("[main] env_candidates:", envInfo.candidates.length > 0 ? envInfo.candidates : "none")
+;(globalThis as any).__followDbType = dbType
 
 import("./manager/bootstrap").then(({ BootstrapManager }) => {
   BootstrapManager.start().catch((err) => {
