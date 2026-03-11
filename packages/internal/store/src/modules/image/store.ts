@@ -3,8 +3,8 @@ import { ImagesService } from "@follow/database/services/image"
 
 import type { Hydratable, Resetable } from "../../lib/base"
 import { createImmerSetter, createTransaction, createZustandStore } from "../../lib/helper"
+import type { ImageModel } from "./types"
 
-export type ImageModel = ImageSchema
 type ImageStore = {
   images: Record<string, ImageModel>
 }
@@ -18,10 +18,29 @@ export const useImagesStore = createZustandStore<ImageStore>("images")(() => def
 const set = useImagesStore.setState
 const immerSet = createImmerSetter(useImagesStore)
 
+type ImageInput = Pick<ImageSchema, "url" | "colors"> & {
+  createdAt?: number | Date | null
+}
+
+const normalizeImageTimestamp = (image: ImageInput): ImageModel => {
+  const { createdAt } = image
+  const normalizedCreatedAt =
+    createdAt instanceof Date
+      ? createdAt
+      : typeof createdAt === "number"
+        ? new Date(createdAt)
+        : new Date()
+
+  return {
+    ...image,
+    createdAt: normalizedCreatedAt,
+  }
+}
+
 class ImageActions implements Hydratable, Resetable {
   async hydrate() {
     const images = await ImagesService.getImageAll()
-    imageActions.upsertManyInSession(images)
+    imageActions.upsertManyInSession(images.map((image) => normalizeImageTimestamp(image)))
   }
 
   async reset() {
@@ -35,7 +54,8 @@ class ImageActions implements Hydratable, Resetable {
 
   upsertManyInSession(images: ImageModel[]) {
     immerSet((state) => {
-      for (const image of images) {
+      for (const rawImage of images) {
+        const image = normalizeImageTimestamp(rawImage)
         state.images[image.url] = image
       }
     })
@@ -44,7 +64,13 @@ class ImageActions implements Hydratable, Resetable {
   async upsertMany(images: ImageModel[]) {
     const tx = createTransaction()
     tx.store(() => this.upsertManyInSession(images))
-    tx.persist(() => ImagesService.upsertMany(images))
+    tx.persist(() => {
+      const imagesForDb = images.map((image) => ({
+        ...image,
+        createdAt: image.createdAt.getTime(),
+      }))
+      return ImagesService.upsertMany(imagesForDb as ImageSchema[])
+    })
     await tx.run()
   }
 }
