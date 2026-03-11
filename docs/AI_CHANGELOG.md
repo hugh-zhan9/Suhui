@@ -5183,3 +5183,27 @@
 - `packages/internal/store/src/morph/db-store.ts`
 
 ---
+
+## [2026-03-11 20:37] [Bugfix]
+
+- **Change**: 稳定本地刷新链路的测试与相关 UI 逻辑，补充 store 导出并规范图片时间戳处理
+- **Risk Analysis**: 刷新/Discover 相关 UI 调整可能影响订阅预览展示；图片时间戳归一化若历史数据异常可能出现时间显示偏差
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/lib/client.ts`
+- `apps/desktop/layer/renderer/src/lib/freefolo-branding.test.ts`
+- `apps/desktop/layer/renderer/src/modules/discover/DiscoverFeedCard.tsx`
+- `apps/desktop/layer/renderer/src/modules/discover/FeedForm.tsx`
+- `apps/desktop/layer/renderer/src/modules/discover/discovery-content-limit.test.ts`
+- `apps/desktop/layer/renderer/src/modules/entry-column/layouts/entry-refresh.test.ts`
+- `apps/desktop/layer/renderer/src/modules/entry-content/actions/header-actions.tsx`
+- `apps/desktop/layer/renderer/src/modules/subscription-column/SimpleDiscoverModal.tsx`
+- `apps/desktop/layer/renderer/src/modules/subscription-column/rsshub-precheck.test.ts`
+- `apps/desktop/layer/renderer/src/providers/server-configs-provider.tsx`
+- `packages/internal/store/package.json`
+- `packages/internal/store/src/modules/image/store.ts`
+- `packages/internal/store/src/modules/image/types.ts`
+- `packages/internal/database/src/schemas/runtime.d.ts`
+- `packages/internal/database/src/schemas/runtime.js`
+
+---
