@@ -1,7 +1,6 @@
 import fs from "node:fs"
 import os from "node:os"
 
-import BDatabase from "better-sqlite3"
 import { join } from "pathe"
 import { describe, expect, it, vi } from "vitest"
 
@@ -24,11 +23,14 @@ describe("sqlite -> postgres migration helpers", () => {
   it("detects sqlite data when entries exist", () => {
     const tmp = fs.mkdtempSync(join(os.tmpdir(), "folo-sqlite-"))
     const dbPath = join(tmp, "suhui_local.db")
-    const sqlite = new BDatabase(dbPath)
-    sqlite.exec("CREATE TABLE entries (id text primary key)")
-    sqlite.exec("INSERT INTO entries (id) VALUES ('e1')")
-    sqlite.close()
+    fs.writeFileSync(dbPath, "")
+    const sqliteFactory = () => ({
+      prepare: () => ({
+        get: () => ({ count: 1 }),
+      }),
+      close: () => {},
+    })
 
-    expect(hasSqliteData(dbPath)).toBe(true)
+    expect(hasSqliteData(dbPath, sqliteFactory as any)).toBe(true)
   })
 })
