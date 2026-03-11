@@ -14,7 +14,7 @@ type FeedRow = {
   updatesPerWeek: number | null
   latestEntryPublishedAt: string | null
   tipUserIds: string[] | null
-  updatedAt: Date | null
+  updatedAt: number | null
 }
 
 type ParsedFeed = {
@@ -31,7 +31,7 @@ export const buildRefreshedFeed = (existing: FeedRow, parsed: ParsedFeed) => {
     description: parsed.description || existing.description || null,
     image: parsed.image || existing.image || null,
     siteUrl: parsed.siteUrl || existing.siteUrl || null,
-    updatedAt: new Date(),
+    updatedAt: Date.now(),
   }
 }
 

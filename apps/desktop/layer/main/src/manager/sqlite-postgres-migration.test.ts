@@ -61,4 +61,51 @@ describe("sqlite -> postgres migration helpers", () => {
       migrateSqliteToPostgres("/tmp/empty.db", pool as any, () => sqlite as any),
     ).resolves.toBeUndefined()
   })
+
+  it("stringifies json fields before inserting into postgres", async () => {
+    const calls: { sql: string; values?: unknown[] }[] = []
+    const pool = {
+      query: vi.fn(async (sql: string, values?: unknown[]) => {
+        calls.push({ sql, values })
+        return { rows: [] }
+      }),
+    }
+    const row = {
+      id: "entry_1",
+      guid: "guid_1",
+      inserted_at: 1700000000000,
+      published_at: 1700000000000,
+      read: 1,
+      media: '[{"type":"photo","url":"https://example.com/a.png"}]',
+    }
+    const sqlite = {
+      prepare: vi.fn((sql: string) => {
+        if (sql.includes("sqlite_master")) {
+          return { get: () => ({ name: "entries" }) }
+        }
+        if (sql.startsWith("SELECT * FROM entries")) {
+          return { all: () => [row] }
+        }
+        return { all: () => [], get: () => null }
+      }),
+      close: vi.fn(),
+    }
+
+    await migrateSqliteToPostgres("/tmp/fake.db", pool as any, () => sqlite as any)
+
+    const insert = calls.find((call) => call.sql.includes('INSERT INTO "entries"'))
+    expect(insert).toBeTruthy()
+    const match = insert?.sql.match(/\(([^)]+)\)\s+VALUES/)
+    expect(match).toBeTruthy()
+    const columns = match![1]
+      .split(",")
+      .map((item) => item.trim().replace(/"/g, ""))
+    const mediaIndex = columns.indexOf("media")
+    expect(mediaIndex).toBeGreaterThan(-1)
+    const mediaValue = insert?.values?.[mediaIndex]
+    expect(typeof mediaValue).toBe("string")
+    expect(JSON.parse(mediaValue as string)).toEqual([
+      { type: "photo", url: "https://example.com/a.png" },
+    ])
+  })
 })

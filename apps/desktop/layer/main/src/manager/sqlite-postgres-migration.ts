@@ -12,18 +12,22 @@ const toBoolean = (value: unknown) => {
   return null
 }
 
-const parseJson = <T>(value: unknown): T | null => {
+const toPgJson = (value: unknown) => {
   if (value === null || value === undefined) return null
-  if (typeof value === "object") return value as T
   if (typeof value === "string") {
     if (!value) return null
     try {
-      return JSON.parse(value) as T
+      JSON.parse(value)
+      return value
     } catch {
       return null
     }
   }
-  return null
+  try {
+    return JSON.stringify(value)
+  } catch {
+    return null
+  }
 }
 
 export const isPostgresEmpty = async (pool: Pool) => {
@@ -94,23 +98,23 @@ const mapRow = (table: string, row: Record<string, unknown>) => {
   }
   if (table === "entries") {
     mapped.read = toBoolean(row.read)
-    mapped.media = parseJson(row.media)
-    mapped.categories = parseJson(row.categories)
-    mapped.attachments = parseJson(row.attachments)
-    mapped.extra = parseJson(row.extra)
-    mapped.sources = parseJson(row.sources)
-    mapped.settings = parseJson(row.settings)
+    mapped.media = toPgJson(row.media)
+    mapped.categories = toPgJson(row.categories)
+    mapped.attachments = toPgJson(row.attachments)
+    mapped.extra = toPgJson(row.extra)
+    mapped.sources = toPgJson(row.sources)
+    mapped.settings = toPgJson(row.settings)
   }
   if (table === "feeds") {
-    mapped.tip_users = parseJson(row.tip_users)
+    mapped.tip_users = toPgJson(row.tip_users)
   }
   if (table === "users") {
     mapped.is_me = toBoolean(row.is_me)
     mapped.email_verified = toBoolean(row.email_verified)
-    mapped.social_links = parseJson(row.social_links)
+    mapped.social_links = toPgJson(row.social_links)
   }
   if (table === "lists") {
-    mapped.feed_ids = parseJson(row.feed_ids)
+    mapped.feed_ids = toPgJson(row.feed_ids)
   }
   if (table === "collections") {
     mapped.view = row.view
@@ -122,11 +126,11 @@ const mapRow = (table: string, row: Record<string, unknown>) => {
     mapped.language = row.language
   }
   if (table === "images") {
-    mapped.colors = parseJson(row.colors)
+    mapped.colors = toPgJson(row.colors)
   }
   if (table === "ai_chat_messages") {
-    mapped.metadata = parseJson(row.metadata)
-    mapped.message_parts = parseJson(row.message_parts)
+    mapped.metadata = toPgJson(row.metadata)
+    mapped.message_parts = toPgJson(row.message_parts)
   }
   if (table === "unread") {
     mapped.count = row.count

@@ -19,16 +19,27 @@ import { resolveHttpErrorMessage } from "./rss-http-error"
 import { parseRssFeed } from "./rss-parser"
 import { buildEntryIdentityKey, buildRefreshedFeed, buildStableLocalEntryId } from "./rss-refresh"
 import { resolvePreviewFeedUrl } from "./rsshub-external"
+import { toTimestampMs } from "./rss-time"
+import { buildPreviewDiagnostics } from "./preview-feed-diagnostics"
 
 /**
  * Fetches a URL using Node.js built-in http/https, follows up to 5 redirects.
  */
+type FetchResult = {
+  body: string
+  finalUrl: string
+  redirectChain: string[]
+  remoteAddress?: string
+  remotePort?: number
+}
+
 function fetchUrl(
   url: string,
   rsshubToken?: string | null,
   redirectCount = 0,
   redirectVisited = new Set<string>(),
-): Promise<string> {
+  redirectChain: string[] = [],
+): Promise<FetchResult> {
   return new Promise((resolve, reject) => {
     if (redirectCount > 12) {
       reject(new Error("Too many redirects"))
@@ -58,7 +69,12 @@ function fetchUrl(
           }
           const nextVisited = new Set(redirectVisited)
           nextVisited.add(resolvedLocation)
-          resolve(fetchUrl(resolvedLocation, rsshubToken, redirectCount + 1, nextVisited))
+          resolve(
+            fetchUrl(resolvedLocation, rsshubToken, redirectCount + 1, nextVisited, [
+              ...redirectChain,
+              resolvedLocation,
+            ]),
+          )
           return
         }
         if (res.statusCode && res.statusCode >= 400) {
@@ -76,7 +92,15 @@ function fetchUrl(
         }
         const chunks: Buffer[] = []
         res.on("data", (chunk) => chunks.push(chunk))
-        res.on("end", () => resolve(Buffer.concat(chunks).toString("utf-8")))
+        res.on("end", () =>
+          resolve({
+            body: Buffer.concat(chunks).toString("utf-8"),
+            finalUrl: url,
+            redirectChain,
+            remoteAddress: res.socket?.remoteAddress,
+            remotePort: res.socket?.remotePort,
+          }),
+        )
         res.on("error", reject)
       })
       .on("error", reject)
@@ -90,14 +114,41 @@ export class DbService extends IpcService {
     feedUrl: string,
     preferredFeedId?: string,
     allowPublicFallback = false,
+    diagnosticsEnabled = false,
   ) {
     const customBaseUrl = store.get("rsshubCustomUrl") ?? ""
     const resolvedUrl = resolvePreviewFeedUrl(feedUrl, {
       customBaseUrl,
       allowPublicFallback,
     })
-    const xmlText = await fetchUrl(resolvedUrl)
-    const parsed = parseRssFeed(xmlText)
+
+    if (diagnosticsEnabled) {
+      const beforeDiagnostics = await buildPreviewDiagnostics({
+        phase: "before",
+        inputUrl: feedUrl,
+        requestedUrl: resolvedUrl,
+        finalUrl: resolvedUrl,
+        redirectChain: [],
+      })
+      console.info("[db.previewFeed] diagnostics", beforeDiagnostics)
+    }
+
+    const fetchResult = await fetchUrl(resolvedUrl)
+
+    if (diagnosticsEnabled) {
+      const afterDiagnostics = await buildPreviewDiagnostics({
+        phase: "after",
+        inputUrl: feedUrl,
+        requestedUrl: resolvedUrl,
+        finalUrl: fetchResult.finalUrl,
+        redirectChain: fetchResult.redirectChain,
+        remoteAddress: fetchResult.remoteAddress,
+        remotePort: fetchResult.remotePort,
+      })
+      console.info("[db.previewFeed] diagnostics", afterDiagnostics)
+    }
+
+    const parsed = parseRssFeed(fetchResult.body)
 
     const feedId =
       preferredFeedId || `local_feed_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
@@ -274,7 +325,12 @@ export class DbService extends IpcService {
       throw new Error("[db.previewFeed] feed url is required")
     }
     try {
-      return await this.buildPreviewData(inputUrl, form.feedId, form?.allowPublicRsshub === true)
+      return await this.buildPreviewData(
+        inputUrl,
+        form.feedId,
+        form?.allowPublicRsshub === true,
+        true,
+      )
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error)
       console.error("[db.previewFeed] failed", {
@@ -391,11 +447,9 @@ export class DbService extends IpcService {
       if (entries.length > 0) {
         const entriesToSave = entries.map((entry) => ({
           ...entry,
-          publishedAt: new Date(entry.publishedAt),
-          insertedAt: new Date(entry.insertedAt),
-          readabilityUpdatedAt: entry.readabilityUpdatedAt
-            ? new Date(entry.readabilityUpdatedAt)
-            : null,
+          publishedAt: toTimestampMs(entry.publishedAt) ?? Date.now(),
+          insertedAt: toTimestampMs(entry.insertedAt) ?? Date.now(),
+          readabilityUpdatedAt: toTimestampMs(entry.readabilityUpdatedAt),
         }))
         await EntryService.upsertMany(entriesToSave as any)
       }
@@ -462,11 +516,9 @@ export class DbService extends IpcService {
         read:
           existingReadById.get(existingIdByKey.get(buildEntryIdentityKey(entry as any)) || "") ??
           entry.read,
-        publishedAt: new Date(entry.publishedAt),
-        insertedAt: new Date(entry.insertedAt),
-        readabilityUpdatedAt: entry.readabilityUpdatedAt
-          ? new Date(entry.readabilityUpdatedAt)
-          : null,
+        publishedAt: toTimestampMs(entry.publishedAt) ?? Date.now(),
+        insertedAt: toTimestampMs(entry.insertedAt) ?? Date.now(),
+        readabilityUpdatedAt: toTimestampMs(entry.readabilityUpdatedAt),
       }))
       await EntryService.upsertMany(entriesToSave as any)
     }
