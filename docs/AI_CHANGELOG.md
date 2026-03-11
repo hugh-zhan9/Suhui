@@ -5083,3 +5083,13 @@
 - `apps/desktop/layer/renderer/src/providers/main-view-hotkeys-provider.tsx`
 
 ---
+
+## [2026-03-11 10:13] [Refactor]
+
+- **Change**: 新增根目录 .env-example，提供 Postgres 配置示例
+- **Risk Analysis**: 仅新增示例文件，不影响运行时逻辑，风险极低。
+- **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
+- **Changed Files**:
+- `.env-example`
+
+---
