@@ -5068,3 +5068,18 @@
 - `docs/plans/2026-03-10-better-sqlite3-packaging.md`
 
 ---
+
+## [2026-03-11 10:04] [Feature]
+
+- **Change**: 移除全局 AI 聊天命令与快捷键，新增测试并补齐渲染层 vitest 别名
+- **Risk Analysis**: 风险主要在于命令被其他隐性入口引用或快捷键依赖被移除导致功能缺失；已通过搜索清理引用并补充测试验证，风险较低。
+- **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/modules/command/hooks/use-command-binding.test.ts`
+- `apps/desktop/layer/renderer/vitest.config.ts`
+- `apps/desktop/layer/renderer/src/modules/command/commands/id.ts`
+- `apps/desktop/layer/renderer/src/modules/command/commands/global.tsx`
+- `apps/desktop/layer/renderer/src/modules/command/hooks/use-command-binding.ts`
+- `apps/desktop/layer/renderer/src/providers/main-view-hotkeys-provider.tsx`
+
+---
