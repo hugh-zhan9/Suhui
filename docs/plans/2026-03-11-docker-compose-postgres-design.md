@@ -21,7 +21,7 @@
   - `image: postgres:18`
   - `container_name: suhui-postgres`
   - `ports: 5432:5432`
-  - `environment`: `POSTGRES_USER=postgres`、`POSTGRES_PASSWORD=your_password`、`POSTGRES_DB=suhui`
+  - `environment`: `POSTGRES_USER=postgres`、`POSTGRES_PASSWORD=your_password`（不指定 `POSTGRES_DB`，默认库与用户同名）
   - `volumes`: `suhui_pgdata:/var/lib/postgresql/data`
 
 ## 验收
