@@ -9,7 +9,7 @@ export const ServerConfigsProvider = () => {
 
   useEffect(() => {
     if (!serverConfigs) return
-    setServerConfigs(serverConfigs)
+    setServerConfigs(serverConfigs as any)
     syncServerShortcuts(serverConfigs.AI_SHORTCUTS)
   }, [serverConfigs])
 

@@ -1,11 +1,17 @@
 import { existsSync, readFileSync } from "node:fs"
-import path from "node:path"
+import { fileURLToPath } from "node:url"
 
+import path from "pathe"
 import { describe, expect, it } from "vitest"
 
 describe("SuHui branding", () => {
+  const currentDir = path.dirname(fileURLToPath(import.meta.url))
+  const desktopRoot = path.resolve(currentDir, "../../../..")
+  const rendererRoot = path.join(desktopRoot, "layer/renderer")
+  const mainRoot = path.join(desktopRoot, "layer/main")
+
   it("desktop package 应为溯洄品牌", () => {
-    const pkgPath = path.resolve(process.cwd(), "package.json")
+    const pkgPath = path.join(desktopRoot, "package.json")
     const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"))
 
     expect(pkg.productName).toBe("溯洄")
@@ -13,14 +19,14 @@ describe("SuHui branding", () => {
   })
 
   it("renderer 全局 APP_NAME 应为溯洄", () => {
-    const globalPath = path.resolve(process.cwd(), "layer/renderer/global.d.ts")
+    const globalPath = path.join(rendererRoot, "global.d.ts")
     const content = readFileSync(globalPath, "utf-8")
 
     expect(content).toContain('export const APP_NAME = "溯洄"')
   })
 
   it("主文案应为“溯源而读，回归纯粹”并移除 FreeFolo", () => {
-    const indexHtmlPath = path.resolve(process.cwd(), "layer/renderer/index.html")
+    const indexHtmlPath = path.join(rendererRoot, "index.html")
     const indexHtml = readFileSync(indexHtmlPath, "utf-8")
 
     expect(indexHtml).toContain("溯源而读，回归纯粹")
@@ -30,7 +36,7 @@ describe("SuHui branding", () => {
   })
 
   it("主进程数据库文件名应切换为 suhui_local.db", () => {
-    const dbPath = path.resolve(process.cwd(), "layer/main/src/manager/db.ts")
+    const dbPath = path.join(mainRoot, "src/manager/db.ts")
     const content = readFileSync(dbPath, "utf-8")
 
     expect(content).toContain("suhui_local.db")
@@ -38,7 +44,7 @@ describe("SuHui branding", () => {
   })
 
   it("设置关于页应展示溯洄 (SuHui) 与新slogan", () => {
-    const aboutPath = path.resolve(process.cwd(), "layer/renderer/src/modules/settings/tabs/about.tsx")
+    const aboutPath = path.join(rendererRoot, "src/modules/settings/tabs/about.tsx")
     const content = readFileSync(aboutPath, "utf-8")
 
     expect(content).toContain("溯洄 (SuHui)")
@@ -46,16 +52,13 @@ describe("SuHui branding", () => {
     expect(content).not.toContain("about.copyEnvironment")
     expect(content).not.toContain("about.checkForUpdates")
     expect(content).not.toContain("about.changelog")
-    expect(content).not.toContain("<span className=\"mr-1.5 text-text-tertiary\">App</span>")
-    expect(content).not.toContain("<span className=\"mr-1.5 text-text-tertiary\">Renderer</span>")
+    expect(content).not.toContain('<span className="mr-1.5 text-text-tertiary">App</span>')
+    expect(content).not.toContain('<span className="mr-1.5 text-text-tertiary">Renderer</span>')
   })
 
   it("设置左上角与关于页应使用新的应用图标资源", () => {
-    const aboutPath = path.resolve(process.cwd(), "layer/renderer/src/modules/settings/tabs/about.tsx")
-    const modalLayoutPath = path.resolve(
-      process.cwd(),
-      "layer/renderer/src/modules/settings/modal/layout.tsx",
-    )
+    const aboutPath = path.join(rendererRoot, "src/modules/settings/tabs/about.tsx")
+    const modalLayoutPath = path.join(rendererRoot, "src/modules/settings/modal/layout.tsx")
     const aboutContent = readFileSync(aboutPath, "utf-8")
     const modalLayoutContent = readFileSync(modalLayoutPath, "utf-8")
 
@@ -68,10 +71,7 @@ describe("SuHui branding", () => {
   })
 
   it("EntryNotFound 占位文案应为两行且不显示图标", () => {
-    const placeholderPath = path.resolve(
-      process.cwd(),
-      "layer/renderer/src/components/errors/EntryNotFound.tsx",
-    )
+    const placeholderPath = path.join(rendererRoot, "src/components/errors/EntryNotFound.tsx")
     const content = readFileSync(placeholderPath, "utf-8")
 
     expect(content).toContain("溯洄 (SuHui)")
@@ -82,9 +82,9 @@ describe("SuHui branding", () => {
   })
 
   it("主界面 EntryPlaceholderLogo 应为两行文案且不显示图标", () => {
-    const placeholderPath = path.resolve(
-      process.cwd(),
-      "layer/renderer/src/modules/entry-content/components/EntryPlaceholderLogo.tsx",
+    const placeholderPath = path.join(
+      rendererRoot,
+      "src/modules/entry-content/components/EntryPlaceholderLogo.tsx",
     )
     const content = readFileSync(placeholderPath, "utf-8")
 
@@ -96,14 +96,14 @@ describe("SuHui branding", () => {
   })
 
   it("renderer 公共目录应存在新图标文件", () => {
-    const iconPath = path.resolve(process.cwd(), "layer/renderer/public/icon.png")
+    const iconPath = path.join(rendererRoot, "public/icon.png")
     expect(existsSync(iconPath)).toBe(true)
   })
 
   it("应用左上角头部应展示新图标与名称", () => {
-    const headerPath = path.resolve(
-      process.cwd(),
-      "layer/renderer/src/modules/subscription-column/SubscriptionColumnHeader.tsx",
+    const headerPath = path.join(
+      rendererRoot,
+      "src/modules/subscription-column/SubscriptionColumnHeader.tsx",
     )
     const content = readFileSync(headerPath, "utf-8")
 
