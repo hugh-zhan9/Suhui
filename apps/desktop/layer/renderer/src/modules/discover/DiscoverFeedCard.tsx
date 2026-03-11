@@ -50,6 +50,11 @@ export function FeedCardActions<T extends TrendingFeedItem | DiscoveryItem>({
           buttonClassName="rounded-lg px-3 font-medium text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/80 dark:hover:text-white"
           onClick={() => {
             if (!item.feed?.id) return
+            const subscriptionCount =
+              "subscriptionCount" in item ? (item.subscriptionCount ?? null) : null
+            const updatesPerWeek = "updatesPerWeek" in item ? (item.updatesPerWeek ?? null) : null
+            const latestEntryPublishedAt =
+              "analytics" in item ? (item.analytics?.latestEntryPublishedAt ?? null) : null
             feedActions.upsertManyInSession([
               {
                 type: "feed",
@@ -60,13 +65,13 @@ export function FeedCardActions<T extends TrendingFeedItem | DiscoveryItem>({
                 image: item.feed.image || null,
                 siteUrl: item.feed.siteUrl || null,
                 ownerUserId: item.feed.ownerUserId || null,
-                errorAt: item.feed.errorAt || null,
-                errorMessage: item.feed.errorMessage || null,
-                subscriptionCount: item.feed.subscriptionCount || null,
-                updatesPerWeek: item.feed.updatesPerWeek || null,
-                latestEntryPublishedAt: item.feed.latestEntryPublishedAt || null,
-                tipUserIds: item.feed.tipUserIds || null,
-                updatedAt: item.feed.updatedAt || null,
+                errorAt: null,
+                errorMessage: null,
+                subscriptionCount,
+                updatesPerWeek,
+                latestEntryPublishedAt,
+                tipUserIds: null,
+                updatedAt: null,
               } as SeedFeed,
             ])
             navigateEntry({

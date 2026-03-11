@@ -15,8 +15,8 @@ describe("refreshLocalFeedAndSyncEntries", () => {
 
     expect(invoke).toHaveBeenCalledWith("db.refreshFeed", "local_feed_1")
     expect(fetchEntries).toHaveBeenCalledWith({ feedId: "local_feed_1" })
-    expect(invoke.mock.invocationCallOrder[0]).toBeLessThan(
-      fetchEntries.mock.invocationCallOrder[0],
-    )
+    const invokeOrder = invoke.mock.invocationCallOrder[0]!
+    const fetchOrder = fetchEntries.mock.invocationCallOrder[0]!
+    expect(invokeOrder).toBeLessThan(fetchOrder)
   })
 })
