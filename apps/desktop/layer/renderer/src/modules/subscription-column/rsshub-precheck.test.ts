@@ -11,7 +11,7 @@ describe("rsshub precheck", () => {
     expect(isRsshubRuntimeRunning("running")).toBe(true)
     expect(isRsshubRuntimeRunning("starting")).toBe(false)
     expect(isRsshubRuntimeRunning("cooldown")).toBe(false)
-    expect(isRsshubRuntimeRunning()).toBe(false)
+    expect(isRsshubRuntimeRunning(void 0)).toBe(false)
   })
 
   it("cooldown 应返回冷却错误，其余返回不可用错误", () => {

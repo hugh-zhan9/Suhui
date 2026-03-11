@@ -4,7 +4,7 @@ import { refreshLocalFeedAndSyncEntries } from "./entry-refresh"
 
 describe("refreshLocalFeedAndSyncEntries", () => {
   it("calls ipc refresh then fetchEntries", async () => {
-    const invoke = vi.fn().mockResolvedValue()
+    const invoke = vi.fn().mockResolvedValue(void 0)
     const fetchEntries = vi.fn().mockResolvedValue({ data: [] })
 
     await refreshLocalFeedAndSyncEntries({
