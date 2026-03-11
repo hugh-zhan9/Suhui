@@ -18,6 +18,7 @@ import { ELECTRON_BUILD } from "@follow/shared/constants"
 import { env } from "@follow/shared/env.desktop"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useQuery } from "@tanstack/react-query"
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
@@ -27,20 +28,16 @@ import { setGeneralSetting, useGeneralSettingValue } from "~/atoms/settings/gene
 import { useDialog, useModalStack } from "~/components/ui/modal/stacked/hooks"
 import { ipcServices } from "~/lib/client"
 import { queryClient } from "~/lib/query-client"
-import { LocalRsshubEntryButton } from "~/modules/rsshub/LocalRsshubConsole"
 import { clearLocalPersistStoreData } from "~/store/utils/clear"
 
 import { SettingActionItem, SettingDescription } from "../control"
 import { createSetting } from "../helper/builder"
 import { SettingItemGroup } from "../section"
-import { getLocalRsshubStatusLabel, normalizeLocalRsshubState } from "./rsshub-local-state"
 
 const { SettingBuilder } = createSetting("general", useGeneralSettingValue, setGeneralSetting)
-type LocalRsshubIpc = {
-  getRsshubStatus?: () => Promise<unknown>
-}
-type LocalAppIpc = {
-  openExternal?: (url: string) => Promise<void>
+type ExternalRsshubIpc = {
+  getRsshubCustomUrl?: () => Promise<string>
+  setRsshubCustomUrl?: (url: string) => Promise<void> | void
 }
 
 export const SettingDataControl = () => {
@@ -90,7 +87,7 @@ export const SettingDataControl = () => {
           },
           ELECTRON_BUILD ? CleanElectronCache : CleanCacheStorage,
           ELECTRON_BUILD && AppCacheLimit,
-          ELECTRON_BUILD && LocalRsshubSection,
+          ELECTRON_BUILD && ExternalRsshubSection,
           {
             label: t("general.rebuild_database.label"),
             action: () => {
@@ -122,49 +119,46 @@ export const SettingDataControl = () => {
   )
 }
 
-const LocalRsshubSection = () => {
-  const localRsshubIpc = ipcServices?.db as unknown as LocalRsshubIpc | undefined
-  const localAppIpc = ipcServices?.app as unknown as LocalAppIpc | undefined
-  const stateQuery = useQuery({
-    queryKey: ["rsshub", "local", "status"],
-    queryFn: async () => {
-      const data = await localRsshubIpc?.getRsshubStatus?.()
-      if (data && typeof data === "object") {
-        return normalizeLocalRsshubState(data)
-      }
-      return normalizeLocalRsshubState()
-    },
+const ExternalRsshubSection = () => {
+  const settingIpc = ipcServices?.setting as unknown as ExternalRsshubIpc | undefined
+  const customUrlQuery = useQuery({
+    queryKey: ["rsshub", "external", "custom-url"],
+    queryFn: async () => (await settingIpc?.getRsshubCustomUrl?.()) ?? "",
     refetchOnMount: "always",
   })
+  const [customUrl, setCustomUrl] = useState("")
 
-  const state = normalizeLocalRsshubState(stateQuery.data)
-  const handleOpenConsole = async () => {
-    if (!state.consoleUrl) {
-      toast.error("内置 RSSHub 尚未就绪，请先启动后再打开控制台")
+  useEffect(() => {
+    if (customUrlQuery.data != null) {
+      setCustomUrl(customUrlQuery.data)
+    }
+  }, [customUrlQuery.data])
+
+  const handleSave = async () => {
+    if (!settingIpc?.setRsshubCustomUrl) {
+      toast.error("当前环境不支持配置 RSSHub")
       return
     }
-    if (!localAppIpc?.openExternal) {
-      toast.error("当前环境不支持打开系统浏览器")
-      return
-    }
-    try {
-      await localAppIpc.openExternal(state.consoleUrl)
-    } catch {
-      toast.error("打开控制台失败，请稍后重试")
-    }
+    await settingIpc.setRsshubCustomUrl(customUrl)
+    toast.success("外部 RSSHub 已更新")
+    await queryClient.invalidateQueries({ queryKey: ["rsshub", "external", "custom-url"] })
   }
 
   return (
     <SettingItemGroup>
-      <div className="mb-2 mt-4 flex items-center justify-between gap-4">
-        <div className="text-sm font-medium">内置 RSSHub</div>
-        <LocalRsshubEntryButton onClick={() => void handleOpenConsole()} />
+      <div className="mb-2 mt-4 text-sm font-medium">外部 RSSHub</div>
+      <SettingDescription>配置自建 RSSHub 实例地址。</SettingDescription>
+      <div className="mt-3 flex items-center gap-2">
+        <Input
+          type="url"
+          placeholder="https://rsshub.example.com"
+          value={customUrl}
+          onChange={(event) => setCustomUrl(event.target.value)}
+        />
+        <Button variant="outline" onClick={() => void handleSave()}>
+          保存
+        </Button>
       </div>
-      <SettingDescription>
-        状态：{getLocalRsshubStatusLabel(state)}
-        {state.runtimeMode === "official" ? "，模式：Official" : "，模式：Lite"}
-      </SettingDescription>
-      <SettingDescription>详细配置请在头像菜单的 RSSHub 页面中操作。</SettingDescription>
     </SettingItemGroup>
   )
 }

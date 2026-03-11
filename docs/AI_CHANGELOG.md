@@ -5146,3 +5146,54 @@
 - `docs/plans/2026-03-11-postgres-auto-create-migrate.md`
 
 ---
+
+## [2026-03-11 17:04] [Refactor]
+
+- **Change**: RSSHub URL 解析改为外部基址并增加未配置错误
+- **Risk Analysis**: 可能影响 RSSHub 订阅改写逻辑，若外部地址拼接或回退条件处理不当会导致订阅失败
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/ipc/services/rsshub-url.ts`
+- `apps/desktop/layer/main/src/ipc/services/rsshub-url.test.ts`
+
+---
+
+## [2026-03-11 17:17] [Refactor]
+
+- **Change**: 移除内置 RSSHub 主进程管理并改为外部解析辅助
+- **Risk Analysis**: 可能影响 RSSHub 订阅预览与设置页相关 IPC，若外部解析接入或调用路径遗漏会导致订阅失败
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/ipc/services/db.ts`
+- `apps/desktop/layer/main/src/ipc/services/setting.ts`
+- `apps/desktop/layer/main/src/manager/bootstrap.ts`
+- `apps/desktop/layer/main/src/ipc/services/rsshub-external.ts`
+- `apps/desktop/layer/main/src/ipc/services/rsshub-external.test.ts`
+
+---
+
+## [2026-03-11 17:34] [Refactor]
+
+- **Change**: 渲染层改为外部 RSSHub 配置与引导流程
+- **Risk Analysis**: 可能影响 RSSHub 订阅引导与错误提示流程，若配置弹窗或设置保存异常会导致订阅体验受损
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/lib/rsshub-local-error.ts`
+- `apps/desktop/layer/renderer/src/modules/subscription-column/rsshub-precheck.ts`
+- `apps/desktop/layer/renderer/src/modules/discover/rsshub-recovery-action.tsx`
+- `apps/desktop/layer/renderer/src/modules/settings/tabs/data-control.tsx`
+
+---
+
+## [2026-03-11 17:37] [Refactor]
+
+- **Change**: 移除内置 RSSHub 构建脚本与打包资源
+- **Risk Analysis**: 可能影响打包流程与产物完整性，若仍有依赖内置 RSSHub 的路径未清理会导致构建或运行异常
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/package.json`
+- `apps/desktop/forge.config.cts`
+- `apps/desktop/scripts/build-rsshub.ts`
+- `apps/desktop/resources/rsshub`
+
+---

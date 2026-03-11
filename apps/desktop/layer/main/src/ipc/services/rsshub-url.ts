@@ -6,8 +6,9 @@ export type RsshubStateSnapshot = {
 
 export type ResolveRsshubUrlInput = {
   url: string
-  state: RsshubStateSnapshot
   customHosts: string[]
+  customBaseUrl?: string | null
+  allowPublicFallback?: boolean
 }
 
 export const isRsshubUrlLike = (url: string, customHosts: string[]) => {
@@ -39,7 +40,17 @@ export const shouldUseLocalRsshubRuntime = (url: string, customHosts: string[]) 
   }
 }
 
-export const resolveRsshubUrl = ({ url, state, customHosts }: ResolveRsshubUrlInput) => {
+const normalizeBaseUrl = (input?: string | null) => {
+  const trimmed = input?.trim()
+  return trimmed ? trimmed.replace(/\/+$/, "") : ""
+}
+
+export const resolveRsshubUrl = ({
+  url,
+  customHosts,
+  customBaseUrl,
+  allowPublicFallback = false,
+}: ResolveRsshubUrlInput) => {
   let isRsshubUrl = false
   let isCustomRsshubHost = false
   let resolvedPath = ""
@@ -71,12 +82,14 @@ export const resolveRsshubUrl = ({ url, state, customHosts }: ResolveRsshubUrlIn
     return { resolvedUrl: url, token: null }
   }
 
-  if (state.status !== "running" || !state.port) {
-    throw new Error("RSSHUB_LOCAL_UNAVAILABLE: 内置 RSSHub 当前未运行")
+  const normalizedCustomBaseUrl = normalizeBaseUrl(customBaseUrl)
+  const baseUrl = normalizedCustomBaseUrl || (allowPublicFallback ? "https://rsshub.app" : "")
+  if (!baseUrl) {
+    throw new Error("RSSHUB_EXTERNAL_UNCONFIGURED: 未配置外部 RSSHub 实例")
   }
 
   return {
-    resolvedUrl: `http://127.0.0.1:${state.port}${resolvedPath}`,
-    token: state.token,
+    resolvedUrl: new URL(resolvedPath, baseUrl).toString(),
+    token: null,
   }
 }

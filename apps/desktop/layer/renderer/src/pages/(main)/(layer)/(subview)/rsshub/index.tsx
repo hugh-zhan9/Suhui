@@ -14,7 +14,7 @@ export function Component() {
         </div>
         <h1 className="mb-3 text-3xl font-bold text-text">RSSHub</h1>
         <p className="mx-auto max-w-2xl text-sm leading-relaxed text-text-secondary">
-          这是 溯洄 的本地 RSSHub 控制台。你可以在这里管理内置 RSSHub 的启动状态、运行模式与路由能力。
+          这是 溯洄 的外部 RSSHub 配置页。你可以在这里填写自建 RSSHub 实例地址。
         </p>
       </div>
       <div className="mx-auto w-full max-w-4xl">
