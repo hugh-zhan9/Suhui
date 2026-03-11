@@ -5093,3 +5093,27 @@
 - `.env-example`
 
 ---
+
+## [2026-03-11 10:57] [Feature]
+
+- **Change**: 新增数据库配置可视化、启动日志与 README 配置说明
+- **Risk Analysis**: 风险主要在于 IPC 配置查询失败或 .env 解析信息为空导致 UI 显示缺失；已添加测试与默认回退展示，风险中等偏低。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/manager/env-loader.ts`
+- `apps/desktop/layer/main/src/manager/db-config-view.ts`
+- `apps/desktop/layer/main/src/bootstrap.ts`
+- `apps/desktop/layer/main/src/ipc/services/app.ts`
+- `apps/desktop/layer/main/src/manager/env-loader.test.ts`
+- `apps/desktop/layer/main/src/manager/db-config-view.test.ts`
+- `apps/desktop/layer/renderer/src/modules/settings/utils/db-config-display.ts`
+- `apps/desktop/layer/renderer/src/modules/settings/utils/db-config-display.test.ts`
+- `apps/desktop/layer/renderer/src/modules/settings/tabs/general.tsx`
+- `locales/settings/en.json`
+- `locales/settings/zh-CN.json`
+- `locales/settings/zh-TW.json`
+- `locales/settings/ja.json`
+- `locales/settings/fr-FR.json`
+- `README.md`
+
+---
