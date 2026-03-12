@@ -22,7 +22,6 @@ import { WindowManager } from "~/manager/window"
 import { cleanupOldRender, loadDynamicRenderEntry } from "~/updater/hot-updater"
 
 import { downloadFile } from "../../lib/download"
-import { checkForAppUpdates, quitAndInstall } from "../../updater"
 import { shouldShowMainWindowOnReady } from "./ready-to-show"
 
 interface WindowActionInput {
@@ -70,11 +69,6 @@ export class AppService extends IpcService {
       env: process.env,
       envInfo: getDesktopEnvInfo(),
     })
-  }
-
-  @IpcMethod()
-  async checkForUpdates(_context: IpcContext): Promise<{ hasUpdate: boolean; error?: string }> {
-    return checkForAppUpdates()
   }
 
   @IpcMethod()
@@ -143,11 +137,6 @@ export class AppService extends IpcService {
         }
       }
     }
-  }
-
-  @IpcMethod()
-  quitAndInstall(_context: IpcContext): void {
-    quitAndInstall()
   }
 
   @IpcMethod()

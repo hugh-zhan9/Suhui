@@ -18,7 +18,6 @@ import { registerAppTray } from "../lib/tray"
 import { updateNotificationsToken } from "../lib/user"
 import { logger } from "../logger"
 import { registerAppMenu } from "../menu"
-import { registerUpdater } from "../updater"
 import { LifecycleManager } from "./lifecycle"
 
 class AppManagerStatic {
@@ -45,7 +44,6 @@ class AppManagerStatic {
     this.registerPushNotifications()
 
     updateProxy()
-    registerUpdater()
     registerAppTray()
   }
 

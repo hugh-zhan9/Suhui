@@ -5,7 +5,6 @@ import { isMacOS, isMAS, isWindows } from "~/env"
 import { getTrayIconPath } from "~/helper"
 import { logger, revealLogFile } from "~/logger"
 import { WindowManager } from "~/manager/window"
-import { checkForAppUpdates } from "~/updater"
 
 import { getDockCount } from "./dock"
 import { t } from "./i18n"
@@ -53,17 +52,6 @@ const getTrayContextMenu = () => {
             await revealLogFile()
           },
         },
-        ...(!isMAS
-          ? [
-              {
-                label: t("menu.checkForUpdates"),
-                click: async () => {
-                  showWindow()
-                  await checkForAppUpdates()
-                },
-              },
-            ]
-          : []),
       ],
     },
     {

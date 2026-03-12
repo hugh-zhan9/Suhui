@@ -69,6 +69,48 @@ docker compose up -d
 - 请修改 `docker-compose.yaml` 中的 `POSTGRES_PASSWORD`
 - 默认库为 `postgres`，应用会在启动时自动创建 `suhui` 库
 
+## Docker 部署 RSSHub（可选）
+
+仓库根目录提供 `docker-compose.rsshub.yaml`，默认使用 `diygod/rsshub:latest` 与 `redis:7-alpine`。
+
+启动：
+
+```bash
+docker compose -f docker-compose.rsshub.yaml up -d
+```
+
+默认访问地址：
+
+- RSSHub：`http://localhost:1200`
+- Redis：`127.0.0.1:6379`
+
+在溯洄中，将外部 RSSHub 地址配置为：
+
+```text
+http://localhost:1200
+```
+
+说明：
+
+- Redis 端口已映射到宿主机，可供其他本地服务复用
+- 当前 Redis 默认无密码，仅适合本机开发或单用户环境，不建议直接用于公网或多人共享主机
+- 如需修改端口，可在启动前覆盖环境变量：`RSSHUB_PORT`、`REDIS_PORT`
+- 如需调整缓存时间，可覆盖 `CACHE_EXPIRE`
+- 如需为 RSSHub 增加访问密钥，可覆盖 `RSSHUB_ACCESS_KEY`
+
+两种 RSSHub 镜像方案：
+
+- 默认：`diygod/rsshub:latest`
+  - 更轻，拉取更快，适合大多数常规路由
+- 备用：`diygod/rsshub:chromium-bundled`
+  - 兼容需要浏览器渲染的动态站点路由，但镜像更大、启动更慢、占用更高
+
+切换到备用方案示例：
+
+```bash
+RSSHUB_IMAGE=diygod/rsshub:chromium-bundled docker compose -f docker-compose.rsshub.yaml up -d
+```
+
 ## 环境要求
 
 - Node.js（建议使用仓库 `.nvmrc` 对应版本）

@@ -21,7 +21,6 @@ export const UpdateNotice = () => {
     })
     switch (status.type) {
       case "app": {
-        ipcServices?.app.quitAndInstall()
         break
       }
       case "renderer": {

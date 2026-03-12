@@ -5426,3 +5426,32 @@
 - `package.json`
 
 ---
+
+## [2026-03-12 14:51] [Feature]
+
+- **Change**: 新增RSSHub Docker Compose 部署文件与说明
+- **Risk Analysis**: 新增本地 RSSHub 部署入口，主要风险是 Redis 裸暴露仅适合本机开发环境，若用户误用于公网或共享主机会产生安全风险。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `docker-compose.rsshub.yaml`
+- `README.md`
+- `docs/plans/2026-03-12-rsshub-docker-design.md`
+- `docs/plans/2026-03-12-rsshub-docker-implementation.md`
+
+---
+
+## [2026-03-12 15:21] [Refactor]
+
+- **Change**: 移除应用自动检查更新与更新入口
+- **Risk Analysis**: 关闭主进程更新器注册、菜单与托盘更新入口，并删除 IPC 更新接口。主要风险是残留更新提示状态若未来重新启用更新器需要重新接回 IPC 与 UI 通路。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/manager/app.ts`
+- `apps/desktop/layer/main/src/menu.ts`
+- `apps/desktop/layer/main/src/lib/tray.ts`
+- `apps/desktop/layer/main/src/updater/configs.ts`
+- `apps/desktop/layer/main/src/ipc/services/app.ts`
+- `apps/desktop/layer/main/src/update-removal.test.ts`
+- `apps/desktop/layer/renderer/src/modules/update-notice/UpdateNotice.tsx`
+
+---

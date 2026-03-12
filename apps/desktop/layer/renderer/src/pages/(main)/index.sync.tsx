@@ -10,6 +10,8 @@ export function Component() {
   return null
 }
 
+export const handle = undefined
+
 export const loader = () => {
   const uiSettings = getUISettings()
   const subscriptionState = useSubscriptionStore.getState()
