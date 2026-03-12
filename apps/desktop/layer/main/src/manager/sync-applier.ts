@@ -1,12 +1,13 @@
 /**
  * SyncApplier — 处理 SyncOp 到真实本地数据库的回放逻辑
  */
-import { eq, inArray } from "drizzle-orm"
+import { and, eq, lte } from "drizzle-orm"
 import { DBManager } from "./db"
 import { EntryService } from "@follow/database/services/entry"
 import { SubscriptionService } from "@follow/database/services/subscription"
 import { CollectionService } from "@follow/database/services/collection"
 import { appliedSyncOpsTable, pendingSyncOpsTable } from "@follow/database/schemas/sync"
+import type { PostgresDB } from "@follow/database/types"
 import type { SyncOpApplier } from "./sync-import"
 import type { SyncOp } from "./sync-logger"
 import { WindowManager } from "./window"
@@ -20,26 +21,29 @@ export class OrphanError extends Error {
 }
 
 export async function drainPendingOps(): Promise<void> {
-  const db = DBManager.getDB()
-  const now = new Date()
+  const db = DBManager.getDB() as PostgresDB
+  const now = Date.now()
 
   // 0. 清理（标记为 failed）超过 90 天的 pending ops
-  const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
+  const ninetyDaysAgo = Date.now() - 90 * 24 * 60 * 60 * 1000
   try {
-    const { and, eq, lte } = require("drizzle-orm")
-    await db.update(pendingSyncOpsTable)
-      .set({ status: "failed", updatedAt: new Date() })
-      .where(and(eq(pendingSyncOpsTable.status, "pending"), lte(pendingSyncOpsTable.createdAt, ninetyDaysAgo)))
+    await db
+      .update(pendingSyncOpsTable)
+      .set({ status: "failed", updatedAt: Date.now() })
+      .where(
+        and(
+          eq(pendingSyncOpsTable.status, "pending"),
+          lte(pendingSyncOpsTable.createdAt, ninetyDaysAgo),
+        ),
+      )
   } catch (e: any) {
     console.error(`[SyncApplier] Failed to expire old pending ops: ${e.message}`)
   }
 
   // 1. 捞出需要重试的 ops
   const opsToRetry = await db.query.pendingSyncOpsTable.findMany({
-    where: (pending, { and, eq, lte }) => and(
-      eq(pending.status, "pending"),
-      lte(pending.retryAfter, now)
-    )
+    where: (pending, { and, eq, lte }) =>
+      and(eq(pending.status, "pending"), lte(pending.retryAfter, now)),
   })
 
   if (opsToRetry.length === 0) return
@@ -60,7 +64,7 @@ export async function drainPendingOps(): Promise<void> {
       await dbSyncApplier.applyOp(op)
       // 成功则状态更新
       await db.update(pendingSyncOpsTable)
-        .set({ status: "applied", appliedAt: new Date() })
+        .set({ status: "applied", appliedAt: Date.now() })
         .where(eq(pendingSyncOpsTable.opId, record.opId))
       
       // 添加到全局 applied_sync_ops
@@ -70,16 +74,16 @@ export async function drainPendingOps(): Promise<void> {
       if (err.name === "OrphanError") {
         // 继续 pending, 延后 1 小时
         await db.update(pendingSyncOpsTable)
-          .set({ 
-            retryAfter: new Date(Date.now() + 60 * 60 * 1000),
-            updatedAt: new Date()
+          .set({
+            retryAfter: Date.now() + 60 * 60 * 1000,
+            updatedAt: Date.now(),
           })
           .where(eq(pendingSyncOpsTable.opId, record.opId))
       } else {
         // 其他错误直接 failed
         console.error(`[SyncApplier] Retry failed for op ${op.opId}:`, err)
         await db.update(pendingSyncOpsTable)
-          .set({ status: "failed", updatedAt: new Date() })
+          .set({ status: "failed", updatedAt: Date.now() })
           .where(eq(pendingSyncOpsTable.opId, record.opId))
       }
     }
@@ -96,26 +100,34 @@ export const dbSyncApplier: SyncOpApplier = {
   },
 
   async markOpApplied(opId: string): Promise<void> {
-    const db = DBManager.getDB()
-    await db.insert(appliedSyncOpsTable).values({
+    const db = DBManager.getDB() as PostgresDB
+    await db
+      .insert(appliedSyncOpsTable)
+      .values({
       opId,
-      appliedAt: new Date()
-    }).onConflictDoNothing().execute()
+      appliedAt: Date.now(),
+    })
+      .onConflictDoNothing()
+      .execute()
   },
 
   async savePendingOp(op: SyncOp): Promise<void> {
-    const db = DBManager.getDB()
-    await db.insert(pendingSyncOpsTable).values({
+    const db = DBManager.getDB() as PostgresDB
+    await db
+      .insert(pendingSyncOpsTable)
+      .values({
       opId: op.opId,
       opJson: JSON.stringify(op),
-      retryAfter: new Date(Date.now() + 60 * 60 * 1000), // Retry 1h later? Actually trigger immediately by refreshing, but set 1hr to pause continuous failing.
-      createdAt: new Date(),
-      status: "pending"
-    }).onConflictDoNothing().execute()
+      retryAfter: Date.now() + 60 * 60 * 1000, // Retry 1h later? Actually trigger immediately by refreshing, but set 1hr to pause continuous failing.
+      createdAt: Date.now(),
+      status: "pending",
+    })
+      .onConflictDoNothing()
+      .execute()
   },
 
   async applyOp(op: SyncOp): Promise<void> {
-    const db = DBManager.getDB()
+    const db = DBManager.getDB() as PostgresDB
 
     // 工具函数：检查 entry 是否存在
     const ensureEntryExists = async (entryId: string) => {

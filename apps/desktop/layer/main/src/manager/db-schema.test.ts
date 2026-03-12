@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest"
 
-import { getRuntimeDbType } from "../../../../../../packages/internal/database/src/schemas/runtime"
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { getRuntimeDbType } = require("@follow/database/schemas/runtime") as {
+  getRuntimeDbType: () => "sqlite" | "postgres"
+}
 
 describe("schema runtime", () => {
   it("defaults to sqlite", () => {
