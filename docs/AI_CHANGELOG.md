@@ -5361,17 +5361,41 @@
 - `apps/desktop/layer/main/src/manager/sqlite-postgres-migration.test.ts`
 
 ---
+
 ## [2026-03-12 10:58] [Refactor]
+
 - **Change**: 统一内部 workspace 包名到 @suhui 并同步引用
 - **Risk Analysis**: 大范围重命名可能导致漏改引用、构建与脚本引用失配；需在安装依赖后全量构建验证
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
 - **Changed Files**:
 - (未检测到变更文件或当前目录非 git 仓库)
-----------------------------------------
+
+---
+
 ## [2026-03-12 11:06] [Refactor]
+
 - **Change**: 统一打包身份与更新/资源 URL 为 suihui
 - **Risk Analysis**: 涉及协议 scheme、appId、输出目录与更新地址，可能影响旧协议唤起与更新分发
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
 - **Changed Files**:
 - (未检测到变更文件或当前目录非 git 仓库)
-----------------------------------------
+
+---
+
+## [2026-03-12 11:43] [docs]
+
+- **Change**: 更新移除SQLite运行时设计文档，补充默认路径与覆盖参数
+- **Risk Analysis**: 仅文档调整，不影响运行逻辑
+- **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
+- **Changed Files**:
+- `apps/desktop/forge.config.cts`
+- `apps/desktop/layer/main/src/manager/db-config-view.test.ts`
+- `apps/desktop/layer/main/src/manager/db-config-view.ts`
+- `apps/desktop/layer/main/src/manager/db-config.test.ts`
+- `apps/desktop/layer/main/src/manager/db-config.ts`
+- `apps/desktop/layer/main/src/manager/db.ts`
+- `apps/desktop/package.json`
+- `docs/plans/2026-03-12-remove-sqlite-design.md`
+- `docs/plans/2026-03-12-remove-sqlite-implementation.md`
+
+---
