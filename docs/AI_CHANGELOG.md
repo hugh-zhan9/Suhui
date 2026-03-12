@@ -5361,3 +5361,10 @@
 - `apps/desktop/layer/main/src/manager/sqlite-postgres-migration.test.ts`
 
 ---
+## [2026-03-12 10:58] [Refactor]
+- **Change**: 统一内部 workspace 包名到 @suhui 并同步引用
+- **Risk Analysis**: 大范围重命名可能导致漏改引用、构建与脚本引用失配；需在安装依赖后全量构建验证
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- (未检测到变更文件或当前目录非 git 仓库)
+----------------------------------------
