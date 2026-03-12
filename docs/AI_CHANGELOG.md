@@ -5692,3 +5692,13 @@
 - `scripts/lib.js`
 
 ---
+
+## [2026-03-12 19:03] [Critical-Fix]
+
+- **Change**: 使用 try-catch 加固窗口诊断逻辑，彻底解决对象销毁导致的崩溃
+- **Risk Analysis**: 使用防错代码包裹 Native 方法调用，即使窗口在事件循环中销毁也能优雅返回，不再导致 TypeError: Object has been destroyed。
+- **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/manager/window-diagnostics.ts`
+
+---
