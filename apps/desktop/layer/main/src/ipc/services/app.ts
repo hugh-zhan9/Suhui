@@ -60,12 +60,12 @@ export class AppService extends IpcService {
   private hasHandledReadyToShowMainWindow = false
 
   @IpcMethod()
-  getAppVersion(): string {
+  getAppVersion(_context: IpcContext): string {
     return app.getVersion()
   }
 
   @IpcMethod()
-  getDbConfig(): DbConfigView {
+  getDbConfig(_context: IpcContext): DbConfigView {
     return buildDbConfigView({
       env: process.env,
       envInfo: getDesktopEnvInfo(),
@@ -73,7 +73,7 @@ export class AppService extends IpcService {
   }
 
   @IpcMethod()
-  async checkForUpdates(): Promise<{ hasUpdate: boolean; error?: string }> {
+  async checkForUpdates(_context: IpcContext): Promise<{ hasUpdate: boolean; error?: string }> {
     return checkForAppUpdates()
   }
 
@@ -87,7 +87,7 @@ export class AppService extends IpcService {
   }
 
   @IpcMethod()
-  rendererUpdateReload(): void {
+  rendererUpdateReload(_context: IpcContext): void {
     const __dirname = fileURLToPath(new URL(".", import.meta.url))
     const allWindows = BrowserWindow.getAllWindows()
     const dynamicRenderEntry = loadDynamicRenderEntry()

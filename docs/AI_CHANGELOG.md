@@ -5317,3 +5317,14 @@
 - `packages/internal/database/src/schemas/runtime.js`
 
 ---
+
+## [2026-03-12 09:51] [Bugfix]
+
+- **Change**: 补齐 AppService IPC 方法的 IpcContext 参数并新增 IPC 类型断言测试，修复 renderer typecheck 缺失 app/sync 方法
+- **Risk Analysis**: 仅调整类型签名与新增类型测试，不改变运行时逻辑；风险在于若某些方法依赖无参数调用的旧签名，可能触发调用约束变化，但当前 IPC 装饰器本就传入 context。
+- **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/ipc/services/app.ts`
+- `apps/desktop/layer/renderer/src/lib/ipc-services.test-d.ts`
+
+---
