@@ -1,7 +1,14 @@
 import type { FeedViewType } from "@follow/constants"
 import type { EntrySchema } from "@follow/database/schemas/types"
 
-export type EntryModel = EntrySchema
+export type EntryModel = Omit<
+  EntrySchema,
+  "insertedAt" | "publishedAt" | "readabilityUpdatedAt"
+> & {
+  insertedAt: number
+  publishedAt: number
+  readabilityUpdatedAt: number | null
+}
 export type FetchEntriesProps = {
   feedId?: string
   feedIdList?: string[]

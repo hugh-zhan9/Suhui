@@ -51,17 +51,41 @@ const hasEntryCacheByFeedId = (feedId?: string) => {
   const entrySet = useEntryStore.getState().entryIdByFeed[feedId]
   return !!entrySet && entrySet.size > 0
 }
+
+type FeedWithNormalizedUpdatedAt = Omit<FeedSchema, "updatedAt"> & {
+  updatedAt?: number | null
+}
+
+type FeedRow = Omit<FeedSchema, "updatedAt"> & {
+  updatedAt?: number | Date | null
+}
+
+const normalizeFeedTimestamp = (feed: FeedRow): FeedWithNormalizedUpdatedAt => {
+  const { updatedAt } = feed
+  const normalizedUpdatedAt =
+    updatedAt === null || updatedAt === undefined
+      ? updatedAt
+      : updatedAt instanceof Date
+        ? updatedAt.getTime()
+        : updatedAt
+
+  return {
+    ...feed,
+    updatedAt: normalizedUpdatedAt,
+  }
+}
 // const get = useFeedStore.getState
 // const distanceTime = 1000 * 60 * 60 * 9
 class FeedActions implements Hydratable, Resetable {
   async hydrate() {
     const feeds = await FeedService.getFeedAll()
-    feedActions.upsertManyInSession(feeds)
+    feedActions.upsertManyInSession(feeds.map((feed) => normalizeFeedTimestamp(feed as FeedSchema)))
   }
 
   upsertManyInSession(feeds: FeedSchema[]) {
     immerSet((draft) => {
-      for (const feed of feeds) {
+      for (const rawFeed of feeds) {
+        const feed = normalizeFeedTimestamp(rawFeed)
         const data = Object.fromEntries(
           FEED_EXTRA_DATA_KEYS.filter((key) => (draft.feeds[feed.id] || {})[key]).map((key) => [
             key,

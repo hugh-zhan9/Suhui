@@ -208,7 +208,7 @@ const entrySelector = (state: EntryModel) => {
     feedId: state.feedId,
     inboxId: state.inboxHandle,
     url: state.url,
-    publishedAt: state.publishedAt.toISOString(),
+    publishedAt: new Date(state.publishedAt).toISOString(),
     read: state.read,
     summary,
     translation,

@@ -54,10 +54,10 @@ class EntryServiceStatic implements Resetable {
         and(
           or(inArray(entriesTable.id, entryIds ?? []), inArray(entriesTable.feedId, feedIds ?? [])),
           time && "startTime" in time
-            ? between(entriesTable.publishedAt, new Date(time.startTime), new Date(time.endTime))
+            ? between(entriesTable.publishedAt, time.startTime, time.endTime)
             : undefined,
           time && "insertedBefore" in time
-            ? lt(entriesTable.insertedAt, new Date(time.insertedBefore))
+            ? lt(entriesTable.insertedAt, time.insertedBefore)
             : undefined,
         ),
       )

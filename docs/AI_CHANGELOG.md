@@ -5148,6 +5148,7 @@
 ---
 
 ## [2026-03-11 15:45] [Bugfix]
+
 - **Change**: 迁移到 Postgres 时对 JSON 字段统一按 JSON 文本写入，避免数组被 pg 当作原生数组导致解析失败，并补充测试覆盖
 - **Risk Analysis**: 迁移期间 JSON 字段可能含有非常规文本被转为 null，影响极少量字段展示；已通过最小化规则并保留合法 JSON 文本降低风险
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
@@ -5158,6 +5159,7 @@
 ---
 
 ## [2026-03-11 16:07] [Bugfix]
+
 - **Change**: 修复 Postgres IPC 代理映射：保留 fields 元数据并在返回为对象行时按字段顺序转换为数组，保证前端 pg-proxy 能正确还原数据
 - **Risk Analysis**: 若 fields 顺序与期望不一致可能导致列映射错位；目前使用 pg 返回字段顺序，风险可控
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
@@ -5194,6 +5196,7 @@
 ---
 
 ## [2026-03-11 17:25] [Feature]
+
 - **Change**: 为 db.previewFeed 增加请求前后诊断日志，并支持输出代理、DNS 解析与重定向信息
 - **Risk Analysis**: 诊断日志会增加 DNS 查询与日志输出，可能在网络异常时带来额外延迟或噪声，但仅在预览订阅时触发。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
@@ -5231,6 +5234,7 @@
 ---
 
 ## [2026-03-11 18:00] [Bugfix]
+
 - **Change**: 统一 RSS 条目与刷新 feed 时间字段为毫秒数，修复 Postgres bigint 写入 Date 导致的刷新失败
 - **Risk Analysis**: 变更涉及时间字段的类型转换，若上游传入非标准时间字符串可能被解析为 null 或当前时间，可能影响极少量条目的时间显示
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
@@ -5240,10 +5244,76 @@
 - `apps/desktop/layer/main/src/ipc/services/rss-time.ts`
 - `apps/desktop/layer/main/src/ipc/services/rss-refresh.test.ts`
 - `apps/desktop/layer/main/src/ipc/services/rss-time.test.ts`
+
+---
+
+## [2026-03-11 18:47] [Bugfix]
+
+- **Change**: 本地刷新后同步条目到前端，避免重启后才出现
+- **Risk Analysis**: 刷新后额外拉取本地条目，增加一次本地读取，可能带来轻微性能开销
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/modules/entry-column/layouts/EntryListHeader.tsx`
+- `apps/desktop/layer/renderer/src/modules/entry-column/layouts/entry-refresh.ts`
+- `apps/desktop/layer/renderer/src/modules/entry-column/layouts/entry-refresh.test.ts`
+
+---
+
 ## [2026-03-11 19:37] [Refactor]
+
 - **Change**: 合并冲突并整合外部 RSSHub 预览与诊断日志逻辑
 - **Risk Analysis**: 合并后的预览流程涉及外部 RSSHub 与诊断输出，若拼接或诊断启用逻辑不当可能导致预览失败或日志噪声增加
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
 - **Changed Files**:
 - `apps/desktop/layer/main/src/ipc/services/db.ts`
-----------------------------------------
+
+---
+
+## [2026-03-11 20:25] [Bugfix]
+
+- **Change**: 收敛数据库类型为 Postgres-only，并将条目/订阅时间字段统一为 number，修复 typecheck
+- **Risk Analysis**: 类型收敛可能影响未来 SQLite 路径；时间字段从 Date 切到 number 若有未覆盖的 UI/集成入口可能需要补充转换
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/hooks/biz/useEntryActions.tsx`
+- `apps/desktop/layer/renderer/src/modules/command/commands/integration.tsx`
+- `apps/desktop/layer/renderer/src/modules/integration/custom-integration-manager.ts`
+- `apps/desktop/layer/renderer/src/store/search/index.ts`
+- `packages/internal/components/src/ui/datetime/index.tsx`
+- `packages/internal/components/src/ui/datetime/utils.tsx`
+- `packages/internal/database/src/db.ts`
+- `packages/internal/database/src/schemas/index.ts`
+- `packages/internal/database/src/services/entry.ts`
+- `packages/internal/database/src/types.ts`
+- `packages/internal/store/src/modules/entry/store.ts`
+- `packages/internal/store/src/modules/entry/types.ts`
+- `packages/internal/store/src/modules/feed/store.ts`
+- `packages/internal/store/src/modules/feed/types.ts`
+- `packages/internal/store/src/morph/api.ts`
+- `packages/internal/store/src/morph/db-store.ts`
+
+---
+
+## [2026-03-11 20:37] [Bugfix]
+
+- **Change**: 稳定本地刷新链路的测试与相关 UI 逻辑，补充 store 导出并规范图片时间戳处理
+- **Risk Analysis**: 刷新/Discover 相关 UI 调整可能影响订阅预览展示；图片时间戳归一化若历史数据异常可能出现时间显示偏差
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/lib/client.ts`
+- `apps/desktop/layer/renderer/src/lib/freefolo-branding.test.ts`
+- `apps/desktop/layer/renderer/src/modules/discover/DiscoverFeedCard.tsx`
+- `apps/desktop/layer/renderer/src/modules/discover/FeedForm.tsx`
+- `apps/desktop/layer/renderer/src/modules/discover/discovery-content-limit.test.ts`
+- `apps/desktop/layer/renderer/src/modules/entry-column/layouts/entry-refresh.test.ts`
+- `apps/desktop/layer/renderer/src/modules/entry-content/actions/header-actions.tsx`
+- `apps/desktop/layer/renderer/src/modules/subscription-column/SimpleDiscoverModal.tsx`
+- `apps/desktop/layer/renderer/src/modules/subscription-column/rsshub-precheck.test.ts`
+- `apps/desktop/layer/renderer/src/providers/server-configs-provider.tsx`
+- `packages/internal/store/package.json`
+- `packages/internal/store/src/modules/image/store.ts`
+- `packages/internal/store/src/modules/image/types.ts`
+- `packages/internal/database/src/schemas/runtime.d.ts`
+- `packages/internal/database/src/schemas/runtime.js`
+
+---

@@ -144,7 +144,7 @@ export function SimpleDiscoverModal({ dismiss }: { dismiss: () => void }) {
       const trimmedKeyword = event.target.value.trimStart()
       const { prefix } = currentConfig
 
-      if (!prefix || prefix.length === 0) {
+      if (!prefix) {
         form.setValue("keyword", trimmedKeyword, { shouldValidate: true })
         return
       }
