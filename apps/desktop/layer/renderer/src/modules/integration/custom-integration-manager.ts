@@ -82,7 +82,7 @@ export class CustomIntegrationManager {
       contentMarkdown: markdownContent,
       summary: this.getDescription(entry),
       author: entry.author || "",
-      publishedAt: entry.publishedAt?.toISOString() || "",
+      publishedAt: entry.publishedAt ? new Date(entry.publishedAt).toISOString() : "",
       description: entry.description || "",
     }
   }
@@ -450,7 +450,9 @@ export class CustomIntegrationManager {
       contentMarkdown: "# Sample Article\n\nThis is sample markdown content.",
       summary: "This is a sample summary of the article content.",
       author: sampleEntry?.author || "John Doe",
-      publishedAt: sampleEntry?.publishedAt?.toISOString() || new Date().toISOString(),
+      publishedAt: sampleEntry?.publishedAt
+        ? new Date(sampleEntry.publishedAt).toISOString()
+        : new Date().toISOString(),
       description: sampleEntry?.description || "Sample article description",
     }
 
@@ -472,7 +474,9 @@ export class CustomIntegrationManager {
       content_markdown: "# Sample Article\n\nThis is sample markdown content.",
       summary: "This is a sample summary of the article content.",
       author: sampleEntry?.author || "John Doe",
-      published_at: sampleEntry?.publishedAt?.toISOString() || new Date().toISOString(),
+      published_at: sampleEntry?.publishedAt
+        ? new Date(sampleEntry.publishedAt).toISOString()
+        : new Date().toISOString(),
       description: sampleEntry?.description || "Sample article description",
     }
 

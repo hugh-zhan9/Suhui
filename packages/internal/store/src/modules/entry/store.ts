@@ -1,38 +1,30 @@
 import { FeedViewType } from "@follow/constants"
 import { EntryService } from "@follow/database/services/entry"
-import { isBizId } from "@follow/utils"
 import { cloneDeep } from "es-toolkit"
 import { debounce } from "es-toolkit/compat"
 
 import { api } from "../../context"
 import type { Hydratable, Resetable } from "../../lib/base"
-import { createImmerSetter, createTransaction, createZustandStore } from "../../lib/helper"
-import { readNdjsonStream } from "../../lib/stream"
-import { apiMorph } from "../../morph/api"
+import { createImmerSetter, createTransaction } from "../../lib/helper"
 import { dbStoreMorph } from "../../morph/db-store"
 import { storeDbMorph } from "../../morph/store-db"
-import { collectionActions } from "../collection/store"
-import { clearAllFeedUnreadDirty, clearFeedUnreadDirty } from "../feed/hooks"
-import { feedActions } from "../feed/store"
-
-import { getDefaultCategory } from "../subscription/utils"
 import { getSubscriptionById } from "../subscription/getter"
+import { getDefaultCategory } from "../subscription/utils"
 import type {
   FeedIdOrInboxHandle,
   InsertedBeforeTimeRangeFilter,
   PublishAtTimeRangeFilter,
 } from "../unread/types"
+import type { EntryState } from "./base"
+import { defaultState, useEntryStore } from "./base"
 import { getEntry } from "./getter"
 import type { EntryModel, FetchEntriesProps, FetchEntriesPropsSettings } from "./types"
-import { getEntriesParams } from "./utils"
 
 type EntryId = string
 type FeedId = string
 type InboxId = string
 type Category = string
 type ListId = string
-
-import { type EntryState, defaultState, useEntryStore } from "./base"
 export { useEntryStore } from "./base"
 
 const get = useEntryStore.getState
@@ -321,7 +313,7 @@ class EntryActions implements Hydratable, Resetable {
     entryId: EntryId
     content?: string
     readabilityContent?: string
-    readabilityUpdatedAt?: Date
+    readabilityUpdatedAt?: number
   }) {
     immerSet((draft) => {
       const entry = draft.data[entryId]
@@ -331,7 +323,7 @@ class EntryActions implements Hydratable, Resetable {
       }
       if (readabilityContent) {
         entry.readabilityContent = readabilityContent
-        entry.readabilityUpdatedAt = readabilityUpdatedAt
+        entry.readabilityUpdatedAt = readabilityUpdatedAt ?? entry.readabilityUpdatedAt ?? null
       }
     })
   }
@@ -340,12 +332,12 @@ class EntryActions implements Hydratable, Resetable {
     entryId,
     content,
     readabilityContent,
-    readabilityUpdatedAt = new Date(),
+    readabilityUpdatedAt = Date.now(),
   }: {
     entryId: EntryId
     content?: string
     readabilityContent?: string
-    readabilityUpdatedAt?: Date
+    readabilityUpdatedAt?: number
   }) {
     const tx = createTransaction()
     tx.store(() => {
@@ -526,7 +518,9 @@ class EntrySyncServices {
         // feedId may be comma-separated (folder view)
         const feedIds = Array.from(
           new Set(
-            (feedId.includes(",") ? feedId.split(",") : [feedId]).map((id) => id.trim()).filter(Boolean),
+            (feedId.includes(",") ? feedId.split(",") : [feedId])
+              .map((id) => id.trim())
+              .filter(Boolean),
           ),
         )
         const results = await Promise.all(
@@ -621,16 +615,19 @@ class EntrySyncServices {
       }
     }
 
-    console.log("[Antigravity] fetchEntries returning page:", entryModels.length, "cursor:", pageParam ?? "initial")
+    console.info(
+      "[Antigravity] fetchEntries returning page:",
+      entryModels.length,
+      "cursor:",
+      pageParam ?? "initial",
+    )
 
     return {
       data: entryModels.map((e: any) => ({ entries: e, feeds: { id: e.feedId, type: "feed" } })),
     } as any
-
-
   }
 
-  async fetchEntryDetail(entryId: EntryId | undefined, isInbox?: boolean) {
+  async fetchEntryDetail(entryId: EntryId | undefined, _isInbox?: boolean) {
     if (!entryId) return null
 
     // First check in-memory store (populated by fetchEntries)
@@ -687,7 +684,7 @@ class EntrySyncServices {
     return entry
   }
 
-  async fetchEntryContentByStream(remoteEntryIds?: string[]) {
+  async fetchEntryContentByStream(_remoteEntryIds?: string[]) {
     // [Local Mode] Entry contents are fully fetched from local storage.
     // No need to query remote stream API.
     return

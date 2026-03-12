@@ -4,13 +4,13 @@ import { RotatingRefreshIcon } from "@follow/components/ui/loading/index.jsx"
 import { EllipsisHorizontalTextWithTooltip } from "@follow/components/ui/typography/index.js"
 import { FeedViewType, getView } from "@follow/constants"
 import { useIsOnline } from "@follow/hooks"
-import { DEFAULT_SUMMARIZE_TIMELINE_SHORTCUT_ID } from "@follow/shared/settings/defaults"
+import { entrySyncServices } from "@follow/store/entry/store"
 import { getFeedById } from "@follow/store/feed/getter"
 import { useFeedById } from "@follow/store/feed/hooks"
 import { useIsLoggedIn, useWhoami } from "@follow/store/user/hooks"
 import { stopPropagation } from "@follow/utils/dom"
 import { clsx, cn, isBizId } from "@follow/utils/utils"
-import { useAtom, useAtomValue } from "jotai"
+import { useAtomValue } from "jotai"
 import type { FC } from "react"
 import { useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -20,7 +20,6 @@ import { previewBackPath } from "~/atoms/preview"
 import { useGeneralSettingKey } from "~/atoms/settings/general"
 import { useSubscriptionColumnShow } from "~/atoms/sidebar"
 import { ROUTE_ENTRY_PENDING } from "~/constants"
-import { useFeature } from "~/hooks/biz/useFeature"
 import { useFollow } from "~/hooks/biz/useFollow"
 import { getRouteParams, useRouteParams } from "~/hooks/biz/useRouteParams"
 import { useLoginModal } from "~/hooks/common"
@@ -38,6 +37,7 @@ import { useEntryRootState } from "../store/EntryColumnContext"
 import { AppendTaildingDivider } from "./AppendTaildingDivider"
 import { SwitchToMasonryButton } from "./buttons/SwitchToMasonryButton"
 import { shouldShowInlineStarInEntryListHeader } from "./entry-list-header-actions"
+import { refreshLocalFeedAndSyncEntries } from "./entry-refresh"
 
 export const EntryListHeader: FC<{
   refetch: () => void
@@ -94,12 +94,20 @@ export const EntryListHeader: FC<{
   const handleRefetch = useCallback(async () => {
     const ipc = (window as any)?.electron?.ipcRenderer
     const canRefreshLocalFeed =
-      !!ipc && !!feedId && feed?.type === "feed" && !isBizId(feedId) && feedId !== ROUTE_ENTRY_PENDING
+      !!ipc &&
+      !!feedId &&
+      feed?.type === "feed" &&
+      !isBizId(feedId) &&
+      feedId !== ROUTE_ENTRY_PENDING
 
     if (canRefreshLocalFeed) {
       setIsLocalRefreshing(true)
       try {
-        await ipc.invoke("db.refreshFeed", feedId)
+        await refreshLocalFeedAndSyncEntries({
+          feedId,
+          ipc,
+          fetchEntries: entrySyncServices.fetchEntries.bind(entrySyncServices),
+        })
       } finally {
         setIsLocalRefreshing(false)
       }
@@ -144,11 +152,11 @@ export const EntryListHeader: FC<{
             onClick={stopPropagation}
           >
             {isWideMode && showEntryHeader && (
-                <>
-                  <EntryHeader entryId={entryId} />
-                  <DividerVertical className="mx-2 w-px" />
-                </>
-              )}
+              <>
+                <EntryHeader entryId={entryId} />
+                <DividerVertical className="mx-2 w-px" />
+              </>
+            )}
             {!isWideMode && showQuickStar && null}
 
             <AppendTaildingDivider>

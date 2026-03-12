@@ -26,9 +26,9 @@ export const EntryHeaderActions = ({ entryId, view }: { entryId: string; view: F
   )
 
   return actionConfigs
+    .filter((item) => item instanceof MenuItemText || item instanceof EntryActionDropdownItem)
     .filter((item) => item.id !== COMMAND_ID.entry.star)
     .filter((item) => item.id !== COMMAND_ID.entry.exportAsPDF)
-    .filter((item) => item instanceof MenuItemText || item instanceof EntryActionDropdownItem)
     .map((config) => {
       const clickHandler = resolveClick(config)
       const baseTrigger = (

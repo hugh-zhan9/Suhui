@@ -2,6 +2,8 @@ import { EntryService } from "@follow/database/services/entry"
 import { FeedService } from "@follow/database/services/feed"
 import { SubscriptionService } from "@follow/database/services/subscription"
 import type { EntryModel } from "@follow/store/entry/types"
+import type { FeedModel } from "@follow/store/feed/types"
+import { dbStoreMorph } from "@follow/store/morph/db-store"
 import type { SubscriptionModel } from "@follow/store/subscription/types"
 import { getStorageNS } from "@follow/utils/ns"
 import type { IFuseOptions } from "fuse.js"
@@ -46,14 +48,28 @@ class SearchActions {
   }
 
   async createLocalDbSearch() {
-    const [entries, feeds, subscriptions] = await Promise.all([
+    const [rawEntries, rawFeeds, subscriptions] = await Promise.all([
       EntryService.getEntryAll(),
-      (await FeedService.getFeedAll()).map((feed) => ({
-        ...feed,
-        type: "feed" as const,
-      })),
+      FeedService.getFeedAll(),
       SubscriptionService.getSubscriptionAll(),
     ])
+
+    const entries = rawEntries.map((entry) => dbStoreMorph.toEntryModel(entry))
+    const feeds = rawFeeds.map((feed) => {
+      const { updatedAt } = feed as { updatedAt?: number | Date | null }
+      const normalizedUpdatedAt =
+        updatedAt === null || updatedAt === undefined
+          ? updatedAt
+          : updatedAt instanceof Date
+            ? updatedAt.getTime()
+            : updatedAt
+
+      return {
+        ...feed,
+        updatedAt: normalizedUpdatedAt,
+        type: "feed" as const,
+      } satisfies FeedModel
+    })
 
     const feedsMap = new Map(feeds.map((feed) => [feed.id, feed]))
 

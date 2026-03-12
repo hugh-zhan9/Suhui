@@ -1,8 +1,6 @@
 import * as pgSchema from "./postgres"
-import { getRuntimeDbType } from "./runtime"
-import * as sqliteSchema from "./sqlite"
 
-const activeSchema = getRuntimeDbType() === "postgres" ? pgSchema : sqliteSchema
+const activeSchema = pgSchema
 
 export const { feedsTable } = activeSchema
 export const { subscriptionsTable } = activeSchema
@@ -22,4 +20,4 @@ export const { pendingSyncOpsTable } = activeSchema
 
 export * from "./types"
 
-export type AiChatMessagesModel = typeof sqliteSchema.aiChatMessagesTable.$inferSelect
+export type AiChatMessagesModel = typeof pgSchema.aiChatMessagesTable.$inferSelect

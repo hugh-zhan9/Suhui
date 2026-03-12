@@ -4,7 +4,7 @@ import { refreshLocalFeedAndSyncEntries } from "./entry-refresh"
 
 describe("refreshLocalFeedAndSyncEntries", () => {
   it("calls ipc refresh then fetchEntries", async () => {
-    const invoke = vi.fn().mockResolvedValue(undefined)
+    const invoke = vi.fn().mockResolvedValue(void 0)
     const fetchEntries = vi.fn().mockResolvedValue({ data: [] })
 
     await refreshLocalFeedAndSyncEntries({
@@ -15,8 +15,8 @@ describe("refreshLocalFeedAndSyncEntries", () => {
 
     expect(invoke).toHaveBeenCalledWith("db.refreshFeed", "local_feed_1")
     expect(fetchEntries).toHaveBeenCalledWith({ feedId: "local_feed_1" })
-    expect(invoke.mock.invocationCallOrder[0]).toBeLessThan(
-      fetchEntries.mock.invocationCallOrder[0],
-    )
+    const invokeOrder = invoke.mock.invocationCallOrder[0]!
+    const fetchOrder = fetchEntries.mock.invocationCallOrder[0]!
+    expect(invokeOrder).toBeLessThan(fetchOrder)
   })
 })

@@ -21,7 +21,7 @@ import { subscriptionActions, subscriptionSyncService } from "@follow/store/subs
 import { whoami } from "@follow/store/user/getters"
 import { tracker } from "@follow/tracker"
 import { cn } from "@follow/utils/utils"
-import type { FeedAnalyticsModel } from "@follow-app/client-sdk"
+import type { FeedAnalyticsModel, ParsedEntry } from "@follow-app/client-sdk"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation } from "@tanstack/react-query"
 import { useCallback, useEffect, useMemo, useRef } from "react"
