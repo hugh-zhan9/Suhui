@@ -67,18 +67,18 @@ async function main() {
     const appxVersion = versionParts.slice(0, 4).join(".")
 
     const config: AppXManifestConfig = {
-      packageName: "Folo",
+      packageName: "Suhui",
       packageDisplayName: isStaging
         ? "溯洄 Staging - 溯源而读，回归纯粹"
         : "溯洄 - 溯源而读，回归纯粹",
       publisherDisplayName: "Natural Selection Labs",
-      identityName: "NaturalSelectionLabs.Follow-Yourfavoritesinoneinbo",
+      identityName: "Suhui.Suhui",
       version: appxVersion,
       publisher: "CN=7CBBEB6A-9B0E-4387-BAE3-576D0ACA279E",
       packageBackgroundColor: "#FF5C00",
-      protocols: ["folo", "follow"],
+      protocols: ["suhui"],
       description: "溯源而读，回归纯粹.",
-      appBundleId: "is.follow",
+      appBundleId: "io.suhui",
     }
 
     // Template file path

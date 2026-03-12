@@ -7,7 +7,7 @@ import { useEffect } from "react"
 
 export function DownloadPage() {
   const openDownloadPage = () => {
-    window.open("https://folo.is/download", "_blank", "noopener,noreferrer")
+    window.open("https://suhui.io/download", "_blank", "noopener,noreferrer")
   }
 
   const mobilePlatform = getMobilePlatform()

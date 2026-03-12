@@ -186,7 +186,7 @@ const ExportFeedsForm = () => {
       exportUrl.searchParams.append("RSSHubURL", values.rsshubUrl)
     }
     link.href = exportUrl.toString()
-    link.download = "follow.opml"
+    link.download = "suhui.opml"
     link.click()
   }
 

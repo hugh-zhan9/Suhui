@@ -46,7 +46,7 @@ export const LoginModalContent = (props: LoginModalContentProps) => {
       tos: "terms-of-service",
     }
 
-    window.open(`https://folo.is/${path[type]}`, "_blank")
+    window.open(`https://suhui.io/${path[type]}`, "_blank")
   }
 
   const handleOpenToken = () => {
