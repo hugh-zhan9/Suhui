@@ -94,8 +94,10 @@ describe("sqlite -> postgres migration helpers", () => {
     await migrateSqliteToPostgres("/tmp/fake.db", pool as any, () => sqlite as any)
 
     const insert = calls.find((call) => call.sql.includes('INSERT INTO "entries"'))
-    expect(insert).toBeTruthy()
-    const match = insert?.sql.match(/\(([^)]+)\)\s+VALUES/)
+    if (!insert) {
+      throw new Error("Expected entries insert call")
+    }
+    const match = insert.sql.match(/\(([^)]+)\)\s+VALUES/)
     expect(match).toBeTruthy()
     const columns = match![1]
       .split(",")
