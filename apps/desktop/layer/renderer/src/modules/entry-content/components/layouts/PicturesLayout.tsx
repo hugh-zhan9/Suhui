@@ -1,5 +1,5 @@
-import { useEntry } from "@follow/store/entry/hooks"
-import { cn } from "@follow/utils/utils"
+import { useEntry } from "@suhui/store/entry/hooks"
+import { cn } from "@suhui/utils/utils"
 
 import { usePreviewMedia } from "~/components/ui/media/hooks"
 import { SwipeMedia } from "~/components/ui/media/SwipeMedia"

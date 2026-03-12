@@ -1,4 +1,4 @@
-import { jotaiStore } from "@follow/utils"
+import { jotaiStore } from "@suhui/utils"
 import { useAtomValue } from "jotai"
 
 import { mouseAtom } from "../atoms/mouse"

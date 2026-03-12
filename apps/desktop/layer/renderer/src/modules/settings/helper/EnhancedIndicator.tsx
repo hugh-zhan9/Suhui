@@ -1,5 +1,5 @@
-import { RootPortal } from "@follow/components/ui/portal/index.js"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@follow/components/ui/tooltip/index.js"
+import { RootPortal } from "@suhui/components/ui/portal/index.js"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@suhui/components/ui/tooltip/index.js"
 import { useTranslation } from "react-i18next"
 
 import { useGeneralSettingKey } from "~/atoms/settings/general"

@@ -1,7 +1,7 @@
-import { AvatarGroup } from "@follow/components/ui/avatar-group/index.js"
-import { FeedViewType } from "@follow/constants"
-import { useEntryReadHistory } from "@follow/store/entry/hooks"
-import { useWhoami } from "@follow/store/user/hooks"
+import { AvatarGroup } from "@suhui/components/ui/avatar-group/index.js"
+import { FeedViewType } from "@suhui/constants"
+import { useEntryReadHistory } from "@suhui/store/entry/hooks"
+import { useWhoami } from "@suhui/store/user/hooks"
 
 import { getRouteParams } from "~/hooks/biz/useRouteParams"
 import { useAppLayoutGridContainerWidth } from "~/providers/app-grid-layout-container-provider"

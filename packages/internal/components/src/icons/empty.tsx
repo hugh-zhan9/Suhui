@@ -1,4 +1,4 @@
-import { cn } from "@follow/utils/utils"
+import { cn } from "@suhui/utils/utils"
 
 export const EmptyIcon: Component = ({ className }) => (
   <svg

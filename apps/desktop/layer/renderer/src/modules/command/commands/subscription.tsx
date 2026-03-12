@@ -1,4 +1,4 @@
-import { EventBus } from "@follow/utils/event-bus"
+import { EventBus } from "@suhui/utils/event-bus"
 import { useTranslation } from "react-i18next"
 
 import type { BizRouteParams } from "~/hooks/biz/useRouteParams"
@@ -8,7 +8,7 @@ import { useRegisterCommandEffect } from "../hooks/use-register-command"
 import type { Command, CommandCategory } from "../types"
 import { COMMAND_ID } from "./id"
 
-declare module "@follow/utils/event-bus" {
+declare module "@suhui/utils/event-bus" {
   interface EventBusMap {
     "subscription:switch-tab-to-next": never
     "subscription:switch-tab-to-previous": never

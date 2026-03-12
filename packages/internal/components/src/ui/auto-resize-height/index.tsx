@@ -1,4 +1,4 @@
-import { cn } from "@follow/utils/utils"
+import { cn } from "@suhui/utils/utils"
 import { m } from "motion/react"
 import { useEffect, useRef, useState } from "react"
 

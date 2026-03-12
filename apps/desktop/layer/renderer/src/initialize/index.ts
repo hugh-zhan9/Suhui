@@ -1,8 +1,8 @@
-import { initializeDayjs } from "@follow/components/dayjs"
-import { registerGlobalContext } from "@follow/shared/bridge"
-import { DEV, ELECTRON_BUILD, IN_ELECTRON } from "@follow/shared/constants"
-import { hydrateDatabaseToStore } from "@follow/store/hydrate"
-import { tracker } from "@follow/tracker"
+import { initializeDayjs } from "@suhui/components/dayjs"
+import { registerGlobalContext } from "@suhui/shared/bridge"
+import { DEV, ELECTRON_BUILD, IN_ELECTRON } from "@suhui/shared/constants"
+import { hydrateDatabaseToStore } from "@suhui/store/hydrate"
+import { tracker } from "@suhui/tracker"
 import { repository } from "@pkg"
 import { enableMapSet } from "immer"
 

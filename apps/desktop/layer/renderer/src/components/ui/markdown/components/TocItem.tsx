@@ -1,5 +1,5 @@
-import { EllipsisHorizontalTextWithTooltip } from "@follow/components/ui/typography/index.js"
-import { clsx, cn } from "@follow/utils/utils"
+import { EllipsisHorizontalTextWithTooltip } from "@suhui/components/ui/typography/index.js"
+import { clsx, cn } from "@suhui/utils/utils"
 import type { FC, MouseEvent } from "react"
 import { memo, useCallback, useRef } from "react"
 

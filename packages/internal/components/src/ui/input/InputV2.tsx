@@ -1,5 +1,5 @@
-import { useInputComposition } from "@follow/hooks"
-import { cn, stopPropagation } from "@follow/utils"
+import { useInputComposition } from "@suhui/hooks"
+import { cn, stopPropagation } from "@suhui/utils"
 import type { DetailedHTMLProps, InputHTMLAttributes, ReactNode } from "react"
 import { useState } from "react"
 import * as React from "react"

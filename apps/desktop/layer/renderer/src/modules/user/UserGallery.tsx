@@ -1,4 +1,4 @@
-import type { UserModel } from "@follow/store/user/store"
+import type { UserModel } from "@suhui/store/user/store"
 
 import { UserAvatar } from "~/modules/user/UserAvatar"
 

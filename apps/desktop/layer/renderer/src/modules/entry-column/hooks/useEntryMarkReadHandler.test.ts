@@ -5,13 +5,13 @@ const { getFlattenMapEntriesMock, markReadMock } = vi.hoisted(() => ({
   markReadMock: vi.fn(),
 }))
 
-vi.mock("@follow/store/entry/store", () => ({
+vi.mock("@suhui/store/entry/store", () => ({
   entryActions: {
     getFlattenMapEntries: getFlattenMapEntriesMock,
   },
 }))
 
-vi.mock("@follow/store/unread/store", () => ({
+vi.mock("@suhui/store/unread/store", () => ({
   unreadSyncService: {
     markRead: markReadMock,
   },

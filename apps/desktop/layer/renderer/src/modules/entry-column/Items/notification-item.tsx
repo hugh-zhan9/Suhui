@@ -1,4 +1,4 @@
-import { Skeleton } from "@follow/components/ui/skeleton/index.jsx"
+import { Skeleton } from "@suhui/components/ui/skeleton/index.jsx"
 
 import { RelativeTime } from "~/components/ui/datetime"
 import { ListItem } from "~/modules/entry-column/templates/list-item-template"

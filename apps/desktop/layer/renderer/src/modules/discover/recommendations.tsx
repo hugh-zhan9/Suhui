@@ -1,5 +1,5 @@
-import { Card, CardContent } from "@follow/components/ui/card/index.jsx"
-import { CategoryMap, RSSHubCategories } from "@follow/constants"
+import { Card, CardContent } from "@suhui/components/ui/card/index.jsx"
+import { CategoryMap, RSSHubCategories } from "@suhui/constants"
 import { useTranslation } from "react-i18next"
 import { Link } from "react-router"
 

@@ -1,6 +1,6 @@
-import { IN_ELECTRON } from "@follow/shared/constants"
-import { useEntry } from "@follow/store/entry/hooks"
-import { transformVideoUrl } from "@follow/utils/url-for-video"
+import { IN_ELECTRON } from "@suhui/shared/constants"
+import { useEntry } from "@suhui/store/entry/hooks"
+import { transformVideoUrl } from "@suhui/utils/url-for-video"
 import { useMemo } from "react"
 
 import { Media } from "~/components/ui/media/Media"

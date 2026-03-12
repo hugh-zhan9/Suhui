@@ -1,5 +1,5 @@
-import { CarbonInfinitySymbol } from "@follow/components/icons/infinify.jsx"
-import { Button, MotionButtonBase } from "@follow/components/ui/button/index.js"
+import { CarbonInfinitySymbol } from "@suhui/components/icons/infinify.jsx"
+import { Button, MotionButtonBase } from "@suhui/components/ui/button/index.js"
 import {
   Form,
   FormControl,
@@ -8,14 +8,14 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@follow/components/ui/form/index.js"
-import { Input } from "@follow/components/ui/input/Input.js"
-import { Label } from "@follow/components/ui/label/index.jsx"
-import { RadioGroup, RadioGroupItem } from "@follow/components/ui/radio-group/motion.js"
-import { Slider } from "@follow/components/ui/slider/index.js"
-import { exportDB } from "@follow/database/db"
-import { ELECTRON_BUILD } from "@follow/shared/constants"
-import { env } from "@follow/shared/env.desktop"
+} from "@suhui/components/ui/form/index.js"
+import { Input } from "@suhui/components/ui/input/Input.js"
+import { Label } from "@suhui/components/ui/label/index.jsx"
+import { RadioGroup, RadioGroupItem } from "@suhui/components/ui/radio-group/motion.js"
+import { Slider } from "@suhui/components/ui/slider/index.js"
+import { exportDB } from "@suhui/database/db"
+import { ELECTRON_BUILD } from "@suhui/shared/constants"
+import { env } from "@suhui/shared/env.desktop"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useQuery } from "@tanstack/react-query"
 import { useEffect, useState } from "react"

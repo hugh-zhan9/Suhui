@@ -1,4 +1,4 @@
-import { isMobile } from "@follow/components/hooks/useMobile.js"
+import { isMobile } from "@suhui/components/hooks/useMobile.js"
 import { redirect } from "react-router"
 
 import { ROUTE_ENTRY_PENDING } from "~/constants"

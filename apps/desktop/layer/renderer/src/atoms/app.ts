@@ -1,4 +1,4 @@
-import { WindowState } from "@follow/shared/bridge"
+import { WindowState } from "@suhui/shared/bridge"
 import { atom } from "jotai"
 
 import { createAtomHooks } from "~/lib/jotai"

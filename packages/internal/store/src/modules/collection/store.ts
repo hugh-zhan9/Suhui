@@ -1,6 +1,6 @@
-import type { FeedViewType } from "@follow/constants"
-import type { CollectionSchema } from "@follow/database/schemas/types"
-import { CollectionService } from "@follow/database/services/collection"
+import type { FeedViewType } from "@suhui/constants"
+import type { CollectionSchema } from "@suhui/database/schemas/types"
+import { CollectionService } from "@suhui/database/services/collection"
 
 import { api } from "../../context"
 import type { Hydratable, Resetable } from "../../lib/base"

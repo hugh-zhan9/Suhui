@@ -1,4 +1,4 @@
-import { FeedViewType } from "@follow/constants"
+import { FeedViewType } from "@suhui/constants"
 
 const PDF_EXPORT_SUPPORTED_VIEWS = new Set<FeedViewType>([
   FeedViewType.All,

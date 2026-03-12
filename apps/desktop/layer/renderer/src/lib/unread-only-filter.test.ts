@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { entrySyncServices } from "@follow/store/entry/store"
+import { entrySyncServices } from "@suhui/store/entry/store"
 
 const makeRow = (id: string, read: boolean) => ({
   id,

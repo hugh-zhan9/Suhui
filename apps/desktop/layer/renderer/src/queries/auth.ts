@@ -1,7 +1,7 @@
-import { whoamiQueryKey } from "@follow/store/user/hooks"
-import { userSyncService } from "@follow/store/user/store"
-import { tracker } from "@follow/tracker"
-import { clearStorage } from "@follow/utils/ns"
+import { whoamiQueryKey } from "@suhui/store/user/hooks"
+import { userSyncService } from "@suhui/store/user/store"
+import { tracker } from "@suhui/tracker"
+import { clearStorage } from "@suhui/utils/ns"
 import type { FetchError } from "ofetch"
 
 import { QUERY_PERSIST_KEY } from "~/constants"

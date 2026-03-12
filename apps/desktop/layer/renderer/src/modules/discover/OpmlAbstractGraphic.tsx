@@ -1,6 +1,6 @@
-import { Spring } from "@follow/components/constants/spring.js"
-import { Logo } from "@follow/components/icons/logo.jsx"
-import { cn } from "@follow/utils/utils"
+import { Spring } from "@suhui/components/constants/spring.js"
+import { Logo } from "@suhui/components/icons/logo.jsx"
+import { cn } from "@suhui/utils/utils"
 import { m } from "motion/react"
 import * as React from "react"
 

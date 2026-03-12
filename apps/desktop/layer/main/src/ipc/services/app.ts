@@ -1,8 +1,8 @@
 import fsp from "node:fs/promises"
 import { fileURLToPath } from "node:url"
 
-import { callWindowExpose } from "@follow/shared/bridge"
-import { DEV } from "@follow/shared/constants"
+import { callWindowExpose } from "@suhui/shared/bridge"
+import { DEV } from "@suhui/shared/constants"
 import { app, BrowserWindow, clipboard, dialog, shell } from "electron"
 import type { IpcContext } from "electron-ipc-decorator"
 import { IpcMethod, IpcService } from "electron-ipc-decorator"

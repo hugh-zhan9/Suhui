@@ -1,5 +1,5 @@
-import { isOnboardingFeedUrl } from "@follow/store/constants/onboarding"
-import { capitalizeFirstLetter, parseUrl } from "@follow/utils/utils"
+import { isOnboardingFeedUrl } from "@suhui/store/constants/onboarding"
+import { capitalizeFirstLetter, parseUrl } from "@suhui/utils/utils"
 
 import { getFeedById } from "../feed/getter"
 import type { SubscriptionModel } from "./types"

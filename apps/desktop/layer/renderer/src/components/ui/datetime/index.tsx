@@ -1,11 +1,11 @@
-import { getUpdateInterval } from "@follow/components/ui/datetime/utils.js"
+import { getUpdateInterval } from "@suhui/components/ui/datetime/utils.js"
 import {
   Tooltip,
   TooltipContent,
   TooltipPortal,
   TooltipTrigger,
-} from "@follow/components/ui/tooltip/index.js"
-import { stopPropagation } from "@follow/utils/dom"
+} from "@suhui/components/ui/tooltip/index.js"
+import { stopPropagation } from "@suhui/utils/dom"
 import dayjs from "dayjs"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -13,7 +13,7 @@ import { useTranslation } from "react-i18next"
 import { useGeneralSettingSelector } from "~/atoms/settings/general"
 import { useUISettingKey } from "~/atoms/settings/ui"
 
-export { RelativeTime } from "@follow/components/ui/datetime/index.js"
+export { RelativeTime } from "@suhui/components/ui/datetime/index.js"
 export const RelativeDay = ({ date }: { date: Date }) => {
   const { t } = useTranslation("common")
   const language = useGeneralSettingSelector((s) => s.language)

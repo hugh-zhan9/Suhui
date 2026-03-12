@@ -1,6 +1,6 @@
 import os from "node:os"
 
-import { DEV } from "@follow/shared/constants"
+import { DEV } from "@suhui/shared/constants"
 
 export const channel: "development" | "beta" | "alpha" | "stable" = DEV ? "development" : "stable"
 

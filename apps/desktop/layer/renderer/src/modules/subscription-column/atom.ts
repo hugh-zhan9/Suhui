@@ -1,4 +1,4 @@
-import { getStorageNS } from "@follow/utils/ns"
+import { getStorageNS } from "@suhui/utils/ns"
 import { atom } from "jotai"
 import { atomWithStorage } from "jotai/utils"
 

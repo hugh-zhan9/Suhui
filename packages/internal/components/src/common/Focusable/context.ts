@@ -1,4 +1,4 @@
-import type { EnhanceSet } from "@follow/utils"
+import type { EnhanceSet } from "@suhui/utils"
 import type { PrimitiveAtom } from "jotai"
 import { createContext } from "react"
 

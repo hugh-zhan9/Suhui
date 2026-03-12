@@ -1,3 +1,3 @@
-import type { CollectionSchema } from "@follow/database/schemas/types"
+import type { CollectionSchema } from "@suhui/database/schemas/types"
 
 export type CollectionModel = CollectionSchema

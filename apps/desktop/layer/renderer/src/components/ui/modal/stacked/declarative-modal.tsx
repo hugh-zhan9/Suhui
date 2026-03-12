@@ -1,4 +1,4 @@
-import { cn } from "@follow/utils/utils"
+import { cn } from "@suhui/utils/utils"
 import { AnimatePresence } from "motion/react"
 import type { FC, ReactNode } from "react"
 import { useCallback, useEffect, useId, useMemo, useState } from "react"

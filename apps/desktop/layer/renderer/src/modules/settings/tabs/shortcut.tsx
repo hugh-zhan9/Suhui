@@ -1,8 +1,8 @@
-import { Button } from "@follow/components/ui/button/index.jsx"
-import { KbdCombined } from "@follow/components/ui/kbd/Kbd.js"
-import { RootPortal } from "@follow/components/ui/portal/index.js"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@follow/components/ui/tooltip/index.js"
-import { cn } from "@follow/utils"
+import { Button } from "@suhui/components/ui/button/index.jsx"
+import { KbdCombined } from "@suhui/components/ui/kbd/Kbd.js"
+import { RootPortal } from "@suhui/components/ui/portal/index.js"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@suhui/components/ui/tooltip/index.js"
+import { cn } from "@suhui/utils"
 import { memo, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 

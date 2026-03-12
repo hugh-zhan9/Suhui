@@ -1,5 +1,5 @@
-import type { FeedViewType } from "@follow/constants"
-import type { SubscriptionSchema } from "@follow/database/schemas/types"
+import type { FeedViewType } from "@suhui/constants"
+import type { SubscriptionSchema } from "@suhui/database/schemas/types"
 
 type Nullable<T> = T | null | undefined
 

@@ -1,4 +1,4 @@
-import { defaultSettings } from "@follow/shared/settings/defaults"
+import { defaultSettings } from "@suhui/shared/settings/defaults"
 import { useCallback } from "react"
 
 import { enhancedGeneralSettingKeys, useGeneralSettingKey } from "~/atoms/settings/general"

@@ -1,6 +1,6 @@
-import { Folo } from "@follow/components/icons/folo.js"
-import { Logo } from "@follow/components/icons/logo.jsx"
-import { cn } from "@follow/utils/utils"
+import { Folo } from "@suhui/components/icons/folo.js"
+import { Logo } from "@suhui/components/icons/logo.jsx"
+import { cn } from "@suhui/utils/utils"
 import pkg from "@pkg"
 
 export const PoweredByFooter: Component = ({ className }) => (

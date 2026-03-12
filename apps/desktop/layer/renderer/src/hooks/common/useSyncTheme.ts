@@ -1,11 +1,11 @@
-import type { ColorMode } from "@follow/hooks"
+import type { ColorMode } from "@suhui/hooks"
 import {
   disableTransition,
   internal_useSetTheme,
   useDarkQuery,
   useSyncThemeWebApp,
-} from "@follow/hooks"
-import { IN_ELECTRON } from "@follow/shared/constants"
+} from "@suhui/hooks"
+import { IN_ELECTRON } from "@suhui/shared/constants"
 import { useCallback, useLayoutEffect } from "react"
 
 import { ipcServices } from "~/lib/client"

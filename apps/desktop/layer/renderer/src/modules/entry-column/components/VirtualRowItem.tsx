@@ -1,6 +1,6 @@
-import { useEntry } from "@follow/store/entry/hooks"
-import { useIsListSubscription } from "@follow/store/subscription/hooks"
-import { clsx } from "@follow/utils/utils"
+import { useEntry } from "@suhui/store/entry/hooks"
+import { useIsListSubscription } from "@suhui/store/subscription/hooks"
+import { clsx } from "@suhui/utils/utils"
 import type { FC, Key } from "react"
 import { Fragment, memo, useMemo } from "react"
 

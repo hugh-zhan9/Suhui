@@ -1,4 +1,4 @@
-import type { FeedViewType } from "@follow/constants"
+import type { FeedViewType } from "@suhui/constants"
 import { createContext, use, useCallback, useLayoutEffect, useMemo, useRef } from "react"
 
 import { useRouteParams } from "~/hooks/biz/useRouteParams"

@@ -1,4 +1,4 @@
-import { getFeedById } from "@follow/store/feed/getter"
+import { getFeedById } from "@suhui/store/feed/getter"
 import { createElement, useCallback } from "react"
 import { useTranslation } from "react-i18next"
 

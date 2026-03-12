@@ -1,11 +1,11 @@
-import { Spring } from "@follow/components/constants/spring.js"
+import { Spring } from "@suhui/components/constants/spring.js"
 import {
   Tooltip,
   TooltipContent,
   TooltipPortal,
   TooltipTrigger,
-} from "@follow/components/ui/tooltip/index.js"
-import { cn } from "@follow/utils/utils"
+} from "@suhui/components/ui/tooltip/index.js"
+import { cn } from "@suhui/utils/utils"
 import { cva } from "class-variance-authority"
 import { m } from "motion/react"
 import type { FC, ReactNode } from "react"

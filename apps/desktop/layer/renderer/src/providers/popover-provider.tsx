@@ -1,12 +1,12 @@
 // Import from the correct path
-import { useSetGlobalFocusableScope } from "@follow/components/common/Focusable/hooks.js"
-import { Spring } from "@follow/components/constants/spring.js"
+import { useSetGlobalFocusableScope } from "@suhui/components/common/Focusable/hooks.js"
+import { Spring } from "@suhui/components/constants/spring.js"
 import {
   Popover,
   PopoverArrow,
   PopoverContent,
   PopoverTrigger,
-} from "@follow/components/ui/popover/index.jsx"
+} from "@suhui/components/ui/popover/index.jsx"
 import { AnimatePresence, m } from "motion/react"
 import { memo, useEffect, useRef } from "react"
 

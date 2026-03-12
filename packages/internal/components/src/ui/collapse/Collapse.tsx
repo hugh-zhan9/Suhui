@@ -1,4 +1,4 @@
-import { cn } from "@follow/utils/utils"
+import { cn } from "@suhui/utils/utils"
 import { atom, useStore } from "jotai"
 import type { Variants } from "motion/react"
 import { AnimatePresence, m } from "motion/react"

@@ -1,4 +1,4 @@
-import type { UserRole } from "@follow/constants"
+import type { UserRole } from "@suhui/constants"
 import type { ExtractResponseData, GetStatusConfigsResponse } from "@follow-app/client-sdk"
 
 export interface SettingPageContext {

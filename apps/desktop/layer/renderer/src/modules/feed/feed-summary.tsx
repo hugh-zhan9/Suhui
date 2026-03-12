@@ -1,16 +1,16 @@
-import { RSSHubLogo } from "@follow/components/ui/platform-icon/icons.js"
+import { RSSHubLogo } from "@suhui/components/ui/platform-icon/icons.js"
 import {
   Tooltip,
   TooltipContent,
   TooltipPortal,
   TooltipTrigger,
-} from "@follow/components/ui/tooltip/index.js"
-import { EllipsisHorizontalTextWithTooltip } from "@follow/components/ui/typography/EllipsisWithTooltip.js"
-import { env } from "@follow/shared/env.desktop"
-import type { FeedModel } from "@follow/store/feed/types"
-import type { InboxModel } from "@follow/store/inbox/types"
-import type { ListModel } from "@follow/store/list/types"
-import { cn } from "@follow/utils/utils"
+} from "@suhui/components/ui/tooltip/index.js"
+import { EllipsisHorizontalTextWithTooltip } from "@suhui/components/ui/typography/EllipsisWithTooltip.js"
+import { env } from "@suhui/shared/env.desktop"
+import type { FeedModel } from "@suhui/store/feed/types"
+import type { InboxModel } from "@suhui/store/inbox/types"
+import type { ListModel } from "@suhui/store/list/types"
+import { cn } from "@suhui/utils/utils"
 
 import { UrlBuilder } from "~/lib/url-builder"
 import { FeedIcon } from "~/modules/feed/feed-icon"

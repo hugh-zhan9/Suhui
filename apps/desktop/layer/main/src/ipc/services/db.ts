@@ -1,9 +1,9 @@
 import * as http from "node:http"
 import * as https from "node:https"
 
-import { EntryService } from "@follow/database/services/entry"
-import { FeedService } from "@follow/database/services/feed"
-import { SubscriptionService } from "@follow/database/services/subscription"
+import { EntryService } from "@suhui/database/services/entry"
+import { FeedService } from "@suhui/database/services/feed"
+import { SubscriptionService } from "@suhui/database/services/subscription"
 import type { IpcContext } from "electron-ipc-decorator"
 import { IpcMethod, IpcService } from "electron-ipc-decorator"
 

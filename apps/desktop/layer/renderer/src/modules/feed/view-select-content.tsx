@@ -1,5 +1,5 @@
-import { SelectContent, SelectItem } from "@follow/components/ui/select/index.jsx"
-import { cn } from "@follow/utils/utils"
+import { SelectContent, SelectItem } from "@suhui/components/ui/select/index.jsx"
+import { cn } from "@suhui/utils/utils"
 import { useTranslation } from "react-i18next"
 
 import { getLocalSupportedViewList } from "~/lib/local-views"

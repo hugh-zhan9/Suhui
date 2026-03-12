@@ -1,15 +1,15 @@
-import { Button } from "@follow/components/ui/button/index.js"
-import type { LinkProps } from "@follow/components/ui/link/LinkWithTooltip.js"
+import { Button } from "@suhui/components/ui/button/index.js"
+import type { LinkProps } from "@suhui/components/ui/link/LinkWithTooltip.js"
 import {
   Tooltip,
   TooltipContent,
   TooltipPortal,
   TooltipTrigger,
-} from "@follow/components/ui/tooltip/index.jsx"
-import { useCorrectZIndex } from "@follow/components/ui/z-index/ctx.js"
-import { env } from "@follow/shared/env.desktop"
-import { feedSyncServices } from "@follow/store/feed/store"
-import { cn, parseSafeUrl, stopPropagation } from "@follow/utils"
+} from "@suhui/components/ui/tooltip/index.jsx"
+import { useCorrectZIndex } from "@suhui/components/ui/z-index/ctx.js"
+import { env } from "@suhui/shared/env.desktop"
+import { feedSyncServices } from "@suhui/store/feed/store"
+import { cn, parseSafeUrl, stopPropagation } from "@suhui/utils"
 import type { MouseEvent } from "react"
 import { use, useCallback } from "react"
 import { useTranslation } from "react-i18next"

@@ -3,9 +3,9 @@ import {
   TooltipContent,
   TooltipPortal,
   TooltipTrigger,
-} from "@follow/components/ui/tooltip/index.js"
-import { useEntry } from "@follow/store/entry/hooks"
-import { cn } from "@follow/utils"
+} from "@suhui/components/ui/tooltip/index.js"
+import { useEntry } from "@suhui/store/entry/hooks"
+import { cn } from "@suhui/utils"
 
 const SUPPORTED_MIME_TYPES = new Set(["application/x-bittorrent"])
 

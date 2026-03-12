@@ -1,4 +1,4 @@
-import { PhCloudCheck } from "@follow/components/icons/PhCloudCheck.js"
+import { PhCloudCheck } from "@suhui/components/icons/PhCloudCheck.js"
 import { SettingSync } from "~/modules/settings/tabs/sync"
 import { SettingsTitle } from "~/modules/settings/title"
 import { defineSettingPageData } from "~/modules/settings/utils"

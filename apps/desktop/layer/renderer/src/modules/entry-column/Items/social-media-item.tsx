@@ -1,7 +1,7 @@
-import { Skeleton } from "@follow/components/ui/skeleton/index.jsx"
-import { useEntry } from "@follow/store/entry/hooks"
-import { useFeedById } from "@follow/store/feed/hooks"
-import { cn } from "@follow/utils/utils"
+import { Skeleton } from "@suhui/components/ui/skeleton/index.jsx"
+import { useEntry } from "@suhui/store/entry/hooks"
+import { useFeedById } from "@suhui/store/feed/hooks"
+import { cn } from "@suhui/utils/utils"
 import { useLayoutEffect, useMemo, useRef } from "react"
 
 import { RelativeTime } from "~/components/ui/datetime"

@@ -1,4 +1,4 @@
-import type { UserModel } from "@follow/store/user/store"
+import type { UserModel } from "@suhui/store/user/store"
 
 export const deduplicateUsers = (users: UserModel[]): UserModel[] => {
   const userMap = new Map<string, UserModel>()

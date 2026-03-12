@@ -1,5 +1,5 @@
-import { useMobile } from "@follow/components/hooks/useMobile.js"
-import { useViewport } from "@follow/components/hooks/useViewport.js"
+import { useMobile } from "@suhui/components/hooks/useMobile.js"
+import { useViewport } from "@suhui/components/hooks/useViewport.js"
 import type { ComponentType, ReactNode, RefAttributes } from "react"
 import { lazy, Suspense } from "react"
 

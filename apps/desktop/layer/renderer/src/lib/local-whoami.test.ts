@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildLocalWhoamiUser } from '@follow/store/user/store'
+import { buildLocalWhoamiUser } from '@suhui/store/user/store'
 
 describe('local whoami user', () => {
   it('应优先使用已持久化的本地显示名称与头像', () => {

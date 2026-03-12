@@ -1,8 +1,8 @@
-import { Logo } from "@follow/components/icons/logo.jsx"
-import { MotionButtonBase } from "@follow/components/ui/button/index.js"
-import { EllipsisHorizontalTextWithTooltip } from "@follow/components/ui/typography/index.js"
-import { useWhoami } from "@follow/store/user/hooks"
-import { cn } from "@follow/utils/utils"
+import { Logo } from "@suhui/components/icons/logo.jsx"
+import { MotionButtonBase } from "@suhui/components/ui/button/index.js"
+import { EllipsisHorizontalTextWithTooltip } from "@suhui/components/ui/typography/index.js"
+import { useWhoami } from "@suhui/store/user/hooks"
+import { cn } from "@suhui/utils/utils"
 import { useTranslation } from "react-i18next"
 
 import { usePresentUserProfileModal } from "~/modules/profile/hooks"

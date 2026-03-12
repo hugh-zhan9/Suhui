@@ -3,10 +3,10 @@ import {
   useMasonryItemRatio,
   useMasonryItemWidth,
   useSetStableMasonryItemRatio,
-} from "@follow/components/ui/masonry/contexts.jsx"
-import { FeedViewType } from "@follow/constants"
-import { useEntry } from "@follow/store/entry/hooks"
-import { cn } from "@follow/utils/utils"
+} from "@suhui/components/ui/masonry/contexts.jsx"
+import { FeedViewType } from "@suhui/constants"
+import { useEntry } from "@suhui/store/entry/hooks"
+import { cn } from "@suhui/utils/utils"
 import type { PropsWithChildren } from "react"
 import { memo, use, useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"

@@ -1,6 +1,6 @@
-import { ScrollArea } from "@follow/components/ui/scroll-area/ScrollArea.js"
-import { getView } from "@follow/constants"
-import { cn } from "@follow/utils/utils"
+import { ScrollArea } from "@suhui/components/ui/scroll-area/ScrollArea.js"
+import { getView } from "@suhui/constants"
+import { cn } from "@suhui/utils/utils"
 
 import { useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
 

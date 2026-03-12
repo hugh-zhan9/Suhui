@@ -1,6 +1,6 @@
-import { createSettingAtom } from "@follow/atoms/helper/setting.js"
-import { defaultUISettings } from "@follow/shared/settings/defaults"
-import type { UISettings } from "@follow/shared/settings/interface"
+import { createSettingAtom } from "@suhui/atoms/helper/setting.js"
+import { defaultUISettings } from "@suhui/shared/settings/defaults"
+import type { UISettings } from "@suhui/shared/settings/interface"
 
 import { getDefaultLanguage } from "~/lib/language"
 import { DEFAULT_ACTION_ORDER } from "~/modules/customize-toolbar/constant"

@@ -1,4 +1,4 @@
-import { createEventBus } from "@follow/utils/event-bus"
+import { createEventBus } from "@suhui/utils/event-bus"
 
 export const ModalEventBus = createEventBus<{
   DISMISS: ModalDisposeEvent

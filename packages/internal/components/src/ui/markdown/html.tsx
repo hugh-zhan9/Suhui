@@ -1,4 +1,4 @@
-import { parseHtml } from "@follow/utils/html"
+import { parseHtml } from "@suhui/utils/html"
 import type { Components } from "hast-util-to-jsx-runtime"
 import { useInsertionEffect } from "react"
 

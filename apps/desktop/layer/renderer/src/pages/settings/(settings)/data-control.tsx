@@ -1,4 +1,4 @@
-import { MaterialSymbolsDatabaseOutline } from "@follow/components/icons/Database.js"
+import { MaterialSymbolsDatabaseOutline } from "@suhui/components/icons/Database.js"
 
 import { SettingDataControl } from "~/modules/settings/tabs/data-control"
 import { SettingsTitle } from "~/modules/settings/title"

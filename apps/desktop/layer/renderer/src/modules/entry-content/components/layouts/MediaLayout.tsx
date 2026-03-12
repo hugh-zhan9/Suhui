@@ -1,5 +1,5 @@
-import { useEntry } from "@follow/store/entry/hooks"
-import { transformVideoUrl } from "@follow/utils/url-for-video"
+import { useEntry } from "@suhui/store/entry/hooks"
+import { transformVideoUrl } from "@suhui/utils/url-for-video"
 
 import { extractVideoUrlFromHtml } from "~/lib/extract-video-url"
 

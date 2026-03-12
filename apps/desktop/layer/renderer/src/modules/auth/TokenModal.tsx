@@ -1,12 +1,12 @@
-import { Button } from "@follow/components/ui/button/index.js"
+import { Button } from "@suhui/components/ui/button/index.js"
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormMessage,
-} from "@follow/components/ui/form/index.jsx"
-import { Input } from "@follow/components/ui/input/index.js"
+} from "@suhui/components/ui/form/index.jsx"
+import { Input } from "@suhui/components/ui/input/index.js"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useState } from "react"
 import { useForm } from "react-hook-form"

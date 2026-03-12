@@ -1,4 +1,4 @@
-import { RSSHubLogo } from "@follow/components/ui/platform-icon/icons.js"
+import { RSSHubLogo } from "@suhui/components/ui/platform-icon/icons.js"
 
 import { useSubViewTitle } from "~/modules/app-layout/subview/hooks"
 import { LocalRsshubConsole } from "~/modules/rsshub/LocalRsshubConsole"

@@ -1,4 +1,4 @@
-import { tracker } from "@follow/tracker"
+import { tracker } from "@suhui/tracker"
 import { useEffect } from "react"
 
 export const BlockError = (props: { error: any; message: string }) => {

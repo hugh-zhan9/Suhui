@@ -1,12 +1,12 @@
 {
-  "extends": "@follow/configs/tsconfig.extend.json",
+  "extends": "@suhui/configs/tsconfig.extend.json",
   "compilerOptions": {
     "baseUrl": ".",
     "jsx": "preserve",
     "declaration": true,
-    "types": ["@follow/types/react", "@follow/types/global", "vite/client"],
+    "types": ["@suhui/types/react", "@suhui/types/global", "vite/client"],
     "paths": {
-      "@follow/models/*": ["./src/*"],
+      "@suhui/models/*": ["./src/*"],
       "@pkg": ["../../package.json"]
     }
   },

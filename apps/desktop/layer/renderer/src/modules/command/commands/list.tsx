@@ -1,4 +1,4 @@
-import { IN_ELECTRON } from "@follow/shared/constants"
+import { IN_ELECTRON } from "@suhui/shared/constants"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 

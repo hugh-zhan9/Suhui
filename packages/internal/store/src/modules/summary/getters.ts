@@ -1,4 +1,4 @@
-import type { SupportedActionLanguage } from "@follow/shared/language"
+import type { SupportedActionLanguage } from "@suhui/shared/language"
 
 import { useSummaryStore } from "./store"
 

@@ -1,7 +1,7 @@
 import { statSync } from "node:fs"
 import fsp from "node:fs/promises"
 
-import { callWindowExpose } from "@follow/shared/bridge"
+import { callWindowExpose } from "@suhui/shared/bridge"
 import { app, dialog } from "electron"
 import path from "pathe"
 

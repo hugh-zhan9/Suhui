@@ -1,4 +1,4 @@
-import { WEB_BUILD } from "@follow/shared/constants"
+import { WEB_BUILD } from "@suhui/shared/constants"
 import type { FC } from "react"
 import { useTranslation } from "react-i18next"
 

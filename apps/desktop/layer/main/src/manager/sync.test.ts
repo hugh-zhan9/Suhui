@@ -20,7 +20,7 @@ function makeTmpDir() {
 // 隔离依赖，防止 Vite 误解析底层 Drizzle schema 导致 Parse error
 vi.mock("./sync-applier", () => ({ dbSyncApplier: {} }))
 vi.mock("./db", () => ({ DBManager: {} }))
-vi.mock("@follow/database/schemas/sync", () => ({}))
+vi.mock("@suhui/database/schemas/sync", () => ({}))
 
 // ======== 测试套件 ========
 

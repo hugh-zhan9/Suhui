@@ -1,4 +1,4 @@
-import { Button } from "@follow/components/ui/button/index.js"
+import { Button } from "@suhui/components/ui/button/index.js"
 import {
   Form,
   FormControl,
@@ -7,20 +7,20 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@follow/components/ui/form/index.jsx"
-import { Input } from "@follow/components/ui/input/index.js"
-import { LoadingCircle } from "@follow/components/ui/loading/index.jsx"
-import { RootPortal } from "@follow/components/ui/portal/index.js"
-import { ScrollArea } from "@follow/components/ui/scroll-area/index.js"
-import { Switch } from "@follow/components/ui/switch/index.jsx"
-import { FeedViewType } from "@follow/constants"
-import { useFeedByIdOrUrl } from "@follow/store/feed/hooks"
-import type { FeedModel } from "@follow/store/feed/types"
-import { useCategories, useSubscriptionByFeedId } from "@follow/store/subscription/hooks"
-import { subscriptionActions, subscriptionSyncService } from "@follow/store/subscription/store"
-import { whoami } from "@follow/store/user/getters"
-import { tracker } from "@follow/tracker"
-import { cn } from "@follow/utils/utils"
+} from "@suhui/components/ui/form/index.jsx"
+import { Input } from "@suhui/components/ui/input/index.js"
+import { LoadingCircle } from "@suhui/components/ui/loading/index.jsx"
+import { RootPortal } from "@suhui/components/ui/portal/index.js"
+import { ScrollArea } from "@suhui/components/ui/scroll-area/index.js"
+import { Switch } from "@suhui/components/ui/switch/index.jsx"
+import { FeedViewType } from "@suhui/constants"
+import { useFeedByIdOrUrl } from "@suhui/store/feed/hooks"
+import type { FeedModel } from "@suhui/store/feed/types"
+import { useCategories, useSubscriptionByFeedId } from "@suhui/store/subscription/hooks"
+import { subscriptionActions, subscriptionSyncService } from "@suhui/store/subscription/store"
+import { whoami } from "@suhui/store/user/getters"
+import { tracker } from "@suhui/tracker"
+import { cn } from "@suhui/utils/utils"
 import type { FeedAnalyticsModel, ParsedEntry } from "@follow-app/client-sdk"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation } from "@tanstack/react-query"

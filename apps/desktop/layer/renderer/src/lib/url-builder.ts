@@ -1,5 +1,5 @@
-import { FeedViewType } from "@follow/constants"
-import { UrlBuilder as UrlBuilderClass } from "@follow/utils/url-builder"
+import { FeedViewType } from "@suhui/constants"
+import { UrlBuilder as UrlBuilderClass } from "@suhui/utils/url-builder"
 
 import { WEB_URL } from "~/constants/env"
 

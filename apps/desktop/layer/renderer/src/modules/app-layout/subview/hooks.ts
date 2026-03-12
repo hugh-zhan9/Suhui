@@ -1,4 +1,4 @@
-import { useTitle } from "@follow/hooks"
+import { useTitle } from "@suhui/hooks"
 import { atom, useAtomValue, useSetAtom } from "jotai"
 import type { ReactNode } from "react"
 import { useEffect } from "react"

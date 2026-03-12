@@ -1,4 +1,4 @@
-import { cn } from "@follow/utils"
+import { cn } from "@suhui/utils"
 import clsx from "clsx"
 import type { PropsWithChildren } from "react"
 import * as React from "react"

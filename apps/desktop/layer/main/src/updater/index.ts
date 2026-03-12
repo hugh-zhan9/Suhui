@@ -1,7 +1,7 @@
 import { fileURLToPath } from "node:url"
 
-import { callWindowExpose } from "@follow/shared/bridge"
-import { DEV } from "@follow/shared/constants"
+import { callWindowExpose } from "@suhui/shared/bridge"
+import { DEV } from "@suhui/shared/constants"
 import type {
   DistributionStatusPayload,
   LatestReleasePayload,

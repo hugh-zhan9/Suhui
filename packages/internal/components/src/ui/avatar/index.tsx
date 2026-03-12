@@ -1,4 +1,4 @@
-import { cn } from "@follow/utils/utils"
+import { cn } from "@suhui/utils/utils"
 import * as AvatarPrimitive from "@radix-ui/react-avatar"
 import * as React from "react"
 

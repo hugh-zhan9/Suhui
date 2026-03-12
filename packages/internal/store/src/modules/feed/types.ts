@@ -1,4 +1,4 @@
-import type { FeedSchema } from "@follow/database/schemas/types"
+import type { FeedSchema } from "@suhui/database/schemas/types"
 
 export type FeedModel = Omit<FeedSchema, "updatedAt"> & {
   updatedAt?: number | null

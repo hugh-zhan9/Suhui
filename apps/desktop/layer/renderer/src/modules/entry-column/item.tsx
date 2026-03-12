@@ -1,7 +1,7 @@
-import { FeedViewType, isFreeRole } from "@follow/constants"
-import { useHasEntry } from "@follow/store/entry/hooks"
-import { useEntryTranslation, usePrefetchEntryTranslation } from "@follow/store/translation/hooks"
-import { useUserRole } from "@follow/store/user/hooks"
+import { FeedViewType, isFreeRole } from "@suhui/constants"
+import { useHasEntry } from "@suhui/store/entry/hooks"
+import { useEntryTranslation, usePrefetchEntryTranslation } from "@suhui/store/translation/hooks"
+import { useUserRole } from "@suhui/store/user/hooks"
 import type { FC } from "react"
 import { memo } from "react"
 

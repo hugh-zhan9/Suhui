@@ -1,4 +1,4 @@
-import { FeedViewType } from "@follow/constants"
+import { FeedViewType } from "@suhui/constants"
 import type { FC } from "react"
 import { memo } from "react"
 

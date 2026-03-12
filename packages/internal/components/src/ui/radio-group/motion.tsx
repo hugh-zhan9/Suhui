@@ -1,6 +1,6 @@
 "use client"
 
-import { cn } from "@follow/utils/utils"
+import { cn } from "@suhui/utils/utils"
 import * as RadioGroupPrimitive from "@radix-ui/react-radio-group"
 import type { HTMLMotionProps, Transition } from "motion/react"
 import { AnimatePresence, m } from "motion/react"

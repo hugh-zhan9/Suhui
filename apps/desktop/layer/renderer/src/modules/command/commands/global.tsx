@@ -1,4 +1,4 @@
-import { EventBus } from "@follow/utils/event-bus"
+import { EventBus } from "@suhui/utils/event-bus"
 import { useTranslation } from "react-i18next"
 
 import { setAppSearchOpen } from "~/atoms/app"
@@ -8,7 +8,7 @@ import { useRegisterCommandEffect } from "../hooks/use-register-command"
 import type { Command, CommandCategory } from "../types"
 import { COMMAND_ID } from "./id"
 
-declare module "@follow/utils/event-bus" {
+declare module "@suhui/utils/event-bus" {
   interface EventBusMap {
     "global:toggle-corner-play": void
     "global:quick-add": void

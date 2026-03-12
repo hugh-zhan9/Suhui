@@ -1,19 +1,19 @@
-import { FeedViewType, getView } from "@follow/constants"
-import { useCollectionEntryList } from "@follow/store/collection/hooks"
-import { isOnboardingEntryUrl } from "@follow/store/constants/onboarding"
+import { FeedViewType, getView } from "@suhui/constants"
+import { useCollectionEntryList } from "@suhui/store/collection/hooks"
+import { isOnboardingEntryUrl } from "@suhui/store/constants/onboarding"
 import {
   useEntryIdsByFeedId,
   useEntryIdsByFeedIds,
   useEntryIdsByInboxId,
   useEntryIdsByListId,
   useEntryIdsByView,
-} from "@follow/store/entry/hooks"
-import { entryActions, useEntryStore } from "@follow/store/entry/store"
-import type { UseEntriesReturn } from "@follow/store/entry/types"
-import { fallbackReturn } from "@follow/store/entry/utils"
-import { useFolderFeedsByFeedId, useIsSubscribed } from "@follow/store/subscription/hooks"
-import { unreadSyncService } from "@follow/store/unread/store"
-import { isBizId } from "@follow/utils/utils"
+} from "@suhui/store/entry/hooks"
+import { entryActions, useEntryStore } from "@suhui/store/entry/store"
+import type { UseEntriesReturn } from "@suhui/store/entry/types"
+import { fallbackReturn } from "@suhui/store/entry/utils"
+import { useFolderFeedsByFeedId, useIsSubscribed } from "@suhui/store/subscription/hooks"
+import { unreadSyncService } from "@suhui/store/unread/store"
+import { isBizId } from "@suhui/utils/utils"
 import { debounce } from "es-toolkit/compat"
 import { useCallback, useEffect, useMemo, useState } from "react"
 

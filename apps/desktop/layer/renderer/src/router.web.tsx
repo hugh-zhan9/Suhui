@@ -1,4 +1,4 @@
-import { IN_ELECTRON } from "@follow/shared/constants"
+import { IN_ELECTRON } from "@suhui/shared/constants"
 import { createBrowserRouter, createHashRouter } from "react-router"
 
 import { ErrorElement } from "./components/common/ErrorElement"

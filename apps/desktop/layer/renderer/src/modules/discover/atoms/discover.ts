@@ -1,4 +1,4 @@
-import { createAtomHooks } from "@follow/utils"
+import { createAtomHooks } from "@suhui/utils"
 import type { DiscoveryItem } from "@follow-app/client-sdk"
 import { atom, useAtomValue } from "jotai"
 import { selectAtom } from "jotai/utils"

@@ -1,5 +1,5 @@
-import { FeedViewType } from "@follow/constants"
-import { sortByAlphabet } from "@follow/utils/utils"
+import { FeedViewType } from "@suhui/constants"
+import { sortByAlphabet } from "@suhui/utils/utils"
 
 import { createSingleArgGetter, createStaticGetter } from "../../lib/helper"
 import { getEntry } from "../entry/getter"

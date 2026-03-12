@@ -1,5 +1,5 @@
-import { useMobile } from "@follow/components/hooks/useMobile.js"
-import { Button, MotionButtonBase } from "@follow/components/ui/button/index.js"
+import { useMobile } from "@suhui/components/hooks/useMobile.js"
+import { Button, MotionButtonBase } from "@suhui/components/ui/button/index.js"
 import {
   Form,
   FormControl,
@@ -7,10 +7,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@follow/components/ui/form/index.jsx"
-import { Input } from "@follow/components/ui/input/index.js"
-import { SegmentGroup, SegmentItem } from "@follow/components/ui/segment/index.js"
-import { ResponsiveSelect } from "@follow/components/ui/select/responsive.js"
+} from "@suhui/components/ui/form/index.jsx"
+import { Input } from "@suhui/components/ui/input/index.js"
+import { SegmentGroup, SegmentItem } from "@suhui/components/ui/segment/index.js"
+import { ResponsiveSelect } from "@suhui/components/ui/select/responsive.js"
 import type { DiscoveryItem } from "@follow-app/client-sdk"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { repository } from "@pkg"

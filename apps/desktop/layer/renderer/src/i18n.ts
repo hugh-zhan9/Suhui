@@ -1,7 +1,7 @@
-import { DEV } from "@follow/shared/constants"
-import { Chain } from "@follow/utils/chain"
-import { EventBus } from "@follow/utils/event-bus"
-import { getStorageNS } from "@follow/utils/ns"
+import { DEV } from "@suhui/shared/constants"
+import { Chain } from "@suhui/utils/chain"
+import { EventBus } from "@suhui/utils/event-bus"
+import { getStorageNS } from "@suhui/utils/ns"
 import i18next from "i18next"
 import { atom } from "jotai"
 import { initReactI18next } from "react-i18next"
@@ -93,7 +93,7 @@ if (import.meta.hot) {
   )
 }
 
-declare module "@follow/utils/event-bus" {
+declare module "@suhui/utils/event-bus" {
   interface CustomEvent {
     I18N_UPDATE: string
   }

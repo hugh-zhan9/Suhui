@@ -1,20 +1,20 @@
-import { Skeleton } from "@follow/components/ui/skeleton/index.jsx"
+import { Skeleton } from "@suhui/components/ui/skeleton/index.jsx"
 import {
   Tooltip,
   TooltipContent,
   TooltipPortal,
   TooltipRoot,
   TooltipTrigger,
-} from "@follow/components/ui/tooltip/index.js"
-import { EllipsisHorizontalTextWithTooltip } from "@follow/components/ui/typography/index.js"
-import { IN_ELECTRON } from "@follow/shared/constants"
-import { useCollectionEntry } from "@follow/store/collection/hooks"
-import { useEntry } from "@follow/store/entry/hooks"
-import type { EntryModel } from "@follow/store/entry/types"
-import { useFeedById } from "@follow/store/feed/hooks"
-import { useInboxById } from "@follow/store/inbox/hooks"
-import { transformVideoUrl } from "@follow/utils/url-for-video"
-import { cn, isSafari } from "@follow/utils/utils"
+} from "@suhui/components/ui/tooltip/index.js"
+import { EllipsisHorizontalTextWithTooltip } from "@suhui/components/ui/typography/index.js"
+import { IN_ELECTRON } from "@suhui/shared/constants"
+import { useCollectionEntry } from "@suhui/store/collection/hooks"
+import { useEntry } from "@suhui/store/entry/hooks"
+import type { EntryModel } from "@suhui/store/entry/types"
+import { useFeedById } from "@suhui/store/feed/hooks"
+import { useInboxById } from "@suhui/store/inbox/hooks"
+import { transformVideoUrl } from "@suhui/utils/url-for-video"
+import { cn, isSafari } from "@suhui/utils/utils"
 import { useMemo } from "react"
 import { titleCase } from "title-case"
 

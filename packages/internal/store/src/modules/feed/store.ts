@@ -1,6 +1,6 @@
-import type { FeedSchema } from "@follow/database/schemas/types"
-import { FEED_EXTRA_DATA_KEYS, FeedService } from "@follow/database/services/feed"
-import { getDateISOString, isBizId } from "@follow/utils"
+import type { FeedSchema } from "@suhui/database/schemas/types"
+import { FEED_EXTRA_DATA_KEYS, FeedService } from "@suhui/database/services/feed"
+import { getDateISOString, isBizId } from "@suhui/utils"
 
 import { api } from "../../context"
 import type { Hydratable, Resetable } from "../../lib/base"

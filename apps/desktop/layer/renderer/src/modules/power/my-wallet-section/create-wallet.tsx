@@ -1,4 +1,4 @@
-import { Button } from "@follow/components/ui/button/index.js"
+import { Button } from "@suhui/components/ui/button/index.js"
 import { Trans, useTranslation } from "react-i18next"
 
 import { useCreateWalletMutation } from "~/queries/wallet"

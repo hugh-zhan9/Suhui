@@ -1,4 +1,4 @@
-import { FeedViewType } from "@follow/constants"
+import { FeedViewType } from "@suhui/constants"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 const {
@@ -13,7 +13,7 @@ const {
   invalidateQueriesMock: vi.fn().mockResolvedValue(undefined),
 }))
 
-vi.mock("@follow/store/context", () => ({
+vi.mock("@suhui/store/context", () => ({
   api: () => ({
     subscriptions: {
       batchUpdate: remoteBatchUpdateMock,
@@ -29,7 +29,7 @@ vi.mock("@follow/store/context", () => ({
   }),
 }))
 
-vi.mock("@follow/database/services/subscription", () => ({
+vi.mock("@suhui/database/services/subscription", () => ({
   SubscriptionService: {
     patchMany: vi.fn().mockResolvedValue(undefined),
     patch: vi.fn().mockResolvedValue(undefined),
@@ -40,8 +40,8 @@ vi.mock("@follow/database/services/subscription", () => ({
   },
 }))
 
-import { subscriptionActions, subscriptionSyncService, useSubscriptionStore } from "@follow/store/subscription/store"
-import { useEntryStore } from "@follow/store/entry/store"
+import { subscriptionActions, subscriptionSyncService, useSubscriptionStore } from "@suhui/store/subscription/store"
+import { useEntryStore } from "@suhui/store/entry/store"
 
 const makeEmptySetMap = () => ({
   [FeedViewType.All]: new Set<string>(),

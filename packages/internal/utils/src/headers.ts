@@ -1,4 +1,4 @@
-import { DEV, MICROSOFT_STORE_BUILD, WEB_BUILD } from "@follow/shared/constants"
+import { DEV, MICROSOFT_STORE_BUILD, WEB_BUILD } from "@suhui/shared/constants"
 
 import { imageRefererMatches } from "./img-proxy"
 

@@ -1,11 +1,11 @@
-import { LoadingWithIcon } from "@follow/components/ui/loading/index.jsx"
+import { LoadingWithIcon } from "@suhui/components/ui/loading/index.jsx"
 import {
   Tooltip,
   TooltipContent,
   TooltipPortal,
   TooltipTrigger,
-} from "@follow/components/ui/tooltip/index.jsx"
-import { cn } from "@follow/utils/utils"
+} from "@suhui/components/ui/tooltip/index.jsx"
+import { cn } from "@suhui/utils/utils"
 import { useTranslation } from "react-i18next"
 
 import { SettingSectionTitle } from "~/modules/settings/section"

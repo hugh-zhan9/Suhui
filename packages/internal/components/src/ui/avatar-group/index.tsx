@@ -1,4 +1,4 @@
-import { cn } from "@follow/utils/utils"
+import { cn } from "@suhui/utils/utils"
 import type { Transition } from "motion/react"
 import { m as motion } from "motion/react"
 import * as React from "react"

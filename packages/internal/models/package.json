@@ -1,5 +1,5 @@
 {
-  "name": "@follow/models",
+  "name": "@suhui/models",
   "private": true,
   "sideEffects": false,
   "exports": {
@@ -21,12 +21,12 @@
   },
   "dependencies": {
     "@follow-app/client-sdk": "catalog:",
-    "@follow/constants": "workspace:*",
-    "@follow/shared": "workspace:*",
-    "@follow/types": "workspace:*",
-    "@follow/utils": "workspace:*"
+    "@suhui/constants": "workspace:*",
+    "@suhui/shared": "workspace:*",
+    "@suhui/types": "workspace:*",
+    "@suhui/utils": "workspace:*"
   },
   "devDependencies": {
-    "@follow/configs": "workspace:*"
+    "@suhui/configs": "workspace:*"
   }
 }

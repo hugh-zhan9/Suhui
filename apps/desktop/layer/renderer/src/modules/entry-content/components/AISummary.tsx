@@ -1,5 +1,5 @@
-import { useEntry } from "@follow/store/entry/hooks"
-import { usePrefetchSummary } from "@follow/store/summary/hooks"
+import { useEntry } from "@suhui/store/entry/hooks"
+import { usePrefetchSummary } from "@suhui/store/summary/hooks"
 import { useTranslation } from "react-i18next"
 
 import { useShowAISummary } from "~/atoms/ai-summary"

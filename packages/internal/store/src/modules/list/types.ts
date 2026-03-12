@@ -1,4 +1,4 @@
-import type { ListSchema } from "@follow/database/schemas/types"
+import type { ListSchema } from "@suhui/database/schemas/types"
 
 export type CreateListModel = Pick<ListModel, "description" | "image" | "view"> & {
   title: string

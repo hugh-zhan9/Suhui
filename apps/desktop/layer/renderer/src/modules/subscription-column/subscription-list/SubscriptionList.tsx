@@ -3,20 +3,20 @@ import {
   useFocusableContainerRef,
   useFocusActions,
   useGlobalFocusableScopeSelector,
-} from "@follow/components/common/Focusable/hooks.js"
-import { ScrollArea } from "@follow/components/ui/scroll-area/index.js"
-import { Skeleton } from "@follow/components/ui/skeleton/index.jsx"
-import { FeedViewType } from "@follow/constants"
-import { useInboxList } from "@follow/store/inbox/hooks"
-import { useListById } from "@follow/store/list/hooks"
+} from "@suhui/components/common/Focusable/hooks.js"
+import { ScrollArea } from "@suhui/components/ui/scroll-area/index.js"
+import { Skeleton } from "@suhui/components/ui/skeleton/index.jsx"
+import { FeedViewType } from "@suhui/constants"
+import { useInboxList } from "@suhui/store/inbox/hooks"
+import { useListById } from "@suhui/store/list/hooks"
 import {
   useCategoryOpenStateByView,
   useFeedsGroupedData,
   useSubscriptionListIds,
-} from "@follow/store/subscription/hooks"
-import { nextFrame } from "@follow/utils/dom"
-import { EventBus } from "@follow/utils/event-bus"
-import { cn, combineCleanupFunctions, isKeyForMultiSelectPressed } from "@follow/utils/utils"
+} from "@suhui/store/subscription/hooks"
+import { nextFrame } from "@suhui/utils/dom"
+import { EventBus } from "@suhui/utils/event-bus"
+import { cn, combineCleanupFunctions, isKeyForMultiSelectPressed } from "@suhui/utils/utils"
 import { memo, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import Selecto from "react-selecto"

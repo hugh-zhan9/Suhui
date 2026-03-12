@@ -1,8 +1,8 @@
-import { Routes } from "@follow/constants"
-import type { DistributionUpdateNotice } from "@follow/shared/bridge"
-import { registerGlobalContext } from "@follow/shared/bridge"
-import { env } from "@follow/shared/env.desktop"
-import { invalidateUserSession } from "@follow/store/user/hooks"
+import { Routes } from "@suhui/constants"
+import type { DistributionUpdateNotice } from "@suhui/shared/bridge"
+import { registerGlobalContext } from "@suhui/shared/bridge"
+import { env } from "@suhui/shared/env.desktop"
+import { invalidateUserSession } from "@suhui/store/user/hooks"
 import { useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import { useLocation } from "react-router"
@@ -24,7 +24,7 @@ import { useSettingModal } from "~/modules/settings/modal/useSettingModal"
 import { handleSessionChanges } from "~/queries/auth"
 import { clearDataIfLoginOtherAccount } from "~/store/utils/clear"
 
-declare module "@follow/components/providers/stable-router-provider.js" {
+declare module "@suhui/components/providers/stable-router-provider.js" {
   interface CustomRoute {
     showSettings: (options?: SettingModalOptions) => void
   }

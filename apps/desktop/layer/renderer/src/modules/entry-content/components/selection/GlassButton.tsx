@@ -1,4 +1,4 @@
-import { cn } from "@follow/utils"
+import { cn } from "@suhui/utils"
 import type { HTMLMotionProps } from "motion/react"
 import { m } from "motion/react"
 

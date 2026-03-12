@@ -1,6 +1,6 @@
-import { useInputComposition } from "@follow/hooks"
-import { stopPropagation } from "@follow/utils/dom"
-import { cn } from "@follow/utils/utils"
+import { useInputComposition } from "@suhui/hooks"
+import { stopPropagation } from "@suhui/utils/dom"
+import { cn } from "@suhui/utils/utils"
 import type { DetailedHTMLProps, InputHTMLAttributes } from "react"
 import * as React from "react"
 // This composition handler is not perfect

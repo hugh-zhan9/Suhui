@@ -1,4 +1,4 @@
-import { createAtomHooks } from "@follow/utils/jotai"
+import { createAtomHooks } from "@suhui/utils/jotai"
 import { atom } from "jotai"
 
 export const [, , useWhoami, , whoami, setWhoami] =

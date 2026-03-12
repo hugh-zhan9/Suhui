@@ -1,5 +1,5 @@
-import { useControlled } from "@follow/hooks"
-import { cn } from "@follow/utils/utils"
+import { useControlled } from "@suhui/hooks"
+import { cn } from "@suhui/utils/utils"
 import { useMemo, useState } from "react"
 
 import { useMobile } from "../../hooks/useMobile"

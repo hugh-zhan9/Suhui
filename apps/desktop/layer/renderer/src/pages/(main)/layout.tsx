@@ -1,4 +1,4 @@
-import { withResponsiveComponent } from "@follow/components/utils/selector.js"
+import { withResponsiveComponent } from "@suhui/components/utils/selector.js"
 
 import { MainDestopLayout } from "~/modules/app-layout/subscription-column/index"
 

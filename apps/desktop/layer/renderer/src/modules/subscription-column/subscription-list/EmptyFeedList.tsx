@@ -1,4 +1,4 @@
-import { stopPropagation } from "@follow/utils/dom"
+import { stopPropagation } from "@suhui/utils/dom"
 import { memo } from "react"
 import { useTranslation } from "react-i18next"
 import { useLocation } from "react-router"

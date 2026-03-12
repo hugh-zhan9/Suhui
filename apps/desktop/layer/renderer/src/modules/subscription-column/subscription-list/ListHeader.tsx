@@ -1,7 +1,7 @@
-import type { FeedViewType } from "@follow/constants"
-import { getView } from "@follow/constants"
-import { useEntryStore } from "@follow/store/entry/store"
-import { stopPropagation } from "@follow/utils"
+import type { FeedViewType } from "@suhui/constants"
+import { getView } from "@suhui/constants"
+import { useEntryStore } from "@suhui/store/entry/store"
+import { stopPropagation } from "@suhui/utils"
 import { useTranslation } from "react-i18next"
 
 import { useNavigateEntry } from "~/hooks/biz/useNavigateEntry"

@@ -1,5 +1,5 @@
-import { jotaiStore } from "@follow/utils/jotai"
-import { isBizId } from "@follow/utils/utils"
+import { jotaiStore } from "@suhui/utils/jotai"
+import { isBizId } from "@suhui/utils/utils"
 import { useQuery } from "@tanstack/react-query"
 import { atom, useAtomValue } from "jotai"
 import { selectAtom } from "jotai/utils"

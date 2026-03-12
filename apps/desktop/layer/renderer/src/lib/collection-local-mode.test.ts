@@ -1,4 +1,4 @@
-import { FeedViewType } from "@follow/constants"
+import { FeedViewType } from "@suhui/constants"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 const { remoteCollectionPostMock, remoteCollectionDeleteMock } = vi.hoisted(() => ({
@@ -6,7 +6,7 @@ const { remoteCollectionPostMock, remoteCollectionDeleteMock } = vi.hoisted(() =
   remoteCollectionDeleteMock: vi.fn(),
 }))
 
-vi.mock("@follow/store/context", () => ({
+vi.mock("@suhui/store/context", () => ({
   api: () => ({
     collections: {
       post: remoteCollectionPostMock,
@@ -18,7 +18,7 @@ vi.mock("@follow/store/context", () => ({
   }),
 }))
 
-vi.mock("@follow/database/services/collection", () => ({
+vi.mock("@suhui/database/services/collection", () => ({
   CollectionService: {
     upsertMany: vi.fn().mockResolvedValue(undefined),
     deleteMany: vi.fn().mockResolvedValue(undefined),
@@ -27,8 +27,8 @@ vi.mock("@follow/database/services/collection", () => ({
   },
 }))
 
-import { collectionSyncService, useCollectionStore } from "@follow/store/collection/store"
-import { entryActions } from "@follow/store/entry/store"
+import { collectionSyncService, useCollectionStore } from "@suhui/store/collection/store"
+import { entryActions } from "@suhui/store/entry/store"
 
 const makeEntry = (id: string) => ({
   id,

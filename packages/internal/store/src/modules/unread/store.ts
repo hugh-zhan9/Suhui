@@ -1,7 +1,7 @@
-import { FeedViewType } from "@follow/constants"
-import type { UnreadSchema } from "@follow/database/schemas/types"
-import { EntryService } from "@follow/database/services/entry"
-import { UnreadService } from "@follow/database/services/unread"
+import { FeedViewType } from "@suhui/constants"
+import type { UnreadSchema } from "@suhui/database/schemas/types"
+import { EntryService } from "@suhui/database/services/entry"
+import { UnreadService } from "@suhui/database/services/unread"
 import type { MarkAllAsReadRequest } from "@follow-app/client-sdk"
 import { isEqual } from "es-toolkit"
 

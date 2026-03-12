@@ -1,24 +1,24 @@
-import { Spring } from "@follow/components/constants/spring.js"
-import { Button } from "@follow/components/ui/button/index.js"
-import { Form, FormField, FormItem, FormLabel } from "@follow/components/ui/form/index.jsx"
-import { Input } from "@follow/components/ui/input/index.js"
-import { RootPortal } from "@follow/components/ui/portal/index.js"
-import { ScrollArea } from "@follow/components/ui/scroll-area/index.js"
+import { Spring } from "@suhui/components/constants/spring.js"
+import { Button } from "@suhui/components/ui/button/index.js"
+import { Form, FormField, FormItem, FormLabel } from "@suhui/components/ui/form/index.jsx"
+import { Input } from "@suhui/components/ui/input/index.js"
+import { RootPortal } from "@suhui/components/ui/portal/index.js"
+import { ScrollArea } from "@suhui/components/ui/scroll-area/index.js"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@follow/components/ui/select/index.jsx"
-import { nextFrame } from "@follow/utils/dom"
+} from "@suhui/components/ui/select/index.jsx"
+import { nextFrame } from "@suhui/utils/dom"
 import {
   MissingOptionalParamError,
   parseFullPathParams,
   parseRegexpPathParams,
   regexpPathToPath,
-} from "@follow/utils/path-parser"
-import { cn } from "@follow/utils/utils"
+} from "@suhui/utils/path-parser"
+import { cn } from "@suhui/utils/utils"
 import type { RSSHubRouteMetadata } from "@follow-app/client-sdk"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { m } from "motion/react"

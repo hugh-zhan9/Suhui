@@ -3,15 +3,15 @@
  */
 import { and, eq, lte } from "drizzle-orm"
 import { DBManager } from "./db"
-import { EntryService } from "@follow/database/services/entry"
-import { SubscriptionService } from "@follow/database/services/subscription"
-import { CollectionService } from "@follow/database/services/collection"
-import { appliedSyncOpsTable, pendingSyncOpsTable } from "@follow/database/schemas/postgres"
-import type { PostgresDB } from "@follow/database/types"
+import { EntryService } from "@suhui/database/services/entry"
+import { SubscriptionService } from "@suhui/database/services/subscription"
+import { CollectionService } from "@suhui/database/services/collection"
+import { appliedSyncOpsTable, pendingSyncOpsTable } from "@suhui/database/schemas/postgres"
+import type { PostgresDB } from "@suhui/database/types"
 import type { SyncOpApplier } from "./sync-import"
 import type { SyncOp } from "./sync-logger"
 import { WindowManager } from "./window"
-import { callWindowExpose } from "@follow/shared/bridge"
+import { callWindowExpose } from "@suhui/shared/bridge"
 
 export class OrphanError extends Error {
   constructor(message: string) {

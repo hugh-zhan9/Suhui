@@ -1,6 +1,6 @@
-import { isOnboardingFeedUrl } from "@follow/store/constants/onboarding"
-import { useFeedStore } from "@follow/store/feed/store"
-import { useSortedCategoriesByUnread } from "@follow/store/unread/hooks"
+import { isOnboardingFeedUrl } from "@suhui/store/constants/onboarding"
+import { useFeedStore } from "@suhui/store/feed/store"
+import { useSortedCategoriesByUnread } from "@suhui/store/unread/hooks"
 import { Fragment, memo, useCallback } from "react"
 
 import { useFeedListSortSelector } from "../atom"

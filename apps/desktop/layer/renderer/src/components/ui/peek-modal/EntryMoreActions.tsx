@@ -1,4 +1,4 @@
-import { RootPortal } from "@follow/components/ui/portal/index.js"
+import { RootPortal } from "@suhui/components/ui/portal/index.js"
 import type { FC } from "react"
 import { useMemo } from "react"
 

@@ -1,5 +1,5 @@
-import { Button } from "@follow/components/ui/button/index.js"
-import { Card, CardContent } from "@follow/components/ui/card/index.js"
+import { Button } from "@suhui/components/ui/button/index.js"
+import { Card, CardContent } from "@suhui/components/ui/card/index.js"
 import {
   Form,
   FormControl,
@@ -7,9 +7,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@follow/components/ui/form/index.jsx"
-import { Input } from "@follow/components/ui/input/Input.js"
-import { whoami } from "@follow/store/user/getters"
+} from "@suhui/components/ui/form/index.jsx"
+import { Input } from "@suhui/components/ui/input/Input.js"
+import { whoami } from "@suhui/store/user/getters"
 import type { RSSHubListItem } from "@follow-app/client-sdk"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useEffect } from "react"

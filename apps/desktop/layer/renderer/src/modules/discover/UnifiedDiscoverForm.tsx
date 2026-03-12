@@ -1,4 +1,4 @@
-import { Button, MotionButtonBase } from "@follow/components/ui/button/index.js"
+import { Button, MotionButtonBase } from "@suhui/components/ui/button/index.js"
 import {
   Form,
   FormControl,
@@ -6,10 +6,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@follow/components/ui/form/index.jsx"
-import { Input } from "@follow/components/ui/input/index.js"
-import { FeedViewType } from "@follow/constants"
-import { cn } from "@follow/utils/utils"
+} from "@suhui/components/ui/form/index.jsx"
+import { Input } from "@suhui/components/ui/input/index.js"
+import { FeedViewType } from "@suhui/constants"
+import { cn } from "@suhui/utils/utils"
 import type { DiscoveryItem } from "@follow-app/client-sdk"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation } from "@tanstack/react-query"

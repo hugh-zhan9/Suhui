@@ -1,5 +1,5 @@
-import { callWindowExposeRenderer } from "@follow/shared/bridge"
-import { detectIsEditableElement } from "@follow/utils"
+import { callWindowExposeRenderer } from "@suhui/shared/bridge"
+import { detectIsEditableElement } from "@suhui/utils"
 
 interface ShortcutDefinition {
   accelerator: string

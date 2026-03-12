@@ -1,4 +1,4 @@
-import { env } from "@follow/shared/env.desktop"
+import { env } from "@suhui/shared/env.desktop"
 
 import { CopyButton } from "~/components/ui/button/CopyButton"
 

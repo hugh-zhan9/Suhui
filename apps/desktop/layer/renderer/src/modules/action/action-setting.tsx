@@ -1,17 +1,17 @@
-import { Button } from "@follow/components/ui/button/index.js"
-import { LoadingWithIcon } from "@follow/components/ui/loading/index.jsx"
-import * as ScrollArea from "@follow/components/ui/scroll-area/ScrollArea.js"
+import { Button } from "@suhui/components/ui/button/index.js"
+import { LoadingWithIcon } from "@suhui/components/ui/loading/index.jsx"
+import * as ScrollArea from "@suhui/components/ui/scroll-area/ScrollArea.js"
 import {
   useActionRules,
   useIsActionDataDirty,
   usePrefetchActions,
   useUpdateActionsMutation,
-} from "@follow/store/action/hooks"
-import type { ActionItem } from "@follow/store/action/store"
-import { actionActions } from "@follow/store/action/store"
-import { nextFrame } from "@follow/utils"
-import { JsonObfuscatedCodec } from "@follow/utils/json-codec"
-import { cn } from "@follow/utils/utils"
+} from "@suhui/store/action/hooks"
+import type { ActionItem } from "@suhui/store/action/store"
+import { actionActions } from "@suhui/store/action/store"
+import { nextFrame } from "@suhui/utils"
+import { JsonObfuscatedCodec } from "@suhui/utils/json-codec"
+import { cn } from "@suhui/utils/utils"
 import { useQueryClient } from "@tanstack/react-query"
 import { m } from "motion/react"
 import { useCallback, useEffect, useRef, useState } from "react"

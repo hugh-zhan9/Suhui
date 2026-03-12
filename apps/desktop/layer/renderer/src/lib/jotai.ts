@@ -1,1 +1,1 @@
-export { createAtomAccessor, createAtomHooks, jotaiStore } from "@follow/utils/jotai"
+export { createAtomAccessor, createAtomHooks, jotaiStore } from "@suhui/utils/jotai"

@@ -1,4 +1,4 @@
-import type { InboxSchema } from "@follow/database/schemas/types"
+import type { InboxSchema } from "@suhui/database/schemas/types"
 
 export type InboxModel = InboxSchema & {
   type: "inbox"

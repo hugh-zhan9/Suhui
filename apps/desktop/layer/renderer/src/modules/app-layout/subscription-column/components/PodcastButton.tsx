@@ -1,7 +1,7 @@
-import { PresentSheet } from "@follow/components/ui/sheet/Sheet.js"
-import { useEntry } from "@follow/store/entry/hooks"
-import type { FeedModel } from "@follow/store/feed/types"
-import { cn } from "@follow/utils/utils"
+import { PresentSheet } from "@suhui/components/ui/sheet/Sheet.js"
+import { useEntry } from "@suhui/store/entry/hooks"
+import type { FeedModel } from "@suhui/store/feed/types"
+import { cn } from "@suhui/utils/utils"
 import { useState } from "react"
 import Marquee from "react-fast-marquee"
 

@@ -1,5 +1,5 @@
 {
-  "name": "@follow/logger",
+  "name": "@suhui/logger",
   "private": true,
   "exports": {
     ".": {
@@ -15,6 +15,6 @@
     "electron-log": "5.4.3"
   },
   "devDependencies": {
-    "@follow/configs": "workspace:*"
+    "@suhui/configs": "workspace:*"
   }
 }

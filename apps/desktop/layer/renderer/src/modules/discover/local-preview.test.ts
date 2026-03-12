@@ -1,4 +1,4 @@
-import { shouldUseElectronLocalPreview } from "@follow/store/feed/local-preview"
+import { shouldUseElectronLocalPreview } from "@suhui/store/feed/local-preview"
 import { describe, expect, it } from "vitest"
 
 describe("shouldUseElectronLocalPreview", () => {

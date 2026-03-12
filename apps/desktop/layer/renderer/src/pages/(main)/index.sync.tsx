@@ -1,5 +1,5 @@
-import { FeedViewType } from "@follow/constants"
-import { useSubscriptionStore } from "@follow/store/subscription/store"
+import { FeedViewType } from "@suhui/constants"
+import { useSubscriptionStore } from "@suhui/store/subscription/store"
 import { redirect } from "react-router"
 
 import { getUISettings } from "~/atoms/settings/ui"

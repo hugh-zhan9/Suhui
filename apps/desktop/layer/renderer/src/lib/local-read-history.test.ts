@@ -4,7 +4,7 @@ const { readHistoriesMock } = vi.hoisted(() => ({
   readHistoriesMock: vi.fn(),
 }))
 
-vi.mock("@follow/store/context", () => ({
+vi.mock("@suhui/store/context", () => ({
   api: () => ({
     entries: {
       readHistories: readHistoriesMock,
@@ -12,7 +12,7 @@ vi.mock("@follow/store/context", () => ({
   }),
 }))
 
-import { entrySyncServices } from "@follow/store/entry/store"
+import { entrySyncServices } from "@suhui/store/entry/store"
 
 describe("local read history", () => {
   beforeEach(() => {

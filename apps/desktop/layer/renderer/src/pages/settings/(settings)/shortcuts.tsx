@@ -1,4 +1,4 @@
-import { isMobile } from "@follow/components/hooks/useMobile.js"
+import { isMobile } from "@suhui/components/hooks/useMobile.js"
 
 import { ShortcutSetting } from "~/modules/settings/tabs/shortcut"
 import { SettingsTitle } from "~/modules/settings/title"

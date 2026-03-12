@@ -1,4 +1,4 @@
-import type { FeedViewType } from "@follow/constants"
+import type { FeedViewType } from "@suhui/constants"
 
 import { countUnreadByView } from "../../../lib/unread-by-view"
 

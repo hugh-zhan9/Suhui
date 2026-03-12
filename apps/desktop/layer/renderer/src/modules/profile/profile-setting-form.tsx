@@ -1,5 +1,5 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@follow/components/ui/avatar/index.jsx"
-import { Button } from "@follow/components/ui/button/index.js"
+import { Avatar, AvatarFallback, AvatarImage } from "@suhui/components/ui/avatar/index.jsx"
+import { Button } from "@suhui/components/ui/button/index.js"
 import {
   Form,
   FormControl,
@@ -8,11 +8,11 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@follow/components/ui/form/index.jsx"
-import { Input, TextArea } from "@follow/components/ui/input/index.js"
-import { useWhoami } from "@follow/store/user/hooks"
-import { userSyncService } from "@follow/store/user/store"
-import { cn } from "@follow/utils/utils"
+} from "@suhui/components/ui/form/index.jsx"
+import { Input, TextArea } from "@suhui/components/ui/input/index.js"
+import { useWhoami } from "@suhui/store/user/hooks"
+import { userSyncService } from "@suhui/store/user/store"
+import { cn } from "@suhui/utils/utils"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation } from "@tanstack/react-query"
 import { useForm } from "react-hook-form"

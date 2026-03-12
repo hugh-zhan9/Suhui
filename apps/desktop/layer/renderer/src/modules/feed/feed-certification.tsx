@@ -1,14 +1,14 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@follow/components/ui/avatar/index.jsx"
+import { Avatar, AvatarFallback, AvatarImage } from "@suhui/components/ui/avatar/index.jsx"
 import {
   Tooltip,
   TooltipContent,
   TooltipPortal,
   TooltipTrigger,
-} from "@follow/components/ui/tooltip/index.jsx"
-import type { FeedModel } from "@follow/store/feed/types"
-import type { ListModel } from "@follow/store/list/types"
-import { useUserById, useWhoami } from "@follow/store/user/hooks"
-import { cn } from "@follow/utils/utils"
+} from "@suhui/components/ui/tooltip/index.jsx"
+import type { FeedModel } from "@suhui/store/feed/types"
+import type { ListModel } from "@suhui/store/list/types"
+import { useUserById, useWhoami } from "@suhui/store/user/hooks"
+import { cn } from "@suhui/utils/utils"
 import { useTranslation } from "react-i18next"
 
 import { useReplaceImgUrlIfNeed } from "~/lib/img-proxy"

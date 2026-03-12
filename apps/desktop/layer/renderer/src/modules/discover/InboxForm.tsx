@@ -1,6 +1,6 @@
-import { Logo } from "@follow/components/icons/logo.jsx"
-import { Button } from "@follow/components/ui/button/index.js"
-import { Card, CardHeader } from "@follow/components/ui/card/index.jsx"
+import { Logo } from "@suhui/components/icons/logo.jsx"
+import { Button } from "@suhui/components/ui/button/index.js"
+import { Card, CardHeader } from "@suhui/components/ui/card/index.jsx"
 import {
   Form,
   FormControl,
@@ -8,13 +8,13 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@follow/components/ui/form/index.jsx"
-import { Input } from "@follow/components/ui/input/index.js"
-import { env } from "@follow/shared/env.desktop"
-import { useInboxById } from "@follow/store/inbox/hooks"
-import { inboxSyncService } from "@follow/store/inbox/store"
-import type { InboxModel } from "@follow/store/inbox/types"
-import { cn } from "@follow/utils/utils"
+} from "@suhui/components/ui/form/index.jsx"
+import { Input } from "@suhui/components/ui/input/index.js"
+import { env } from "@suhui/shared/env.desktop"
+import { useInboxById } from "@suhui/store/inbox/hooks"
+import { inboxSyncService } from "@suhui/store/inbox/store"
+import type { InboxModel } from "@suhui/store/inbox/types"
+import { cn } from "@suhui/utils/utils"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation } from "@tanstack/react-query"
 import { useForm } from "react-hook-form"

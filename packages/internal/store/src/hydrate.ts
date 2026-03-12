@@ -1,4 +1,4 @@
-import { initializeDB, migrateDB } from "@follow/database/db"
+import { initializeDB, migrateDB } from "@suhui/database/db"
 
 import type { Hydratable } from "./lib/base"
 import { collectionActions } from "./modules/collection/store"

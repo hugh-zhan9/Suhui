@@ -1,5 +1,5 @@
-import { EnhanceSet } from "@follow/utils"
-import { jotaiStore } from "@follow/utils/jotai"
+import { EnhanceSet } from "@suhui/utils"
+import { jotaiStore } from "@suhui/utils/jotai"
 import { atom } from "jotai"
 import type { PropsWithChildren } from "react"
 import { useEffect, useMemo } from "react"

@@ -1,13 +1,13 @@
-import { createSettingAtom } from "@follow/atoms/helper/setting.js"
-import { defaultAISettings } from "@follow/shared/settings/defaults"
+import { createSettingAtom } from "@suhui/atoms/helper/setting.js"
+import { defaultAISettings } from "@suhui/shared/settings/defaults"
 import type {
   AISettings,
   AIShortcut,
   AIShortcutTarget,
   MCPService,
-} from "@follow/shared/settings/interface"
-import { DEFAULT_SHORTCUT_TARGETS } from "@follow/shared/settings/interface"
-import { jotaiStore } from "@follow/utils"
+} from "@suhui/shared/settings/interface"
+import { DEFAULT_SHORTCUT_TARGETS } from "@suhui/shared/settings/interface"
+import { jotaiStore } from "@suhui/utils"
 import type { ExtractResponseData, GetStatusConfigsResponse } from "@follow-app/client-sdk"
 import { clamp } from "es-toolkit"
 import { atom, useAtomValue } from "jotai"

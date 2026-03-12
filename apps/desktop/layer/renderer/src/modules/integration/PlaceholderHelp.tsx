@@ -1,5 +1,5 @@
-import { Tooltip, TooltipContent, TooltipTrigger } from "@follow/components/ui/tooltip/index.js"
-import { cn } from "@follow/utils"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@suhui/components/ui/tooltip/index.js"
+import { cn } from "@suhui/utils"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 

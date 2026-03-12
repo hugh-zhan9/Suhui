@@ -1,5 +1,5 @@
-import type { FetchTemplate } from "@follow/shared/settings/interface"
-import { cn } from "@follow/utils"
+import type { FetchTemplate } from "@suhui/shared/settings/interface"
+import { cn } from "@suhui/utils"
 import { useTranslation } from "react-i18next"
 
 import { CustomIntegrationManager } from "./custom-integration-manager"

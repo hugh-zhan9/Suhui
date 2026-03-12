@@ -1,4 +1,4 @@
-import { cn } from "@follow/utils"
+import { cn } from "@suhui/utils"
 import type { ComponentPropsWithoutRef, CSSProperties, FC } from "react"
 
 import styles from "./index.module.css"

@@ -1,5 +1,5 @@
 {
-  "name": "@follow/components",
+  "name": "@suhui/components",
   "type": "module",
   "private": true,
   "sideEffects": false,
@@ -26,10 +26,10 @@
     "@floating-ui/core": "1.7.2",
     "@floating-ui/react": "0.27.17",
     "@floating-ui/react-dom": "2.1.4",
-    "@follow/hooks": "workspace:*",
-    "@follow/models": "workspace:*",
-    "@follow/types": "workspace:*",
-    "@follow/utils": "workspace:*",
+    "@suhui/hooks": "workspace:*",
+    "@suhui/models": "workspace:*",
+    "@suhui/types": "workspace:*",
+    "@suhui/utils": "workspace:*",
     "@headlessui/react": "2.2.9",
     "@lexical/code": "0.40.0",
     "@lexical/link": "0.40.0",
@@ -97,7 +97,7 @@
     "vfile": "5.3.7"
   },
   "devDependencies": {
-    "@follow/configs": "workspace:*",
+    "@suhui/configs": "workspace:*",
     "@types/katex": "0.16.8"
   }
 }

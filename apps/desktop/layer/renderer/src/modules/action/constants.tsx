@@ -1,7 +1,7 @@
-import { ResponsiveSelect } from "@follow/components/ui/select/responsive.js"
-import { ACTION_LANGUAGE_MAP } from "@follow/shared/language"
-import type { ActionAction } from "@follow/store/action/constant"
-import { availableActionMap as availableActionMapOriginal } from "@follow/store/action/constant"
+import { ResponsiveSelect } from "@suhui/components/ui/select/responsive.js"
+import { ACTION_LANGUAGE_MAP } from "@suhui/shared/language"
+import type { ActionAction } from "@suhui/store/action/constant"
+import { availableActionMap as availableActionMapOriginal } from "@suhui/store/action/constant"
 import type { ActionId } from "@follow-app/client-sdk"
 import { useTranslation } from "react-i18next"
 

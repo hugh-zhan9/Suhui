@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const { getRuntimeDbType } = require("@follow/database/schemas/runtime") as {
+const { getRuntimeDbType } = require("@suhui/database/schemas/runtime") as {
   getRuntimeDbType: () => "sqlite" | "postgres"
 }
 

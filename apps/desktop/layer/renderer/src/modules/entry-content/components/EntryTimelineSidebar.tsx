@@ -1,6 +1,6 @@
-import { EllipsisHorizontalTextWithTooltip } from "@follow/components/ui/typography/EllipsisWithTooltip.js"
-import { useEntry } from "@follow/store/entry/hooks"
-import { cn } from "@follow/utils/utils"
+import { EllipsisHorizontalTextWithTooltip } from "@suhui/components/ui/typography/EllipsisWithTooltip.js"
+import { useEntry } from "@suhui/store/entry/hooks"
+import { cn } from "@suhui/utils/utils"
 import type { TargetAndTransition } from "motion/react"
 import { m } from "motion/react"
 

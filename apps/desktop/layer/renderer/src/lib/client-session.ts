@@ -1,4 +1,4 @@
-import { getStorageNS } from "@follow/utils/ns"
+import { getStorageNS } from "@suhui/utils/ns"
 import { nanoid } from "nanoid"
 
 const CLIENT_ID_KEY = getStorageNS("client_id")

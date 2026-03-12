@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs"
 import { mkdir, readdir, rename, rm, stat, writeFile } from "node:fs/promises"
 import os from "node:os"
 
-import { callWindowExpose } from "@follow/shared/bridge"
+import { callWindowExpose } from "@suhui/shared/bridge"
 import type { LatestReleasePayload, RendererUpdate } from "@follow-app/client-sdk"
 import { mainHash, version as appVersion } from "@pkg"
 import log from "electron-log"

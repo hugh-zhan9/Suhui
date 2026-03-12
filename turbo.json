@@ -8,11 +8,11 @@
     "//#format:check": {},
     "//#lint": {},
     "test": {},
-    "@follow/electron-main#build": {
+    "@suhui/electron-main#build": {
       "outputs": ["dist/**"]
     },
     "typecheck": {
-      "dependsOn": ["@follow/electron-main#build"]
+      "dependsOn": ["@suhui/electron-main#build"]
     },
     "build": {
       "outputs": ["dist/**"]

@@ -2,10 +2,10 @@ import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
-} from "@follow/components/ui/hover-card/index.js"
-import { useFeedById } from "@follow/store/feed/hooks"
-import { feedIconSelector } from "@follow/store/feed/selectors"
-import { cn } from "@follow/utils"
+} from "@suhui/components/ui/hover-card/index.js"
+import { useFeedById } from "@suhui/store/feed/hooks"
+import { feedIconSelector } from "@suhui/store/feed/selectors"
+import { cn } from "@suhui/utils"
 import { m } from "motion/react"
 import * as React from "react"
 

@@ -1,4 +1,4 @@
-import type { MCPService } from "@follow/shared/settings/interface"
+import type { MCPService } from "@suhui/shared/settings/interface"
 import type { UpdateConnectionRequest } from "@follow-app/client-sdk"
 
 import { followApi } from "~/lib/api-client"

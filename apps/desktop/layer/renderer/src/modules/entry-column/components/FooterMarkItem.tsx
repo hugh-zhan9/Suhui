@@ -1,4 +1,4 @@
-import { FeedViewType, getView } from "@follow/constants"
+import { FeedViewType, getView } from "@suhui/constants"
 
 import { readableContentMaxWidthClassName } from "~/constants/ui"
 

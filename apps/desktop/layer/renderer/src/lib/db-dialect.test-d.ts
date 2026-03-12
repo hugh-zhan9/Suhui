@@ -1,5 +1,5 @@
-import type * as pgSchema from "@follow/database/schemas/postgres"
-import type { DB } from "@follow/database/types"
+import type * as pgSchema from "@suhui/database/schemas/postgres"
+import type { DB } from "@suhui/database/types"
 import type { NodePgDatabase } from "drizzle-orm/node-postgres"
 import type { PgRemoteDatabase } from "drizzle-orm/pg-proxy"
 import { assertType, test } from "vitest"

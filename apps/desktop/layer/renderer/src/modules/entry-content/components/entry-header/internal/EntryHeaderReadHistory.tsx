@@ -1,5 +1,5 @@
-import { getView } from "@follow/constants"
-import { cn } from "@follow/utils/utils"
+import { getView } from "@suhui/constants"
+import { cn } from "@suhui/utils/utils"
 import { memo } from "react"
 
 import { useUISettingKey } from "~/atoms/settings/ui"

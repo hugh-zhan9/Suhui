@@ -1,4 +1,4 @@
-import { Button } from "@follow/components/ui/button/index.js"
+import { Button } from "@suhui/components/ui/button/index.js"
 import {
   Form,
   FormControl,
@@ -7,18 +7,18 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@follow/components/ui/form/index.jsx"
-import { Input } from "@follow/components/ui/input/index.js"
-import { LoadingCircle } from "@follow/components/ui/loading/index.jsx"
-import { Switch } from "@follow/components/ui/switch/index.jsx"
-import { FeedViewType } from "@follow/constants"
-import { useListById, usePrefetchListById } from "@follow/store/list/hooks"
-import type { ListModel } from "@follow/store/list/types"
-import { useSubscriptionByFeedId } from "@follow/store/subscription/hooks"
-import { subscriptionSyncService } from "@follow/store/subscription/store"
-import { whoami } from "@follow/store/user/getters"
-import { tracker } from "@follow/tracker"
-import { cn } from "@follow/utils/utils"
+} from "@suhui/components/ui/form/index.jsx"
+import { Input } from "@suhui/components/ui/input/index.js"
+import { LoadingCircle } from "@suhui/components/ui/loading/index.jsx"
+import { Switch } from "@suhui/components/ui/switch/index.jsx"
+import { FeedViewType } from "@suhui/constants"
+import { useListById, usePrefetchListById } from "@suhui/store/list/hooks"
+import type { ListModel } from "@suhui/store/list/types"
+import { useSubscriptionByFeedId } from "@suhui/store/subscription/hooks"
+import { subscriptionSyncService } from "@suhui/store/subscription/store"
+import { whoami } from "@suhui/store/user/getters"
+import { tracker } from "@suhui/tracker"
+import { cn } from "@suhui/utils/utils"
 import type { ListAnalyticsSchema } from "@follow-app/client-sdk"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation } from "@tanstack/react-query"

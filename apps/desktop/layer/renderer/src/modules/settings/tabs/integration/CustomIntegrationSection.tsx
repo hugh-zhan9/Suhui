@@ -1,5 +1,5 @@
-import { Button } from "@follow/components/ui/button/index.js"
-import type { CustomIntegration } from "@follow/shared/settings/interface"
+import { Button } from "@suhui/components/ui/button/index.js"
+import type { CustomIntegration } from "@suhui/shared/settings/interface"
 import { nanoid } from "nanoid"
 import { memo, useCallback, useMemo } from "react"
 import { useTranslation } from "react-i18next"

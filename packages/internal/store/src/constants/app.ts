@@ -1,4 +1,4 @@
-import { getStorageNS } from "@follow/utils/ns"
+import { getStorageNS } from "@suhui/utils/ns"
 
 /// Feed
 export const FEED_COLLECTION_LIST = "collections"

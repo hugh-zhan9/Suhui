@@ -1,4 +1,4 @@
-import { defaultGeneralSettings } from "@follow/shared/settings/defaults"
+import { defaultGeneralSettings } from "@suhui/shared/settings/defaults"
 import { describe, expect, it } from "vitest"
 
 describe("mark read defaults", () => {

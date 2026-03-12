@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { useOnce, useTypeScriptHappyCallback } from "@follow/hooks"
+import { useOnce, useTypeScriptHappyCallback } from "@suhui/hooks"
 import type { FC } from "react"
 import { createContext, createElement, use } from "react"
 import { useEventCallback } from "usehooks-ts"

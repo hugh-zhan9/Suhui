@@ -1,4 +1,4 @@
-import { useIsEntryStarred } from "@follow/store/collection/hooks"
+import { useIsEntryStarred } from "@suhui/store/collection/hooks"
 
 import { CommandActionButton } from "~/components/ui/button/CommandActionButton"
 import { useRouteParams } from "~/hooks/biz/useRouteParams"

@@ -1,4 +1,4 @@
-import { usePrefetchEntryDetail } from "@follow/store/entry/hooks"
+import { usePrefetchEntryDetail } from "@suhui/store/entry/hooks"
 import { memo, Suspense } from "react"
 
 import { EntryNotFound } from "~/components/errors/EntryNotFound"

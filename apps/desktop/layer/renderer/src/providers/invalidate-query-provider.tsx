@@ -1,5 +1,5 @@
-import { usePageVisibility } from "@follow/hooks"
-import { IN_ELECTRON } from "@follow/shared/constants"
+import { usePageVisibility } from "@suhui/hooks"
+import { IN_ELECTRON } from "@suhui/shared/constants"
 import { useQueryClient } from "@tanstack/react-query"
 import { useEffect, useRef } from "react"
 

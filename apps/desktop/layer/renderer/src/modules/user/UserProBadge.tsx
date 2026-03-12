@@ -1,5 +1,5 @@
-import { UserRole, UserRoleName } from "@follow/constants"
-import { cn } from "@follow/utils"
+import { UserRole, UserRoleName } from "@suhui/constants"
+import { cn } from "@suhui/utils"
 
 export const UserProBadge = ({
   className,

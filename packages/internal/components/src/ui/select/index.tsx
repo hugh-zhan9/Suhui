@@ -1,4 +1,4 @@
-import { cn } from "@follow/utils/utils"
+import { cn } from "@suhui/utils/utils"
 import * as SelectPrimitive from "@radix-ui/react-select"
 import * as React from "react"
 

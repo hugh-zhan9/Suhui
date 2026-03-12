@@ -1,7 +1,7 @@
-import { FeedViewType } from "@follow/constants"
-import type { CollectionSchema } from "@follow/database/schemas/types"
-import { SubscriptionService } from "@follow/database/services/subscription"
-import { tracker } from "@follow/tracker"
+import { FeedViewType } from "@suhui/constants"
+import type { CollectionSchema } from "@suhui/database/schemas/types"
+import { SubscriptionService } from "@suhui/database/services/subscription"
+import { tracker } from "@suhui/tracker"
 import { omit } from "es-toolkit"
 
 import { api, queryClient } from "../../context"

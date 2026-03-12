@@ -1,4 +1,4 @@
-import { useThemeAtomValue } from "@follow/hooks"
+import { useThemeAtomValue } from "@suhui/hooks"
 import { useTranslation } from "react-i18next"
 
 import { useSetTheme } from "~/hooks/common"

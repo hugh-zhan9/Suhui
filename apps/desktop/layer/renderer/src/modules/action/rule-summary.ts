@@ -1,5 +1,5 @@
-import { filterFieldOptions, filterOperatorOptions } from "@follow/store/action/constant"
-import type { ActionItem } from "@follow/store/action/store"
+import { filterFieldOptions, filterOperatorOptions } from "@suhui/store/action/constant"
+import type { ActionItem } from "@suhui/store/action/store"
 import type { TFunction } from "i18next"
 
 import { availableActionMap } from "./constants"

@@ -3,7 +3,7 @@ import {
   TooltipContent,
   TooltipPortal,
   TooltipTrigger,
-} from "@follow/components/ui/tooltip/index.js"
+} from "@suhui/components/ui/tooltip/index.js"
 import dayjs from "dayjs"
 import { useTranslation } from "react-i18next"
 

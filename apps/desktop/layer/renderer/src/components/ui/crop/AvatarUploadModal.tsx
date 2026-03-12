@@ -1,5 +1,5 @@
-import { Button } from "@follow/components/ui/button/index.js"
-import { DropZone } from "@follow/components/ui/drop-zone/index.js"
+import { Button } from "@suhui/components/ui/button/index.js"
+import { DropZone } from "@suhui/components/ui/drop-zone/index.js"
 import { useCallback, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"

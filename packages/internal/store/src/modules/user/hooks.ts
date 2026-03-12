@@ -1,4 +1,4 @@
-import { tracker } from "@follow/tracker"
+import { tracker } from "@suhui/tracker"
 import { useQuery } from "@tanstack/react-query"
 import { useEffect } from "react"
 

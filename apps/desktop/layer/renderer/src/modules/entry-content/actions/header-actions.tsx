@@ -1,5 +1,5 @@
-import { RootPortal } from "@follow/components/ui/portal/index.js"
-import type { FeedViewType } from "@follow/constants"
+import { RootPortal } from "@suhui/components/ui/portal/index.js"
+import type { FeedViewType } from "@suhui/constants"
 import { memo, useCallback } from "react"
 
 import { MenuItemText } from "~/atoms/context-menu"

@@ -1,4 +1,4 @@
-import { cn } from "@follow/utils/utils"
+import { cn } from "@suhui/utils/utils"
 import { use } from "react"
 import { useContextSelector } from "use-context-selector"
 

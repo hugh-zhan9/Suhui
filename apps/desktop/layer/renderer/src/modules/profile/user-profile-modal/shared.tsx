@@ -1,13 +1,13 @@
-import { useMobile } from "@follow/components/hooks/useMobile.js"
-import { FollowIcon } from "@follow/components/icons/follow.jsx"
-import { AutoResizeHeight } from "@follow/components/ui/auto-resize-height/index.jsx"
-import { Avatar, AvatarFallback, AvatarImage } from "@follow/components/ui/avatar/index.jsx"
-import { Button } from "@follow/components/ui/button/index.js"
-import { LoadingWithIcon } from "@follow/components/ui/loading/index.jsx"
-import { EllipsisHorizontalTextWithTooltip } from "@follow/components/ui/typography/index.js"
-import { useIsSubscribed } from "@follow/store/subscription/hooks"
-import { usePrefetchUser, useUserById } from "@follow/store/user/hooks"
-import { cn } from "@follow/utils/utils"
+import { useMobile } from "@suhui/components/hooks/useMobile.js"
+import { FollowIcon } from "@suhui/components/icons/follow.jsx"
+import { AutoResizeHeight } from "@suhui/components/ui/auto-resize-height/index.jsx"
+import { Avatar, AvatarFallback, AvatarImage } from "@suhui/components/ui/avatar/index.jsx"
+import { Button } from "@suhui/components/ui/button/index.js"
+import { LoadingWithIcon } from "@suhui/components/ui/loading/index.jsx"
+import { EllipsisHorizontalTextWithTooltip } from "@suhui/components/ui/typography/index.js"
+import { useIsSubscribed } from "@suhui/store/subscription/hooks"
+import { usePrefetchUser, useUserById } from "@suhui/store/user/hooks"
+import { cn } from "@suhui/utils/utils"
 import type {
   InboxSubscriptionResponse,
   ListSubscriptionResponse,

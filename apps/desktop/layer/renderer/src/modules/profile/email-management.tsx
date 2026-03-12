@@ -1,17 +1,17 @@
-import { useMobile } from "@follow/components/hooks/useMobile.js"
-import { Button } from "@follow/components/ui/button/index.js"
+import { useMobile } from "@suhui/components/hooks/useMobile.js"
+import { Button } from "@suhui/components/ui/button/index.js"
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormMessage,
-} from "@follow/components/ui/form/index.js"
-import { Input } from "@follow/components/ui/input/Input.js"
-import { Label } from "@follow/components/ui/label/index.js"
-import { useWhoami } from "@follow/store/user/hooks"
-import { userActions } from "@follow/store/user/store"
-import { cn } from "@follow/utils/utils"
+} from "@suhui/components/ui/form/index.js"
+import { Input } from "@suhui/components/ui/input/Input.js"
+import { Label } from "@suhui/components/ui/label/index.js"
+import { useWhoami } from "@suhui/store/user/hooks"
+import { userActions } from "@suhui/store/user/store"
+import { cn } from "@suhui/utils/utils"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation } from "@tanstack/react-query"
 import { m } from "motion/react"

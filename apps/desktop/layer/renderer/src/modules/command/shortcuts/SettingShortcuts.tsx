@@ -1,4 +1,4 @@
-import { KbdCombined } from "@follow/components/ui/kbd/Kbd.js"
+import { KbdCombined } from "@suhui/components/ui/kbd/Kbd.js"
 import { memo } from "react"
 import { useTranslation } from "react-i18next"
 

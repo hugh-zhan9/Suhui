@@ -1,6 +1,6 @@
-import { useEntry } from "@follow/store/entry/hooks"
-import type { EntryModel } from "@follow/store/entry/types"
-import { useIsLoggedIn } from "@follow/store/user/hooks"
+import { useEntry } from "@suhui/store/entry/hooks"
+import type { EntryModel } from "@suhui/store/entry/types"
+import { useIsLoggedIn } from "@suhui/store/user/hooks"
 
 import { useRouteParamsSelector } from "./useRouteParams"
 

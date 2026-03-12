@@ -1,5 +1,5 @@
-import type { FocusableProps } from "@follow/components/common/Focusable/Focusable.js"
-import { Focusable as FocusableComponent } from "@follow/components/common/Focusable/Focusable.js"
+import type { FocusableProps } from "@suhui/components/common/Focusable/Focusable.js"
+import { Focusable as FocusableComponent } from "@suhui/components/common/Focusable/Focusable.js"
 
 import { FloatingLayerScope, HotkeyScope } from "~/constants"
 

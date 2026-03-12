@@ -1,8 +1,8 @@
-import type { FeedViewType } from "@follow/constants"
-import { isOnboardingFeedUrl } from "@follow/store/constants/onboarding"
-import { useFeedStore } from "@follow/store/feed/store"
-import { useSortedIdsByUnread } from "@follow/store/unread/hooks"
-import { sortByAlphabet } from "@follow/utils/utils"
+import type { FeedViewType } from "@suhui/constants"
+import { isOnboardingFeedUrl } from "@suhui/store/constants/onboarding"
+import { useFeedStore } from "@suhui/store/feed/store"
+import { useSortedIdsByUnread } from "@suhui/store/unread/hooks"
+import { sortByAlphabet } from "@suhui/utils/utils"
 import { Fragment, memo, useCallback } from "react"
 
 import { getPreferredTitle } from "~/store/feed/hooks"

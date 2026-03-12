@@ -1,4 +1,4 @@
-import { useEntry } from "@follow/store/entry/hooks"
+import { useEntry } from "@suhui/store/entry/hooks"
 
 import { ImageGallery } from "../actions/picture-gallery"
 

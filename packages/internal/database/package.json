@@ -1,5 +1,5 @@
 {
-  "name": "@follow/database",
+  "name": "@suhui/database",
   "type": "module",
   "private": true,
   "author": "Folo Team",
@@ -38,9 +38,9 @@
   },
   "dependencies": {
     "@follow-app/client-sdk": "catalog:",
-    "@follow/constants": "workspace:*",
-    "@follow/models": "workspace:*",
-    "@follow/shared": "workspace:*",
+    "@suhui/constants": "workspace:*",
+    "@suhui/models": "workspace:*",
+    "@suhui/shared": "workspace:*",
     "ai": "6.0.85",
     "drizzle-orm": "0.45.1",
     "expo-sqlite": "16.0.10",
@@ -49,7 +49,7 @@
     "wa-sqlite": "git+https://github.com/rhashimoto/wa-sqlite.git#v1.0.8"
   },
   "devDependencies": {
-    "@follow/configs": "workspace:*",
+    "@suhui/configs": "workspace:*",
     "@types/pg": "8.10.9",
     "drizzle-kit": "0.31.9"
   }

@@ -1,9 +1,9 @@
-import { WEB_BUILD } from "@follow/shared/constants"
-import { useUserRole } from "@follow/store/user/hooks"
+import { WEB_BUILD } from "@suhui/shared/constants"
+import { useUserRole } from "@suhui/store/user/hooks"
 import {
   getImageProxyUrl as getImageProxyUrlUtils,
   replaceImgUrlIfNeed as replaceImgUrlIfNeedUtils,
-} from "@follow/utils/img-proxy"
+} from "@suhui/utils/img-proxy"
 import { useCallback } from "react"
 
 import { useServerConfigs } from "~/atoms/server-configs"

@@ -1,4 +1,4 @@
-import type { FeedViewType } from "@follow/constants"
+import type { FeedViewType } from "@suhui/constants"
 import { useCallback } from "react"
 import { useTranslation } from "react-i18next"
 

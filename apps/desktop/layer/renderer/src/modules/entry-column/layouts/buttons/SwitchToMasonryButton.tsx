@@ -1,8 +1,8 @@
-import { useMobile } from "@follow/components/hooks/useMobile.js"
-import { ActionButton } from "@follow/components/ui/button/index.js"
-import { SegmentGroup, SegmentItem } from "@follow/components/ui/segment/index.js"
-import { Switch } from "@follow/components/ui/switch/index.js"
-import { clsx, cn } from "@follow/utils/utils"
+import { useMobile } from "@suhui/components/hooks/useMobile.js"
+import { ActionButton } from "@suhui/components/ui/button/index.js"
+import { SegmentGroup, SegmentItem } from "@suhui/components/ui/segment/index.js"
+import { Switch } from "@suhui/components/ui/switch/index.js"
+import { clsx, cn } from "@suhui/utils/utils"
 import {
   HoverCard,
   HoverCardContent,

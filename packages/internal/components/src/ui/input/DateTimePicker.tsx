@@ -1,4 +1,4 @@
-import { clsx, cn } from "@follow/utils/utils"
+import { clsx, cn } from "@suhui/utils/utils"
 import { useDatePicker } from "@rehookify/datepicker"
 import dayjs from "dayjs"
 import { memo, useEffect, useMemo, useState } from "react"

@@ -4,7 +4,7 @@ import {
   getMainSqlite,
   initializeMainDB,
   migrateMainDB,
-} from "@follow/database/db.main"
+} from "@suhui/database/db.main"
 import { app, dialog } from "electron"
 import { join } from "pathe"
 

@@ -1,6 +1,6 @@
-import { Button } from "@follow/components/ui/button/index.js"
-import type { URLSchemeTemplate } from "@follow/shared/settings/interface"
-import { cn } from "@follow/utils"
+import { Button } from "@suhui/components/ui/button/index.js"
+import type { URLSchemeTemplate } from "@suhui/shared/settings/interface"
+import { cn } from "@suhui/utils"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 

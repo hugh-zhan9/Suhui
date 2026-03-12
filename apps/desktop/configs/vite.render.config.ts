@@ -41,7 +41,7 @@ export const viteRenderBaseConfig = {
       "~": resolve("layer/renderer/src"),
       "@pkg": resolve("package.json"),
       "@locales": resolve("../../locales"),
-      "@follow/electron-main": resolve("layer/main/src"),
+      "@suhui/electron-main": resolve("layer/main/src"),
     },
   },
   base: "/",

@@ -1,6 +1,6 @@
 "use client"
 
-import { cn } from "@follow/utils/utils"
+import { cn } from "@suhui/utils/utils"
 import * as ProgressPrimitive from "@radix-ui/react-progress"
 import * as React from "react"
 

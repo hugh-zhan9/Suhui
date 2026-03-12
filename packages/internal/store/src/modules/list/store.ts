@@ -1,4 +1,4 @@
-import { ListService } from "@follow/database/services/list"
+import { ListService } from "@suhui/database/services/list"
 import { clone } from "es-toolkit"
 
 import { api } from "../../context"

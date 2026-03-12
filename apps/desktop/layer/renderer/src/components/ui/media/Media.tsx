@@ -1,5 +1,5 @@
-import { nextFrame } from "@follow/utils/dom"
-import { cn } from "@follow/utils/utils"
+import { nextFrame } from "@suhui/utils/dom"
+import { cn } from "@suhui/utils/utils"
 import { useForceUpdate } from "motion/react"
 import type { FC, ImgHTMLAttributes, VideoHTMLAttributes } from "react"
 import * as React from "react"

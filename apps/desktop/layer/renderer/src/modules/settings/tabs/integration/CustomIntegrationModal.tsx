@@ -1,4 +1,4 @@
-import { Button } from "@follow/components/ui/button/index.js"
+import { Button } from "@suhui/components/ui/button/index.js"
 import {
   Form,
   FormControl,
@@ -7,17 +7,17 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@follow/components/ui/form/index.jsx"
-import { Input, TextArea } from "@follow/components/ui/input/index.js"
-import { KeyValueEditor } from "@follow/components/ui/key-value-editor/index.js"
-import { ScrollArea } from "@follow/components/ui/scroll-area/index.js"
-import { ResponsiveSelect } from "@follow/components/ui/select/responsive.js"
+} from "@suhui/components/ui/form/index.jsx"
+import { Input, TextArea } from "@suhui/components/ui/input/index.js"
+import { KeyValueEditor } from "@suhui/components/ui/key-value-editor/index.js"
+import { ScrollArea } from "@suhui/components/ui/scroll-area/index.js"
+import { ResponsiveSelect } from "@suhui/components/ui/select/responsive.js"
 import type {
   CustomIntegration,
   FetchTemplate,
   URLSchemeTemplate,
-} from "@follow/shared/settings/interface"
-import { nextFrame } from "@follow/utils"
+} from "@suhui/shared/settings/interface"
+import { nextFrame } from "@suhui/utils"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { memo, useCallback, useEffect, useMemo } from "react"
 import { useForm } from "react-hook-form"

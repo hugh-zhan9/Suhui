@@ -1,4 +1,4 @@
-import { MemoedDangerousHTMLStyle } from "@follow/components/common/MemoedDangerousHTMLStyle.js"
+import { MemoedDangerousHTMLStyle } from "@suhui/components/common/MemoedDangerousHTMLStyle.js"
 import katexStyle from "katex/dist/katex.min.css?raw"
 import {
   createElement,

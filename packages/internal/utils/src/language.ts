@@ -1,5 +1,5 @@
-import type { SupportedActionLanguage } from "@follow/shared/language"
-import { ACTION_LANGUAGE_MAP } from "@follow/shared/language"
+import type { SupportedActionLanguage } from "@suhui/shared/language"
+import { ACTION_LANGUAGE_MAP } from "@suhui/shared/language"
 import { franc } from "franc-min"
 
 import { parseHtml } from "./html"

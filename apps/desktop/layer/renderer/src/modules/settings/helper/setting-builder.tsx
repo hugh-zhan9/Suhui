@@ -1,7 +1,7 @@
 /* eslint-disable @eslint-react/no-array-index-key */
-import { UserRole } from "@follow/constants"
-import { SettingPaidLevels } from "@follow/shared/settings/constants"
-import { useUserRole } from "@follow/store/user/hooks"
+import { UserRole } from "@suhui/constants"
+import { SettingPaidLevels } from "@suhui/shared/settings/constants"
+import { useUserRole } from "@suhui/store/user/hooks"
 import type { FC, ReactNode } from "react"
 import * as React from "react"
 import { isValidElement } from "react"
@@ -9,7 +9,7 @@ import { isValidElement } from "react"
 import { SettingActionItem, SettingDescription, SettingInput, SettingSwitch } from "../control"
 import { SettingItemGroup, SettingSectionTitle } from "../section"
 
-export { SettingPaidLevels } from "@follow/shared/settings/constants"
+export { SettingPaidLevels } from "@suhui/shared/settings/constants"
 
 type SharedSettingItem = {
   disabled?: boolean

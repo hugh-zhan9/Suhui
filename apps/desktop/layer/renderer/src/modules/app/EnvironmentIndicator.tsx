@@ -1,16 +1,16 @@
 /* eslint-disable @eslint-react/dom/no-missing-iframe-sandbox */
-import { Button } from "@follow/components/ui/button/index.js"
-import { Switch } from "@follow/components/ui/switch/index.jsx"
+import { Button } from "@suhui/components/ui/button/index.js"
+import { Switch } from "@suhui/components/ui/switch/index.jsx"
 import {
   Tooltip,
   TooltipContent,
   TooltipPortal,
   TooltipTrigger,
-} from "@follow/components/ui/tooltip/index.jsx"
-import { getDBFile } from "@follow/database/db"
-import { DEV, MODE } from "@follow/shared/constants"
-import { env } from "@follow/shared/env.desktop"
-import { useUserRole } from "@follow/store/user/hooks"
+} from "@suhui/components/ui/tooltip/index.jsx"
+import { getDBFile } from "@suhui/database/db"
+import { DEV, MODE } from "@suhui/shared/constants"
+import { env } from "@suhui/shared/env.desktop"
+import { useUserRole } from "@suhui/store/user/hooks"
 
 import { useDebugFeatureValue, useSetDebugFeatureValue } from "~/atoms/debug-feature"
 import { PlainModal } from "~/components/ui/modal/stacked/custom-modal"

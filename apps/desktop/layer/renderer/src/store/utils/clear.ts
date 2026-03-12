@@ -1,5 +1,5 @@
-import { deleteDB } from "@follow/database/db"
-import { getStorageNS } from "@follow/utils/ns"
+import { deleteDB } from "@suhui/database/db"
+import { getStorageNS } from "@suhui/utils/ns"
 
 import { clearImageDimensionsDb } from "../image/db"
 

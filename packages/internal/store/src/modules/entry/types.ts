@@ -1,5 +1,5 @@
-import type { FeedViewType } from "@follow/constants"
-import type { EntrySchema } from "@follow/database/schemas/types"
+import type { FeedViewType } from "@suhui/constants"
+import type { EntrySchema } from "@suhui/database/schemas/types"
 
 export type EntryModel = Omit<
   EntrySchema,

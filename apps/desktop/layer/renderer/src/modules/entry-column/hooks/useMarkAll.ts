@@ -1,6 +1,6 @@
-import type { FeedViewType } from "@follow/constants"
-import { getCategoryFeedIds } from "@follow/store/subscription/getter"
-import { unreadSyncService } from "@follow/store/unread/store"
+import type { FeedViewType } from "@suhui/constants"
+import { getCategoryFeedIds } from "@suhui/store/subscription/getter"
+import { unreadSyncService } from "@suhui/store/unread/store"
 
 import { getGeneralSettings } from "~/atoms/settings/general"
 

@@ -1,7 +1,7 @@
-import { Card, CardContent, CardHeader } from "@follow/components/ui/card/index.jsx"
-import { FeedViewType, getView } from "@follow/constants"
-import type { FeedModel } from "@follow/store/feed/types"
-import { cn } from "@follow/utils/utils"
+import { Card, CardContent, CardHeader } from "@suhui/components/ui/card/index.jsx"
+import { FeedViewType, getView } from "@suhui/constants"
+import type { FeedModel } from "@suhui/store/feed/types"
+import { cn } from "@suhui/utils/utils"
 import type { ParsedEntry } from "@follow-app/client-sdk"
 import { cloneElement, useMemo } from "react"
 

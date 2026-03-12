@@ -1,19 +1,19 @@
-import { ScrollArea } from "@follow/components/ui/scroll-area/index.js"
-import { EllipsisHorizontalTextWithTooltip } from "@follow/components/ui/typography/EllipsisWithTooltip.js"
-import { getView } from "@follow/constants"
-import { getEntry, getEntryIdsByFeedId } from "@follow/store/entry/getter"
-import { useFeedById } from "@follow/store/feed/hooks"
-import { useListById } from "@follow/store/list/hooks"
+import { ScrollArea } from "@suhui/components/ui/scroll-area/index.js"
+import { EllipsisHorizontalTextWithTooltip } from "@suhui/components/ui/typography/EllipsisWithTooltip.js"
+import { getView } from "@suhui/constants"
+import { getEntry, getEntryIdsByFeedId } from "@suhui/store/entry/getter"
+import { useFeedById } from "@suhui/store/feed/hooks"
+import { useListById } from "@suhui/store/list/hooks"
 import {
   getFeedSubscriptionByViewSelector,
   getListSubscriptionByViewSelector,
-} from "@follow/store/subscription/getter"
+} from "@suhui/store/subscription/getter"
 import type {
   useFeedSubscriptionByView,
   useListSubscriptionByView,
-} from "@follow/store/subscription/hooks"
-import { useSubscriptionStore } from "@follow/store/subscription/store"
-import { cn } from "@follow/utils/utils"
+} from "@suhui/store/subscription/hooks"
+import { useSubscriptionStore } from "@suhui/store/subscription/store"
+import { cn } from "@suhui/utils/utils"
 import { useForceUpdate } from "motion/react"
 import { useCallback, useRef } from "react"
 import { useTranslation } from "react-i18next"

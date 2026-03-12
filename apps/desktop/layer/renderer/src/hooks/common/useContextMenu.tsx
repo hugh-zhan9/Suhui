@@ -1,4 +1,4 @@
-import { useLongPress } from "@follow/hooks"
+import { useLongPress } from "@suhui/hooks"
 
 interface UseContextMenuOptions {
   onContextMenu: (e: React.MouseEvent) => void

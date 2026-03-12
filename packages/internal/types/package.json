@@ -1,5 +1,5 @@
 {
-  "name": "@follow/types",
+  "name": "@suhui/types",
   "private": true,
   "sideEffects": false,
   "exports": {

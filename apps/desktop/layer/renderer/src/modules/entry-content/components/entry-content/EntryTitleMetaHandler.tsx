@@ -1,6 +1,6 @@
-import { useEntry } from "@follow/store/entry/hooks"
-import { useFeedById } from "@follow/store/feed/hooks"
-import { useInboxById } from "@follow/store/inbox/hooks"
+import { useEntry } from "@suhui/store/entry/hooks"
+import { useFeedById } from "@suhui/store/feed/hooks"
+import { useInboxById } from "@suhui/store/inbox/hooks"
 import { useEffect } from "react"
 
 import { setEntryTitleMeta } from "../../atoms"

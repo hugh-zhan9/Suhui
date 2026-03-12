@@ -1,5 +1,5 @@
-import { env } from "@follow/shared/env.desktop"
-import { createDesktopAPIHeaders } from "@follow/utils/headers"
+import { env } from "@suhui/shared/env.desktop"
+import { createDesktopAPIHeaders } from "@suhui/utils/headers"
 import { FollowClient } from "@follow-app/client-sdk"
 import PKG, { mainHash, version as appVersion } from "@pkg"
 import { gte } from "semver"

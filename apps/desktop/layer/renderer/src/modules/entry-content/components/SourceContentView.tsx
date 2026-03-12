@@ -1,5 +1,5 @@
-import { Spring } from "@follow/components/constants/spring.js"
-import { IN_ELECTRON } from "@follow/shared/constants"
+import { Spring } from "@suhui/components/constants/spring.js"
+import { IN_ELECTRON } from "@suhui/shared/constants"
 import { useEffect, useRef, useState } from "react"
 
 import { useShowSourceContent } from "~/atoms/source-content"

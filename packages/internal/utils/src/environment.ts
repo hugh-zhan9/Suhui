@@ -1,4 +1,4 @@
-import { IN_ELECTRON, MODE } from "@follow/shared/constants"
+import { IN_ELECTRON, MODE } from "@suhui/shared/constants"
 import { nanoid } from "nanoid"
 
 import { detectBrowser, getOS } from "./utils"

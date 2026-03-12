@@ -1,4 +1,4 @@
-import { nextFrame } from "@follow/utils/dom"
+import { nextFrame } from "@suhui/utils/dom"
 import { throttle } from "es-toolkit/compat"
 import { useCallback, useLayoutEffect, useRef, useState } from "react"
 

@@ -1,4 +1,4 @@
-import { EventBus } from "@follow/utils/event-bus"
+import { EventBus } from "@suhui/utils/event-bus"
 import i18next from "i18next"
 import { useAtom } from "jotai"
 import type { FC, PropsWithChildren } from "react"

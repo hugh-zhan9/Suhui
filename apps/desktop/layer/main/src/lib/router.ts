@@ -1,5 +1,5 @@
-import { callWindowExpose } from "@follow/shared/bridge"
-import { extractElectronWindowOptions } from "@follow/shared/electron"
+import { callWindowExpose } from "@suhui/shared/bridge"
+import { extractElectronWindowOptions } from "@suhui/shared/electron"
 import type { BrowserWindow } from "electron/main"
 
 import { logger } from "~/logger"

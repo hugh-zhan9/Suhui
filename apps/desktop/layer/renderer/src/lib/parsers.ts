@@ -1,4 +1,4 @@
-import { isTwitterUrl, isXUrl } from "@follow/utils/link-parser"
+import { isTwitterUrl, isXUrl } from "@suhui/utils/link-parser"
 
 export const parseSocialMedia = (parsedUrl?: string | null) => {
   if (!parsedUrl) return

@@ -1,4 +1,4 @@
-import { useEntry } from "@follow/store/entry/hooks"
+import { useEntry } from "@suhui/store/entry/hooks"
 import { useEffect } from "react"
 
 import { enableShowSourceContent } from "~/atoms/source-content"

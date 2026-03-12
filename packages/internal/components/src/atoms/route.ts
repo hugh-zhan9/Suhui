@@ -1,4 +1,4 @@
-import { createAtomHooks } from "@follow/utils/jotai"
+import { createAtomHooks } from "@suhui/utils/jotai"
 import { atom, useAtomValue } from "jotai"
 import { selectAtom } from "jotai/utils"
 import { useMemo } from "react"

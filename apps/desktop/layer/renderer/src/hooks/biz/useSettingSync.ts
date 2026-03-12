@@ -1,6 +1,6 @@
-import { useRegisterGlobalContext } from "@follow/shared/bridge"
-import { EventBus } from "@follow/utils/event-bus"
-import { getStorageNS } from "@follow/utils/ns"
+import { useRegisterGlobalContext } from "@suhui/shared/bridge"
+import { EventBus } from "@suhui/utils/event-bus"
+import { getStorageNS } from "@suhui/utils/ns"
 import { useEffect } from "react"
 import { ipcServices } from "~/lib/client"
 

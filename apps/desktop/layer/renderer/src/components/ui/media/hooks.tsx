@@ -1,4 +1,4 @@
-import { isMobile } from "@follow/components/hooks/useMobile.js"
+import { isMobile } from "@suhui/components/hooks/useMobile.js"
 import { use, useCallback } from "react"
 
 import { PlainModal } from "../modal/stacked/custom-modal"

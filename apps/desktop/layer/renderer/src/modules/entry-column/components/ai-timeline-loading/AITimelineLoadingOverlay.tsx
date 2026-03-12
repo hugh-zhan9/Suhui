@@ -1,6 +1,6 @@
 import "./AITimelineLoadingOverlay.css"
 
-import { Spring } from "@follow/components/constants/spring.js"
+import { Spring } from "@suhui/components/constants/spring.js"
 import { AnimatePresence, m } from "motion/react"
 import type { FC } from "react"
 

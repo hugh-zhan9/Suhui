@@ -1,6 +1,6 @@
-import { useEntry } from "@follow/store/entry/hooks"
-import { useFeedById } from "@follow/store/feed/hooks"
-import { cn } from "@follow/utils/utils"
+import { useEntry } from "@suhui/store/entry/hooks"
+import { useFeedById } from "@suhui/store/feed/hooks"
+import { cn } from "@suhui/utils/utils"
 
 import { Media } from "~/components/ui/media/Media"
 import { readableContentMaxWidthClassName } from "~/constants/ui"

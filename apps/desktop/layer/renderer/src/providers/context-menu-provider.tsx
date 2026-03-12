@@ -1,8 +1,8 @@
 import {
   useGlobalFocusableHasScope,
   useSetGlobalFocusableScope,
-} from "@follow/components/common/Focusable/hooks.js"
-import { useMobile } from "@follow/components/hooks/useMobile.js"
+} from "@suhui/components/common/Focusable/hooks.js"
+import { useMobile } from "@suhui/components/hooks/useMobile.js"
 import {
   ContextMenu,
   ContextMenuCheckboxItem,
@@ -14,10 +14,10 @@ import {
   ContextMenuSubContent,
   ContextMenuSubTrigger,
   ContextMenuTrigger,
-} from "@follow/components/ui/context-menu/context-menu.js"
-import { KbdCombined } from "@follow/components/ui/kbd/Kbd.js"
-import { nextFrame, preventDefault } from "@follow/utils/dom"
-import { cn } from "@follow/utils/utils"
+} from "@suhui/components/ui/context-menu/context-menu.js"
+import { KbdCombined } from "@suhui/components/ui/kbd/Kbd.js"
+import { nextFrame, preventDefault } from "@suhui/utils/dom"
+import { cn } from "@suhui/utils/utils"
 import { Fragment, memo, useCallback, useEffect, useRef } from "react"
 import { useHotkeys } from "react-hotkeys-hook"
 

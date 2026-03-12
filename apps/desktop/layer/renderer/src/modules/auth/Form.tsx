@@ -1,5 +1,5 @@
-import { Button } from "@follow/components/ui/button/index.js"
-import { Divider } from "@follow/components/ui/divider/index.js"
+import { Button } from "@suhui/components/ui/button/index.js"
+import { Divider } from "@suhui/components/ui/divider/index.js"
 import {
   Form,
   FormControl,
@@ -7,11 +7,11 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@follow/components/ui/form/index.js"
-import { Input } from "@follow/components/ui/input/Input.js"
-import type { LoginRuntime } from "@follow/shared/auth"
-import { IN_ELECTRON } from "@follow/shared/constants"
-import { env } from "@follow/shared/env.desktop"
+} from "@suhui/components/ui/form/index.js"
+import { Input } from "@suhui/components/ui/input/Input.js"
+import type { LoginRuntime } from "@suhui/shared/auth"
+import { IN_ELECTRON } from "@suhui/shared/constants"
+import { env } from "@suhui/shared/env.desktop"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"

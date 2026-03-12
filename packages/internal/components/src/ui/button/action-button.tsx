@@ -1,10 +1,10 @@
 import {
   useFocusable,
   useGlobalFocusableScopeSelector,
-} from "@follow/components/common/Focusable/index.js"
-import type { EnhanceSet } from "@follow/utils"
-import { stopPropagation } from "@follow/utils/dom"
-import { cn, getOS } from "@follow/utils/utils"
+} from "@suhui/components/common/Focusable/index.js"
+import type { EnhanceSet } from "@suhui/utils"
+import { stopPropagation } from "@suhui/utils/dom"
+import { cn, getOS } from "@suhui/utils/utils"
 import * as React from "react"
 import { useCallback, useState } from "react"
 import type { Options } from "react-hotkeys-hook"

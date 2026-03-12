@@ -1,5 +1,5 @@
-import { MemoedDangerousHTMLStyle } from "@follow/components/common/MemoedDangerousHTMLStyle.jsx"
-import { RootPortal } from "@follow/components/ui/portal/index.js"
+import { MemoedDangerousHTMLStyle } from "@suhui/components/common/MemoedDangerousHTMLStyle.jsx"
+import { RootPortal } from "@suhui/components/ui/portal/index.js"
 import type { FC, PropsWithChildren } from "react"
 import { createContext, use, useCallback, useState } from "react"
 

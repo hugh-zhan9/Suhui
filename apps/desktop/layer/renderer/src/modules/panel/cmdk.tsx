@@ -1,21 +1,21 @@
-import { EmptyIcon } from "@follow/components/icons/empty.jsx"
-import { Logo } from "@follow/components/icons/logo.jsx"
-import { ScrollArea } from "@follow/components/ui/scroll-area/index.js"
+import { EmptyIcon } from "@suhui/components/icons/empty.jsx"
+import { Logo } from "@suhui/components/icons/logo.jsx"
+import { ScrollArea } from "@suhui/components/ui/scroll-area/index.js"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@follow/components/ui/select/index.jsx"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@follow/components/ui/tooltip/index.jsx"
-import type { FeedViewType } from "@follow/constants"
-import { useInputComposition } from "@follow/hooks"
-import { getFeedById } from "@follow/store/feed/getter"
-import { getSubscriptionByFeedId } from "@follow/store/subscription/getter"
-import { getUnreadById } from "@follow/store/unread/getters"
-import { tracker } from "@follow/tracker"
-import { clsx, cn } from "@follow/utils/utils"
+} from "@suhui/components/ui/select/index.jsx"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@suhui/components/ui/tooltip/index.jsx"
+import type { FeedViewType } from "@suhui/constants"
+import { useInputComposition } from "@suhui/hooks"
+import { getFeedById } from "@suhui/store/feed/getter"
+import { getSubscriptionByFeedId } from "@suhui/store/subscription/getter"
+import { getUnreadById } from "@suhui/store/unread/getters"
+import { tracker } from "@suhui/tracker"
+import { clsx, cn } from "@suhui/utils/utils"
 import { Command } from "cmdk"
 import type { FC } from "react"
 import * as React from "react"

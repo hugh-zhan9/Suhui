@@ -1,4 +1,4 @@
-import { cn } from "@follow/utils/utils"
+import { cn } from "@suhui/utils/utils"
 import type { ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 

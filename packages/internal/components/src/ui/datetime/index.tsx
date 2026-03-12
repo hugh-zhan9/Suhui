@@ -1,4 +1,4 @@
-import { stopPropagation } from "@follow/utils/dom"
+import { stopPropagation } from "@suhui/utils/dom"
 import dayjs from "dayjs"
 import type { FC } from "react"
 import * as React from "react"

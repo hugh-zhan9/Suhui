@@ -1,6 +1,6 @@
-import { Auth } from "@follow/shared/auth"
-import { env } from "@follow/shared/env.desktop"
-import { createDesktopAPIHeaders } from "@follow/utils/headers"
+import { Auth } from "@suhui/shared/auth"
+import { env } from "@suhui/shared/env.desktop"
+import { createDesktopAPIHeaders } from "@suhui/utils/headers"
 import PKG from "@pkg"
 
 const headers = createDesktopAPIHeaders({ version: PKG.version })

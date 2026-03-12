@@ -1,5 +1,5 @@
-import { SYSTEM_CAN_UNDER_BLUR_WINDOW } from "@follow/shared/constants"
-import { cn } from "@follow/utils/utils"
+import { SYSTEM_CAN_UNDER_BLUR_WINDOW } from "@suhui/shared/constants"
+import { cn } from "@suhui/utils/utils"
 import type * as React from "react"
 import type { ComponentPropsWithoutRef, ElementType } from "react"
 

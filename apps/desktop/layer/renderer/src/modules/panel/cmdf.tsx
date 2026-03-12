@@ -2,11 +2,11 @@
  * @see https://github.com/toeverything/AFFiNE/blob/98e35384a6f71bf64c668b8f13afcaf28c9b8e97/packages/frontend/core/src/modules/find-in-page/view/find-in-page-modal.tsx
  * @copyright AFFiNE, Folo
  */
-import { Spring } from "@follow/components/constants/spring.js"
-import { RootPortal } from "@follow/components/ui/portal/index.jsx"
-import { useInputComposition, useRefValue } from "@follow/hooks"
-import { useSubscribeElectronEvent } from "@follow/shared/event"
-import { nextFrame } from "@follow/utils/dom"
+import { Spring } from "@suhui/components/constants/spring.js"
+import { RootPortal } from "@suhui/components/ui/portal/index.jsx"
+import { useInputComposition, useRefValue } from "@suhui/hooks"
+import { useSubscribeElectronEvent } from "@suhui/shared/event"
+import { nextFrame } from "@suhui/utils/dom"
 import { AnimatePresence, m } from "motion/react"
 import type { FC } from "react"
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"

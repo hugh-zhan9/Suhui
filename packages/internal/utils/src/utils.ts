@@ -1,4 +1,4 @@
-import { WEB_BUILD } from "@follow/shared/constants"
+import { WEB_BUILD } from "@suhui/shared/constants"
 import type { ClassValue } from "clsx"
 import { clsx } from "clsx"
 import dayjs from "dayjs"

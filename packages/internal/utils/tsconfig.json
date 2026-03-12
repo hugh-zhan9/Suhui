@@ -1,11 +1,11 @@
 {
-  "extends": "@follow/configs/tsconfig.extend.json",
+  "extends": "@suhui/configs/tsconfig.extend.json",
   "compilerOptions": {
     "baseUrl": ".",
     "declaration": false,
-    "types": ["@follow/types/global", "@follow/types/vite"],
+    "types": ["@suhui/types/global", "@suhui/types/vite"],
     "paths": {
-      "@follow/utils/*": ["./src/*"]
+      "@suhui/utils/*": ["./src/*"]
     }
   }
 }

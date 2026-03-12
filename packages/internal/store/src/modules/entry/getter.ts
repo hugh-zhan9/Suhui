@@ -1,4 +1,4 @@
-import type { FeedViewType } from "@follow/constants"
+import type { FeedViewType } from "@suhui/constants"
 
 import { createSingleArgGetter, createStaticGetter } from "../../lib/helper"
 import { getSubscriptionByEntryId } from "../subscription/getter"

@@ -1,4 +1,4 @@
-import { cn } from "@follow/utils/utils"
+import { cn } from "@suhui/utils/utils"
 import * as Dialog from "@radix-ui/react-dialog"
 import { AnimatePresence } from "motion/react"
 import type { FC } from "react"

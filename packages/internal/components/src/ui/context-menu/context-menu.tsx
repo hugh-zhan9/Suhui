@@ -1,4 +1,4 @@
-import { cn } from "@follow/utils/utils"
+import { cn } from "@suhui/utils/utils"
 import * as ContextMenuPrimitive from "@radix-ui/react-context-menu"
 import * as React from "react"
 
@@ -219,4 +219,4 @@ export {
   ContextMenuTrigger,
 }
 
-export { RootPortal as ContextMenuPortal } from "@follow/components/ui/portal/index.jsx"
+export { RootPortal as ContextMenuPortal } from "@suhui/components/ui/portal/index.jsx"

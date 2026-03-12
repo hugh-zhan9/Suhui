@@ -1,5 +1,5 @@
 {
-  "name": "@follow/hooks",
+  "name": "@suhui/hooks",
   "private": true,
   "sideEffects": false,
   "exports": {
@@ -12,14 +12,14 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@follow/shared": "workspace:*",
-    "@follow/types": "workspace:*",
-    "@follow/utils": "workspace:*",
+    "@suhui/shared": "workspace:*",
+    "@suhui/types": "workspace:*",
+    "@suhui/utils": "workspace:*",
     "foxact": "0.2.52",
     "jotai": "2.17.1",
     "usehooks-ts": "3.1.1"
   },
   "devDependencies": {
-    "@follow/configs": "workspace:*"
+    "@suhui/configs": "workspace:*"
   }
 }

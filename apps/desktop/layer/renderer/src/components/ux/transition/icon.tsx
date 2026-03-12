@@ -1,5 +1,5 @@
-import { Spring } from "@follow/components/constants/spring.js"
-import { cn } from "@follow/utils/utils"
+import { Spring } from "@suhui/components/constants/spring.js"
+import { cn } from "@suhui/utils/utils"
 import type { TargetAndTransition, Transition } from "motion/react"
 import { AnimatePresence, m } from "motion/react"
 import * as React from "react"

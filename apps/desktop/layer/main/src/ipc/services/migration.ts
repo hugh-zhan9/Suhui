@@ -1,8 +1,8 @@
 import { DBManager } from "~/manager/db"
 import { IpcContext, IpcMethod, IpcService } from "electron-ipc-decorator"
-import { FeedService } from "@follow/database/services/feed"
-import { SubscriptionService } from "@follow/database/services/subscription"
-import { EntryService } from "@follow/database/services/entry"
+import { FeedService } from "@suhui/database/services/feed"
+import { SubscriptionService } from "@suhui/database/services/subscription"
+import { EntryService } from "@suhui/database/services/entry"
 
 export class MigrationService extends IpcService {
   static override readonly groupName = "migration"

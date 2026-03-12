@@ -1,6 +1,6 @@
-import { MotionButtonBase } from "@follow/components/ui/button/index.js"
-import { ScrollArea } from "@follow/components/ui/scroll-area/index.js"
-import { clsx } from "@follow/utils/utils"
+import { MotionButtonBase } from "@suhui/components/ui/button/index.js"
+import { ScrollArea } from "@suhui/components/ui/scroll-area/index.js"
+import { clsx } from "@suhui/utils/utils"
 import { m, useDragControls } from "motion/react"
 import { useTranslation } from "react-i18next"
 

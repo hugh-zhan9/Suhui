@@ -1,12 +1,12 @@
-import { Button } from "@follow/components/ui/button/index.js"
-import { LoadingCircle } from "@follow/components/ui/loading/index.jsx"
-import { ScrollArea } from "@follow/components/ui/scroll-area/index.js"
+import { Button } from "@suhui/components/ui/button/index.js"
+import { LoadingCircle } from "@suhui/components/ui/loading/index.jsx"
+import { ScrollArea } from "@suhui/components/ui/scroll-area/index.js"
 import {
   Tooltip,
   TooltipContent,
   TooltipPortal,
   TooltipTrigger,
-} from "@follow/components/ui/tooltip/index.jsx"
+} from "@suhui/components/ui/tooltip/index.jsx"
 import { useEffect } from "react"
 import { Trans } from "react-i18next"
 import { Link } from "react-router"

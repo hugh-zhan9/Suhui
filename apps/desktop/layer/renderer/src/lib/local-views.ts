@@ -1,4 +1,4 @@
-import { FeedViewType, getViewList, type ViewDefinition } from "@follow/constants"
+import { FeedViewType, getViewList, type ViewDefinition } from "@suhui/constants"
 
 const DISABLED_LOCAL_VIEWS = new Set<FeedViewType>([])
 const DISABLED_TRENDING_VIEWS = new Set<FeedViewType>([

@@ -5,8 +5,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@follow/components/ui/table/index.jsx"
-import { useInboxById, useInboxList } from "@follow/store/inbox/hooks"
+} from "@suhui/components/ui/table/index.jsx"
+import { useInboxById, useInboxList } from "@suhui/store/inbox/hooks"
 import { memo } from "react"
 import { useTranslation } from "react-i18next"
 

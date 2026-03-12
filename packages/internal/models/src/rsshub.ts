@@ -1,4 +1,4 @@
-import type { FeedViewType } from "@follow/constants"
+import type { FeedViewType } from "@suhui/constants"
 import type { FeedDiscoveryResult } from "@follow-app/client-sdk"
 
 export type RSSHubRouteType = Record<string, RSSHubRouteDeclaration>

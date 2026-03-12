@@ -1,6 +1,6 @@
-import { Avatar, AvatarImage } from "@follow/components/ui/avatar/index.jsx"
-import { Button } from "@follow/components/ui/button/index.js"
-import { Divider } from "@follow/components/ui/divider/index.js"
+import { Avatar, AvatarImage } from "@suhui/components/ui/avatar/index.jsx"
+import { Button } from "@suhui/components/ui/button/index.js"
+import { Divider } from "@suhui/components/ui/divider/index.js"
 import {
   Form,
   FormControl,
@@ -8,9 +8,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@follow/components/ui/form/index.jsx"
-import { Input } from "@follow/components/ui/input/index.js"
-import { ScrollArea } from "@follow/components/ui/scroll-area/index.js"
+} from "@suhui/components/ui/form/index.jsx"
+import { Input } from "@suhui/components/ui/input/index.js"
+import { ScrollArea } from "@suhui/components/ui/scroll-area/index.js"
 import {
   Table,
   TableBody,
@@ -18,14 +18,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@follow/components/ui/table/index.jsx"
-import { FeedViewType } from "@follow/constants"
-import { getFeedById } from "@follow/store/feed/getter"
-import { useFeedById } from "@follow/store/feed/hooks"
-import { useListById } from "@follow/store/list/hooks"
-import { listSyncServices } from "@follow/store/list/store"
-import { useAllFeedSubscription } from "@follow/store/subscription/hooks"
-import { isBizId } from "@follow/utils/utils"
+} from "@suhui/components/ui/table/index.jsx"
+import { FeedViewType } from "@suhui/constants"
+import { getFeedById } from "@suhui/store/feed/getter"
+import { useFeedById } from "@suhui/store/feed/hooks"
+import { useListById } from "@suhui/store/list/hooks"
+import { listSyncServices } from "@suhui/store/list/store"
+import { useAllFeedSubscription } from "@suhui/store/subscription/hooks"
+import { isBizId } from "@suhui/utils/utils"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation } from "@tanstack/react-query"
 import { useMemo, useRef, useState } from "react"

@@ -1,4 +1,4 @@
-import type { SupportedActionLanguage } from "@follow/shared"
+import type { SupportedActionLanguage } from "@suhui/shared"
 import type { SupportedLanguages } from "@follow-app/client-sdk"
 import { useQueries, useQueryClient } from "@tanstack/react-query"
 import { useCallback, useEffect } from "react"

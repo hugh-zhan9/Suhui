@@ -1,5 +1,5 @@
 import { stripeClient } from "@better-auth/stripe/client"
-import { IN_ELECTRON } from "@follow/shared"
+import { IN_ELECTRON } from "@suhui/shared"
 import type { AuthPlugins } from "@follow-app/client-sdk/auth"
 import type { BetterAuthClientPlugin, BetterFetchOption } from "better-auth/client"
 import { createAuthClient } from "better-auth/client"

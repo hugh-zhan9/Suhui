@@ -1,5 +1,5 @@
-import { useIsSubscribed } from "@follow/store/subscription/hooks"
-import { formatNumber } from "@follow/utils"
+import { useIsSubscribed } from "@suhui/store/subscription/hooks"
+import { formatNumber } from "@suhui/utils"
 import type { TrendingFeedItem } from "@follow-app/client-sdk"
 import type { FC } from "react"
 import { useTranslation } from "react-i18next"

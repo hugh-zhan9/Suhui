@@ -1,4 +1,4 @@
-import { cn } from "@follow/utils/utils"
+import { cn } from "@suhui/utils/utils"
 import { memo, useMemo } from "react"
 import * as React from "react"
 

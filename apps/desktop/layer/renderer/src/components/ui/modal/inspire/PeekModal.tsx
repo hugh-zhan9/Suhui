@@ -1,5 +1,5 @@
-import { getStableRouterNavigate } from "@follow/components/atoms/route.js"
-import { RootPortalContext } from "@follow/components/ui/portal/provider.js"
+import { getStableRouterNavigate } from "@suhui/components/atoms/route.js"
+import { RootPortalContext } from "@suhui/components/ui/portal/provider.js"
 import type { PropsWithChildren, ReactNode } from "react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"

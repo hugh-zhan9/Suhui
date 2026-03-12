@@ -1,4 +1,4 @@
-import { FeedViewType } from "@follow/constants"
+import { FeedViewType } from "@suhui/constants"
 
 import { ArticleItemSkeleton } from "./article-item"
 import { AudioItemSkeleton } from "./audio-item"

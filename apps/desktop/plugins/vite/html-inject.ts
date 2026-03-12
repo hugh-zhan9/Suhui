@@ -1,4 +1,4 @@
-import type { env as EnvType } from "@follow/shared/env.desktop"
+import type { env as EnvType } from "@suhui/shared/env.desktop"
 import type { PluginOption } from "vite"
 
 export function htmlInjectPlugin(env: typeof EnvType): PluginOption {

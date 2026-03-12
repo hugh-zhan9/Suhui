@@ -1,4 +1,4 @@
-import { FeedViewType } from "@follow/constants"
+import { FeedViewType } from "@suhui/constants"
 import { createContext as createReactContext } from "react"
 import { createContext } from "use-context-selector"
 

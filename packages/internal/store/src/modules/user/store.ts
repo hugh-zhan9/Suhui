@@ -1,6 +1,6 @@
-import { UserRole } from "@follow/constants"
-import type { UserSchema } from "@follow/database/schemas/types"
-import { UserService } from "@follow/database/services/user"
+import { UserRole } from "@suhui/constants"
+import type { UserSchema } from "@suhui/database/schemas/types"
+import { UserService } from "@suhui/database/services/user"
 import type { AuthUser } from "@follow-app/client-sdk"
 import { create, indexedResolver, windowScheduler } from "@yornaath/batshit"
 

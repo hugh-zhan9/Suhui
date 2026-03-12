@@ -1,4 +1,4 @@
-import { cn } from "@follow/utils/utils"
+import { cn } from "@suhui/utils/utils"
 import type { PropsWithChildren } from "react"
 import * as React from "react"
 import { useEffect, useState } from "react"

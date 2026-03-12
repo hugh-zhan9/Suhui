@@ -1,5 +1,5 @@
-import { useHasEntry } from "@follow/store/entry/hooks"
-import { cn } from "@follow/utils/utils"
+import { useHasEntry } from "@suhui/store/entry/hooks"
+import { cn } from "@suhui/utils/utils"
 import type { MotionStyle } from "motion/react"
 import type { ReactNode } from "react"
 import { createContext, memo, use, useMemo } from "react"

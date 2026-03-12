@@ -1,5 +1,5 @@
-import { IN_ELECTRON } from "@follow/shared/constants"
-import { clsx } from "@follow/utils/utils"
+import { IN_ELECTRON } from "@suhui/shared/constants"
+import { clsx } from "@suhui/utils/utils"
 
 export const feedColumnStyles = {
   item: clsx(

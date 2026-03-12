@@ -3,8 +3,8 @@ import {
   MasonryItemsAspectRatioSetterContext,
   MasonryItemWidthContext,
   useMasonryItemWidth,
-} from "@follow/components/ui/masonry/contexts.jsx"
-import { useMasonryColumn } from "@follow/components/ui/masonry/hooks.js"
+} from "@suhui/components/ui/masonry/contexts.jsx"
+import { useMasonryColumn } from "@suhui/components/ui/masonry/hooks.js"
 import type { MediaModel } from "@folo-services/drizzle"
 import type { RenderComponentProps } from "masonic"
 import { Masonry } from "masonic"

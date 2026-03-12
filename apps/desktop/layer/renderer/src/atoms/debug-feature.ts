@@ -1,5 +1,5 @@
-import { createAtomHooks } from "@follow/utils/jotai"
-import { getStorageNS } from "@follow/utils/ns"
+import { createAtomHooks } from "@suhui/utils/jotai"
+import { getStorageNS } from "@suhui/utils/ns"
 import { atomWithStorage } from "jotai/utils"
 
 // Shape: { __override?: boolean, [featureKey: string]: boolean }

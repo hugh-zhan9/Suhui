@@ -2,9 +2,9 @@ import {
   getReadonlyRoute,
   useReadonlyRoute,
   useReadonlyRouteSelector,
-} from "@follow/components/atoms/route.js"
-import { FeedViewType } from "@follow/constants"
-import { getListById } from "@follow/store/list/getters"
+} from "@suhui/components/atoms/route.js"
+import { FeedViewType } from "@suhui/constants"
+import { getListById } from "@suhui/store/list/getters"
 import { useMemo } from "react"
 import type { Params } from "react-router"
 import { useParams } from "react-router"

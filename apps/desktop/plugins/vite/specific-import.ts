@@ -18,7 +18,7 @@ export function createPlatformSpecificImportPlugin(platform: Platform): Plugin {
       if (importer.includes("node_modules")) return null
       const [path, query] = source.split("?")
 
-      if (path.startsWith(".") || path.startsWith("/") || path.startsWith("@follow/")) {
+      if (path.startsWith(".") || path.startsWith("/") || path.startsWith("@suhui/")) {
         let priorities: string[] = []
         switch (platform) {
           case "electron": {

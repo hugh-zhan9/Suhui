@@ -1,4 +1,4 @@
-import { cn } from "@follow/utils/utils"
+import { cn } from "@suhui/utils/utils"
 import { m, useAnimation } from "motion/react"
 import * as React from "react"
 import { cloneElement, useEffect } from "react"

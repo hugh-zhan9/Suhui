@@ -2,8 +2,8 @@ import {
   MasonryItemsAspectRatioContext,
   MasonryItemsAspectRatioSetterContext,
   MasonryItemWidthContext,
-} from "@follow/components/ui/masonry/contexts.jsx"
-import { useMeasure } from "@follow/hooks"
+} from "@suhui/components/ui/masonry/contexts.jsx"
+import { useMeasure } from "@suhui/hooks"
 import { useState } from "react"
 
 import { Media } from "~/components/ui/media/Media"

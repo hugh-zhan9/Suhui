@@ -1,4 +1,4 @@
-import type { GeneralSettings } from "@follow/shared/settings/interface"
+import type { GeneralSettings } from "@suhui/shared/settings/interface"
 
 export const translationFields = ["title", "description", "content", "readabilityContent"] as const
 export type TranslationField = (typeof translationFields)[number]

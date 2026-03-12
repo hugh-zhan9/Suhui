@@ -1,5 +1,5 @@
-import { Button } from "@follow/components/ui/button/index.js"
-import { tracker } from "@follow/tracker"
+import { Button } from "@suhui/components/ui/button/index.js"
+import { tracker } from "@suhui/tracker"
 import { useEffect, useRef } from "react"
 import { isRouteErrorResponse, useNavigate, useRouteError } from "react-router"
 import { toast } from "sonner"

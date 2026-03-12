@@ -1,6 +1,6 @@
-import { Button } from "@follow/components/ui/button/index.js"
-import { LoadingWithIcon } from "@follow/components/ui/loading/index.jsx"
-import { useEntry } from "@follow/store/entry/hooks"
+import { Button } from "@suhui/components/ui/button/index.js"
+import { LoadingWithIcon } from "@suhui/components/ui/loading/index.jsx"
+import { useEntry } from "@suhui/store/entry/hooks"
 import { useTranslation } from "react-i18next"
 
 import {

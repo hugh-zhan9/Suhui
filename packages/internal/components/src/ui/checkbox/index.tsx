@@ -1,6 +1,6 @@
 "use client"
 
-import { cn } from "@follow/utils/utils"
+import { cn } from "@suhui/utils/utils"
 import * as CheckboxPrimitive from "@radix-ui/react-checkbox"
 import type { HTMLMotionProps } from "motion/react"
 import { m } from "motion/react"

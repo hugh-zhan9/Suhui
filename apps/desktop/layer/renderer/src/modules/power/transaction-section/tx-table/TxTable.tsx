@@ -5,16 +5,16 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@follow/components/ui/table/index.jsx"
+} from "@suhui/components/ui/table/index.jsx"
 import {
   Tooltip,
   TooltipContent,
   TooltipPortal,
   TooltipTrigger,
-} from "@follow/components/ui/tooltip/index.jsx"
-import { EllipsisHorizontalTextWithTooltip } from "@follow/components/ui/typography/index.js"
-import { useWhoami } from "@follow/store/user/hooks"
-import { cn } from "@follow/utils/utils"
+} from "@suhui/components/ui/tooltip/index.jsx"
+import { EllipsisHorizontalTextWithTooltip } from "@suhui/components/ui/typography/index.js"
+import { useWhoami } from "@suhui/store/user/hooks"
+import { cn } from "@suhui/utils/utils"
 import type { TransactionType } from "@follow-app/client-sdk"
 import { useTranslation } from "react-i18next"
 

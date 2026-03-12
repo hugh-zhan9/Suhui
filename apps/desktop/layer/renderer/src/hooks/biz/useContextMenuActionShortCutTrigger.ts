@@ -1,4 +1,4 @@
-import { checkIsEditableElement } from "@follow/utils"
+import { checkIsEditableElement } from "@suhui/utils"
 import { useEffect } from "react"
 import { tinykeys } from "tinykeys"
 

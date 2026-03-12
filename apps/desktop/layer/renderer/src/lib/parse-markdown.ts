@@ -1,5 +1,5 @@
-import type { RemarkOptions } from "@follow/components/utils/parse-markdown.js"
-import { parseMarkdown as parseMarkdownImpl } from "@follow/components/utils/parse-markdown.js"
+import type { RemarkOptions } from "@suhui/components/utils/parse-markdown.js"
+import { parseMarkdown as parseMarkdownImpl } from "@suhui/components/utils/parse-markdown.js"
 import { createElement } from "react"
 
 import { MarkdownLink } from "~/components/ui/markdown/renderers/MarkdownLink"
@@ -62,4 +62,4 @@ export const parseMarkdown = (content: string, options?: Partial<RemarkOptions>)
   })
 }
 
-export { type RemarkOptions } from "@follow/components/utils/parse-markdown.js"
+export { type RemarkOptions } from "@suhui/components/utils/parse-markdown.js"

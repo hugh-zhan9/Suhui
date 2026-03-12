@@ -1,4 +1,4 @@
-import { useScrollViewElement } from "@follow/components/ui/scroll-area/hooks.js"
+import { useScrollViewElement } from "@suhui/components/ui/scroll-area/hooks.js"
 import { throttle } from "es-toolkit"
 import { useEffect, useRef, useState } from "react"
 import { useEventCallback } from "usehooks-ts"

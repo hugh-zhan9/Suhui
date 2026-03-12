@@ -1,5 +1,5 @@
-import { getImageProxyUrl } from "@follow/utils/img-proxy"
-import { getUrlIcon } from "@follow/utils/utils"
+import { getImageProxyUrl } from "@suhui/utils/img-proxy"
+import { getUrlIcon } from "@suhui/utils/utils"
 
 export const getFeedIconSrc = ({
   src,

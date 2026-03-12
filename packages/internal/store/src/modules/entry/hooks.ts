@@ -1,4 +1,4 @@
-import type { FeedViewType } from "@follow/constants"
+import type { FeedViewType } from "@suhui/constants"
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query"
 import { useCallback, useMemo } from "react"
 

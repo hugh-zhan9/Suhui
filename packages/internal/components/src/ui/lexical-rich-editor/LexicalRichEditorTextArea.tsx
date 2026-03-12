@@ -1,4 +1,4 @@
-import { cn, nextFrame } from "@follow/utils"
+import { cn, nextFrame } from "@suhui/utils"
 import type { EditorState, LexicalEditor } from "lexical"
 import { $getRoot } from "lexical"
 import { useCallback, useImperativeHandle, useMemo, useRef, useState } from "react"

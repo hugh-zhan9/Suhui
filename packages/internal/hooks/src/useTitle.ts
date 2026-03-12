@@ -1,4 +1,4 @@
-import { IN_ELECTRON } from "@follow/shared/constants"
+import { IN_ELECTRON } from "@suhui/shared/constants"
 import { useEffect, useRef } from "react"
 
 declare const APP_NAME: string

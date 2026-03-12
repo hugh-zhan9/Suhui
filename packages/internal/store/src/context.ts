@@ -1,4 +1,4 @@
-import type { AuthClient } from "@follow/shared/auth"
+import type { AuthClient } from "@suhui/shared/auth"
 import type { QueryClient } from "@tanstack/react-query"
 
 import type { FollowAPI } from "./types"

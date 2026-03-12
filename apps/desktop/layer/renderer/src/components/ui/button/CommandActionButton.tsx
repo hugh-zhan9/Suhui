@@ -1,5 +1,5 @@
-import type { ActionButtonProps } from "@follow/components/ui/button/action-button.js"
-import { ActionButton } from "@follow/components/ui/button/action-button.js"
+import type { ActionButtonProps } from "@suhui/components/ui/button/action-button.js"
+import { ActionButton } from "@suhui/components/ui/button/action-button.js"
 
 import { useCommand } from "~/modules/command/hooks/use-command"
 import type { FollowCommandId } from "~/modules/command/types"

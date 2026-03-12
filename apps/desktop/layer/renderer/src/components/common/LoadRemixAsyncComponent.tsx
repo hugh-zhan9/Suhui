@@ -1,4 +1,4 @@
-import { LoadingCircle } from "@follow/components/ui/loading/index.jsx"
+import { LoadingCircle } from "@suhui/components/ui/loading/index.jsx"
 import type { FC, ReactNode } from "react"
 import { createElement, useEffect, useState } from "react"
 

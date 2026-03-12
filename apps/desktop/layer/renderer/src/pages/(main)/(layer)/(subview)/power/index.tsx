@@ -1,5 +1,5 @@
-import { AutoResizeHeight } from "@follow/components/ui/auto-resize-height/index.js"
-import { Divider } from "@follow/components/ui/divider/index.js"
+import { AutoResizeHeight } from "@suhui/components/ui/auto-resize-height/index.js"
+import { Divider } from "@suhui/components/ui/divider/index.js"
 import { useTranslation } from "react-i18next"
 
 import { useSubViewTitle } from "~/modules/app-layout/subview/hooks"

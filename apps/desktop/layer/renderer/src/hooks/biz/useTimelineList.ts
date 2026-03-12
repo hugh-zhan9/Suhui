@@ -1,6 +1,6 @@
-import { FeedViewType } from "@follow/constants"
-import type { UISettings } from "@follow/shared/settings/interface"
-import { useSubscriptionStore } from "@follow/store/subscription/store"
+import { FeedViewType } from "@suhui/constants"
+import type { UISettings } from "@suhui/shared/settings/interface"
+import { useSubscriptionStore } from "@suhui/store/subscription/store"
 import { useMemo } from "react"
 
 import { useUISettingKey } from "~/atoms/settings/ui"

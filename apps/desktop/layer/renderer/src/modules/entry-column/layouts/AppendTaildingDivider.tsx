@@ -1,4 +1,4 @@
-import { DividerVertical } from "@follow/components/ui/divider/Divider.js"
+import { DividerVertical } from "@suhui/components/ui/divider/Divider.js"
 import * as React from "react"
 
 export const AppendTaildingDivider = ({ children }: { children: React.ReactNode }) => (

@@ -1,4 +1,4 @@
-import type { EntrySchema, ListSchema, SubscriptionSchema } from "@follow/database/schemas/types"
+import type { EntrySchema, ListSchema, SubscriptionSchema } from "@suhui/database/schemas/types"
 
 import type { EntryModel } from "../modules/entry/types"
 import type { ListModel } from "../modules/list/types"

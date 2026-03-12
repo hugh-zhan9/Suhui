@@ -1,16 +1,16 @@
-import { UserRole } from "@follow/constants"
-import { useRefValue } from "@follow/hooks"
-import { getSettingPaidLevel, SettingPaidLevels } from "@follow/shared/settings/constants"
-import { useUserStore } from "@follow/store/user/store"
-import { EventBus } from "@follow/utils/event-bus"
-import { createAtomHooks } from "@follow/utils/jotai"
-import { getStorageNS } from "@follow/utils/ns"
+import { UserRole } from "@suhui/constants"
+import { useRefValue } from "@suhui/hooks"
+import { getSettingPaidLevel, SettingPaidLevels } from "@suhui/shared/settings/constants"
+import { useUserStore } from "@suhui/store/user/store"
+import { EventBus } from "@suhui/utils/event-bus"
+import { createAtomHooks } from "@suhui/utils/jotai"
+import { getStorageNS } from "@suhui/utils/ns"
 import { atom as jotaiAtom, useAtomValue } from "jotai"
 import { atomWithStorage, selectAtom } from "jotai/utils"
 import { useMemo } from "react"
 import { shallow } from "zustand/shallow"
 
-declare module "@follow/utils/event-bus" {
+declare module "@suhui/utils/event-bus" {
   interface CustomEvent {
     SETTING_CHANGE_EVENT: {
       updated: number

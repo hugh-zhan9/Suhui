@@ -1,5 +1,5 @@
-import { useEntry } from "@follow/store/entry/hooks"
-import { getSubscriptionById } from "@follow/store/subscription/getter"
+import { useEntry } from "@suhui/store/entry/hooks"
+import { getSubscriptionById } from "@suhui/store/subscription/getter"
 import { useCallback } from "react"
 
 import { disableShowAISummaryOnce } from "~/atoms/ai-summary"

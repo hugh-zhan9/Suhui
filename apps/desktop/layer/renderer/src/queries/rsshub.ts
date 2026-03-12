@@ -1,4 +1,4 @@
-import { userActions } from "@follow/store/user/store"
+import { userActions } from "@suhui/store/user/store"
 import type { RSSHubUseRequest } from "@follow-app/client-sdk"
 import { useMutation } from "@tanstack/react-query"
 

@@ -1,4 +1,4 @@
-import { useUserRole } from "@follow/store/user/hooks"
+import { useUserRole } from "@suhui/store/user/hooks"
 import { useMemo } from "react"
 
 import { useDebugFeatureValue } from "~/atoms/debug-feature"

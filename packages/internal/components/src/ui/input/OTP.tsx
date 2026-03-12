@@ -1,4 +1,4 @@
-import { cn } from "@follow/utils/utils"
+import { cn } from "@suhui/utils/utils"
 import { OTPInput, OTPInputContext } from "input-otp"
 import * as React from "react"
 

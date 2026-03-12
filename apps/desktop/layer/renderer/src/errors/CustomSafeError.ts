@@ -1,4 +1,4 @@
-import { nextFrame } from "@follow/utils/dom"
+import { nextFrame } from "@suhui/utils/dom"
 
 import { createErrorToaster } from "~/lib/error-parser"
 

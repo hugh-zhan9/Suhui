@@ -1,11 +1,11 @@
-import { useGlobalFocusableScopeSelector } from "@follow/components/common/Focusable/hooks.js"
-import { highlightElement } from "@follow/components/common/Focusable/utils.js"
+import { useGlobalFocusableScopeSelector } from "@suhui/components/common/Focusable/hooks.js"
+import { highlightElement } from "@suhui/components/common/Focusable/utils.js"
 import {
   checkIsEditableElement,
   nextFrame,
   preventDefault,
   stopPropagation,
-} from "@follow/utils/dom"
+} from "@suhui/utils/dom"
 import { useEffect } from "react"
 import { tinykeys } from "tinykeys"
 import { useEventListener } from "usehooks-ts"

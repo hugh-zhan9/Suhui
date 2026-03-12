@@ -1,4 +1,4 @@
-import type { UserSchema } from "@follow/database/schemas/types"
+import type { UserSchema } from "@suhui/database/schemas/types"
 
 export interface UserProfileEditable {
   email: string

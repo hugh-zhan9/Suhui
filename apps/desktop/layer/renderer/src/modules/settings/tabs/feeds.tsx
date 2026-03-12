@@ -1,12 +1,12 @@
-import { Spring } from "@follow/components/constants/spring.js"
-import { MotionButtonBase } from "@follow/components/ui/button/index.js"
-import { Checkbox } from "@follow/components/ui/checkbox/index.js"
-import { Divider } from "@follow/components/ui/divider/index.js"
-import { LoadingCircle } from "@follow/components/ui/loading/index.jsx"
-import { RSSHubLogo } from "@follow/components/ui/platform-icon/icons.js"
-import { useScrollViewElement } from "@follow/components/ui/scroll-area/hooks.js"
-import { ScrollArea } from "@follow/components/ui/scroll-area/index.js"
-import { ResponsiveSelect } from "@follow/components/ui/select/responsive.js"
+import { Spring } from "@suhui/components/constants/spring.js"
+import { MotionButtonBase } from "@suhui/components/ui/button/index.js"
+import { Checkbox } from "@suhui/components/ui/checkbox/index.js"
+import { Divider } from "@suhui/components/ui/divider/index.js"
+import { LoadingCircle } from "@suhui/components/ui/loading/index.jsx"
+import { RSSHubLogo } from "@suhui/components/ui/platform-icon/icons.js"
+import { useScrollViewElement } from "@suhui/components/ui/scroll-area/hooks.js"
+import { ScrollArea } from "@suhui/components/ui/scroll-area/index.js"
+import { ResponsiveSelect } from "@suhui/components/ui/select/responsive.js"
 import {
   Table,
   TableBody,
@@ -14,23 +14,23 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@follow/components/ui/table/index.jsx"
+} from "@suhui/components/ui/table/index.jsx"
 import {
   Tooltip,
   TooltipContent,
   TooltipPortal,
   TooltipTrigger,
-} from "@follow/components/ui/tooltip/index.js"
-import { EllipsisHorizontalTextWithTooltip } from "@follow/components/ui/typography/index.js"
-import { getView } from "@follow/constants"
-import { getFeedById } from "@follow/store/feed/getter"
-import { useFeedById, usePrefetchFeedAnalytics } from "@follow/store/feed/hooks"
-import { getSubscriptionByFeedId } from "@follow/store/subscription/getter"
+} from "@suhui/components/ui/tooltip/index.js"
+import { EllipsisHorizontalTextWithTooltip } from "@suhui/components/ui/typography/index.js"
+import { getView } from "@suhui/constants"
+import { getFeedById } from "@suhui/store/feed/getter"
+import { useFeedById, usePrefetchFeedAnalytics } from "@suhui/store/feed/hooks"
+import { getSubscriptionByFeedId } from "@suhui/store/subscription/getter"
 import {
   useAllFeedSubscriptionIds,
   useSubscriptionByFeedId,
-} from "@follow/store/subscription/hooks"
-import { clsx, formatNumber, sortByAlphabet } from "@follow/utils/utils"
+} from "@suhui/store/subscription/hooks"
+import { clsx, formatNumber, sortByAlphabet } from "@suhui/utils/utils"
 import { useVirtualizer } from "@tanstack/react-virtual"
 import { AnimatePresence, m } from "motion/react"
 import type { FC } from "react"

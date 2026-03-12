@@ -1,12 +1,12 @@
 import {
   useFocusActions,
   useGlobalFocusableScopeSelector,
-} from "@follow/components/common/Focusable/index.js"
-import { Spring } from "@follow/components/constants/spring.js"
-import { useSmoothScroll } from "@follow/hooks"
-import { nextFrame } from "@follow/utils/dom"
-import { EventBus } from "@follow/utils/event-bus"
-import { clsx, combineCleanupFunctions } from "@follow/utils/utils"
+} from "@suhui/components/common/Focusable/index.js"
+import { Spring } from "@suhui/components/constants/spring.js"
+import { useSmoothScroll } from "@suhui/hooks"
+import { nextFrame } from "@suhui/utils/dom"
+import { EventBus } from "@suhui/utils/event-bus"
+import { clsx, combineCleanupFunctions } from "@suhui/utils/utils"
 import type { JSAnimation } from "motion/react"
 import { AnimatePresence, m } from "motion/react"
 import * as React from "react"

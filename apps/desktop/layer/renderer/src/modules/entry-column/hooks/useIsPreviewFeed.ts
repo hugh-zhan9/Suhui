@@ -1,5 +1,5 @@
-import { getSubscriptionByFeedId } from "@follow/store/subscription/getter"
-import { isBizId } from "@follow/utils/utils"
+import { getSubscriptionByFeedId } from "@suhui/store/subscription/getter"
+import { isBizId } from "@suhui/utils/utils"
 import { useMemo } from "react"
 
 import { useRouteParamsSelector } from "~/hooks/biz/useRouteParams"

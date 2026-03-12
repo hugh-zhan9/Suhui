@@ -1,5 +1,5 @@
-import { nextFrame } from "@follow/utils/dom"
-import { jotaiStore } from "@follow/utils/jotai"
+import { nextFrame } from "@suhui/utils/dom"
+import { jotaiStore } from "@suhui/utils/jotai"
 import { atom } from "jotai"
 
 import { router } from "~/router"

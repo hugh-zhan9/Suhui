@@ -1,4 +1,4 @@
-import { Button } from "@follow/components/ui/button/index.js"
+import { Button } from "@suhui/components/ui/button/index.js"
 import type { FC } from "react"
 
 import { attachOpenInEditor } from "~/lib/dev"

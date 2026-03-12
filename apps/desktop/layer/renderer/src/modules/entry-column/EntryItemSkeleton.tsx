@@ -1,7 +1,7 @@
-import { LoadingCircle } from "@follow/components/ui/loading/index.js"
-import type { FeedViewType } from "@follow/constants"
-import { getView } from "@follow/constants"
-import { cn } from "@follow/utils/utils"
+import { LoadingCircle } from "@suhui/components/ui/loading/index.js"
+import type { FeedViewType } from "@suhui/constants"
+import { getView } from "@suhui/constants"
+import { cn } from "@suhui/utils/utils"
 import type { FC } from "react"
 import { memo } from "react"
 

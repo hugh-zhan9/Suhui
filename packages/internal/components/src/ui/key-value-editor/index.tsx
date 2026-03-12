@@ -1,6 +1,6 @@
-import { Button } from "@follow/components/ui/button/index.js"
-import { Input } from "@follow/components/ui/input/index.js"
-import { cn } from "@follow/utils/utils"
+import { Button } from "@suhui/components/ui/button/index.js"
+import { Input } from "@suhui/components/ui/input/index.js"
+import { cn } from "@suhui/utils/utils"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 export interface KeyValuePair {

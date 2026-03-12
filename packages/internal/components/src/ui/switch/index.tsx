@@ -1,6 +1,6 @@
 "use client"
 
-import { cn } from "@follow/utils/utils"
+import { cn } from "@suhui/utils/utils"
 import type { SwitchProps as SwitchPrimitiveProps } from "@headlessui/react"
 import { Switch as SwitchPrimitive } from "@headlessui/react"
 import type { HTMLMotionProps } from "motion/react"

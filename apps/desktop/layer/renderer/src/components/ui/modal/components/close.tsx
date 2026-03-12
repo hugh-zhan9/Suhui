@@ -1,4 +1,4 @@
-import { cn } from "@follow/utils"
+import { cn } from "@suhui/utils"
 import { useTranslation } from "react-i18next"
 
 import { GlassButton } from "~/components/ui/button/GlassButton"

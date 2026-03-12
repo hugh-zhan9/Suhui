@@ -1,4 +1,4 @@
-import { FeedViewType } from "@follow/constants"
+import { FeedViewType } from "@suhui/constants"
 
 import { FEED_COLLECTION_LIST, ROUTE_FEED_IN_FOLDER } from "../../constants/app"
 import type { SubscriptionState } from "./store"

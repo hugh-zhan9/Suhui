@@ -1,5 +1,5 @@
-import { Tooltip, TooltipContent, TooltipTrigger } from "@follow/components/ui/tooltip/index.js"
-import { cn, toScientificNotation } from "@follow/utils/utils"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@suhui/components/ui/tooltip/index.js"
+import { cn, toScientificNotation } from "@suhui/utils/utils"
 import { format } from "dnum"
 
 import { useGeneralSettingSelector } from "~/atoms/settings/general"

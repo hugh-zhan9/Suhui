@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { transformVideoUrl } from "@follow/utils/url-for-video"
+import { transformVideoUrl } from "@suhui/utils/url-for-video"
 
 describe("url-for-video compat", () => {
   it("应支持 bilibili html5mobileplayer 链接", () => {

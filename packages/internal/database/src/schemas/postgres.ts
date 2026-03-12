@@ -1,5 +1,5 @@
-import type { FeedViewType } from "@follow/constants"
-import type { SupportedActionLanguage } from "@follow/shared/language"
+import type { FeedViewType } from "@suhui/constants"
+import type { SupportedActionLanguage } from "@suhui/shared/language"
 import type { EntrySettings } from "@follow-app/client-sdk"
 import { sql } from "drizzle-orm"
 import {

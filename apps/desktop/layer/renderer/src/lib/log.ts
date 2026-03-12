@@ -1,4 +1,4 @@
-import { log } from "@follow/logger"
+import { log } from "@suhui/logger"
 
 export const appLog = (...args: any[]) => {
   if (ELECTRON) log(...args)

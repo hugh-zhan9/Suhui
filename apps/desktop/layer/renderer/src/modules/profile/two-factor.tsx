@@ -1,4 +1,4 @@
-import { Button } from "@follow/components/ui/button/index.js"
+import { Button } from "@suhui/components/ui/button/index.js"
 import {
   Form,
   FormControl,
@@ -6,11 +6,11 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@follow/components/ui/form/index.jsx"
-import { Input, InputOTP, InputOTPGroup, InputOTPSlot } from "@follow/components/ui/input/index.js"
-import { Label } from "@follow/components/ui/label/index.js"
-import { useWhoami } from "@follow/store/user/hooks"
-import { userActions } from "@follow/store/user/store"
+} from "@suhui/components/ui/form/index.jsx"
+import { Input, InputOTP, InputOTPGroup, InputOTPSlot } from "@suhui/components/ui/input/index.js"
+import { Label } from "@suhui/components/ui/label/index.js"
+import { useWhoami } from "@suhui/store/user/hooks"
+import { userActions } from "@suhui/store/user/store"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation } from "@tanstack/react-query"
 import { m, useAnimation } from "motion/react"

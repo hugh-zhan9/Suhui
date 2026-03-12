@@ -10,7 +10,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest"
 
 vi.mock("./sync-applier", () => ({ dbSyncApplier: {} }))
 vi.mock("./db", () => ({ DBManager: {} }))
-vi.mock("@follow/database/schemas/sync", () => ({}))
+vi.mock("@suhui/database/schemas/sync", () => ({}))
 
 describe("SyncLogger", () => {
   it("record() 应自动生成 opId, ts, deviceId，并自增 logicalClock", async () => {

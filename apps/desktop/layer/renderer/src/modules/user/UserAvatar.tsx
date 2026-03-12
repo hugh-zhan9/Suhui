@@ -1,8 +1,8 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@follow/components/ui/avatar/index.jsx"
-import { UserRole } from "@follow/constants"
-import { usePrefetchUser, useUserById, useUserRole, useWhoami } from "@follow/store/user/hooks"
-import { getColorScheme, stringToHue } from "@follow/utils/color"
-import { cn } from "@follow/utils/utils"
+import { Avatar, AvatarFallback, AvatarImage } from "@suhui/components/ui/avatar/index.jsx"
+import { UserRole } from "@suhui/constants"
+import { usePrefetchUser, useUserById, useUserRole, useWhoami } from "@suhui/store/user/hooks"
+import { getColorScheme, stringToHue } from "@suhui/utils/color"
+import { cn } from "@suhui/utils/utils"
 
 import { useServerConfigs } from "~/atoms/server-configs"
 import { useReplaceImgUrlIfNeed } from "~/lib/img-proxy"

@@ -2,7 +2,7 @@
  * @see https://www.zhangxinxu.com/wordpress/2024/06/css-transition-behavior/
  * @see https://www.zhangxinxu.com/wordpress/2024/11/css-calc-interpolate-size/
  */
-import { cn } from "@follow/utils/utils"
+import { cn } from "@suhui/utils/utils"
 import type { FC } from "react"
 import * as React from "react"
 import { createContext, use, useState } from "react"

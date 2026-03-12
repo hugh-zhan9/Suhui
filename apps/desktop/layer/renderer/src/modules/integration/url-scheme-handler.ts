@@ -1,4 +1,4 @@
-import type { URLSchemeTemplate } from "@follow/shared/settings/interface"
+import type { URLSchemeTemplate } from "@suhui/shared/settings/interface"
 import { toast } from "sonner"
 
 import { ipcServices } from "~/lib/client"

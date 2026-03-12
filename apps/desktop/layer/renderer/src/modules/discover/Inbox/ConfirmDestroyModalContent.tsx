@@ -1,5 +1,5 @@
-import { Button } from "@follow/components/ui/button/index.js"
-import { inboxSyncService } from "@follow/store/inbox/store"
+import { Button } from "@suhui/components/ui/button/index.js"
+import { inboxSyncService } from "@suhui/store/inbox/store"
 import { useMutation } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"

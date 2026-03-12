@@ -1,6 +1,6 @@
-import { useGlobalFocusableScopeSelector } from "@follow/components/common/Focusable/hooks.js"
-import type { FeedViewType } from "@follow/constants"
-import { useEntry } from "@follow/store/entry/hooks"
+import { useGlobalFocusableScopeSelector } from "@suhui/components/common/Focusable/hooks.js"
+import type { FeedViewType } from "@suhui/constants"
+import { useEntry } from "@suhui/store/entry/hooks"
 import { useHotkeys } from "react-hotkeys-hook"
 
 import { FocusablePresets } from "~/components/common/Focusable"

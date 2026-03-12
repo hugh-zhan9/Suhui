@@ -1,4 +1,4 @@
-import { MODE, ModeEnum } from "@follow/shared/constants"
+import { MODE, ModeEnum } from "@suhui/shared/constants"
 
 const APP_ICON_SRC = "icon.png?v=20260303"
 

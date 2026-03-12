@@ -16,8 +16,8 @@
     "types": [
       "vite/client",
       "vite-plugin-pwa/client",
-      "@follow/types/global",
-      "@follow/types/react"
+      "@suhui/types/global",
+      "@suhui/types/react"
     ],
     "paths": {
       "~/*": ["src/*"],

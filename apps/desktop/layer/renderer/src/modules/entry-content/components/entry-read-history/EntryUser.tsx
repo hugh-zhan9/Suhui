@@ -1,8 +1,8 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@follow/components/ui/avatar/index.jsx"
-import { TooltipContent, TooltipPortal } from "@follow/components/ui/tooltip/index.jsx"
-import { useUserById } from "@follow/store/user/hooks"
-import { getAvatarUrl } from "@follow/utils"
-import { getNameInitials } from "@follow/utils/cjk"
+import { Avatar, AvatarFallback, AvatarImage } from "@suhui/components/ui/avatar/index.jsx"
+import { TooltipContent, TooltipPortal } from "@suhui/components/ui/tooltip/index.jsx"
+import { useUserById } from "@suhui/store/user/hooks"
+import { getAvatarUrl } from "@suhui/utils"
+import { getNameInitials } from "@suhui/utils/cjk"
 import { memo } from "react"
 import { useTranslation } from "react-i18next"
 

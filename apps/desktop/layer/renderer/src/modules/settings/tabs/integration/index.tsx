@@ -1,7 +1,7 @@
-import { Button } from "@follow/components/ui/button/index.js"
-import { CollapseCss, CollapseCssGroup } from "@follow/components/ui/collapse/CollapseCss.js"
-import { Divider } from "@follow/components/ui/divider/index.js"
-import { InputV2 } from "@follow/components/ui/input/index.js"
+import { Button } from "@suhui/components/ui/button/index.js"
+import { CollapseCss, CollapseCssGroup } from "@suhui/components/ui/collapse/CollapseCss.js"
+import { Divider } from "@suhui/components/ui/divider/index.js"
+import { InputV2 } from "@suhui/components/ui/input/index.js"
 import {
   SimpleIconsCubox,
   SimpleIconsEagle,
@@ -11,7 +11,7 @@ import {
   SimpleIconsReadeck,
   SimpleIconsReadwise,
   SimpleIconsZotero,
-} from "@follow/components/ui/platform-icon/icons.js"
+} from "@suhui/components/ui/platform-icon/icons.js"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"

@@ -1,7 +1,7 @@
-import { createSettingAtom } from "@follow/atoms/helper/setting.js"
-import { IN_ELECTRON } from "@follow/shared/constants"
-import { defaultIntegrationSettings } from "@follow/shared/settings/defaults"
-import type { IntegrationSettings } from "@follow/shared/settings/interface"
+import { createSettingAtom } from "@suhui/atoms/helper/setting.js"
+import { IN_ELECTRON } from "@suhui/shared/constants"
+import { defaultIntegrationSettings } from "@suhui/shared/settings/defaults"
+import type { IntegrationSettings } from "@suhui/shared/settings/interface"
 
 export const createDefaultSettings = (): IntegrationSettings => {
   const defaultSettings = { ...defaultIntegrationSettings }

@@ -1,6 +1,6 @@
-import type { FeedViewType } from "@follow/constants"
-import type { EntryModel } from "@follow/store/entry/types"
-import { getSubscribedFeedIdAndInboxHandlesByView } from "@follow/store/subscription/getter"
+import type { FeedViewType } from "@suhui/constants"
+import type { EntryModel } from "@suhui/store/entry/types"
+import { getSubscribedFeedIdAndInboxHandlesByView } from "@suhui/store/subscription/getter"
 
 type EntryViewState = {
   data: Record<string, EntryModel>

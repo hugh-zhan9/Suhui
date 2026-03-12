@@ -1,4 +1,4 @@
-import { nextFrame } from "@follow/utils/dom"
+import { nextFrame } from "@suhui/utils/dom"
 import type { FC, PropsWithChildren } from "react"
 import { useId, useRef } from "react"
 import { useEventCallback } from "usehooks-ts"

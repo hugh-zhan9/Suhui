@@ -1,4 +1,4 @@
-import { whoami } from "@follow/store/user/getters"
+import { whoami } from "@suhui/store/user/getters"
 
 import { getClientId, getSessionId } from "~/lib/client-session"
 

@@ -1,5 +1,5 @@
-import { IN_ELECTRON } from "@follow/shared/constants"
-import { getOS, transformShortcut } from "@follow/utils/utils"
+import { IN_ELECTRON } from "@suhui/shared/constants"
+import { getOS, transformShortcut } from "@suhui/utils/utils"
 import { atom } from "jotai"
 import { useCallback } from "react"
 

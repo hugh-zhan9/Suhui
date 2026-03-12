@@ -1,8 +1,8 @@
-import { Avatar, AvatarImage } from "@follow/components/ui/avatar/index.jsx"
-import { ActionButton, Button } from "@follow/components/ui/button/index.js"
-import { Divider } from "@follow/components/ui/divider/index.js"
-import { LoadingCircle } from "@follow/components/ui/loading/index.jsx"
-import { ScrollArea } from "@follow/components/ui/scroll-area/index.js"
+import { Avatar, AvatarImage } from "@suhui/components/ui/avatar/index.jsx"
+import { ActionButton, Button } from "@suhui/components/ui/button/index.js"
+import { Divider } from "@suhui/components/ui/divider/index.js"
+import { LoadingCircle } from "@suhui/components/ui/loading/index.jsx"
+import { ScrollArea } from "@suhui/components/ui/scroll-area/index.js"
 import {
   Table,
   TableBody,
@@ -10,17 +10,17 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@follow/components/ui/table/index.jsx"
+} from "@suhui/components/ui/table/index.jsx"
 import {
   Tooltip,
   TooltipContent,
   TooltipPortal,
   TooltipTrigger,
-} from "@follow/components/ui/tooltip/index.jsx"
-import { getView } from "@follow/constants"
-import { useOwnedLists, usePrefetchLists } from "@follow/store/list/hooks"
-import { listSyncServices } from "@follow/store/list/store"
-import { cn, formatNumber } from "@follow/utils/utils"
+} from "@suhui/components/ui/tooltip/index.jsx"
+import { getView } from "@suhui/constants"
+import { useOwnedLists, usePrefetchLists } from "@suhui/store/list/hooks"
+import { listSyncServices } from "@suhui/store/list/store"
+import { cn, formatNumber } from "@suhui/utils/utils"
 import { useMutation } from "@tanstack/react-query"
 import { useMemo } from "react"
 import { toast } from "sonner"

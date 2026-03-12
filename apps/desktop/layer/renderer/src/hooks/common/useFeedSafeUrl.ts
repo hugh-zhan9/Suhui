@@ -1,8 +1,8 @@
-import { isOnboardingEntryUrl } from "@follow/store/constants/onboarding"
-import { useEntry } from "@follow/store/entry/hooks"
-import { useFeedById } from "@follow/store/feed/hooks"
-import { useIsInbox } from "@follow/store/inbox/hooks"
-import { resolveUrlWithBase } from "@follow/utils/utils"
+import { isOnboardingEntryUrl } from "@suhui/store/constants/onboarding"
+import { useEntry } from "@suhui/store/entry/hooks"
+import { useFeedById } from "@suhui/store/feed/hooks"
+import { useIsInbox } from "@suhui/store/inbox/hooks"
+import { resolveUrlWithBase } from "@suhui/utils/utils"
 import { useMemo } from "react"
 
 export const useFeedSafeUrl = (entryId: string) => {

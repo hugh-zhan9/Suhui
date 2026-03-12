@@ -1,5 +1,5 @@
-import { FeedViewType } from "@follow/constants"
-import { EntryService } from "@follow/database/services/entry"
+import { FeedViewType } from "@suhui/constants"
+import { EntryService } from "@suhui/database/services/entry"
 import { cloneDeep } from "es-toolkit"
 import { debounce } from "es-toolkit/compat"
 

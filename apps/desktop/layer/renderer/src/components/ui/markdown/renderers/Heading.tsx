@@ -1,6 +1,6 @@
-import { useScrollViewElement } from "@follow/components/ui/scroll-area/hooks.js"
-import { springScrollToElement } from "@follow/utils/scroller"
-import { cn } from "@follow/utils/utils"
+import { useScrollViewElement } from "@suhui/components/ui/scroll-area/hooks.js"
+import { springScrollToElement } from "@suhui/utils/scroller"
+import { cn } from "@suhui/utils/utils"
 import { use, useId, useRef } from "react"
 
 import { MarkdownRenderContainerRefContext } from "../context"

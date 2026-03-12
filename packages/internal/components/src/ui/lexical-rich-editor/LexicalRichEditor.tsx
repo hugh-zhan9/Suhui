@@ -1,4 +1,4 @@
-import { cn, stopPropagation } from "@follow/utils"
+import { cn, stopPropagation } from "@suhui/utils"
 import { TRANSFORMERS } from "@lexical/markdown"
 import { AutoFocusPlugin } from "@lexical/react/LexicalAutoFocusPlugin"
 import { AutoLinkPlugin } from "@lexical/react/LexicalAutoLinkPlugin"

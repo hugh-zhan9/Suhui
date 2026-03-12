@@ -1,4 +1,4 @@
-import { extendConfig } from "@follow/configs/tailwindcss/web"
+import { extendConfig } from "@suhui/configs/tailwindcss/web"
 import plugin from "tailwindcss/plugin"
 
 export default extendConfig({

@@ -1,5 +1,5 @@
-import { Spring } from "@follow/components/constants/spring.js"
-import { cn } from "@follow/utils/utils"
+import { Spring } from "@suhui/components/constants/spring.js"
+import { cn } from "@suhui/utils/utils"
 import * as TooltipPrimitive from "@radix-ui/react-tooltip"
 import { m } from "motion/react"
 import * as React from "react"

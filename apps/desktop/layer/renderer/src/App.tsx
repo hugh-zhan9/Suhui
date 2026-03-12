@@ -1,8 +1,8 @@
-import { isMobile } from "@follow/components/hooks/useMobile.js"
-import { IN_ELECTRON } from "@follow/shared/constants"
-import { tracker } from "@follow/tracker"
-import { nextFrame } from "@follow/utils"
-import { cn, getOS } from "@follow/utils/utils"
+import { isMobile } from "@suhui/components/hooks/useMobile.js"
+import { IN_ELECTRON } from "@suhui/shared/constants"
+import { tracker } from "@suhui/tracker"
+import { nextFrame } from "@suhui/utils"
+import { cn, getOS } from "@suhui/utils/utils"
 import { useEffect, useLayoutEffect, useRef } from "react"
 import { Outlet } from "react-router"
 

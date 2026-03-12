@@ -1,5 +1,5 @@
-import { Button } from "@follow/components/ui/button/index.js"
-import { cn } from "@follow/utils/utils"
+import { Button } from "@suhui/components/ui/button/index.js"
+import { cn } from "@suhui/utils/utils"
 import { useTranslation } from "react-i18next"
 
 import type { ModalActionsInternal } from "~/components/ui/modal"

@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { fileURLToPath } from "node:url"
 
-import type { env as EnvType } from "@follow/shared/env.desktop"
+import type { env as EnvType } from "@suhui/shared/env.desktop"
 import { minify as htmlMinify } from "html-minifier-terser"
 import { cyan, dim, green } from "kolorist"
 import { parseHTML } from "linkedom/worker"
@@ -169,7 +169,7 @@ export default ({ mode }) => {
     resolve: {
       alias: {
         ...viteRenderBaseConfig.resolve?.alias,
-        "@follow/logger": resolve(__dirname, "../../packages/internal/logger/web.ts"),
+        "@suhui/logger": resolve(__dirname, "../../packages/internal/logger/web.ts"),
       },
     },
     plugins: [

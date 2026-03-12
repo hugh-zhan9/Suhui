@@ -1,4 +1,4 @@
-import { cn } from "@follow/utils/utils"
+import { cn } from "@suhui/utils/utils"
 import * as PopoverPrimitive from "@radix-ui/react-popover"
 import * as React from "react"
 

@@ -1,4 +1,4 @@
-import { setNavigate, setRoute } from "@follow/components/atoms/route.js"
+import { setNavigate, setRoute } from "@suhui/components/atoms/route.js"
 import { useLayoutEffect } from "react"
 import type { NavigateFunction } from "react-router"
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router"

@@ -1,6 +1,6 @@
-import { ScrollArea } from "@follow/components/ui/scroll-area/index.js"
-import { useIsLoggedIn } from "@follow/store/user/hooks"
-import { clsx, cn } from "@follow/utils"
+import { ScrollArea } from "@suhui/components/ui/scroll-area/index.js"
+import { useIsLoggedIn } from "@suhui/store/user/hooks"
+import { clsx, cn } from "@suhui/utils"
 import type { FC } from "react"
 import {
   Suspense,

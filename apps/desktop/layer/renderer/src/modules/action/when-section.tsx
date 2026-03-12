@@ -1,17 +1,17 @@
-import { Button } from "@follow/components/ui/button/index.js"
-import { Input } from "@follow/components/ui/input/index.js"
-import { SegmentGroup, SegmentItem } from "@follow/components/ui/segment/index.js"
+import { Button } from "@suhui/components/ui/button/index.js"
+import { Input } from "@suhui/components/ui/input/index.js"
+import { SegmentGroup, SegmentItem } from "@suhui/components/ui/segment/index.js"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@follow/components/ui/select/index.jsx"
-import { ResponsiveSelect } from "@follow/components/ui/select/responsive.js"
-import { filterFieldOptions, filterOperatorOptions } from "@follow/store/action/constant"
-import { useActionRule } from "@follow/store/action/hooks"
-import { actionActions } from "@follow/store/action/store"
+} from "@suhui/components/ui/select/index.jsx"
+import { ResponsiveSelect } from "@suhui/components/ui/select/responsive.js"
+import { filterFieldOptions, filterOperatorOptions } from "@suhui/store/action/constant"
+import { useActionRule } from "@suhui/store/action/hooks"
+import { actionActions } from "@suhui/store/action/store"
 import type { ActionFeedField, ActionOperation } from "@follow-app/client-sdk"
 import { Fragment } from "react"
 import { useTranslation } from "react-i18next"

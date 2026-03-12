@@ -1,4 +1,4 @@
-import { useIsLoggedIn } from "@follow/store/user/hooks"
+import { useIsLoggedIn } from "@suhui/store/user/hooks"
 import { useCallback } from "react"
 
 import { useLoginModal } from "./useLoginModal"

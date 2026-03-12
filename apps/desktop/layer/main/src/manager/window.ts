@@ -1,9 +1,9 @@
 import { fileURLToPath } from "node:url"
 
 import { is } from "@electron-toolkit/utils"
-import { LEGACY_APP_PROTOCOL } from "@follow/shared"
-import { callWindowExpose, WindowState } from "@follow/shared/bridge"
-import { APP_PROTOCOL, DEV } from "@follow/shared/constants"
+import { LEGACY_APP_PROTOCOL } from "@suhui/shared"
+import { callWindowExpose, WindowState } from "@suhui/shared/bridge"
+import { APP_PROTOCOL, DEV } from "@suhui/shared/constants"
 import type { BrowserWindowConstructorOptions } from "electron"
 import { BrowserWindow, screen, shell } from "electron"
 import type { Event } from "electron/main"

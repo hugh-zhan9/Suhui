@@ -1,4 +1,4 @@
-import { Spring } from "@follow/components/constants/spring.js"
+import { Spring } from "@suhui/components/constants/spring.js"
 import type { MotionProps, TargetAndTransition } from "motion/react"
 
 const enterStyle: TargetAndTransition = {

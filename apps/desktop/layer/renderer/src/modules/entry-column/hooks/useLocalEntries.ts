@@ -1,15 +1,15 @@
-import { FeedViewType } from "@follow/constants"
-import { useCollectionEntryList } from "@follow/store/collection/hooks"
+import { FeedViewType } from "@suhui/constants"
+import { useCollectionEntryList } from "@suhui/store/collection/hooks"
 import {
   useEntryIdsByFeedId,
   useEntryIdsByFeedIds,
   useEntryIdsByInboxId,
   useEntryIdsByListId,
   useEntryIdsByView,
-} from "@follow/store/entry/hooks"
-import { useEntryStore } from "@follow/store/entry/store"
-import type { UseEntriesReturn } from "@follow/store/entry/types"
-import { useFolderFeedsByFeedId } from "@follow/store/subscription/hooks"
+} from "@suhui/store/entry/hooks"
+import { useEntryStore } from "@suhui/store/entry/store"
+import type { UseEntriesReturn } from "@suhui/store/entry/types"
+import { useFolderFeedsByFeedId } from "@suhui/store/subscription/hooks"
 import { debounce } from "es-toolkit/compat"
 import { useCallback, useEffect, useMemo, useState } from "react"
 

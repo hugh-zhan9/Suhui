@@ -1,4 +1,4 @@
-import { DEV, MICROSOFT_STORE_BUILD, MODE, ModeEnum } from "@follow/shared/constants"
+import { DEV, MICROSOFT_STORE_BUILD, MODE, ModeEnum } from "@suhui/shared/constants"
 
 const isStoreDistribution = Boolean(process.mas || MICROSOFT_STORE_BUILD)
 

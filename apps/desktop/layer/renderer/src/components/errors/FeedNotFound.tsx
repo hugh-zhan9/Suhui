@@ -1,5 +1,5 @@
-import { Logo } from "@follow/components/icons/logo.jsx"
-import { Button } from "@follow/components/ui/button/index.js"
+import { Logo } from "@suhui/components/icons/logo.jsx"
+import { Button } from "@suhui/components/ui/button/index.js"
 import type { FC } from "react"
 import { useNavigate } from "react-router"
 

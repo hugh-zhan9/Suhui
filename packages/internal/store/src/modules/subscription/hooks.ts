@@ -1,4 +1,4 @@
-import { FeedViewType, getViewList } from "@follow/constants"
+import { FeedViewType, getViewList } from "@suhui/constants"
 import { useQuery } from "@tanstack/react-query"
 import { useCallback, useMemo, useRef } from "react"
 

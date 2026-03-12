@@ -1,4 +1,4 @@
-import { tracker } from "@follow/tracker"
+import { tracker } from "@suhui/tracker"
 import type { PropsWithChildren, ReactNode } from "react"
 import type { FallbackProps } from "react-error-boundary"
 import { ErrorBoundary as ReactErrorBoundary } from "react-error-boundary"

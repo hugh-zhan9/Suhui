@@ -66,8 +66,8 @@ describe("SuHui branding", () => {
     expect(modalLayoutContent).toContain('const APP_ICON_SRC = "icon.png?v=20260303"')
     expect(aboutContent).toContain('event.currentTarget.src = "icon.svg"')
     expect(modalLayoutContent).toContain('event.currentTarget.src = "icon.svg"')
-    expect(aboutContent).not.toContain("@follow/components/icons/logo.jsx")
-    expect(modalLayoutContent).not.toContain("@follow/components/icons/logo.jsx")
+    expect(aboutContent).not.toContain("@suhui/components/icons/logo.jsx")
+    expect(modalLayoutContent).not.toContain("@suhui/components/icons/logo.jsx")
   })
 
   it("EntryNotFound 占位文案应为两行且不显示图标", () => {
@@ -77,7 +77,7 @@ describe("SuHui branding", () => {
     expect(content).toContain("溯洄 (SuHui)")
     expect(content).toContain("溯源而读，回归纯粹")
     expect(content).toContain("text-[14px] font-medium text-zinc-500 dark:text-zinc-400")
-    expect(content).not.toContain("@follow/components/icons/logo.jsx")
+    expect(content).not.toContain("@suhui/components/icons/logo.jsx")
     expect(content).not.toContain("<Logo")
   })
 

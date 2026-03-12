@@ -1,10 +1,10 @@
 import {
   useGlobalFocusableScopeSelector,
   useSetGlobalFocusableScope,
-} from "@follow/components/common/Focusable/hooks.js"
-import { useRefValue } from "@follow/hooks"
-import type { EnhanceSet } from "@follow/utils"
-import { EventBus } from "@follow/utils/event-bus"
+} from "@suhui/components/common/Focusable/hooks.js"
+import { useRefValue } from "@suhui/hooks"
+import type { EnhanceSet } from "@suhui/utils"
+import { EventBus } from "@suhui/utils/event-bus"
 import { useEffect } from "react"
 
 import { useHasModal } from "~/components/ui/modal/stacked/hooks"

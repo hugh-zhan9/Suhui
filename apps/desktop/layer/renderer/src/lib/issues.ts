@@ -1,4 +1,4 @@
-import { getCurrentEnvironment } from "@follow/utils/environment"
+import { getCurrentEnvironment } from "@suhui/utils/environment"
 import { repository } from "@pkg"
 
 interface IssueOptions {

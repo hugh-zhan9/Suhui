@@ -1,5 +1,5 @@
-import { useRefValue } from "@follow/hooks"
-import { checkIsEditableElement } from "@follow/utils/dom"
+import { useRefValue } from "@suhui/hooks"
+import { checkIsEditableElement } from "@suhui/utils/dom"
 import { useEffect } from "react"
 import { tinykeys } from "tinykeys"
 

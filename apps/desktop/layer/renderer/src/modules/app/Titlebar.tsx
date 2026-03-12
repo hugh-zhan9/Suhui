@@ -1,5 +1,5 @@
-import { WindowState } from "@follow/shared/bridge"
-import { preventDefault } from "@follow/utils/dom"
+import { WindowState } from "@suhui/shared/bridge"
+import { preventDefault } from "@suhui/utils/dom"
 
 import { useWindowState } from "~/atoms/app"
 import { useUISettingKey } from "~/atoms/settings/ui"

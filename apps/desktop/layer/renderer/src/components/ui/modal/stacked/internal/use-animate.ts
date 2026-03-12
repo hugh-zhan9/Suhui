@@ -1,5 +1,5 @@
-import { Spring } from "@follow/components/constants/spring.js"
-import { nextFrame } from "@follow/utils/dom"
+import { Spring } from "@suhui/components/constants/spring.js"
+import { nextFrame } from "@suhui/utils/dom"
 import { useAnimationControls } from "motion/react"
 import { useCallback, useEffect, useLayoutEffect, useState } from "react"
 import { useEventCallback } from "usehooks-ts"

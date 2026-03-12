@@ -1,6 +1,6 @@
-import { FeedViewType } from "@follow/constants"
-import { useEntry } from "@follow/store/entry/hooks"
-import { getFeedById } from "@follow/store/feed/getter"
+import { FeedViewType } from "@suhui/constants"
+import { useEntry } from "@suhui/store/entry/hooks"
+import { getFeedById } from "@suhui/store/feed/getter"
 import { useMemo } from "react"
 import type { JSX } from "react/jsx-runtime"
 

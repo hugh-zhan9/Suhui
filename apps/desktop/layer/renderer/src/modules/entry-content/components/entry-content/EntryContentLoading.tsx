@@ -1,6 +1,6 @@
-import { Avatar, AvatarImage } from "@follow/components/ui/avatar/index.jsx"
-import { LoadingCircle, LoadingWithIcon } from "@follow/components/ui/loading/index.jsx"
-import { getUrlIcon } from "@follow/utils/utils"
+import { Avatar, AvatarImage } from "@suhui/components/ui/avatar/index.jsx"
+import { LoadingCircle, LoadingWithIcon } from "@suhui/components/ui/loading/index.jsx"
+import { getUrlIcon } from "@suhui/utils/utils"
 
 export const EntryContentLoading = (props: { icon?: string | null }) => {
   if (!props.icon) {

@@ -1,6 +1,6 @@
-import { useEntry } from "@follow/store/entry/hooks"
-import { nextFrame } from "@follow/utils/dom"
-import { formatTimeToSeconds, timeStringToSeconds } from "@follow/utils/utils"
+import { useEntry } from "@suhui/store/entry/hooks"
+import { nextFrame } from "@suhui/utils/dom"
+import { formatTimeToSeconds, timeStringToSeconds } from "@suhui/utils/utils"
 import { use } from "react"
 
 import { AudioPlayer } from "~/atoms/player"

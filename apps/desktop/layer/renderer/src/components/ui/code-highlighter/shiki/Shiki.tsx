@@ -1,5 +1,5 @@
-import { ELECTRON_BUILD } from "@follow/shared/constants"
-import { cn } from "@follow/utils/utils"
+import { ELECTRON_BUILD } from "@suhui/shared/constants"
+import { cn } from "@suhui/utils/utils"
 import { useIsomorphicLayoutEffect } from "foxact/use-isomorphic-layout-effect"
 import type { FC } from "react"
 import { memo, useInsertionEffect, useMemo, useRef, useState } from "react"

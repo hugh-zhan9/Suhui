@@ -1,7 +1,7 @@
-import { ActionButton } from "@follow/components/ui/button/action-button.js"
-import { useIsEntryStarred } from "@follow/store/collection/hooks"
-import { useEntry } from "@follow/store/entry/hooks"
-import { useSubscriptionByFeedId } from "@follow/store/subscription/hooks"
+import { ActionButton } from "@suhui/components/ui/button/action-button.js"
+import { useIsEntryStarred } from "@suhui/store/collection/hooks"
+import { useEntry } from "@suhui/store/entry/hooks"
+import { useSubscriptionByFeedId } from "@suhui/store/subscription/hooks"
 import clsx from "clsx"
 import { memo } from "react"
 

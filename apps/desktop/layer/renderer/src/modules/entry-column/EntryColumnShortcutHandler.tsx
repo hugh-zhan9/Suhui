@@ -1,11 +1,11 @@
 import {
   useFocusActions,
   useGlobalFocusableScopeSelector,
-} from "@follow/components/common/Focusable/hooks.js"
-import { useScrollViewElement } from "@follow/components/ui/scroll-area/hooks.js"
-import { useRefValue } from "@follow/hooks"
-import { nextFrame } from "@follow/utils/dom"
-import { EventBus } from "@follow/utils/event-bus"
+} from "@suhui/components/common/Focusable/hooks.js"
+import { useScrollViewElement } from "@suhui/components/ui/scroll-area/hooks.js"
+import { useRefValue } from "@suhui/hooks"
+import { nextFrame } from "@suhui/utils/dom"
+import { EventBus } from "@suhui/utils/event-bus"
 import type { FC } from "react"
 import { memo, useEffect } from "react"
 import { toast } from "sonner"

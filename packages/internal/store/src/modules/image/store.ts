@@ -1,5 +1,5 @@
-import type { ImageSchema } from "@follow/database/schemas/types"
-import { ImagesService } from "@follow/database/services/image"
+import type { ImageSchema } from "@suhui/database/schemas/types"
+import { ImagesService } from "@suhui/database/services/image"
 
 import type { Hydratable, Resetable } from "../../lib/base"
 import { createImmerSetter, createTransaction, createZustandStore } from "../../lib/helper"

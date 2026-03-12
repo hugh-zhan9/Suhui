@@ -1,6 +1,6 @@
-import { SegmentGroup, SegmentItem } from "@follow/components/ui/segment/index.js"
-import type { ResponsiveSelectItem } from "@follow/components/ui/select/responsive.js"
-import { ResponsiveSelect } from "@follow/components/ui/select/responsive.js"
+import { SegmentGroup, SegmentItem } from "@suhui/components/ui/segment/index.js"
+import type { ResponsiveSelectItem } from "@suhui/components/ui/select/responsive.js"
+import { ResponsiveSelect } from "@suhui/components/ui/select/responsive.js"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 

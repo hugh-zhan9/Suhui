@@ -1,5 +1,5 @@
-import { getFeedByIdOrUrl } from "@follow/store/feed/getter"
-import { getSubscriptionByFeedId } from "@follow/store/subscription/getter"
+import { getFeedByIdOrUrl } from "@suhui/store/feed/getter"
+import { getSubscriptionByFeedId } from "@suhui/store/subscription/getter"
 import { t } from "i18next"
 import { useCallback } from "react"
 import { useNavigate } from "react-router"

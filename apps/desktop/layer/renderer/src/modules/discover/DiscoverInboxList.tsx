@@ -1,4 +1,4 @@
-import { Button } from "@follow/components/ui/button/index.js"
+import { Button } from "@suhui/components/ui/button/index.js"
 import { repository } from "@pkg"
 import { useTranslation } from "react-i18next"
 

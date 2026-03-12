@@ -16,8 +16,8 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
-import { Button } from "@follow/components/ui/button/index.js"
-import { getView } from "@follow/constants"
+import { Button } from "@suhui/components/ui/button/index.js"
+import { getView } from "@suhui/constants"
 import type { CSSProperties, ReactNode } from "react"
 import { useCallback, useMemo } from "react"
 import { useTranslation } from "react-i18next"

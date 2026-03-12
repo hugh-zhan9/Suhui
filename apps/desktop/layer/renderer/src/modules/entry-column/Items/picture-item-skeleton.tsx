@@ -1,4 +1,4 @@
-import { Skeleton } from "@follow/components/ui/skeleton/index.jsx"
+import { Skeleton } from "@suhui/components/ui/skeleton/index.jsx"
 
 export const PictureItemSkeleton = (
   <div className="relative max-w-md rounded-md">

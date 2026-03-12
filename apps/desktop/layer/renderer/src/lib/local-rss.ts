@@ -1,4 +1,4 @@
-import type { FeedModel } from "@follow/store/feed/types"
+import type { FeedModel } from "@suhui/store/feed/types"
 
 type LocalEntry = {
   id: string

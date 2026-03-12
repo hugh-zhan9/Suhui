@@ -1,8 +1,8 @@
-import { Folo } from "@follow/components/icons/folo.jsx"
-import { Logo } from "@follow/components/icons/logo.jsx"
-import { Button } from "@follow/components/ui/button/index.js"
-import { APP_STORE_URLS } from "@follow/constants"
-import { getMobilePlatform, isMobileDevice } from "@follow/utils"
+import { Folo } from "@suhui/components/icons/folo.jsx"
+import { Logo } from "@suhui/components/icons/logo.jsx"
+import { Button } from "@suhui/components/ui/button/index.js"
+import { APP_STORE_URLS } from "@suhui/constants"
+import { getMobilePlatform, isMobileDevice } from "@suhui/utils"
 import { useEffect } from "react"
 
 export function DownloadPage() {

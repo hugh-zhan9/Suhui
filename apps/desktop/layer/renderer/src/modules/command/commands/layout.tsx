@@ -1,4 +1,4 @@
-import { EventBus } from "@follow/utils/event-bus"
+import { EventBus } from "@suhui/utils/event-bus"
 import { useTranslation } from "react-i18next"
 
 import { setTimelineColumnShow } from "~/atoms/sidebar"
@@ -10,7 +10,7 @@ import { COMMAND_ID } from "./id"
 interface FocusEvent {
   highlightBoundary: boolean
 }
-declare module "@follow/utils/event-bus" {
+declare module "@suhui/utils/event-bus" {
   interface EventBusMap {
     "layout:focus-to-timeline": FocusEvent
     "layout:focus-to-subscription": FocusEvent

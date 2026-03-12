@@ -1,8 +1,8 @@
-import { FeedViewType } from "@follow/constants"
-import type { CollectionSchema } from "@follow/database/schemas/types"
+import { FeedViewType } from "@suhui/constants"
+import type { CollectionSchema } from "@suhui/database/schemas/types"
 import { describe, expect, it } from "vitest"
 
-import { getCollectionEntryIdsByFeedIds } from "@follow/store/subscription/store"
+import { getCollectionEntryIdsByFeedIds } from "@suhui/store/subscription/store"
 
 describe("subscription unsubscribe collection cleanup", () => {
   it("取消订阅后应筛出对应 feed 的收藏 entryIds 并清理", () => {

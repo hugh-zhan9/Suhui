@@ -1,8 +1,8 @@
-import { EllipsisHorizontalTextWithTooltip } from "@follow/components/ui/typography/EllipsisWithTooltip.js"
-import type { FeedModel } from "@follow/store/feed/types"
-import type { InboxModel } from "@follow/store/inbox/types"
-import type { ListModel } from "@follow/store/list/types"
-import { cn } from "@follow/utils/utils"
+import { EllipsisHorizontalTextWithTooltip } from "@suhui/components/ui/typography/EllipsisWithTooltip.js"
+import type { FeedModel } from "@suhui/store/feed/types"
+import type { InboxModel } from "@suhui/store/inbox/types"
+import type { ListModel } from "@suhui/store/list/types"
+import { cn } from "@suhui/utils/utils"
 
 import { useUISettingKey } from "~/atoms/settings/ui"
 import { FeedCertification } from "~/modules/feed/feed-certification"

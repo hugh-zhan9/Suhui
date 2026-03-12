@@ -1,11 +1,11 @@
-import { FeedViewType } from "@follow/constants"
+import { FeedViewType } from "@suhui/constants"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 const { deleteByTargetsMock } = vi.hoisted(() => ({
   deleteByTargetsMock: vi.fn().mockResolvedValue(undefined),
 }))
 
-vi.mock("@follow/database/services/subscription", () => ({
+vi.mock("@suhui/database/services/subscription", () => ({
   SubscriptionService: {
     deleteByTargets: deleteByTargetsMock,
     delete: vi.fn().mockResolvedValue(undefined),
@@ -17,7 +17,7 @@ vi.mock("@follow/database/services/subscription", () => ({
   },
 }))
 
-vi.mock("@follow/store/context", () => ({
+vi.mock("@suhui/store/context", () => ({
   api: () => ({
     subscriptions: {
       update: vi.fn(),
@@ -33,8 +33,8 @@ vi.mock("@follow/store/context", () => ({
   }),
 }))
 
-import { subscriptionActions, subscriptionSyncService, useSubscriptionStore } from "@follow/store/subscription/store"
-import { useEntryStore } from "@follow/store/entry/store"
+import { subscriptionActions, subscriptionSyncService, useSubscriptionStore } from "@suhui/store/subscription/store"
+import { useEntryStore } from "@suhui/store/entry/store"
 
 const setMap = () => ({
   [FeedViewType.All]: new Set<string>(),

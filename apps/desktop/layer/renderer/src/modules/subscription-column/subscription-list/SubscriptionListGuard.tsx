@@ -1,5 +1,5 @@
-import type { FeedViewType } from "@follow/constants"
-import { cn } from "@follow/utils"
+import type { FeedViewType } from "@suhui/constants"
+import { cn } from "@suhui/utils"
 
 import { SubscriptionList as FeedListDesktop } from "./SubscriptionList"
 

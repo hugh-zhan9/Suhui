@@ -1,5 +1,5 @@
-import { EnhanceSet } from "@follow/utils"
-import { jotaiStore } from "@follow/utils/jotai"
+import { EnhanceSet } from "@suhui/utils"
+import { jotaiStore } from "@suhui/utils/jotai"
 import { useAtomValue, useSetAtom } from "jotai"
 import { selectAtom } from "jotai/utils"
 import { use, useCallback, useMemo } from "react"

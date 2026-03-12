@@ -1,6 +1,6 @@
-import { ActionButton } from "@follow/components/ui/button/index.js"
-import { RootPortal } from "@follow/components/ui/portal/index.js"
-import type { FeedViewType } from "@follow/constants"
+import { ActionButton } from "@suhui/components/ui/button/index.js"
+import { RootPortal } from "@suhui/components/ui/portal/index.js"
+import type { FeedViewType } from "@suhui/constants"
 import { useCallback, useMemo } from "react"
 
 import { MenuItemText } from "~/atoms/context-menu"

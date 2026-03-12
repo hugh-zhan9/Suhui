@@ -1,4 +1,4 @@
-import { getView } from "@follow/constants"
+import { getView } from "@suhui/constants"
 
 import { AIChatPanelStyle, useAIChatPanelStyle, useAIPanelVisibility } from "~/atoms/settings/ai"
 import { useRouteParamsSelector } from "~/hooks/biz/useRouteParams"

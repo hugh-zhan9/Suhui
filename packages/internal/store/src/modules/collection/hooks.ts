@@ -1,5 +1,5 @@
-import type { FeedViewType } from "@follow/constants"
-import type { CollectionSchema } from "@follow/database/schemas/types"
+import type { FeedViewType } from "@suhui/constants"
+import type { CollectionSchema } from "@suhui/database/schemas/types"
 import { useCallback } from "react"
 
 import { useCollectionStore } from "./store"

@@ -1,4 +1,4 @@
-import { getStorageNS } from "@follow/utils/ns"
+import { getStorageNS } from "@suhui/utils/ns"
 import type { ExtractResponseData, GetStatusConfigsResponse } from "@follow-app/client-sdk"
 import PKG from "@pkg"
 import { atomWithStorage } from "jotai/utils"

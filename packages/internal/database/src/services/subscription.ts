@@ -1,4 +1,4 @@
-import type { FeedViewType } from "@follow/constants"
+import type { FeedViewType } from "@suhui/constants"
 import { and, eq, inArray, notInArray, or, sql } from "drizzle-orm"
 
 import { db } from "../db"

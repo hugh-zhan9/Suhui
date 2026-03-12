@@ -1,4 +1,4 @@
-import type { SupportedActionLanguage } from "@follow/shared"
+import type { SupportedActionLanguage } from "@suhui/shared"
 import { useQuery } from "@tanstack/react-query"
 
 import type { GeneralQueryOptions } from "../../types"

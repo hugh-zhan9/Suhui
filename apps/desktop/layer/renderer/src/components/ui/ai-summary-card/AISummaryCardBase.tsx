@@ -1,6 +1,6 @@
-import { AutoResizeHeight } from "@follow/components/ui/auto-resize-height/index.js"
-import { MotionButtonBase } from "@follow/components/ui/button/index.js"
-import { cn } from "@follow/utils/utils"
+import { AutoResizeHeight } from "@suhui/components/ui/auto-resize-height/index.js"
+import { MotionButtonBase } from "@suhui/components/ui/button/index.js"
+import { cn } from "@suhui/utils/utils"
 import type { ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 

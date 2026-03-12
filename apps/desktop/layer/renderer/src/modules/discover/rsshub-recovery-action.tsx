@@ -1,4 +1,4 @@
-import { Button } from "@follow/components/ui/button/index.js"
+import { Button } from "@suhui/components/ui/button/index.js"
 import { toast } from "sonner"
 
 import { useModalStack } from "~/components/ui/modal/stacked/hooks"

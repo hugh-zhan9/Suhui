@@ -1,7 +1,7 @@
 import fs from "node:fs"
 
-import { callWindowExpose } from "@follow/shared/bridge"
-import { readability } from "@follow-app/readability"
+import { callWindowExpose } from "@suhui/shared/bridge"
+import { readability } from "@suhui/readability"
 import { app, BrowserWindow } from "electron"
 import type { IpcContext } from "electron-ipc-decorator"
 import { IpcMethod, IpcService } from "electron-ipc-decorator"

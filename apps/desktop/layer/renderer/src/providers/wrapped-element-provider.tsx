@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
-import { useScrollViewElement } from "@follow/components/ui/scroll-area/hooks.js"
-import { cn } from "@follow/utils/utils"
+import { useScrollViewElement } from "@suhui/components/ui/scroll-area/hooks.js"
+import { cn } from "@suhui/utils/utils"
 import { createContextState } from "foxact/create-context-state"
 import { useIsomorphicLayoutEffect } from "foxact/use-isomorphic-layout-effect"
 import type { PrimitiveAtom } from "jotai"

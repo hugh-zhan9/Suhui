@@ -1,4 +1,4 @@
-import { MotionButtonBase } from "@follow/components/ui/button/index.js"
+import { MotionButtonBase } from "@suhui/components/ui/button/index.js"
 import { useTranslation } from "react-i18next"
 
 import { useCurrentModal } from "./hooks"

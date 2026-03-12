@@ -1,4 +1,4 @@
-import { jotaiStore } from "@follow/utils"
+import { jotaiStore } from "@suhui/utils"
 import { atom } from "jotai"
 import { useEffect } from "react"
 

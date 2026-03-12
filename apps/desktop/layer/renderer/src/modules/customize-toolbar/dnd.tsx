@@ -6,8 +6,8 @@ import {
   TooltipContent,
   TooltipPortal,
   TooltipTrigger,
-} from "@follow/components/ui/tooltip/index.js"
-import { IN_ELECTRON } from "@follow/shared"
+} from "@suhui/components/ui/tooltip/index.js"
+import { IN_ELECTRON } from "@suhui/shared"
 import type { ReactNode } from "react"
 import { useMemo } from "react"
 import { useTranslation } from "react-i18next"

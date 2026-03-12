@@ -1,4 +1,4 @@
-import { usePrefetchEntryDetail } from "@follow/store/entry/hooks"
+import { usePrefetchEntryDetail } from "@suhui/store/entry/hooks"
 
 import { Paper } from "~/components/ui/paper"
 import { EntryContentForPreview } from "~/modules/entry-content/EntryContentForPreview"

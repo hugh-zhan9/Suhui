@@ -7,12 +7,12 @@ import {
   SimpleIconsReadeck,
   SimpleIconsReadwise,
   SimpleIconsZotero,
-} from "@follow/components/ui/platform-icon/icons.js"
-import { IN_ELECTRON } from "@follow/shared/constants"
-import { getEntry } from "@follow/store/entry/getter"
-import type { EntryModel } from "@follow/store/entry/types"
-import { getSummary } from "@follow/store/summary/getters"
-import { tracker } from "@follow/tracker"
+} from "@suhui/components/ui/platform-icon/icons.js"
+import { IN_ELECTRON } from "@suhui/shared/constants"
+import { getEntry } from "@suhui/store/entry/getter"
+import type { EntryModel } from "@suhui/store/entry/types"
+import { getSummary } from "@suhui/store/summary/getters"
+import { tracker } from "@suhui/tracker"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import type { FetchError } from "ofetch"
 import { ofetch } from "ofetch"

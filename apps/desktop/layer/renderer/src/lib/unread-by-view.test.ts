@@ -1,10 +1,10 @@
-import { FeedViewType } from "@follow/constants"
+import { FeedViewType } from "@suhui/constants"
 import { describe, expect, it } from "vitest"
 import { vi } from "vitest"
 
 import { countUnreadByView } from "./unread-by-view"
 
-vi.mock("@follow/store/subscription/getter", () => ({
+vi.mock("@suhui/store/subscription/getter", () => ({
   getSubscribedFeedIdAndInboxHandlesByView: ({ view }: { view: FeedViewType }) =>
     view === FeedViewType.Articles ? ["feed-a"] : ["feed-a", "feed-b"],
 }))

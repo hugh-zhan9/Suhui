@@ -1,6 +1,6 @@
 import { fileURLToPath, pathToFileURL } from "node:url"
 
-import { MODE, ModeEnum } from "@follow/shared/constants"
+import { MODE, ModeEnum } from "@suhui/shared/constants"
 import path from "pathe"
 
 import { isMacOS, isWindows } from "./env"

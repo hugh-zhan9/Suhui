@@ -1,5 +1,5 @@
-import type { FeedSchema, InboxSchema } from "@follow/database/schemas/types"
-import { getDateISOString } from "@follow/utils/utils"
+import type { FeedSchema, InboxSchema } from "@suhui/database/schemas/types"
+import { getDateISOString } from "@suhui/utils/utils"
 import type {
   AddFeedsResponse,
   AuthUser,

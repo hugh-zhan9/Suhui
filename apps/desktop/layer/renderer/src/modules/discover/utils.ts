@@ -1,4 +1,4 @@
-import type { RSSHubParameter, RSSHubParameterObject } from "@follow/models/rsshub"
+import type { RSSHubParameter, RSSHubParameterObject } from "@suhui/models/rsshub"
 
 export const normalizeRSSHubParameters = (
   parameters: RSSHubParameter,

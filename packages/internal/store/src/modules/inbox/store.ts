@@ -1,5 +1,5 @@
-import type { InboxSchema } from "@follow/database/schemas/types"
-import { InboxService } from "@follow/database/services/inbox"
+import type { InboxSchema } from "@suhui/database/schemas/types"
+import { InboxService } from "@suhui/database/services/inbox"
 
 import { api } from "../../context"
 import type { Hydratable, Resetable } from "../../lib/base"

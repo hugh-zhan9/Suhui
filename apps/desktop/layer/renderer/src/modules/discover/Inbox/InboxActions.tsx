@@ -1,4 +1,4 @@
-import { ActionButton } from "@follow/components/ui/button/action-button.js"
+import { ActionButton } from "@suhui/components/ui/button/action-button.js"
 import { useTranslation } from "react-i18next"
 
 import { useModalStack } from "~/components/ui/modal/stacked/hooks"

@@ -1,4 +1,4 @@
-import { stopPropagation } from "@follow/utils/dom"
+import { stopPropagation } from "@suhui/utils/dom"
 
 export const EntryPlaceholderLogo = () => {
   return (

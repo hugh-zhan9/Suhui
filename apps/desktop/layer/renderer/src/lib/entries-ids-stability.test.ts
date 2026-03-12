@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { deriveEntriesIds } from "@follow/store/entry/hooks"
+import { deriveEntriesIds } from "@suhui/store/entry/hooks"
 
 describe("entries ids stability", () => {
   it("刷新中(isLoading=true)但已有数据时，不应清空条目列表", () => {

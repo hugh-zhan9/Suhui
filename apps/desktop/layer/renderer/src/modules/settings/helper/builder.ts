@@ -1,5 +1,5 @@
-import type { SettingNamespace } from "@follow/shared/settings/constants"
-import { getSettingPaidLevel } from "@follow/shared/settings/constants"
+import type { SettingNamespace } from "@suhui/shared/settings/constants"
+import { getSettingPaidLevel } from "@suhui/shared/settings/constants"
 import type { JSX } from "react/jsx-runtime"
 
 import type { SettingItem } from "./setting-builder"

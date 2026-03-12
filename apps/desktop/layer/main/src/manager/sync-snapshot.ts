@@ -2,9 +2,9 @@ import * as fs from "node:fs"
 import * as path from "node:path"
 import { DBManager } from "./db"
 import { SyncManagerInstance } from "./sync"
-import { SubscriptionService } from "@follow/database/services/subscription"
-import { CollectionService } from "@follow/database/services/collection"
-import { EntryService } from "@follow/database/services/entry"
+import { SubscriptionService } from "@suhui/database/services/subscription"
+import { CollectionService } from "@suhui/database/services/collection"
+import { EntryService } from "@suhui/database/services/entry"
 import { inArray } from "drizzle-orm"
 
 export interface SyncSnapshot {

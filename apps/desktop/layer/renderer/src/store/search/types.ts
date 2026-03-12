@@ -1,6 +1,6 @@
-import type { EntryModel } from "@follow/store/entry/types"
-import type { FeedModel } from "@follow/store/feed/types"
-import type { SubscriptionModel } from "@follow/store/subscription/types"
+import type { EntryModel } from "@suhui/store/entry/types"
+import type { FeedModel } from "@suhui/store/feed/types"
+import type { SubscriptionModel } from "@suhui/store/subscription/types"
 
 // @ts-expect-error
 export interface SearchResult<T extends object, A extends object = object> extends A {

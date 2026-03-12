@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { shouldUseLocalSubscriptionMutation } from "@follow/store/subscription/store"
+import { shouldUseLocalSubscriptionMutation } from "@suhui/store/subscription/store"
 
 describe("subscription local mode", () => {
   it("Electron 环境应使用本地订阅更新", () => {

@@ -2,10 +2,10 @@ import type {
   CustomIntegration,
   FetchTemplate,
   URLSchemeTemplate,
-} from "@follow/shared/settings/interface"
-import type { EntryModel } from "@follow/store/entry/types"
-import { getSummary } from "@follow/store/summary/getters"
-import { tracker } from "@follow/tracker"
+} from "@suhui/shared/settings/interface"
+import type { EntryModel } from "@suhui/store/entry/types"
+import { getSummary } from "@suhui/store/summary/getters"
+import { tracker } from "@suhui/tracker"
 import { toast } from "sonner"
 
 import { getActionLanguage } from "~/atoms/settings/general"

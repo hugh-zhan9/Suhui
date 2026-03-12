@@ -1,4 +1,4 @@
-import { useIsDark } from "@follow/hooks"
+import { useIsDark } from "@suhui/hooks"
 
 import { useUISettingSelector } from "~/atoms/settings/ui"
 

@@ -1,8 +1,8 @@
-import { isOnboardingFeedUrl } from "@follow/store/constants/onboarding"
-import { useFeedStore } from "@follow/store/feed/store"
-import { useSubscriptionStore } from "@follow/store/subscription/store"
-import { getInboxHandleOrFeedIdFromFeedId } from "@follow/store/unread/utils"
-import { sortByAlphabet } from "@follow/utils/utils"
+import { isOnboardingFeedUrl } from "@suhui/store/constants/onboarding"
+import { useFeedStore } from "@suhui/store/feed/store"
+import { useSubscriptionStore } from "@suhui/store/subscription/store"
+import { getInboxHandleOrFeedIdFromFeedId } from "@suhui/store/unread/utils"
+import { sortByAlphabet } from "@suhui/utils/utils"
 import { Fragment, useCallback } from "react"
 
 import { getPreferredTitle } from "~/store/feed/hooks"
