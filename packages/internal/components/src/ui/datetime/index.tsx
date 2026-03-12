@@ -11,7 +11,7 @@ import { getUpdateInterval } from "./utils"
 const formatTemplateString = "lll"
 
 const formatTime = (
-  date: string | Date,
+  date: string | number | Date,
   relativeBeforeDay?: number,
   template = formatTemplateString,
 ) => {
@@ -22,7 +22,7 @@ const formatTime = (
 }
 
 export const RelativeTime: FC<{
-  date: string | Date
+  date: string | number | Date
   displayAbsoluteTimeAfterDay?: number
   dateFormatTemplate?: string
   postfix?: string

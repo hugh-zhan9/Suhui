@@ -18,13 +18,13 @@
 
 ### 2) 产品目标
 
-- 目标：**Desktop 端完全本地 RSS 阅读器（FreeFolo）**
+- 目标：**Desktop 端完全本地 RSS 阅读器（溯洄 / Suhui）**
 - 已明确剔除：会员/计费、登录强依赖、在线 AI 主链路依赖
 
 ### 3) 本地数据面
 
 - 主数据面：主进程 SQLite（`better-sqlite3`）
-  - DB 文件：`app.getPath("userData")/folo_local.db`
+- DB 文件：`app.getPath("userData")/suhui_local.db`
   - 入口：`apps/desktop/layer/main/src/manager/db.ts`
   - 初始化：`apps/desktop/layer/main/src/manager/bootstrap.ts`
 - 渲染层 DB：`packages/internal/database/src/db.desktop.ts`
@@ -33,18 +33,18 @@
 
 ### 4) 启动与构建（当前可用）
 
-- 开发启动：`pnpm --filter FreeFolo dev:electron`
-- 预览启动：`pnpm --filter FreeFolo start`
-- 打包：`pnpm --filter FreeFolo build:electron`  
-  无签名打包：`pnpm --filter FreeFolo build:electron:unsigned`
+- 开发启动：`pnpm --filter suhui dev:electron`
+- 预览启动：`pnpm --filter suhui start`
+- 打包：`pnpm --filter suhui build:electron`  
+  无签名打包：`pnpm --filter suhui build:electron:unsigned`
 - 桌面打包已强制 `asar` 解包所有 `*.node`，并在拷贝保留模块时启用符号链接解引用（`dereference`），用于确保 `better-sqlite3` 原生二进制被正确带入安装包
 - 桌面打包在 `postPackage` 阶段会再次覆盖产物内 `better_sqlite3.node`（以构建机当前二进制为准），降低跨机器启动失败概率
-- 无签名打包产物目录：`/tmp/folo-forge-out/make`（常见产物：`FreeFolo-<version>-macos-arm64.dmg`）
+- 无签名打包产物目录：`/tmp/folo-forge-out/make`（常见产物：`溯洄-<version>-macos-arm64.dmg`）
 
 ### 5) Release 规则（Desktop）
 
 - 当前仓库已移除 GitHub Actions 自动构建/发布 workflow（`.github/workflows` 为空）
-- 发布与安装验证以本地构建流程为准：`pnpm --filter FreeFolo build:electron:unsigned`
+- 发布与安装验证以本地构建流程为准：`pnpm --filter suhui build:electron:unsigned`
 - 历史 CI 发布规则与 release 编排保留在 `docs/AI_CHANGELOG.md` 作为演进记录，不再作为当前执行基线
 
 ## 本地 RSS 主链路（已落地）
