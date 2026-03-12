@@ -98,13 +98,25 @@ describe("sqlite -> postgres migration helpers", () => {
       throw new Error("Expected entries insert call")
     }
     const match = insert.sql.match(/\(([^)]+)\)\s+VALUES/)
+    if (!match) {
+      throw new Error("Expected entries insert columns")
+    }
     expect(match).toBeTruthy()
-    const columns = match![1]
-      .split(",")
-      .map((item) => item.trim().replace(/"/g, ""))
+    const columnsText = match[1]
+    if (!columnsText) {
+      throw new Error("Expected entries insert columns text")
+    }
+    const columns = columnsText.split(",").map((item) => item.trim().replaceAll('"', ""))
     const mediaIndex = columns.indexOf("media")
     expect(mediaIndex).toBeGreaterThan(-1)
-    const mediaValue = insert?.values?.[mediaIndex]
+    if (mediaIndex === -1) {
+      throw new Error("Expected media column in entries insert")
+    }
+    const { values } = insert
+    if (!values) {
+      throw new Error("Expected entries insert values")
+    }
+    const mediaValue = values[mediaIndex]
     expect(typeof mediaValue).toBe("string")
     expect(JSON.parse(mediaValue as string)).toEqual([
       { type: "photo", url: "https://example.com/a.png" },
