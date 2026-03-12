@@ -5328,3 +5328,12 @@
 - `apps/desktop/layer/renderer/src/lib/ipc-services.test-d.ts`
 
 ---
+## [2026-03-12 10:15] [Bugfix]
+- **Change**: 修复主进程类型错误：sqlite 迁移判空保护、sync-applier 时间字段用 number 并收窄 DB 类型，运行时 schema 测试改为包导入
+- **Risk Analysis**: 改动集中在类型与数据转换层，运行时逻辑变更很小；风险是 sync-applier 时间字段从 Date 改为 number 可能影响少量日志/调试输出，但与 schema 预期一致。
+- **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/manager/sqlite-postgres-migration.ts`
+- `apps/desktop/layer/main/src/manager/sync-applier.ts`
+- `apps/desktop/layer/main/src/manager/db-schema.test.ts`
+----------------------------------------
