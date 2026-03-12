@@ -1,6 +1,6 @@
 // @ts-nocheck
 /**
- * One-time migration from IndexedDB (wa-sqlite) to Main Process (folo_local.db)
+ * One-time migration from IndexedDB (wa-sqlite) to Main Process (suhui_local.db)
  */
 export async function migrateFromIndexedDB() {
   const IDB_NAME = "WA_SQLITE"
@@ -8,7 +8,7 @@ export async function migrateFromIndexedDB() {
 
   // 1. Check if the old database exists in IndexedDB
   const dbs = await indexedDB.databases()
-  const exists = dbs.some(db => db.name === IDB_NAME)
+  const exists = dbs.some((db) => db.name === IDB_NAME)
   if (!exists) return
 
   console.log("[Migration] Found old IndexedDB database, starting migration...")
@@ -23,7 +23,7 @@ export async function migrateFromIndexedDB() {
     const sqlite3 = SQLite.Factory(module)
     const vfs = await IDBMirrorVFS.create(IDB_NAME, module)
     sqlite3.vfs_register(vfs, true)
-    
+
     const dbSqlite3 = await sqlite3.open_v2(SQLITE_DB_NAME)
 
     const query = async (sql) => {
@@ -42,7 +42,9 @@ export async function migrateFromIndexedDB() {
     const subscriptions = await query("SELECT * FROM subscriptions")
     const entries = await query("SELECT * FROM entries")
 
-    console.log(`[Migration] Read ${feeds.length} feeds, ${subscriptions.length} subscriptions, ${entries.length} entries`)
+    console.log(
+      `[Migration] Read ${feeds.length} feeds, ${subscriptions.length} subscriptions, ${entries.length} entries`,
+    )
 
     // 4. Send to Main Process
     const electron = window.electron
@@ -50,7 +52,7 @@ export async function migrateFromIndexedDB() {
       const result = await electron.ipcRenderer.invoke("migration.migrateFromRenderer", {
         feeds,
         subscriptions,
-        entries
+        entries,
       })
 
       if (result.success) {

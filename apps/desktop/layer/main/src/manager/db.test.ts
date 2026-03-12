@@ -1,8 +1,20 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
+
+vi.mock("@suhui/database/db.main", () => ({
+  getMainDB: vi.fn(),
+  getMainPgPool: vi.fn(),
+  initializeMainDB: vi.fn(),
+  migrateMainDB: vi.fn(),
+}))
 
 import { buildPgConfig } from "./db-config"
+import { DBManager } from "./db"
 
 describe("db manager", () => {
+  it("defaults to postgres dialect", () => {
+    expect(DBManager.getDialect()).toBe("postgres")
+  })
+
   it("builds postgres config from env", () => {
     const config = buildPgConfig({
       DB_TYPE: "postgres",

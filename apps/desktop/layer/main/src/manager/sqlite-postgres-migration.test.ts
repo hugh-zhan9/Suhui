@@ -8,6 +8,8 @@ import {
   hasSqliteData,
   isPostgresEmpty,
   migrateSqliteToPostgres,
+  parseMigrationArgs,
+  resolveLegacySqlitePath,
 } from "./sqlite-postgres-migration"
 
 describe("sqlite -> postgres migration helpers", () => {
@@ -36,6 +38,57 @@ describe("sqlite -> postgres migration helpers", () => {
     })
 
     expect(hasSqliteData(dbPath, sqliteFactory as any)).toBe(true)
+  })
+
+  it("resolves legacy sqlite path on macOS", () => {
+    const resolved = resolveLegacySqlitePath({
+      platform: "darwin",
+      homeDir: "/Users/suhui",
+    })
+    expect(resolved).toBe(
+      join("/Users/suhui", "Library", "Application Support", "溯洄", "suhui_local.db"),
+    )
+  })
+
+  it("resolves legacy sqlite path on Windows using APPDATA", () => {
+    const resolved = resolveLegacySqlitePath({
+      platform: "win32",
+      homeDir: "C:\\Users\\Suhui",
+      env: { APPDATA: "C:\\Users\\Suhui\\AppData\\Roaming" },
+    })
+    expect(resolved).toBe(join("C:\\Users\\Suhui\\AppData\\Roaming", "溯洄", "suhui_local.db"))
+  })
+
+  it("resolves legacy sqlite path on Linux using XDG_CONFIG_HOME", () => {
+    const resolved = resolveLegacySqlitePath({
+      platform: "linux",
+      homeDir: "/home/suhui",
+      env: { XDG_CONFIG_HOME: "/home/suhui/.config" },
+    })
+    expect(resolved).toBe(join("/home/suhui/.config", "溯洄", "suhui_local.db"))
+  })
+
+  it("parses migration args overrides", () => {
+    const parsed = parseMigrationArgs([
+      "--sqlite-path",
+      "/tmp/legacy.db",
+      "--postgres-url",
+      "postgres://user:pass@localhost:5432/suhui",
+    ])
+    expect(parsed).toEqual({
+      help: false,
+      sqlitePath: "/tmp/legacy.db",
+      postgresUrl: "postgres://user:pass@localhost:5432/suhui",
+    })
+  })
+
+  it("parses help flag", () => {
+    const parsed = parseMigrationArgs(["--help"])
+    expect(parsed).toEqual({
+      help: true,
+      sqlitePath: undefined,
+      postgresUrl: undefined,
+    })
   })
 
   it("skips missing tables during migration", async () => {

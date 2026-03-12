@@ -5,7 +5,7 @@ declare global {
     electron?: ElectronAPI
     api?: { canWindowBlur: boolean }
     platform: NodeJS.Platform
-    __followDbType?: "sqlite" | "postgres"
+    __followDbType?: "postgres"
   }
   export const APP_NAME = "溯洄"
 }

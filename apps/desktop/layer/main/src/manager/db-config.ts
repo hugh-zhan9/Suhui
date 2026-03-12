@@ -1,11 +1,10 @@
-export type DbType = "sqlite" | "postgres"
+export type DbType = "postgres"
 
 export type DbConnInfo =
   | { connectionString: string }
   | { host: string; port: number; database: string }
 
-export const resolveDbType = (env: NodeJS.ProcessEnv): DbType =>
-  env.DB_TYPE === "postgres" ? "postgres" : "sqlite"
+export const resolveDbType = (_env: NodeJS.ProcessEnv): DbType => "postgres"
 
 export const parseDbConn = (raw?: string): DbConnInfo => {
   if (!raw) throw new Error("DB_CONN is required for postgres")

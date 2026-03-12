@@ -194,7 +194,7 @@ export const SettingGeneral = () => {
 }
 
 type DbConfigView = {
-  dbType: "sqlite" | "postgres"
+  dbType: "postgres"
   dbConn: string
   dbUser: string
   dbPasswordMasked: string

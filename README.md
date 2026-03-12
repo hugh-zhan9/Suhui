@@ -1,28 +1,27 @@
-# FreeFolo
+# 溯洄（Suhui）
 
-FreeFolo 是一个 desktop-only 的本地 RSS 阅读器分支。当前仓库目标是：
+溯洄是一个 desktop-only 的本地 RSS 阅读器分支。当前仓库目标是：
 
 - 仅保留桌面端（`apps/desktop`）
-- 以本地数据为主（SQLite + IPC）
+- 以本地数据为主（Postgres + IPC）
 - 优先保障订阅、拉取、阅读、已读/未读等核心链路离线可用
 
 详细上下文请先阅读 `AI-CONTEXT.md`（单一事实源）。
 
 ## 当前状态
 
-- 应用名：`FreeFolo`
+- 应用名：`溯洄`
 - 主要工作区：`apps/desktop`、`packages/internal/*`
 - 远端能力：主阅读链路已本地化，部分非核心模块仍可能保留在线分支
 
 ## 数据库配置
 
-- 默认使用 SQLite（本地文件位于 `userData/folo_local.db`）
-- 如需切换 PostgreSQL，请在 `userData/.env` 配置（修改后需重启应用）
+- 默认使用 Postgres（本地通过 IPC 访问）
+- 在 `userData/.env` 配置连接信息（修改后需重启应用）
 
 示例（同时见仓库根目录 `.env-example`）：
 
 ```env
-DB_TYPE=postgres
 DB_CONN=127.0.0.1:5432/suhui
 DB_USER=postgres
 DB_PASSWORD=your_password
@@ -33,7 +32,23 @@ DB_PASSWORD=your_password
 - `DB_CONN` 支持 `host:port/dbname` 或完整 DSN（包含 `://`）
 - `.env` 优先级：`resources/.env` → `userData/.env`（后者覆盖前者）
 - Postgres 模式下如果目标库不存在，应用启动时会自动创建
-- 当 Postgres 为空且检测到本地 SQLite 有数据时，会自动迁移到 Postgres
+
+## 历史 SQLite 数据迁移（手动）
+
+如果你之前使用过 SQLite，本版本不再自动迁移，请手动执行脚本：
+
+```bash
+pnpm tsx scripts/migrate-sqlite-to-postgres.ts
+```
+
+说明：
+
+- 脚本默认读取旧 SQLite 默认路径（见下方 `userData` 路径）
+- 如需覆盖路径或 Postgres 连接串：
+
+```bash
+pnpm tsx scripts/migrate-sqlite-to-postgres.ts --sqlite-path /path/to/old.db --postgres-url postgres://user:pass@localhost:5432/suhui
+```
 
 `userData` 路径（应用名：`溯洄`）：
 
@@ -71,26 +86,26 @@ pnpm install
 
 ```bash
 # Electron 开发
-pnpm --filter FreeFolo dev:electron
+pnpm --filter suhui dev:electron
 
 # Electron 预览（基于构建产物）
-pnpm --filter FreeFolo start
+pnpm --filter suhui start
 ```
 
 ## 打包命令
 
 ```bash
 # 常规打包
-pnpm --filter FreeFolo build:electron
+pnpm --filter suhui build:electron
 
 # 无签名打包（本地验证建议）
-pnpm --filter FreeFolo build:electron:unsigned
+pnpm --filter suhui build:electron:unsigned
 ```
 
 无签名构建默认产物目录：
 
 - `/tmp/folo-forge-out/make`
-- 示例：`/tmp/folo-forge-out/make/FreeFolo-1.3.1-macos-arm64.dmg`
+- 示例：`/tmp/folo-forge-out/make/溯洄-1.3.1-macos-arm64.dmg`
 
 ## 目录速览
 

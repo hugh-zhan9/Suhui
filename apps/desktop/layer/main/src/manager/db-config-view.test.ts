@@ -30,12 +30,12 @@ describe("buildDbConfigView", () => {
     })
   })
 
-  it("defaults to sqlite when missing DB_TYPE", () => {
+  it("defaults to postgres when missing DB_TYPE", () => {
     const result = buildDbConfigView({
       env: {},
       envInfo: { candidates: [], active: undefined },
     })
 
-    expect(result.dbType).toBe("sqlite")
+    expect(result.dbType).toBe("postgres")
   })
 })

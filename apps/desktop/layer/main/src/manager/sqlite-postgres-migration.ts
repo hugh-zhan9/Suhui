@@ -1,9 +1,79 @@
 import fs from "node:fs"
+import os from "node:os"
 
-import BDatabase from "better-sqlite3"
 import type { Pool } from "pg"
+import { join } from "pathe"
 
 const tablesToCheck = ["feeds", "subscriptions", "entries"]
+
+const DEFAULT_SQLITE_FILENAME = "suhui_local.db"
+const DEFAULT_APP_NAME = "溯洄"
+
+type LegacySqlitePathOptions = {
+  platform?: NodeJS.Platform
+  env?: NodeJS.ProcessEnv
+  homeDir?: string
+  appName?: string
+  fileName?: string
+}
+
+export const resolveLegacySqlitePath = (options: LegacySqlitePathOptions = {}) => {
+  const platform = options.platform ?? process.platform
+  const env = options.env ?? process.env
+  const homeDir = options.homeDir ?? os.homedir()
+  const appName = options.appName ?? DEFAULT_APP_NAME
+  const fileName = options.fileName ?? DEFAULT_SQLITE_FILENAME
+
+  let baseDir: string
+  if (platform === "darwin") {
+    baseDir = join(homeDir, "Library", "Application Support", appName)
+  } else if (platform === "win32") {
+    const appData = env.APPDATA ?? join(homeDir, "AppData", "Roaming")
+    baseDir = join(appData, appName)
+  } else {
+    const configHome = env.XDG_CONFIG_HOME ?? join(homeDir, ".config")
+    baseDir = join(configHome, appName)
+  }
+
+  return join(baseDir, fileName)
+}
+
+type MigrationArgs = {
+  help: boolean
+  sqlitePath?: string
+  postgresUrl?: string
+}
+
+export const parseMigrationArgs = (args: string[]): MigrationArgs => {
+  const result: MigrationArgs = { help: false }
+  for (let i = 0; i < args.length; i += 1) {
+    const arg = args[i]
+    if (!arg) continue
+    if (arg === "--help" || arg === "-h") {
+      result.help = true
+      continue
+    }
+    if (arg === "--sqlite-path") {
+      const value = args[i + 1]
+      if (!value) {
+        throw new Error("Missing value for --sqlite-path")
+      }
+      result.sqlitePath = value
+      i += 1
+      continue
+    }
+    if (arg === "--postgres-url") {
+      const value = args[i + 1]
+      if (!value) {
+        throw new Error("Missing value for --postgres-url")
+      }
+      result.postgresUrl = value
+      i += 1
+      continue
+    }
+  }
+  return result
+}
 
 const toBoolean = (value: unknown) => {
   if (typeof value === "boolean") return value
@@ -44,11 +114,7 @@ type SqliteReader = {
   close: () => void
 }
 
-export const hasSqliteData = (
-  dbPath: string,
-  sqliteFactory: (path: string) => SqliteReader = (path) =>
-    new BDatabase(path, { readonly: true }) as unknown as SqliteReader,
-) => {
+export const hasSqliteData = (dbPath: string, sqliteFactory: (path: string) => SqliteReader) => {
   if (!fs.existsSync(dbPath)) return false
   const sqlite = sqliteFactory(dbPath)
   try {
@@ -148,8 +214,7 @@ const mapRow = (table: string, row: Record<string, unknown>) => {
 export const migrateSqliteToPostgres = async (
   dbPath: string,
   pool: Pool,
-  sqliteFactory: (path: string) => SqliteReader = (path) =>
-    new BDatabase(path, { readonly: true }) as unknown as SqliteReader,
+  sqliteFactory: (path: string) => SqliteReader,
 ) => {
   const sqlite = sqliteFactory(dbPath)
   try {

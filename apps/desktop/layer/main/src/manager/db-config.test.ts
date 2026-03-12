@@ -17,11 +17,7 @@ describe("db-config", () => {
     })
   })
 
-  it("defaults db type to sqlite", () => {
-    expect(resolveDbType({})).toBe("sqlite")
-  })
-
-  it("uses postgres when DB_TYPE=postgres", () => {
-    expect(resolveDbType({ DB_TYPE: "postgres" })).toBe("postgres")
+  it("defaults db type to postgres", () => {
+    expect(resolveDbType({})).toBe("postgres")
   })
 })

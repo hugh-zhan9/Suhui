@@ -5399,3 +5399,30 @@
 - `docs/plans/2026-03-12-remove-sqlite-implementation.md`
 
 ---
+
+## [2026-03-12 11:44] [docs]
+
+- **Change**: 完善移除SQLite实现计划，补充默认路径与依赖调整
+- **Risk Analysis**: 仅计划文档更新，不影响运行逻辑
+- **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
+- **Changed Files**:
+- `apps/desktop/forge.config.cts`
+- `apps/desktop/layer/main/src/manager/db-config-view.test.ts`
+- `apps/desktop/layer/main/src/manager/db-config-view.ts`
+- `apps/desktop/layer/main/src/manager/db-config.test.ts`
+- `apps/desktop/layer/main/src/manager/db-config.ts`
+- `apps/desktop/layer/main/src/manager/db.ts`
+- `apps/desktop/package.json`
+- `docs/plans/2026-03-12-remove-sqlite-implementation.md`
+
+---
+
+## [2026-03-12 14:32] [Refactor]
+
+- **Change**: 移除 eslint 相关脚本与 lint-staged 检查
+- **Risk Analysis**: 提交前 eslint 校验被移除，可能导致风格/质量问题更晚暴露；也移除了 locales 去重校验，i18n 错误更难被发现。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `package.json`
+
+---

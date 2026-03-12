@@ -237,28 +237,9 @@ export class DbService extends IpcService {
     method?: "run" | "all" | "get" | "values",
   ) {
     try {
-      if (DBManager.getDialect() === "postgres") {
-        const pgPool = DBManager.getPgPool()
-        const result = await pgPool.query(sql, (params as any[]) ?? [])
-        return mapExecuteResult(method, result)
-      }
-
-      const sqlite = DBManager.getSqlite()
-      if (params && params.length > 0) {
-        if (method === "get") {
-          return { rows: sqlite.prepare(sql).raw().get(params) }
-        } else if (method === "run") {
-          return sqlite.prepare(sql).run(params)
-        }
-        return { rows: sqlite.prepare(sql).raw().all(params) }
-      }
-
-      if (method === "get") {
-        return { rows: sqlite.prepare(sql).raw().get() }
-      } else if (method === "run") {
-        return sqlite.prepare(sql).run()
-      }
-      return { rows: sqlite.prepare(sql).raw().all() }
+      const pgPool = DBManager.getPgPool()
+      const result = await pgPool.query(sql, (params as any[]) ?? [])
+      return mapExecuteResult(method, result)
     } catch (error: any) {
       console.error(`[DbService] Error executing SQL: ${sql} with params:`, params, error)
       return { rows: [] }

@@ -39,10 +39,7 @@ if (process.contextIsolated) {
     contextBridge.exposeInMainWorld("electron", electronAPI)
     contextBridge.exposeInMainWorld("api", api)
     contextBridge.exposeInMainWorld("platform", process.platform)
-    contextBridge.exposeInMainWorld(
-      "__followDbType",
-      (process.env.DB_TYPE ?? "sqlite") as "sqlite" | "postgres",
-    )
+    contextBridge.exposeInMainWorld("__followDbType", "postgres" as "postgres")
   } catch (error) {
     console.error(error)
   }
@@ -54,7 +51,7 @@ if (process.contextIsolated) {
   // @ts-ignore (define in dts)
   window.platform = process.platform
   // @ts-ignore (define in dts)
-  window.__followDbType = (process.env.DB_TYPE ?? "sqlite") as "sqlite" | "postgres"
+  window.__followDbType = "postgres" as "postgres"
 
   Object.defineProperty(window.navigator, "clipboard", {
     get: () => {

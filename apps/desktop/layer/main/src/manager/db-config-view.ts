@@ -2,7 +2,7 @@ import { resolveDbType } from "./db-config"
 import type { EnvLoadInfo } from "./env-loader"
 
 export type DbConfigView = {
-  dbType: "sqlite" | "postgres"
+  dbType: "postgres"
   dbConn: string
   dbUser: string
   dbPasswordMasked: string

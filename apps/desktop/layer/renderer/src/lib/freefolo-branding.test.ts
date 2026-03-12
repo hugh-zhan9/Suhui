@@ -35,8 +35,8 @@ describe("SuHui branding", () => {
     expect(indexHtml).not.toContain('href="/icon.svg"')
   })
 
-  it("主进程数据库文件名应切换为 suhui_local.db", () => {
-    const dbPath = path.join(mainRoot, "src/manager/db.ts")
+  it("SQLite 迁移默认文件名应为 suhui_local.db", () => {
+    const dbPath = path.join(mainRoot, "src/manager/sqlite-postgres-migration.ts")
     const content = readFileSync(dbPath, "utf-8")
 
     expect(content).toContain("suhui_local.db")

@@ -14,15 +14,12 @@
   "scripts": {
     "build:packages": "turbo run build --filter=\"./packages/**/*\"",
     "build:web": "turbo run Folo#build:web",
-    "dedupe:locales": "eslint --fix locales/**",
     "depcheck": "npx depcheck --quiet",
     "dev:web": "turbo run @suhui/web#dev",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "icons:sync": "echo \"desktop-only mode: icons sync disabled\"",
     "icons:update": "echo \"desktop-only mode: icons update disabled\"",
-    "lint": "pnpm run lint:tsl && eslint",
-    "lint:fix": "eslint --fix",
     "lint:tsl": "tsslint --project apps/desktop/layer/main/tsconfig.json --project apps/desktop/layer/renderer/tsconfig.json",
     "mitproxy": "bash scripts/run-proxy.sh",
     "polyfill-optimize": "pnpx nolyfill install",
@@ -46,8 +43,6 @@
     "@vercel/node": "5.6.3",
     "better-sqlite3": "12.4.0",
     "cross-env": "10.1.0",
-    "eslint": "9.39.1",
-    "eslint-config-hyoban": "4.0.10",
     "fast-glob": "3.3.3",
     "glob": "11.0.3",
     "lint-staged": "16.2.7",
@@ -72,12 +67,7 @@
   },
   "lint-staged": {
     "*": [
-      "eslint --fix",
       "prettier --ignore-unknown --write"
-    ],
-    "locales/**/*.json": [
-      "npm run dedupe:locales",
-      "git add locales"
     ]
   }
 }

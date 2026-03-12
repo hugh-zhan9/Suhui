@@ -25,8 +25,8 @@ describe("env-loader", () => {
     const resEnv = join(resourcesPath, ".env")
     const userEnv = join(userDataPath, ".env")
 
-    fs.writeFileSync(resEnv, "DB_TYPE=sqlite\n")
-    fs.writeFileSync(userEnv, "DB_TYPE=postgres\n")
+    fs.writeFileSync(resEnv, "DB_CONN=127.0.0.1:5432/suhui\n")
+    fs.writeFileSync(userEnv, "DB_CONN=127.0.0.1:5432/suhui\n")
 
     const originalEnv = { ...process.env }
     try {
