@@ -212,30 +212,30 @@ importers:
       '@electron-toolkit/tsconfig':
         specifier: 2.0.0
         version: 2.0.0(@types/node@25.2.3)
-      '@follow/components':
-        specifier: workspace:*
-        version: link:../../packages/internal/components
-      '@follow/configs':
-        specifier: workspace:*
-        version: link:../../packages/configs
-      '@follow/constants':
-        specifier: workspace:*
-        version: link:../../packages/internal/constants
-      '@follow/hooks':
-        specifier: workspace:*
-        version: link:../../packages/internal/hooks
-      '@follow/models':
-        specifier: workspace:*
-        version: link:../../packages/internal/models
-      '@follow/shared':
-        specifier: workspace:*
-        version: link:../../packages/internal/shared
-      '@follow/utils':
-        specifier: workspace:*
-        version: link:../../packages/internal/utils
       '@pengx17/electron-forge-maker-appimage':
         specifier: 1.2.1
         version: 1.2.1(patch_hash=5b5ab1ba36e8c0d7ffee912ebf29c1a18bc101c9c661ceb1bb0bda3deaf4c667)(dmg-builder@24.13.3)(electron-builder-squirrel-windows@24.13.3)
+      '@suhui/components':
+        specifier: workspace:*
+        version: link:../../packages/internal/components
+      '@suhui/configs':
+        specifier: workspace:*
+        version: link:../../packages/configs
+      '@suhui/constants':
+        specifier: workspace:*
+        version: link:../../packages/internal/constants
+      '@suhui/hooks':
+        specifier: workspace:*
+        version: link:../../packages/internal/hooks
+      '@suhui/models':
+        specifier: workspace:*
+        version: link:../../packages/internal/models
+      '@suhui/shared':
+        specifier: workspace:*
+        version: link:../../packages/internal/shared
+      '@suhui/utils':
+        specifier: workspace:*
+        version: link:../../packages/internal/utils
       '@types/html-minifier-terser':
         specifier: 7.0.2
         version: 7.0.2
@@ -344,16 +344,16 @@ importers:
       '@follow-app/client-sdk':
         specifier: 'catalog:'
         version: 0.3.92(@opentelemetry/api@1.9.0)(@types/pg@8.10.9)(better-sqlite3@12.6.2)(expo-sqlite@16.0.10(expo@54.0.33)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0))(react@19.1.0))(hono@4.11.10)(kysely@0.28.11)(pg@8.16.3)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      '@follow-app/readability':
-        specifier: workspace:*
-        version: link:../../../../packages/readability
-      '@follow/database':
+      '@suhui/database':
         specifier: workspace:*
         version: link:../../../../packages/internal/database
-      '@follow/shared':
+      '@suhui/readability':
+        specifier: workspace:*
+        version: link:../../../../packages/readability
+      '@suhui/shared':
         specifier: workspace:*
         version: link:../../../../packages/internal/shared
-      '@follow/utils':
+      '@suhui/utils':
         specifier: workspace:*
         version: link:../../../../packages/internal/utils
       builder-util-runtime:
@@ -420,10 +420,10 @@ importers:
         specifier: npm:@vscode/vscode-languagedetection@1.0.22
         version: '@vscode/vscode-languagedetection@1.0.22'
     devDependencies:
-      '@follow/models':
+      '@suhui/models':
         specifier: workspace:*
         version: link:../../../../packages/internal/models
-      '@follow/types':
+      '@suhui/types':
         specifier: workspace:*
         version: link:../../../../packages/internal/types
       '@types/js-yaml':
@@ -456,21 +456,6 @@ importers:
       '@follow-app/client-sdk':
         specifier: 'catalog:'
         version: 0.3.92(@opentelemetry/api@1.9.0)(@types/pg@8.10.9)(better-sqlite3@12.6.2)(expo-sqlite@16.0.10(expo@54.0.33)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0))(react@19.1.0))(hono@4.11.10)(kysely@0.28.11)(pg@8.16.3)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      '@follow/database':
-        specifier: workspace:*
-        version: link:../../../../packages/internal/database
-      '@follow/electron-main':
-        specifier: workspace:*
-        version: link:../main
-      '@follow/shared':
-        specifier: workspace:*
-        version: link:../../../../packages/internal/shared
-      '@follow/store':
-        specifier: workspace:*
-        version: link:../../../../packages/internal/store
-      '@follow/tracker':
-        specifier: workspace:*
-        version: link:../../../../packages/internal/tracker
       '@fontsource/sn-pro':
         specifier: 5.2.6
         version: 5.2.6
@@ -522,6 +507,21 @@ importers:
       '@splinetool/react-spline':
         specifier: 4.1.0
         version: 4.1.0(@splinetool/runtime@1.12.58)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@suhui/database':
+        specifier: workspace:*
+        version: link:../../../../packages/internal/database
+      '@suhui/electron-main':
+        specifier: workspace:*
+        version: link:../main
+      '@suhui/shared':
+        specifier: workspace:*
+        version: link:../../../../packages/internal/shared
+      '@suhui/store':
+        specifier: workspace:*
+        version: link:../../../../packages/internal/store
+      '@suhui/tracker':
+        specifier: workspace:*
+        version: link:../../../../packages/internal/tracker
       '@tanstack/query-sync-storage-persister':
         specifier: 5.90.22
         version: 5.90.22
@@ -745,33 +745,33 @@ importers:
         specifier: 5.0.11
         version: 5.0.11(@types/react@19.1.17)(immer@11.1.4)(react@19.1.0)(use-sync-external-store@1.6.0(react@19.1.0))
     devDependencies:
-      '@follow/atoms':
-        specifier: workspace:*
-        version: link:../../../../packages/internal/atoms
-      '@follow/components':
-        specifier: workspace:*
-        version: link:../../../../packages/internal/components
-      '@follow/constants':
-        specifier: workspace:*
-        version: link:../../../../packages/internal/constants
-      '@follow/hooks':
-        specifier: workspace:*
-        version: link:../../../../packages/internal/hooks
-      '@follow/logger':
-        specifier: workspace:*
-        version: link:../../../../packages/internal/logger
-      '@follow/models':
-        specifier: workspace:*
-        version: link:../../../../packages/internal/models
-      '@follow/types':
-        specifier: workspace:*
-        version: link:../../../../packages/internal/types
-      '@follow/utils':
-        specifier: workspace:*
-        version: link:../../../../packages/internal/utils
       '@folo-services/ai-tools':
         specifier: 'catalog:'
         version: 0.2.65(@opentelemetry/api@1.9.0)(@types/pg@8.10.9)(better-sqlite3@12.6.2)(expo-sqlite@16.0.10(expo@54.0.33)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0))(react@19.1.0))(hono@4.11.10)(kysely@0.28.11)(pg@8.16.3)
+      '@suhui/atoms':
+        specifier: workspace:*
+        version: link:../../../../packages/internal/atoms
+      '@suhui/components':
+        specifier: workspace:*
+        version: link:../../../../packages/internal/components
+      '@suhui/constants':
+        specifier: workspace:*
+        version: link:../../../../packages/internal/constants
+      '@suhui/hooks':
+        specifier: workspace:*
+        version: link:../../../../packages/internal/hooks
+      '@suhui/logger':
+        specifier: workspace:*
+        version: link:../../../../packages/internal/logger
+      '@suhui/models':
+        specifier: workspace:*
+        version: link:../../../../packages/internal/models
+      '@suhui/types':
+        specifier: workspace:*
+        version: link:../../../../packages/internal/types
+      '@suhui/utils':
+        specifier: workspace:*
+        version: link:../../../../packages/internal/utils
       '@types/node':
         specifier: 25.2.3
         version: 25.2.3
@@ -851,25 +851,25 @@ importers:
 
   packages/internal/atoms:
     dependencies:
-      '@follow/configs':
+      '@suhui/configs':
         specifier: workspace:*
         version: link:../../configs
-      '@follow/constants':
+      '@suhui/constants':
         specifier: workspace:*
         version: link:../constants
-      '@follow/hooks':
+      '@suhui/hooks':
         specifier: workspace:*
         version: link:../hooks
-      '@follow/shared':
+      '@suhui/shared':
         specifier: workspace:*
         version: link:../shared
-      '@follow/store':
+      '@suhui/store':
         specifier: workspace:*
         version: link:../store
-      '@follow/types':
+      '@suhui/types':
         specifier: workspace:*
         version: link:../types
-      '@follow/utils':
+      '@suhui/utils':
         specifier: workspace:*
         version: link:../utils
       jotai:
@@ -890,18 +890,6 @@ importers:
       '@floating-ui/react-dom':
         specifier: 2.1.4
         version: 2.1.4(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      '@follow/hooks':
-        specifier: workspace:*
-        version: link:../hooks
-      '@follow/models':
-        specifier: workspace:*
-        version: link:../models
-      '@follow/types':
-        specifier: workspace:*
-        version: link:../types
-      '@follow/utils':
-        specifier: workspace:*
-        version: link:../utils
       '@headlessui/react':
         specifier: 2.2.9
         version: 2.2.9(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -995,6 +983,18 @@ importers:
       '@rehookify/datepicker':
         specifier: 6.6.8
         version: 6.6.8(react@19.1.0)
+      '@suhui/hooks':
+        specifier: workspace:*
+        version: link:../hooks
+      '@suhui/models':
+        specifier: workspace:*
+        version: link:../models
+      '@suhui/types':
+        specifier: workspace:*
+        version: link:../types
+      '@suhui/utils':
+        specifier: workspace:*
+        version: link:../utils
       '@types/hast':
         specifier: 3.0.4
         version: 3.0.4
@@ -1098,7 +1098,7 @@ importers:
         specifier: 5.3.7
         version: 5.3.7
     devDependencies:
-      '@follow/configs':
+      '@suhui/configs':
         specifier: workspace:*
         version: link:../../configs
       '@types/katex':
@@ -1110,10 +1110,10 @@ importers:
       '@follow-app/client-sdk':
         specifier: 'catalog:'
         version: 0.3.92(@opentelemetry/api@1.9.0)(@types/pg@8.10.9)(better-sqlite3@12.6.2)(expo-sqlite@16.0.10(expo@54.0.33)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0))(react@19.1.0))(hono@4.11.10)(kysely@0.28.11)(pg@8.16.3)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      '@follow/configs':
+      '@suhui/configs':
         specifier: workspace:*
         version: link:../../configs
-      '@follow/types':
+      '@suhui/types':
         specifier: workspace:*
         version: link:../types
 
@@ -1122,13 +1122,13 @@ importers:
       '@follow-app/client-sdk':
         specifier: 'catalog:'
         version: 0.3.92(@opentelemetry/api@1.9.0)(@types/pg@8.10.9)(better-sqlite3@12.6.2)(expo-sqlite@16.0.10(expo@54.0.33)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0))(react@19.1.0))(hono@4.11.10)(kysely@0.28.11)(pg@8.13.3)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      '@follow/constants':
+      '@suhui/constants':
         specifier: workspace:*
         version: link:../constants
-      '@follow/models':
+      '@suhui/models':
         specifier: workspace:*
         version: link:../models
-      '@follow/shared':
+      '@suhui/shared':
         specifier: workspace:*
         version: link:../shared
       ai:
@@ -1150,7 +1150,7 @@ importers:
         specifier: git+https://github.com/rhashimoto/wa-sqlite.git#v1.0.8
         version: https://codeload.github.com/rhashimoto/wa-sqlite/tar.gz/03c00ed67cd934bd664ae310234bba317928f851
     devDependencies:
-      '@follow/configs':
+      '@suhui/configs':
         specifier: workspace:*
         version: link:../../configs
       '@types/pg':
@@ -1162,13 +1162,13 @@ importers:
 
   packages/internal/hooks:
     dependencies:
-      '@follow/shared':
+      '@suhui/shared':
         specifier: workspace:*
         version: link:../shared
-      '@follow/types':
+      '@suhui/types':
         specifier: workspace:*
         version: link:../types
-      '@follow/utils':
+      '@suhui/utils':
         specifier: workspace:*
         version: link:../utils
       foxact:
@@ -1181,7 +1181,7 @@ importers:
         specifier: 3.1.1
         version: 3.1.1(react@19.1.0)
     devDependencies:
-      '@follow/configs':
+      '@suhui/configs':
         specifier: workspace:*
         version: link:../../configs
 
@@ -1191,7 +1191,7 @@ importers:
         specifier: 5.4.3
         version: 5.4.3
     devDependencies:
-      '@follow/configs':
+      '@suhui/configs':
         specifier: workspace:*
         version: link:../../configs
 
@@ -1200,20 +1200,20 @@ importers:
       '@follow-app/client-sdk':
         specifier: 'catalog:'
         version: 0.3.92(@opentelemetry/api@1.9.0)(@types/pg@8.10.9)(better-sqlite3@12.6.2)(expo-sqlite@16.0.10(expo@54.0.33)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0))(react@19.1.0))(hono@4.11.10)(kysely@0.28.11)(pg@8.16.3)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      '@follow/constants':
+      '@suhui/constants':
         specifier: workspace:*
         version: link:../constants
-      '@follow/shared':
+      '@suhui/shared':
         specifier: workspace:*
         version: link:../shared
-      '@follow/types':
+      '@suhui/types':
         specifier: workspace:*
         version: link:../types
-      '@follow/utils':
+      '@suhui/utils':
         specifier: workspace:*
         version: link:../utils
     devDependencies:
-      '@follow/configs':
+      '@suhui/configs':
         specifier: workspace:*
         version: link:../../configs
 
@@ -1261,25 +1261,25 @@ importers:
       '@follow-app/client-sdk':
         specifier: 'catalog:'
         version: 0.3.92(@opentelemetry/api@1.9.0)(@types/pg@8.10.9)(better-sqlite3@12.6.2)(expo-sqlite@16.0.10(expo@54.0.33)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0))(react@19.1.0))(hono@4.11.10)(kysely@0.28.11)(pg@8.16.3)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      '@follow/configs':
+      '@suhui/configs':
         specifier: workspace:*
         version: link:../../configs
-      '@follow/constants':
+      '@suhui/constants':
         specifier: workspace:*
         version: link:../constants
-      '@follow/database':
+      '@suhui/database':
         specifier: workspace:*
         version: link:../database
-      '@follow/models':
+      '@suhui/models':
         specifier: workspace:*
         version: link:../models
-      '@follow/shared':
+      '@suhui/shared':
         specifier: workspace:*
         version: link:../shared
-      '@follow/tracker':
+      '@suhui/tracker':
         specifier: workspace:*
         version: link:../tracker
-      '@follow/utils':
+      '@suhui/utils':
         specifier: workspace:*
         version: link:../utils
       '@tanstack/react-query':
@@ -1306,7 +1306,7 @@ importers:
       '@follow-app/client-sdk':
         specifier: 'catalog:'
         version: 0.3.92(@opentelemetry/api@1.9.0)(@types/pg@8.10.9)(better-sqlite3@12.6.2)(expo-sqlite@16.0.10(expo@54.0.33)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0))(react@19.1.0))(hono@4.11.10)(kysely@0.28.11)(pg@8.16.3)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      '@follow/configs':
+      '@suhui/configs':
         specifier: workspace:*
         version: link:../../configs
 
@@ -1314,15 +1314,15 @@ importers:
 
   packages/internal/utils:
     dependencies:
-      '@follow/shared':
-        specifier: workspace:*
-        version: link:../shared
-      '@follow/types':
-        specifier: workspace:*
-        version: link:../types
       '@mozilla/readability':
         specifier: 0.6.0
         version: 0.6.0(patch_hash=61709486ef07e9c8175a4b3f19f1aa4e2a1a75a3c557643c574d6cdacd6dd959)
+      '@suhui/shared':
+        specifier: workspace:*
+        version: link:../shared
+      '@suhui/types':
+        specifier: workspace:*
+        version: link:../types
       chardet:
         specifier: 2.1.1
         version: 2.1.1
@@ -1351,7 +1351,7 @@ importers:
         specifier: 1.1.1
         version: 1.1.1
     devDependencies:
-      '@follow/configs':
+      '@suhui/configs':
         specifier: workspace:*
         version: link:../../configs
       vite-tsconfig-paths:
@@ -1373,7 +1373,7 @@ importers:
         specifier: 0.18.12
         version: 0.18.12
     devDependencies:
-      '@follow/configs':
+      '@suhui/configs':
         specifier: workspace:*
         version: link:../configs
       nbump:
