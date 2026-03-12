@@ -17,6 +17,7 @@ import { getTrayConfig } from "~/lib/tray"
 import { refreshBound } from "~/lib/utils"
 import { logger } from "~/logger"
 import { shouldForwardRendererConsoleError } from "~/manager/renderer-console-filter"
+import { snapshotBrowserWindow } from "~/manager/window-diagnostics"
 import { loadDynamicRenderEntry } from "~/updater/hot-updater"
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url))
@@ -354,6 +355,8 @@ class WindowManagerStatic {
       ...configs,
     })
 
+    logger.info("[Window] created", snapshotBrowserWindow(window))
+
     this.bindEvents(window)
 
     window.webContents.on("console-message", (_event, level, message, line, sourceId) => {
@@ -385,6 +388,40 @@ class WindowManagerStatic {
       window.loadURL(appLoadEntry)
       logger.log("load URL", appLoadEntry)
     }
+
+    window.once("ready-to-show", () => {
+      logger.info("[Window] ready-to-show", snapshotBrowserWindow(window))
+      if (!DEV) {
+        window.center()
+        window.show()
+        window.focus()
+        logger.info("[Window] forced-show", snapshotBrowserWindow(window))
+      }
+    })
+
+    window.on("show", () => {
+      logger.info("[Window] show", snapshotBrowserWindow(window))
+    })
+
+    window.webContents.on("did-finish-load", () => {
+      logger.info("[Window] did-finish-load", snapshotBrowserWindow(window))
+    })
+
+    window.webContents.on("did-fail-load", (_event, errorCode, errorDescription, validatedURL) => {
+      logger.error("[Window] did-fail-load", {
+        errorCode,
+        errorDescription,
+        url: validatedURL,
+        window: snapshotBrowserWindow(window),
+      })
+    })
+
+    window.webContents.on("render-process-gone", (_event, details) => {
+      logger.error("[Window] render-process-gone", {
+        details,
+        window: snapshotBrowserWindow(window),
+      })
+    })
 
     return window
   }

@@ -13,6 +13,13 @@ vi.mock("./db", () => ({ DBManager: {} }))
 vi.mock("@suhui/database/schemas/sync", () => ({}))
 
 describe("SyncLogger", () => {
+  beforeEach(async () => {
+    const { configureSyncLogger } = await import("./sync-logger")
+    configureSyncLogger(() => {
+      throw new Error("[SyncLogger] 未配置 SyncManager getter")
+    })
+  })
+
   it("record() 应自动生成 opId, ts, deviceId，并自增 logicalClock", async () => {
     const { createSyncLogger } = await import("./sync-logger")
 
@@ -64,7 +71,7 @@ describe("SyncLogger", () => {
 
   it("drain() 可以选择性根据 fromClock 提供增量同步", async () => {
     const { createSyncLogger } = await import("./sync-logger")
-    
+
     let clock = 100
     const mockManager = {
       getDeviceId: () => "mock-device-id",
@@ -77,7 +84,7 @@ describe("SyncLogger", () => {
     logger.record({ type: "entry.mark_read", entityType: "entry", entityId: "e3" }) // 103
 
     const ops = logger.drain(101) // 只取 > 101 的，应包含 e2(102)和 e3(103)
-    
+
     expect(ops.length).toBe(2)
     expect(ops[0]?.entityId).toBe("e2")
     expect(ops[1]?.entityId).toBe("e3")
@@ -86,5 +93,29 @@ describe("SyncLogger", () => {
     const remaining = logger.drain()
     expect(remaining.length).toBe(1)
     expect(remaining[0]?.entityId).toBe("e1")
+  })
+
+  it("syncLogger 在配置 getter 后可以记录操作，不依赖运行时 require", async () => {
+    const { configureSyncLogger, syncLogger } = await import("./sync-logger")
+
+    let clock = 7
+    configureSyncLogger(
+      () =>
+        ({
+          getDeviceId: () => "configured-device",
+          bumpLogicalClock: () => ++clock,
+        }) as any,
+    )
+
+    syncLogger.record({
+      type: "entry.mark_read",
+      entityType: "entry",
+      entityId: "configured-entry",
+    })
+
+    const ops = syncLogger.drain()
+    expect(ops).toHaveLength(1)
+    expect(ops[0]?.deviceId).toBe("configured-device")
+    expect(ops[0]?.logicalClock).toBe(8)
   })
 })

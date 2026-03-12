@@ -1,6 +1,6 @@
 /**
  * SyncLogger — 同步操作日志拦截器
- * 
+ *
  * 职责：
  * - 提供内存队列收集 DB 写事件
  * - 根据 SyncManager 的 deviceId 和 logicalClock 组装完整的 SyncOp
@@ -10,7 +10,7 @@
 import { randomUUID } from "node:crypto"
 import type { SyncManagerInstance } from "./sync"
 
-export type OpType = 
+export type OpType =
   | "entry.mark_read"
   | "entry.mark_unread"
   | "collection.add"
@@ -52,7 +52,7 @@ export function createSyncLogger(getSyncManager: () => SyncManagerInstance): Syn
         const syncManager = getSyncManager()
         const deviceId = syncManager.getDeviceId()
         const logicalClock = syncManager.bumpLogicalClock()
-        
+
         const fullOp: SyncOp = {
           ...baseOp,
           opId: randomUUID(),
@@ -60,7 +60,7 @@ export function createSyncLogger(getSyncManager: () => SyncManagerInstance): Syn
           logicalClock,
           ts: Date.now(),
         }
-        
+
         ops.push(fullOp)
       } catch (err) {
         // 如果 SyncManager 尚未初始化，忽略录制（不阻止应用正常使用）
@@ -69,11 +69,11 @@ export function createSyncLogger(getSyncManager: () => SyncManagerInstance): Syn
     },
 
     drain(fromClock: number = 0) {
-      const result = ops.filter(op => op.logicalClock > fromClock)
-      
+      const result = ops.filter((op) => op.logicalClock > fromClock)
+
       // 清理已 drain 且未超出的
-      ops = ops.filter(op => op.logicalClock <= fromClock)
-      
+      ops = ops.filter((op) => op.logicalClock <= fromClock)
+
       return result
     },
 
@@ -83,12 +83,16 @@ export function createSyncLogger(getSyncManager: () => SyncManagerInstance): Syn
 
     resume() {
       isPaused = false
-    }
+    },
   }
 }
 
-export const syncLogger = createSyncLogger(() => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { SyncManager } = require("./sync")
-  return SyncManager
-})
+let getMainSyncManager: () => SyncManagerInstance = () => {
+  throw new Error("[SyncLogger] 未配置 SyncManager getter")
+}
+
+export function configureSyncLogger(getSyncManager: () => SyncManagerInstance) {
+  getMainSyncManager = getSyncManager
+}
+
+export const syncLogger = createSyncLogger(() => getMainSyncManager())

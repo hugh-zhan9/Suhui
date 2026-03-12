@@ -11,13 +11,18 @@ export type EnvLoadInfo = {
 export const resolveEnvPaths = ({
   userDataPath,
   resourcesPath,
+  workspacePath,
 }: {
   userDataPath: string
   resourcesPath?: string
+  workspacePath?: string
 }) => {
   const paths: string[] = []
   if (resourcesPath) {
     paths.push(join(resourcesPath, ".env"))
+  }
+  if (workspacePath) {
+    paths.push(join(workspacePath, ".env"))
   }
   paths.push(join(userDataPath, ".env"))
   return paths
@@ -30,11 +35,13 @@ export const getDesktopEnvInfo = () => lastEnvInfo
 export const loadDesktopEnv = ({
   userDataPath,
   resourcesPath,
+  workspacePath,
 }: {
   userDataPath: string
   resourcesPath?: string
+  workspacePath?: string
 }) => {
-  const paths = resolveEnvPaths({ userDataPath, resourcesPath })
+  const paths = resolveEnvPaths({ userDataPath, resourcesPath, workspacePath })
   const candidates: string[] = []
   for (const path of paths) {
     if (!fs.existsSync(path)) continue

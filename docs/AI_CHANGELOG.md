@@ -5455,3 +5455,240 @@
 - `apps/desktop/layer/renderer/src/modules/update-notice/UpdateNotice.tsx`
 
 ---
+
+## [2026-03-12 15:50] [Bugfix]
+
+- **Change**: 恢复 Discover 与 Trending 使用 api.folo.is，避免依赖当前 suhui 主 API
+- **Risk Analysis**: 发现页趋势与分类请求已切换到独立旧 API 客户端，风险在于发现类接口仍会影响全局 API 状态提示，且旧 API 若后续下线会再次失效。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/lib/api-client.ts`
+- `apps/desktop/layer/renderer/src/lib/discover-client.test.ts`
+- `apps/desktop/layer/renderer/src/modules/trending/index.tsx`
+- `apps/desktop/layer/renderer/src/queries/discover.ts`
+
+---
+
+## [2026-03-12 16:01] [Bugfix]
+
+- **Change**: 为 Discover/Trending 增加临时诊断日志定位接口异常
+- **Risk Analysis**: 只在 discoverClient 上增加请求/响应/错误日志，风险是日志会暴露响应体片段，需要在问题定位后移除或降级。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/lib/api-client.ts`
+- `apps/desktop/layer/renderer/src/lib/discover-client.test.ts`
+- `docs/plans/2026-03-12-discover-api-diagnostics-design.md`
+- `docs/plans/2026-03-12-discover-api-diagnostics-implementation.md`
+
+---
+
+## [2026-03-12 16:03] [Bugfix]
+
+- **Change**: 调整 Discover/Trending 诊断日志为 warn/error 级别以进入主日志
+- **Risk Analysis**: renderer 的 info 日志不会被主进程日志转发，因此将诊断日志提升为 warn/error；风险是主日志会短期变多，定位后应回收。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/lib/api-client.ts`
+
+---
+
+## [2026-03-12 16:08] [Bugfix]
+
+- **Change**: 将 Discover/Trending 诊断请求与响应日志提升到 error 级别
+- **Risk Analysis**: 主进程只转发 renderer error 级别日志到 main.log，因此将 Discover API 请求/响应日志统一提升为 error；风险是排障期主日志会显著变多，定位后应移除。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/lib/api-client.ts`
+
+---
+
+## [2026-03-12 16:15] [Bugfix]
+
+- **Change**: 修复 dev 模式下主进程解析 pg-native 失败
+- **Risk Analysis**: 通过在 electron-vite main 构建中将 pg 与 pg-native 标记为 external，避免 dev bundling 解析可选原生依赖；风险是若未来需要在 bundle 中特殊处理 pg，将需要同步调整测试与配置。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/electron.vite.config.ts`
+- `apps/desktop/layer/main/src/electron-vite-config.test.ts`
+
+---
+
+## [2026-03-12 16:31] [Bugfix]
+
+- **Change**: 将 Discover/Trending 请求改为公开模式，避免 dev 场景跨域凭证问题
+- **Risk Analysis**: discoverClient 改为 credentials=omit，可降低旧 API 的 CORS 凭证要求；风险是若旧发现接口未来依赖 cookie 登录态，此路径将无法复用，但当前趋势与分类都是公开接口。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/lib/api-client.ts`
+- `apps/desktop/layer/renderer/src/lib/discover-client.test.ts`
+
+---
+
+## [2026-03-12 16:35] [Bugfix]
+
+- **Change**: 统一 dev 与桌面包的数据库环境变量加载路径
+- **Risk Analysis**: 将项目根 .env 纳入 loadDesktopEnv 候选路径，避免 dev 模式找不到 DB_CONN；风险是若工作区根目录存在过期 .env，会在 dev 下被加载，但 userData/.env 仍保持最高优先级。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/manager/env-loader.ts`
+- `apps/desktop/layer/main/src/manager/env-loader.test.ts`
+- `apps/desktop/layer/main/src/bootstrap.ts`
+
+---
+
+## [2026-03-12 16:55] [Bugfix]
+
+- **Change**: 移除 Discover 临时日志并新增主进程网络错误 URL 日志
+- **Risk Analysis**: 删除 renderer 侧临时 Discover request/response/error 日志，避免污染控制台；新增 main 进程网络错误日志可定位 SSL/TLS 失败资源 URL，风险是开发态若外部资源失败会增加主日志量。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/lib/api-client.ts`
+- `apps/desktop/layer/renderer/src/lib/discover-client.test.ts`
+- `apps/desktop/layer/main/src/manager/bootstrap.ts`
+- `apps/desktop/layer/main/src/manager/network-error-log.ts`
+- `apps/desktop/layer/main/src/manager/network-error-log.test.ts`
+
+---
+
+## [2026-03-12 17:12] [Bugfix]
+
+- **Change**: 将 Trending/Discover 改为主进程代理旧 API
+- **Risk Analysis**: renderer 不再直连 api.folo.is，改由主进程代理以规避 packaged 模式的 CORS 和 app 协议限制；风险是主进程代理新增了外部请求负担，若旧 API 变更返回结构需同步调整 renderer 查询层。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/ipc/services/discover-proxy.ts`
+- `apps/desktop/layer/main/src/ipc/services/discover.ts`
+- `apps/desktop/layer/main/src/ipc/services/discover.test.ts`
+- `apps/desktop/layer/main/src/ipc/index.ts`
+- `apps/desktop/layer/renderer/src/lib/client.ts`
+- `apps/desktop/layer/renderer/src/modules/trending/index.tsx`
+- `apps/desktop/layer/renderer/src/queries/discover.ts`
+- `docs/plans/2026-03-12-discover-main-proxy-design.md`
+- `docs/plans/2026-03-12-discover-main-proxy-implementation.md`
+
+---
+
+## [2026-03-12 17:27] [Bugfix]
+
+- **Change**: 为打包版主进程增加 boot.log 早期启动诊断
+- **Risk Analysis**: 风险主要在主进程启动路径新增同步写盘；若日志目录权限异常会被吞掉，不应阻断启动。未解决的风险是 apps/desktop/layer/main 的 tsc 构建仍有既有 rootDir 问题，与本次改动无关。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/bootstrap.ts`
+- `apps/desktop/layer/main/src/manager/bootstrap.ts`
+- `apps/desktop/layer/main/src/manager/boot-log.ts`
+- `apps/desktop/layer/main/src/manager/boot-log.test.ts`
+- `docs/plans/2026-03-12-packaged-boot-log-design.md`
+- `docs/plans/2026-03-12-packaged-boot-log-implementation.md`
+
+---
+
+## [2026-03-12 17:47] [Bugfix]
+
+- **Change**: 修复无签名 macOS 打包产物的 ad-hoc 重签名目标路径解析
+- **Risk Analysis**: 风险主要在 Electron Forge 的 postPackage 钩子新增重签名逻辑；如果 outputPaths 结构变化，可能导致找不到 .app 并使无签名打包失败。当前已用单测锁定目录路径解析，但实证打包验证受当前网络/代理环境限制未完成。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/forge.config.cts`
+- `apps/desktop/scripts/packaging/adhoc-sign.ts`
+- `apps/desktop/scripts/packaging/adhoc-sign.test.ts`
+- `docs/plans/2026-03-12-nosign-adhoc-sign-design.md`
+- `docs/plans/2026-03-12-nosign-adhoc-sign-implementation.md`
+
+---
+
+## [2026-03-12 18:05] [Bugfix]
+
+- **Change**: 为 packaged 启动链路增加窗口创建与渲染加载诊断日志
+- **Risk Analysis**: 风险主要在主进程窗口事件增加日志与 packaged 下强制 center/show/focus；如果某些窗口状态依赖原始隐藏逻辑，可能改变首次显示时机，但仅限 packaged 模式。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/manager/bootstrap.ts`
+- `apps/desktop/layer/main/src/manager/window.ts`
+- `apps/desktop/layer/main/src/manager/window-diagnostics.ts`
+- `apps/desktop/layer/main/src/manager/window-diagnostics.test.ts`
+- `docs/plans/2026-03-12-packaged-window-diagnostics-design.md`
+- `docs/plans/2026-03-12-packaged-window-diagnostics-implementation.md`
+
+---
+
+## [2026-03-12 18:11] [Bugfix]
+
+- **Change**: 移除 sync-logger 对 ./sync 的运行时 require，改为显式注入 SyncManager getter
+- **Risk Analysis**: 风险主要在同步日志初始化顺序：若 bootstrap 未及时配置 getter，syncLogger 会按设计抛出未配置错误并被 record 的 try/catch 吞掉，不会阻断应用，但可能丢失极早期同步操作记录。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/manager/sync-logger.ts`
+- `apps/desktop/layer/main/src/manager/sync-logger.test.ts`
+- `apps/desktop/layer/main/src/manager/bootstrap.ts`
+
+---
+
+## [2026-03-12 19:02] [Bugfix]
+
+- **Change**: 增强打包版主进程启动诊断日志，并修复窗口销毁导致的 snapshotBrowserWindow 崩溃
+- **Risk Analysis**: 主进程启动路径新增同步写盘逻辑（boot.log），用于定位 Packaged 模式下的加载挂死；修复了窗口在销毁瞬时触发诊断导致的 TypeError。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/electron.vite.config.ts`
+- `apps/desktop/forge.config.cts`
+- `apps/desktop/layer/main/src/bootstrap.ts`
+- `apps/desktop/layer/main/src/ipc/index.ts`
+- `apps/desktop/layer/main/src/manager/bootstrap.ts`
+- `apps/desktop/layer/main/src/manager/env-loader.test.ts`
+- `apps/desktop/layer/main/src/manager/env-loader.ts`
+- `apps/desktop/layer/main/src/manager/sync-logger.test.ts`
+- `apps/desktop/layer/main/src/manager/sync-logger.ts`
+- `apps/desktop/layer/main/src/manager/window.ts`
+- `apps/desktop/layer/renderer/src/lib/api-client.ts`
+- `apps/desktop/layer/renderer/src/lib/client.ts`
+- `apps/desktop/layer/renderer/src/modules/trending/index.tsx`
+- `apps/desktop/layer/renderer/src/queries/discover.ts`
+- `docs/AI_CHANGELOG.md`
+- `apps/desktop/configs/vite.electron-render.config.d.ts`
+- `apps/desktop/configs/vite.electron-render.config.js`
+- `apps/desktop/configs/vite.render.config.d.ts`
+- `apps/desktop/configs/vite.render.config.js`
+- `apps/desktop/electron.vite.config.d.ts`
+- `apps/desktop/electron.vite.config.js`
+- `apps/desktop/layer/main/src/electron-vite-config.test.ts`
+- `apps/desktop/layer/main/src/ipc/services/discover-proxy.ts`
+- `apps/desktop/layer/main/src/ipc/services/discover.test.ts`
+- `apps/desktop/layer/main/src/ipc/services/discover.ts`
+- `apps/desktop/layer/main/src/manager/boot-log.test.ts`
+- `apps/desktop/layer/main/src/manager/boot-log.ts`
+- `apps/desktop/layer/main/src/manager/network-error-log.test.ts`
+- `apps/desktop/layer/main/src/manager/network-error-log.ts`
+- `apps/desktop/layer/main/src/manager/window-diagnostics.test.ts`
+- `apps/desktop/layer/main/src/manager/window-diagnostics.ts`
+- `apps/desktop/layer/renderer/src/lib/discover-client.test.ts`
+- `apps/desktop/plugins/vite/ast.d.ts`
+- `apps/desktop/plugins/vite/ast.js`
+- `apps/desktop/plugins/vite/cleanup.d.ts`
+- `apps/desktop/plugins/vite/cleanup.js`
+- `apps/desktop/plugins/vite/hmr.d.ts`
+- `apps/desktop/plugins/vite/hmr.js`
+- `apps/desktop/plugins/vite/i18n-hmr.d.ts`
+- `apps/desktop/plugins/vite/i18n-hmr.js`
+- `apps/desktop/plugins/vite/locales-json.d.ts`
+- `apps/desktop/plugins/vite/locales-json.js`
+- `apps/desktop/plugins/vite/specific-import.d.ts`
+- `apps/desktop/plugins/vite/specific-import.js`
+- `apps/desktop/plugins/vite/utils/i18n-completeness.d.ts`
+- `apps/desktop/plugins/vite/utils/i18n-completeness.js`
+- `apps/desktop/scripts/packaging/adhoc-sign.test.ts`
+- `apps/desktop/scripts/packaging/adhoc-sign.ts`
+- `docs/plans/2026-03-12-discover-api-diagnostics-design.md`
+- `docs/plans/2026-03-12-discover-api-diagnostics-implementation.md`
+- `docs/plans/2026-03-12-discover-main-proxy-design.md`
+- `docs/plans/2026-03-12-discover-main-proxy-implementation.md`
+- `docs/plans/2026-03-12-nosign-adhoc-sign-design.md`
+- `docs/plans/2026-03-12-nosign-adhoc-sign-implementation.md`
+- `docs/plans/2026-03-12-packaged-boot-log-design.md`
+- `docs/plans/2026-03-12-packaged-boot-log-implementation.md`
+- `docs/plans/2026-03-12-packaged-window-diagnostics-design.md`
+- `docs/plans/2026-03-12-packaged-window-diagnostics-implementation.md`
+- `scripts/lib.d.ts`
+- `scripts/lib.js`
+
+---

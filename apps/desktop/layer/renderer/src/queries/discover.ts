@@ -1,4 +1,4 @@
-import { followClient } from "~/lib/api-client"
+import { ipcServices } from "~/lib/client"
 import { defineQuery } from "~/lib/defineQuery"
 
 export const discover = {
@@ -14,7 +14,7 @@ export const discover = {
     defineQuery(
       ["discover", "rsshub", "category", category, categories, lang],
       async () => {
-        const res = await followClient.api.discover.rsshub({
+        const res = await ipcServices!.discover.rsshub({
           category,
           categories,
           ...(lang !== "all" && { lang }),
@@ -27,21 +27,21 @@ export const discover = {
     ),
   rsshubNamespace: ({ namespace }: { namespace: string }) =>
     defineQuery(["discover", "rsshub", "namespace", namespace], async () => {
-      const res = await followClient.api.discover.rsshub({
+      const res = await ipcServices!.discover.rsshub({
         namespace,
       })
       return res.data
     }),
   rsshubRoute: ({ route }: { route: string }) =>
     defineQuery(["discover", "rsshub", "route", route], async () => {
-      const res = await followClient.api.discover.rsshubRoute({
+      const res = await ipcServices!.discover.rsshubRoute({
         route,
       })
       return res.data
     }),
   rsshubAnalytics: ({ lang }: { lang?: string }) =>
     defineQuery(["discover", "rsshub", "analytics", lang], async () => {
-      const res = await followClient.api.discover.rsshubAnalytics({
+      const res = await ipcServices!.discover.rsshubAnalytics({
         ...(lang !== "all" && { lang }),
       })
       return res.data

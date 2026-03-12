@@ -17,6 +17,11 @@ import path, { resolve } from "pathe"
 import { rimraf, rimrafSync } from "rimraf"
 
 import { packagerIgnorePatterns } from "./scripts/forge-ignore"
+import {
+  adhocSignPackagedApp,
+  resolveAdhocSignTargets,
+  shouldAdhocSignPackagedApp,
+} from "./scripts/packaging/adhoc-sign"
 
 const ResolvedMakerAppImage: typeof MakerAppImage = (MakerAppImage as any).default || MakerAppImage
 const platform = process.argv.find((arg) => arg.startsWith("--platform"))?.split("=")[1]
@@ -124,6 +129,24 @@ const cleanSourcesOnly = async (buildPath, electronVersion, platform, arch, call
 
 const config: ForgeConfig = {
   ...(isNoSignBuild ? { outDir: noSignOutDir } : {}),
+  hooks: {
+    postPackage: async (_forgeConfig, packageResult) => {
+      if (!shouldAdhocSignPackagedApp({ platform: packageResult.platform, isNoSignBuild })) {
+        return
+      }
+
+      const appPaths = resolveAdhocSignTargets(packageResult.outputPaths)
+      if (appPaths.length === 0) {
+        throw new Error(
+          `No macOS app bundle found in postPackage outputs: ${packageResult.outputPaths.join(", ")}`,
+        )
+      }
+
+      for (const appPath of appPaths) {
+        adhocSignPackagedApp(appPath)
+      }
+    },
+  },
   packagerConfig: {
     name: isStaging ? "溯洄 Staging" : "溯洄",
     appCategoryType: "public.app-category.news",

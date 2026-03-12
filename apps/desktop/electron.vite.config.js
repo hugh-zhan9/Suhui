@@ -1,10 +1,8 @@
 import { defineConfig } from "electron-vite"
 import { resolve } from "pathe"
-
 import { getGitHash } from "../../scripts/lib"
 import rendererConfig from "./configs/vite.electron-render.config"
 import { createPlatformSpecificImportPlugin } from "./plugins/vite/specific-import"
-
 export default defineConfig({
   main: {
     build: {
@@ -38,7 +36,6 @@ export default defineConfig({
             const json = JSON.stringify(code)
               .replaceAll("\u2028", "\\u2028")
               .replaceAll("\u2029", "\\u2029")
-
             return {
               code: `export default ${json}`,
             }

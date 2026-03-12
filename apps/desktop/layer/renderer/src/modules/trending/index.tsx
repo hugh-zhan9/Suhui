@@ -8,7 +8,7 @@ import { cloneElement, useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { setUISetting, useUISettingKey } from "~/atoms/settings/ui"
-import { followClient } from "~/lib/api-client"
+import { ipcServices } from "~/lib/client"
 import { getTrendingSupportedViewList } from "~/lib/local-views"
 
 import { TrendingFeedCard } from "../discover/TrendingFeedCard"
@@ -77,7 +77,7 @@ export function Trending({
   const { data, isLoading } = useQuery({
     queryKey: ["trending", lang, selectedView],
     queryFn: async () => {
-      return await followClient.api.trending.getFeeds({
+      return await ipcServices!.discover.getTrendingFeeds({
         language: trendingLanguage === "all" ? undefined : trendingLanguage,
         view: selectedView === "all" ? undefined : Number(selectedView),
         limit,
