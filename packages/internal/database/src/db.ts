@@ -1,7 +1,4 @@
-import type { BaseSQLiteDatabase } from "drizzle-orm/sqlite-core"
-
-import type * as schema from "./schemas"
-import type { DB } from "./types"
+import type { DB, LegacySqliteAsyncDb } from "./types"
 
 export declare const sqlite: unknown
 export declare const db: DB
@@ -14,4 +11,4 @@ export declare function exportDB(): Promise<void>
  */
 export declare function deleteDB(): Promise<void>
 
-export type AsyncDb = BaseSQLiteDatabase<"async", any, typeof schema>
+export type AsyncDb = LegacySqliteAsyncDb
