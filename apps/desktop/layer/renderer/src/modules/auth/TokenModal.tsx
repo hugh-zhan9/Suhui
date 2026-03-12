@@ -68,7 +68,7 @@ export const TokenModalContent = () => {
                   <Input
                     autoFocus
                     className="mt-1 dark:text-zinc-200"
-                    placeholder="folo://auth?token=xxx"
+                    placeholder="suhui://auth?token=xxx"
                     {...field}
                   />
                 </FormControl>

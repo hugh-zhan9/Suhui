@@ -25,7 +25,7 @@ const isMicrosoftStore =
   process.argv.find((arg) => arg.startsWith("--ms"))?.split("=")[1] === "true"
 const isNoSignBuild = process.env.FOLO_NO_SIGN === "1"
 const enableFuses = !isNoSignBuild
-const noSignOutDir = "/tmp/folo-forge-out"
+const noSignOutDir = "/tmp/suhui-forge-out"
 
 const isStaging = mode === "staging"
 
@@ -186,17 +186,13 @@ const config: ForgeConfig = {
     name: isStaging ? "溯洄 Staging" : "溯洄",
     appCategoryType: "public.app-category.news",
     buildVersion: process.env.BUILD_VERSION || undefined,
-    appBundleId: "is.follow",
+    appBundleId: "io.suhui",
     icon: isStaging ? "resources/icon-staging" : "resources/icon",
     extraResource: ["./resources/app-update.yml"],
     protocols: [
       {
         name: "溯洄",
-        schemes: ["follow"],
-      },
-      {
-        name: "溯洄",
-        schemes: ["folo"],
+        schemes: ["suhui"],
       },
     ],
 
@@ -309,14 +305,14 @@ const config: ForgeConfig = {
             publisherDisplayName: "Natural Selection Labs",
             identityName: "NaturalSelectionLabs.Follow-Yourfavoritesinoneinbo",
             packageBackgroundColor: "#FF5C00",
-            protocol: "folo",
+            protocol: "suhui",
           }),
         ]
       : [
           new MakerSquirrel({
             name: "溯洄",
             setupIcon: isStaging ? "resources/icon-staging.ico" : "resources/icon.ico",
-            iconUrl: "https://app.folo.is/favicon.ico",
+            iconUrl: "https://suhui.io/favicon.ico",
           }),
         ]),
   ],

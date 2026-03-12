@@ -38,7 +38,7 @@ export interface RendererEligibilityResult {
 
 class RendererHotUpdater {
   private readonly logger = log.scope("updater:renderer")
-  private readonly tempDir = path.resolve(os.tmpdir(), "follow-render-update")
+  private readonly tempDir = path.resolve(os.tmpdir(), "suhui-render-update")
   private readonly manifestPath = path.resolve(HOTUPDATE_RENDER_ENTRY_DIR, "manifest.yml")
 
   extractManifest(payload: LatestReleasePayload | null): RendererManifest | null {

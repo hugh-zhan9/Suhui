@@ -8,7 +8,7 @@ import { WindowManager } from "~/manager/window"
 export const handleUrlRouting = (url: string) => {
   const options = extractElectronWindowOptions(url)
 
-  // For example, the url is "follow://add?id=123&type=list&url=https://example.com"
+  // For example, the url is "suhui://add?id=123&type=list&url=https://example.com"
   const doubleSlash = url.indexOf("://")
   if (doubleSlash === -1) {
     logger.error("url routing error: no protocol found", url)
@@ -18,7 +18,7 @@ export const handleUrlRouting = (url: string) => {
   // For example, the uri is "/add?id=123&type=list&url=https://example.com"
   const uri = url.slice(doubleSlash + 2)
   try {
-    const { pathname, searchParams } = new URL(uri, "https://follow.dev")
+    const { pathname, searchParams } = new URL(uri, "https://suhui.io")
 
     const pathnameTrimmed = pathname.endsWith("/") ? pathname.slice(0, -1) : pathname
 

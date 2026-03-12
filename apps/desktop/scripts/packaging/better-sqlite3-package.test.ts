@@ -5,12 +5,12 @@ import { test } from "node:test"
 import { join } from "pathe"
 
 const findZip = () => {
-  const output = execFileSync("/bin/ls", ["-1", "/tmp/folo-forge-out/make/zip/darwin/arm64"], {
+  const output = execFileSync("/bin/ls", ["-1", "/tmp/suhui-forge-out/make/zip/darwin/arm64"], {
     encoding: "utf-8",
   })
   const zip = output.split("\n").find((name) => name.endsWith(".zip"))
   if (!zip) throw new Error("zip not found")
-  return join("/tmp/folo-forge-out/make/zip/darwin/arm64", zip)
+  return join("/tmp/suhui-forge-out/make/zip/darwin/arm64", zip)
 }
 
 test("packaged zip should include better_sqlite3.node", () => {
