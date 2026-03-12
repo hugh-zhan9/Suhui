@@ -7,4 +7,4 @@ You must read and understand "AI-CONTEXT.md" before taking any action.
 This file is only a compatibility pointer for tools expecting "AGENTS.md".
 Do not maintain independent rules here unless explicitly required.
 
-Generated at: 20260311195347
+Generated at: 20260312102420
