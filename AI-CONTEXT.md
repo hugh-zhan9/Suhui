@@ -23,13 +23,12 @@
 
 ### 3) 本地数据面
 
-- 主数据面：主进程 SQLite（`better-sqlite3`）
-- DB 文件：`app.getPath("userData")/suhui_local.db`
+- 主数据面：主进程 Postgres（`pg` / Drizzle）
   - 入口：`apps/desktop/layer/main/src/manager/db.ts`
   - 初始化：`apps/desktop/layer/main/src/manager/bootstrap.ts`
 - 渲染层 DB：`packages/internal/database/src/db.desktop.ts`
   - 已改为 IPC SQL 代理（`db.executeRawSql`）
-- 兼容迁移：保留 `migrateFromIndexedDB()`，用于历史 IndexedDB -> SQLite
+- 兼容迁移：保留 `migrateFromIndexedDB()`，用于历史 IndexedDB -> Postgres
 
 ### 4) 启动与构建（当前可用）
 
@@ -37,8 +36,6 @@
 - 预览启动：`pnpm --filter suhui start`
 - 打包：`pnpm --filter suhui build:electron`  
   无签名打包：`pnpm --filter suhui build:electron:unsigned`
-- 桌面打包已强制 `asar` 解包所有 `*.node`，并在拷贝保留模块时启用符号链接解引用（`dereference`），用于确保 `better-sqlite3` 原生二进制被正确带入安装包
-- 桌面打包在 `postPackage` 阶段会再次覆盖产物内 `better_sqlite3.node`（以构建机当前二进制为准），降低跨机器启动失败概率
 - 无签名打包产物目录：`/tmp/folo-forge-out/make`（常见产物：`溯洄-<version>-macos-arm64.dmg`）
 
 ### 5) Release 规则（Desktop）
