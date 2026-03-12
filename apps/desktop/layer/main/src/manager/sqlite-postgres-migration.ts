@@ -52,11 +52,15 @@ export const hasSqliteData = (
   if (!fs.existsSync(dbPath)) return false
   const sqlite = sqliteFactory(dbPath)
   try {
-    const exists = sqlite
-      .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='entries'")
-      .get()
+    const existsQuery = sqlite.prepare(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='entries'",
+    )
+    if (!existsQuery.get) return false
+    const exists = existsQuery.get()
     if (!exists) return false
-    const row = sqlite.prepare("SELECT COUNT(*) as count FROM entries").get() as { count: number }
+    const countQuery = sqlite.prepare("SELECT COUNT(*) as count FROM entries")
+    if (!countQuery.get) return false
+    const row = countQuery.get() as { count: number }
     return Number(row?.count ?? 0) > 0
   } finally {
     sqlite.close()
