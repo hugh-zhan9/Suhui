@@ -5328,7 +5328,9 @@
 - `apps/desktop/layer/renderer/src/lib/ipc-services.test-d.ts`
 
 ---
+
 ## [2026-03-12 10:15] [Bugfix]
+
 - **Change**: 修复主进程类型错误：sqlite 迁移判空保护、sync-applier 时间字段用 number 并收窄 DB 类型，运行时 schema 测试改为包导入
 - **Risk Analysis**: 改动集中在类型与数据转换层，运行时逻辑变更很小；风险是 sync-applier 时间字段从 Date 改为 number 可能影响少量日志/调试输出，但与 schema 预期一致。
 - **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
@@ -5336,12 +5338,26 @@
 - `apps/desktop/layer/main/src/manager/sqlite-postgres-migration.ts`
 - `apps/desktop/layer/main/src/manager/sync-applier.ts`
 - `apps/desktop/layer/main/src/manager/db-schema.test.ts`
-----------------------------------------
+
+---
+
 ## [2026-03-12 10:17] [Bugfix]
+
 - **Change**: 同步应用逻辑改用 Postgres 同步表，并修复 sqlite 迁移测试的可空断言
 - **Risk Analysis**: 同步表改为 pg schema 后与 DB 类型一致，风险在于若仍启用 sqlite 模式会出现运行时不匹配，但当前策略为 Postgres-only。
 - **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
 - **Changed Files**:
 - `apps/desktop/layer/main/src/manager/sync-applier.ts`
 - `apps/desktop/layer/main/src/manager/sqlite-postgres-migration.test.ts`
-----------------------------------------
+
+---
+
+## [2026-03-12 10:44] [Bugfix]
+
+- **Change**: 修复 sqlite-postgres 迁移测试的类型判定以通过 tsc
+- **Risk Analysis**: 仅在测试中新增显式校验，低风险；可能影响的是测试断言路径而非功能
+- **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/manager/sqlite-postgres-migration.test.ts`
+
+---
