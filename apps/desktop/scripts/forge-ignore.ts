@@ -1,10 +1,4 @@
-const keepModules = [
-  "font-list",
-  "vscode-languagedetection",
-  "better-sqlite3",
-  "bindings",
-  "file-uri-to-path",
-]
+const keepModules = ["font-list", "vscode-languagedetection", "bindings", "file-uri-to-path"]
 
 const rootNodeModulesIgnorePattern = new RegExp(`^/node_modules/(?!${keepModules.join("|")})`)
 const nestedLayerNodeModulesIgnorePattern = /^\/layer\/[^/]+\/node_modules(?:\/|$)/

@@ -2,8 +2,8 @@ import { defineConfig } from "electron-vite"
 import { resolve } from "pathe"
 
 import { getGitHash } from "../../scripts/lib"
-import { createPlatformSpecificImportPlugin } from "./plugins/vite/specific-import"
 import rendererConfig from "./configs/vite.electron-render.config"
+import { createPlatformSpecificImportPlugin } from "./plugins/vite/specific-import"
 
 export default defineConfig({
   main: {
@@ -13,7 +13,7 @@ export default defineConfig({
         entry: "./layer/main/src/index.ts",
       },
       rollupOptions: {
-        external: ["bufferutil", "utf-8-validate", "better-sqlite3"],
+        external: ["bufferutil", "utf-8-validate"],
       },
     },
     resolve: {

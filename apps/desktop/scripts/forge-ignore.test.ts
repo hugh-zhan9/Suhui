@@ -8,6 +8,6 @@ test("should ignore nested node_modules under layer", () => {
   assert.equal(shouldIgnorePackagerPath("/layer/main/node_modules/foo/index.js"), true)
 })
 
-test("should keep required native modules in root node_modules", () => {
-  assert.equal(shouldIgnorePackagerPath("/node_modules/better-sqlite3/build/Release/a.node"), false)
+test("should keep whitelisted modules in root node_modules", () => {
+  assert.equal(shouldIgnorePackagerPath("/node_modules/bindings/index.js"), false)
 })

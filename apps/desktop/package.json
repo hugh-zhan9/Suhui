@@ -32,7 +32,6 @@
     "hotfix": "vv -c bump.hotfix.config.js --patch",
     "publish": "electron-vite build && electron-forge publish",
     "start": "electron-vite preview",
-    "test:packaging": "node --test apps/desktop/scripts/packaging/better-sqlite3-package.test.ts",
     "update:main-hash": "tsx plugins/vite/generate-main-hash.ts"
   },
   "dependencies": {
@@ -44,7 +43,6 @@
     "@protobufjs/path": "1.1.2",
     "@protobufjs/pool": "1.1.0",
     "@protobufjs/utf8": "1.1.0",
-    "better-sqlite3": "12.6.2",
     "dotenv": "17.2.3"
   },
   "devDependencies": {
@@ -57,6 +55,7 @@
     "@electron-forge/plugin-fuses": "7.11.1",
     "@electron-forge/publisher-github": "7.11.1",
     "@electron-toolkit/tsconfig": "2.0.0",
+    "@pengx17/electron-forge-maker-appimage": "1.2.1",
     "@suhui/components": "workspace:*",
     "@suhui/configs": "workspace:*",
     "@suhui/constants": "workspace:*",
@@ -64,7 +63,6 @@
     "@suhui/models": "workspace:*",
     "@suhui/shared": "workspace:*",
     "@suhui/utils": "workspace:*",
-    "@pengx17/electron-forge-maker-appimage": "1.2.1",
     "@types/html-minifier-terser": "7.0.2",
     "@types/js-yaml": "4.0.9",
     "@vitejs/plugin-react": "5.1.4",
