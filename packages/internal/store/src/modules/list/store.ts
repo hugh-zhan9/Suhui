@@ -31,7 +31,12 @@ class ListActions implements Hydratable, Resetable {
     listActions.upsertManyInSession(
       lists.map((list) => ({
         ...list,
-        feedIds: JSON.parse(list.feedIds || "[]") as string[],
+        feedIds:
+          typeof list.feedIds === "string"
+            ? (JSON.parse(list.feedIds || "[]") as string[])
+            : Array.isArray(list.feedIds)
+              ? list.feedIds
+              : [],
         type: "list" as const,
       })),
     )
