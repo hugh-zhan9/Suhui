@@ -51,6 +51,19 @@ const keepModules = new Set([
   "vscode-languagedetection",
   "bindings",
   "file-uri-to-path",
+  "pg",
+  "pg-connection-string",
+  "pg-pool",
+  "pg-protocol",
+  "pg-types",
+  "pgpass",
+  "pg-int8",
+  "postgres-array",
+  "postgres-bytea",
+  "postgres-date",
+  "postgres-interval",
+  "split2",
+  "xtend",
 ])
 const keepLanguages = new Set(["en", "en_GB", "en-US", "en_US"])
 

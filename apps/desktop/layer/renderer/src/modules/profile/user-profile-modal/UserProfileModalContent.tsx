@@ -225,6 +225,8 @@ const UserInfo = ({ userInfo }: { userInfo: PickedUser }) => {
   // It's a string value when it's from the store
   if (typeof userInfo.socialLinks === "string") {
     userInfo.socialLinks = JSON.parse(userInfo.socialLinks)
+  } else if (!userInfo.socialLinks || typeof userInfo.socialLinks !== "object") {
+    userInfo.socialLinks = {}
   }
 
   return (

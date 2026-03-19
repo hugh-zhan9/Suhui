@@ -5,6 +5,21 @@ import { getGitHash } from "../../scripts/lib"
 import rendererConfig from "./configs/vite.electron-render.config"
 import { createPlatformSpecificImportPlugin } from "./plugins/vite/specific-import"
 
+const workspaceAliases = {
+  "@suhui/atoms": resolve("../../packages/internal/atoms/src"),
+  "@suhui/components": resolve("../../packages/internal/components/src"),
+  "@suhui/constants": resolve("../../packages/internal/constants/src"),
+  "@suhui/database": resolve("../../packages/internal/database/src"),
+  "@suhui/hooks": resolve("../../packages/internal/hooks/src"),
+  "@suhui/models": resolve("../../packages/internal/models/src"),
+  "@suhui/readability": resolve("../../packages/readability/src/index.ts"),
+  "@suhui/shared": resolve("../../packages/internal/shared/src"),
+  "@suhui/store": resolve("../../packages/internal/store/src"),
+  "@suhui/tracker": resolve("../../packages/internal/tracker/src"),
+  "@suhui/types": resolve("../../packages/internal/types"),
+  "@suhui/utils": resolve("../../packages/internal/utils/src"),
+}
+
 export default defineConfig({
   main: {
     build: {
@@ -18,6 +33,7 @@ export default defineConfig({
     },
     resolve: {
       alias: {
+        ...workspaceAliases,
         "@shared": resolve("packages/shared/src"),
         "@pkg": resolve("./package.json"),
         "@locales": resolve("../../locales"),
@@ -56,6 +72,7 @@ export default defineConfig({
     },
     resolve: {
       alias: {
+        ...workspaceAliases,
         "@pkg": resolve("./package.json"),
         "@locales": resolve("../../locales"),
       },
