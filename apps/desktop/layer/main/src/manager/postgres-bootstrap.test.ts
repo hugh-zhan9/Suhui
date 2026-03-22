@@ -26,7 +26,14 @@ describe("postgres bootstrap", () => {
         DB_USER: "u",
         DB_PASSWORD: "p",
       }),
-    ).toEqual({ host: "127.0.0.1", port: 5432, database: "postgres", user: "u", password: "p" })
+    ).toEqual({
+      host: "127.0.0.1",
+      port: 5432,
+      database: "postgres",
+      user: "u",
+      password: "p",
+      connectionTimeoutMillis: 5000,
+    })
   })
 
   it("creates database when missing", async () => {

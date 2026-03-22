@@ -37,7 +37,7 @@ import { useEntryRootState } from "../store/EntryColumnContext"
 import { AppendTaildingDivider } from "./AppendTaildingDivider"
 import { SwitchToMasonryButton } from "./buttons/SwitchToMasonryButton"
 import { shouldShowInlineStarInEntryListHeader } from "./entry-list-header-actions"
-import { refreshLocalFeedAndSyncEntries } from "./entry-refresh"
+import { refreshLocalFeedAndSyncEntries, shouldUseLocalFeedRefresh } from "./entry-refresh"
 
 export const EntryListHeader: FC<{
   refetch: () => void
@@ -95,10 +95,11 @@ export const EntryListHeader: FC<{
     const ipc = (window as any)?.electron?.ipcRenderer
     const canRefreshLocalFeed =
       !!ipc &&
-      !!feedId &&
-      feed?.type === "feed" &&
-      !isBizId(feedId) &&
-      feedId !== ROUTE_ENTRY_PENDING
+      feedId !== ROUTE_ENTRY_PENDING &&
+      shouldUseLocalFeedRefresh({
+        feedId,
+        feed,
+      })
 
     if (canRefreshLocalFeed) {
       setIsLocalRefreshing(true)

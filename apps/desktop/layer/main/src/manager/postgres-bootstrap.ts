@@ -17,10 +17,11 @@ export const getTargetDatabaseName = (env: NodeJS.ProcessEnv) => {
 
 export const buildPostgresAdminConfig = (env: NodeJS.ProcessEnv) => {
   const conn = parseDbConn(env.DB_CONN)
+  const connectionTimeoutMillis = 5000
   if ("connectionString" in conn) {
     const url = new URL(conn.connectionString)
     url.pathname = "/postgres"
-    return { connectionString: url.toString() }
+    return { connectionString: url.toString(), connectionTimeoutMillis }
   }
   return {
     host: conn.host,
@@ -28,6 +29,7 @@ export const buildPostgresAdminConfig = (env: NodeJS.ProcessEnv) => {
     database: "postgres",
     user: env.DB_USER,
     password: env.DB_PASSWORD,
+    connectionTimeoutMillis,
   }
 }
 

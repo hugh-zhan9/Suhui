@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest"
 
-import { refreshLocalFeedAndSyncEntries } from "./entry-refresh"
+import { refreshLocalFeedAndSyncEntries, shouldUseLocalFeedRefresh } from "./entry-refresh"
 
 describe("refreshLocalFeedAndSyncEntries", () => {
   it("calls ipc refresh then fetchEntries", async () => {
@@ -18,5 +18,23 @@ describe("refreshLocalFeedAndSyncEntries", () => {
     const invokeOrder = invoke.mock.invocationCallOrder[0]!
     const fetchOrder = fetchEntries.mock.invocationCallOrder[0]!
     expect(invokeOrder).toBeLessThan(fetchOrder)
+  })
+
+  it("treats imported numeric feeds without owner as local refresh targets", () => {
+    expect(
+      shouldUseLocalFeedRefresh({
+        feedId: "199666248185461760",
+        feed: { type: "feed", ownerUserId: null, url: "https://example.com/rss.xml" },
+      }),
+    ).toBe(true)
+  })
+
+  it("keeps owned biz feeds on the remote refresh path", () => {
+    expect(
+      shouldUseLocalFeedRefresh({
+        feedId: "199666248185461760",
+        feed: { type: "feed", ownerUserId: "user_1", url: "https://example.com/rss.xml" },
+      }),
+    ).toBe(false)
   })
 })

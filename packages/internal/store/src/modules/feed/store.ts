@@ -6,6 +6,7 @@ import { api } from "../../context"
 import type { Hydratable, Resetable } from "../../lib/base"
 import { createImmerSetter, createTransaction, createZustandStore } from "../../lib/helper"
 import { useEntryStore } from "../entry/base"
+import { shouldTreatFeedAsRemoteBiz } from "./local-feed"
 import { whoami } from "../user/getters"
 import { shouldUseElectronLocalPreview } from "./local-preview"
 import type { FeedModel } from "./types"
@@ -157,10 +158,10 @@ type FeedQueryParams = {
 
 class FeedSyncServices {
   async fetchFeedById({ id, url }: FeedQueryParams) {
-    const isFeedId = isBizId(id)
+    const existing = id ? get().feeds[id!] : undefined
+    const isFeedId = shouldTreatFeedAsRemoteBiz({ id, feed: existing })
 
     // If we have a feed by id in the store, return it directly
-    const existing = isFeedId ? get().feeds[id!] : undefined
     const hasEntryCache = hasEntryCacheByFeedId(id)
     if (
       shouldSkipIdOnlyPreview({
