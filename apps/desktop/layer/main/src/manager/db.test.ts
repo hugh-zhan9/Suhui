@@ -28,6 +28,7 @@ describe("db manager", () => {
       database: "suhui",
       user: "u",
       password: "p",
+      connectionTimeoutMillis: 5000,
     })
   })
 })

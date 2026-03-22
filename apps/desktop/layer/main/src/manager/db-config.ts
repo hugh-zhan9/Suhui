@@ -24,8 +24,9 @@ export const parseDbConn = (raw?: string): DbConnInfo => {
 
 export const buildPgConfig = (env: NodeJS.ProcessEnv) => {
   const conn = parseDbConn(env.DB_CONN)
+  const connectionTimeoutMillis = 5000
   if ("connectionString" in conn) {
-    return { connectionString: conn.connectionString }
+    return { connectionString: conn.connectionString, connectionTimeoutMillis }
   }
   return {
     host: conn.host,
@@ -33,5 +34,6 @@ export const buildPgConfig = (env: NodeJS.ProcessEnv) => {
     database: conn.database,
     user: env.DB_USER,
     password: env.DB_PASSWORD,
+    connectionTimeoutMillis,
   }
 }
