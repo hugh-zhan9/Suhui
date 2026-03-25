@@ -12,6 +12,7 @@ import { join } from "pathe"
 
 import { appendBootLog } from "~/manager/boot-log"
 import { DBManager } from "~/manager/db"
+import { FeedRefreshService } from "~/manager/feed-refresh"
 import { shouldForwardRendererConsoleError } from "~/manager/renderer-console-filter"
 import { SyncManager } from "~/manager/sync"
 import { configureSyncLogger } from "~/manager/sync-logger"
@@ -147,11 +148,28 @@ export class BootstrapManager {
       // 延迟 5s 执行首次并设置定时同步以免阻塞启动
       setTimeout(() => {
         SyncManager.gitSync().catch((err) => logger.error("[Sync] auto sync on start failed:", err))
+        // 首次启动 10s 后执行一次全量刷新
+        setTimeout(() => {
+          FeedRefreshService.refreshAll().catch((err) =>
+            logger.error("[Feed] auto refresh on start failed:", err),
+          )
+        }, 5000)
+
         setInterval(
           () => {
             SyncManager.gitSync().catch((err) => logger.error("[Sync] periodic sync failed:", err))
           },
           10 * 60 * 1000,
+        )
+
+        // 每 30 分钟执行一次全量刷新
+        setInterval(
+          () => {
+            FeedRefreshService.refreshAll().catch((err) =>
+              logger.error("[Feed] periodic refresh failed:", err),
+            )
+          },
+          30 * 60 * 1000,
         )
       }, 5000)
     })

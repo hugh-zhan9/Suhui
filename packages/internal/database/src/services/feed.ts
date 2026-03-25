@@ -31,6 +31,10 @@ class FeedServiceStatic implements Resetable {
     return db.query.feedsTable.findMany()
   }
 
+  async refreshAll() {
+    // To be implemented
+  }
+
   async patch(feedId: string, patch: Partial<FeedSchema>) {
     await db.update(feedsTable).set(patch).where(eq(feedsTable.id, feedId)).execute()
   }

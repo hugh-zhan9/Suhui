@@ -5702,3 +5702,27 @@
 - `apps/desktop/layer/main/src/manager/window-diagnostics.ts`
 
 ---
+
+## [2026-03-25 10:29] [Feature]
+
+- **Change**: 实现订阅批量刷新与自动刷新功能
+- **Risk Analysis**: 重构了刷新逻辑到 FeedRefreshService；在 EntryListHeader 中增加了对 All 视图批量刷新的支持；在 BootstrapManager 中增加了 30 分钟间隔的自动刷新定时器。风险点在于并发刷新多个订阅时可能造成的瞬时 CPU/网络峰值。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/manager/feed-refresh.ts`
+- `apps/desktop/layer/main/src/ipc/services/db.ts`
+- `apps/desktop/layer/renderer/src/modules/entry-column/layouts/EntryListHeader.tsx`
+- `apps/desktop/layer/main/src/manager/bootstrap.ts`
+
+---
+
+## [2026-03-25 15:09] [Refactor]
+
+- **Change**: 疯言疯语页面增加按天分割线
+- **Risk Analysis**: 在 SocialMedia 视图中，非首项且非吸顶的日期头上方增加了一条 border-t 分割线。通过 VirtualRowItem 传入 isFirst 标记实现。
+- **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/modules/entry-column/components/VirtualRowItem.tsx`
+- `apps/desktop/layer/renderer/src/modules/entry-column/components/DateItem.tsx`
+
+---
