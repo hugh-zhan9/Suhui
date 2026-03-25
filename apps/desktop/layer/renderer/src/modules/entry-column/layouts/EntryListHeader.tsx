@@ -101,6 +101,8 @@ export const EntryListHeader: FC<{
         feed,
       })
 
+    const isAllView = view === FeedViewType.All
+
     if (canRefreshLocalFeed) {
       setIsLocalRefreshing(true)
       try {
@@ -112,10 +114,21 @@ export const EntryListHeader: FC<{
       } finally {
         setIsLocalRefreshing(false)
       }
+    } else if (isAllView && !!ipc) {
+      setIsLocalRefreshing(true)
+      try {
+        await ipc.invoke("db.refreshAll")
+        // 全部刷新后，同步一下当前视图的条目
+        await entrySyncServices.fetchEntries({ feedId: routerParams.feedId! })
+      } catch (e) {
+        console.error("[EntryListHeader] refreshAll error:", e)
+      } finally {
+        setIsLocalRefreshing(false)
+      }
     }
 
     await refetch()
-  }, [feed?.type, feedId, refetch])
+  }, [feed?.type, feedId, refetch, view])
 
   const { isScrolledBeyondThreshold } = useEntryRootState()
   const isScrolledBeyondThresholdValue = useAtomValue(isScrolledBeyondThreshold)

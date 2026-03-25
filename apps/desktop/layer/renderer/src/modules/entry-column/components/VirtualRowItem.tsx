@@ -24,7 +24,8 @@ interface VirtualRowItemProps {
 const EntryHeadDateItem: FC<{
   entryId: string
   isSticky?: boolean
-}> = ({ entryId, isSticky }) => {
+  isFirst?: boolean
+}> = ({ entryId, isSticky, isFirst }) => {
   const entry = useEntry(entryId, (state) => {
     const { insertedAt, publishedAt } = state
 
@@ -38,7 +39,7 @@ const EntryHeadDateItem: FC<{
   if (!entry) return null
   const date = new Date(isList ? entry.insertedAt : entry.publishedAt).toDateString()
 
-  return <DateItem isSticky={isSticky} date={date} view={view} />
+  return <DateItem isSticky={isSticky} date={date} view={view} isFirst={isFirst} />
 }
 
 export const VirtualRowItem: FC<VirtualRowItemProps> = memo(
@@ -73,6 +74,7 @@ export const VirtualRowItem: FC<VirtualRowItemProps> = memo(
             <EntryHeadDateItem
               entryId={entriesIds[virtualRowIndex]!}
               isSticky={isActiveStickyItem}
+              isFirst={virtualRowIndex === 0}
             />
           </div>
         )}

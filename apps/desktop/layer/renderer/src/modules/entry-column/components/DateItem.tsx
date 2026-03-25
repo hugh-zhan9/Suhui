@@ -23,6 +23,7 @@ type DateItemProps = Pick<DateItemInnerProps, "isSticky"> & {
   view: FeedViewType
   date: string
   className?: string
+  isFirst?: boolean
 }
 const useParseDate = (date: string) =>
   useMemo(() => {
@@ -35,11 +36,18 @@ const useParseDate = (date: string) =>
   }, [date])
 
 const dateItemclassName = tw`relative flex items-center text-sm lg:text-base gap-1 px-3 font-bold text-text h-9`
-export const DateItem = memo(({ date, view, isSticky }: DateItemProps) => {
+export const DateItem = memo(({ date, view, isSticky, isFirst }: DateItemProps) => {
   const showEntryDetailsColumn = useShowEntryDetailsColumn()
 
   if (view === FeedViewType.SocialMedia || !showEntryDetailsColumn) {
-    return <SocialMediaDateItem date={date} className={dateItemclassName} isSticky={isSticky} />
+    return (
+      <SocialMediaDateItem
+        date={date}
+        className={dateItemclassName}
+        isSticky={isSticky}
+        isFirst={isFirst}
+      />
+    )
   }
   return <UniversalDateItem date={date} className={dateItemclassName} isSticky={isSticky} />
 })
@@ -106,27 +114,34 @@ const SocialMediaDateItem = ({
   date,
   className,
   isSticky,
+  isFirst,
 }: {
   date: string
   className?: string
   isSticky?: boolean
+  isFirst?: boolean
 }) => {
   const { dateObj } = useParseDate(date)
 
   return (
-    <DateItemInner
-      Wrapper={({ children }) => (
-        <div
-          className={cn(
-            "m-auto flex w-full max-w-[645px] select-none gap-3 pl-2 text-base lg:text-lg",
-          )}
-        >
-          {children}
-        </div>
+    <div className="flex w-full flex-col">
+      {!isSticky && !isFirst && (
+        <div className="m-auto mb-6 mt-10 w-full max-w-[645px] border-t border-border opacity-30" />
       )}
-      className={className}
-      date={dateObj}
-      isSticky={isSticky}
-    />
+      <DateItemInner
+        Wrapper={({ children }) => (
+          <div
+            className={cn(
+              "m-auto flex w-full max-w-[645px] select-none gap-3 pl-2 text-base lg:text-lg",
+            )}
+          >
+            {children}
+          </div>
+        )}
+        className={className}
+        date={dateObj}
+        isSticky={isSticky}
+      />
+    </div>
   )
 }
