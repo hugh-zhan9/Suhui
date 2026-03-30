@@ -5726,3 +5726,34 @@
 - `apps/desktop/layer/renderer/src/modules/entry-column/components/DateItem.tsx`
 
 ---
+
+## [2026-03-30 10:53] [Feature]
+
+- **Change**: 新增 macOS 本地无签名一键安装脚本与命令入口
+- **Risk Analysis**: 主要风险在于脚本依赖 macOS 的 hdiutil、ditto、xattr 与 /Applications 写权限；若本机无最新 DMG 产物或应用未正确挂载，会在安装阶段失败。已用 node:test 覆盖 DMG 选择与安装路径解析，未在当前会话执行真实安装链路。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/scripts/packaging/install-local-macos.ts`
+- `apps/desktop/scripts/packaging/install-local-macos.test.ts`
+- `scripts/install-macos-local.sh`
+- `package.json`
+- `apps/desktop/package.json`
+- `README.md`
+- `docs/mac-local-packaging.md`
+
+---
+
+## [2026-03-30 10:57] [Refactor]
+
+- **Change**: 将 macOS 本地安装器改为纯 shell，并补充失败诊断与清理逻辑
+- **Risk Analysis**: 主要风险在于 shell 脚本更依赖 macOS 命令行为差异，尤其是 stat、hdiutil、xattr 与 Applications 写权限；已补充 shell 级测试覆盖最新 DMG 解析与缺失产物报错，但未在本次会话执行真实安装。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `scripts/install-macos-local.sh`
+- `scripts/install-macos-local.test.sh`
+- `apps/desktop/package.json`
+- `package.json`
+- `README.md`
+- `docs/mac-local-packaging.md`
+
+---

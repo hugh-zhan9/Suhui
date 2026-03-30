@@ -20,6 +20,7 @@
     "format:check": "prettier --check .",
     "icons:sync": "echo \"desktop-only mode: icons sync disabled\"",
     "icons:update": "echo \"desktop-only mode: icons update disabled\"",
+    "install:macos-local": "bash scripts/install-macos-local.sh",
     "lint:tsl": "tsslint --project apps/desktop/layer/main/tsconfig.json --project apps/desktop/layer/renderer/tsconfig.json",
     "mitproxy": "bash scripts/run-proxy.sh",
     "polyfill-optimize": "pnpx nolyfill install",
