@@ -29,3 +29,10 @@ export const refreshLocalFeedAndSyncEntries = async ({
   await ipc.invoke("db.refreshFeed", feedId)
   await fetchEntries({ feedId })
 }
+
+export const refreshAllLocalFeedsAndSyncEntries = async ({ ipc }: { ipc: IpcInvoker }) => {
+  const result = (await ipc.invoke("db.refreshLocalSubscribedFeeds")) as
+    | { refreshed?: number; failed?: number }
+    | undefined
+  return result
+}

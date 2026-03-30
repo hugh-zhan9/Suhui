@@ -40,7 +40,11 @@ class AppManagerStatic {
     this.setupAppVisuals()
     this.setupSystemConfigs()
     this.runCronJobs()
-    this.registerMenuAndContextMenu()
+    try {
+      this.registerMenuAndContextMenu()
+    } catch (error) {
+      logger.error("[AppManager] registerMenuAndContextMenu failed", error)
+    }
     this.registerPushNotifications()
 
     updateProxy()
