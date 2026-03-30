@@ -13,6 +13,7 @@ appendBootLog(bootLogPath, "bootstrap:loaded", {
   pid: process.pid,
   resourcesPath: process.resourcesPath,
 })
+
 console.info("[main] device id:", DEVICE_ID)
 if (squirrelStartup) {
   appendBootLog(bootLogPath, "bootstrap:squirrel-startup")
@@ -45,6 +46,7 @@ import("./manager/bootstrap")
         error: errorMessage,
       })
       console.error("Failed to start BootstrapManager:", err)
+      app.exit(1)
     })
   })
   .catch((err) => {

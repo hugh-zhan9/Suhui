@@ -37,7 +37,12 @@ import { useEntryRootState } from "../store/EntryColumnContext"
 import { AppendTaildingDivider } from "./AppendTaildingDivider"
 import { SwitchToMasonryButton } from "./buttons/SwitchToMasonryButton"
 import { shouldShowInlineStarInEntryListHeader } from "./entry-list-header-actions"
-import { refreshLocalFeedAndSyncEntries, shouldUseLocalFeedRefresh } from "./entry-refresh"
+import {
+  refreshAllLocalFeedsAndSyncEntries,
+  refreshLocalFeedAndSyncEntries,
+  shouldUseBatchLocalRefresh,
+  shouldUseLocalFeedRefresh,
+} from "./entry-refresh"
 
 export const EntryListHeader: FC<{
   refetch: () => void
@@ -48,7 +53,7 @@ export const EntryListHeader: FC<{
 
   const unreadOnly = useGeneralSettingKey("unreadOnly")
 
-  const { feedId, entryId, view, isCollection } = routerParams
+  const { feedId, entryId, view, isAllFeeds, isCollection } = routerParams
   const isPreview = useIsPreviewFeed()
   const viewDefinition = getView(view)
   const isWideMode = !!viewDefinition?.wideMode
@@ -93,17 +98,13 @@ export const EntryListHeader: FC<{
   const runCmdFn = useRunCommandFn()
   const handleRefetch = useCallback(async () => {
     const ipc = (window as any)?.electron?.ipcRenderer
-    const canRefreshLocalFeed =
-      !!ipc &&
-      feedId !== ROUTE_ENTRY_PENDING &&
-      shouldUseLocalFeedRefresh({
-        feedId,
-        feed,
-      })
+    const latestFeed = getFeedById(feedId) ?? feed
+    const canAttemptLocalFeedRefresh =
+      !!ipc && shouldUseLocalFeedRefresh({ feedId, feed: latestFeed as any })
+    const canAttemptBatchLocalRefresh =
+      !!ipc && shouldUseBatchLocalRefresh({ feedId, isAllFeeds, feed: latestFeed as any })
 
-    const isAllView = view === FeedViewType.All
-
-    if (canRefreshLocalFeed) {
+    if (canAttemptLocalFeedRefresh) {
       setIsLocalRefreshing(true)
       try {
         await refreshLocalFeedAndSyncEntries({
@@ -111,24 +112,36 @@ export const EntryListHeader: FC<{
           ipc,
           fetchEntries: entrySyncServices.fetchEntries.bind(entrySyncServices),
         })
+        await refetch()
+        return
+      } catch (error) {
+        console.warn("[EntryListHeader] local feed refresh failed, fallback to refetch", {
+          feedId,
+          reason: error instanceof Error ? error.message : String(error),
+        })
       } finally {
         setIsLocalRefreshing(false)
       }
-    } else if (isAllView && !!ipc) {
+    }
+
+    if (canAttemptBatchLocalRefresh) {
       setIsLocalRefreshing(true)
       try {
-        await ipc.invoke("db.refreshAll")
-        // 全部刷新后，同步一下当前视图的条目
-        await entrySyncServices.fetchEntries({ feedId: routerParams.feedId! })
-      } catch (e) {
-        console.error("[EntryListHeader] refreshAll error:", e)
+        await refreshAllLocalFeedsAndSyncEntries({
+          ipc,
+        })
+      } catch (error) {
+        console.warn("[EntryListHeader] batch local feed refresh failed, fallback to refetch", {
+          feedId,
+          reason: error instanceof Error ? error.message : String(error),
+        })
       } finally {
         setIsLocalRefreshing(false)
       }
     }
 
     await refetch()
-  }, [feed?.type, feedId, refetch, view])
+  }, [feed, feedId, isAllFeeds, refetch])
 
   const { isScrolledBeyondThreshold } = useEntryRootState()
   const isScrolledBeyondThresholdValue = useAtomValue(isScrolledBeyondThreshold)
@@ -180,7 +193,8 @@ export const EntryListHeader: FC<{
             {isOnline &&
               (feed?.ownerUserId === user?.id &&
               isBizId(routerParams.feedId!) &&
-              feed?.type === "feed" ? (
+              feed?.type === "feed" &&
+              !feed?.url ? (
                 <ActionButton
                   tooltip="Refresh"
                   onClick={() => {

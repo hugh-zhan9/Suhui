@@ -15,6 +15,7 @@ import { store, StoreKey } from "~/lib/store"
 import { registerAppTray } from "~/lib/tray"
 import { logger, revealLogFile } from "~/logger"
 import { AppManager } from "~/manager/app"
+import { DBManager } from "~/manager/db"
 import type { DbConfigView } from "~/manager/db-config-view"
 import { buildDbConfigView } from "~/manager/db-config-view"
 import { getDesktopEnvInfo } from "~/manager/env-loader"
@@ -69,6 +70,11 @@ export class AppService extends IpcService {
       env: process.env,
       envInfo: getDesktopEnvInfo(),
     })
+  }
+
+  @IpcMethod()
+  getDatabaseStatus(_context: IpcContext) {
+    return DBManager.getStatus()
   }
 
   @IpcMethod()

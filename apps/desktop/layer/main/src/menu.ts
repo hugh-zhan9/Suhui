@@ -12,6 +12,8 @@ import { revealLogFile } from "./logger"
 import { WindowManager } from "./manager/window"
 
 export const registerAppMenu = () => {
+  const mainWindow = WindowManager.getMainWindow()
+  const canUseMainWindow = !!mainWindow && !mainWindow.isDestroyed()
   const menus: Array<MenuItemConstructorOptions | MenuItem> = [
     ...(isMacOS
       ? ([
@@ -156,10 +158,10 @@ export const registerAppMenu = () => {
         {
           label: "Always on top",
           type: "checkbox",
-          checked: WindowManager.getMainWindow()?.isAlwaysOnTop(),
+          checked: canUseMainWindow ? mainWindow.isAlwaysOnTop() : false,
           click: () => {
             const mainWindow = WindowManager.getMainWindow()
-            if (!mainWindow) return
+            if (!mainWindow || mainWindow.isDestroyed()) return
             mainWindow.setAlwaysOnTop(!mainWindow.isAlwaysOnTop())
             registerAppMenu()
           },

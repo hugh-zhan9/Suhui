@@ -12,7 +12,6 @@ import { join } from "pathe"
 
 import { appendBootLog } from "~/manager/boot-log"
 import { DBManager } from "~/manager/db"
-import { FeedRefreshService } from "~/manager/feed-refresh"
 import { shouldForwardRendererConsoleError } from "~/manager/renderer-console-filter"
 import { SyncManager } from "~/manager/sync"
 import { configureSyncLogger } from "~/manager/sync-logger"
@@ -25,6 +24,7 @@ import { store } from "../lib/store"
 import { updateNotificationsToken } from "../lib/user"
 import { logger } from "../logger"
 import { cleanupOldRender } from "../updater/hot-updater"
+import { DbService } from "../ipc/services/db"
 import { AppManager } from "./app"
 import { logNetworkRequestError } from "./network-error-log"
 
@@ -36,22 +36,45 @@ const buildSafeHeaders = createBuildSafeHeaders(env.VITE_WEB_URL, [
   env.VITE_API_URL,
   "https://readwise.io",
 ])
+const localFeedRefreshIntervalMs = 30 * 60 * 1000
+let localFeedRefreshRunning: Promise<void> | null = null
+
+const runLocalFeedRefresh = async (reason: "startup" | "interval") => {
+  if (localFeedRefreshRunning) {
+    logger.warn("[Refresh] local feed refresh skipped because a previous run is still active", {
+      reason,
+    })
+    return localFeedRefreshRunning
+  }
+
+  localFeedRefreshRunning = (async () => {
+    try {
+      const result = await new DbService().refreshLocalSubscribedFeeds({} as any, {
+        source: reason === "startup" ? "startup-auto" : "interval-auto",
+      })
+      logger.info("[Refresh] local feed refresh completed", {
+        reason,
+        total: result.total,
+        refreshed: result.refreshed,
+        failed: result.failed,
+      })
+    } catch (error) {
+      logger.error("[Refresh] local feed refresh failed", {
+        reason,
+        error: error instanceof Error ? error.message : String(error),
+      })
+    } finally {
+      localFeedRefreshRunning = null
+    }
+  })()
+
+  return localFeedRefreshRunning
+}
 
 export class BootstrapManager {
   public static async start() {
     appendBootLog(bootLogPath, "manager:start")
     configureSyncLogger(() => SyncManager)
-    logger.info("[Startup] DBManager.init:start")
-    await DBManager.init()
-    logger.info("[Startup] DBManager.init:done")
-    appendBootLog(bootLogPath, "manager:db-ready")
-    logger.info("[Startup] SyncManager.init:start")
-    await SyncManager.init()
-    logger.info("[Startup] SyncManager.init:done")
-    appendBootLog(bootLogPath, "manager:sync-ready")
-    AppManager.init()
-    logger.info("[Startup] AppManager.init:done")
-    appendBootLog(bootLogPath, "manager:app-init")
 
     const gotTheLock = app.requestSingleInstanceLock()
     if (!gotTheLock) {
@@ -60,6 +83,26 @@ export class BootstrapManager {
       return
     }
     appendBootLog(bootLogPath, "manager:single-instance-ok")
+
+    logger.info("[Startup] DBManager.init:start")
+    DBManager.init({ background: true })
+      .then(async () => {
+        logger.info("[Startup] DBManager.init:done")
+        appendBootLog(bootLogPath, "manager:db-ready")
+        logger.info("[Startup] SyncManager.init:start")
+        await SyncManager.init()
+        logger.info("[Startup] SyncManager.init:done")
+        appendBootLog(bootLogPath, "manager:sync-ready")
+      })
+      .catch((error) => {
+        const message = error instanceof Error ? error.message : String(error)
+        appendBootLog(bootLogPath, "manager:db-failed", { error: message })
+        logger.error("[Startup] DBManager.init:failed", message)
+      })
+
+    AppManager.init()
+    logger.info("[Startup] AppManager.init:done")
+    appendBootLog(bootLogPath, "manager:app-init")
 
     this.registerAppEvents()
   }
@@ -148,29 +191,20 @@ export class BootstrapManager {
       // 延迟 5s 执行首次并设置定时同步以免阻塞启动
       setTimeout(() => {
         SyncManager.gitSync().catch((err) => logger.error("[Sync] auto sync on start failed:", err))
-        // 首次启动 10s 后执行一次全量刷新
-        setTimeout(() => {
-          FeedRefreshService.refreshAll().catch((err) =>
-            logger.error("[Feed] auto refresh on start failed:", err),
-          )
-        }, 5000)
-
+        runLocalFeedRefresh("startup").catch((err) =>
+          logger.error("[Refresh] auto local refresh on start failed:", err),
+        )
         setInterval(
           () => {
             SyncManager.gitSync().catch((err) => logger.error("[Sync] periodic sync failed:", err))
           },
           10 * 60 * 1000,
         )
-
-        // 每 30 分钟执行一次全量刷新
-        setInterval(
-          () => {
-            FeedRefreshService.refreshAll().catch((err) =>
-              logger.error("[Feed] periodic refresh failed:", err),
-            )
-          },
-          30 * 60 * 1000,
-        )
+        setInterval(() => {
+          runLocalFeedRefresh("interval").catch((err) =>
+            logger.error("[Refresh] periodic local refresh failed:", err),
+          )
+        }, localFeedRefreshIntervalMs)
       }, 5000)
     })
 
