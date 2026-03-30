@@ -142,12 +142,15 @@ pnpm --filter suhui build:electron
 
 # 无签名打包（本地验证建议）
 pnpm --filter suhui build:electron:unsigned
+
+# 一键构建并安装到 /Applications（macOS）
+pnpm install:macos-local
 ```
 
 无签名构建默认产物目录：
 
-- `/tmp/folo-forge-out/make`
-- 示例：`/tmp/folo-forge-out/make/溯洄-1.3.1-macos-arm64.dmg`
+- `/tmp/suhui-forge-out/make`
+- 示例：`/tmp/suhui-forge-out/make/溯洄-1.3.1-macos-arm64.dmg`
 
 ## 目录速览
 
