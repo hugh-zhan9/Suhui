@@ -15,6 +15,8 @@ type EntryRecord = any
 type RemoteServerDependencies = {
   getSubscriptions: () => Promise<SubscriptionRecord[]>
   getEntries: (feedId?: string) => Promise<EntryRecord[]>
+  getUnreadCounts: () => Promise<Array<{ id: string; count: number }>>
+  updateReadStatus: (payload: { entryIds: string[]; read: boolean }) => Promise<void>
 }
 
 type StartOptions = Partial<{
@@ -40,6 +42,8 @@ type StoppedServerStatus = {
 type RemoteServerStatus = RunningServerStatus | StoppedServerStatus
 
 type StartResult = RunningServerStatus
+type RemoteEventName = "ready" | "ping" | "entries.updated" | "subscriptions.updated"
+type RemoteEventPayload = Record<string, unknown>
 
 const json = (response: ServerResponse, statusCode: number, payload: unknown) => {
   response.statusCode = statusCode
@@ -59,9 +63,30 @@ const text = (
 }
 
 const getBaseUrl = (host: string, port: number) => `http://${host}:${port}`
+const readJsonBody = async <T>(request: IncomingMessage): Promise<T> => {
+  const chunks: Buffer[] = []
+  for await (const chunk of request) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
+  }
+
+  const raw = Buffer.concat(chunks).toString("utf8")
+  return JSON.parse(raw) as T
+}
+
+const writeSseEvent = (
+  response: ServerResponse<IncomingMessage>,
+  event: RemoteEventName,
+  payload: RemoteEventPayload,
+) => {
+  response.write(`event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`)
+}
 
 const createRequestHandler =
-  (deps: RemoteServerDependencies, getStatus: () => RemoteServerStatus) =>
+  (
+    deps: RemoteServerDependencies,
+    getStatus: () => RemoteServerStatus,
+    onSseConnect: (request: IncomingMessage, response: ServerResponse<IncomingMessage>) => void,
+  ) =>
   async (request: IncomingMessage, response: ServerResponse) => {
     const method = request.method || "GET"
     const url = new URL(request.url || "/", "http://127.0.0.1")
@@ -82,21 +107,7 @@ const createRequestHandler =
     }
 
     if (method === "GET" && url.pathname === "/events") {
-      response.statusCode = 200
-      response.setHeader("Content-Type", "text/event-stream; charset=utf-8")
-      response.setHeader("Cache-Control", "no-cache, no-transform")
-      response.setHeader("Connection", "keep-alive")
-      response.setHeader("X-Accel-Buffering", "no")
-      response.write('event: ready\ndata: {"connected":true}\n\n')
-
-      const heartbeat = setInterval(() => {
-        response.write("event: ping\ndata: {}\n\n")
-      }, 15000)
-
-      request.on("close", () => {
-        clearInterval(heartbeat)
-        response.end()
-      })
+      onSseConnect(request, response)
       return
     }
 
@@ -112,6 +123,19 @@ const createRequestHandler =
       return
     }
 
+    if (method === "GET" && url.pathname === "/api/unread") {
+      const unreadCounts = await deps.getUnreadCounts()
+      json(response, 200, { data: unreadCounts })
+      return
+    }
+
+    if (method === "POST" && url.pathname === "/api/entries/read") {
+      const payload = await readJsonBody<{ entryIds: string[]; read: boolean }>(request)
+      await deps.updateReadStatus(payload)
+      json(response, 200, { ok: true })
+      return
+    }
+
     if (method === "GET" && url.pathname === "/api/subscriptions") {
       const subscriptions = await deps.getSubscriptions()
       json(response, 200, { data: subscriptions })
@@ -123,6 +147,8 @@ const createRequestHandler =
 
 class RemoteServerManagerStatic {
   private server: ReturnType<typeof createServer> | null = null
+  private sseClients = new Set<ServerResponse<IncomingMessage>>()
+  private sseHeartbeats = new Map<ServerResponse<IncomingMessage>, ReturnType<typeof setInterval>>()
   private status: RemoteServerStatus = {
     running: false,
     host: null,
@@ -135,6 +161,16 @@ class RemoteServerManagerStatic {
     getEntries: async (feedId?: string) => {
       const { entryApplicationService } = await import("~/application/entry/service")
       return entryApplicationService.listEntries(feedId)
+    },
+    getUnreadCounts: async () => {
+      const { unreadApplicationService } = await import("~/application/unread/service")
+      return unreadApplicationService.listUnreadCounts()
+    },
+    updateReadStatus: async (payload) => {
+      const { entryApplicationService } = await import("~/application/entry/service")
+      await entryApplicationService.updateReadStatus(payload)
+      this.broadcast("entries.updated", {})
+      this.broadcast("subscriptions.updated", {})
     },
   }
 
@@ -149,10 +185,16 @@ class RemoteServerManagerStatic {
       ...this.deps,
       ...(options?.getSubscriptions ? { getSubscriptions: options.getSubscriptions } : {}),
       ...(options?.getEntries ? { getEntries: options.getEntries } : {}),
+      ...(options?.getUnreadCounts ? { getUnreadCounts: options.getUnreadCounts } : {}),
+      ...(options?.updateReadStatus ? { updateReadStatus: options.updateReadStatus } : {}),
     }
 
     this.server = createServer((request, response) => {
-      void createRequestHandler(this.deps, () => this.getStatus())(request, response)
+      void createRequestHandler(
+        this.deps,
+        () => this.getStatus(),
+        (incomingRequest, sseResponse) => this.handleSseConnect(incomingRequest, sseResponse),
+      )(request, response)
     })
 
     await new Promise<void>((resolve, reject) => {
@@ -179,6 +221,10 @@ class RemoteServerManagerStatic {
 
     const currentServer = this.server
     this.server = null
+    for (const client of this.sseClients) {
+      this.cleanupSseClient(client)
+      client.end()
+    }
 
     await new Promise<void>((resolve, reject) => {
       currentServer.close((error) => {
@@ -200,6 +246,42 @@ class RemoteServerManagerStatic {
 
   getStatus(): RemoteServerStatus {
     return this.status
+  }
+
+  broadcast(event: RemoteEventName, payload: RemoteEventPayload = {}) {
+    for (const client of this.sseClients) {
+      writeSseEvent(client, event, payload)
+    }
+  }
+
+  private handleSseConnect(request: IncomingMessage, response: ServerResponse<IncomingMessage>) {
+    response.statusCode = 200
+    response.setHeader("Content-Type", "text/event-stream; charset=utf-8")
+    response.setHeader("Cache-Control", "no-cache, no-transform")
+    response.setHeader("Connection", "keep-alive")
+    response.setHeader("X-Accel-Buffering", "no")
+    this.sseClients.add(response)
+    writeSseEvent(response, "ready", { connected: true })
+
+    const heartbeat = setInterval(() => {
+      writeSseEvent(response, "ping", {})
+    }, 15000)
+    this.sseHeartbeats.set(response, heartbeat)
+
+    request.on("close", () => {
+      this.cleanupSseClient(response)
+      response.end()
+    })
+  }
+
+  private cleanupSseClient(response: ServerResponse<IncomingMessage>) {
+    const heartbeat = this.sseHeartbeats.get(response)
+    if (heartbeat) {
+      clearInterval(heartbeat)
+      this.sseHeartbeats.delete(response)
+    }
+
+    this.sseClients.delete(response)
   }
 }
 

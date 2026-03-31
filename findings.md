@@ -26,7 +26,10 @@
 - 当前 `@suhui/electron-main` 的 `typecheck` 本身就被多处历史配置/测试问题阻塞，不能作为本次 remote 改动的有效回归门禁。
 - 在不改 renderer 构建链的前提下，可先由主进程直接托管最小 HTML + JS shell，快速验证 remote browser 端访问链路。
 - 现阶段 SSE 已能提供连接建立和保活信号，适合作为后续真实领域事件广播的传输骨架。
+- 通过在 `RemoteServerManager` 内部维护 SSE client 集合并提供 `broadcast()`，可以先建立最小领域事件广播骨架，而不必一开始就引入更重的事件总线抽象。
 - 在主进程直接托管的最小 remote shell 中，先做 subscription -> entry list 的两栏结构，可以更快验证浏览器端主阅读链路，而不必立即接入完整 renderer。
+- unread counts 读取可直接经主进程 `unreadTable` 暴露，不必等待 renderer store 收敛后再做。
+- read-state 写路径可以先通过单一 `POST /api/entries/read` 收口，浏览器端只依赖事件刷新，不直接维护另一套写模型。
 
 ## 技术决策
 
@@ -40,6 +43,7 @@
 | Slice 1 先实现主进程 remote server skeleton 与只读订阅查询                    | 这是最小可运行闭环，且不会过早引入复杂写路径一致性问题 |
 | 最小 remote browser shell 先由主进程直接托管，而不是立刻接入 renderer 构建链  | 这样能更快验证浏览器访问能力，降低早期改造风险         |
 | 在真实广播落地前，SSE 先承载 `ready/ping` 连接状态                            | 先把远程端“连接断开必须显式提示”的硬约束做实           |
+| read-state 远程写入先收口为单一 HTTP endpoint                                 | 先验证主进程单一写入口，再逐步扩到 refresh 等写能力    |
 
 ## 遇到的问题
 
