@@ -60,6 +60,18 @@ const remoteShellHtml = `<!doctype html>
         font-size: 18px;
         font-weight: 600;
       }
+      .columns {
+        display: grid;
+        grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
+        gap: 16px;
+      }
+      .section-title {
+        margin: 0 0 12px;
+        font-size: 14px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: #5b6470;
+      }
       .list {
         list-style: none;
         padding: 0;
@@ -72,6 +84,11 @@ const remoteShellHtml = `<!doctype html>
         border-radius: 14px;
         background: rgba(244, 241, 234, 0.65);
         border: 1px solid rgba(31, 35, 40, 0.06);
+        cursor: pointer;
+      }
+      .item.is-active {
+        border-color: rgba(178, 100, 42, 0.45);
+        background: rgba(220, 180, 140, 0.18);
       }
       .item-title {
         margin: 0;
@@ -107,6 +124,15 @@ const remoteShellHtml = `<!doctype html>
           background: rgba(255, 255, 255, 0.04);
           border-color: rgba(255, 255, 255, 0.06);
         }
+        .item.is-active {
+          border-color: rgba(247, 184, 119, 0.4);
+          background: rgba(247, 184, 119, 0.08);
+        }
+      }
+      @media (max-width: 800px) {
+        .columns {
+          grid-template-columns: 1fr;
+        }
       }
     </style>
   </head>
@@ -120,8 +146,20 @@ const remoteShellHtml = `<!doctype html>
         <div id="remote-status" class="status">Connecting...</div>
       </header>
       <main id="remote-root" class="panel">
-        <h2 class="panel-title">Subscriptions</h2>
-        <p class="empty">Loading...</p>
+        <div class="columns">
+          <section>
+            <h2 class="section-title">Subscriptions</h2>
+            <div id="subscription-panel">
+              <p class="empty">Loading...</p>
+            </div>
+          </section>
+          <section>
+            <h2 class="section-title">Entries</h2>
+            <div id="entry-panel">
+              <p class="empty">Choose a subscription.</p>
+            </div>
+          </section>
+        </div>
       </main>
     </div>
     <script type="module" src="/remote.js"></script>
@@ -129,19 +167,23 @@ const remoteShellHtml = `<!doctype html>
 </html>`
 
 const remoteShellScript = `const root = document.getElementById("remote-root");
+const subscriptionPanel = document.getElementById("subscription-panel");
+const entryPanel = document.getElementById("entry-panel");
 const status = document.getElementById("remote-status");
+let activeFeedId = null;
+let subscriptionsCache = [];
 
 const renderSubscriptions = (items) => {
-  const title = '<h2 class="panel-title">Subscriptions</h2>';
   if (!items || items.length === 0) {
-    root.innerHTML = title + '<p class="empty">No subscriptions yet.</p>';
+    subscriptionPanel.innerHTML = '<p class="empty">No subscriptions yet.</p>';
     return;
   }
 
   const list = items
     .map((item) => {
       const meta = [item.type, item.category, item.feedId].filter(Boolean).join(" · ");
-      return '<li class="item"><p class="item-title">' +
+      const activeClass = item.feedId === activeFeedId ? ' is-active' : '';
+      return '<li class="item' + activeClass + '" data-feed-id="' + (item.feedId || '') + '"><p class="item-title">' +
         (item.title || item.id) +
         '</p><p class="item-meta">' +
         (meta || item.id) +
@@ -149,14 +191,71 @@ const renderSubscriptions = (items) => {
     })
     .join("");
 
-  root.innerHTML = title + '<ul class="list">' + list + '</ul>';
+  subscriptionPanel.innerHTML = '<ul class="list">' + list + '</ul>';
+  subscriptionPanel.querySelectorAll("[data-feed-id]").forEach((node) => {
+    node.addEventListener("click", () => {
+      const nextFeedId = node.getAttribute("data-feed-id");
+      if (!nextFeedId) return;
+      activeFeedId = nextFeedId;
+      renderSubscriptions(subscriptionsCache);
+      void loadEntries(nextFeedId);
+    });
+  });
+};
+
+const renderEntries = (items) => {
+  if (!items || items.length === 0) {
+    entryPanel.innerHTML = '<p class="empty">No entries for this subscription yet.</p>';
+    return;
+  }
+
+  const list = items
+    .map((item) => {
+      const publishedAt = item.publishedAt ? new Date(item.publishedAt).toLocaleString() : "Unknown time";
+      return '<li class="item"><p class="item-title">' +
+        (item.title || item.id) +
+        '</p><p class="item-meta">' +
+        publishedAt +
+        '</p></li>';
+    })
+    .join("");
+
+  entryPanel.innerHTML = '<ul class="list">' + list + '</ul>';
 };
 
 const setStatus = (label) => {
   status.textContent = label;
 };
 
-const load = async () => {
+const connectEvents = () => {
+  const eventSource = new EventSource("/events");
+  eventSource.addEventListener("ready", () => {
+    setStatus("Connected · Realtime online");
+  });
+  eventSource.addEventListener("ping", () => {
+    setStatus("Connected · Realtime online");
+  });
+  eventSource.onerror = () => {
+    setStatus("Disconnected");
+  };
+};
+
+const loadEntries = async (feedId) => {
+  entryPanel.innerHTML = '<p class="empty">Loading entries...</p>';
+  try {
+    const response = await fetch("/api/entries?feedId=" + encodeURIComponent(feedId));
+    if (!response.ok) {
+      throw new Error("HTTP " + response.status);
+    }
+    const payload = await response.json();
+    renderEntries(payload.data || []);
+  } catch (error) {
+    entryPanel.innerHTML = '<p class="empty">Failed to load entries.</p>';
+    console.error("[remote-shell] failed to load entries", error);
+  }
+};
+
+const loadSubscriptions = async () => {
   setStatus("Loading subscriptions...");
   try {
     const response = await fetch("/api/subscriptions");
@@ -164,16 +263,25 @@ const load = async () => {
       throw new Error("HTTP " + response.status);
     }
     const payload = await response.json();
-    renderSubscriptions(payload.data || []);
-    setStatus("Connected");
+    subscriptionsCache = payload.data || [];
+    activeFeedId = subscriptionsCache.find((item) => item.feedId)?.feedId || null;
+    renderSubscriptions(subscriptionsCache);
+    if (activeFeedId) {
+      await loadEntries(activeFeedId);
+    } else {
+      entryPanel.innerHTML = '<p class="empty">Choose a subscription.</p>';
+    }
+    setStatus("Connected · Initial sync complete");
   } catch (error) {
-    root.innerHTML = '<h2 class="panel-title">Subscriptions</h2><p class="empty">Failed to load subscriptions.</p>';
+    subscriptionPanel.innerHTML = '<p class="empty">Failed to load subscriptions.</p>';
+    entryPanel.innerHTML = '<p class="empty">Entries unavailable.</p>';
     setStatus("Disconnected");
     console.error("[remote-shell] failed to load subscriptions", error);
   }
 };
 
-void load();
+connectEvents();
+void loadSubscriptions();
 `
 
 export const getRemoteShellHtml = () => remoteShellHtml

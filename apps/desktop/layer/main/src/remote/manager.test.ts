@@ -70,10 +70,12 @@ describe("RemoteServerManager", () => {
   })
 
   it("serves a remote browser shell and client script", async () => {
+    const abortController = new AbortController()
     const server = await RemoteServerManager.start({
       host: "127.0.0.1",
       port: 0,
       getSubscriptions: vi.fn().mockResolvedValue([]),
+      getEntries: vi.fn().mockResolvedValue([]),
     })
 
     const htmlResponse = await fetch(`${server.baseUrl}/`)
@@ -88,6 +90,52 @@ describe("RemoteServerManager", () => {
     expect(jsResponse.headers.get("content-type")).toContain("javascript")
     const js = await jsResponse.text()
     expect(js).toContain("/api/subscriptions")
+    expect(js).toContain("/api/entries")
+    expect(js).toContain("/events")
     expect(js).toContain("remote-root")
+
+    const eventsResponse = await fetch(`${server.baseUrl}/events`, {
+      signal: abortController.signal,
+    })
+    expect(eventsResponse.status).toBe(200)
+    expect(eventsResponse.headers.get("content-type")).toContain("text/event-stream")
+    const reader = eventsResponse.body!.getReader()
+    const firstChunk = await reader.read()
+    const payload = new TextDecoder().decode(firstChunk.value)
+    expect(payload).toContain("event: ready")
+    expect(payload).toContain('{"connected":true}')
+    abortController.abort()
+  })
+
+  it("serves entries from the injected provider", async () => {
+    const getEntries = vi.fn().mockResolvedValue([
+      {
+        id: "entry_1",
+        feedId: "feed_1",
+        title: "Entry One",
+        publishedAt: 1710000000000,
+      },
+    ])
+
+    const server = await RemoteServerManager.start({
+      host: "127.0.0.1",
+      port: 0,
+      getSubscriptions: vi.fn().mockResolvedValue([]),
+      getEntries,
+    })
+
+    const response = await fetch(`${server.baseUrl}/api/entries?feedId=feed_1`)
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual({
+      data: [
+        {
+          id: "entry_1",
+          feedId: "feed_1",
+          title: "Entry One",
+          publishedAt: 1710000000000,
+        },
+      ],
+    })
+    expect(getEntries).toHaveBeenCalledWith("feed_1")
   })
 })

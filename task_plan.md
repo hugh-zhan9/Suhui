@@ -49,6 +49,7 @@
 - [x] 提供 `/health`、`/status`、`/api/subscriptions` 只读接口
 - [x] 接入主进程启动与关闭生命周期
 - [x] 提供最小 remote browser shell
+- [x] 补充 entry list 只读接口与最小 SSE 连接状态
 - [ ] 补充更多远程 capability 与正式浏览器端入口
 - **状态：** in_progress
 
@@ -69,14 +70,15 @@
 
 ## 遇到的错误
 
-| 错误                              | 尝试次数 | 解决方案                                                            |
-| --------------------------------- | -------- | ------------------------------------------------------------------- |
-| 仓库中无 `writing-plans` skill    | 1        | 使用 `planning-with-files-zh` 作为最接近的文件化规划替代流程        |
-| 首次 remote 测试命令路径错误      | 1        | 改为在 `apps/desktop/layer/main` 下运行 `vitest run src/remote/...` |
-| 主进程 `typecheck` 被历史问题阻塞 | 1        | 记录为基线问题，本轮先以新增 remote 测试通过作为验证依据            |
+| 错误                               | 尝试次数 | 解决方案                                                            |
+| ---------------------------------- | -------- | ------------------------------------------------------------------- |
+| 仓库中无 `writing-plans` skill     | 1        | 使用 `planning-with-files-zh` 作为最接近的文件化规划替代流程        |
+| 首次 remote 测试命令路径错误       | 1        | 改为在 `apps/desktop/layer/main` 下运行 `vitest run src/remote/...` |
+| 主进程 `typecheck` 被历史问题阻塞  | 1        | 记录为基线问题，本轮先以新增 remote 测试通过作为验证依据            |
+| entry 查询默认依赖主进程模块副作用 | 1        | 将 `entryApplicationService` 改为 lazy import，避免测试初始化噪音   |
 
 ## 备注
 
 - 详细设计必须对齐已提交 spec：`docs/superpowers/specs/2026-03-31-remote-browser-access-design.md`
 - 计划需要可直接转化为 implementation backlog，而不只是高层方向
-- 当前实现从 `Slice 1` 开始，优先完成 remote server skeleton 和只读订阅路径
+- 当前实现已完成 `Slice 1` 与 `Slice 2` 的主要只读能力，下一步进入真实事件广播与写路径
