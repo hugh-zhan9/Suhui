@@ -1,7 +1,7 @@
 # AI-CONTEXT.md
 
 > 单一事实源（Single Source of Truth）
-> 最后更新时间：2026-02-28（基于当前代码与 issue 修复进展）
+> 最后更新时间：2026-03-31（基于当前代码、远程访问实现与文档同步结果）
 
 ## 上下文委派策略
 
@@ -19,6 +19,7 @@
 ### 2) 产品目标
 
 - 目标：**Desktop 端完全本地 RSS 阅读器（溯洄 / Suhui）**
+- 当前已扩展：运行中的 Desktop app 可对外托管远程浏览器访问入口（LAN / VPN 内 `IP + 端口`）
 - 已明确剔除：会员/计费、登录强依赖、在线 AI 主链路依赖
 
 ### 3) 本地数据面
@@ -38,7 +39,39 @@
   无签名打包：`pnpm --filter suhui build:electron:unsigned`
 - 无签名打包产物目录：`/tmp/folo-forge-out/make`（常见产物：`溯洄-<version>-macos-arm64.dmg`）
 
-### 5) Release 规则（Desktop）
+### 5) 远程浏览器访问（当前已落地）
+
+- 形态：不是独立 web 产品，而是 Electron main 内嵌 remote HTTP server + renderer remote entry
+- 访问方式：运行中的 app 通过 `IP + 端口` 对 LAN / VPN 暴露浏览器访问入口
+- 单一真相源：
+  - 持久化真相：本地 Postgres
+  - 写入协调者：Electron main process
+  - 桌面端与远程浏览器端都是客户端，不允许远程端直接写库
+- 当前主进程 remote 能力：
+  - 健康与状态：`/health`、`/status`
+  - 事件流：`/events`（SSE）
+  - 订阅：`GET/POST/PATCH/DELETE /api/subscriptions`
+  - 条目：`GET /api/entries`、`GET /api/entries/:id`
+  - 未读：`GET /api/unread`
+  - 读状态：`POST /api/entries/read`（支持 `read=true/false`）
+  - 刷新：`POST /api/feeds/:feedId/refresh`、`POST /api/feeds/refresh-all`
+- 当前远程浏览器端能力：
+  - 订阅列表与未读数
+  - 条目列表与详情阅读
+  - `Unread only`
+  - `Mark read / Mark unread`
+  - `Prev / Next`
+  - 读完自动前进
+  - 作者、原文链接、时间等基础元信息展示
+  - 列表排序：`Newest / Oldest / Unread First`
+  - 订阅新增、删除、编辑（`title / category / view`）
+  - 断线提示、重试同步、最近同步时间、当前阅读上下文显示
+- 当前边界：
+  - 远程端已适合“阅读 + 轻量订阅管理”
+  - 设置页、导入导出、批量管理与更多 Electron 专属能力映射仍未完成
+  - 远程端仍是独立轻量实现，不是桌面 renderer 的完全等价复用层
+
+### 6) Release 规则（Desktop）
 
 - 当前仓库已移除 GitHub Actions 自动构建/发布 workflow（`.github/workflows` 为空）
 - 发布与安装验证以本地构建流程为准：`pnpm --filter suhui build:electron:unsigned`
@@ -125,6 +158,21 @@
   - 其他模块（如 translation/summary/discover 等）仍可能含远端调用
 - 第 22 条（TTS 本地化）目前仍为“评估完成、暂不实现”状态
 
+## 远程访问当前边界
+
+- 当前远程能力优先级已经调整为“阅读体验优先于后台管理能力”
+- 已完成的主价值链路：
+  - 远程阅读
+  - 已读/未读切换
+  - feed 刷新
+  - 轻量订阅管理
+- 当前未优先推进的能力：
+  - 设置页
+  - 导入导出
+  - 批量订阅操作
+  - 分类级管理
+- 远程事件流断开时，前端必须显式显示连接断开，不得伪装为在线写入成功
+
 ## 模块定位（Desktop）
 
 - 订阅流：`apps/desktop/layer/renderer/src/modules/subscription-column`
@@ -133,12 +181,17 @@
 - 发现与订阅：`apps/desktop/layer/renderer/src/modules/discover`
 - 本地 store：`packages/internal/store/src`
 - 主进程 DB/IPC：`apps/desktop/layer/main/src/ipc/services/db.ts`
+- 主进程远程服务：`apps/desktop/layer/main/src/remote`
+- 主进程共享应用服务：`apps/desktop/layer/main/src/application`
+- 远程浏览器入口：`apps/desktop/layer/renderer/remote.html`
+- 远程浏览器端：`apps/desktop/layer/renderer/src/remote`
 
 ## 执行优先级（当前）
 
 1. 保持“完全本地 RSS 可用性”稳定（订阅、刷新、阅读、已读计数）
-2. 继续收敛残留在线能力入口（按业务优先级逐步本地化）
-3. 如需 TTS，优先系统离线方案（第 22 条）
+2. 稳定远程浏览器访问的阅读体验与轻量订阅管理能力
+3. 继续收敛残留在线能力入口（按业务优先级逐步本地化）
+4. 如需 TTS，优先系统离线方案（第 22 条）
 
 ## 约束
 

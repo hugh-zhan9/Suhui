@@ -25,6 +25,47 @@ Related spec:
 - 主进程为唯一写入口
 - 远程事件流断开时必须显式提示连接断开
 
+## 1.1 当前实现快照
+
+截至 2026-03-31，本文档中的 Phase 1 已经有较大一部分落地，当前代码状态不是“纯计划”，而是“计划 + 已实现基线”。
+
+当前已落地：
+
+- main process 内嵌 remote HTTP server 与生命周期接入
+- `/health`、`/status`、`/events`
+- `/api/subscriptions`、`/api/unread`、`/api/entries`、`/api/entries/:id`
+- `POST /api/entries/read`
+- `POST /api/feeds/:feedId/refresh`
+- `POST /api/feeds/refresh-all`
+- `POST/PATCH/DELETE /api/subscriptions`
+- renderer 多入口 remote browser entry
+- 远程阅读主链路：
+  - 订阅列表
+  - 未读数
+  - 条目列表
+  - 详情阅读
+  - 未读筛选
+  - 已读/未读切换
+  - 上一条/下一条
+  - 自动前进
+  - 作者/原文链接等基础元信息
+  - 排序
+  - 断线提示与重试同步
+  - 阅读上下文条
+- 轻量订阅管理：
+  - 新增订阅
+  - 删除订阅
+  - 编辑 `title/category/view`
+
+当前仍待推进：
+
+- 设置页
+- 导入导出
+- 批量订阅管理
+- 分类级管理
+- 更深的 Electron 专属能力浏览器映射
+- store capability 层的系统性收敛
+
 ## 2. 当前代码基线与改造约束
 
 ### 2.1 现状摘要
@@ -582,6 +623,10 @@ type DomainEvent = {
 
 - 让远程浏览器能够访问并操作核心阅读功能
 
+当前状态：
+
+- 已基本完成，并且已经继续向“阅读优先”的远程可用形态深化
+
 任务：
 
 1. 启动 remote HTTP server
@@ -622,6 +667,11 @@ type DomainEvent = {
 目标：
 
 - 让远程端覆盖主要管理类功能
+
+当前状态：
+
+- 尚未按原计划推进
+- 产品优先级已调整为“阅读体验优先于后台管理能力”，因此本阶段被后置
 
 任务：
 

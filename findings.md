@@ -49,31 +49,34 @@
 - 断线恢复要把“实时连接状态”和“数据已同步”拆开，否则手动重试同步会错误地显示为 realtime 已恢复。
 - 连续阅读的闪烁主要来自把“状态提示”和“后台重载”绑在一起；把静默刷新和显式用户动作分开后，远程端阅读会稳定很多。
 - 当前阅读上下文直接显示为 feed、未读筛选、排序和条目数的组合，成本低，但对远程阅读非常有效，因为用户不会像桌面端那样一直看到完整侧栏层级。
+- 当前文档中最明显的过期点是 `AI-CONTEXT.md` 仍停留在 2026-02-28，没有反映远程浏览器访问已经落地为“可阅读 + 轻量订阅管理”的事实。
+- 远程访问 spec 和详细设计计划仍然有效，但更适合补充“当前实现快照”，而不是重写为纯状态文档；这样可以同时保留决策历史和现状。
 
 ## 技术决策
 
-| 决策                                                                          | 理由                                                     |
-| ----------------------------------------------------------------------------- | -------------------------------------------------------- |
-| 采用“Application Services <- IPC/HTTP adapters <- Desktop/Remote clients”结构 | 避免重复业务逻辑，便于一致性控制                         |
-| 远程访问服务内嵌到 Electron main process                                      | 当前所有权威状态和关键能力已经集中在主进程               |
-| Realtime 同步优先采用事件广播                                                 | 多客户端并发写入下需要统一收敛状态                       |
-| 实现按阶段推进，但总目标保持为广泛功能对齐                                    | 远程端最终要和桌面端同权，但不能一次性硬推全部改造       |
-| 详细开发计划需要单独把“共享服务层抽离”和“客户端接入层收敛”列为前置工作流      | 仅加 HTTP server 无法解决现有 store 双轨耦合问题         |
-| Slice 1 先实现主进程 remote server skeleton 与只读订阅查询                    | 这是最小可运行闭环，且不会过早引入复杂写路径一致性问题   |
-| 最小 remote browser shell 先由主进程直接托管，而不是立刻接入 renderer 构建链  | 这样能更快验证浏览器访问能力，降低早期改造风险           |
-| 在真实广播落地前，SSE 先承载 `ready/ping` 连接状态                            | 先把远程端“连接断开必须显式提示”的硬约束做实             |
-| read-state 远程写入先收口为单一 HTTP endpoint                                 | 先验证主进程单一写入口，再逐步扩到 refresh 等写能力      |
-| refresh 远程写入直接复用 `FeedRefreshService`                                 | 避免复制 `DbService.refreshFeed` 的大段逻辑              |
-| refresh-all 远程写入直接复用 `FeedRefreshService.refreshAll()`                | 保持写路径简单一致，避免过早引入调度抽象                 |
-| 正式 remote client 接入 renderer 多入口构建                                   | 复用现有 Vite/Electron 构建链，避免维护第二套前端工程    |
-| entry detail 先在 remote client 侧做轻量 HTML 展示                            | 先确保可读与可维护，再考虑复用桌面端完整渲染体系         |
-| subscription create 先复用 `DbService.addFeed()`                              | 直接继承已存在的桌面端 add-feed 逻辑，降低远程写路径分叉 |
-| subscription 管理先落最小 create/delete UI                                    | 先打通远程端管理闭环，再逐步补编辑和更细能力             |
-| subscription update 先只支持 `title/category/view`                            | 覆盖核心管理诉求，同时保持 API 和前端复杂度可控          |
-| 阅读增强优先补 `unreadOnly`、`mark unread`、`prev/next`                       | 这些是远程阅读端最高频、最直接影响可用性的动作           |
-| 读完自动前进逻辑抽成纯函数并单测                                              | 保证阅读导航行为可预测，便于后续继续扩展                 |
-| 阅读列表排序先落前端层                                                        | 先提升远程可读性，避免过早扩展后端查询复杂度             |
-| realtime 状态与数据同步状态拆开                                               | 避免断线恢复时出现误导性的“已连接”状态                   |
+| 决策                                                                          | 理由                                                         |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| 采用“Application Services <- IPC/HTTP adapters <- Desktop/Remote clients”结构 | 避免重复业务逻辑，便于一致性控制                             |
+| 远程访问服务内嵌到 Electron main process                                      | 当前所有权威状态和关键能力已经集中在主进程                   |
+| Realtime 同步优先采用事件广播                                                 | 多客户端并发写入下需要统一收敛状态                           |
+| 实现按阶段推进，但总目标保持为广泛功能对齐                                    | 远程端最终要和桌面端同权，但不能一次性硬推全部改造           |
+| 详细开发计划需要单独把“共享服务层抽离”和“客户端接入层收敛”列为前置工作流      | 仅加 HTTP server 无法解决现有 store 双轨耦合问题             |
+| Slice 1 先实现主进程 remote server skeleton 与只读订阅查询                    | 这是最小可运行闭环，且不会过早引入复杂写路径一致性问题       |
+| 最小 remote browser shell 先由主进程直接托管，而不是立刻接入 renderer 构建链  | 这样能更快验证浏览器访问能力，降低早期改造风险               |
+| 在真实广播落地前，SSE 先承载 `ready/ping` 连接状态                            | 先把远程端“连接断开必须显式提示”的硬约束做实                 |
+| read-state 远程写入先收口为单一 HTTP endpoint                                 | 先验证主进程单一写入口，再逐步扩到 refresh 等写能力          |
+| refresh 远程写入直接复用 `FeedRefreshService`                                 | 避免复制 `DbService.refreshFeed` 的大段逻辑                  |
+| refresh-all 远程写入直接复用 `FeedRefreshService.refreshAll()`                | 保持写路径简单一致，避免过早引入调度抽象                     |
+| 正式 remote client 接入 renderer 多入口构建                                   | 复用现有 Vite/Electron 构建链，避免维护第二套前端工程        |
+| entry detail 先在 remote client 侧做轻量 HTML 展示                            | 先确保可读与可维护，再考虑复用桌面端完整渲染体系             |
+| subscription create 先复用 `DbService.addFeed()`                              | 直接继承已存在的桌面端 add-feed 逻辑，降低远程写路径分叉     |
+| subscription 管理先落最小 create/delete UI                                    | 先打通远程端管理闭环，再逐步补编辑和更细能力                 |
+| subscription update 先只支持 `title/category/view`                            | 覆盖核心管理诉求，同时保持 API 和前端复杂度可控              |
+| 阅读增强优先补 `unreadOnly`、`mark unread`、`prev/next`                       | 这些是远程阅读端最高频、最直接影响可用性的动作               |
+| 读完自动前进逻辑抽成纯函数并单测                                              | 保证阅读导航行为可预测，便于后续继续扩展                     |
+| 阅读列表排序先落前端层                                                        | 先提升远程可读性，避免过早扩展后端查询复杂度                 |
+| realtime 状态与数据同步状态拆开                                               | 避免断线恢复时出现误导性的“已连接”状态                       |
+| 文档同步优先更新 `AI-CONTEXT.md`，spec/plan 增加实现快照                      | `AI-CONTEXT.md` 是仓库主事实源，spec/plan 还需要保留设计语义 |
 
 ## 遇到的问题
 
