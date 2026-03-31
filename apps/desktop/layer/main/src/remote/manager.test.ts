@@ -80,34 +80,44 @@ describe("RemoteServerManager", () => {
     expect(getSubscriptions).toHaveBeenCalledTimes(1)
   })
 
-  it("serves a remote browser shell and client script", async () => {
+  it("serves remote client html and assets from the injected providers", async () => {
     const abortController = new AbortController()
+    const getRemoteIndexHtml = vi
+      .fn()
+      .mockResolvedValue(
+        '<!doctype html><html><body><div id="root"></div><script type="module" src="/assets/remote-entry.js"></script></body></html>',
+      )
+    const getRemoteAsset = vi.fn().mockImplementation(async (pathname: string) => {
+      if (pathname === "/assets/remote-entry.js") {
+        return {
+          contentType: "text/javascript; charset=utf-8",
+          content: 'console.log("remote-entry")',
+        }
+      }
+      return null
+    })
     const server = await RemoteServerManager.start({
       host: "127.0.0.1",
       port: 0,
       getSubscriptions: vi.fn().mockResolvedValue([]),
       getEntries: vi.fn().mockResolvedValue([]),
+      getRemoteIndexHtml,
+      getRemoteAsset,
     })
 
     const htmlResponse = await fetch(`${server.baseUrl}/`)
     expect(htmlResponse.status).toBe(200)
     expect(htmlResponse.headers.get("content-type")).toContain("text/html")
     const html = await htmlResponse.text()
-    expect(html).toContain('id="remote-root"')
-    expect(html).toContain('src="/remote.js"')
+    expect(html).toContain('<div id="root"></div>')
+    expect(html).toContain('src="/assets/remote-entry.js"')
+    expect(getRemoteIndexHtml).toHaveBeenCalledTimes(1)
 
-    const jsResponse = await fetch(`${server.baseUrl}/remote.js`)
+    const jsResponse = await fetch(`${server.baseUrl}/assets/remote-entry.js`)
     expect(jsResponse.status).toBe(200)
     expect(jsResponse.headers.get("content-type")).toContain("javascript")
-    const js = await jsResponse.text()
-    expect(js).toContain("/api/subscriptions")
-    expect(js).toContain("/api/unread")
-    expect(js).toContain("/api/entries")
-    expect(js).toContain("/api/entries/read")
-    expect(js).toContain("/api/feeds/")
-    expect(js).toContain("/api/feeds/refresh-all")
-    expect(js).toContain("/events")
-    expect(js).toContain("remote-root")
+    await expect(jsResponse.text()).resolves.toContain("remote-entry")
+    expect(getRemoteAsset).toHaveBeenCalledWith("/assets/remote-entry.js")
 
     const eventsResponse = await fetch(`${server.baseUrl}/events`, {
       signal: abortController.signal,
