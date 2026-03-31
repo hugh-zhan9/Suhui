@@ -161,7 +161,47 @@ describe("RemoteServerManager", () => {
         },
       ],
     })
-    expect(getEntries).toHaveBeenCalledWith("feed_1")
+    expect(getEntries).toHaveBeenCalledWith({
+      feedId: "feed_1",
+      unreadOnly: false,
+    })
+  })
+
+  it("serves unread-only entries from the injected provider", async () => {
+    const getEntries = vi.fn().mockResolvedValue([
+      {
+        id: "entry_2",
+        feedId: "feed_1",
+        title: "Unread Entry",
+        read: false,
+        publishedAt: 1710000001000,
+      },
+    ])
+
+    const server = await RemoteServerManager.start({
+      host: "127.0.0.1",
+      port: 0,
+      getSubscriptions: vi.fn().mockResolvedValue([]),
+      getEntries,
+    })
+
+    const response = await fetch(`${server.baseUrl}/api/entries?feedId=feed_1&unreadOnly=1`)
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual({
+      data: [
+        {
+          id: "entry_2",
+          feedId: "feed_1",
+          title: "Unread Entry",
+          read: false,
+          publishedAt: 1710000001000,
+        },
+      ],
+    })
+    expect(getEntries).toHaveBeenCalledWith({
+      feedId: "feed_1",
+      unreadOnly: true,
+    })
   })
 
   it("serves entry detail from the injected provider", async () => {

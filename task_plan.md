@@ -60,6 +60,8 @@
 - [x] 在正式 remote client 中补充最小订阅管理 UI（新增/删除）
 - [x] 打通 subscription update 远程写接口
 - [x] 在正式 remote client 中补充订阅编辑 UI（标题/分类/view）
+- [x] 打通 entries unread-only 远程筛选接口
+- [x] 在正式 remote client 中补充阅读增强交互（标未读、未读筛选、上一条/下一条）
 - [ ] 补充更多远程 capability 与 remote client 深化集成
 - **状态：** in_progress
 

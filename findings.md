@@ -40,6 +40,9 @@
 - 正式 remote client 中的订阅管理 UI 先保持极简即可：URL + 可选标题创建、列表项删除；这足以验证“远程端与桌面端共用写入口”的关键链路。
 - 订阅编辑同样可以先只暴露 `title/category/view` 三个字段；这已经覆盖远程管理最核心的元数据维护需求。
 - remote 端创建订阅默认 view 不应写死魔法数字，应该显式使用 `FeedViewType.Articles` 作为默认值，否则会把新订阅落到错误分组。
+- 阅读体验增强优先级应高于后台管理能力，远程端先补 `unreadOnly`、`mark unread`、`prev/next` 这类高频阅读动作，收益比设置和批量操作更高。
+- `mark unread` 不需要新增后端写接口，直接复用现有 `POST /api/entries/read` 的 `read=false` 即可，关键在于前端把它纳入正式交互。
+- `unreadOnly` 更适合做成后端查询参数而不是纯前端过滤，这样在远程端刷新、SSE 回推和切换 feed 时都能保持一致口径。
 
 ## 技术决策
 
@@ -61,6 +64,7 @@
 | subscription create 先复用 `DbService.addFeed()`                              | 直接继承已存在的桌面端 add-feed 逻辑，降低远程写路径分叉 |
 | subscription 管理先落最小 create/delete UI                                    | 先打通远程端管理闭环，再逐步补编辑和更细能力             |
 | subscription update 先只支持 `title/category/view`                            | 覆盖核心管理诉求，同时保持 API 和前端复杂度可控          |
+| 阅读增强优先补 `unreadOnly`、`mark unread`、`prev/next`                       | 这些是远程阅读端最高频、最直接影响可用性的动作           |
 
 ## 遇到的问题
 
