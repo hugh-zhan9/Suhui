@@ -178,7 +178,10 @@ const remoteShellHtml = `<!doctype html>
           <section>
             <div class="section-header">
               <h2 class="section-title section-title--compact">Subscriptions</h2>
-              <button id="refresh-feed-button" class="item-button" disabled>Refresh</button>
+              <div class="item-actions">
+                <button id="refresh-all-button" class="item-button">Refresh All</button>
+                <button id="refresh-feed-button" class="item-button" disabled>Refresh</button>
+              </div>
             </div>
             <div id="subscription-panel">
               <p class="empty">Loading...</p>
@@ -201,6 +204,7 @@ const remoteShellScript = `const root = document.getElementById("remote-root");
 const subscriptionPanel = document.getElementById("subscription-panel");
 const entryPanel = document.getElementById("entry-panel");
 const status = document.getElementById("remote-status");
+const refreshAllButton = document.getElementById("refresh-all-button");
 const refreshButton = document.getElementById("refresh-feed-button");
 let activeFeedId = null;
 let subscriptionsCache = [];
@@ -348,6 +352,34 @@ const refreshActiveFeed = async () => {
   }
 };
 
+const refreshAllFeeds = async () => {
+  if (!refreshAllButton) return;
+  refreshAllButton.setAttribute("disabled", "true");
+  if (refreshButton) {
+    refreshButton.setAttribute("disabled", "true");
+  }
+  setStatus("Refreshing all feeds...");
+  try {
+    const response = await fetch("/api/feeds/refresh-all", {
+      method: "POST",
+    });
+    if (!response.ok) {
+      throw new Error("HTTP " + response.status);
+    }
+    setStatus("Connected · Refresh all complete");
+    await loadSubscriptions();
+    if (activeFeedId) {
+      await loadEntries(activeFeedId);
+    }
+  } catch (error) {
+    setStatus("Connected · Refresh all failed");
+    console.error("[remote-shell] failed to refresh all feeds", error);
+  } finally {
+    refreshAllButton.removeAttribute("disabled");
+    syncRefreshButton();
+  }
+};
+
 const loadEntries = async (feedId) => {
   entryPanel.innerHTML = '<p class="empty">Loading entries...</p>';
   try {
@@ -400,6 +432,12 @@ const loadSubscriptions = async () => {
 if (refreshButton) {
   refreshButton.addEventListener("click", () => {
     void refreshActiveFeed();
+  });
+}
+
+if (refreshAllButton) {
+  refreshAllButton.addEventListener("click", () => {
+    void refreshAllFeeds();
   });
 }
 
