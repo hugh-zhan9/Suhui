@@ -30,6 +30,7 @@
 - 在主进程直接托管的最小 remote shell 中，先做 subscription -> entry list 的两栏结构，可以更快验证浏览器端主阅读链路，而不必立即接入完整 renderer。
 - unread counts 读取可直接经主进程 `unreadTable` 暴露，不必等待 renderer store 收敛后再做。
 - read-state 写路径可以先通过单一 `POST /api/entries/read` 收口，浏览器端只依赖事件刷新，不直接维护另一套写模型。
+- feed 刷新同样可以先经单一 `POST /api/feeds/:feedId/refresh` 收口，直接复用主进程现有 `FeedRefreshService`，避免复制 IPC `DbService.refreshFeed` 的复杂实现。
 
 ## 技术决策
 
@@ -44,6 +45,7 @@
 | 最小 remote browser shell 先由主进程直接托管，而不是立刻接入 renderer 构建链  | 这样能更快验证浏览器访问能力，降低早期改造风险         |
 | 在真实广播落地前，SSE 先承载 `ready/ping` 连接状态                            | 先把远程端“连接断开必须显式提示”的硬约束做实           |
 | read-state 远程写入先收口为单一 HTTP endpoint                                 | 先验证主进程单一写入口，再逐步扩到 refresh 等写能力    |
+| refresh 远程写入直接复用 `FeedRefreshService`                                 | 避免复制 `DbService.refreshFeed` 的大段逻辑            |
 
 ## 遇到的问题
 

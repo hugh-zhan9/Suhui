@@ -104,6 +104,7 @@ describe("RemoteServerManager", () => {
     expect(js).toContain("/api/unread")
     expect(js).toContain("/api/entries")
     expect(js).toContain("/api/entries/read")
+    expect(js).toContain("/api/feeds/")
     expect(js).toContain("/events")
     expect(js).toContain("remote-root")
 
@@ -235,5 +236,34 @@ describe("RemoteServerManager", () => {
       entryIds: ["entry_1"],
       read: true,
     })
+  })
+
+  it("refreshes a feed through the injected provider", async () => {
+    const refreshFeed = vi.fn().mockResolvedValue({
+      feed: { id: "feed_1" },
+      entriesCount: 2,
+    })
+    const server = await RemoteServerManager.start({
+      host: "127.0.0.1",
+      port: 0,
+      getSubscriptions: vi.fn().mockResolvedValue([]),
+      getEntries: vi.fn().mockResolvedValue([]),
+      getUnreadCounts: vi.fn().mockResolvedValue([]),
+      updateReadStatus: vi.fn().mockResolvedValue(undefined),
+      refreshFeed,
+    })
+
+    const response = await fetch(`${server.baseUrl}/api/feeds/feed_1/refresh`, {
+      method: "POST",
+    })
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual({
+      data: {
+        feed: { id: "feed_1" },
+        entriesCount: 2,
+      },
+    })
+    expect(refreshFeed).toHaveBeenCalledWith("feed_1")
   })
 })

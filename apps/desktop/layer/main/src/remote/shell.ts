@@ -72,6 +72,16 @@ const remoteShellHtml = `<!doctype html>
         text-transform: uppercase;
         color: #5b6470;
       }
+      .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+      .section-title.section-title--compact {
+        margin: 0;
+      }
       .list {
         list-style: none;
         padding: 0;
@@ -166,7 +176,10 @@ const remoteShellHtml = `<!doctype html>
       <main id="remote-root" class="panel">
         <div class="columns">
           <section>
-            <h2 class="section-title">Subscriptions</h2>
+            <div class="section-header">
+              <h2 class="section-title section-title--compact">Subscriptions</h2>
+              <button id="refresh-feed-button" class="item-button" disabled>Refresh</button>
+            </div>
             <div id="subscription-panel">
               <p class="empty">Loading...</p>
             </div>
@@ -188,6 +201,7 @@ const remoteShellScript = `const root = document.getElementById("remote-root");
 const subscriptionPanel = document.getElementById("subscription-panel");
 const entryPanel = document.getElementById("entry-panel");
 const status = document.getElementById("remote-status");
+const refreshButton = document.getElementById("refresh-feed-button");
 let activeFeedId = null;
 let subscriptionsCache = [];
 let unreadCache = {};
@@ -220,6 +234,7 @@ const renderSubscriptions = (items) => {
       if (!nextFeedId) return;
       activeFeedId = nextFeedId;
       renderSubscriptions(subscriptionsCache);
+      syncRefreshButton();
       void loadEntries(nextFeedId);
     });
   });
@@ -280,6 +295,15 @@ const setStatus = (label) => {
   status.textContent = label;
 };
 
+const syncRefreshButton = () => {
+  if (!refreshButton) return;
+  if (activeFeedId) {
+    refreshButton.removeAttribute("disabled");
+  } else {
+    refreshButton.setAttribute("disabled", "true");
+  }
+};
+
 const connectEvents = () => {
   const eventSource = new EventSource("/events");
   eventSource.addEventListener("ready", () => {
@@ -300,6 +324,28 @@ const connectEvents = () => {
     if (payload.feedId && payload.feedId !== activeFeedId) return;
     void loadEntries(activeFeedId);
   });
+};
+
+const refreshActiveFeed = async () => {
+  if (!activeFeedId || !refreshButton) return;
+  refreshButton.setAttribute("disabled", "true");
+  setStatus("Refreshing...");
+  try {
+    const response = await fetch("/api/feeds/" + encodeURIComponent(activeFeedId) + "/refresh", {
+      method: "POST",
+    });
+    if (!response.ok) {
+      throw new Error("HTTP " + response.status);
+    }
+    setStatus("Connected · Refresh complete");
+    await loadSubscriptions();
+    await loadEntries(activeFeedId);
+  } catch (error) {
+    setStatus("Connected · Refresh failed");
+    console.error("[remote-shell] failed to refresh feed", error);
+  } finally {
+    syncRefreshButton();
+  }
 };
 
 const loadEntries = async (feedId) => {
@@ -336,6 +382,7 @@ const loadSubscriptions = async () => {
     unreadCache = Object.fromEntries((unreadPayload.data || []).map((item) => [item.id, item.count]));
     activeFeedId = subscriptionsCache.find((item) => item.feedId)?.feedId || null;
     renderSubscriptions(subscriptionsCache);
+    syncRefreshButton();
     if (activeFeedId) {
       await loadEntries(activeFeedId);
     } else {
@@ -349,6 +396,12 @@ const loadSubscriptions = async () => {
     console.error("[remote-shell] failed to load subscriptions", error);
   }
 };
+
+if (refreshButton) {
+  refreshButton.addEventListener("click", () => {
+    void refreshActiveFeed();
+  });
+}
 
 connectEvents();
 void loadSubscriptions();

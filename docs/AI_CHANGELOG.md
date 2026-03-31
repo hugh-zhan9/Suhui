@@ -5787,3 +5787,19 @@
 - `progress.md`
 
 ---
+
+## [2026-03-31 14:34] [Feature]
+
+- **Change**: 新增远程单 feed 刷新写路径
+- **Risk Analysis**: 主进程 remote server 现在支持按 feed 触发刷新，并在浏览器端提供最小 Refresh 按钮。主要风险在于当前仍是最小 shell，刷新后用整段列表重载兜底，后续需要补 refresh-all 和更细粒度状态反馈。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/application/feed/service.ts`
+- `apps/desktop/layer/main/src/remote/manager.ts`
+- `apps/desktop/layer/main/src/remote/manager.test.ts`
+- `apps/desktop/layer/main/src/remote/shell.ts`
+- `task_plan.md`
+- `findings.md`
+- `progress.md`
+
+---

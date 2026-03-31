@@ -17,6 +17,7 @@ type RemoteServerDependencies = {
   getEntries: (feedId?: string) => Promise<EntryRecord[]>
   getUnreadCounts: () => Promise<Array<{ id: string; count: number }>>
   updateReadStatus: (payload: { entryIds: string[]; read: boolean }) => Promise<void>
+  refreshFeed: (feedId: string) => Promise<unknown>
 }
 
 type StartOptions = Partial<{
@@ -136,6 +137,19 @@ const createRequestHandler =
       return
     }
 
+    if (
+      method === "POST" &&
+      url.pathname.startsWith("/api/feeds/") &&
+      url.pathname.endsWith("/refresh")
+    ) {
+      const feedId = decodeURIComponent(
+        url.pathname.replace("/api/feeds/", "").replace("/refresh", ""),
+      )
+      const result = await deps.refreshFeed(feedId)
+      json(response, 200, { data: result })
+      return
+    }
+
     if (method === "GET" && url.pathname === "/api/subscriptions") {
       const subscriptions = await deps.getSubscriptions()
       json(response, 200, { data: subscriptions })
@@ -172,6 +186,13 @@ class RemoteServerManagerStatic {
       this.broadcast("entries.updated", {})
       this.broadcast("subscriptions.updated", {})
     },
+    refreshFeed: async (feedId) => {
+      const { feedApplicationService } = await import("~/application/feed/service")
+      const result = await feedApplicationService.refreshFeed(feedId)
+      this.broadcast("entries.updated", { feedId })
+      this.broadcast("subscriptions.updated", { feedId })
+      return result
+    },
   }
 
   async start(options?: StartOptions): Promise<StartResult> {
@@ -187,6 +208,7 @@ class RemoteServerManagerStatic {
       ...(options?.getEntries ? { getEntries: options.getEntries } : {}),
       ...(options?.getUnreadCounts ? { getUnreadCounts: options.getUnreadCounts } : {}),
       ...(options?.updateReadStatus ? { updateReadStatus: options.updateReadStatus } : {}),
+      ...(options?.refreshFeed ? { refreshFeed: options.refreshFeed } : {}),
     }
 
     this.server = createServer((request, response) => {
