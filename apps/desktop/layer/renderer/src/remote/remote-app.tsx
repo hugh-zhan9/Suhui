@@ -14,6 +14,9 @@ type EntryRecord = {
   feedId?: string | null
   read?: boolean | null
   publishedAt?: number | null
+  content?: string | null
+  readabilityContent?: string | null
+  description?: string | null
 }
 
 type UnreadRecord = {
@@ -36,6 +39,8 @@ export const RemoteApp = () => {
   const [entries, setEntries] = useState<EntryRecord[]>([])
   const [unreads, setUnreads] = useState<Record<string, number>>({})
   const [activeFeedId, setActiveFeedId] = useState<string | null>(null)
+  const [activeEntryId, setActiveEntryId] = useState<string | null>(null)
+  const [activeEntry, setActiveEntry] = useState<EntryRecord | null>(null)
   const [refreshingFeed, setRefreshingFeed] = useState(false)
   const [refreshingAll, setRefreshingAll] = useState(false)
   const [mutatingEntryId, setMutatingEntryId] = useState<string | null>(null)
@@ -72,7 +77,21 @@ export const RemoteApp = () => {
     const payload = await fetchJson<{ data: EntryRecord[] }>(
       `/api/entries?feedId=${encodeURIComponent(feedId)}`,
     )
-    setEntries(payload.data || [])
+    const nextEntries = payload.data || []
+    setEntries(nextEntries)
+    setActiveEntryId((current) => {
+      if (current && nextEntries.some((item) => item.id === current)) {
+        return current
+      }
+      return nextEntries[0]?.id || null
+    })
+  }
+
+  const loadEntry = async (entryId: string) => {
+    const payload = await fetchJson<{ data: EntryRecord | null }>(
+      `/api/entries/${encodeURIComponent(entryId)}`,
+    )
+    setActiveEntry(payload.data || null)
   }
 
   useEffect(() => {
@@ -85,6 +104,8 @@ export const RemoteApp = () => {
   useEffect(() => {
     if (!activeFeedId) {
       setEntries([])
+      setActiveEntryId(null)
+      setActiveEntry(null)
       return
     }
 
@@ -92,6 +113,17 @@ export const RemoteApp = () => {
       console.error("[remote-app] failed to load entries", error)
     })
   }, [activeFeedId])
+
+  useEffect(() => {
+    if (!activeEntryId) {
+      setActiveEntry(null)
+      return
+    }
+
+    void loadEntry(activeEntryId).catch((error) => {
+      console.error("[remote-app] failed to load entry detail", error)
+    })
+  }, [activeEntryId])
 
   useEffect(() => {
     const eventSource = new EventSource("/events")
@@ -267,7 +299,17 @@ export const RemoteApp = () => {
               <p className="remote-empty">No entries for this subscription yet.</p>
             ) : (
               entries.map((item) => (
-                <article key={item.id} className="remote-card remote-card--entry">
+                <article
+                  key={item.id}
+                  className={
+                    activeEntryId === item.id
+                      ? "remote-card remote-card--entry is-active"
+                      : "remote-card remote-card--entry"
+                  }
+                  onClick={() => {
+                    setActiveEntryId(item.id)
+                  }}
+                >
                   <div>
                     <h3 className="remote-card-title">{item.title || item.id}</h3>
                     <p className="remote-card-meta">
@@ -282,6 +324,7 @@ export const RemoteApp = () => {
                       className="remote-button"
                       disabled={!!item.read || mutatingEntryId === item.id}
                       onClick={() => {
+                        setActiveEntryId(item.id)
                         void handleMarkRead(item.id)
                       }}
                     >
@@ -292,6 +335,25 @@ export const RemoteApp = () => {
               ))
             )}
           </div>
+
+          {activeEntry && (
+            <article className="remote-detail">
+              <p className="remote-section-label">Detail</p>
+              <h3 className="remote-detail-title">{activeEntry.title || activeEntry.id}</h3>
+              {activeEntry.description && (
+                <p className="remote-detail-description">{activeEntry.description}</p>
+              )}
+              <div
+                className="remote-detail-content"
+                dangerouslySetInnerHTML={{
+                  __html:
+                    activeEntry.readabilityContent ||
+                    activeEntry.content ||
+                    "<p>No readable content yet.</p>",
+                }}
+              />
+            </article>
+          )}
         </section>
       </main>
     </div>

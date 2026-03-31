@@ -16,6 +16,7 @@ type EntryRecord = any
 type RemoteServerDependencies = {
   getSubscriptions: () => Promise<SubscriptionRecord[]>
   getEntries: (feedId?: string) => Promise<EntryRecord[]>
+  getEntry: (entryId: string) => Promise<EntryRecord | null>
   getUnreadCounts: () => Promise<Array<{ id: string; count: number }>>
   updateReadStatus: (payload: { entryIds: string[]; read: boolean }) => Promise<void>
   refreshFeed: (feedId: string) => Promise<unknown>
@@ -142,6 +143,13 @@ const createRequestHandler =
       return
     }
 
+    if (method === "GET" && url.pathname.startsWith("/api/entries/")) {
+      const entryId = decodeURIComponent(url.pathname.replace("/api/entries/", ""))
+      const entry = await deps.getEntry(entryId)
+      json(response, 200, { data: entry })
+      return
+    }
+
     if (method === "GET" && url.pathname === "/api/unread") {
       const unreadCounts = await deps.getUnreadCounts()
       json(response, 200, { data: unreadCounts })
@@ -200,6 +208,10 @@ class RemoteServerManagerStatic {
       const { entryApplicationService } = await import("~/application/entry/service")
       return entryApplicationService.listEntries(feedId)
     },
+    getEntry: async (entryId: string) => {
+      const { entryApplicationService } = await import("~/application/entry/service")
+      return entryApplicationService.getEntry(entryId)
+    },
     getUnreadCounts: async () => {
       const { unreadApplicationService } = await import("~/application/unread/service")
       return unreadApplicationService.listUnreadCounts()
@@ -239,6 +251,7 @@ class RemoteServerManagerStatic {
       ...this.deps,
       ...(options?.getSubscriptions ? { getSubscriptions: options.getSubscriptions } : {}),
       ...(options?.getEntries ? { getEntries: options.getEntries } : {}),
+      ...(options?.getEntry ? { getEntry: options.getEntry } : {}),
       ...(options?.getUnreadCounts ? { getUnreadCounts: options.getUnreadCounts } : {}),
       ...(options?.updateReadStatus ? { updateReadStatus: options.updateReadStatus } : {}),
       ...(options?.refreshFeed ? { refreshFeed: options.refreshFeed } : {}),

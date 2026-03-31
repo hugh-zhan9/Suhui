@@ -3,6 +3,15 @@ import { EntryService } from "@suhui/database/services/entry"
 import { DBManager } from "~/manager/db"
 
 export class EntryApplicationService {
+  async getEntry(entryId: string) {
+    const db = DBManager.getDB()
+    return (
+      db.query.entriesTable.findFirst({
+        where: (entries, { eq }) => eq(entries.id, entryId),
+      }) ?? null
+    )
+  }
+
   async listEntries(feedId?: string) {
     const db = DBManager.getDB()
 

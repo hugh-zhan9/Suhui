@@ -164,6 +164,35 @@ describe("RemoteServerManager", () => {
     expect(getEntries).toHaveBeenCalledWith("feed_1")
   })
 
+  it("serves entry detail from the injected provider", async () => {
+    const getEntry = vi.fn().mockResolvedValue({
+      id: "entry_1",
+      title: "Entry One",
+      content: "<p>Hello</p>",
+      readabilityContent: "<article>Hello</article>",
+    })
+
+    const server = await RemoteServerManager.start({
+      host: "127.0.0.1",
+      port: 0,
+      getSubscriptions: vi.fn().mockResolvedValue([]),
+      getEntries: vi.fn().mockResolvedValue([]),
+      getEntry,
+    })
+
+    const response = await fetch(`${server.baseUrl}/api/entries/entry_1`)
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual({
+      data: {
+        id: "entry_1",
+        title: "Entry One",
+        content: "<p>Hello</p>",
+        readabilityContent: "<article>Hello</article>",
+      },
+    })
+    expect(getEntry).toHaveBeenCalledWith("entry_1")
+  })
+
   it("serves unread counts from the injected provider", async () => {
     const getUnreadCounts = vi.fn().mockResolvedValue([
       { id: "feed_1", count: 3 },

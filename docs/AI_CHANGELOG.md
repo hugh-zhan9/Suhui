@@ -5840,3 +5840,20 @@
 - `progress.md`
 
 ---
+
+## [2026-03-31 14:51] [Feature]
+
+- **Change**: 新增远程条目详情读取与展示
+- **Risk Analysis**: 主进程 remote API 现在支持单条 entry 详情读取，正式 remote client 已能在列表旁展示当前条目的正文 HTML。主要风险在于当前详情展示仍是轻量版，没有复用桌面端完整渲染和交互能力，后续需要继续补齐。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/application/entry/service.ts`
+- `apps/desktop/layer/main/src/remote/manager.ts`
+- `apps/desktop/layer/main/src/remote/manager.test.ts`
+- `apps/desktop/layer/renderer/src/remote/remote-app.tsx`
+- `apps/desktop/layer/renderer/src/remote/remote.css`
+- `task_plan.md`
+- `findings.md`
+- `progress.md`
+
+---
