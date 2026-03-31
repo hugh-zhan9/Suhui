@@ -61,6 +61,48 @@ body {
   white-space: nowrap;
 }
 
+.remote-context-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.remote-context-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(24, 28, 32, 0.08);
+  background: rgba(255, 255, 255, 0.72);
+  font-size: 13px;
+}
+
+.remote-context-chip.is-offline {
+  border-color: rgba(178, 100, 42, 0.28);
+  background: rgba(178, 100, 42, 0.12);
+  color: #8c694b;
+}
+
+.remote-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(178, 100, 42, 0.18);
+  background: rgba(255, 245, 236, 0.82);
+}
+
+.remote-banner-text {
+  margin: 0;
+  color: #5f6670;
+  font-size: 14px;
+}
+
 .remote-shell {
   display: grid;
   grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
@@ -327,14 +369,27 @@ body {
   .remote-subtitle,
   .remote-card-meta,
   .remote-empty,
-  .remote-detail-description {
+  .remote-detail-description,
+  .remote-banner-text {
     color: #aab4be;
   }
 
   .remote-status,
+  .remote-context-chip,
   .remote-pane {
     border-color: rgba(255, 255, 255, 0.08);
     background: rgba(17, 22, 27, 0.76);
+  }
+
+  .remote-context-chip.is-offline {
+    border-color: rgba(247, 184, 119, 0.32);
+    background: rgba(247, 184, 119, 0.14);
+    color: #f7b877;
+  }
+
+  .remote-banner {
+    border-color: rgba(247, 184, 119, 0.18);
+    background: rgba(247, 184, 119, 0.08);
   }
 
   .remote-input {

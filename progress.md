@@ -69,6 +69,8 @@
   - 在正式 remote client 中增加作者、原文链接等条目元信息展示
   - 抽出 remote 阅读导航 helper，并补充“读完自动前进”的前端选择逻辑和单测
   - 在正式 remote client 中增加阅读列表排序（`Newest / Oldest / Unread First`）
+  - 在正式 remote client 中增加阅读上下文条和断线提示，并将 realtime 状态与数据同步状态拆开
+  - 将 subscription/entry 后台刷新改为静默刷新，减少连续阅读过程中的状态闪烁
   - 运行新增 remote 测试并全部通过
   - 尝试运行主进程 `typecheck`，确认被仓库既有问题阻塞
   - 运行 `build:render`，确认正式 remote entry 与订阅管理 UI 能进入 renderer 产物
@@ -116,32 +118,33 @@
 
 ## 错误日志
 
-| 时间戳     | 错误                                           | 尝试次数 | 解决方案                                                      |
-| ---------- | ---------------------------------------------- | -------- | ------------------------------------------------------------- |
-| 2026-03-31 | 无 `writing-plans` skill                       | 1        | 使用 `planning-with-files-zh` 流程和仓库内规划文件替代        |
-| 2026-03-31 | 首次 remote 测试命令路径错误                   | 1        | 改为包目录下运行 `vitest run src/remote/...`                  |
-| 2026-03-31 | 主进程 `typecheck` 被历史问题阻塞              | 1        | 记录为基线问题，本轮以新增 remote 测试通过作为验证依据        |
-| 2026-03-31 | entry 服务直接导入触发主进程副作用             | 1        | 改为在 remote manager 默认依赖中 lazy import                  |
-| 2026-03-31 | remote 端最初只有连接保活无业务广播            | 1        | 在 manager 内增加 SSE client 集合与 `broadcast()`             |
-| 2026-03-31 | refresh 路径若复用 IPC service 代价过高        | 1        | 改为新增薄的 feed application service 直接复用主进程刷新      |
-| 2026-03-31 | refresh-all 路由若放在 feed 路由后会被误判     | 1        | 先匹配 `/api/feeds/refresh-all`，再匹配单 feed refresh        |
-| 2026-03-31 | 远程浏览器端继续堆内联 shell 可维护性差        | 1        | 切换为 renderer 多入口正式 remote client，主进程负责托管      |
-| 2026-03-31 | 直接复用桌面端 EntryContent 到 remote 成本偏高 | 1        | 先补单条 entry detail API 与轻量 HTML 详情展示                |
-| 2026-03-31 | 新增订阅若重写 add-feed 逻辑会放大远程端分叉   | 1        | 先复用 `DbService.addFeed()`，保持与桌面端同一入库路径        |
-| 2026-03-31 | remote 端创建订阅默认 view 写成魔法数字 `1`    | 1        | 改为显式使用 `FeedViewType.Articles` 并在 UI 中暴露 view 选择 |
-| 2026-03-31 | unread only 若只在前端过滤会和服务端状态不同步 | 1        | 改为服务端 `GET /api/entries?unreadOnly=1` 统一口径           |
-| 2026-03-31 | 读完后的下一条选择逻辑若散落在组件里会难以维护 | 1        | 抽出 `entry-navigation` helper 并通过单测固定行为             |
-| 2026-03-31 | 阅读列表排序若直接写在组件里会和导航逻辑耦合   | 1        | 复用 `entry-navigation` helper 管理排序，保持导航和列表一致   |
+| 时间戳     | 错误                                            | 尝试次数 | 解决方案                                                      |
+| ---------- | ----------------------------------------------- | -------- | ------------------------------------------------------------- |
+| 2026-03-31 | 无 `writing-plans` skill                        | 1        | 使用 `planning-with-files-zh` 流程和仓库内规划文件替代        |
+| 2026-03-31 | 首次 remote 测试命令路径错误                    | 1        | 改为包目录下运行 `vitest run src/remote/...`                  |
+| 2026-03-31 | 主进程 `typecheck` 被历史问题阻塞               | 1        | 记录为基线问题，本轮以新增 remote 测试通过作为验证依据        |
+| 2026-03-31 | entry 服务直接导入触发主进程副作用              | 1        | 改为在 remote manager 默认依赖中 lazy import                  |
+| 2026-03-31 | remote 端最初只有连接保活无业务广播             | 1        | 在 manager 内增加 SSE client 集合与 `broadcast()`             |
+| 2026-03-31 | refresh 路径若复用 IPC service 代价过高         | 1        | 改为新增薄的 feed application service 直接复用主进程刷新      |
+| 2026-03-31 | refresh-all 路由若放在 feed 路由后会被误判      | 1        | 先匹配 `/api/feeds/refresh-all`，再匹配单 feed refresh        |
+| 2026-03-31 | 远程浏览器端继续堆内联 shell 可维护性差         | 1        | 切换为 renderer 多入口正式 remote client，主进程负责托管      |
+| 2026-03-31 | 直接复用桌面端 EntryContent 到 remote 成本偏高  | 1        | 先补单条 entry detail API 与轻量 HTML 详情展示                |
+| 2026-03-31 | 新增订阅若重写 add-feed 逻辑会放大远程端分叉    | 1        | 先复用 `DbService.addFeed()`，保持与桌面端同一入库路径        |
+| 2026-03-31 | remote 端创建订阅默认 view 写成魔法数字 `1`     | 1        | 改为显式使用 `FeedViewType.Articles` 并在 UI 中暴露 view 选择 |
+| 2026-03-31 | unread only 若只在前端过滤会和服务端状态不同步  | 1        | 改为服务端 `GET /api/entries?unreadOnly=1` 统一口径           |
+| 2026-03-31 | 读完后的下一条选择逻辑若散落在组件里会难以维护  | 1        | 抽出 `entry-navigation` helper 并通过单测固定行为             |
+| 2026-03-31 | 阅读列表排序若直接写在组件里会和导航逻辑耦合    | 1        | 复用 `entry-navigation` helper 管理排序，保持导航和列表一致   |
+| 2026-03-31 | 手动同步成功若直接标记为 realtime online 会误导 | 1        | 将 realtime 连接状态与数据同步时间拆开，分别显示              |
 
 ## 五问重启检查
 
-| 问题           | 答案                                                                        |
-| -------------- | --------------------------------------------------------------------------- |
-| 我在哪里？     | 阶段 4：已完成正式 remote browser entry、订阅管理基础闭环和三批阅读增强能力 |
-| 我要去哪里？   | 继续扩展更贴近阅读的远程能力，并把更多桌面端能力迁到正式 remote client      |
-| 目标是什么？   | 按远程访问计划逐步落地可运行实现，并保持单一写入口                          |
-| 我学到了什么？ | 见 `findings.md`                                                            |
-| 我做了什么？   | 见上方记录                                                                  |
+| 问题           | 答案                                                                                      |
+| -------------- | ----------------------------------------------------------------------------------------- |
+| 我在哪里？     | 阶段 4：已完成正式 remote browser entry、订阅管理基础闭环和断线恢复在内的三批阅读增强能力 |
+| 我要去哪里？   | 继续扩展更贴近阅读的远程能力，并把更多桌面端能力迁到正式 remote client                    |
+| 目标是什么？   | 按远程访问计划逐步落地可运行实现，并保持单一写入口                                        |
+| 我学到了什么？ | 见 `findings.md`                                                                          |
+| 我做了什么？   | 见上方记录                                                                                |
 
 ---
 

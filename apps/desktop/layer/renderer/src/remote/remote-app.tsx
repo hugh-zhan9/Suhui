@@ -1,5 +1,5 @@
 import { FeedViewType } from "@suhui/constants"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 import {
   type EntrySortMode,
@@ -64,6 +64,9 @@ export const RemoteApp = () => {
   const [subscriptions, setSubscriptions] = useState<SubscriptionRecord[]>([])
   const [entries, setEntries] = useState<EntryRecord[]>([])
   const [unreads, setUnreads] = useState<Record<string, number>>({})
+  const [realtimeConnected, setRealtimeConnected] = useState(false)
+  const [lastSyncAt, setLastSyncAt] = useState<string | null>(null)
+  const [isHydrating, setIsHydrating] = useState(true)
   const [activeFeedId, setActiveFeedId] = useState<string | null>(null)
   const [activeEntryId, setActiveEntryId] = useState<string | null>(null)
   const [activeEntry, setActiveEntry] = useState<EntryRecord | null>(null)
@@ -82,6 +85,7 @@ export const RemoteApp = () => {
   const [draftTitle, setDraftTitle] = useState("")
   const [draftCategory, setDraftCategory] = useState("")
   const [draftView, setDraftView] = useState<number>(FeedViewType.Articles)
+  const hadRealtimeConnectionRef = useRef(false)
 
   const activeSubscription = useMemo(
     () => subscriptions.find((item) => item.feedId === activeFeedId) || null,
@@ -94,6 +98,16 @@ export const RemoteApp = () => {
   )
 
   const sortedEntries = useMemo(() => sortEntries(entries, entrySort), [entries, entrySort])
+
+  const contextSummary = useMemo(() => {
+    const items = [
+      activeSubscription?.title || "All sources",
+      unreadOnly ? "Unread only" : "All entries",
+      ENTRY_SORT_OPTIONS.find((option) => option.value === entrySort)?.label || "Newest",
+      `${sortedEntries.length} entries`,
+    ]
+    return items.join(" · ")
+  }, [activeSubscription?.title, unreadOnly, entrySort, sortedEntries.length])
 
   const activeEntryIndex = useMemo(
     () => sortedEntries.findIndex((item) => item.id === activeEntryId),
@@ -112,8 +126,17 @@ export const RemoteApp = () => {
     setDraftView(activeSubscription?.view ?? FeedViewType.Articles)
   }, [activeSubscription])
 
-  const loadSubscriptions = async () => {
-    setStatus("Loading subscriptions...")
+  const markSynced = (nextStatus = "Connected · Realtime online") => {
+    setRealtimeConnected(true)
+    hadRealtimeConnectionRef.current = true
+    setLastSyncAt(new Date().toLocaleTimeString())
+    setStatus(nextStatus)
+  }
+
+  const loadSubscriptions = async (options?: { silent?: boolean; statusText?: string }) => {
+    if (!options?.silent) {
+      setStatus(options?.statusText || "Loading subscriptions...")
+    }
     const [subscriptionPayload, unreadPayload] = await Promise.all([
       fetchJson<{ data: SubscriptionRecord[] }>("/api/subscriptions"),
       fetchJson<{ data: UnreadRecord[] }>("/api/unread"),
@@ -132,10 +155,18 @@ export const RemoteApp = () => {
       }
       return nextSubscriptions.find((item) => item.feedId)?.feedId || null
     })
-    setStatus("Connected · Initial sync complete")
+    setLastSyncAt(new Date().toLocaleTimeString())
+    setIsHydrating(false)
+    if (!options?.silent) {
+      setStatus(realtimeConnected ? "Connected · Initial sync complete" : "Connected · Data synced")
+    }
   }
 
-  const loadEntries = async (feedId: string, nextUnreadOnly = unreadOnly) => {
+  const loadEntries = async (
+    feedId: string,
+    nextUnreadOnly = unreadOnly,
+    options?: { preserveSelection?: boolean },
+  ) => {
     const searchParams = new URLSearchParams({
       feedId,
     })
@@ -148,6 +179,13 @@ export const RemoteApp = () => {
     const nextEntries = payload.data || []
     setEntries(nextEntries)
     setActiveEntryId((current) => {
+      if (
+        options?.preserveSelection &&
+        current &&
+        nextEntries.some((item) => item.id === current)
+      ) {
+        return current
+      }
       if (current && nextEntries.some((item) => item.id === current)) {
         return current
       }
@@ -163,7 +201,9 @@ export const RemoteApp = () => {
   }
 
   useEffect(() => {
-    void loadSubscriptions().catch((error) => {
+    void loadSubscriptions({ statusText: "Loading subscriptions..." }).catch((error) => {
+      setIsHydrating(false)
+      setRealtimeConnected(false)
       setStatus("Disconnected")
       console.error("[remote-app] failed to load subscriptions", error)
     })
@@ -177,7 +217,7 @@ export const RemoteApp = () => {
       return
     }
 
-    void loadEntries(activeFeedId).catch((error) => {
+    void loadEntries(activeFeedId, unreadOnly, { preserveSelection: true }).catch((error) => {
       console.error("[remote-app] failed to load entries", error)
     })
   }, [activeFeedId, unreadOnly])
@@ -197,13 +237,24 @@ export const RemoteApp = () => {
     const eventSource = new EventSource("/events")
 
     eventSource.addEventListener("ready", () => {
-      setStatus("Connected · Realtime online")
+      const shouldResync = hadRealtimeConnectionRef.current
+      markSynced("Connected · Realtime online")
+      if (shouldResync) {
+        void loadSubscriptions({ silent: true }).catch((error) => {
+          console.error("[remote-app] failed to resync subscriptions", error)
+        })
+        if (activeFeedId) {
+          void loadEntries(activeFeedId, unreadOnly, { preserveSelection: true }).catch((error) => {
+            console.error("[remote-app] failed to resync entries", error)
+          })
+        }
+      }
     })
     eventSource.addEventListener("ping", () => {
-      setStatus("Connected · Realtime online")
+      markSynced("Connected · Realtime online")
     })
     eventSource.addEventListener("subscriptions.updated", () => {
-      void loadSubscriptions().catch((error) => {
+      void loadSubscriptions({ silent: true }).catch((error) => {
         console.error("[remote-app] failed to reload subscriptions", error)
       })
     })
@@ -211,18 +262,19 @@ export const RemoteApp = () => {
       if (!activeFeedId) return
       const payload = JSON.parse(event.data || "{}") as { feedId?: string }
       if (payload.feedId && payload.feedId !== activeFeedId) return
-      void loadEntries(activeFeedId).catch((error) => {
+      void loadEntries(activeFeedId, unreadOnly, { preserveSelection: true }).catch((error) => {
         console.error("[remote-app] failed to reload entries", error)
       })
     })
     eventSource.onerror = () => {
+      setRealtimeConnected(false)
       setStatus("Disconnected")
     }
 
     return () => {
       eventSource.close()
     }
-  }, [activeFeedId])
+  }, [activeFeedId, unreadOnly])
 
   const handleUpdateReadStatus = async (entryId: string, read: boolean) => {
     setMutatingEntryId(entryId)
@@ -240,9 +292,9 @@ export const RemoteApp = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ entryIds: [entryId], read }),
       })
-      await loadSubscriptions()
+      await loadSubscriptions({ silent: true })
       if (activeFeedId) {
-        await loadEntries(activeFeedId)
+        await loadEntries(activeFeedId, unreadOnly, { preserveSelection: true })
       }
       if (preferredNextEntryId !== undefined) {
         setActiveEntryId(preferredNextEntryId)
@@ -273,7 +325,7 @@ export const RemoteApp = () => {
       setNewFeedTitle("")
       setNewFeedCategory("")
       setNewFeedView(FeedViewType.Articles)
-      await loadSubscriptions()
+      await loadSubscriptions({ silent: true })
       setStatus("Connected · Subscription created")
     } catch (error) {
       setStatus("Connected · Create failed")
@@ -297,7 +349,7 @@ export const RemoteApp = () => {
           view: draftView,
         }),
       })
-      await loadSubscriptions()
+      await loadSubscriptions({ silent: true })
       setStatus("Connected · Subscription saved")
     } catch (error) {
       setStatus("Connected · Save failed")
@@ -314,7 +366,7 @@ export const RemoteApp = () => {
       await fetchJson(`/api/subscriptions/${encodeURIComponent(subscriptionId)}`, {
         method: "DELETE",
       })
-      await loadSubscriptions()
+      await loadSubscriptions({ silent: true })
       setStatus("Connected · Subscription deleted")
     } catch (error) {
       setStatus("Connected · Delete failed")
@@ -332,8 +384,8 @@ export const RemoteApp = () => {
       await fetchJson(`/api/feeds/${encodeURIComponent(activeFeedId)}/refresh`, {
         method: "POST",
       })
-      await loadSubscriptions()
-      await loadEntries(activeFeedId)
+      await loadSubscriptions({ silent: true })
+      await loadEntries(activeFeedId, unreadOnly, { preserveSelection: true })
       setStatus("Connected · Refresh complete")
     } catch (error) {
       setStatus("Connected · Refresh failed")
@@ -350,9 +402,9 @@ export const RemoteApp = () => {
       await fetchJson("/api/feeds/refresh-all", {
         method: "POST",
       })
-      await loadSubscriptions()
+      await loadSubscriptions({ silent: true })
       if (activeFeedId) {
-        await loadEntries(activeFeedId)
+        await loadEntries(activeFeedId, unreadOnly, { preserveSelection: true })
       }
       setStatus("Connected · Refresh all complete")
     } catch (error) {
@@ -373,6 +425,44 @@ export const RemoteApp = () => {
         </div>
         <div className="remote-status">{status}</div>
       </header>
+
+      <section className="remote-context-bar">
+        <span className="remote-context-chip">{contextSummary}</span>
+        <span
+          className={realtimeConnected ? "remote-context-chip" : "remote-context-chip is-offline"}
+        >
+          {realtimeConnected ? "Realtime Online" : "Realtime Disconnected"}
+        </span>
+        {lastSyncAt && <span className="remote-context-chip">Last sync {lastSyncAt}</span>}
+      </section>
+
+      {!realtimeConnected && !isHydrating && (
+        <section className="remote-banner">
+          <p className="remote-banner-text">
+            Connection lost. Reading state is preserved. Realtime updates will resume after
+            reconnection.
+          </p>
+          <button
+            className="remote-button"
+            onClick={() => {
+              void loadSubscriptions({ statusText: "Reconnecting..." }).catch((error) => {
+                setRealtimeConnected(false)
+                setStatus("Disconnected")
+                console.error("[remote-app] failed to reconnect subscriptions", error)
+              })
+              if (activeFeedId) {
+                void loadEntries(activeFeedId, unreadOnly, { preserveSelection: true }).catch(
+                  (error) => {
+                    console.error("[remote-app] failed to reconnect entries", error)
+                  },
+                )
+              }
+            }}
+          >
+            Retry Sync
+          </button>
+        </section>
+      )}
 
       <main className="remote-shell">
         <section className="remote-pane remote-pane--subscriptions">
@@ -590,6 +680,9 @@ export const RemoteApp = () => {
                   </option>
                 ))}
               </select>
+              <span className="remote-context-chip">
+                {unreadOnly ? "Unread only" : "All entries"} · {sortedEntries.length}
+              </span>
               <button
                 className="remote-button remote-button--secondary"
                 disabled={!previousEntry}
