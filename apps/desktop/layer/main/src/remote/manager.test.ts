@@ -402,4 +402,51 @@ describe("RemoteServerManager", () => {
     await expect(response.json()).resolves.toEqual({ ok: true })
     expect(deleteSubscription).toHaveBeenCalledWith("feed/feed_1")
   })
+
+  it("updates a subscription through the injected provider", async () => {
+    const updateSubscription = vi.fn().mockResolvedValue({
+      id: "feed/feed_1",
+      title: "Renamed Feed",
+      category: "Work",
+      view: 0,
+    })
+    const server = await RemoteServerManager.start({
+      host: "127.0.0.1",
+      port: 0,
+      getSubscriptions: vi.fn().mockResolvedValue([]),
+      getEntries: vi.fn().mockResolvedValue([]),
+      getUnreadCounts: vi.fn().mockResolvedValue([]),
+      updateReadStatus: vi.fn().mockResolvedValue(undefined),
+      refreshFeed: vi.fn().mockResolvedValue(undefined),
+      refreshAllFeeds: vi.fn().mockResolvedValue(undefined),
+      updateSubscription,
+    } as any)
+
+    const response = await fetch(`${server.baseUrl}/api/subscriptions/feed%2Ffeed_1`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        title: "Renamed Feed",
+        category: "Work",
+        view: 0,
+      }),
+    })
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual({
+      data: {
+        id: "feed/feed_1",
+        title: "Renamed Feed",
+        category: "Work",
+        view: 0,
+      },
+    })
+    expect(updateSubscription).toHaveBeenCalledWith("feed/feed_1", {
+      title: "Renamed Feed",
+      category: "Work",
+      view: 0,
+    })
+  })
 })

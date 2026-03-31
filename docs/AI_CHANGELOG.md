@@ -5874,3 +5874,20 @@
 - `progress.md`
 
 ---
+
+## [2026-03-31 15:04] [Feature]
+
+- **Change**: 为远程订阅管理补充编辑能力，新增 subscription update API、远程端标题/分类/view 编辑表单，并修正新建订阅默认 view 为 Articles。
+- **Risk Analysis**: 主要风险在于 subscription update 当前直接调用 SubscriptionService.patch，虽然足够薄，但如果后续桌面端对订阅更新增加额外副作用或索引重建，这里需要同步补齐；另外远程端当前编辑成功后仍依赖重新加载来回收状态，复杂并发场景还需要继续验证。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/application/subscription/service.ts`
+- `apps/desktop/layer/main/src/remote/manager.ts`
+- `apps/desktop/layer/main/src/remote/manager.test.ts`
+- `apps/desktop/layer/renderer/src/remote/remote-app.tsx`
+- `apps/desktop/layer/renderer/src/remote/remote.css`
+- `task_plan.md`
+- `findings.md`
+- `progress.md`
+
+---

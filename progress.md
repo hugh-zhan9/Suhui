@@ -62,6 +62,8 @@
   - 在正式 remote client 中增加当前条目详情展示
   - 新增 `POST /api/subscriptions` 与 `DELETE /api/subscriptions/:id`，打通最小 subscription create/delete 写路径
   - 在正式 remote client 中增加最小订阅管理 UI，支持输入 feed URL、新增订阅和删除订阅
+  - 新增 `PATCH /api/subscriptions/:id`，打通 subscription title/category/view 更新写路径
+  - 在正式 remote client 中增加订阅编辑表单，并修正新订阅默认 view 为 `Articles`
   - 运行新增 remote 测试并全部通过
   - 尝试运行主进程 `typecheck`，确认被仓库既有问题阻塞
   - 运行 `build:render`，确认正式 remote entry 与订阅管理 UI 能进入 renderer 产物
@@ -100,30 +102,32 @@
 | remote refresh-all tests             | `vitest run src/remote/manager.test.ts src/remote/lifecycle.test.ts` | refresh-all 写路径与 remote shell 扩展测试通过        | 12 个测试全部通过                            | 通过 |
 | remote entry-detail tests            | `vitest run src/remote/manager.test.ts src/remote/lifecycle.test.ts` | entry detail 读取与路由测试通过                       | 13 个测试全部通过                            | 通过 |
 | remote subscription-management tests | `vitest run src/remote/manager.test.ts src/remote/lifecycle.test.ts` | subscription create/delete 路由测试通过               | 15 个测试全部通过                            | 通过 |
+| remote subscription-update tests     | `vitest run src/remote/manager.test.ts src/remote/lifecycle.test.ts` | subscription update 路由测试通过                      | 16 个测试全部通过                            | 通过 |
 | renderer build with remote entry     | `pnpm --filter suhui build:render`                                   | 正式 remote browser entry 能进 renderer 构建产物      | 构建成功，`dist/renderer/remote.html` 已生成 | 通过 |
 | 主进程 typecheck                     | `pnpm --filter @suhui/electron-main typecheck`                       | 无错误                                                | 被仓库既有 TS6059/TS6307/历史测试问题阻塞    | 阻塞 |
 
 ## 错误日志
 
-| 时间戳     | 错误                                           | 尝试次数 | 解决方案                                                 |
-| ---------- | ---------------------------------------------- | -------- | -------------------------------------------------------- |
-| 2026-03-31 | 无 `writing-plans` skill                       | 1        | 使用 `planning-with-files-zh` 流程和仓库内规划文件替代   |
-| 2026-03-31 | 首次 remote 测试命令路径错误                   | 1        | 改为包目录下运行 `vitest run src/remote/...`             |
-| 2026-03-31 | 主进程 `typecheck` 被历史问题阻塞              | 1        | 记录为基线问题，本轮以新增 remote 测试通过作为验证依据   |
-| 2026-03-31 | entry 服务直接导入触发主进程副作用             | 1        | 改为在 remote manager 默认依赖中 lazy import             |
-| 2026-03-31 | remote 端最初只有连接保活无业务广播            | 1        | 在 manager 内增加 SSE client 集合与 `broadcast()`        |
-| 2026-03-31 | refresh 路径若复用 IPC service 代价过高        | 1        | 改为新增薄的 feed application service 直接复用主进程刷新 |
-| 2026-03-31 | refresh-all 路由若放在 feed 路由后会被误判     | 1        | 先匹配 `/api/feeds/refresh-all`，再匹配单 feed refresh   |
-| 2026-03-31 | 远程浏览器端继续堆内联 shell 可维护性差        | 1        | 切换为 renderer 多入口正式 remote client，主进程负责托管 |
-| 2026-03-31 | 直接复用桌面端 EntryContent 到 remote 成本偏高 | 1        | 先补单条 entry detail API 与轻量 HTML 详情展示           |
-| 2026-03-31 | 新增订阅若重写 add-feed 逻辑会放大远程端分叉   | 1        | 先复用 `DbService.addFeed()`，保持与桌面端同一入库路径   |
+| 时间戳     | 错误                                           | 尝试次数 | 解决方案                                                      |
+| ---------- | ---------------------------------------------- | -------- | ------------------------------------------------------------- |
+| 2026-03-31 | 无 `writing-plans` skill                       | 1        | 使用 `planning-with-files-zh` 流程和仓库内规划文件替代        |
+| 2026-03-31 | 首次 remote 测试命令路径错误                   | 1        | 改为包目录下运行 `vitest run src/remote/...`                  |
+| 2026-03-31 | 主进程 `typecheck` 被历史问题阻塞              | 1        | 记录为基线问题，本轮以新增 remote 测试通过作为验证依据        |
+| 2026-03-31 | entry 服务直接导入触发主进程副作用             | 1        | 改为在 remote manager 默认依赖中 lazy import                  |
+| 2026-03-31 | remote 端最初只有连接保活无业务广播            | 1        | 在 manager 内增加 SSE client 集合与 `broadcast()`             |
+| 2026-03-31 | refresh 路径若复用 IPC service 代价过高        | 1        | 改为新增薄的 feed application service 直接复用主进程刷新      |
+| 2026-03-31 | refresh-all 路由若放在 feed 路由后会被误判     | 1        | 先匹配 `/api/feeds/refresh-all`，再匹配单 feed refresh        |
+| 2026-03-31 | 远程浏览器端继续堆内联 shell 可维护性差        | 1        | 切换为 renderer 多入口正式 remote client，主进程负责托管      |
+| 2026-03-31 | 直接复用桌面端 EntryContent 到 remote 成本偏高 | 1        | 先补单条 entry detail API 与轻量 HTML 详情展示                |
+| 2026-03-31 | 新增订阅若重写 add-feed 逻辑会放大远程端分叉   | 1        | 先复用 `DbService.addFeed()`，保持与桌面端同一入库路径        |
+| 2026-03-31 | remote 端创建订阅默认 view 写成魔法数字 `1`    | 1        | 改为显式使用 `FeedViewType.Articles` 并在 UI 中暴露 view 选择 |
 
 ## 五问重启检查
 
 | 问题           | 答案                                                                                     |
 | -------------- | ---------------------------------------------------------------------------------------- |
-| 我在哪里？     | 阶段 4：已完成正式 remote browser entry、最小核心写路径、entry detail 和订阅管理首批能力 |
-| 我要去哪里？   | 继续扩展更多管理能力，并把更多桌面端能力迁到正式 remote client                           |
+| 我在哪里？     | 阶段 4：已完成正式 remote browser entry、最小核心写路径、entry detail 和订阅管理基础闭环 |
+| 我要去哪里？   | 继续扩展剩余订阅管理能力，并把更多桌面端能力迁到正式 remote client                       |
 | 目标是什么？   | 按远程访问计划逐步落地可运行实现，并保持单一写入口                                       |
 | 我学到了什么？ | 见 `findings.md`                                                                         |
 | 我做了什么？   | 见上方记录                                                                               |

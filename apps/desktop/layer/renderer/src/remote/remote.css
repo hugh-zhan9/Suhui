@@ -85,6 +85,10 @@ body {
   margin-bottom: 16px;
 }
 
+.remote-pane-header--stack {
+  margin-bottom: 12px;
+}
+
 .remote-section-label {
   margin: 0 0 6px;
   font-size: 11px;
@@ -96,6 +100,10 @@ body {
 .remote-section-title {
   margin: 0;
   font-size: 20px;
+}
+
+.remote-section-title--small {
+  font-size: 16px;
 }
 
 .remote-list {
@@ -237,6 +245,12 @@ body {
   padding-top: 16px;
 }
 
+.remote-editor {
+  margin-top: 16px;
+  border-top: 1px solid rgba(24, 28, 32, 0.08);
+  padding-top: 16px;
+}
+
 .remote-detail-title {
   margin: 0 0 10px;
   font-size: 22px;
@@ -322,6 +336,10 @@ body {
   }
 
   .remote-detail {
+    border-top-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .remote-editor {
     border-top-color: rgba(255, 255, 255, 0.08);
   }
 

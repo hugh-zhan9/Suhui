@@ -20,6 +20,25 @@ export class SubscriptionApplicationService {
 
     await SubscriptionService.delete(subscriptionId)
   }
+
+  async updateSubscription(
+    subscriptionId: string,
+    payload: {
+      title?: string | null
+      category?: string | null
+      view?: number
+    },
+  ) {
+    await SubscriptionService.patch({
+      id: subscriptionId,
+      ...payload,
+    })
+
+    return SubscriptionService.getSubscriptionAll().then(
+      (subscriptions) =>
+        subscriptions.find((subscription) => subscription.id === subscriptionId) || null,
+    )
+  }
 }
 
 export const subscriptionApplicationService = new SubscriptionApplicationService()
