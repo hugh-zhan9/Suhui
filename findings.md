@@ -34,6 +34,7 @@
 - `refresh-all` 可以沿用同一模式，通过 `FeedRefreshService.refreshAll()` 收口到单一 HTTP endpoint，无需额外引入任务编排层。
 - renderer 构建链本身支持多 HTML 入口，因此正式 remote client 可以通过新增 `remote.html + src/remote/main.tsx` 接入，而不必另起一套前端工程。
 - 主进程 remote server 适合采用“正式 remote client 优先、inline shell 兜底”的托管策略：dev/prod 有正式资产时优先服务，没有时保留旧 fallback，降低迁移风险。
+- entry detail 读取可以直接复用本地 `entriesTable` 单条查询，不必先把桌面端复杂的 `EntryContent` 渲染链整体搬到 remote client；先显示基础 HTML 内容更稳。
 
 ## 技术决策
 
@@ -51,6 +52,7 @@
 | refresh 远程写入直接复用 `FeedRefreshService`                                 | 避免复制 `DbService.refreshFeed` 的大段逻辑            |
 | refresh-all 远程写入直接复用 `FeedRefreshService.refreshAll()`                | 保持写路径简单一致，避免过早引入调度抽象               |
 | 正式 remote client 接入 renderer 多入口构建                                   | 复用现有 Vite/Electron 构建链，避免维护第二套前端工程  |
+| entry detail 先在 remote client 侧做轻量 HTML 展示                            | 先确保可读与可维护，再考虑复用桌面端完整渲染体系       |
 
 ## 遇到的问题
 

@@ -55,6 +55,7 @@
 - [x] 打通单 feed refresh 远程写接口
 - [x] 打通 refresh-all 远程写接口
 - [x] 建立正式 remote browser entry，并接入 renderer 多入口构建
+- [x] 打通 entry detail 读取与 remote detail 展示
 - [ ] 补充更多远程 capability 与 remote client 深化集成
 - **状态：** in_progress
 
