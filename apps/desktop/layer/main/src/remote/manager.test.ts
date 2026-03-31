@@ -3,6 +3,17 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { RemoteServerManager } from "./manager"
 
 describe("RemoteServerManager", () => {
+  const readChunkWithTimeout = async (
+    reader: ReadableStreamDefaultReader<Uint8Array>,
+    timeoutMs = 300,
+  ) =>
+    Promise.race([
+      reader.read(),
+      new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error(`Timed out after ${timeoutMs}ms`)), timeoutMs)
+      }),
+    ])
+
   afterEach(async () => {
     await RemoteServerManager.stop()
   })
@@ -90,7 +101,9 @@ describe("RemoteServerManager", () => {
     expect(jsResponse.headers.get("content-type")).toContain("javascript")
     const js = await jsResponse.text()
     expect(js).toContain("/api/subscriptions")
+    expect(js).toContain("/api/unread")
     expect(js).toContain("/api/entries")
+    expect(js).toContain("/api/entries/read")
     expect(js).toContain("/events")
     expect(js).toContain("remote-root")
 
@@ -137,5 +150,90 @@ describe("RemoteServerManager", () => {
       ],
     })
     expect(getEntries).toHaveBeenCalledWith("feed_1")
+  })
+
+  it("serves unread counts from the injected provider", async () => {
+    const getUnreadCounts = vi.fn().mockResolvedValue([
+      { id: "feed_1", count: 3 },
+      { id: "feed_2", count: 1 },
+    ])
+
+    const server = await RemoteServerManager.start({
+      host: "127.0.0.1",
+      port: 0,
+      getSubscriptions: vi.fn().mockResolvedValue([]),
+      getEntries: vi.fn().mockResolvedValue([]),
+      getUnreadCounts,
+    })
+
+    const response = await fetch(`${server.baseUrl}/api/unread`)
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual({
+      data: [
+        { id: "feed_1", count: 3 },
+        { id: "feed_2", count: 1 },
+      ],
+    })
+    expect(getUnreadCounts).toHaveBeenCalledTimes(1)
+  })
+
+  it("broadcasts remote events to connected sse clients", async () => {
+    const abortController = new AbortController()
+    const server = await RemoteServerManager.start({
+      host: "127.0.0.1",
+      port: 0,
+      getSubscriptions: vi.fn().mockResolvedValue([]),
+      getEntries: vi.fn().mockResolvedValue([]),
+    })
+
+    const response = await fetch(`${server.baseUrl}/events`, {
+      signal: abortController.signal,
+    })
+    expect(response.status).toBe(200)
+
+    const reader = response.body!.getReader()
+    const firstChunk = await readChunkWithTimeout(reader)
+    expect(new TextDecoder().decode(firstChunk.value)).toContain("event: ready")
+
+    RemoteServerManager.broadcast("entries.updated", {
+      feedId: "feed_1",
+    })
+
+    const secondChunk = await readChunkWithTimeout(reader)
+    const payload = new TextDecoder().decode(secondChunk.value)
+    expect(payload).toContain("event: entries.updated")
+    expect(payload).toContain('"feedId":"feed_1"')
+
+    abortController.abort()
+  })
+
+  it("updates read status through the injected provider", async () => {
+    const updateReadStatus = vi.fn().mockResolvedValue(undefined)
+    const server = await RemoteServerManager.start({
+      host: "127.0.0.1",
+      port: 0,
+      getSubscriptions: vi.fn().mockResolvedValue([]),
+      getEntries: vi.fn().mockResolvedValue([]),
+      getUnreadCounts: vi.fn().mockResolvedValue([]),
+      updateReadStatus,
+    })
+
+    const response = await fetch(`${server.baseUrl}/api/entries/read`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        entryIds: ["entry_1"],
+        read: true,
+      }),
+    })
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual({ ok: true })
+    expect(updateReadStatus).toHaveBeenCalledWith({
+      entryIds: ["entry_1"],
+      read: true,
+    })
   })
 })

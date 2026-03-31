@@ -100,6 +100,24 @@ const remoteShellHtml = `<!doctype html>
         color: #5b6470;
         font-size: 13px;
       }
+      .item-actions {
+        margin-top: 12px;
+        display: flex;
+        justify-content: flex-end;
+      }
+      .item-button {
+        border: 0;
+        border-radius: 999px;
+        padding: 8px 12px;
+        background: #b2642a;
+        color: #fff;
+        font-size: 12px;
+        cursor: pointer;
+      }
+      .item-button[disabled] {
+        opacity: 0.55;
+        cursor: default;
+      }
       .empty {
         margin: 0;
         color: #5b6470;
@@ -172,6 +190,7 @@ const entryPanel = document.getElementById("entry-panel");
 const status = document.getElementById("remote-status");
 let activeFeedId = null;
 let subscriptionsCache = [];
+let unreadCache = {};
 
 const renderSubscriptions = (items) => {
   if (!items || items.length === 0) {
@@ -183,10 +202,13 @@ const renderSubscriptions = (items) => {
     .map((item) => {
       const meta = [item.type, item.category, item.feedId].filter(Boolean).join(" · ");
       const activeClass = item.feedId === activeFeedId ? ' is-active' : '';
+      const unread = unreadCache[item.feedId] || 0;
+      const unreadLabel = unread > 0 ? ' · ' + unread + ' unread' : '';
       return '<li class="item' + activeClass + '" data-feed-id="' + (item.feedId || '') + '"><p class="item-title">' +
         (item.title || item.id) +
         '</p><p class="item-meta">' +
         (meta || item.id) +
+        unreadLabel +
         '</p></li>';
     })
     .join("");
@@ -212,15 +234,46 @@ const renderEntries = (items) => {
   const list = items
     .map((item) => {
       const publishedAt = item.publishedAt ? new Date(item.publishedAt).toLocaleString() : "Unknown time";
+      const buttonLabel = item.read ? "Read" : "Mark read";
       return '<li class="item"><p class="item-title">' +
         (item.title || item.id) +
         '</p><p class="item-meta">' +
         publishedAt +
+        '</p><div class="item-actions"><button class="item-button" data-entry-id="' + item.id + '"' +
+        (item.read ? " disabled" : "") +
+        '>' + buttonLabel + '</button></div><p class="item-meta">' +
+        (item.read ? "Read" : "Unread") +
         '</p></li>';
     })
     .join("");
 
   entryPanel.innerHTML = '<ul class="list">' + list + '</ul>';
+  entryPanel.querySelectorAll("[data-entry-id]").forEach((node) => {
+    node.addEventListener("click", async () => {
+      const entryId = node.getAttribute("data-entry-id");
+      if (!entryId || node.hasAttribute("disabled")) return;
+      node.setAttribute("disabled", "true");
+      try {
+        await fetch("/api/entries/read", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            entryIds: [entryId],
+            read: true,
+          }),
+        });
+        await loadSubscriptions();
+        if (activeFeedId) {
+          await loadEntries(activeFeedId);
+        }
+      } catch (error) {
+        node.removeAttribute("disabled");
+        console.error("[remote-shell] failed to update read status", error);
+      }
+    });
+  });
 };
 
 const setStatus = (label) => {
@@ -238,6 +291,15 @@ const connectEvents = () => {
   eventSource.onerror = () => {
     setStatus("Disconnected");
   };
+  eventSource.addEventListener("subscriptions.updated", () => {
+    void loadSubscriptions();
+  });
+  eventSource.addEventListener("entries.updated", (event) => {
+    if (!activeFeedId) return;
+    const payload = JSON.parse(event.data || "{}");
+    if (payload.feedId && payload.feedId !== activeFeedId) return;
+    void loadEntries(activeFeedId);
+  });
 };
 
 const loadEntries = async (feedId) => {
@@ -258,12 +320,20 @@ const loadEntries = async (feedId) => {
 const loadSubscriptions = async () => {
   setStatus("Loading subscriptions...");
   try {
-    const response = await fetch("/api/subscriptions");
-    if (!response.ok) {
-      throw new Error("HTTP " + response.status);
+    const [subscriptionsResponse, unreadResponse] = await Promise.all([
+      fetch("/api/subscriptions"),
+      fetch("/api/unread"),
+    ]);
+    if (!subscriptionsResponse.ok) {
+      throw new Error("HTTP " + subscriptionsResponse.status);
     }
-    const payload = await response.json();
+    if (!unreadResponse.ok) {
+      throw new Error("HTTP " + unreadResponse.status);
+    }
+    const payload = await subscriptionsResponse.json();
+    const unreadPayload = await unreadResponse.json();
     subscriptionsCache = payload.data || [];
+    unreadCache = Object.fromEntries((unreadPayload.data || []).map((item) => [item.id, item.count]));
     activeFeedId = subscriptionsCache.find((item) => item.feedId)?.feedId || null;
     renderSubscriptions(subscriptionsCache);
     if (activeFeedId) {

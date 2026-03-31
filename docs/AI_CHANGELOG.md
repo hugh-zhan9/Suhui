@@ -5757,3 +5757,33 @@
 - `docs/mac-local-packaging.md`
 
 ---
+
+## [2026-03-31 14:22] [Feature]
+
+- **Change**: 新增远程条目列表接口与 SSE 连接状态能力
+- **Risk Analysis**: 主进程 remote server 现在会对外提供 entry 查询与 SSE 长连接。主要风险在于 SSE 连接清理和后续真实事件广播尚未接入，当前 shell 仍是最小实现，和正式 renderer 的状态模型还未统一。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/application/entry/service.ts`
+- `apps/desktop/layer/main/src/remote/manager.ts`
+- `apps/desktop/layer/main/src/remote/manager.test.ts`
+- `apps/desktop/layer/main/src/remote/shell.ts`
+
+---
+
+## [2026-03-31 14:29] [Feature]
+
+- **Change**: 补充远程未读统计与最小已读写入链路
+- **Risk Analysis**: 主进程 remote server 新增 unread 接口、SSE 广播骨架和 read-state 写接口，浏览器端可以直接标记已读。主要风险在于当前 shell 仍是最小实现，写入后依赖整段列表刷新，后续需要更细粒度事件与更正式的客户端状态层。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/application/entry/service.ts`
+- `apps/desktop/layer/main/src/application/unread/service.ts`
+- `apps/desktop/layer/main/src/remote/manager.ts`
+- `apps/desktop/layer/main/src/remote/manager.test.ts`
+- `apps/desktop/layer/main/src/remote/shell.ts`
+- `task_plan.md`
+- `findings.md`
+- `progress.md`
+
+---
