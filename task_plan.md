@@ -56,6 +56,8 @@
 - [x] 打通 refresh-all 远程写接口
 - [x] 建立正式 remote browser entry，并接入 renderer 多入口构建
 - [x] 打通 entry detail 读取与 remote detail 展示
+- [x] 打通 subscription create/delete 远程写接口
+- [x] 在正式 remote client 中补充最小订阅管理 UI（新增/删除）
 - [ ] 补充更多远程 capability 与 remote client 深化集成
 - **状态：** in_progress
 
@@ -88,4 +90,4 @@
 - 详细设计必须对齐已提交 spec：`docs/superpowers/specs/2026-03-31-remote-browser-access-design.md`
 - 计划需要可直接转化为 implementation backlog，而不只是高层方向
 - 当前实现已完成 `Slice 1` 与 `Slice 2` 的主要只读能力，下一步进入真实事件广播与写路径
-- 当前实现已完成最小 remote API 与正式 remote browser entry，后续优先把更多能力从临时 client 迁到正式 remote client，并继续收敛共享前端能力
+- 当前实现已完成最小 remote API、正式 remote browser entry 与第一批订阅管理能力，后续优先继续扩展远程端管理能力，并逐步淘汰临时 inline shell 的职责

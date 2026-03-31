@@ -35,24 +35,29 @@
 - renderer 构建链本身支持多 HTML 入口，因此正式 remote client 可以通过新增 `remote.html + src/remote/main.tsx` 接入，而不必另起一套前端工程。
 - 主进程 remote server 适合采用“正式 remote client 优先、inline shell 兜底”的托管策略：dev/prod 有正式资产时优先服务，没有时保留旧 fallback，降低迁移风险。
 - entry detail 读取可以直接复用本地 `entriesTable` 单条查询，不必先把桌面端复杂的 `EntryContent` 渲染链整体搬到 remote client；先显示基础 HTML 内容更稳。
+- subscription 管理可以先收口到 `POST /api/subscriptions` 与 `DELETE /api/subscriptions/:id` 两个 endpoint，先覆盖新增/删除，再把编辑能力后续补齐。
+- 新增订阅当前最稳的复用路径是调用现有 `DbService.addFeed()`，这样能直接继承桌面端已存在的 feed 解析、去重与入库逻辑，避免在 remote 路径重写一份。
+- 正式 remote client 中的订阅管理 UI 先保持极简即可：URL + 可选标题创建、列表项删除；这足以验证“远程端与桌面端共用写入口”的关键链路。
 
 ## 技术决策
 
-| 决策                                                                          | 理由                                                   |
-| ----------------------------------------------------------------------------- | ------------------------------------------------------ |
-| 采用“Application Services <- IPC/HTTP adapters <- Desktop/Remote clients”结构 | 避免重复业务逻辑，便于一致性控制                       |
-| 远程访问服务内嵌到 Electron main process                                      | 当前所有权威状态和关键能力已经集中在主进程             |
-| Realtime 同步优先采用事件广播                                                 | 多客户端并发写入下需要统一收敛状态                     |
-| 实现按阶段推进，但总目标保持为广泛功能对齐                                    | 远程端最终要和桌面端同权，但不能一次性硬推全部改造     |
-| 详细开发计划需要单独把“共享服务层抽离”和“客户端接入层收敛”列为前置工作流      | 仅加 HTTP server 无法解决现有 store 双轨耦合问题       |
-| Slice 1 先实现主进程 remote server skeleton 与只读订阅查询                    | 这是最小可运行闭环，且不会过早引入复杂写路径一致性问题 |
-| 最小 remote browser shell 先由主进程直接托管，而不是立刻接入 renderer 构建链  | 这样能更快验证浏览器访问能力，降低早期改造风险         |
-| 在真实广播落地前，SSE 先承载 `ready/ping` 连接状态                            | 先把远程端“连接断开必须显式提示”的硬约束做实           |
-| read-state 远程写入先收口为单一 HTTP endpoint                                 | 先验证主进程单一写入口，再逐步扩到 refresh 等写能力    |
-| refresh 远程写入直接复用 `FeedRefreshService`                                 | 避免复制 `DbService.refreshFeed` 的大段逻辑            |
-| refresh-all 远程写入直接复用 `FeedRefreshService.refreshAll()`                | 保持写路径简单一致，避免过早引入调度抽象               |
-| 正式 remote client 接入 renderer 多入口构建                                   | 复用现有 Vite/Electron 构建链，避免维护第二套前端工程  |
-| entry detail 先在 remote client 侧做轻量 HTML 展示                            | 先确保可读与可维护，再考虑复用桌面端完整渲染体系       |
+| 决策                                                                          | 理由                                                     |
+| ----------------------------------------------------------------------------- | -------------------------------------------------------- |
+| 采用“Application Services <- IPC/HTTP adapters <- Desktop/Remote clients”结构 | 避免重复业务逻辑，便于一致性控制                         |
+| 远程访问服务内嵌到 Electron main process                                      | 当前所有权威状态和关键能力已经集中在主进程               |
+| Realtime 同步优先采用事件广播                                                 | 多客户端并发写入下需要统一收敛状态                       |
+| 实现按阶段推进，但总目标保持为广泛功能对齐                                    | 远程端最终要和桌面端同权，但不能一次性硬推全部改造       |
+| 详细开发计划需要单独把“共享服务层抽离”和“客户端接入层收敛”列为前置工作流      | 仅加 HTTP server 无法解决现有 store 双轨耦合问题         |
+| Slice 1 先实现主进程 remote server skeleton 与只读订阅查询                    | 这是最小可运行闭环，且不会过早引入复杂写路径一致性问题   |
+| 最小 remote browser shell 先由主进程直接托管，而不是立刻接入 renderer 构建链  | 这样能更快验证浏览器访问能力，降低早期改造风险           |
+| 在真实广播落地前，SSE 先承载 `ready/ping` 连接状态                            | 先把远程端“连接断开必须显式提示”的硬约束做实             |
+| read-state 远程写入先收口为单一 HTTP endpoint                                 | 先验证主进程单一写入口，再逐步扩到 refresh 等写能力      |
+| refresh 远程写入直接复用 `FeedRefreshService`                                 | 避免复制 `DbService.refreshFeed` 的大段逻辑              |
+| refresh-all 远程写入直接复用 `FeedRefreshService.refreshAll()`                | 保持写路径简单一致，避免过早引入调度抽象                 |
+| 正式 remote client 接入 renderer 多入口构建                                   | 复用现有 Vite/Electron 构建链，避免维护第二套前端工程    |
+| entry detail 先在 remote client 侧做轻量 HTML 展示                            | 先确保可读与可维护，再考虑复用桌面端完整渲染体系         |
+| subscription create 先复用 `DbService.addFeed()`                              | 直接继承已存在的桌面端 add-feed 逻辑，降低远程写路径分叉 |
+| subscription 管理先落最小 create/delete UI                                    | 先打通远程端管理闭环，再逐步补编辑和更细能力             |
 
 ## 遇到的问题
 
