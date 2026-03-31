@@ -5908,3 +5908,19 @@
 - `progress.md`
 
 ---
+
+## [2026-03-31 15:17] [Feature]
+
+- **Change**: 为远程阅读端补充作者和原文链接展示，并增加读完自动前进的导航逻辑与单测。
+- **Risk Analysis**: 主要风险在于自动前进逻辑目前基于当前已加载列表工作，若后续引入更复杂排序或跨 feed 阅读，需要同步调整 helper 规则；另外作者和原文链接直接取条目字段，个别源若字段为空时会自然降级，但不影响主链路。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/remote/remote-app.tsx`
+- `apps/desktop/layer/renderer/src/remote/remote.css`
+- `apps/desktop/layer/renderer/src/remote/entry-navigation.ts`
+- `apps/desktop/layer/renderer/src/remote/entry-navigation.test.ts`
+- `task_plan.md`
+- `findings.md`
+- `progress.md`
+
+---

@@ -62,6 +62,8 @@
 - [x] 在正式 remote client 中补充订阅编辑 UI（标题/分类/view）
 - [x] 打通 entries unread-only 远程筛选接口
 - [x] 在正式 remote client 中补充阅读增强交互（标未读、未读筛选、上一条/下一条）
+- [x] 在正式 remote client 中补充条目元信息展示（作者/原文链接）
+- [x] 在正式 remote client 中补充读完自动前进的阅读导航逻辑
 - [ ] 补充更多远程 capability 与 remote client 深化集成
 - **状态：** in_progress
 

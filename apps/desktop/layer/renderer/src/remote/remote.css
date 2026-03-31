@@ -267,6 +267,22 @@ body {
   line-height: 1.6;
 }
 
+.remote-detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.remote-link {
+  color: #b2642a;
+  text-decoration: none;
+}
+
+.remote-link:hover {
+  text-decoration: underline;
+}
+
 .remote-detail-content {
   color: #222831;
   line-height: 1.75;
@@ -336,6 +352,10 @@ body {
   }
 
   .remote-inline-action {
+    color: #f7b877;
+  }
+
+  .remote-link {
     color: #f7b877;
   }
 
