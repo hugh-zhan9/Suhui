@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from "vitest"
 
-import { refreshLocalFeedAndSyncEntries, shouldUseLocalFeedRefresh } from "./entry-refresh"
+import {
+  refreshAllLocalFeedsAndSyncEntries,
+  refreshLocalFeedAndSyncEntries,
+  shouldUseBatchLocalRefresh,
+  shouldUseLocalFeedRefresh,
+} from "./entry-refresh"
 
 describe("refreshLocalFeedAndSyncEntries", () => {
   it("calls ipc refresh then fetchEntries", async () => {
@@ -13,7 +18,9 @@ describe("refreshLocalFeedAndSyncEntries", () => {
       fetchEntries,
     })
 
-    expect(invoke).toHaveBeenCalledWith("db.refreshFeed", "local_feed_1")
+    expect(invoke).toHaveBeenCalledWith("db.refreshFeed", "local_feed_1", {
+      source: "manual-single",
+    })
     expect(fetchEntries).toHaveBeenCalledWith({ feedId: "local_feed_1" })
     const invokeOrder = invoke.mock.invocationCallOrder[0]!
     const fetchOrder = fetchEntries.mock.invocationCallOrder[0]!
@@ -29,12 +36,35 @@ describe("refreshLocalFeedAndSyncEntries", () => {
     ).toBe(true)
   })
 
-  it("keeps owned biz feeds on the remote refresh path", () => {
+  it("allows owned feeds with url to use the local refresh path", () => {
     expect(
       shouldUseLocalFeedRefresh({
         feedId: "199666248185461760",
         feed: { type: "feed", ownerUserId: "user_1", url: "https://example.com/rss.xml" },
       }),
-    ).toBe(false)
+    ).toBe(true)
+  })
+
+  it("treats the all-feeds route as a batch refresh target", () => {
+    expect(
+      shouldUseBatchLocalRefresh({
+        feedId: "all",
+        isAllFeeds: true,
+        feed: undefined,
+      }),
+    ).toBe(true)
+  })
+
+  it("passes manual batch source metadata", async () => {
+    const invoke = vi.fn().mockResolvedValue({ refreshed: 1, failed: 0 })
+
+    await expect(refreshAllLocalFeedsAndSyncEntries({ ipc: { invoke } })).resolves.toEqual({
+      refreshed: 1,
+      failed: 0,
+    })
+
+    expect(invoke).toHaveBeenCalledWith("db.refreshLocalSubscribedFeeds", {
+      source: "manual-batch",
+    })
   })
 })

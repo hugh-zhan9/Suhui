@@ -1,5 +1,3 @@
-import { shouldTreatFeedAsRemoteBiz } from "@suhui/store/feed/local-feed"
-
 type IpcInvoker = {
   invoke: (channel: string, ...args: any[]) => Promise<unknown>
 }
@@ -14,7 +12,21 @@ export const shouldUseLocalFeedRefresh = ({
   feed?: { type?: string | null; url?: string | null; ownerUserId?: string | null } | null
 }) => {
   if (!feedId || feed?.type !== "feed" || !feed.url) return false
-  return !shouldTreatFeedAsRemoteBiz({ id: feedId, feed: feed as any })
+  return true
+}
+
+export const shouldUseBatchLocalRefresh = ({
+  feedId,
+  isAllFeeds,
+  feed,
+}: {
+  feedId?: string
+  isAllFeeds: boolean
+  feed?: { type?: string | null; url?: string | null; ownerUserId?: string | null } | null
+}) => {
+  if (isAllFeeds) return true
+  if (!feedId) return true
+  return !feed
 }
 
 export const refreshLocalFeedAndSyncEntries = async ({
@@ -26,13 +38,13 @@ export const refreshLocalFeedAndSyncEntries = async ({
   ipc: IpcInvoker
   fetchEntries: FetchEntries
 }) => {
-  await ipc.invoke("db.refreshFeed", feedId)
+  await ipc.invoke("db.refreshFeed", feedId, { source: "manual-single" })
   await fetchEntries({ feedId })
 }
 
 export const refreshAllLocalFeedsAndSyncEntries = async ({ ipc }: { ipc: IpcInvoker }) => {
-  const result = (await ipc.invoke("db.refreshLocalSubscribedFeeds")) as
-    | { refreshed?: number; failed?: number }
-    | undefined
+  const result = (await ipc.invoke("db.refreshLocalSubscribedFeeds", {
+    source: "manual-batch",
+  })) as { refreshed?: number; failed?: number } | undefined
   return result
 }
