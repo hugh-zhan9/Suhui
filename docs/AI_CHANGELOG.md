@@ -5803,3 +5803,19 @@
 - `progress.md`
 
 ---
+
+## [2026-03-31 14:39] [Feature]
+
+- **Change**: 新增远程 refresh-all 写路径
+- **Risk Analysis**: 主进程 remote server 现在支持浏览器端触发全部订阅刷新，并复用现有 FeedRefreshService.refreshAll。主要风险在于当前浏览器端仍是最小 shell，刷新完成后的状态反馈仍以整段重载为主，后续需要正式 remote UI 层来承接更复杂交互。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/application/feed/service.ts`
+- `apps/desktop/layer/main/src/remote/manager.ts`
+- `apps/desktop/layer/main/src/remote/manager.test.ts`
+- `apps/desktop/layer/main/src/remote/shell.ts`
+- `task_plan.md`
+- `findings.md`
+- `progress.md`
+
+---

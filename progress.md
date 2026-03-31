@@ -55,6 +55,7 @@
   - 新增 `/api/unread`，在 remote shell 中展示 subscription unread 数
   - 新增 `POST /api/entries/read`，打通最小 read-state 远程写路径
   - 新增 `POST /api/feeds/:feedId/refresh`，打通单 feed refresh 写路径
+  - 新增 `POST /api/feeds/refresh-all`，打通 refresh-all 写路径
   - 运行新增 remote 测试并全部通过
   - 尝试运行主进程 `typecheck`，确认被仓库既有问题阻塞
 - 创建/修改的文件：
@@ -82,25 +83,27 @@
 | remote entry/SSE tests    | `vitest run src/remote/manager.test.ts src/remote/lifecycle.test.ts` | entry API、SSE、remote shell 扩展后的测试通过         | 7 个测试全部通过                          | 通过 |
 | remote unread/write tests | `vitest run src/remote/manager.test.ts src/remote/lifecycle.test.ts` | unread API、SSE 广播、read-state 写路径测试通过       | 10 个测试全部通过                         | 通过 |
 | remote refresh tests      | `vitest run src/remote/manager.test.ts src/remote/lifecycle.test.ts` | refresh 写路径与 remote shell 扩展测试通过            | 11 个测试全部通过                         | 通过 |
+| remote refresh-all tests  | `vitest run src/remote/manager.test.ts src/remote/lifecycle.test.ts` | refresh-all 写路径与 remote shell 扩展测试通过        | 12 个测试全部通过                         | 通过 |
 | 主进程 typecheck          | `pnpm --filter @suhui/electron-main typecheck`                       | 无错误                                                | 被仓库既有 TS6059/TS6307/历史测试问题阻塞 | 阻塞 |
 
 ## 错误日志
 
-| 时间戳     | 错误                                    | 尝试次数 | 解决方案                                                 |
-| ---------- | --------------------------------------- | -------- | -------------------------------------------------------- |
-| 2026-03-31 | 无 `writing-plans` skill                | 1        | 使用 `planning-with-files-zh` 流程和仓库内规划文件替代   |
-| 2026-03-31 | 首次 remote 测试命令路径错误            | 1        | 改为包目录下运行 `vitest run src/remote/...`             |
-| 2026-03-31 | 主进程 `typecheck` 被历史问题阻塞       | 1        | 记录为基线问题，本轮以新增 remote 测试通过作为验证依据   |
-| 2026-03-31 | entry 服务直接导入触发主进程副作用      | 1        | 改为在 remote manager 默认依赖中 lazy import             |
-| 2026-03-31 | remote 端最初只有连接保活无业务广播     | 1        | 在 manager 内增加 SSE client 集合与 `broadcast()`        |
-| 2026-03-31 | refresh 路径若复用 IPC service 代价过高 | 1        | 改为新增薄的 feed application service 直接复用主进程刷新 |
+| 时间戳     | 错误                                       | 尝试次数 | 解决方案                                                 |
+| ---------- | ------------------------------------------ | -------- | -------------------------------------------------------- |
+| 2026-03-31 | 无 `writing-plans` skill                   | 1        | 使用 `planning-with-files-zh` 流程和仓库内规划文件替代   |
+| 2026-03-31 | 首次 remote 测试命令路径错误               | 1        | 改为包目录下运行 `vitest run src/remote/...`             |
+| 2026-03-31 | 主进程 `typecheck` 被历史问题阻塞          | 1        | 记录为基线问题，本轮以新增 remote 测试通过作为验证依据   |
+| 2026-03-31 | entry 服务直接导入触发主进程副作用         | 1        | 改为在 remote manager 默认依赖中 lazy import             |
+| 2026-03-31 | remote 端最初只有连接保活无业务广播        | 1        | 在 manager 内增加 SSE client 集合与 `broadcast()`        |
+| 2026-03-31 | refresh 路径若复用 IPC service 代价过高    | 1        | 改为新增薄的 feed application service 直接复用主进程刷新 |
+| 2026-03-31 | refresh-all 路由若放在 feed 路由后会被误判 | 1        | 先匹配 `/api/feeds/refresh-all`，再匹配单 feed refresh   |
 
 ## 五问重启检查
 
 | 问题           | 答案                                               |
 | -------------- | -------------------------------------------------- |
-| 我在哪里？     | 阶段 4：已完成最小 read/refresh 写路径             |
-| 我要去哪里？   | 继续扩展 refresh-all、更多写能力与正式浏览器端入口 |
+| 我在哪里？     | 阶段 4：已完成最小 read/refresh/refresh-all 写路径 |
+| 我要去哪里？   | 继续扩展更多写能力与正式浏览器端入口               |
 | 目标是什么？   | 按远程访问计划逐步落地可运行实现，并保持单一写入口 |
 | 我学到了什么？ | 见 `findings.md`                                   |
 | 我做了什么？   | 见上方记录                                         |

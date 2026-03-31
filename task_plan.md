@@ -53,6 +53,7 @@
 - [x] 补充 unread counts 只读接口与订阅未读展示
 - [x] 打通最小 read-state 远程写接口
 - [x] 打通单 feed refresh 远程写接口
+- [x] 打通 refresh-all 远程写接口
 - [ ] 补充更多远程 capability 与正式浏览器端入口
 - **状态：** in_progress
 
@@ -85,4 +86,4 @@
 - 详细设计必须对齐已提交 spec：`docs/superpowers/specs/2026-03-31-remote-browser-access-design.md`
 - 计划需要可直接转化为 implementation backlog，而不只是高层方向
 - 当前实现已完成 `Slice 1` 与 `Slice 2` 的主要只读能力，下一步进入真实事件广播与写路径
-- 当前实现已完成 `Slice 3` 的最小 read/refresh 写路径，后续优先补 refresh-all、更多写能力和更正式的浏览器端入口
+- 当前实现已完成 `Slice 3` 的最小 read/refresh 写路径，后续优先转向更正式的浏览器端入口与更多写能力
