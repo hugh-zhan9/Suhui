@@ -5940,3 +5940,17 @@
 - `progress.md`
 
 ---
+
+## [2026-03-31 15:25] [Feature]
+
+- **Change**: 为远程阅读端补充断线提示与恢复状态、阅读上下文条，并把后台刷新改为静默刷新以减少连续阅读闪烁。
+- **Risk Analysis**: 主要风险在于当前 reconnect 仍依赖浏览器 EventSource 的自动重连机制，应用层只是在 UI 上做更清晰的区分和手动补同步；如果后续需要更强的断线重试策略，可能还要补专门的连接管理层。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/remote/remote-app.tsx`
+- `apps/desktop/layer/renderer/src/remote/remote.css`
+- `task_plan.md`
+- `findings.md`
+- `progress.md`
+
+---
