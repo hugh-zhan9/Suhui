@@ -56,19 +56,29 @@
   - 新增 `POST /api/entries/read`，打通最小 read-state 远程写路径
   - 新增 `POST /api/feeds/:feedId/refresh`，打通单 feed refresh 写路径
   - 新增 `POST /api/feeds/refresh-all`，打通 refresh-all 写路径
+  - 为 renderer 增加 `remote.html + src/remote/main.tsx` 正式 remote browser entry
+  - 为 main remote server 增加正式 remote client 资产托管，优先服务正式 client，inline shell 兜底
   - 运行新增 remote 测试并全部通过
   - 尝试运行主进程 `typecheck`，确认被仓库既有问题阻塞
+  - 运行 `build:render`，确认正式 remote entry 能进入 renderer 产物
 - 创建/修改的文件：
   - `apps/desktop/layer/main/src/application/subscription/service.ts`
   - `apps/desktop/layer/main/src/application/entry/service.ts`
   - `apps/desktop/layer/main/src/application/feed/service.ts`
   - `apps/desktop/layer/main/src/application/unread/service.ts`
   - `apps/desktop/layer/main/src/remote/config.ts`
+  - `apps/desktop/layer/main/src/remote/client.ts`
   - `apps/desktop/layer/main/src/remote/manager.ts`
   - `apps/desktop/layer/main/src/remote/manager.test.ts`
   - `apps/desktop/layer/main/src/remote/lifecycle.ts`
   - `apps/desktop/layer/main/src/remote/lifecycle.test.ts`
   - `apps/desktop/layer/main/src/remote/shell.ts`
+  - `apps/desktop/layer/renderer/remote.html`
+  - `apps/desktop/layer/renderer/src/remote/main.tsx`
+  - `apps/desktop/layer/renderer/src/remote/remote-app.tsx`
+  - `apps/desktop/layer/renderer/src/remote/remote.css`
+  - `apps/desktop/configs/vite.electron-render.config.ts`
+  - `apps/desktop/vite.config.ts`
   - `apps/desktop/layer/main/src/manager/bootstrap.ts`
   - `task_plan.md`
   - `findings.md`
@@ -76,15 +86,16 @@
 
 ## 测试结果
 
-| 测试                      | 输入                                                                 | 预期结果                                              | 实际结果                                  | 状态 |
-| ------------------------- | -------------------------------------------------------------------- | ----------------------------------------------------- | ----------------------------------------- | ---- |
-| 设计文档提交              | `git commit`                                                         | 设计 spec 成功提交                                    | 已提交 `43fde504b`                        | 通过 |
-| remote server tests       | `vitest run src/remote/manager.test.ts src/remote/lifecycle.test.ts` | remote server skeleton、生命周期与最小 shell 测试通过 | 6 个测试全部通过                          | 通过 |
-| remote entry/SSE tests    | `vitest run src/remote/manager.test.ts src/remote/lifecycle.test.ts` | entry API、SSE、remote shell 扩展后的测试通过         | 7 个测试全部通过                          | 通过 |
-| remote unread/write tests | `vitest run src/remote/manager.test.ts src/remote/lifecycle.test.ts` | unread API、SSE 广播、read-state 写路径测试通过       | 10 个测试全部通过                         | 通过 |
-| remote refresh tests      | `vitest run src/remote/manager.test.ts src/remote/lifecycle.test.ts` | refresh 写路径与 remote shell 扩展测试通过            | 11 个测试全部通过                         | 通过 |
-| remote refresh-all tests  | `vitest run src/remote/manager.test.ts src/remote/lifecycle.test.ts` | refresh-all 写路径与 remote shell 扩展测试通过        | 12 个测试全部通过                         | 通过 |
-| 主进程 typecheck          | `pnpm --filter @suhui/electron-main typecheck`                       | 无错误                                                | 被仓库既有 TS6059/TS6307/历史测试问题阻塞 | 阻塞 |
+| 测试                             | 输入                                                                 | 预期结果                                              | 实际结果                                     | 状态 |
+| -------------------------------- | -------------------------------------------------------------------- | ----------------------------------------------------- | -------------------------------------------- | ---- |
+| 设计文档提交                     | `git commit`                                                         | 设计 spec 成功提交                                    | 已提交 `43fde504b`                           | 通过 |
+| remote server tests              | `vitest run src/remote/manager.test.ts src/remote/lifecycle.test.ts` | remote server skeleton、生命周期与最小 shell 测试通过 | 6 个测试全部通过                             | 通过 |
+| remote entry/SSE tests           | `vitest run src/remote/manager.test.ts src/remote/lifecycle.test.ts` | entry API、SSE、remote shell 扩展后的测试通过         | 7 个测试全部通过                             | 通过 |
+| remote unread/write tests        | `vitest run src/remote/manager.test.ts src/remote/lifecycle.test.ts` | unread API、SSE 广播、read-state 写路径测试通过       | 10 个测试全部通过                            | 通过 |
+| remote refresh tests             | `vitest run src/remote/manager.test.ts src/remote/lifecycle.test.ts` | refresh 写路径与 remote shell 扩展测试通过            | 11 个测试全部通过                            | 通过 |
+| remote refresh-all tests         | `vitest run src/remote/manager.test.ts src/remote/lifecycle.test.ts` | refresh-all 写路径与 remote shell 扩展测试通过        | 12 个测试全部通过                            | 通过 |
+| renderer build with remote entry | `pnpm --filter suhui build:render`                                   | 正式 remote browser entry 能进 renderer 构建产物      | 构建成功，`dist/renderer/remote.html` 已生成 | 通过 |
+| 主进程 typecheck                 | `pnpm --filter @suhui/electron-main typecheck`                       | 无错误                                                | 被仓库既有 TS6059/TS6307/历史测试问题阻塞    | 阻塞 |
 
 ## 错误日志
 
@@ -97,16 +108,17 @@
 | 2026-03-31 | remote 端最初只有连接保活无业务广播        | 1        | 在 manager 内增加 SSE client 集合与 `broadcast()`        |
 | 2026-03-31 | refresh 路径若复用 IPC service 代价过高    | 1        | 改为新增薄的 feed application service 直接复用主进程刷新 |
 | 2026-03-31 | refresh-all 路由若放在 feed 路由后会被误判 | 1        | 先匹配 `/api/feeds/refresh-all`，再匹配单 feed refresh   |
+| 2026-03-31 | 远程浏览器端继续堆内联 shell 可维护性差    | 1        | 切换为 renderer 多入口正式 remote client，主进程负责托管 |
 
 ## 五问重启检查
 
-| 问题           | 答案                                               |
-| -------------- | -------------------------------------------------- |
-| 我在哪里？     | 阶段 4：已完成最小 read/refresh/refresh-all 写路径 |
-| 我要去哪里？   | 继续扩展更多写能力与正式浏览器端入口               |
-| 目标是什么？   | 按远程访问计划逐步落地可运行实现，并保持单一写入口 |
-| 我学到了什么？ | 见 `findings.md`                                   |
-| 我做了什么？   | 见上方记录                                         |
+| 问题           | 答案                                                     |
+| -------------- | -------------------------------------------------------- |
+| 我在哪里？     | 阶段 4：已完成正式 remote browser entry 与最小核心写路径 |
+| 我要去哪里？   | 继续扩展更多写能力，并把临时能力迁到正式 remote client   |
+| 目标是什么？   | 按远程访问计划逐步落地可运行实现，并保持单一写入口       |
+| 我学到了什么？ | 见 `findings.md`                                         |
+| 我做了什么？   | 见上方记录                                               |
 
 ---
 

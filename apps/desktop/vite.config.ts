@@ -135,6 +135,7 @@ export default ({ mode }) => {
       rollupOptions: {
         input: {
           main: resolve(ROOT, "/index.html"),
+          remote: resolve(ROOT, "/remote.html"),
         },
       },
     },

@@ -49,6 +49,7 @@ export default {
     rollupOptions: {
       input: {
         main: resolve(VITE_ROOT, "index.html"),
+        remote: resolve(VITE_ROOT, "remote.html"),
       },
     },
     minify: !isStaging,

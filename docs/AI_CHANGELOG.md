@@ -5819,3 +5819,24 @@
 - `progress.md`
 
 ---
+
+## [2026-03-31 14:48] [Feature]
+
+- **Change**: 接入正式 remote browser entry 与主进程资产托管
+- **Risk Analysis**: renderer 已新增 remote 多入口并能构建出 remote.html，main 侧 remote server 也会优先托管正式 client、缺失时回退 inline shell。主要风险在于正式 remote client 目前还是独立轻量实现，尚未与现有 renderer/store 深度共享，后续还需要继续收敛。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/configs/vite.electron-render.config.ts`
+- `apps/desktop/vite.config.ts`
+- `apps/desktop/layer/main/src/remote/client.ts`
+- `apps/desktop/layer/main/src/remote/manager.ts`
+- `apps/desktop/layer/main/src/remote/manager.test.ts`
+- `apps/desktop/layer/renderer/remote.html`
+- `apps/desktop/layer/renderer/src/remote/main.tsx`
+- `apps/desktop/layer/renderer/src/remote/remote-app.tsx`
+- `apps/desktop/layer/renderer/src/remote/remote.css`
+- `task_plan.md`
+- `findings.md`
+- `progress.md`
+
+---

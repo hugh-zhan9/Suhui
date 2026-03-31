@@ -3,6 +3,7 @@ import type { AddressInfo } from "node:net"
 
 import { subscriptionApplicationService } from "~/application/subscription/service"
 
+import { getRemoteClientAsset, getRemoteClientHtml } from "./client"
 import { REMOTE_SERVER_DEFAULT_HOST, REMOTE_SERVER_DEFAULT_PORT } from "./config"
 import { getRemoteShellHtml, getRemoteShellScript } from "./shell"
 
@@ -19,6 +20,10 @@ type RemoteServerDependencies = {
   updateReadStatus: (payload: { entryIds: string[]; read: boolean }) => Promise<void>
   refreshFeed: (feedId: string) => Promise<unknown>
   refreshAllFeeds: () => Promise<unknown>
+  getRemoteIndexHtml: () => Promise<string | null>
+  getRemoteAsset: (
+    pathname: string,
+  ) => Promise<{ content: Buffer | string; contentType: string } | null>
 }
 
 type StartOptions = Partial<{
@@ -56,7 +61,7 @@ const json = (response: ServerResponse, statusCode: number, payload: unknown) =>
 const text = (
   response: ServerResponse,
   statusCode: number,
-  payload: string,
+  payload: string | Buffer,
   contentType: string,
 ) => {
   response.statusCode = statusCode
@@ -99,13 +104,25 @@ const createRequestHandler =
     }
 
     if (method === "GET" && url.pathname === "/") {
-      text(response, 200, getRemoteShellHtml(), "text/html; charset=utf-8")
+      const remoteHtml = await deps.getRemoteIndexHtml()
+      text(response, 200, remoteHtml || getRemoteShellHtml(), "text/html; charset=utf-8")
       return
     }
 
     if (method === "GET" && url.pathname === "/remote.js") {
       text(response, 200, getRemoteShellScript(), "text/javascript; charset=utf-8")
       return
+    }
+
+    if (
+      method === "GET" &&
+      (url.pathname.startsWith("/assets/") || url.pathname.startsWith("/__remote_dev__/"))
+    ) {
+      const asset = await deps.getRemoteAsset(url.pathname)
+      if (asset) {
+        text(response, 200, asset.content, asset.contentType)
+        return
+      }
     }
 
     if (method === "GET" && url.pathname === "/events") {
@@ -207,6 +224,8 @@ class RemoteServerManagerStatic {
       this.broadcast("subscriptions.updated", {})
       return result
     },
+    getRemoteIndexHtml: () => getRemoteClientHtml(),
+    getRemoteAsset: (pathname) => getRemoteClientAsset(pathname),
   }
 
   async start(options?: StartOptions): Promise<StartResult> {
@@ -224,6 +243,8 @@ class RemoteServerManagerStatic {
       ...(options?.updateReadStatus ? { updateReadStatus: options.updateReadStatus } : {}),
       ...(options?.refreshFeed ? { refreshFeed: options.refreshFeed } : {}),
       ...(options?.refreshAllFeeds ? { refreshAllFeeds: options.refreshAllFeeds } : {}),
+      ...(options?.getRemoteIndexHtml ? { getRemoteIndexHtml: options.getRemoteIndexHtml } : {}),
+      ...(options?.getRemoteAsset ? { getRemoteAsset: options.getRemoteAsset } : {}),
     }
 
     this.server = createServer((request, response) => {
