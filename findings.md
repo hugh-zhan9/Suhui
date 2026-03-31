@@ -8,6 +8,58 @@
 - 远程访问与桌面端同权。
 - 用户明确不要求额外认证、访问码、随机端口、额外确认等产品限制。
 - 若远程 realtime 事件流断开，前端必须显式显示连接断开，不得伪装为成功写入。
+- 新要求：`http://<host>:41595/` 必须能直接打开与桌面应用一致的主界面，而不是一个能力裁剪过的 remote 专用页。
+
+## 41595 当前缺口清单
+
+### 结论
+
+- `41595` 当前不满足“界面和桌面端一致”的要求。
+- 根因不是样式差一点，而是 `41595` 现在运行的是 `apps/desktop/layer/renderer/src/remote/main.tsx -> RemoteApp` 这条独立入口，而桌面应用运行的是 `apps/desktop/layer/renderer/src/main.tsx -> RouterProvider -> App -> 主路由树`。
+- 因此 `41595` 现在本质上是“remote client”，不是“浏览器里的桌面端”。
+
+### 入口与架构缺口
+
+- `41595` 没有复用桌面端真正的启动链路。它未进入 `initializeApp()`、`RouterProvider`、`App`、`RootProviders` 这条主路径，所以天然拿不到桌面端的大部分初始化结果。
+- `41595` 没有跑桌面端路由树，因此不能按桌面端真实页面结构进入 timeline、entry、discover、settings 等页面，只能停留在 `RemoteApp` 定义的单页三栏壳。
+- `41595` 当前依赖的是一组手写 HTTP endpoint 和本地 state，不是桌面端现有 store/query/router 的正式 browser 适配层，所以能力扩展会持续分叉。
+- `41595` 当前虽然由主进程托管，但只是“托管 remote 页”，不是“托管桌面端完整 renderer 运行时”。
+
+### 布局与视觉缺口
+
+- `41595` 的顶层视觉是 `LAN Remote / Suhui Remote` 的专用 remote 头部，不是桌面端主界面。
+- `41595` 当前布局是“订阅管理 + 条目列表 + 详情”的单一三栏页，桌面端则包含完整 timeline/tab 切换、侧栏交互、主布局容器和对应动画/焦点体系。
+- `41595` 没有复用桌面端的 `SubscriptionColumn`、`EntryColumn`、`EntryContent` 组件树，视觉结构与交互细节天然无法一致。
+- `41595` 缺少桌面端的标题栏适配、窗口骨架、ready/skeleton 过渡和主应用级容器行为。
+
+### 主阅读链路缺口
+
+- `41595` 的条目详情目前是轻量 HTML 注入页，不是桌面端 `EntryContent` 渲染链，因此阅读体验、布局分型和内容附件能力都不一致。
+- `41595` 没有接入桌面端按 `FeedViewType` 切换后的完整内容布局体系，文章、图片、视频、社交流等视图不能保证与桌面端一致。
+- `41595` 只有基础 `Prev/Next`、`Mark Read/Unread`、排序和筛选，缺少桌面端完整的阅读动作体系、滚动导航、命令绑定和上下文行为。
+- `41595` 当前没有复用桌面端的虚拟列表、列表骨架、列表头、分组和细节展示逻辑，列表体验仍是简化实现。
+
+### 页面与功能覆盖缺口
+
+- `41595` 没有 discover 页面和对应订阅发现流程，桌面端的 discover 入口与内容未接入。
+- `41595` 没有 settings 路由和设置页面集合，桌面端的 appearance/general/profile/about/data-control/shortcuts 等页面未接入。
+- `41595` 没有桌面端全局路由能力，因此无法覆盖桌面端的子视图、详情页切换和页面间导航。
+- `41595` 没有桌面端命令系统、全局快捷键、命令面板等交互入口。
+- `41595` 没有桌面端现有的 AI、translation、readability 相关阅读增强链路。
+- `41595` 没有桌面端更多非主阅读页面和配套状态同步机制，因此无法称为“同一应用界面”。
+
+### 数据接入与能力边界缺口
+
+- 桌面端大量能力当前仍通过 Electron IPC、shared store 和初始化注入完成，`41595` 只补了最小 HTTP 面，因此浏览器端还不能等价承接这些能力。
+- `41595` 当前后端只暴露了 subscriptions、entries、unread、read-state、refresh 等最小集合，远不足以支撑桌面端完整页面树。
+- 只要浏览器端仍走“remote 专用 API + remote 专用 UI”，就会继续和桌面端产生功能差和行为差。
+
+### 一致性改造的直接目标
+
+- `41595` 需要从“remote 专用页”提升为“浏览器可运行的桌面端 renderer 主界面”。
+- 浏览器入口需要尽量复用桌面端现有 `main.tsx`、路由树、providers、页面组件和 store hooks，而不是继续扩写 `RemoteApp`。
+- 主进程需要补齐让 browser client 能跑通桌面端主界面所需的正式 adapter/API，而不是只补 remote 页专用 endpoint。
+- 在这个目标达成前，`41595` 只能被定义为“远程访问原型/裁剪客户端”，不能对外宣称为“与桌面端一致的网页端”。
 
 ## 研究发现
 
