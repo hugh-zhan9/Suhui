@@ -49,10 +49,13 @@
   - 新增 remote lifecycle 测试，验证主进程启动/关闭 remote server 的行为
   - 将 remote 生命周期接入 `BootstrapManager`
   - 新增最小 remote browser shell，允许浏览器打开 `/` 并展示订阅列表
+  - 新增 `/api/entries` 和 `/events`，让 remote shell 能展示 entry list 和连接状态
+  - 将 entry 查询默认实现改为 lazy import，避免测试路径触发额外主进程副作用
   - 运行新增 remote 测试并全部通过
   - 尝试运行主进程 `typecheck`，确认被仓库既有问题阻塞
 - 创建/修改的文件：
   - `apps/desktop/layer/main/src/application/subscription/service.ts`
+  - `apps/desktop/layer/main/src/application/entry/service.ts`
   - `apps/desktop/layer/main/src/remote/config.ts`
   - `apps/desktop/layer/main/src/remote/manager.ts`
   - `apps/desktop/layer/main/src/remote/manager.test.ts`
@@ -66,19 +69,21 @@
 
 ## 测试结果
 
-| 测试                | 输入                                                                 | 预期结果                                              | 实际结果                                  | 状态 |
-| ------------------- | -------------------------------------------------------------------- | ----------------------------------------------------- | ----------------------------------------- | ---- |
-| 设计文档提交        | `git commit`                                                         | 设计 spec 成功提交                                    | 已提交 `43fde504b`                        | 通过 |
-| remote server tests | `vitest run src/remote/manager.test.ts src/remote/lifecycle.test.ts` | remote server skeleton、生命周期与最小 shell 测试通过 | 6 个测试全部通过                          | 通过 |
-| 主进程 typecheck    | `pnpm --filter @suhui/electron-main typecheck`                       | 无错误                                                | 被仓库既有 TS6059/TS6307/历史测试问题阻塞 | 阻塞 |
+| 测试                   | 输入                                                                 | 预期结果                                              | 实际结果                                  | 状态 |
+| ---------------------- | -------------------------------------------------------------------- | ----------------------------------------------------- | ----------------------------------------- | ---- |
+| 设计文档提交           | `git commit`                                                         | 设计 spec 成功提交                                    | 已提交 `43fde504b`                        | 通过 |
+| remote server tests    | `vitest run src/remote/manager.test.ts src/remote/lifecycle.test.ts` | remote server skeleton、生命周期与最小 shell 测试通过 | 6 个测试全部通过                          | 通过 |
+| remote entry/SSE tests | `vitest run src/remote/manager.test.ts src/remote/lifecycle.test.ts` | entry API、SSE、remote shell 扩展后的测试通过         | 7 个测试全部通过                          | 通过 |
+| 主进程 typecheck       | `pnpm --filter @suhui/electron-main typecheck`                       | 无错误                                                | 被仓库既有 TS6059/TS6307/历史测试问题阻塞 | 阻塞 |
 
 ## 错误日志
 
-| 时间戳     | 错误                              | 尝试次数 | 解决方案                                               |
-| ---------- | --------------------------------- | -------- | ------------------------------------------------------ |
-| 2026-03-31 | 无 `writing-plans` skill          | 1        | 使用 `planning-with-files-zh` 流程和仓库内规划文件替代 |
-| 2026-03-31 | 首次 remote 测试命令路径错误      | 1        | 改为包目录下运行 `vitest run src/remote/...`           |
-| 2026-03-31 | 主进程 `typecheck` 被历史问题阻塞 | 1        | 记录为基线问题，本轮以新增 remote 测试通过作为验证依据 |
+| 时间戳     | 错误                               | 尝试次数 | 解决方案                                               |
+| ---------- | ---------------------------------- | -------- | ------------------------------------------------------ |
+| 2026-03-31 | 无 `writing-plans` skill           | 1        | 使用 `planning-with-files-zh` 流程和仓库内规划文件替代 |
+| 2026-03-31 | 首次 remote 测试命令路径错误       | 1        | 改为包目录下运行 `vitest run src/remote/...`           |
+| 2026-03-31 | 主进程 `typecheck` 被历史问题阻塞  | 1        | 记录为基线问题，本轮以新增 remote 测试通过作为验证依据 |
+| 2026-03-31 | entry 服务直接导入触发主进程副作用 | 1        | 改为在 remote manager 默认依赖中 lazy import           |
 
 ## 五问重启检查
 

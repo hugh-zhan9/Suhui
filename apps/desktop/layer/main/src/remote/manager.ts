@@ -10,15 +10,18 @@ type SubscriptionRecord = Awaited<
   ReturnType<typeof subscriptionApplicationService.listSubscriptions>
 >[number]
 
+type EntryRecord = any
+
 type RemoteServerDependencies = {
   getSubscriptions: () => Promise<SubscriptionRecord[]>
+  getEntries: (feedId?: string) => Promise<EntryRecord[]>
 }
 
 type StartOptions = Partial<{
   host: string
   port: number
 }> &
-  RemoteServerDependencies
+  Partial<RemoteServerDependencies>
 
 type RunningServerStatus = {
   running: true
@@ -78,8 +81,34 @@ const createRequestHandler =
       return
     }
 
+    if (method === "GET" && url.pathname === "/events") {
+      response.statusCode = 200
+      response.setHeader("Content-Type", "text/event-stream; charset=utf-8")
+      response.setHeader("Cache-Control", "no-cache, no-transform")
+      response.setHeader("Connection", "keep-alive")
+      response.setHeader("X-Accel-Buffering", "no")
+      response.write('event: ready\ndata: {"connected":true}\n\n')
+
+      const heartbeat = setInterval(() => {
+        response.write("event: ping\ndata: {}\n\n")
+      }, 15000)
+
+      request.on("close", () => {
+        clearInterval(heartbeat)
+        response.end()
+      })
+      return
+    }
+
     if (method === "GET" && url.pathname === "/status") {
       json(response, 200, getStatus())
+      return
+    }
+
+    if (method === "GET" && url.pathname === "/api/entries") {
+      const feedId = url.searchParams.get("feedId") || undefined
+      const entries = await deps.getEntries(feedId)
+      json(response, 200, { data: entries })
       return
     }
 
@@ -103,9 +132,13 @@ class RemoteServerManagerStatic {
 
   private deps: RemoteServerDependencies = {
     getSubscriptions: () => subscriptionApplicationService.listSubscriptions(),
+    getEntries: async (feedId?: string) => {
+      const { entryApplicationService } = await import("~/application/entry/service")
+      return entryApplicationService.listEntries(feedId)
+    },
   }
 
-  async start(options?: Partial<StartOptions>): Promise<StartResult> {
+  async start(options?: StartOptions): Promise<StartResult> {
     if (this.server) {
       return this.status as RunningServerStatus
     }
@@ -115,6 +148,7 @@ class RemoteServerManagerStatic {
     this.deps = {
       ...this.deps,
       ...(options?.getSubscriptions ? { getSubscriptions: options.getSubscriptions } : {}),
+      ...(options?.getEntries ? { getEntries: options.getEntries } : {}),
     }
 
     this.server = createServer((request, response) => {
