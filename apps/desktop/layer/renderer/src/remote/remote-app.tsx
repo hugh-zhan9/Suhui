@@ -52,6 +52,7 @@ export const RemoteApp = () => {
   const [activeFeedId, setActiveFeedId] = useState<string | null>(null)
   const [activeEntryId, setActiveEntryId] = useState<string | null>(null)
   const [activeEntry, setActiveEntry] = useState<EntryRecord | null>(null)
+  const [unreadOnly, setUnreadOnly] = useState(false)
   const [refreshingFeed, setRefreshingFeed] = useState(false)
   const [refreshingAll, setRefreshingAll] = useState(false)
   const [mutatingEntryId, setMutatingEntryId] = useState<string | null>(null)
@@ -75,6 +76,17 @@ export const RemoteApp = () => {
     () => activeSubscription?.title || "Entries",
     [activeSubscription],
   )
+
+  const activeEntryIndex = useMemo(
+    () => entries.findIndex((item) => item.id === activeEntryId),
+    [activeEntryId, entries],
+  )
+
+  const previousEntry = activeEntryIndex > 0 ? entries[activeEntryIndex - 1] : null
+  const nextEntry =
+    activeEntryIndex >= 0 && activeEntryIndex < entries.length - 1
+      ? entries[activeEntryIndex + 1]
+      : null
 
   useEffect(() => {
     setDraftTitle(activeSubscription?.title || "")
@@ -105,9 +117,15 @@ export const RemoteApp = () => {
     setStatus("Connected · Initial sync complete")
   }
 
-  const loadEntries = async (feedId: string) => {
+  const loadEntries = async (feedId: string, nextUnreadOnly = unreadOnly) => {
+    const searchParams = new URLSearchParams({
+      feedId,
+    })
+    if (nextUnreadOnly) {
+      searchParams.set("unreadOnly", "1")
+    }
     const payload = await fetchJson<{ data: EntryRecord[] }>(
-      `/api/entries?feedId=${encodeURIComponent(feedId)}`,
+      `/api/entries?${searchParams.toString()}`,
     )
     const nextEntries = payload.data || []
     setEntries(nextEntries)
@@ -144,7 +162,7 @@ export const RemoteApp = () => {
     void loadEntries(activeFeedId).catch((error) => {
       console.error("[remote-app] failed to load entries", error)
     })
-  }, [activeFeedId])
+  }, [activeFeedId, unreadOnly])
 
   useEffect(() => {
     if (!activeEntryId) {
@@ -188,20 +206,20 @@ export const RemoteApp = () => {
     }
   }, [activeFeedId])
 
-  const handleMarkRead = async (entryId: string) => {
+  const handleUpdateReadStatus = async (entryId: string, read: boolean) => {
     setMutatingEntryId(entryId)
     try {
       await fetchJson<{ ok: true }>("/api/entries/read", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ entryIds: [entryId], read: true }),
+        body: JSON.stringify({ entryIds: [entryId], read }),
       })
       await loadSubscriptions()
       if (activeFeedId) {
         await loadEntries(activeFeedId)
       }
     } catch (error) {
-      console.error("[remote-app] failed to mark read", error)
+      console.error("[remote-app] failed to update read state", error)
     } finally {
       setMutatingEntryId(null)
     }
@@ -335,6 +353,14 @@ export const RemoteApp = () => {
               <h2 className="remote-section-title">Sources</h2>
             </div>
             <div className="remote-actions">
+              <button
+                className={unreadOnly ? "remote-button" : "remote-button remote-button--secondary"}
+                onClick={() => {
+                  setUnreadOnly((current) => !current)
+                }}
+              >
+                {unreadOnly ? "Unread Only On" : "Unread Only Off"}
+              </button>
               <button
                 className="remote-button remote-button--secondary"
                 disabled={refreshingAll}
@@ -521,6 +547,30 @@ export const RemoteApp = () => {
               <p className="remote-section-label">Entries</p>
               <h2 className="remote-section-title">{activeSubscriptionTitle}</h2>
             </div>
+            <div className="remote-actions">
+              <button
+                className="remote-button remote-button--secondary"
+                disabled={!previousEntry}
+                onClick={() => {
+                  if (previousEntry) {
+                    setActiveEntryId(previousEntry.id)
+                  }
+                }}
+              >
+                Prev
+              </button>
+              <button
+                className="remote-button remote-button--secondary"
+                disabled={!nextEntry}
+                onClick={() => {
+                  if (nextEntry) {
+                    setActiveEntryId(nextEntry.id)
+                  }
+                }}
+              >
+                Next
+              </button>
+            </div>
           </div>
 
           <div className="remote-list">
@@ -556,10 +606,20 @@ export const RemoteApp = () => {
                       disabled={!!item.read || mutatingEntryId === item.id}
                       onClick={() => {
                         setActiveEntryId(item.id)
-                        void handleMarkRead(item.id)
+                        void handleUpdateReadStatus(item.id, true)
                       }}
                     >
                       {item.read ? "Read" : mutatingEntryId === item.id ? "Saving..." : "Mark Read"}
+                    </button>
+                    <button
+                      className="remote-button remote-button--secondary"
+                      disabled={!item.read || mutatingEntryId === item.id}
+                      onClick={() => {
+                        setActiveEntryId(item.id)
+                        void handleUpdateReadStatus(item.id, false)
+                      }}
+                    >
+                      {mutatingEntryId === item.id && item.read ? "Saving..." : "Mark Unread"}
                     </button>
                   </div>
                 </article>
@@ -571,9 +631,62 @@ export const RemoteApp = () => {
             <article className="remote-detail">
               <p className="remote-section-label">Detail</p>
               <h3 className="remote-detail-title">{activeEntry.title || activeEntry.id}</h3>
+              <p className="remote-detail-description">
+                {activeEntry.publishedAt
+                  ? new Date(activeEntry.publishedAt).toLocaleString()
+                  : "Unknown publish time"}
+              </p>
               {activeEntry.description && (
                 <p className="remote-detail-description">{activeEntry.description}</p>
               )}
+              <div className="remote-actions remote-detail-actions">
+                <button
+                  className="remote-button"
+                  disabled={!!activeEntry.read || mutatingEntryId === activeEntry.id}
+                  onClick={() => {
+                    void handleUpdateReadStatus(activeEntry.id, true)
+                  }}
+                >
+                  {activeEntry.read
+                    ? "Read"
+                    : mutatingEntryId === activeEntry.id
+                      ? "Saving..."
+                      : "Mark Read"}
+                </button>
+                <button
+                  className="remote-button remote-button--secondary"
+                  disabled={!activeEntry.read || mutatingEntryId === activeEntry.id}
+                  onClick={() => {
+                    void handleUpdateReadStatus(activeEntry.id, false)
+                  }}
+                >
+                  {mutatingEntryId === activeEntry.id && activeEntry.read
+                    ? "Saving..."
+                    : "Mark Unread"}
+                </button>
+                <button
+                  className="remote-button remote-button--secondary"
+                  disabled={!previousEntry}
+                  onClick={() => {
+                    if (previousEntry) {
+                      setActiveEntryId(previousEntry.id)
+                    }
+                  }}
+                >
+                  Prev
+                </button>
+                <button
+                  className="remote-button remote-button--secondary"
+                  disabled={!nextEntry}
+                  onClick={() => {
+                    if (nextEntry) {
+                      setActiveEntryId(nextEntry.id)
+                    }
+                  }}
+                >
+                  Next
+                </button>
+              </div>
               <div
                 className="remote-detail-content"
                 dangerouslySetInnerHTML={{

@@ -15,7 +15,7 @@ type EntryRecord = any
 
 type RemoteServerDependencies = {
   getSubscriptions: () => Promise<SubscriptionRecord[]>
-  getEntries: (feedId?: string) => Promise<EntryRecord[]>
+  getEntries: (options?: { feedId?: string; unreadOnly?: boolean }) => Promise<EntryRecord[]>
   getEntry: (entryId: string) => Promise<EntryRecord | null>
   getUnreadCounts: () => Promise<Array<{ id: string; count: number }>>
   createSubscription: (payload: {
@@ -149,7 +149,10 @@ const createRequestHandler =
 
     if (method === "GET" && url.pathname === "/api/entries") {
       const feedId = url.searchParams.get("feedId") || undefined
-      const entries = await deps.getEntries(feedId)
+      const unreadOnly = ["1", "true"].includes(
+        (url.searchParams.get("unreadOnly") || "").toLowerCase(),
+      )
+      const entries = await deps.getEntries({ feedId, unreadOnly })
       json(response, 200, { data: entries })
       return
     }
@@ -246,9 +249,9 @@ class RemoteServerManagerStatic {
 
   private deps: RemoteServerDependencies = {
     getSubscriptions: () => subscriptionApplicationService.listSubscriptions(),
-    getEntries: async (feedId?: string) => {
+    getEntries: async (options?: { feedId?: string; unreadOnly?: boolean }) => {
       const { entryApplicationService } = await import("~/application/entry/service")
-      return entryApplicationService.listEntries(feedId)
+      return entryApplicationService.listEntries(options)
     },
     getEntry: async (entryId: string) => {
       const { entryApplicationService } = await import("~/application/entry/service")

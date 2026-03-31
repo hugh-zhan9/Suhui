@@ -197,6 +197,10 @@ body {
   gap: 8px;
 }
 
+.remote-detail-actions {
+  margin-bottom: 14px;
+}
+
 .remote-inline-actions {
   display: flex;
   justify-content: flex-end;

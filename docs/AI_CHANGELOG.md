@@ -5891,3 +5891,20 @@
 - `progress.md`
 
 ---
+
+## [2026-03-31 15:13] [Feature]
+
+- **Change**: 为远程阅读端补充未读筛选、标未读和上一篇/下一篇切换，并新增 unreadOnly 服务端查询参数。
+- **Risk Analysis**: 主要风险在于 unreadOnly 现在只覆盖 remote 查询路径，后续如果列表查询逻辑继续演进，需要保持与桌面端未读口径一致；另外 Prev/Next 当前基于当前列表顺序工作，切换 unreadOnly 或收到 SSE 更新时会依赖前端重算选中项，需要继续观察边界行为。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/application/entry/service.ts`
+- `apps/desktop/layer/main/src/remote/manager.ts`
+- `apps/desktop/layer/main/src/remote/manager.test.ts`
+- `apps/desktop/layer/renderer/src/remote/remote-app.tsx`
+- `apps/desktop/layer/renderer/src/remote/remote.css`
+- `task_plan.md`
+- `findings.md`
+- `progress.md`
+
+---
