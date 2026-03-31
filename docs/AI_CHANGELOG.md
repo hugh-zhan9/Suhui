@@ -5924,3 +5924,19 @@
 - `progress.md`
 
 ---
+
+## [2026-03-31 15:21] [Feature]
+
+- **Change**: 为远程阅读列表增加最新、最旧和未读优先排序，并让自动前进逻辑跟随当前排序结果工作。
+- **Risk Analysis**: 主要风险在于当前排序仍是前端本地排序，如果后续远程端引入分页或更复杂服务端排序，需要同步重构 helper 和导航逻辑；现阶段列表是全量加载，这个方案足够直接且可控。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/remote/remote-app.tsx`
+- `apps/desktop/layer/renderer/src/remote/remote.css`
+- `apps/desktop/layer/renderer/src/remote/entry-navigation.ts`
+- `apps/desktop/layer/renderer/src/remote/entry-navigation.test.ts`
+- `task_plan.md`
+- `findings.md`
+- `progress.md`
+
+---

@@ -1,7 +1,11 @@
 import { FeedViewType } from "@suhui/constants"
 import { useEffect, useMemo, useState } from "react"
 
-import { getPreferredEntryIdAfterReadChange } from "./entry-navigation"
+import {
+  type EntrySortMode,
+  getPreferredEntryIdAfterReadChange,
+  sortEntries,
+} from "./entry-navigation"
 
 type SubscriptionRecord = {
   id: string
@@ -40,6 +44,12 @@ const VIEW_OPTIONS = [
   { value: FeedViewType.Notifications, label: "Notifications" },
 ]
 
+const ENTRY_SORT_OPTIONS: Array<{ value: EntrySortMode; label: string }> = [
+  { value: "newest", label: "Newest" },
+  { value: "oldest", label: "Oldest" },
+  { value: "unread-first", label: "Unread First" },
+]
+
 const fetchJson = async <T,>(input: string, init?: RequestInit): Promise<T> => {
   const response = await fetch(input, init)
   if (!response.ok) {
@@ -58,6 +68,7 @@ export const RemoteApp = () => {
   const [activeEntryId, setActiveEntryId] = useState<string | null>(null)
   const [activeEntry, setActiveEntry] = useState<EntryRecord | null>(null)
   const [unreadOnly, setUnreadOnly] = useState(false)
+  const [entrySort, setEntrySort] = useState<EntrySortMode>("newest")
   const [refreshingFeed, setRefreshingFeed] = useState(false)
   const [refreshingAll, setRefreshingAll] = useState(false)
   const [mutatingEntryId, setMutatingEntryId] = useState<string | null>(null)
@@ -82,15 +93,17 @@ export const RemoteApp = () => {
     [activeSubscription],
   )
 
+  const sortedEntries = useMemo(() => sortEntries(entries, entrySort), [entries, entrySort])
+
   const activeEntryIndex = useMemo(
-    () => entries.findIndex((item) => item.id === activeEntryId),
-    [activeEntryId, entries],
+    () => sortedEntries.findIndex((item) => item.id === activeEntryId),
+    [activeEntryId, sortedEntries],
   )
 
-  const previousEntry = activeEntryIndex > 0 ? entries[activeEntryIndex - 1] : null
+  const previousEntry = activeEntryIndex > 0 ? sortedEntries[activeEntryIndex - 1] : null
   const nextEntry =
-    activeEntryIndex >= 0 && activeEntryIndex < entries.length - 1
-      ? entries[activeEntryIndex + 1]
+    activeEntryIndex >= 0 && activeEntryIndex < sortedEntries.length - 1
+      ? sortedEntries[activeEntryIndex + 1]
       : null
 
   useEffect(() => {
@@ -214,7 +227,7 @@ export const RemoteApp = () => {
   const handleUpdateReadStatus = async (entryId: string, read: boolean) => {
     setMutatingEntryId(entryId)
     const preferredNextEntryId = getPreferredEntryIdAfterReadChange({
-      entries,
+      entries: sortedEntries,
       activeEntryId,
       changedEntryId: entryId,
       nextRead: read,
@@ -564,6 +577,19 @@ export const RemoteApp = () => {
               <h2 className="remote-section-title">{activeSubscriptionTitle}</h2>
             </div>
             <div className="remote-actions">
+              <select
+                className="remote-input remote-input--compact"
+                value={entrySort}
+                onChange={(event) => {
+                  setEntrySort(event.target.value as EntrySortMode)
+                }}
+              >
+                {ENTRY_SORT_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
               <button
                 className="remote-button remote-button--secondary"
                 disabled={!previousEntry}
@@ -592,10 +618,10 @@ export const RemoteApp = () => {
           <div className="remote-list">
             {!activeFeedId ? (
               <p className="remote-empty">Choose a subscription.</p>
-            ) : entries.length === 0 ? (
+            ) : sortedEntries.length === 0 ? (
               <p className="remote-empty">No entries for this subscription yet.</p>
             ) : (
-              entries.map((item) => (
+              sortedEntries.map((item) => (
                 <article
                   key={item.id}
                   className={
