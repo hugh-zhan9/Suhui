@@ -30,36 +30,63 @@
 
 ### 阶段 3：文档自检与提交
 
-- **状态：** in_progress
+- **状态：** complete
 - 执行的操作：
   - 对详细设计与开发计划文档进行自检
   - 去除模糊词，确保计划可直接用于实现拆解
+  - 提交详细设计、计划和规划文件
 - 创建/修改的文件：
   - `task_plan.md`
   - `progress.md`
   - `docs/plans/2026-03-31-remote-browser-access-detailed-design-and-plan.md`
 
+### 阶段 4：Slice 1 实现
+
+- **状态：** in_progress
+- 执行的操作：
+  - 按 TDD 新增 `RemoteServerManager` 测试，先验证 `/health`、`/status`、`/api/subscriptions`
+  - 实现 `RemoteServerManager`、remote config 和最小 `SubscriptionApplicationService`
+  - 新增 remote lifecycle 测试，验证主进程启动/关闭 remote server 的行为
+  - 将 remote 生命周期接入 `BootstrapManager`
+  - 运行新增 remote 测试并全部通过
+  - 尝试运行主进程 `typecheck`，确认被仓库既有问题阻塞
+- 创建/修改的文件：
+  - `apps/desktop/layer/main/src/application/subscription/service.ts`
+  - `apps/desktop/layer/main/src/remote/config.ts`
+  - `apps/desktop/layer/main/src/remote/manager.ts`
+  - `apps/desktop/layer/main/src/remote/manager.test.ts`
+  - `apps/desktop/layer/main/src/remote/lifecycle.ts`
+  - `apps/desktop/layer/main/src/remote/lifecycle.test.ts`
+  - `apps/desktop/layer/main/src/manager/bootstrap.ts`
+  - `task_plan.md`
+  - `findings.md`
+  - `progress.md`
+
 ## 测试结果
 
-| 测试         | 输入         | 预期结果           | 实际结果           | 状态 |
-| ------------ | ------------ | ------------------ | ------------------ | ---- |
-| 设计文档提交 | `git commit` | 设计 spec 成功提交 | 已提交 `43fde504b` | 通过 |
+| 测试                | 输入                                                                 | 预期结果                                  | 实际结果                                  | 状态 |
+| ------------------- | -------------------------------------------------------------------- | ----------------------------------------- | ----------------------------------------- | ---- |
+| 设计文档提交        | `git commit`                                                         | 设计 spec 成功提交                        | 已提交 `43fde504b`                        | 通过 |
+| remote server tests | `vitest run src/remote/manager.test.ts src/remote/lifecycle.test.ts` | remote server skeleton 与生命周期测试通过 | 5 个测试全部通过                          | 通过 |
+| 主进程 typecheck    | `pnpm --filter @suhui/electron-main typecheck`                       | 无错误                                    | 被仓库既有 TS6059/TS6307/历史测试问题阻塞 | 阻塞 |
 
 ## 错误日志
 
-| 时间戳     | 错误                     | 尝试次数 | 解决方案                                               |
-| ---------- | ------------------------ | -------- | ------------------------------------------------------ |
-| 2026-03-31 | 无 `writing-plans` skill | 1        | 使用 `planning-with-files-zh` 流程和仓库内规划文件替代 |
+| 时间戳     | 错误                              | 尝试次数 | 解决方案                                               |
+| ---------- | --------------------------------- | -------- | ------------------------------------------------------ |
+| 2026-03-31 | 无 `writing-plans` skill          | 1        | 使用 `planning-with-files-zh` 流程和仓库内规划文件替代 |
+| 2026-03-31 | 首次 remote 测试命令路径错误      | 1        | 改为包目录下运行 `vitest run src/remote/...`           |
+| 2026-03-31 | 主进程 `typecheck` 被历史问题阻塞 | 1        | 记录为基线问题，本轮以新增 remote 测试通过作为验证依据 |
 
 ## 五问重启检查
 
-| 问题           | 答案                                                     |
-| -------------- | -------------------------------------------------------- |
-| 我在哪里？     | 阶段 2：详细设计与开发计划                               |
-| 我要去哪里？   | 输出详细设计文档、开发计划并提交给用户审阅               |
-| 目标是什么？   | 形成一份可直接指导实现的远程浏览器访问详细设计和开发计划 |
-| 我学到了什么？ | 见 `findings.md`                                         |
-| 我做了什么？   | 见上方记录                                               |
+| 问题           | 答案                                              |
+| -------------- | ------------------------------------------------- |
+| 我在哪里？     | 阶段 4：Slice 1 实现                              |
+| 我要去哪里？   | 继续扩展 remote capability 与浏览器端入口         |
+| 目标是什么？   | 按远程访问计划逐步落地可运行实现，从 Slice 1 开始 |
+| 我学到了什么？ | 见 `findings.md`                                  |
+| 我做了什么？   | 见上方记录                                        |
 
 ---
 
