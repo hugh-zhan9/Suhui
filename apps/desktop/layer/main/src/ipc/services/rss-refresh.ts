@@ -31,6 +31,17 @@ export const buildRefreshedFeed = (existing: FeedRow, parsed: ParsedFeed) => {
     description: parsed.description || existing.description || null,
     image: parsed.image || existing.image || null,
     siteUrl: parsed.siteUrl || existing.siteUrl || null,
+    errorAt: null,
+    errorMessage: null,
+    updatedAt: Date.now(),
+  }
+}
+
+export const buildFailedFeed = (existing: FeedRow, errorMessage: string) => {
+  return {
+    ...existing,
+    errorAt: new Date().toISOString(),
+    errorMessage,
     updatedAt: Date.now(),
   }
 }

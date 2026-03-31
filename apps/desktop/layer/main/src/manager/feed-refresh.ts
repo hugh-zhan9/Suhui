@@ -14,6 +14,7 @@ import { resolveHttpErrorMessage } from "../ipc/services/rss-http-error"
 import { parseRssFeed } from "../ipc/services/rss-parser"
 import {
   buildEntryIdentityKey,
+  buildFailedFeed,
   buildRefreshedFeed,
   buildStableLocalEntryId,
 } from "../ipc/services/rss-refresh"
@@ -229,59 +230,65 @@ export class FeedRefreshService {
       throw new Error(`Feed not found: ${feedId}`)
     }
 
-    const preview = await this.buildPreviewData(existingFeed.url, feedId)
-    const refreshedFeed = buildRefreshedFeed(existingFeed as any, preview.feed as any)
+    try {
+      const preview = await this.buildPreviewData(existingFeed.url, feedId)
+      const refreshedFeed = buildRefreshedFeed(existingFeed as any, preview.feed as any)
 
-    await FeedService.upsertMany([refreshedFeed] as any)
+      await FeedService.upsertMany([refreshedFeed] as any)
 
-    const { entries } = preview
-    if (entries.length > 0) {
-      const existingEntries = await db.query.entriesTable.findMany({
-        where: (entriesTable, { eq }) => eq(entriesTable.feedId, feedId),
-        columns: {
-          id: true,
-          guid: true,
-          url: true,
-          title: true,
-          publishedAt: true,
-          read: true,
-        },
-      })
-      const existingIdByKey = new Map<string, string>()
-      const existingReadById = new Map<string, boolean>()
-      for (const existing of existingEntries) {
-        const key = buildEntryIdentityKey(existing as any)
-        if (!existingIdByKey.has(key)) {
-          existingIdByKey.set(key, existing.id)
+      const { entries } = preview
+      if (entries.length > 0) {
+        const existingEntries = await db.query.entriesTable.findMany({
+          where: (entriesTable, { eq }) => eq(entriesTable.feedId, feedId),
+          columns: {
+            id: true,
+            guid: true,
+            url: true,
+            title: true,
+            publishedAt: true,
+            read: true,
+          },
+        })
+        const existingIdByKey = new Map<string, string>()
+        const existingReadById = new Map<string, boolean>()
+        for (const existing of existingEntries) {
+          const key = buildEntryIdentityKey(existing as any)
+          if (!existingIdByKey.has(key)) {
+            existingIdByKey.set(key, existing.id)
+          }
+          const read =
+            typeof existing.read === "boolean"
+              ? existing.read
+              : existing.read === 1 || existing.read === "1"
+          existingReadById.set(existing.id, read)
         }
-        const read =
-          typeof existing.read === "boolean"
-            ? existing.read
-            : existing.read === 1 || existing.read === "1"
-        existingReadById.set(existing.id, read)
+
+        const entriesToSave = entries.map((entry) => ({
+          ...entry,
+          id: existingIdByKey.get(buildEntryIdentityKey(entry as any)) || entry.id,
+          read:
+            existingReadById.get(existingIdByKey.get(buildEntryIdentityKey(entry as any)) || "") ??
+            entry.read,
+          publishedAt: toTimestampMs(entry.publishedAt) ?? Date.now(),
+          insertedAt: toTimestampMs(entry.insertedAt) ?? Date.now(),
+          readabilityUpdatedAt: toTimestampMs(entry.readabilityUpdatedAt),
+        }))
+        await EntryService.upsertMany(entriesToSave as any)
       }
 
-      const entriesToSave = entries.map((entry) => ({
-        ...entry,
-        id: existingIdByKey.get(buildEntryIdentityKey(entry as any)) || entry.id,
-        read:
-          existingReadById.get(existingIdByKey.get(buildEntryIdentityKey(entry as any)) || "") ??
-          entry.read,
-        publishedAt: toTimestampMs(entry.publishedAt) ?? Date.now(),
-        insertedAt: toTimestampMs(entry.insertedAt) ?? Date.now(),
-        readabilityUpdatedAt: toTimestampMs(entry.readabilityUpdatedAt),
-      }))
-      await EntryService.upsertMany(entriesToSave as any)
-    }
+      // 尝试重试由于前置依赖缺失而 pending 的同步操作（后台执行）
+      drainPendingOps().catch((err) => {
+        console.error("[FeedRefreshService] error draining pending ops after refresh:", err)
+      })
 
-    // 尝试重试由于前置依赖缺失而 pending 的同步操作（后台执行）
-    drainPendingOps().catch((err) => {
-      console.error("[FeedRefreshService] error draining pending ops after refresh:", err)
-    })
-
-    return {
-      feed: refreshedFeed,
-      entriesCount: entries.length,
+      return {
+        feed: refreshedFeed,
+        entriesCount: entries.length,
+      }
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error)
+      await FeedService.upsertMany([buildFailedFeed(existingFeed as any, reason)] as any)
+      throw error
     }
   }
 
