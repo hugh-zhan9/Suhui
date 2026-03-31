@@ -1,3 +1,4 @@
+import { FeedViewType } from "@suhui/constants"
 import { useEffect, useMemo, useState } from "react"
 
 type SubscriptionRecord = {
@@ -6,6 +7,7 @@ type SubscriptionRecord = {
   category?: string | null
   title?: string | null
   feedId?: string | null
+  view?: number | null
 }
 
 type EntryRecord = {
@@ -23,6 +25,15 @@ type UnreadRecord = {
   id: string
   count: number
 }
+
+const VIEW_OPTIONS = [
+  { value: FeedViewType.Articles, label: "Articles" },
+  { value: FeedViewType.SocialMedia, label: "Social" },
+  { value: FeedViewType.Pictures, label: "Pictures" },
+  { value: FeedViewType.Videos, label: "Videos" },
+  { value: FeedViewType.Audios, label: "Audios" },
+  { value: FeedViewType.Notifications, label: "Notifications" },
+]
 
 const fetchJson = async <T,>(input: string, init?: RequestInit): Promise<T> => {
   const response = await fetch(input, init)
@@ -45,14 +56,31 @@ export const RemoteApp = () => {
   const [refreshingAll, setRefreshingAll] = useState(false)
   const [mutatingEntryId, setMutatingEntryId] = useState<string | null>(null)
   const [creatingSubscription, setCreatingSubscription] = useState(false)
+  const [savingSubscription, setSavingSubscription] = useState(false)
   const [deletingSubscriptionId, setDeletingSubscriptionId] = useState<string | null>(null)
   const [newFeedUrl, setNewFeedUrl] = useState("")
   const [newFeedTitle, setNewFeedTitle] = useState("")
+  const [newFeedCategory, setNewFeedCategory] = useState("")
+  const [newFeedView, setNewFeedView] = useState<number>(FeedViewType.Articles)
+  const [draftTitle, setDraftTitle] = useState("")
+  const [draftCategory, setDraftCategory] = useState("")
+  const [draftView, setDraftView] = useState<number>(FeedViewType.Articles)
 
-  const activeSubscriptionTitle = useMemo(
-    () => subscriptions.find((item) => item.feedId === activeFeedId)?.title || "Entries",
+  const activeSubscription = useMemo(
+    () => subscriptions.find((item) => item.feedId === activeFeedId) || null,
     [activeFeedId, subscriptions],
   )
+
+  const activeSubscriptionTitle = useMemo(
+    () => activeSubscription?.title || "Entries",
+    [activeSubscription],
+  )
+
+  useEffect(() => {
+    setDraftTitle(activeSubscription?.title || "")
+    setDraftCategory(activeSubscription?.category || "")
+    setDraftView(activeSubscription?.view ?? FeedViewType.Articles)
+  }, [activeSubscription])
 
   const loadSubscriptions = async () => {
     setStatus("Loading subscriptions...")
@@ -189,12 +217,15 @@ export const RemoteApp = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           url: newFeedUrl.trim(),
-          view: 1,
+          view: newFeedView,
+          category: newFeedCategory.trim() || undefined,
           title: newFeedTitle.trim() || undefined,
         }),
       })
       setNewFeedUrl("")
       setNewFeedTitle("")
+      setNewFeedCategory("")
+      setNewFeedView(FeedViewType.Articles)
       await loadSubscriptions()
       setStatus("Connected · Subscription created")
     } catch (error) {
@@ -202,6 +233,30 @@ export const RemoteApp = () => {
       console.error("[remote-app] failed to create subscription", error)
     } finally {
       setCreatingSubscription(false)
+    }
+  }
+
+  const handleSaveSubscription = async () => {
+    if (!activeSubscription?.id) return
+    setSavingSubscription(true)
+    setStatus("Saving subscription...")
+    try {
+      await fetchJson(`/api/subscriptions/${encodeURIComponent(activeSubscription.id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: draftTitle.trim() || null,
+          category: draftCategory.trim() || null,
+          view: draftView,
+        }),
+      })
+      await loadSubscriptions()
+      setStatus("Connected · Subscription saved")
+    } catch (error) {
+      setStatus("Connected · Save failed")
+      console.error("[remote-app] failed to save subscription", error)
+    } finally {
+      setSavingSubscription(false)
     }
   }
 
@@ -318,6 +373,27 @@ export const RemoteApp = () => {
                 setNewFeedTitle(event.target.value)
               }}
             />
+            <input
+              className="remote-input"
+              placeholder="Category"
+              value={newFeedCategory}
+              onChange={(event) => {
+                setNewFeedCategory(event.target.value)
+              }}
+            />
+            <select
+              className="remote-input"
+              value={newFeedView}
+              onChange={(event) => {
+                setNewFeedView(Number(event.target.value))
+              }}
+            >
+              {VIEW_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
             <button
               className="remote-button"
               disabled={creatingSubscription || !newFeedUrl.trim()}
@@ -352,7 +428,14 @@ export const RemoteApp = () => {
                     >
                       <span className="remote-card-title">{item.title || item.id}</span>
                       <span className="remote-card-meta">
-                        {[item.type, item.category, item.feedId].filter(Boolean).join(" · ")}
+                        {[
+                          item.type,
+                          item.category,
+                          item.feedId,
+                          VIEW_OPTIONS.find((option) => option.value === item.view)?.label,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
                       </span>
                       {unread > 0 && <span className="remote-badge">{unread} unread</span>}
                     </button>
@@ -370,6 +453,64 @@ export const RemoteApp = () => {
                   </article>
                 )
               })
+            )}
+          </div>
+
+          <div className="remote-editor">
+            <div className="remote-pane-header remote-pane-header--stack">
+              <div>
+                <p className="remote-section-label">Manage</p>
+                <h3 className="remote-section-title remote-section-title--small">
+                  {activeSubscription
+                    ? activeSubscription.title || activeSubscription.id
+                    : "Select a source"}
+                </h3>
+              </div>
+            </div>
+
+            {!activeSubscription ? (
+              <p className="remote-empty">Choose a subscription to edit it.</p>
+            ) : (
+              <div className="remote-create-form">
+                <input
+                  className="remote-input"
+                  placeholder="Title"
+                  value={draftTitle}
+                  onChange={(event) => {
+                    setDraftTitle(event.target.value)
+                  }}
+                />
+                <input
+                  className="remote-input"
+                  placeholder="Category"
+                  value={draftCategory}
+                  onChange={(event) => {
+                    setDraftCategory(event.target.value)
+                  }}
+                />
+                <select
+                  className="remote-input"
+                  value={draftView}
+                  onChange={(event) => {
+                    setDraftView(Number(event.target.value))
+                  }}
+                >
+                  {VIEW_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  className="remote-button"
+                  disabled={savingSubscription}
+                  onClick={() => {
+                    void handleSaveSubscription()
+                  }}
+                >
+                  {savingSubscription ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
             )}
           </div>
         </section>

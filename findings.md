@@ -38,6 +38,8 @@
 - subscription 管理可以先收口到 `POST /api/subscriptions` 与 `DELETE /api/subscriptions/:id` 两个 endpoint，先覆盖新增/删除，再把编辑能力后续补齐。
 - 新增订阅当前最稳的复用路径是调用现有 `DbService.addFeed()`，这样能直接继承桌面端已存在的 feed 解析、去重与入库逻辑，避免在 remote 路径重写一份。
 - 正式 remote client 中的订阅管理 UI 先保持极简即可：URL + 可选标题创建、列表项删除；这足以验证“远程端与桌面端共用写入口”的关键链路。
+- 订阅编辑同样可以先只暴露 `title/category/view` 三个字段；这已经覆盖远程管理最核心的元数据维护需求。
+- remote 端创建订阅默认 view 不应写死魔法数字，应该显式使用 `FeedViewType.Articles` 作为默认值，否则会把新订阅落到错误分组。
 
 ## 技术决策
 
@@ -58,6 +60,7 @@
 | entry detail 先在 remote client 侧做轻量 HTML 展示                            | 先确保可读与可维护，再考虑复用桌面端完整渲染体系         |
 | subscription create 先复用 `DbService.addFeed()`                              | 直接继承已存在的桌面端 add-feed 逻辑，降低远程写路径分叉 |
 | subscription 管理先落最小 create/delete UI                                    | 先打通远程端管理闭环，再逐步补编辑和更细能力             |
+| subscription update 先只支持 `title/category/view`                            | 覆盖核心管理诉求，同时保持 API 和前端复杂度可控          |
 
 ## 遇到的问题
 

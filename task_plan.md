@@ -58,6 +58,8 @@
 - [x] 打通 entry detail 读取与 remote detail 展示
 - [x] 打通 subscription create/delete 远程写接口
 - [x] 在正式 remote client 中补充最小订阅管理 UI（新增/删除）
+- [x] 打通 subscription update 远程写接口
+- [x] 在正式 remote client 中补充订阅编辑 UI（标题/分类/view）
 - [ ] 补充更多远程 capability 与 remote client 深化集成
 - **状态：** in_progress
 

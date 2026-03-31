@@ -25,6 +25,10 @@ type RemoteServerDependencies = {
     title?: string
   }) => Promise<unknown>
   deleteSubscription: (subscriptionId: string) => Promise<void>
+  updateSubscription: (
+    subscriptionId: string,
+    payload: { title?: string | null; category?: string | null; view?: number },
+  ) => Promise<unknown>
   updateReadStatus: (payload: { entryIds: string[]; read: boolean }) => Promise<void>
   refreshFeed: (feedId: string) => Promise<unknown>
   refreshAllFeeds: () => Promise<unknown>
@@ -182,6 +186,18 @@ const createRequestHandler =
       return
     }
 
+    if (method === "PATCH" && url.pathname.startsWith("/api/subscriptions/")) {
+      const subscriptionId = decodeURIComponent(url.pathname.replace("/api/subscriptions/", ""))
+      const payload = await readJsonBody<{
+        title?: string | null
+        category?: string | null
+        view?: number
+      }>(request)
+      const result = await deps.updateSubscription(subscriptionId, payload)
+      json(response, 200, { data: result })
+      return
+    }
+
     if (method === "POST" && url.pathname === "/api/entries/read") {
       const payload = await readJsonBody<{ entryIds: string[]; read: boolean }>(request)
       await deps.updateReadStatus(payload)
@@ -253,6 +269,15 @@ class RemoteServerManagerStatic {
       this.broadcast("subscriptions.updated", {})
       this.broadcast("entries.updated", {})
     },
+    updateSubscription: async (subscriptionId, payload) => {
+      const result = await subscriptionApplicationService.updateSubscription(
+        subscriptionId,
+        payload,
+      )
+      this.broadcast("subscriptions.updated", {})
+      this.broadcast("entries.updated", {})
+      return result
+    },
     updateReadStatus: async (payload) => {
       const { entryApplicationService } = await import("~/application/entry/service")
       await entryApplicationService.updateReadStatus(payload)
@@ -292,6 +317,7 @@ class RemoteServerManagerStatic {
       ...(options?.getUnreadCounts ? { getUnreadCounts: options.getUnreadCounts } : {}),
       ...(options?.createSubscription ? { createSubscription: options.createSubscription } : {}),
       ...(options?.deleteSubscription ? { deleteSubscription: options.deleteSubscription } : {}),
+      ...(options?.updateSubscription ? { updateSubscription: options.updateSubscription } : {}),
       ...(options?.updateReadStatus ? { updateReadStatus: options.updateReadStatus } : {}),
       ...(options?.refreshFeed ? { refreshFeed: options.refreshFeed } : {}),
       ...(options?.refreshAllFeeds ? { refreshAllFeeds: options.refreshAllFeeds } : {}),
