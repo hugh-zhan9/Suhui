@@ -97,6 +97,23 @@
   - `findings.md`
   - `progress.md`
 
+### 阶段 5：文档同步
+
+- **状态：** complete
+- 执行的操作：
+  - 复核 `AI-CONTEXT.md`、远程访问 spec、详细设计计划与规划文件
+  - 对照当前代码确认远程访问已落地为“阅读 + 轻量订阅管理可用”
+  - 更新主上下文中的远程访问能力、边界、模块定位和当前优先级
+  - 在 spec 与 plan 中增加当前实现快照，避免把已实现能力继续写成未来计划
+  - 同步 `task_plan.md`、`findings.md`、`progress.md`
+- 创建/修改的文件：
+  - `AI-CONTEXT.md`
+  - `docs/superpowers/specs/2026-03-31-remote-browser-access-design.md`
+  - `docs/plans/2026-03-31-remote-browser-access-detailed-design-and-plan.md`
+  - `task_plan.md`
+  - `findings.md`
+  - `progress.md`
+
 ## 测试结果
 
 | 测试                                 | 输入                                                                                     | 预期结果                                              | 实际结果                                     | 状态 |

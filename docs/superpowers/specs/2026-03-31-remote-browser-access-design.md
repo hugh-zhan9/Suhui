@@ -17,6 +17,36 @@ The current repository is `desktop-only`, with the main product flow centered on
 
 This feature extends that architecture by adding a remote control plane, not by reviving the historical standalone web app as the primary product form.
 
+## Implementation Snapshot
+
+As of the current codebase on 2026-03-31, the design has already been partially implemented.
+
+Implemented:
+
+- embedded main-process remote HTTP server
+- status and health endpoints
+- SSE event stream
+- remote browser renderer entry and bundled `remote.html`
+- subscription listing and unread counts
+- entry listing and entry detail reading
+- read / unread mutations
+- single-feed refresh and refresh-all
+- create / update / delete subscription
+- remote reading UX improvements:
+  - unread-only filtering
+  - previous / next navigation
+  - auto-advance after read
+  - author / original-link metadata
+  - list sorting
+  - disconnected-state banner and retry sync
+  - current reading-context display
+
+Current product reality:
+
+- remote access is already usable for reading and light subscription management
+- settings, import/export, batch operations, and broader parity work are still pending
+- the design in this document remains valid, but parts of Phase 1 are now implementation history rather than future intent
+
 ## Confirmed Requirements
 
 The following points were explicitly confirmed during brainstorming and are treated as product requirements for this design:
@@ -255,7 +285,9 @@ The product goal is near-equal authority and broad feature coverage. To keep del
 
 ### Phase 1
 
-Phase 1 establishes the full remote-access skeleton and the highest-value product flows:
+Phase 1 establishes the full remote-access skeleton and the highest-value product flows.
+
+Current status: largely implemented.
 
 - subscription tree and unread counts
 - entry list and entry detail reading
@@ -268,7 +300,9 @@ Phase 1 establishes the full remote-access skeleton and the highest-value produc
 
 ### Phase 2
 
-Phase 2 expands the remote surface toward deeper parity:
+Phase 2 expands the remote surface toward deeper parity.
+
+Current status: not started as a unified phase; only the reading-priority subset of Phase 1 has been deepened so far.
 
 - import and export
 - more settings pages
