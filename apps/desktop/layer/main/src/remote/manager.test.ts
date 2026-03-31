@@ -338,4 +338,68 @@ describe("RemoteServerManager", () => {
     })
     expect(refreshAllFeeds).toHaveBeenCalledTimes(1)
   })
+
+  it("creates a subscription through the injected provider", async () => {
+    const createSubscription = vi.fn().mockResolvedValue({
+      subscription: { id: "feed/feed_1", feedId: "feed_1", title: "Feed One" },
+    })
+    const server = await RemoteServerManager.start({
+      host: "127.0.0.1",
+      port: 0,
+      getSubscriptions: vi.fn().mockResolvedValue([]),
+      getEntries: vi.fn().mockResolvedValue([]),
+      getUnreadCounts: vi.fn().mockResolvedValue([]),
+      updateReadStatus: vi.fn().mockResolvedValue(undefined),
+      refreshFeed: vi.fn().mockResolvedValue(undefined),
+      refreshAllFeeds: vi.fn().mockResolvedValue(undefined),
+      createSubscription,
+    })
+
+    const response = await fetch(`${server.baseUrl}/api/subscriptions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        url: "https://example.com/feed.xml",
+        view: 1,
+        title: "Feed One",
+      }),
+    })
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual({
+      data: {
+        subscription: { id: "feed/feed_1", feedId: "feed_1", title: "Feed One" },
+      },
+    })
+    expect(createSubscription).toHaveBeenCalledWith({
+      url: "https://example.com/feed.xml",
+      view: 1,
+      title: "Feed One",
+    })
+  })
+
+  it("deletes a subscription through the injected provider", async () => {
+    const deleteSubscription = vi.fn().mockResolvedValue(undefined)
+    const server = await RemoteServerManager.start({
+      host: "127.0.0.1",
+      port: 0,
+      getSubscriptions: vi.fn().mockResolvedValue([]),
+      getEntries: vi.fn().mockResolvedValue([]),
+      getUnreadCounts: vi.fn().mockResolvedValue([]),
+      updateReadStatus: vi.fn().mockResolvedValue(undefined),
+      refreshFeed: vi.fn().mockResolvedValue(undefined),
+      refreshAllFeeds: vi.fn().mockResolvedValue(undefined),
+      deleteSubscription,
+    })
+
+    const response = await fetch(`${server.baseUrl}/api/subscriptions/feed%2Ffeed_1`, {
+      method: "DELETE",
+    })
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual({ ok: true })
+    expect(deleteSubscription).toHaveBeenCalledWith("feed/feed_1")
+  })
 })

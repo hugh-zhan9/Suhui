@@ -5857,3 +5857,20 @@
 - `progress.md`
 
 ---
+
+## [2026-03-31 14:59] [Feature]
+
+- **Change**: 新增远程订阅管理能力，支持浏览器端创建和删除订阅，并补充正式 remote client 的最小管理界面。
+- **Risk Analysis**: 主要风险在于远程新增订阅当前复用 DbService.addFeed 的动态导入路径，如果该 IPC service 后续再引入更强的 Electron 进程依赖，可能影响 remote 路径稳定性；另外删除订阅后列表和当前选中 feed 的联动主要依赖前端重新加载，需要继续观察边界状态。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/application/subscription/service.ts`
+- `apps/desktop/layer/main/src/remote/manager.ts`
+- `apps/desktop/layer/main/src/remote/manager.test.ts`
+- `apps/desktop/layer/renderer/src/remote/remote-app.tsx`
+- `apps/desktop/layer/renderer/src/remote/remote.css`
+- `task_plan.md`
+- `findings.md`
+- `progress.md`
+
+---

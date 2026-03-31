@@ -44,6 +44,10 @@ export const RemoteApp = () => {
   const [refreshingFeed, setRefreshingFeed] = useState(false)
   const [refreshingAll, setRefreshingAll] = useState(false)
   const [mutatingEntryId, setMutatingEntryId] = useState<string | null>(null)
+  const [creatingSubscription, setCreatingSubscription] = useState(false)
+  const [deletingSubscriptionId, setDeletingSubscriptionId] = useState<string | null>(null)
+  const [newFeedUrl, setNewFeedUrl] = useState("")
+  const [newFeedTitle, setNewFeedTitle] = useState("")
 
   const activeSubscriptionTitle = useMemo(
     () => subscriptions.find((item) => item.feedId === activeFeedId)?.title || "Entries",
@@ -175,6 +179,49 @@ export const RemoteApp = () => {
     }
   }
 
+  const handleCreateSubscription = async () => {
+    if (!newFeedUrl.trim()) return
+    setCreatingSubscription(true)
+    setStatus("Creating subscription...")
+    try {
+      await fetchJson("/api/subscriptions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url: newFeedUrl.trim(),
+          view: 1,
+          title: newFeedTitle.trim() || undefined,
+        }),
+      })
+      setNewFeedUrl("")
+      setNewFeedTitle("")
+      await loadSubscriptions()
+      setStatus("Connected · Subscription created")
+    } catch (error) {
+      setStatus("Connected · Create failed")
+      console.error("[remote-app] failed to create subscription", error)
+    } finally {
+      setCreatingSubscription(false)
+    }
+  }
+
+  const handleDeleteSubscription = async (subscriptionId: string) => {
+    setDeletingSubscriptionId(subscriptionId)
+    setStatus("Deleting subscription...")
+    try {
+      await fetchJson(`/api/subscriptions/${encodeURIComponent(subscriptionId)}`, {
+        method: "DELETE",
+      })
+      await loadSubscriptions()
+      setStatus("Connected · Subscription deleted")
+    } catch (error) {
+      setStatus("Connected · Delete failed")
+      console.error("[remote-app] failed to delete subscription", error)
+    } finally {
+      setDeletingSubscriptionId(null)
+    }
+  }
+
   const handleRefreshFeed = async () => {
     if (!activeFeedId) return
     setRefreshingFeed(true)
@@ -254,6 +301,34 @@ export const RemoteApp = () => {
             </div>
           </div>
 
+          <div className="remote-create-form">
+            <input
+              className="remote-input"
+              placeholder="Feed URL"
+              value={newFeedUrl}
+              onChange={(event) => {
+                setNewFeedUrl(event.target.value)
+              }}
+            />
+            <input
+              className="remote-input"
+              placeholder="Custom title"
+              value={newFeedTitle}
+              onChange={(event) => {
+                setNewFeedTitle(event.target.value)
+              }}
+            />
+            <button
+              className="remote-button"
+              disabled={creatingSubscription || !newFeedUrl.trim()}
+              onClick={() => {
+                void handleCreateSubscription()
+              }}
+            >
+              {creatingSubscription ? "Adding..." : "Add Feed"}
+            </button>
+          </div>
+
           <div className="remote-list">
             {subscriptions.length === 0 ? (
               <p className="remote-empty">No subscriptions yet.</p>
@@ -262,22 +337,37 @@ export const RemoteApp = () => {
                 const unread = item.feedId ? unreads[item.feedId] || 0 : 0
                 const active = item.feedId === activeFeedId
                 return (
-                  <button
+                  <article
                     key={item.id}
                     className={active ? "remote-card is-active" : "remote-card"}
-                    disabled={!item.feedId}
-                    onClick={() => {
-                      if (item.feedId) {
-                        setActiveFeedId(item.feedId)
-                      }
-                    }}
                   >
-                    <span className="remote-card-title">{item.title || item.id}</span>
-                    <span className="remote-card-meta">
-                      {[item.type, item.category, item.feedId].filter(Boolean).join(" · ")}
-                    </span>
-                    {unread > 0 && <span className="remote-badge">{unread} unread</span>}
-                  </button>
+                    <button
+                      className="remote-card-button"
+                      disabled={!item.feedId}
+                      onClick={() => {
+                        if (item.feedId) {
+                          setActiveFeedId(item.feedId)
+                        }
+                      }}
+                    >
+                      <span className="remote-card-title">{item.title || item.id}</span>
+                      <span className="remote-card-meta">
+                        {[item.type, item.category, item.feedId].filter(Boolean).join(" · ")}
+                      </span>
+                      {unread > 0 && <span className="remote-badge">{unread} unread</span>}
+                    </button>
+                    <div className="remote-inline-actions">
+                      <button
+                        className="remote-inline-action"
+                        disabled={deletingSubscriptionId === item.id}
+                        onClick={() => {
+                          void handleDeleteSubscription(item.id)
+                        }}
+                      >
+                        {deletingSubscriptionId === item.id ? "Deleting..." : "Delete"}
+                      </button>
+                    </div>
+                  </article>
                 )
               })
             )}

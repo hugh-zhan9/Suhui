@@ -103,6 +103,23 @@ body {
   gap: 12px;
 }
 
+.remote-create-form {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.remote-input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid rgba(24, 28, 32, 0.08);
+  background: rgba(255, 255, 255, 0.78);
+  border-radius: 14px;
+  padding: 12px 14px;
+  color: inherit;
+  font: inherit;
+}
+
 .remote-card {
   width: 100%;
   text-align: left;
@@ -115,6 +132,17 @@ body {
     transform 120ms ease,
     border-color 120ms ease,
     background 120ms ease;
+}
+
+.remote-card-button {
+  width: 100%;
+  border: 0;
+  padding: 0;
+  text-align: left;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
 }
 
 .remote-card:hover {
@@ -159,6 +187,21 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.remote-inline-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.remote-inline-action {
+  border: 0;
+  background: transparent;
+  color: #b2642a;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
 }
 
 .remote-button {
@@ -254,6 +297,11 @@ body {
     background: rgba(17, 22, 27, 0.76);
   }
 
+  .remote-input {
+    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+  }
+
   .remote-card {
     border-color: rgba(255, 255, 255, 0.06);
     background: rgba(255, 255, 255, 0.04);
@@ -267,6 +315,10 @@ body {
   .remote-button--secondary {
     background: rgba(255, 255, 255, 0.1);
     color: #eef2f5;
+  }
+
+  .remote-inline-action {
+    color: #f7b877;
   }
 
   .remote-detail {

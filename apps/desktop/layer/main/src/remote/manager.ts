@@ -18,6 +18,13 @@ type RemoteServerDependencies = {
   getEntries: (feedId?: string) => Promise<EntryRecord[]>
   getEntry: (entryId: string) => Promise<EntryRecord | null>
   getUnreadCounts: () => Promise<Array<{ id: string; count: number }>>
+  createSubscription: (payload: {
+    url: string
+    view: number
+    category?: string
+    title?: string
+  }) => Promise<unknown>
+  deleteSubscription: (subscriptionId: string) => Promise<void>
   updateReadStatus: (payload: { entryIds: string[]; read: boolean }) => Promise<void>
   refreshFeed: (feedId: string) => Promise<unknown>
   refreshAllFeeds: () => Promise<unknown>
@@ -156,6 +163,25 @@ const createRequestHandler =
       return
     }
 
+    if (method === "POST" && url.pathname === "/api/subscriptions") {
+      const payload = await readJsonBody<{
+        url: string
+        view: number
+        category?: string
+        title?: string
+      }>(request)
+      const result = await deps.createSubscription(payload)
+      json(response, 200, { data: result })
+      return
+    }
+
+    if (method === "DELETE" && url.pathname.startsWith("/api/subscriptions/")) {
+      const subscriptionId = decodeURIComponent(url.pathname.replace("/api/subscriptions/", ""))
+      await deps.deleteSubscription(subscriptionId)
+      json(response, 200, { ok: true })
+      return
+    }
+
     if (method === "POST" && url.pathname === "/api/entries/read") {
       const payload = await readJsonBody<{ entryIds: string[]; read: boolean }>(request)
       await deps.updateReadStatus(payload)
@@ -216,6 +242,17 @@ class RemoteServerManagerStatic {
       const { unreadApplicationService } = await import("~/application/unread/service")
       return unreadApplicationService.listUnreadCounts()
     },
+    createSubscription: async (payload) => {
+      const result = await subscriptionApplicationService.createSubscription(payload)
+      this.broadcast("subscriptions.updated", {})
+      this.broadcast("entries.updated", {})
+      return result
+    },
+    deleteSubscription: async (subscriptionId) => {
+      await subscriptionApplicationService.deleteSubscription(subscriptionId)
+      this.broadcast("subscriptions.updated", {})
+      this.broadcast("entries.updated", {})
+    },
     updateReadStatus: async (payload) => {
       const { entryApplicationService } = await import("~/application/entry/service")
       await entryApplicationService.updateReadStatus(payload)
@@ -253,6 +290,8 @@ class RemoteServerManagerStatic {
       ...(options?.getEntries ? { getEntries: options.getEntries } : {}),
       ...(options?.getEntry ? { getEntry: options.getEntry } : {}),
       ...(options?.getUnreadCounts ? { getUnreadCounts: options.getUnreadCounts } : {}),
+      ...(options?.createSubscription ? { createSubscription: options.createSubscription } : {}),
+      ...(options?.deleteSubscription ? { deleteSubscription: options.deleteSubscription } : {}),
       ...(options?.updateReadStatus ? { updateReadStatus: options.updateReadStatus } : {}),
       ...(options?.refreshFeed ? { refreshFeed: options.refreshFeed } : {}),
       ...(options?.refreshAllFeeds ? { refreshAllFeeds: options.refreshAllFeeds } : {}),
