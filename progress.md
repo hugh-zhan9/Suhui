@@ -68,6 +68,7 @@
   - 在正式 remote client 中增加 `Unread only`、`Mark unread`、`Prev/Next` 阅读增强交互
   - 在正式 remote client 中增加作者、原文链接等条目元信息展示
   - 抽出 remote 阅读导航 helper，并补充“读完自动前进”的前端选择逻辑和单测
+  - 在正式 remote client 中增加阅读列表排序（`Newest / Oldest / Unread First`）
   - 运行新增 remote 测试并全部通过
   - 尝试运行主进程 `typecheck`，确认被仓库既有问题阻塞
   - 运行 `build:render`，确认正式 remote entry 与订阅管理 UI 能进入 renderer 产物
@@ -109,6 +110,7 @@
 | remote subscription-update tests     | `vitest run src/remote/manager.test.ts src/remote/lifecycle.test.ts`                     | subscription update 路由测试通过                      | 16 个测试全部通过                            | 通过 |
 | remote unread-only entry tests       | `vitest run src/remote/manager.test.ts src/remote/lifecycle.test.ts`                     | unread-only entries 查询路由测试通过                  | 17 个测试全部通过                            | 通过 |
 | remote entry-navigation tests        | `pnpm --filter suhui exec vitest run layer/renderer/src/remote/entry-navigation.test.ts` | remote 阅读导航 helper 测试通过                       | 4 个测试全部通过                             | 通过 |
+| remote entry-sort tests              | `pnpm --filter suhui exec vitest run layer/renderer/src/remote/entry-navigation.test.ts` | remote 阅读排序 helper 测试通过                       | 7 个测试全部通过                             | 通过 |
 | renderer build with remote entry     | `pnpm --filter suhui build:render`                                                       | 正式 remote browser entry 能进 renderer 构建产物      | 构建成功，`dist/renderer/remote.html` 已生成 | 通过 |
 | 主进程 typecheck                     | `pnpm --filter @suhui/electron-main typecheck`                                           | 无错误                                                | 被仓库既有 TS6059/TS6307/历史测试问题阻塞    | 阻塞 |
 
@@ -129,12 +131,13 @@
 | 2026-03-31 | remote 端创建订阅默认 view 写成魔法数字 `1`    | 1        | 改为显式使用 `FeedViewType.Articles` 并在 UI 中暴露 view 选择 |
 | 2026-03-31 | unread only 若只在前端过滤会和服务端状态不同步 | 1        | 改为服务端 `GET /api/entries?unreadOnly=1` 统一口径           |
 | 2026-03-31 | 读完后的下一条选择逻辑若散落在组件里会难以维护 | 1        | 抽出 `entry-navigation` helper 并通过单测固定行为             |
+| 2026-03-31 | 阅读列表排序若直接写在组件里会和导航逻辑耦合   | 1        | 复用 `entry-navigation` helper 管理排序，保持导航和列表一致   |
 
 ## 五问重启检查
 
 | 问题           | 答案                                                                        |
 | -------------- | --------------------------------------------------------------------------- |
-| 我在哪里？     | 阶段 4：已完成正式 remote browser entry、订阅管理基础闭环和两批阅读增强能力 |
+| 我在哪里？     | 阶段 4：已完成正式 remote browser entry、订阅管理基础闭环和三批阅读增强能力 |
 | 我要去哪里？   | 继续扩展更贴近阅读的远程能力，并把更多桌面端能力迁到正式 remote client      |
 | 目标是什么？   | 按远程访问计划逐步落地可运行实现，并保持单一写入口                          |
 | 我学到了什么？ | 见 `findings.md`                                                            |

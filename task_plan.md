@@ -64,6 +64,7 @@
 - [x] 在正式 remote client 中补充阅读增强交互（标未读、未读筛选、上一条/下一条）
 - [x] 在正式 remote client 中补充条目元信息展示（作者/原文链接）
 - [x] 在正式 remote client 中补充读完自动前进的阅读导航逻辑
+- [x] 在正式 remote client 中补充阅读列表排序（最新/最旧/未读优先）
 - [ ] 补充更多远程 capability 与 remote client 深化集成
 - **状态：** in_progress
 

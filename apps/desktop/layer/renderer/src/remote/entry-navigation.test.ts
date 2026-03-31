@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { getPreferredEntryIdAfterReadChange } from "./entry-navigation"
+import { getPreferredEntryIdAfterReadChange, sortEntries } from "./entry-navigation"
 
 const entries = [
   { id: "entry_1", read: false },
@@ -55,5 +55,37 @@ describe("getPreferredEntryIdAfterReadChange", () => {
         unreadOnly: true,
       }),
     ).toBe("entry_2")
+  })
+})
+
+describe("sortEntries", () => {
+  const sortableEntries = [
+    { id: "entry_1", read: true, publishedAt: 100 },
+    { id: "entry_2", read: false, publishedAt: 200 },
+    { id: "entry_3", read: false, publishedAt: 150 },
+  ]
+
+  it("sorts newest first", () => {
+    expect(sortEntries(sortableEntries, "newest").map((entry) => entry.id)).toEqual([
+      "entry_2",
+      "entry_3",
+      "entry_1",
+    ])
+  })
+
+  it("sorts oldest first", () => {
+    expect(sortEntries(sortableEntries, "oldest").map((entry) => entry.id)).toEqual([
+      "entry_1",
+      "entry_3",
+      "entry_2",
+    ])
+  })
+
+  it("puts unread entries first", () => {
+    expect(sortEntries(sortableEntries, "unread-first").map((entry) => entry.id)).toEqual([
+      "entry_2",
+      "entry_3",
+      "entry_1",
+    ])
   })
 })
