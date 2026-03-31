@@ -68,4 +68,26 @@ describe("RemoteServerManager", () => {
     })
     expect(getSubscriptions).toHaveBeenCalledTimes(1)
   })
+
+  it("serves a remote browser shell and client script", async () => {
+    const server = await RemoteServerManager.start({
+      host: "127.0.0.1",
+      port: 0,
+      getSubscriptions: vi.fn().mockResolvedValue([]),
+    })
+
+    const htmlResponse = await fetch(`${server.baseUrl}/`)
+    expect(htmlResponse.status).toBe(200)
+    expect(htmlResponse.headers.get("content-type")).toContain("text/html")
+    const html = await htmlResponse.text()
+    expect(html).toContain('id="remote-root"')
+    expect(html).toContain('src="/remote.js"')
+
+    const jsResponse = await fetch(`${server.baseUrl}/remote.js`)
+    expect(jsResponse.status).toBe(200)
+    expect(jsResponse.headers.get("content-type")).toContain("javascript")
+    const js = await jsResponse.text()
+    expect(js).toContain("/api/subscriptions")
+    expect(js).toContain("remote-root")
+  })
 })

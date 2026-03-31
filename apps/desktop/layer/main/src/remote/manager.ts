@@ -4,6 +4,7 @@ import type { AddressInfo } from "node:net"
 import { subscriptionApplicationService } from "~/application/subscription/service"
 
 import { REMOTE_SERVER_DEFAULT_HOST, REMOTE_SERVER_DEFAULT_PORT } from "./config"
+import { getRemoteShellHtml, getRemoteShellScript } from "./shell"
 
 type SubscriptionRecord = Awaited<
   ReturnType<typeof subscriptionApplicationService.listSubscriptions>
@@ -43,6 +44,17 @@ const json = (response: ServerResponse, statusCode: number, payload: unknown) =>
   response.end(JSON.stringify(payload))
 }
 
+const text = (
+  response: ServerResponse,
+  statusCode: number,
+  payload: string,
+  contentType: string,
+) => {
+  response.statusCode = statusCode
+  response.setHeader("Content-Type", contentType)
+  response.end(payload)
+}
+
 const getBaseUrl = (host: string, port: number) => `http://${host}:${port}`
 
 const createRequestHandler =
@@ -53,6 +65,16 @@ const createRequestHandler =
 
     if (method === "GET" && url.pathname === "/health") {
       json(response, 200, { ok: true })
+      return
+    }
+
+    if (method === "GET" && url.pathname === "/") {
+      text(response, 200, getRemoteShellHtml(), "text/html; charset=utf-8")
+      return
+    }
+
+    if (method === "GET" && url.pathname === "/remote.js") {
+      text(response, 200, getRemoteShellScript(), "text/javascript; charset=utf-8")
       return
     }
 

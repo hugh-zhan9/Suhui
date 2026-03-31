@@ -23,6 +23,7 @@
 - `BootstrapManager` 的 `app.whenReady()` 是接入 remote server 生命周期的合适位置；退出路径需显式关闭 server，避免端口残留。
 - 通过依赖注入让 `RemoteServerManager` 接收 `getSubscriptions` provider，可以在不初始化 DB 的情况下稳定做 HTTP 集成测试。
 - 当前 `@suhui/electron-main` 的 `typecheck` 本身就被多处历史配置/测试问题阻塞，不能作为本次 remote 改动的有效回归门禁。
+- 在不改 renderer 构建链的前提下，可先由主进程直接托管最小 HTML + JS shell，快速验证 remote browser 端访问链路。
 
 ## 技术决策
 
@@ -34,6 +35,7 @@
 | 实现按阶段推进，但总目标保持为广泛功能对齐                                    | 远程端最终要和桌面端同权，但不能一次性硬推全部改造     |
 | 详细开发计划需要单独把“共享服务层抽离”和“客户端接入层收敛”列为前置工作流      | 仅加 HTTP server 无法解决现有 store 双轨耦合问题       |
 | Slice 1 先实现主进程 remote server skeleton 与只读订阅查询                    | 这是最小可运行闭环，且不会过早引入复杂写路径一致性问题 |
+| 最小 remote browser shell 先由主进程直接托管，而不是立刻接入 renderer 构建链  | 这样能更快验证浏览器访问能力，降低早期改造风险         |
 
 ## 遇到的问题
 

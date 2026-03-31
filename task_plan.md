@@ -48,7 +48,8 @@
 - [x] 建立 remote server skeleton
 - [x] 提供 `/health`、`/status`、`/api/subscriptions` 只读接口
 - [x] 接入主进程启动与关闭生命周期
-- [ ] 补充更多远程 capability 与浏览器端入口
+- [x] 提供最小 remote browser shell
+- [ ] 补充更多远程 capability 与正式浏览器端入口
 - **状态：** in_progress
 
 ## 关键问题

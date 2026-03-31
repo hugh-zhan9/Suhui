@@ -48,6 +48,7 @@
   - 实现 `RemoteServerManager`、remote config 和最小 `SubscriptionApplicationService`
   - 新增 remote lifecycle 测试，验证主进程启动/关闭 remote server 的行为
   - 将 remote 生命周期接入 `BootstrapManager`
+  - 新增最小 remote browser shell，允许浏览器打开 `/` 并展示订阅列表
   - 运行新增 remote 测试并全部通过
   - 尝试运行主进程 `typecheck`，确认被仓库既有问题阻塞
 - 创建/修改的文件：
@@ -57,6 +58,7 @@
   - `apps/desktop/layer/main/src/remote/manager.test.ts`
   - `apps/desktop/layer/main/src/remote/lifecycle.ts`
   - `apps/desktop/layer/main/src/remote/lifecycle.test.ts`
+  - `apps/desktop/layer/main/src/remote/shell.ts`
   - `apps/desktop/layer/main/src/manager/bootstrap.ts`
   - `task_plan.md`
   - `findings.md`
@@ -64,11 +66,11 @@
 
 ## 测试结果
 
-| 测试                | 输入                                                                 | 预期结果                                  | 实际结果                                  | 状态 |
-| ------------------- | -------------------------------------------------------------------- | ----------------------------------------- | ----------------------------------------- | ---- |
-| 设计文档提交        | `git commit`                                                         | 设计 spec 成功提交                        | 已提交 `43fde504b`                        | 通过 |
-| remote server tests | `vitest run src/remote/manager.test.ts src/remote/lifecycle.test.ts` | remote server skeleton 与生命周期测试通过 | 5 个测试全部通过                          | 通过 |
-| 主进程 typecheck    | `pnpm --filter @suhui/electron-main typecheck`                       | 无错误                                    | 被仓库既有 TS6059/TS6307/历史测试问题阻塞 | 阻塞 |
+| 测试                | 输入                                                                 | 预期结果                                              | 实际结果                                  | 状态 |
+| ------------------- | -------------------------------------------------------------------- | ----------------------------------------------------- | ----------------------------------------- | ---- |
+| 设计文档提交        | `git commit`                                                         | 设计 spec 成功提交                                    | 已提交 `43fde504b`                        | 通过 |
+| remote server tests | `vitest run src/remote/manager.test.ts src/remote/lifecycle.test.ts` | remote server skeleton、生命周期与最小 shell 测试通过 | 6 个测试全部通过                          | 通过 |
+| 主进程 typecheck    | `pnpm --filter @suhui/electron-main typecheck`                       | 无错误                                                | 被仓库既有 TS6059/TS6307/历史测试问题阻塞 | 阻塞 |
 
 ## 错误日志
 
