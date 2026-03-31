@@ -1,6 +1,8 @@
 import { FeedViewType } from "@suhui/constants"
 import { useEffect, useMemo, useState } from "react"
 
+import { getPreferredEntryIdAfterReadChange } from "./entry-navigation"
+
 type SubscriptionRecord = {
   id: string
   type?: string
@@ -19,6 +21,9 @@ type EntryRecord = {
   content?: string | null
   readabilityContent?: string | null
   description?: string | null
+  url?: string | null
+  author?: string | null
+  authorUrl?: string | null
 }
 
 type UnreadRecord = {
@@ -208,6 +213,14 @@ export const RemoteApp = () => {
 
   const handleUpdateReadStatus = async (entryId: string, read: boolean) => {
     setMutatingEntryId(entryId)
+    const preferredNextEntryId = getPreferredEntryIdAfterReadChange({
+      entries,
+      activeEntryId,
+      changedEntryId: entryId,
+      nextRead: read,
+      unreadOnly,
+    })
+
     try {
       await fetchJson<{ ok: true }>("/api/entries/read", {
         method: "POST",
@@ -217,6 +230,9 @@ export const RemoteApp = () => {
       await loadSubscriptions()
       if (activeFeedId) {
         await loadEntries(activeFeedId)
+      }
+      if (preferredNextEntryId !== undefined) {
+        setActiveEntryId(preferredNextEntryId)
       }
     } catch (error) {
       console.error("[remote-app] failed to update read state", error)
@@ -598,6 +614,7 @@ export const RemoteApp = () => {
                         ? new Date(item.publishedAt).toLocaleString()
                         : "Unknown time"}
                     </p>
+                    {item.author && <p className="remote-card-meta">By {item.author}</p>}
                     <p className="remote-card-meta">{item.read ? "Read" : "Unread"}</p>
                   </div>
                   <div className="remote-actions">
@@ -631,11 +648,42 @@ export const RemoteApp = () => {
             <article className="remote-detail">
               <p className="remote-section-label">Detail</p>
               <h3 className="remote-detail-title">{activeEntry.title || activeEntry.id}</h3>
-              <p className="remote-detail-description">
-                {activeEntry.publishedAt
-                  ? new Date(activeEntry.publishedAt).toLocaleString()
-                  : "Unknown publish time"}
-              </p>
+              <div className="remote-detail-meta">
+                <p className="remote-detail-description">
+                  {activeEntry.publishedAt
+                    ? new Date(activeEntry.publishedAt).toLocaleString()
+                    : "Unknown publish time"}
+                </p>
+                {activeEntry.author && (
+                  <p className="remote-detail-description">
+                    By{" "}
+                    {activeEntry.authorUrl ? (
+                      <a
+                        className="remote-link"
+                        href={activeEntry.authorUrl}
+                        rel="noreferrer"
+                        target="_blank"
+                      >
+                        {activeEntry.author}
+                      </a>
+                    ) : (
+                      activeEntry.author
+                    )}
+                  </p>
+                )}
+                {activeEntry.url && (
+                  <p className="remote-detail-description">
+                    <a
+                      className="remote-link"
+                      href={activeEntry.url}
+                      rel="noreferrer"
+                      target="_blank"
+                    >
+                      Open Original
+                    </a>
+                  </p>
+                )}
+              </div>
               {activeEntry.description && (
                 <p className="remote-detail-description">{activeEntry.description}</p>
               )}
