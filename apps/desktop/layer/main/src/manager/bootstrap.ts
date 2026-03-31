@@ -23,6 +23,7 @@ import { handleUrlRouting } from "../lib/router"
 import { store } from "../lib/store"
 import { updateNotificationsToken } from "../lib/user"
 import { logger } from "../logger"
+import { initializeRemoteAccess, shutdownRemoteAccess } from "../remote/lifecycle"
 import { cleanupOldRender } from "../updater/hot-updater"
 import { DbService } from "../ipc/services/db"
 import { AppManager } from "./app"
@@ -175,6 +176,8 @@ export class BootstrapManager {
       )
       appendBootLog(bootLogPath, "manager:window-created")
 
+      await initializeRemoteAccess()
+
       app.on("open-url", (_, url) => {
         const activeWindow = WindowManager.getMainWindowOrCreate()
         if (activeWindow && !activeWindow.isDestroyed()) {
@@ -223,6 +226,8 @@ export class BootstrapManager {
           logger.error("[Sync] auto sync on quit failed:", err)
         }
 
+        await shutdownRemoteAccess()
+
         app.quit()
         return
       }
@@ -237,6 +242,7 @@ export class BootstrapManager {
         x: bounds.x,
         y: bounds.y,
       })
+      await shutdownRemoteAccess()
       await session.defaultSession.cookies.flushStore()
       await cleanupOldRender()
     })

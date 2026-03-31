@@ -1,0 +1,2 @@
+export const REMOTE_SERVER_DEFAULT_HOST = "0.0.0.0"
+export const REMOTE_SERVER_DEFAULT_PORT = 41595

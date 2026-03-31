@@ -6,7 +6,7 @@
 
 ## 当前阶段
 
-阶段 2
+阶段 6
 
 ## 各阶段
 
@@ -28,20 +28,28 @@
 
 - [x] 产出详细设计与开发计划文档
 - [x] 进行自检，消除歧义和冲突
-- [ ] 提交到 git
-- **状态：** in_progress
+- [x] 提交到 git
+- **状态：** complete
 
 ### 阶段 4：用户审阅
 
-- [ ] 向用户提供文档路径和核心结论
-- [ ] 根据用户反馈迭代文档
-- **状态：** pending
+- [x] 向用户提供文档路径和核心结论
+- [x] 根据用户反馈迭代文档
+- **状态：** complete
 
 ### 阶段 5：后续实现准备
 
-- [ ] 形成可以直接进入实现的阶段计划
-- [ ] 明确首个 implementation slice
-- **状态：** pending
+- [x] 形成可以直接进入实现的阶段计划
+- [x] 明确首个 implementation slice
+- **状态：** complete
+
+### 阶段 6：Slice 1 实现
+
+- [x] 建立 remote server skeleton
+- [x] 提供 `/health`、`/status`、`/api/subscriptions` 只读接口
+- [x] 接入主进程启动与关闭生命周期
+- [ ] 补充更多远程 capability 与浏览器端入口
+- **状态：** in_progress
 
 ## 关键问题
 
@@ -60,11 +68,14 @@
 
 ## 遇到的错误
 
-| 错误                           | 尝试次数 | 解决方案                                                     |
-| ------------------------------ | -------- | ------------------------------------------------------------ |
-| 仓库中无 `writing-plans` skill | 1        | 使用 `planning-with-files-zh` 作为最接近的文件化规划替代流程 |
+| 错误                              | 尝试次数 | 解决方案                                                            |
+| --------------------------------- | -------- | ------------------------------------------------------------------- |
+| 仓库中无 `writing-plans` skill    | 1        | 使用 `planning-with-files-zh` 作为最接近的文件化规划替代流程        |
+| 首次 remote 测试命令路径错误      | 1        | 改为在 `apps/desktop/layer/main` 下运行 `vitest run src/remote/...` |
+| 主进程 `typecheck` 被历史问题阻塞 | 1        | 记录为基线问题，本轮先以新增 remote 测试通过作为验证依据            |
 
 ## 备注
 
 - 详细设计必须对齐已提交 spec：`docs/superpowers/specs/2026-03-31-remote-browser-access-design.md`
 - 计划需要可直接转化为 implementation backlog，而不只是高层方向
+- 当前实现从 `Slice 1` 开始，优先完成 remote server skeleton 和只读订阅路径
