@@ -91,6 +91,16 @@
       "require": "./src/modules/translation/*.ts",
       "import": "./src/modules/translation/*.ts"
     },
+    "./remote": {
+      "types": "./src/remote/index.ts",
+      "require": "./src/remote/index.ts",
+      "import": "./src/remote/index.ts"
+    },
+    "./remote/*": {
+      "types": "./src/remote/*.ts",
+      "require": "./src/remote/*.ts",
+      "import": "./src/remote/*.ts"
+    },
     "./unread/*": {
       "types": "./src/modules/unread/*.ts",
       "require": "./src/modules/unread/*.ts",
