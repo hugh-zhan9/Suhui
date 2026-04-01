@@ -31,7 +31,7 @@ import {
   buildStableLocalEntryId,
 } from "./rss-refresh"
 import { resolvePreviewFeedUrl } from "./rsshub-external"
-import { toTimestampMs } from "./rss-time"
+import { resolvePublishedAtMs, toTimestampMs } from "./rss-time"
 import { buildPreviewDiagnostics } from "./preview-feed-diagnostics"
 
 /**
@@ -624,7 +624,7 @@ export class DbService extends IpcService {
       if (entries.length > 0) {
         const entriesToSave = entries.map((entry) => ({
           ...entry,
-          publishedAt: toTimestampMs(entry.publishedAt) ?? Date.now(),
+          publishedAt: resolvePublishedAtMs(entry.publishedAt),
           insertedAt: toTimestampMs(entry.insertedAt) ?? Date.now(),
           readabilityUpdatedAt: toTimestampMs(entry.readabilityUpdatedAt),
         }))
@@ -743,7 +743,7 @@ export class DbService extends IpcService {
           read:
             existingReadById.get(existingIdByKey.get(buildEntryIdentityKey(entry as any)) || "") ??
             entry.read,
-          publishedAt: toTimestampMs(entry.publishedAt) ?? Date.now(),
+          publishedAt: resolvePublishedAtMs(entry.publishedAt),
           insertedAt: toTimestampMs(entry.insertedAt) ?? Date.now(),
           readabilityUpdatedAt: toTimestampMs(entry.readabilityUpdatedAt),
         }))

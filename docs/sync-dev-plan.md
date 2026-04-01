@@ -1,4 +1,7 @@
-# FreeFolo 多设备同步 — 开发计划
+# Suhui 多设备同步 — 开发计划
+
+> 状态：开发计划文档，需与当前代码交叉核对
+> 当前实现请以 `AI-CONTEXT.md` 与主进程 `sync` 模块代码为准
 
 > **方案**：Oplog + Git 私有仓库  
 > **总预估工时**：4.5 天  
@@ -9,14 +12,14 @@
 
 ## 里程碑概览
 
-| 阶段 | 内容 | 预估 | 关键产出 |
-|------|------|------|---------|
-| **P0** | 基础设施 | 0.5 天 | deviceId、2 张新表、SyncManager 骨架 |
-| **P1** | export-state | 1 天 | SyncLogger + 写 ndjson |
-| **P2** | import-state | 1.5 天 | 幂等回放 + LWW + 孤儿 Op |
-| **P3** | Git 集成 | 0.5 天 | GitRunner + 生命周期钩子 + 定时 flush |
-| **P4** | Snapshot | 0.5 天 | 快照压缩 + 新设备初始化 |
-| **P5** | 错误处理 | 0.5 天 | 冲突重试 / 残缺行 / 日志归档 |
+| 阶段   | 内容         | 预估   | 关键产出                              |
+| ------ | ------------ | ------ | ------------------------------------- |
+| **P0** | 基础设施     | 0.5 天 | deviceId、2 张新表、SyncManager 骨架  |
+| **P1** | export-state | 1 天   | SyncLogger + 写 ndjson                |
+| **P2** | import-state | 1.5 天 | 幂等回放 + LWW + 孤儿 Op              |
+| **P3** | Git 集成     | 0.5 天 | GitRunner + 生命周期钩子 + 定时 flush |
+| **P4** | Snapshot     | 0.5 天 | 快照压缩 + 新设备初始化               |
+| **P5** | 错误处理     | 0.5 天 | 冲突重试 / 残缺行 / 日志归档          |
 
 ---
 
@@ -39,6 +42,7 @@
    - 在 `apps/desktop/layer/main/src/ipc/index.ts` 注册 SyncService
 
 ### 验收标准
+
 - DB migration 可运行（现有测试不回归）
 - `getStatus()` IPC 可从渲染层调用并返回 `{ deviceId, syncRepoPath: null }`
 
@@ -68,6 +72,7 @@
 4. **IPC**：`sync.exportState`
 
 ### 验收标准
+
 - 在应用中操作，退出后 ndjson 文件存在且格式正确
 - 单元测试通过
 
@@ -103,6 +108,7 @@
    - 孤儿：entityId 不存在时写入 pending
 
 ### 验收标准
+
 - 双设备模拟测试：设备 A export → 设备 B import，已读状态同步
 - 单元测试通过
 
@@ -113,7 +119,7 @@
 ### 任务列表
 
 1. **GitRunner**（`manager/sync-git.ts`）
-   - 使用 Node.js `child_process.execFile` 调用本地 `git`  
+   - 使用 Node.js `child_process.execFile` 调用本地 `git`
    - 实现：`pull()` / `add()` / `commit()` / `push()` / `syncCycle()`
    - 单元测试：mock `execFile`，验证命令参数
 
@@ -132,6 +138,7 @@
 5. **IPC**：`sync.gitSync`
 
 ### 验收标准
+
 - 手动点击"立即同步"成功执行 git pull + import + export + commit + push
 - 退出时自动触发同步
 
@@ -154,6 +161,7 @@
 4. **UI**：设置页新增"生成快照"按钮
 
 ### 验收标准
+
 - 新设备设置仓库路径 → 自动加载快照 → 读状态同步
 
 ---
@@ -174,27 +182,27 @@
 
 ### 新增文件
 
-| 文件 | 说明 |
-|------|------|
-| `manager/sync.ts` | SyncManager 单例 |
-| `manager/sync-git.ts` | GitRunner |
-| `manager/sync-logger.ts` | SyncLogger（DB 写操作拦截器） |
-| `manager/sync-export.ts` | exportState() 实现 |
-| `manager/sync-import.ts` | importState() 实现 |
-| `manager/sync-snapshot.ts` | compactSnapshot() / importFromSnapshot() |
-| `ipc/services/sync.ts` | SyncService IPC |
-| `renderer/.../SyncSettings.tsx` | 设置页 UI 组件 |
-| 测试文件 × 4 | 单元测试 |
-| DB migration 文件 × 1 | applied/pending_sync_ops 表 |
+| 文件                            | 说明                                     |
+| ------------------------------- | ---------------------------------------- |
+| `manager/sync.ts`               | SyncManager 单例                         |
+| `manager/sync-git.ts`           | GitRunner                                |
+| `manager/sync-logger.ts`        | SyncLogger（DB 写操作拦截器）            |
+| `manager/sync-export.ts`        | exportState() 实现                       |
+| `manager/sync-import.ts`        | importState() 实现                       |
+| `manager/sync-snapshot.ts`      | compactSnapshot() / importFromSnapshot() |
+| `ipc/services/sync.ts`          | SyncService IPC                          |
+| `renderer/.../SyncSettings.tsx` | 设置页 UI 组件                           |
+| 测试文件 × 4                    | 单元测试                                 |
+| DB migration 文件 × 1           | applied/pending_sync_ops 表              |
 
 ### 修改文件
 
-| 文件 | 改动 |
-|------|------|
-| `database/src/schemas/index.ts` | 追加 2 张新表 Schema |
-| `ipc/services/db.ts` | 3 个写操作点插入 syncLogger.record() |
-| `ipc/index.ts` | 注册 SyncService |
-| `manager/bootstrap.ts` | 启动/退出同步钩子 |
+| 文件                            | 改动                                 |
+| ------------------------------- | ------------------------------------ |
+| `database/src/schemas/index.ts` | 追加 2 张新表 Schema                 |
+| `ipc/services/db.ts`            | 3 个写操作点插入 syncLogger.record() |
+| `ipc/index.ts`                  | 注册 SyncService                     |
+| `manager/bootstrap.ts`          | 启动/退出同步钩子                    |
 
 ---
 
@@ -208,6 +216,7 @@ pnpm --filter FreeFolo test --run
 ```
 
 新增测试文件：
+
 - `apps/desktop/layer/main/src/manager/sync-logger.test.ts`
 - `apps/desktop/layer/main/src/manager/sync-export.test.ts`
 - `apps/desktop/layer/main/src/manager/sync-import.test.ts`
@@ -248,14 +257,14 @@ git clone /tmp/freefolo-sync-test.git /tmp/freefolo-sync-b
 
 ## 风险与缓解措施
 
-| 风险 | 影响 | 缓解 |
-|------|------|------|
-| `entryId` 算法变更 | oplog 失效 | `meta.json` 记录算法版本，升级时迁移脚本 |
-| Wall clock 漂移 | LWW 决策不准确 | 主排序依赖 logicalClock，ts 仅辅助 LWW |
-| Push 中断 | 部分提交 | ndjson 末行校验，下次启动自动补全 |
-| Git 未安装 | syncCycle 失败 | 启动时检测 `git --version`，提示安装 |
-| 仓库非 Private | 隐私泄露 | 配置页显示安全提示，不强制（用户自负） |
-| ops 无限增长 | 磁盘 / Git 性能 | 30 天归档 + 季度 snapshot 压缩 |
+| 风险               | 影响            | 缓解                                     |
+| ------------------ | --------------- | ---------------------------------------- |
+| `entryId` 算法变更 | oplog 失效      | `meta.json` 记录算法版本，升级时迁移脚本 |
+| Wall clock 漂移    | LWW 决策不准确  | 主排序依赖 logicalClock，ts 仅辅助 LWW   |
+| Push 中断          | 部分提交        | ndjson 末行校验，下次启动自动补全        |
+| Git 未安装         | syncCycle 失败  | 启动时检测 `git --version`，提示安装     |
+| 仓库非 Private     | 隐私泄露        | 配置页显示安全提示，不强制（用户自负）   |
+| ops 无限增长       | 磁盘 / Git 性能 | 30 天归档 + 季度 snapshot 压缩           |
 
 ---
 

@@ -5,9 +5,14 @@ This file provides specific guidance for developing the Electron desktop applica
 ## Architecture
 
 - **Main Process** (`layer/main/`) - Electron main process handling system integration
-- **Renderer Process** (`layer/renderer/`) - Vite + React renderer (primary web app)
+- **Renderer Process** (`layer/renderer/`) - Vite + React renderer for desktop UI and remote browser entry
 
-The renderer is the **primary web application** - a Vite + React SPA that can run both in Electron and as a standalone web app.
+The renderer is not a separate standalone product web app in the current repository.
+
+It serves two runtime contexts:
+
+- the Electron desktop UI
+- the remote browser client exposed by the running desktop app
 
 ## UI Style
 
@@ -18,15 +23,27 @@ The renderer is the **primary web application** - a Vite + React SPA that can ru
 ## Development Commands
 
 ```bash
-# Recommended: Browser development (faster)
-pnpm run dev:web
-
-# Full Electron development
+# Primary desktop development path
 pnpm run dev:electron
 
-# Build web version
+# Optional renderer-only web build
 pnpm run build:web
+
+# Preview build
+pnpm run start
+
+# Full Electron package
+pnpm run build:electron
 ```
+
+Remote access defaults:
+
+```bash
+host=0.0.0.0
+port=41595
+```
+
+Do not design or document against a separate web product unless the codebase changes first.
 
 ## UIKit Colors for Desktop Components
 

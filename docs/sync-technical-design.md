@@ -1,4 +1,7 @@
-# FreeFolo 多设备同步功能 — 技术设计文档
+# Suhui 多设备同步功能 — 技术设计文档
+
+> 状态：设计文档，需与当前代码交叉核对
+> 当前实现请以 `AI-CONTEXT.md`、`apps/desktop/layer/main/src/manager/sync.ts`、`apps/desktop/layer/main/src/ipc/services/sync.ts` 为准
 
 > **方案基础**：增量 Oplog + Git 私有仓库（详细原理见 [sync-design.md](./sync-design.md)）  
 > **文档版本**：v1.0  
@@ -131,10 +134,10 @@ export type OpType =
   | "subscription.update"
 
 export interface SyncOp {
-  opId: string          // UUID v4，幂等键
-  deviceId: string      // 设备唯一 ID
-  logicalClock: number  // 单设备递增（Lamport Clock），用于排序
-  ts: number            // wall clock ms，仅用于 LWW 决策
+  opId: string // UUID v4，幂等键
+  deviceId: string // 设备唯一 ID
+  logicalClock: number // 单设备递增（Lamport Clock），用于排序
+  ts: number // wall clock ms，仅用于 LWW 决策
   type: OpType
   entityType: "entry" | "feed" | "subscription" | "collection"
   entityId: string
@@ -167,20 +170,23 @@ export interface SubscriptionUpdatePayload {
 export interface SyncMeta {
   schemaVersion: number
   entryIdAlgoVersion: number
-  devices: Record<string, {
-    name: string
-    registeredAt: number
-    lastSyncAt: number
-  }>
+  devices: Record<
+    string,
+    {
+      name: string
+      registeredAt: number
+      lastSyncAt: number
+    }
+  >
 }
 
 // ===== 本地持久化水位线（app userData/sync-meta.json）=====
 
 export interface LocalSyncMeta {
   deviceId: string
-  deviceName: string        // 系统主机名
-  logicalClock: number      // 上次 export 后的水位线
-  syncRepoPath: string | null  // 用户配置的 Git 仓库本地路径
+  deviceName: string // 系统主机名
+  logicalClock: number // 上次 export 后的水位线
+  syncRepoPath: string | null // 用户配置的 Git 仓库本地路径
   lastExportAt: number | null
   lastImportAt: number | null
 }
@@ -198,7 +204,7 @@ export interface LocalSyncMeta {
 class SyncManagerStatic {
   private localMeta: LocalSyncMeta | null = null
   private flushTimer: NodeJS.Timeout | null = null
-  private readonly FLUSH_INTERVAL_MS = 10 * 60 * 1000  // 10 分钟
+  private readonly FLUSH_INTERVAL_MS = 10 * 60 * 1000 // 10 分钟
 
   async init(): Promise<void>
   // 1. 读取 app.getPath("userData")/sync-local-meta.json
@@ -257,12 +263,12 @@ importState() {
 
 > 多设备同时操作同一实体时，不靠 Git 行级合并（ndjson 每行独立无冲突），而是在 `applyOp` 阶段按以下规则裁决：
 
-| 操作对 | 决策规则 |
-|-------|---------|
-| `entry.mark_read` vs `entry.mark_unread` | 取 `ts` 最大值；相同 ts 则 `read=true` 优先 |
-| `collection.add` vs `collection.remove` | 取 `ts` 最大值；相同 ts 则 `add` 优先 |
-| `subscription.update` | 每字段独立 LWW，不整体覆盖 |
-| `subscription.add` vs `subscription.remove` | 取 `logicalClock + ts` 最大值 |
+| 操作对                                      | 决策规则                                    |
+| ------------------------------------------- | ------------------------------------------- |
+| `entry.mark_read` vs `entry.mark_unread`    | 取 `ts` 最大值；相同 ts 则 `read=true` 优先 |
+| `collection.add` vs `collection.remove`     | 取 `ts` 最大值；相同 ts 则 `add` 优先       |
+| `subscription.update`                       | 每字段独立 LWW，不整体覆盖                  |
+| `subscription.add` vs `subscription.remove` | 取 `logicalClock + ts` 最大值               |
 
 **实现方案**：`applyOp` 前先查 `applied_sync_ops` 中对同一 `entityId` 最近的反向 op，若存在且对方 ts 更新，则放弃本次应用。
 
@@ -321,7 +327,7 @@ export interface SyncCycleResult {
 ```typescript
 class SyncLogger {
   private ops: SyncOp[] = []
-  private logicalClock = 0  // 从 localMeta 初始化
+  private logicalClock = 0 // 从 localMeta 初始化
 
   /** 外部调用：记录一条操作 */
   record(op: Omit<SyncOp, "opId" | "deviceId" | "logicalClock" | "ts">): void
@@ -342,13 +348,13 @@ class SyncLogger {
 
 以下调用点在 **主进程 IPC 服务** 或 **渲染层 store action** 中插入 `syncLogger.record()`：
 
-| 触发点 | 文件 | 生成 OpType |
-|-------|------|------------|
-| `DbService.updateReadStatus()` | `ipc/services/db.ts` | `entry.mark_read` / `entry.mark_unread` |
-| `DbService.addFeed()` | `ipc/services/db.ts` | `subscription.add` |
-| `DbService.deleteSubscriptionByTargets()` | `ipc/services/db.ts` | `subscription.remove` |
-| `SubscriptionService.patch()` 包装 | `ipc/services/sync.ts` | `subscription.update` |
-| Collection add/remove IPC | 待确认位置 | `collection.add` / `collection.remove` |
+| 触发点                                    | 文件                   | 生成 OpType                             |
+| ----------------------------------------- | ---------------------- | --------------------------------------- |
+| `DbService.updateReadStatus()`            | `ipc/services/db.ts`   | `entry.mark_read` / `entry.mark_unread` |
+| `DbService.addFeed()`                     | `ipc/services/db.ts`   | `subscription.add`                      |
+| `DbService.deleteSubscriptionByTargets()` | `ipc/services/db.ts`   | `subscription.remove`                   |
+| `SubscriptionService.patch()` 包装        | `ipc/services/sync.ts` | `subscription.update`                   |
+| Collection add/remove IPC                 | 待确认位置             | `collection.add` / `collection.remove`  |
 
 > ⚠️ importState 执行期间，SyncLogger 处于 `paused` 状态，回放的 DB 写操作不生成新 SyncOp。
 
@@ -456,6 +462,7 @@ await SyncManager.drainPendingOps(feedId)
 ```
 
 `drainPendingOps(feedId)` 实现：
+
 1. 查询 `pending_sync_ops` 中 `status='pending'` 且 `retry_after <= Date.now()` 的 ops
 2. 筛选 `entityId` 在给定 feedId 下已存在的条目
 3. 重新执行 `applyOp(op)` 成功 → 删除 pending 记录
@@ -465,11 +472,11 @@ await SyncManager.drainPendingOps(feedId)
 
 ## 十一、Wind-down（日志压缩）
 
-| 阶段 | 触发时机 | 操作 |
-|------|---------|------|
-| 30 天归档 | 每次 exportState 或手动触发 | 将 30 天前的 `ops/YYYY-MM-DD/` 递归移入 `ops/archive/` |
-| 快照压缩 | 手动触发 / 每季度 | `compactSnapshot()`：全量状态写 `snapshot/latest.json` |
-| 新设备初始化 | 首次配置 syncRepoPath | 先加载 `snapshot/latest.json`，再回放 30 天内增量 |
+| 阶段         | 触发时机                    | 操作                                                   |
+| ------------ | --------------------------- | ------------------------------------------------------ |
+| 30 天归档    | 每次 exportState 或手动触发 | 将 30 天前的 `ops/YYYY-MM-DD/` 递归移入 `ops/archive/` |
+| 快照压缩     | 手动触发 / 每季度           | `compactSnapshot()`：全量状态写 `snapshot/latest.json` |
+| 新设备初始化 | 首次配置 syncRepoPath       | 先加载 `snapshot/latest.json`，再回放 30 天内增量      |
 
 ---
 
@@ -499,20 +506,20 @@ await SyncManager.drainPendingOps(feedId)
 
 ### 13.1 配置项
 
-| 配置项 | 控件 | 说明 |
-|-------|------|------|
+| 配置项           | 控件                        | 说明                      |
+| ---------------- | --------------------------- | ------------------------- |
 | Git 仓库本地路径 | 路径输入框 + 文件夹选择按钮 | 必须已存在且已 `git init` |
-| 当前设备名 | 只读文本 + 编辑按钮 | 用于 ndjson 文件命名 |
-| 设备 ID | 只读文本（折叠） | 显示当前 deviceId |
+| 当前设备名       | 只读文本 + 编辑按钮         | 用于 ndjson 文件命名      |
+| 设备 ID          | 只读文本（折叠）            | 显示当前 deviceId         |
 
 ### 13.2 状态展示
 
-| 状态 | 显示内容 |
-|-----|---------|
-| 未配置 | "尚未配置同步仓库" + 配置按钮 |
-| 同步中 | Loading 动画 + "正在同步..." |
+| 状态         | 显示内容                            |
+| ------------ | ----------------------------------- |
+| 未配置       | "尚未配置同步仓库" + 配置按钮       |
+| 同步中       | Loading 动画 + "正在同步..."        |
 | 上次同步成功 | "上次同步: 3 分钟前" + 手动触发按钮 |
-| 同步失败 | 红色警告 + 错误信息折叠展示 |
+| 同步失败     | 红色警告 + 错误信息折叠展示         |
 
 ### 13.3 操作按钮
 
@@ -525,15 +532,15 @@ await SyncManager.drainPendingOps(feedId)
 
 ## 十四、错误码定义
 
-| 错误码 | 含义 | 处理方式 |
-|-------|------|---------|
-| `SYNC_REPO_NOT_CONFIGURED` | 仓库路径未配置 | 引导用户配置 |
-| `SYNC_REPO_NOT_GIT` | 路径不是 git 仓库 | 提示运行 `git init` |
-| `SYNC_GIT_PULL_CONFLICT` | pull rebase 冲突 | 重试一次，仍失败则报错 |
-| `SYNC_GIT_PUSH_REJECTED` | push 被拒绝 | pull rebase 后重试 |
-| `SYNC_NDJSON_CORRUPT` | ndjson 末行残缺 | 截断修复，记录告警 |
-| `SYNC_CLOCK_DRIFT` | ts 与 logicalClock 偏差 > 阈值 | 记录警告，不阻塞 |
-| `SYNC_ENTRY_ID_ALGO_MISMATCH` | meta.json 算法版本不一致 | 强提示，需要迁移脚本 |
+| 错误码                        | 含义                           | 处理方式               |
+| ----------------------------- | ------------------------------ | ---------------------- |
+| `SYNC_REPO_NOT_CONFIGURED`    | 仓库路径未配置                 | 引导用户配置           |
+| `SYNC_REPO_NOT_GIT`           | 路径不是 git 仓库              | 提示运行 `git init`    |
+| `SYNC_GIT_PULL_CONFLICT`      | pull rebase 冲突               | 重试一次，仍失败则报错 |
+| `SYNC_GIT_PUSH_REJECTED`      | push 被拒绝                    | pull rebase 后重试     |
+| `SYNC_NDJSON_CORRUPT`         | ndjson 末行残缺                | 截断修复，记录告警     |
+| `SYNC_CLOCK_DRIFT`            | ts 与 logicalClock 偏差 > 阈值 | 记录警告，不阻塞       |
+| `SYNC_ENTRY_ID_ALGO_MISMATCH` | meta.json 算法版本不一致       | 强提示，需要迁移脚本   |
 
 ---
 
@@ -562,12 +569,12 @@ await SyncManager.drainPendingOps(feedId)
 
 ### 单元测试
 
-| 测试文件 | 覆盖内容 |
-|---------|---------|
-| `sync-logger.test.ts` | record/drain/pause/resume 逻辑 |
+| 测试文件              | 覆盖内容                            |
+| --------------------- | ----------------------------------- |
+| `sync-logger.test.ts` | record/drain/pause/resume 逻辑      |
 | `sync-export.test.ts` | exportState 返回值、ndjson 格式校验 |
-| `sync-import.test.ts` | applyOp 幂等性、LWW 冲突决策 |
-| `sync-git.test.ts` | GitRunner mock 测试 |
+| `sync-import.test.ts` | applyOp 幂等性、LWW 冲突决策        |
+| `sync-git.test.ts`    | GitRunner mock 测试                 |
 
 ### 集成测试
 

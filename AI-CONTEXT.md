@@ -1,7 +1,7 @@
 # AI-CONTEXT.md
 
 > 单一事实源（Single Source of Truth）
-> 最后更新时间：2026-03-31（基于当前代码、远程访问实现与文档同步结果）
+> 最后更新时间：2026-04-01（基于当前代码、远程访问实现、排序修复与文档同步结果）
 
 ## 上下文委派策略
 
@@ -149,6 +149,21 @@
 - 内置 RSSHub 在打包环境的路径识别已增强：当缺少 `electron app` 上下文和 `ELECTRON_IS_PACKAGED` 时，按路径特征兜底识别，避免误走开发路径导致启动失败
 - Discover 首页趋势模块默认拉取数量已调整为 `50`（`DiscoveryContent -> Trending limit=50`）
 - issue 第 39 条已按产品决策直接删除，不纳入修复范围
+
+## 最近补充修复（2026-04-01）
+
+- 远程浏览器端同步链路已补齐：
+  - remote entry 注入 `queryClientContext`
+  - 当前选中 feed 会真实拉取条目
+  - `entries.updated` 失效后可重新取数
+  - 订阅刷新改为全量替换，避免删除订阅后残留旧项
+  - 远程详情在缓存仅含摘要时会补拉完整正文
+- 订阅列表按未读排序时已去掉 onboarding 插队逻辑，当前应严格按未读数排序
+- 文章发布时间写入已移除 `Date.now()` 兜底，避免缺失发布时间时伪装成“最新发布”
+- 已新增 `apps/desktop/scripts/repair-published-at.ts`，用于在真实数据库环境下诊断和修复历史 `publishedAt` 脏数据
+- 已新增文档：
+  - `docs/README.md`
+  - `apps/desktop/scripts/README.repair-published-at.md`
 
 ## 已知边界与残留在线能力
 

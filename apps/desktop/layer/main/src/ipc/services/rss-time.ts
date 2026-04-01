@@ -11,3 +11,7 @@ export const toTimestampMs = (input: TimestampInput): number | null => {
   const parsed = Date.parse(trimmed)
   return Number.isFinite(parsed) ? parsed : null
 }
+
+export const resolvePublishedAtMs = (input: TimestampInput): number => {
+  return toTimestampMs(input) ?? 0
+}

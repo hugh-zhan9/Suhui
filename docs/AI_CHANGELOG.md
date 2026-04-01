@@ -5970,3 +5970,38 @@
 - `apps/desktop/layer/renderer/src/lib/remote-store-sync.test.ts`
 
 ---
+
+## [2026-04-01 16:50] [Bugfix]
+
+- **Change**: 修正订阅列表未读排序与文章发布时间排序的回归
+- **Risk Analysis**: 主要风险在于订阅列表去掉 onboarding 优先后，少数引导源会从列表顶部下移；文章发布时间缺失现在统一写为 0，旧数据库中已经写入的错误发布时间不会被自动回滚，需要后续刷新逐步修正。新逻辑不会改变文章列表的排序字段，仍是按 publishedAt，只是去掉了错误的当前时间兜底。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/modules/subscription-column/SortedFeedItems.tsx`
+- `apps/desktop/layer/renderer/src/modules/subscription-column/sort-by/SortByUnreadList.tsx`
+- `apps/desktop/layer/renderer/src/modules/subscription-column/SortedFeedItems.test.tsx`
+- `apps/desktop/layer/main/src/ipc/services/rss-time.ts`
+- `apps/desktop/layer/main/src/ipc/services/rss-time.test.ts`
+- `apps/desktop/layer/main/src/ipc/services/db.ts`
+
+---
+
+## [2026-04-01 17:10] [docs]
+
+- **Change**: 同步项目文档到当前 desktop-only、外部 RSSHub 与远程访问实现状态
+- **Risk Analysis**: 低风险。主要变更为文档对齐与历史文档标注，不改运行逻辑；剩余风险是部分历史文档正文仍保留旧术语，但已通过 docs/README 与文件头明确其非当前基线。
+- **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
+- **Changed Files**:
+- `README.md`
+- `CONTRIBUTING.md`
+- `AI-CONTEXT.md`
+- `docs/README.md`
+- `apps/desktop/AGENTS.md`
+- `docs/rsshub-embedded-design.md`
+- `docs/rsshub-technical-design.md`
+- `docs/rsshub-dev-plan.md`
+- `docs/sync-design.md`
+- `docs/sync-technical-design.md`
+- `docs/sync-dev-plan.md`
+
+---
