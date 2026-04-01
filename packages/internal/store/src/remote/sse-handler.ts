@@ -5,10 +5,12 @@
 
 import { queryClient } from "../context"
 import type { UnreadSchema } from "../../../database/src/schemas/types"
+import { feedActions } from "../modules/feed/store"
 import { subscriptionActions } from "../modules/subscription/store"
 import { unreadActions } from "../modules/unread/store"
 import { getRuntimeEnv } from "./env"
 import {
+  extractFeedsFromSubscriptions,
   transformSubscriptionsFromApi,
   transformUnreadsFromApi,
   type SubscriptionRecord,
@@ -122,8 +124,10 @@ class RemoteSSEHandler {
 
       const { data } = (await response.json()) as { data: SubscriptionRecord[] }
       const subscriptions = transformSubscriptionsFromApi(data)
+      const feeds = extractFeedsFromSubscriptions(data)
 
-      subscriptionActions.upsertManyInSession(subscriptions)
+      subscriptionActions.replaceManyInSession(subscriptions)
+      feedActions.upsertManyInSession(feeds as any)
       this.handlers.onSubscriptionsUpdated?.()
     } catch (error) {
       console.error("[RemoteSSEHandler] Failed to refresh subscriptions:", error)

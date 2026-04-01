@@ -6,8 +6,7 @@
 import { cn } from "@suhui/utils/utils"
 import { useEffect, useMemo, useState } from "react"
 
-import { useEntry } from "@suhui/store/entry/hooks"
-import { useEntryStore } from "@suhui/store/entry/store"
+import { useEntry, useEntriesQuery } from "@suhui/store/entry/hooks"
 import { useFeedById } from "@suhui/store/feed/hooks"
 import { useSubscriptionStore } from "@suhui/store/subscription/store"
 import { useUnreadStore } from "@suhui/store/unread/store"
@@ -22,7 +21,6 @@ export function RemoteApp() {
   const [activeEntryId, setActiveEntryId] = useState<string | null>(null)
   const [unreadOnly, setUnreadOnly] = useState(false)
   const [connected, setConnected] = useState(true)
-  const [feedListVersion, setFeedListVersion] = useState(0)
 
   // 获取订阅数据
   const subscriptionState = useSubscriptionStore()
@@ -51,16 +49,13 @@ export function RemoteApp() {
     }
 
     return feeds
-  }, [subscriptionState.data, subscriptionState.feedIdByView, feedListVersion])
+  }, [subscriptionState.data, subscriptionState.feedIdByView])
 
   // 设置 SSE 连接状态监听
   useEffect(() => {
     remoteSSEHandler.setHandlers({
       onConnectionChange: (isConnected) => {
         setConnected(isConnected)
-      },
-      onSubscriptionsUpdated: () => {
-        setFeedListVersion((v) => v + 1)
       },
     })
   }, [])
@@ -71,6 +66,13 @@ export function RemoteApp() {
       setActiveFeedId(feedList[0].feedId)
     }
   }, [feedList, activeFeedId])
+
+  useEffect(() => {
+    if (activeFeedId && !feedList.some((feed) => feed.feedId === activeFeedId)) {
+      setActiveFeedId(feedList[0]?.feedId ?? null)
+      setActiveEntryId(null)
+    }
+  }, [activeFeedId, feedList])
 
   return (
     <div className="flex h-screen flex-col bg-theme-background">
@@ -189,37 +191,42 @@ function EntryColumn({
   feedId: string | null
   unreadOnly: boolean
   activeEntryId: string | null
-  onSelectEntry: (entryId: string) => void
+  onSelectEntry: (entryId: string | null) => void
 }) {
-  // 获取条目 ID 列表
-  const entryIds = useMemo(() => {
-    if (!feedId) return []
-    const { entryIdByFeed, data } = useEntryStore.getState()
-    const ids = entryIdByFeed[feedId]
-    if (!ids) return []
+  const entriesQuery = useEntriesQuery(
+    feedId
+      ? {
+          feedId,
+          unreadOnly,
+          limit: 100,
+        }
+      : undefined,
+  )
+  const entryIds = entriesQuery.entriesIds
 
-    const result: string[] = []
-    for (const id of ids) {
-      const entry = data[id]
-      if (entry && (!unreadOnly || !entry.read)) {
-        result.push(id)
-      }
+  useEffect(() => {
+    if (entryIds.length === 0) {
+      if (activeEntryId) onSelectEntry(null)
+      return
     }
 
-    // 按发布时间排序
-    result.sort((a, b) => {
-      const entryA = data[a]
-      const entryB = data[b]
-      return (entryB?.publishedAt ?? 0) - (entryA?.publishedAt ?? 0)
-    })
-
-    return result
-  }, [feedId, unreadOnly])
+    if (!activeEntryId || !entryIds.includes(activeEntryId)) {
+      onSelectEntry(entryIds[0]!)
+    }
+  }, [activeEntryId, entryIds, onSelectEntry])
 
   if (!feedId) {
     return (
       <div className="text-muted-foreground flex h-full items-center justify-center p-4">
         Select a feed to view entries
+      </div>
+    )
+  }
+
+  if (entriesQuery.isLoading) {
+    return (
+      <div className="text-muted-foreground flex h-full items-center justify-center p-4">
+        Loading entries...
       </div>
     )
   }

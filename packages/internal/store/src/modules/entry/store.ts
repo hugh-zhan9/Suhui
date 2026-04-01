@@ -742,11 +742,14 @@ class EntrySyncServices {
   async fetchEntryDetail(entryId: EntryId | undefined, _isInbox?: boolean) {
     if (!entryId) return null
 
-    // First check in-memory store (populated by fetchEntries)
-    const cached = getEntry(entryId)
-    if (cached) return cached
-
     const { isRemote } = getRuntimeEnv()
+
+    // In remote mode, list queries often cache partial records, so fetch the full
+    // detail when正文/可读内容 still missing.
+    const cached = getEntry(entryId)
+    const hasFullContent = !!cached && !!(cached.content || cached.readabilityContent)
+    if (!isRemote && cached) return cached
+    if (isRemote && cached && hasFullContent) return cached
 
     // [Remote Mode] Fetch from HTTP API
     if (isRemote) {

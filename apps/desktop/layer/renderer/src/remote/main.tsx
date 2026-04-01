@@ -8,6 +8,7 @@ import { Provider } from "jotai"
 import React from "react"
 import ReactDOM from "react-dom/client"
 
+import { queryClientContext } from "@suhui/store/context"
 import { jotaiStore } from "~/lib/jotai"
 import { persistConfig, queryClient } from "~/lib/query-client"
 
@@ -17,6 +18,7 @@ import { RemoteApp } from "./remote-app"
 
 // 标记远程运行时环境
 markRemoteRuntime()
+queryClientContext.provide(queryClient)
 
 const container = document.querySelector("#root")
 
