@@ -1,3 +1,6 @@
+/* 远程端样式 - 复用桌面端主题系统 */
+@import "../styles/theme.css";
+
 :root {
   color-scheme: light dark;
   font-family:
@@ -12,423 +15,86 @@ body,
 
 body {
   margin: 0;
-  background:
-    radial-gradient(circle at top left, rgba(226, 196, 166, 0.35), transparent 24%),
-    linear-gradient(180deg, #f2ede4 0%, #f9f6ef 100%);
-  color: #181c20;
+  background: var(--fo-background);
+  color: var(--fo-foreground);
 }
 
-.remote-page {
-  max-width: 1240px;
-  margin: 0 auto;
-  padding: 28px 18px 40px;
-}
-
-.remote-hero {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 20px;
-  margin-bottom: 20px;
-}
-
-.remote-eyebrow {
-  margin: 0 0 8px;
-  font-size: 12px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: #8c694b;
-}
-
-.remote-title {
-  margin: 0;
-  font-size: clamp(30px, 5vw, 52px);
-  line-height: 0.95;
-}
-
-.remote-subtitle {
-  margin: 10px 0 0;
-  color: #5f6670;
-  font-size: 15px;
-}
-
-.remote-status {
-  padding: 12px 14px;
-  border-radius: 999px;
-  border: 1px solid rgba(24, 28, 32, 0.08);
-  background: rgba(255, 255, 255, 0.78);
-  font-size: 13px;
-  white-space: nowrap;
-}
-
-.remote-context-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
-.remote-context-chip {
-  display: inline-flex;
-  align-items: center;
-  min-height: 34px;
-  padding: 0 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(24, 28, 32, 0.08);
-  background: rgba(255, 255, 255, 0.72);
-  font-size: 13px;
-}
-
-.remote-context-chip.is-offline {
-  border-color: rgba(178, 100, 42, 0.28);
-  background: rgba(178, 100, 42, 0.12);
-  color: #8c694b;
-}
-
-.remote-banner {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 16px;
-  padding: 14px 16px;
-  border-radius: 18px;
-  border: 1px solid rgba(178, 100, 42, 0.18);
-  background: rgba(255, 245, 236, 0.82);
-}
-
-.remote-banner-text {
-  margin: 0;
-  color: #5f6670;
+/* 断线提示样式 */
+.remote-offline-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: 8px 16px;
+  background: var(--fo-destructive);
+  color: white;
+  text-align: center;
   font-size: 14px;
 }
 
-.remote-shell {
-  display: grid;
-  grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
-  gap: 16px;
+/* 内容区 prose 样式 */
+.prose {
+  line-height: 1.75;
 }
 
-.remote-pane {
-  min-height: 70vh;
-  border-radius: 24px;
-  border: 1px solid rgba(24, 28, 32, 0.08);
-  background: rgba(255, 255, 255, 0.72);
-  box-shadow: 0 18px 60px rgba(24, 28, 32, 0.08);
-  backdrop-filter: blur(18px);
-  padding: 18px;
-}
-
-.remote-pane-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
-.remote-pane-header--stack {
-  margin-bottom: 12px;
-}
-
-.remote-section-label {
-  margin: 0 0 6px;
-  font-size: 11px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: #8c694b;
-}
-
-.remote-section-title {
-  margin: 0;
-  font-size: 20px;
-}
-
-.remote-section-title--small {
-  font-size: 16px;
-}
-
-.remote-list {
-  display: grid;
-  gap: 12px;
-}
-
-.remote-create-form {
-  display: grid;
-  gap: 10px;
-  margin-bottom: 16px;
-}
-
-.remote-input {
-  width: 100%;
-  box-sizing: border-box;
-  border: 1px solid rgba(24, 28, 32, 0.08);
-  background: rgba(255, 255, 255, 0.78);
-  border-radius: 14px;
-  padding: 12px 14px;
-  color: inherit;
-  font: inherit;
-}
-
-.remote-input--compact {
-  width: auto;
-  min-width: 130px;
-  padding: 10px 12px;
-}
-
-.remote-card {
-  width: 100%;
-  text-align: left;
-  border: 1px solid rgba(24, 28, 32, 0.06);
-  background: rgba(244, 239, 230, 0.9);
-  border-radius: 18px;
-  padding: 14px;
-  cursor: pointer;
-  transition:
-    transform 120ms ease,
-    border-color 120ms ease,
-    background 120ms ease;
-}
-
-.remote-card-button {
-  width: 100%;
-  border: 0;
-  padding: 0;
-  text-align: left;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-}
-
-.remote-card:hover {
-  transform: translateY(-1px);
-  border-color: rgba(178, 100, 42, 0.28);
-}
-
-.remote-card.is-active {
-  border-color: rgba(178, 100, 42, 0.48);
-  background: rgba(221, 190, 158, 0.34);
-}
-
-.remote-card--entry {
-  cursor: default;
-}
-
-.remote-card-title {
-  display: block;
-  margin: 0;
-  font-size: 16px;
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4 {
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
   font-weight: 600;
 }
 
-.remote-card-meta {
-  display: block;
-  margin: 8px 0 0;
-  color: #5f6670;
-  font-size: 13px;
+.prose p {
+  margin-top: 1em;
+  margin-bottom: 1em;
 }
 
-.remote-badge {
-  display: inline-flex;
-  margin-top: 10px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: #b2642a;
-  color: #fff7ef;
-  font-size: 12px;
-}
-
-.remote-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.remote-detail-actions {
-  margin-bottom: 14px;
-}
-
-.remote-inline-actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 12px;
-}
-
-.remote-inline-action {
-  border: 0;
-  background: transparent;
-  color: #b2642a;
-  font: inherit;
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.remote-button {
-  border: 0;
-  border-radius: 999px;
-  padding: 10px 14px;
-  background: #b2642a;
-  color: #fff;
-  font: inherit;
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.remote-button--secondary {
-  background: rgba(24, 28, 32, 0.12);
-  color: #181c20;
-}
-
-.remote-button[disabled] {
-  opacity: 0.55;
-  cursor: default;
-}
-
-.remote-empty {
-  margin: 0;
-  color: #5f6670;
-  font-size: 14px;
-}
-
-.remote-detail {
-  margin-top: 16px;
-  border-top: 1px solid rgba(24, 28, 32, 0.08);
-  padding-top: 16px;
-}
-
-.remote-editor {
-  margin-top: 16px;
-  border-top: 1px solid rgba(24, 28, 32, 0.08);
-  padding-top: 16px;
-}
-
-.remote-detail-title {
-  margin: 0 0 10px;
-  font-size: 22px;
-}
-
-.remote-detail-description {
-  margin: 0 0 12px;
-  color: #5f6670;
-  font-size: 14px;
-  line-height: 1.6;
-}
-
-.remote-detail-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.remote-link {
-  color: #b2642a;
-  text-decoration: none;
-}
-
-.remote-link:hover {
+.prose a {
+  color: var(--fo-primary);
   text-decoration: underline;
 }
 
-.remote-detail-content {
-  color: #222831;
-  line-height: 1.75;
-  font-size: 15px;
-}
-
-.remote-detail-content p:first-child {
-  margin-top: 0;
-}
-
-.remote-detail-content img,
-.remote-detail-content video,
-.remote-detail-content iframe {
+.prose img {
   max-width: 100%;
-  border-radius: 16px;
+  border-radius: 8px;
+  margin: 1em 0;
 }
 
-@media (max-width: 960px) {
-  .remote-shell {
-    grid-template-columns: 1fr;
-  }
-
-  .remote-pane {
-    min-height: auto;
-  }
+.prose pre {
+  background: var(--fo-muted);
+  padding: 1em;
+  border-radius: 8px;
+  overflow-x: auto;
 }
 
-@media (prefers-color-scheme: dark) {
-  body {
-    background:
-      radial-gradient(circle at top left, rgba(139, 98, 62, 0.26), transparent 24%),
-      linear-gradient(180deg, #101418 0%, #161b20 100%);
-    color: #eef2f5;
-  }
+.prose code {
+  background: var(--fo-muted);
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
 
-  .remote-subtitle,
-  .remote-card-meta,
-  .remote-empty,
-  .remote-detail-description,
-  .remote-banner-text {
-    color: #aab4be;
-  }
+.prose pre code {
+  background: none;
+  padding: 0;
+}
 
-  .remote-status,
-  .remote-context-chip,
-  .remote-pane {
-    border-color: rgba(255, 255, 255, 0.08);
-    background: rgba(17, 22, 27, 0.76);
-  }
+.prose blockquote {
+  border-left: 4px solid var(--fo-border);
+  margin: 1em 0;
+  padding-left: 1em;
+  color: var(--fo-muted-foreground);
+}
 
-  .remote-context-chip.is-offline {
-    border-color: rgba(247, 184, 119, 0.32);
-    background: rgba(247, 184, 119, 0.14);
-    color: #f7b877;
-  }
+.prose ul,
+.prose ol {
+  padding-left: 1.5em;
+  margin: 1em 0;
+}
 
-  .remote-banner {
-    border-color: rgba(247, 184, 119, 0.18);
-    background: rgba(247, 184, 119, 0.08);
-  }
-
-  .remote-input {
-    border-color: rgba(255, 255, 255, 0.08);
-    background: rgba(255, 255, 255, 0.04);
-  }
-
-  .remote-card {
-    border-color: rgba(255, 255, 255, 0.06);
-    background: rgba(255, 255, 255, 0.04);
-  }
-
-  .remote-card.is-active {
-    border-color: rgba(247, 184, 119, 0.45);
-    background: rgba(247, 184, 119, 0.1);
-  }
-
-  .remote-button--secondary {
-    background: rgba(255, 255, 255, 0.1);
-    color: #eef2f5;
-  }
-
-  .remote-inline-action {
-    color: #f7b877;
-  }
-
-  .remote-link {
-    color: #f7b877;
-  }
-
-  .remote-detail {
-    border-top-color: rgba(255, 255, 255, 0.08);
-  }
-
-  .remote-editor {
-    border-top-color: rgba(255, 255, 255, 0.08);
-  }
-
-  .remote-detail-content {
-    color: #eef2f5;
-  }
+.prose li {
+  margin: 0.5em 0;
 }

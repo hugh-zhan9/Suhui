@@ -5,6 +5,8 @@ import { tracker } from "@suhui/tracker"
 import { omit } from "es-toolkit"
 
 import { api, queryClient } from "../../context"
+import { getRuntimeEnv } from "../../remote/env"
+import { transformSubscriptionFromApi, type SubscriptionRecord } from "../../remote/transforms"
 import type { Hydratable, Resetable } from "../../lib/base"
 import { createImmerSetter, createTransaction, createZustandStore } from "../../lib/helper"
 import { apiMorph } from "../../morph/api"
@@ -222,12 +224,18 @@ class SubscriptionActions implements Hydratable, Resetable {
 
 class SubscriptionSyncService {
   async fetch(view?: FeedViewType) {
+    const { isRemote } = getRuntimeEnv()
+
+    // [Remote Mode] Fetch from HTTP API
+    if (isRemote) {
+      return this.fetchFromRemote(view)
+    }
+
     // [Local Mode] Return subscriptions from the local Zustand store
     const storeData = get().data
     const allSubscriptions = Object.values(storeData)
-    const filtered = view !== undefined
-      ? allSubscriptions.filter((s: any) => s.view === view)
-      : allSubscriptions
+    const filtered =
+      view !== undefined ? allSubscriptions.filter((s: any) => s.view === view) : allSubscriptions
 
     // Also gather associated feeds from the feed store
     const feedStore = (await import("../feed/store")).useFeedStore.getState()
@@ -235,6 +243,41 @@ class SubscriptionSyncService {
     const feeds = Object.values(feedStore.feeds).filter((f: any) => feedIds.has(f.id))
 
     return { subscriptions: filtered, feeds }
+  }
+
+  /**
+   * [Remote Mode] Fetch subscriptions from HTTP API
+   */
+  private async fetchFromRemote(view?: FeedViewType) {
+    try {
+      const response = await fetch("/api/subscriptions")
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`)
+      }
+
+      const { data } = (await response.json()) as { data: SubscriptionRecord[] }
+      const subscriptions = (data || []).map(transformSubscriptionFromApi)
+
+      // Update store
+      subscriptionActions.upsertManyInSession(subscriptions)
+
+      // Filter by view if specified
+      const filtered =
+        view !== undefined ? subscriptions.filter((s) => s.view === view) : subscriptions
+
+      // Extract feeds from subscriptions
+      const feedIds = new Set(filtered.map((s) => s.feedId).filter(Boolean))
+      const feeds = Array.from(feedIds).map((id) => ({
+        id,
+        title: filtered.find((s) => s.feedId === id)?.title || null,
+        url: "",
+      }))
+
+      return { subscriptions: filtered, feeds }
+    } catch (error) {
+      console.error("[Remote] fetchFromRemote error:", error)
+      throw error
+    }
   }
 
   async edit(subscription: SubscriptionModel) {
@@ -335,7 +378,9 @@ class SubscriptionSyncService {
         ""
 
       // Use the feedId from the preview phase if already assigned
-      const feedId = (subscription as any).feedId || `local_feed_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+      const feedId =
+        (subscription as any).feedId ||
+        `local_feed_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
       const subId = `local_sub_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
 
       data = {
@@ -376,7 +421,11 @@ class SubscriptionSyncService {
     }
 
     // Insert to subscription first so that entry hydration can bind to its view!
-    if (typeof window !== "undefined" && (window as any).electron?.ipcRenderer && data.subscription) {
+    if (
+      typeof window !== "undefined" &&
+      (window as any).electron?.ipcRenderer &&
+      data.subscription
+    ) {
       // Local IPC mode: DB already persisted it, just update the in-memory store
       subscriptionActions.upsertManyInSession([dbStoreMorph.toSubscriptionModel(data.subscription)])
     } else {
@@ -497,7 +546,10 @@ class SubscriptionSyncService {
       }
 
       if (typeof window !== "undefined" && (window as any).electron?.ipcRenderer) {
-        return (window as any).electron.ipcRenderer.invoke("db.deleteSubscriptionByTargets", payload)
+        return (window as any).electron.ipcRenderer.invoke(
+          "db.deleteSubscriptionByTargets",
+          payload,
+        )
       } else {
         return SubscriptionService.deleteByTargets(payload)
       }

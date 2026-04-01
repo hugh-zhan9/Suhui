@@ -6,6 +6,7 @@ import type { MarkAllAsReadRequest } from "@follow-app/client-sdk"
 import { isEqual } from "es-toolkit"
 
 import { api } from "../../context"
+import { getRuntimeEnv } from "../../remote/env"
 import type { Hydratable, Resetable } from "../../lib/base"
 import { createTransaction, createZustandStore } from "../../lib/helper"
 import { getEntry } from "../entry/getter"
@@ -13,7 +14,10 @@ import { entryActions } from "../entry/store"
 import { setFeedUnreadDirty } from "../feed/hooks"
 import { getListFeedIds } from "../list/getters"
 import { getSubscribedFeedIdAndInboxHandlesByView } from "../subscription/getter"
-import { applyUnreadCountForAffectedEntries, applyUnreadDeltaForAffectedEntries } from "./local-unread"
+import {
+  applyUnreadCountForAffectedEntries,
+  applyUnreadDeltaForAffectedEntries,
+} from "./local-unread"
 import { invalidateEntriesForUnreadMutation } from "./invalidate-entries"
 import type {
   FeedIdOrInboxHandle,
@@ -70,7 +74,9 @@ class UnreadSyncService {
       if (!time && read) {
         unreadActions.upsertManyInSession(newUnreadListWhenNoTimeFilter)
       } else {
-        const currentCounts = Object.fromEntries(currentUnreadList.map((item) => [item.id, item.count]))
+        const currentCounts = Object.fromEntries(
+          currentUnreadList.map((item) => [item.id, item.count]),
+        )
         const affectedEntries = affectedEntryIds
           .map((entryId) => getEntry(entryId))
           .filter((entry): entry is NonNullable<typeof entry> => !!entry)
@@ -108,7 +114,9 @@ class UnreadSyncService {
         if (read && res) {
           await unreadActions.changeBatch(res, "decrement")
         } else {
-          const currentCounts = Object.fromEntries(currentUnreadList.map((item) => [item.id, item.count]))
+          const currentCounts = Object.fromEntries(
+            currentUnreadList.map((item) => [item.id, item.count]),
+          )
           const affectedEntries = affectedEntryIds
             .map((entryId) => getEntry(entryId))
             .filter((entry): entry is NonNullable<typeof entry> => !!entry)
@@ -217,7 +225,7 @@ class UnreadSyncService {
     await this.updateUnreadStatus({
       ids: feedIds,
       read: false,
-      request: async () => ({} as UnreadStoreModel),
+      request: async () => ({}) as UnreadStoreModel,
     })
   }
 
@@ -238,7 +246,7 @@ class UnreadSyncService {
     await this.updateUnreadStatus({
       ids: feedIds,
       read: false,
-      request: async () => ({} as UnreadStoreModel),
+      request: async () => ({}) as UnreadStoreModel,
     })
   }
 
@@ -247,6 +255,7 @@ class UnreadSyncService {
     if (!entry || entry.read === read || (!entry.feedId && !entry.inboxHandle)) return
 
     const id: FeedIdOrInboxHandle = entry.inboxHandle || entry.feedId || ""
+    const { isRemote } = getRuntimeEnv()
 
     const tx = createTransaction()
     tx.store(() => {
@@ -259,6 +268,14 @@ class UnreadSyncService {
     })
 
     tx.request(async () => {
+      // [Remote Mode] Use HTTP API
+      if (isRemote) {
+        await fetch("/api/entries/read", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ entryIds: [entryId], read }),
+        })
+      }
       // [Local Mode] No remote API call for read/unread status
       // The store and persist layers handle state locally
     })
@@ -273,6 +290,9 @@ class UnreadSyncService {
     })
 
     tx.persist(async () => {
+      // [Remote Mode] No local persistence, already handled by HTTP API
+      if (isRemote) return
+
       // [Local Mode] Persist via IPC to main process SQLite
       if (typeof window !== "undefined" && (window as any).electron?.ipcRenderer) {
         await (window as any).electron.ipcRenderer.invoke("db.updateReadStatus", {
