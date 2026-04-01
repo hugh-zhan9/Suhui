@@ -16,6 +16,8 @@ type SortListProps = {
   showCollapse: boolean
 }
 
+export const preserveUnreadSortedFeedIds = (ids: string[]) => ids.concat()
+
 export const SortedFeedItems = memo((props: SortListProps) => {
   const by = useFeedListSortSelector((s) => s.by)
   switch (by) {
@@ -84,28 +86,7 @@ const SortByAlphabeticalList = (props: SortListProps) => {
 const SortByUnreadList = ({ ids, showCollapse, view }: SortListProps) => {
   const isDesc = useFeedListSortSelector((s) => s.order === "desc")
   const sortByUnreadFeedList = useSortedIdsByUnread(ids, isDesc)
-
-  // Separate onboarding feeds and regular feeds, then merge with onboarding first
-  const sortedList = useFeedStore(
-    useCallback(
-      (state) => {
-        const onboardingFeeds: string[] = []
-        const regularFeeds: string[] = []
-
-        for (const id of sortByUnreadFeedList) {
-          const feed = state.feeds[id]
-          if (feed && isOnboardingFeedUrl(feed.url)) {
-            onboardingFeeds.push(id)
-          } else {
-            regularFeeds.push(id)
-          }
-        }
-
-        return [...onboardingFeeds, ...regularFeeds]
-      },
-      [sortByUnreadFeedList],
-    ),
-  )
+  const sortedList = preserveUnreadSortedFeedIds(sortByUnreadFeedList)
 
   return (
     <Fragment>

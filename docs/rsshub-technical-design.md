@@ -1,15 +1,19 @@
 # FreeFolo 内嵌 RSSHub 技术设计文档
 
+> 状态：历史技术设计，不是当前实现基线
 > 版本：1.1 | 最后更新：2026-02-28
-> 关联文档：[开发计划](./rsshub-dev-plan.md) | [总方案](./rsshub-embedded-design.md) | [AI 上下文](../AI-CONTEXT.md)
+> 当前代码以外部 RSSHub 模式为准，见 [AI-CONTEXT.md](/Users/zhangyukun/project/Suhui/AI-CONTEXT.md)
+> 关联文档：[开发计划](./rsshub-dev-plan.md) | [总方案](./rsshub-embedded-design.md)
 
-## 0. 当前实现对齐说明
+## 0. 当前状态说明
 
-- 当前代码已支持 `Lite/Official` 双模式：
-  - Lite：轻量内置路由（白名单）
-  - Official：内嵌官方运行时（全量链路）
-- 启动策略默认：`spawn + ELECTRON_RUN_AS_NODE=1`，可通过环境变量切回 `fork`
-- 运行时入口脚本已按打包环境适配（避免 `pathe` 缺失导致子进程启动失败）
+以下内容仅保留历史设计背景。
+
+当前真实代码不是本文档描述的“内嵌 RSSHub Lite/Official 双模式”，而是：
+
+- 识别 `rsshub.app` 与 `rsshub://` 路由
+- 改写到外部 RSSHub 实例
+- 未配置外部实例时抛出 `RSSHUB_EXTERNAL_UNCONFIGURED`
 
 ---
 

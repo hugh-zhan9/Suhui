@@ -1,19 +1,15 @@
 # FreeFolo 内嵌 RSSHub 开发计划
 
+> 状态：历史开发计划，不是当前实施计划
 > 版本：1.1 | 最后更新：2026-02-28
-> 关联文档：[技术设计](./rsshub-technical-design.md) | [总方案](./rsshub-embedded-design.md) | [AI 上下文](../AI-CONTEXT.md)
+> 当前代码以外部 RSSHub 模式为准，见 [AI-CONTEXT.md](/Users/zhangyukun/project/Suhui/AI-CONTEXT.md)
+> 关联文档：[技术设计](./rsshub-technical-design.md) | [总方案](./rsshub-embedded-design.md)
 
-## 当前实施状态（代码对齐）
+## 当前状态说明
 
-- M0：已完成（继续开发）
-- M1：已完成（本地改写与最小闭环）
-- M2：已完成（状态机、重试/冷却、控制台与错误透传）
-- M3：已完成（`build:rsshub` + `extraResource` + 本地打包集成）
-- M4：进行中（以 macOS arm64 为主，Windows/Linux 仅设计验证）
-- M5：部分完成（关键安全边界已落地，持续补充）
+以下里程碑用于保留历史规划背景。
 
-> 说明：当前实现为 **Lite/Official 双模式**。  
-> Lite 为内置轻量路由；Official 走本地内嵌官方运行时。
+当前真实实现已经转向外部 RSSHub 模式，不再按本文档继续推进内嵌运行时开发。
 
 ---
 
