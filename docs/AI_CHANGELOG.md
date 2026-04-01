@@ -5954,3 +5954,19 @@
 - `progress.md`
 
 ---
+
+## [2026-04-01 16:38] [Bugfix]
+
+- **Change**: 修复远程端订阅同步与条目详情加载回归，明确仅保留 app 端自动刷新
+- **Risk Analysis**: 主要风险在远程端共享 store 的替换语义变化，若其他页面依赖订阅 store 的增量合并行为，可能出现选中态或分类展开态被重置；另外 remote 入口新增 queryClientContext 提供后，若后续存在重复 provide，需留意上下文初始化顺序。主进程自动刷新频率与逻辑未改，web/remote 未新增定时刷新。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/remote/main.tsx`
+- `apps/desktop/layer/renderer/src/remote/remote-app.tsx`
+- `packages/internal/store/src/modules/subscription/store.ts`
+- `packages/internal/store/src/modules/entry/store.ts`
+- `packages/internal/store/src/remote/hydrate.ts`
+- `packages/internal/store/src/remote/sse-handler.ts`
+- `apps/desktop/layer/renderer/src/lib/remote-store-sync.test.ts`
+
+---

@@ -70,7 +70,7 @@ export const hydrateFromRemote = async (options?: RemoteHydrateOptions): Promise
 
     // 转换并填充订阅
     const subscriptions = transformSubscriptionsFromApi(subscriptionsData.data || [])
-    subscriptionActions.upsertManyInSession(subscriptions)
+    subscriptionActions.replaceManyInSession(subscriptions)
     status.subscriptionsLoaded = subscriptions.length
 
     // 提取并填充 Feed 信息

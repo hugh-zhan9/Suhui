@@ -30,6 +30,26 @@ import { getDefaultCategory, getSubscriptionDBId, getSubscriptionStoreId } from 
 type FeedId = string
 type ListId = string
 
+const createEmptySetMap = () => ({
+  [FeedViewType.All]: new Set<string>(),
+  [FeedViewType.Articles]: new Set<string>(),
+  [FeedViewType.Audios]: new Set<string>(),
+  [FeedViewType.Notifications]: new Set<string>(),
+  [FeedViewType.Pictures]: new Set<string>(),
+  [FeedViewType.SocialMedia]: new Set<string>(),
+  [FeedViewType.Videos]: new Set<string>(),
+})
+
+const createEmptyCategoryOpenStateByView = () => ({
+  [FeedViewType.All]: {},
+  [FeedViewType.Articles]: {},
+  [FeedViewType.Audios]: {},
+  [FeedViewType.Notifications]: {},
+  [FeedViewType.Pictures]: {},
+  [FeedViewType.SocialMedia]: {},
+  [FeedViewType.Videos]: {},
+})
+
 export interface SubscriptionState {
   /**
    * Key: FeedId, ListId, `inbox/${inboxId}`
@@ -53,32 +73,13 @@ export interface SubscriptionState {
   categoryOpenStateByView: Record<FeedViewType, Record<string, boolean>>
 }
 
-const emptyDataSetByView: Record<FeedViewType, Set<FeedId>> = {
-  [FeedViewType.All]: new Set(),
-  [FeedViewType.Articles]: new Set(),
-  [FeedViewType.Audios]: new Set(),
-  [FeedViewType.Notifications]: new Set(),
-  [FeedViewType.Pictures]: new Set(),
-  [FeedViewType.SocialMedia]: new Set(),
-  [FeedViewType.Videos]: new Set(),
-}
-const emptyCategoryOpenStateByView: Record<FeedViewType, Record<string, boolean>> = {
-  [FeedViewType.All]: {},
-  [FeedViewType.Articles]: {},
-  [FeedViewType.Audios]: {},
-  [FeedViewType.Notifications]: {},
-  [FeedViewType.Pictures]: {},
-  [FeedViewType.SocialMedia]: {},
-  [FeedViewType.Videos]: {},
-}
-
 const defaultState: SubscriptionState = {
   data: {},
-  feedIdByView: { ...emptyDataSetByView },
-  listIdByView: { ...emptyDataSetByView },
-  categories: { ...emptyDataSetByView },
+  feedIdByView: createEmptySetMap(),
+  listIdByView: createEmptySetMap(),
+  categories: createEmptySetMap(),
   subscriptionIdSet: new Set(),
-  categoryOpenStateByView: { ...emptyCategoryOpenStateByView },
+  categoryOpenStateByView: createEmptyCategoryOpenStateByView(),
 }
 
 const invalidateViews = (...views: (FeedViewType | undefined)[]) => {
@@ -151,6 +152,18 @@ class SubscriptionActions implements Hydratable, Resetable {
       }
     })
   }
+
+  replaceManyInSession(subscriptions: SubscriptionModel[]) {
+    immerSet((draft) => {
+      draft.data = {}
+      draft.feedIdByView = createEmptySetMap()
+      draft.listIdByView = createEmptySetMap()
+      draft.categories = createEmptySetMap()
+      draft.subscriptionIdSet = new Set()
+    })
+
+    this.upsertManyInSession(subscriptions)
+  }
   async upsertMany(
     subscriptions: SubscriptionModel[],
     options: { resetBeforeUpsert?: boolean | FeedViewType } = {},
@@ -208,9 +221,12 @@ class SubscriptionActions implements Hydratable, Resetable {
   async reset() {
     const tx = createTransaction()
     tx.store(() => {
-      // set(defaultState)
       immerSet((draft) => {
         Object.assign(draft, omit(defaultState, ["categoryOpenStateByView"]))
+        draft.feedIdByView = createEmptySetMap()
+        draft.listIdByView = createEmptySetMap()
+        draft.categories = createEmptySetMap()
+        draft.subscriptionIdSet = new Set()
       })
     })
 
