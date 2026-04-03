@@ -13,6 +13,8 @@ import { DBManager } from "~/manager/db"
 import { drainPendingOps } from "~/manager/sync-applier"
 import { syncLogger } from "~/manager/sync-logger"
 import { logger } from "~/logger"
+import { appendRefreshAuditTrace } from "~/manager/refresh-audit-log"
+import { broadcastLocalFeedRefreshCompleted } from "~/manager/local-feed-refresh-events"
 
 import { mapExecuteResult } from "./db-execute-result"
 import {
@@ -103,6 +105,7 @@ const refreshLog = (
     stage,
     ...extra,
   })
+  appendRefreshAuditTrace(trace, level, stage, extra)
 }
 
 const withTimeout = async <T>(
@@ -929,12 +932,23 @@ export class DbService extends IpcService {
       failed: results.filter((result) => !result.ok).length,
       durationMs: Date.now() - batchStartedAt,
     })
-    return {
+    const batchResult = {
       total: localFeeds.length,
       refreshed: results.filter((result) => result.ok).length,
       failed: results.filter((result) => !result.ok).length,
       results,
     }
+    if (
+      batchTrace.source === "manual-batch" ||
+      batchTrace.source === "startup-auto" ||
+      batchTrace.source === "interval-auto"
+    ) {
+      broadcastLocalFeedRefreshCompleted({
+        source: batchTrace.source,
+        result: batchResult,
+      })
+    }
+    return batchResult
   }
 
   @IpcMethod()

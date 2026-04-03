@@ -21,6 +21,7 @@ import { FollowCommandManager } from "~/modules/command/command-manager"
 import { HotkeyProvider } from "./hotkey-provider"
 import { I18nProvider } from "./i18n-provider"
 import { InvalidateQueryProvider } from "./invalidate-query-provider"
+import { LocalFeedRefreshSyncProvider } from "./local-feed-refresh-sync-provider"
 import {
   LazyContextMenuProvider,
   LazyExtensionExposeProvider,
@@ -71,6 +72,7 @@ export const RootProviders: FC<PropsWithChildren> = ({ children }) => (
           </GlobalFocusableProvider>
 
           <InvalidateQueryProvider />
+          <LocalFeedRefreshSyncProvider />
         </PersistQueryClientProvider>
       </MotionProvider>
     </RecaptchaProvider>

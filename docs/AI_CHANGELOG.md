@@ -6005,3 +6005,35 @@
 - `docs/sync-dev-plan.md`
 
 ---
+
+## [2026-04-03 16:55] [Bugfix]
+
+- **Change**: 修复本地 RSS 自动刷新与批量刷新后 renderer store 不同步，导致桌面端列表和未读显示滞后
+- **Risk Analysis**: 主风险在于批量刷新完成后会为成功 feed 追加一次本地取数，若订阅量很大可能带来短时 IPC 压力；另一个风险是后台自动刷新事件只同步成功 feed 的最新列表，不做全量重建，若未来刷新结果结构变化需要同步调整事件解析。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/ipc/services/db.ts`
+- `apps/desktop/layer/main/src/manager/local-feed-refresh-events.ts`
+- `apps/desktop/layer/main/src/manager/local-feed-refresh-events.test.ts`
+- `apps/desktop/layer/renderer/src/modules/entry-column/layouts/EntryListHeader.tsx`
+- `apps/desktop/layer/renderer/src/modules/entry-column/layouts/entry-refresh.ts`
+- `apps/desktop/layer/renderer/src/modules/entry-column/layouts/entry-refresh.test.ts`
+- `apps/desktop/layer/renderer/src/lib/local-feed-refresh-sync.ts`
+- `apps/desktop/layer/renderer/src/lib/local-feed-refresh-sync.test.ts`
+- `apps/desktop/layer/renderer/src/providers/local-feed-refresh-sync-provider.tsx`
+- `apps/desktop/layer/renderer/src/providers/root-providers.tsx`
+
+---
+
+## [2026-04-03 17:05] [Bugfix]
+
+- **Change**: 新增独立 refresh 审计日志，记录自动刷新与全局刷新批次执行、失败与跳过情况，便于溯源
+- **Risk Analysis**: 主风险在于批量刷新事件会额外追加一份 refresh.log，日志量会随订阅失败数增加；但写文件失败已做吞错，不会阻断刷新主流程。另一个风险是目前审计范围聚焦 batch 级事件，不覆盖单 feed 手动刷新。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/main/src/manager/refresh-audit-log.ts`
+- `apps/desktop/layer/main/src/manager/refresh-audit-log.test.ts`
+- `apps/desktop/layer/main/src/ipc/services/db.ts`
+- `apps/desktop/layer/main/src/manager/bootstrap.ts`
+
+---
