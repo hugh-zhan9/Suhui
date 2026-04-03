@@ -31,7 +31,7 @@ describe("SuHui branding", () => {
 
     expect(indexHtml).toContain("溯源而读，回归纯粹")
     expect(indexHtml).not.toContain("FreeFolo")
-    expect(indexHtml).toContain('<link rel="icon" href="/icon.png?v=20260303" type="image/png" />')
+    expect(indexHtml).toContain('<link rel="icon" href="/icon.png?v=20260403" type="image/png" />')
     expect(indexHtml).not.toContain('href="/icon.svg"')
   })
 
@@ -62,8 +62,8 @@ describe("SuHui branding", () => {
     const aboutContent = readFileSync(aboutPath, "utf-8")
     const modalLayoutContent = readFileSync(modalLayoutPath, "utf-8")
 
-    expect(aboutContent).toContain('const APP_ICON_SRC = "icon.png?v=20260303"')
-    expect(modalLayoutContent).toContain('const APP_ICON_SRC = "icon.png?v=20260303"')
+    expect(aboutContent).toContain('const APP_ICON_SRC = "icon.png?v=20260403"')
+    expect(modalLayoutContent).toContain('const APP_ICON_SRC = "icon.png?v=20260403"')
     expect(aboutContent).toContain('event.currentTarget.src = "icon.svg"')
     expect(modalLayoutContent).toContain('event.currentTarget.src = "icon.svg"')
     expect(aboutContent).not.toContain("@suhui/components/icons/logo.jsx")
@@ -107,7 +107,7 @@ describe("SuHui branding", () => {
     )
     const content = readFileSync(headerPath, "utf-8")
 
-    expect(content).toContain('const APP_ICON_SRC = "icon.png?v=20260303"')
+    expect(content).toContain('const APP_ICON_SRC = "icon.png?v=20260403"')
     expect(content).toContain("溯洄 (SuHui)")
     expect(content).not.toContain("<Folo")
     expect(content).not.toContain("<Logo")
