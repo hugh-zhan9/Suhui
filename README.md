@@ -93,6 +93,7 @@ pnpm install:macos-local
 - `/tmp/suhui-forge-out/make`
 
 更多见 [mac-local-packaging.md](/Users/zhangyukun/project/Suhui/docs/mac-local-packaging.md)。
+刷新链路校验与日志位置见 [local-refresh-observability.md](/Users/zhangyukun/project/Suhui/docs/local-refresh-observability.md)。
 
 ## PostgreSQL Docker（可选）
 
