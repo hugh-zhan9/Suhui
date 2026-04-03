@@ -105,6 +105,10 @@ export const EntryListHeader: FC<{
       !!ipc && shouldUseBatchLocalRefresh({ feedId, isAllFeeds, feed: latestFeed as any })
 
     if (canAttemptLocalFeedRefresh) {
+      if (!feedId) {
+        await refetch()
+        return
+      }
       setIsLocalRefreshing(true)
       try {
         await refreshLocalFeedAndSyncEntries({
@@ -129,6 +133,7 @@ export const EntryListHeader: FC<{
       try {
         await refreshAllLocalFeedsAndSyncEntries({
           ipc,
+          fetchEntries: entrySyncServices.fetchEntries.bind(entrySyncServices),
         })
       } catch (error) {
         console.warn("[EntryListHeader] batch local feed refresh failed, fallback to refetch", {

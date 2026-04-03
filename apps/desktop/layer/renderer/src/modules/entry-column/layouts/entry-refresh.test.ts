@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest"
 
 import {
+  extractSuccessfulLocalRefreshFeedIds,
   refreshAllLocalFeedsAndSyncEntries,
   refreshLocalFeedAndSyncEntries,
   shouldUseBatchLocalRefresh,
@@ -66,5 +67,44 @@ describe("refreshLocalFeedAndSyncEntries", () => {
     expect(invoke).toHaveBeenCalledWith("db.refreshLocalSubscribedFeeds", {
       source: "manual-batch",
     })
+  })
+
+  it("syncs successful batch-refreshed feeds back into the renderer store", async () => {
+    const invoke = vi.fn().mockResolvedValue({
+      refreshed: 2,
+      failed: 1,
+      results: [
+        { feedId: "feed_1", ok: true, entriesCount: 3 },
+        { feedId: "feed_2", ok: false, error: "timeout" },
+        { feedId: "feed_3", ok: true, entriesCount: 1 },
+        { feedId: "feed_1", ok: true, entriesCount: 3 },
+      ],
+    })
+    const fetchEntries = vi.fn().mockResolvedValue({ data: [] })
+
+    await refreshAllLocalFeedsAndSyncEntries({
+      ipc: { invoke },
+      fetchEntries,
+    })
+
+    expect(fetchEntries).toHaveBeenCalledTimes(2)
+    expect(fetchEntries).toHaveBeenNthCalledWith(1, { feedId: "feed_1" })
+    expect(fetchEntries).toHaveBeenNthCalledWith(2, { feedId: "feed_3" })
+  })
+})
+
+describe("extractSuccessfulLocalRefreshFeedIds", () => {
+  it("returns only successful unique feed ids", () => {
+    expect(
+      extractSuccessfulLocalRefreshFeedIds({
+        results: [
+          { feedId: "feed_1", ok: true },
+          { feedId: "feed_2", ok: false },
+          { feedId: "feed_3", ok: true },
+          { feedId: "feed_1", ok: true },
+          { feedId: "", ok: true },
+        ],
+      }),
+    ).toEqual(["feed_1", "feed_3"])
   })
 })

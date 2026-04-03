@@ -1,5 +1,4 @@
-/* 远程端样式 - 复用桌面端主题系统 */
-@import "../styles/theme.css";
+/* 远程端样式 - 主题变量由 remote main 预先引入的组件样式提供 */
 
 :root {
   color-scheme: light dark;

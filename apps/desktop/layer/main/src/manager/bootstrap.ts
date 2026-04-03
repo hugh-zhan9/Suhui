@@ -13,6 +13,7 @@ import { join } from "pathe"
 import { appendBootLog } from "~/manager/boot-log"
 import { DBManager } from "~/manager/db"
 import { shouldForwardRendererConsoleError } from "~/manager/renderer-console-filter"
+import { appendRefreshAuditLog } from "~/manager/refresh-audit-log"
 import { SyncManager } from "~/manager/sync"
 import { configureSyncLogger } from "~/manager/sync-logger"
 import { snapshotBrowserWindow } from "~/manager/window-diagnostics"
@@ -41,7 +42,14 @@ const localFeedRefreshIntervalMs = 30 * 60 * 1000
 let localFeedRefreshRunning: Promise<void> | null = null
 
 const runLocalFeedRefresh = async (reason: "startup" | "interval") => {
+  const source = reason === "startup" ? "startup-auto" : "interval-auto"
   if (localFeedRefreshRunning) {
+    appendRefreshAuditLog({
+      level: "warn",
+      stage: "runner.skipped",
+      source,
+      reason: "previous_run_still_active",
+    })
     logger.warn("[Refresh] local feed refresh skipped because a previous run is still active", {
       reason,
     })
@@ -51,7 +59,7 @@ const runLocalFeedRefresh = async (reason: "startup" | "interval") => {
   localFeedRefreshRunning = (async () => {
     try {
       const result = await new DbService().refreshLocalSubscribedFeeds({} as any, {
-        source: reason === "startup" ? "startup-auto" : "interval-auto",
+        source,
       })
       logger.info("[Refresh] local feed refresh completed", {
         reason,
@@ -60,6 +68,12 @@ const runLocalFeedRefresh = async (reason: "startup" | "interval") => {
         failed: result.failed,
       })
     } catch (error) {
+      appendRefreshAuditLog({
+        level: "error",
+        stage: "runner.failed",
+        source,
+        reason: error instanceof Error ? error.message : String(error),
+      })
       logger.error("[Refresh] local feed refresh failed", {
         reason,
         error: error instanceof Error ? error.message : String(error),
