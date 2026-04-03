@@ -1,6 +1,6 @@
 import { MODE, ModeEnum } from "@suhui/shared/constants"
 
-const APP_ICON_SRC = "icon.png?v=20260303"
+const APP_ICON_SRC = "icon.png?v=20260403"
 
 export const SettingAbout = () => {
   return (

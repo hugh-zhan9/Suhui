@@ -29,7 +29,7 @@ import { DisableWhy } from "../utils"
 import { SettingModalContentPortalableContext, useSetSettingTab, useSettingTab } from "./context"
 import { defaultCtx, SettingContext } from "./hooks"
 
-const APP_ICON_SRC = "icon.png?v=20260303"
+const APP_ICON_SRC = "icon.png?v=20260403"
 
 export function SettingModalLayout(props: PropsWithChildren) {
   const { children } = props

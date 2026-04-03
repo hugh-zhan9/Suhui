@@ -12,7 +12,7 @@ import { useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
 import { useI18n } from "~/hooks/common"
 import { ProfileButton } from "~/modules/user/ProfileButton"
 
-const APP_ICON_SRC = "icon.png?v=20260303"
+const APP_ICON_SRC = "icon.png?v=20260403"
 
 export const SubscriptionColumnHeader = memo(() => {
   const timelineId = useRouteParamsSelector((s) => s.timelineId)

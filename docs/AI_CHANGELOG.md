@@ -6051,3 +6051,32 @@
 - `docs/local-refresh-observability.md`
 
 ---
+
+## [2026-04-03 17:53] [Chore]
+
+- **Change**: 基于现有 icon.png 重新生成桌面应用图标资产并验证安装包生效
+- **Risk Analysis**: 低风险。只重生成 icon.icns 与 icon.ico，源码 icon.png 未改；已通过本地安装脚本验证安装包中的 electron.icns 与源码 icon.icns 指纹一致。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/resources/icon.icns`
+- `apps/desktop/resources/icon.ico`
+
+---
+
+## [2026-04-03 18:02] [Chore]
+
+- **Change**: 将桌面应用图标整体缩小为 88% 并同步更新 renderer 图标缓存版本
+- **Risk Analysis**: 低风险。图标内容未重绘，只在 512x512 画布内整体等比缩小；风险主要是 Dock/Finder 仍可能受 macOS 图标缓存影响，需要重开 App 或 killall Dock。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/resources/icon.png`
+- `apps/desktop/resources/icon.icns`
+- `apps/desktop/resources/icon.ico`
+- `apps/desktop/layer/renderer/public/icon.png`
+- `apps/desktop/layer/renderer/index.html`
+- `apps/desktop/layer/renderer/src/modules/settings/modal/layout.tsx`
+- `apps/desktop/layer/renderer/src/modules/settings/tabs/about.tsx`
+- `apps/desktop/layer/renderer/src/modules/subscription-column/SubscriptionColumnHeader.tsx`
+- `apps/desktop/layer/renderer/src/lib/freefolo-branding.test.ts`
+
+---
