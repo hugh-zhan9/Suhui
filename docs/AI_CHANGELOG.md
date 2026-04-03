@@ -6037,3 +6037,17 @@
 - `apps/desktop/layer/main/src/manager/bootstrap.ts`
 
 ---
+
+## [2026-04-03 17:24] [Bugfix]
+
+- **Change**: 补充本地刷新校验与日志排查文档并同步上下文
+- **Risk Analysis**: 风险较低，主要风险是文档记录与当前代码行为不一致或安装脚本依赖补编说明在其他机器上存在差异；已基于当前仓库、真实安装脚本运行结果和本机日志路径核对。
+- **Risk Level**: S3（低级: 轻微行为偏差或日志/可观测性影响）
+- **Changed Files**:
+- `AI-CONTEXT.md`
+- `README.md`
+- `docs/README.md`
+- `docs/mac-local-packaging.md`
+- `docs/local-refresh-observability.md`
+
+---

@@ -1,7 +1,7 @@
 # AI-CONTEXT.md
 
 > 单一事实源（Single Source of Truth）
-> 最后更新时间：2026-04-01（基于当前代码、远程访问实现、排序修复与文档同步结果）
+> 最后更新时间：2026-04-03（基于当前代码、远程访问实现、本地刷新同步修复、刷新审计日志与文档同步结果）
 
 ## 上下文委派策略
 
@@ -164,6 +164,18 @@
 - 已新增文档：
   - `docs/README.md`
   - `apps/desktop/scripts/README.repair-published-at.md`
+
+## 最近补充修复（2026-04-03）
+
+- 本地批量刷新链路已补齐 renderer 同步：
+  - 手动全局刷新会把刷新成功的 feed 条目同步回本地 store
+  - 自动刷新完成后会广播成功 feed 列表，renderer 侧按需回拉条目，避免 UI 长时间停留在旧数据
+- 已新增批量刷新审计日志：
+  - `refresh.log` 写入 `app.getPath("logs")`
+  - 当前覆盖 `manual-batch`、`startup-auto`、`interval-auto`
+  - 当前记录 `batch.start`、`batch.no_subscriptions`、`batch.feed_failed`、`batch.completed`、`runner.skipped`、`runner.failed`
+- 已补充排查文档：
+  - `docs/local-refresh-observability.md`
 
 ## 已知边界与残留在线能力
 

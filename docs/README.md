@@ -12,6 +12,8 @@
   - 贡献流程与文档同步规则
 - [mac-local-packaging.md](/Users/zhangyukun/project/Suhui/docs/mac-local-packaging.md)
   - macOS 本地构建和安装
+- [local-refresh-observability.md](/Users/zhangyukun/project/Suhui/docs/local-refresh-observability.md)
+  - 本地刷新链路的校验方法、日志位置与排查步骤
 - [README.repair-published-at.md](/Users/zhangyukun/project/Suhui/apps/desktop/scripts/README.repair-published-at.md)
   - 历史 `publishedAt` 脏数据诊断与修复脚本说明
 - [AI_CHANGELOG.md](/Users/zhangyukun/project/Suhui/docs/AI_CHANGELOG.md)
