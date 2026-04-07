@@ -35,7 +35,7 @@ describe("isLocalFeedRefreshCandidate", () => {
   })
 
   it("exports refresh tuning constants", () => {
-    expect(localFeedRefreshRequestTimeoutMs).toBe(15_000)
+    expect(localFeedRefreshRequestTimeoutMs).toBe(30_000)
     expect(localFeedRefreshBatchConcurrency).toBe(8)
   })
 })

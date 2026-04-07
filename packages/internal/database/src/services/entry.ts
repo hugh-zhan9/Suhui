@@ -6,6 +6,46 @@ import type { EntrySchema } from "../schemas/types"
 import type { Resetable } from "./internal/base"
 import { conflictUpdateAllExcept } from "./internal/utils"
 
+const entryJsonColumns = [
+  "media",
+  "categories",
+  "attachments",
+  "extra",
+  "sources",
+  "settings",
+] as const
+
+type EntryJsonColumn = (typeof entryJsonColumns)[number]
+
+const toPgJsonbValue = (value: unknown) => {
+  if (value === null || value === undefined) return null
+  if (typeof value === "string") {
+    if (!value) return null
+    try {
+      JSON.parse(value)
+      return value
+    } catch {
+      return null
+    }
+  }
+  try {
+    return JSON.stringify(value)
+  } catch {
+    return null
+  }
+}
+
+export const sanitizeEntryJsonFields = <T extends Partial<EntrySchema>>(entry: T): T => {
+  const sanitized = { ...entry }
+  for (const column of entryJsonColumns) {
+    if (!(column in sanitized)) continue
+    const value = sanitized[column as EntryJsonColumn]
+    if (value === undefined) continue
+    ;(sanitized as Record<EntryJsonColumn, unknown>)[column] = toPgJsonbValue(value)
+  }
+  return sanitized
+}
+
 interface PublishAtTimeRangeFilter {
   startTime: number
   endTime: number
@@ -24,7 +64,7 @@ class EntryServiceStatic implements Resetable {
     if (entries.length === 0) return
     await db
       .insert(entriesTable)
-      .values(entries)
+      .values(entries.map((entry) => sanitizeEntryJsonFields(entry)))
       .onConflictDoUpdate({
         target: [entriesTable.id],
         set: conflictUpdateAllExcept(entriesTable, ["id"]),
@@ -32,7 +72,10 @@ class EntryServiceStatic implements Resetable {
   }
 
   async patch(entry: Partial<EntrySchema> & { id: string }) {
-    await db.update(entriesTable).set(entry).where(eq(entriesTable.id, entry.id))
+    await db
+      .update(entriesTable)
+      .set(sanitizeEntryJsonFields(entry))
+      .where(eq(entriesTable.id, entry.id))
   }
 
   async patchMany({
@@ -49,7 +92,7 @@ class EntryServiceStatic implements Resetable {
     if (!entryIds && !feedIds) return
     await db
       .update(entriesTable)
-      .set(entry)
+      .set(sanitizeEntryJsonFields(entry))
       .where(
         and(
           or(inArray(entriesTable.id, entryIds ?? []), inArray(entriesTable.feedId, feedIds ?? [])),
