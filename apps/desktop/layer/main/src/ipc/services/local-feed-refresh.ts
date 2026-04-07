@@ -1,4 +1,4 @@
-export const localFeedRefreshRequestTimeoutMs = 15_000
+export const localFeedRefreshRequestTimeoutMs = 30_000
 export const localFeedRefreshBatchConcurrency = 8
 
 export const isLocalFeedRefreshCandidate = ({
