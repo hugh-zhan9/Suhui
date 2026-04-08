@@ -50,6 +50,16 @@ const decodeEntitiesDeep = (value: string, maxDepth = 4) => {
   return current
 }
 
+const RSS_TIMEZONE_ABBREVIATIONS: Record<string, string> = {
+  UTC: "+0000",
+  GMT: "+0000",
+  HKT: "+0800",
+  CST: "+0800",
+  JST: "+0900",
+  KST: "+0900",
+  SGT: "+0800",
+}
+
 const stripHtml = (value: string) =>
   value
     .replaceAll(/<script[\s\S]*?<\/script>/gi, " ")
@@ -82,9 +92,19 @@ const pickDescription = (title: string, ...candidates: Array<string | null | und
   return ""
 }
 
+const normalizeTimestampString = (raw: string) => {
+  const decoded = decodeEntitiesDeep(raw).trim()
+  if (!decoded) return ""
+
+  return decoded.replace(/\b([A-Z]{2,5})\b$/, (abbr) => RSS_TIMEZONE_ABBREVIATIONS[abbr] || abbr)
+}
+
 const pickTimestamp = (raw: string) => {
-  const timestamp = raw ? new Date(raw).getTime() : Date.now()
-  return Number.isNaN(timestamp) ? Date.now() : timestamp
+  if (!raw) return 0
+  const normalized = normalizeTimestampString(raw)
+  if (!normalized) return 0
+  const timestamp = new Date(normalized).getTime()
+  return Number.isNaN(timestamp) ? 0 : timestamp
 }
 
 const cleanupTagText = (value: string) => {
@@ -142,6 +162,9 @@ const findLinkHref = (xml: string, preferredRel?: string) => {
   return firstHref
 }
 
+const RSS_TIME_TAGS = ["pubDate", "dc:date", "date", "published", "updated", "isoDate"] as const
+const ATOM_TIME_TAGS = ["published", "updated", "dc:date", "date"] as const
+
 const parseRss = (channelXml: string): ParsedFeed => {
   const title = findTagText(channelXml, ["title"])
   const description = pickDescription(title, findTagText(channelXml, ["description"]))
@@ -162,7 +185,7 @@ const parseRss = (channelXml: string): ParsedFeed => {
       url ||
       `guid_${Date.now()}_${Math.random().toString(36).slice(2)}`
     const author = findTagText(itemXml, ["dc:creator", "author", "name"])
-    const pubDate = findTagText(itemXml, ["pubDate", "published", "updated"])
+    const pubDate = findTagText(itemXml, [...RSS_TIME_TAGS])
 
     return {
       title: itemTitle || "",
@@ -195,7 +218,7 @@ const parseAtom = (feedXml: string): ParsedFeed => {
       `guid_${Date.now()}_${Math.random().toString(36).slice(2)}`
     const authorBlock = findBlocks(entryXml, "author")[0] || ""
     const author = findTagText(authorBlock || entryXml, ["name", "author"])
-    const pubDate = findTagText(entryXml, ["published", "updated"])
+    const pubDate = findTagText(entryXml, [...ATOM_TIME_TAGS])
 
     return {
       title: itemTitle || "",

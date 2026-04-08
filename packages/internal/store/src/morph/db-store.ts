@@ -16,7 +16,7 @@ class DbStoreMorph {
 
   toEntryModel(entry: EntryRow): EntryModel {
     const normalizeRequiredTime = (value: Date | number | null | undefined) => {
-      if (value === null || value === undefined) return Date.now()
+      if (value === null || value === undefined) return 0
       return value instanceof Date ? value.getTime() : value
     }
     const normalizeOptionalTime = (value: Date | number | null | undefined) => {

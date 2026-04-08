@@ -2,6 +2,7 @@ type EntryLike = {
   id: string
   read?: boolean | null
   publishedAt?: number | null
+  insertedAt?: number | null
 }
 
 export type EntrySortMode = "newest" | "oldest" | "unread-first"
@@ -31,9 +32,18 @@ export const getPreferredEntryIdAfterReadChange = ({
 
 export const sortEntries = <T extends EntryLike>(entries: T[], mode: EntrySortMode) => {
   const nextEntries = [...entries]
+  const compareNewest = (a: EntryLike, b: EntryLike) => {
+    const publishedCompare = (b.publishedAt || 0) - (a.publishedAt || 0)
+    if (publishedCompare !== 0) return publishedCompare
+    return (b.insertedAt || 0) - (a.insertedAt || 0)
+  }
 
   if (mode === "oldest") {
-    return nextEntries.sort((a, b) => (a.publishedAt || 0) - (b.publishedAt || 0))
+    return nextEntries.sort((a, b) => {
+      const publishedCompare = (a.publishedAt || 0) - (b.publishedAt || 0)
+      if (publishedCompare !== 0) return publishedCompare
+      return (a.insertedAt || 0) - (b.insertedAt || 0)
+    })
   }
 
   if (mode === "unread-first") {
@@ -41,9 +51,9 @@ export const sortEntries = <T extends EntryLike>(entries: T[], mode: EntrySortMo
       if (!!a.read !== !!b.read) {
         return a.read ? 1 : -1
       }
-      return (b.publishedAt || 0) - (a.publishedAt || 0)
+      return compareNewest(a, b)
     })
   }
 
-  return nextEntries.sort((a, b) => (b.publishedAt || 0) - (a.publishedAt || 0))
+  return nextEntries.sort(compareNewest)
 }
