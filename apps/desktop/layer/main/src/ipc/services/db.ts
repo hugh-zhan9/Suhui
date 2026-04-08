@@ -27,10 +27,11 @@ import { buildEntryMediaPayload } from "./rss-entry-media"
 import { resolveHttpErrorMessage } from "./rss-http-error"
 import { parseRssFeed } from "./rss-parser"
 import {
-  buildEntryIdentityKey,
+  buildExistingEntryReuseIndex,
   buildFailedFeed,
   buildRefreshedFeed,
   buildStableLocalEntryId,
+  resolveExistingEntryIdForRefresh,
 } from "./rss-refresh"
 import { resolvePreviewFeedUrl } from "./rsshub-external"
 import { resolvePublishedAtMs, toTimestampMs } from "./rss-time"
@@ -719,39 +720,29 @@ export class DbService extends IpcService {
             url: true,
             title: true,
             publishedAt: true,
+            insertedAt: true,
             read: true,
           },
         })
-        const existingIdByKey = new Map<string, string>()
-        const existingReadById = new Map<string, boolean>()
-        for (const existing of existingEntries) {
-          const key = buildEntryIdentityKey(existing as any)
-          if (!existingIdByKey.has(key)) {
-            existingIdByKey.set(key, existing.id)
-          }
-          const read =
-            typeof existing.read === "boolean"
-              ? existing.read
-              : existing.read === 1 || existing.read === "1"
-          existingReadById.set(existing.id, read)
-        }
+        const existingReuseIndex = buildExistingEntryReuseIndex(existingEntries as any)
 
         refreshLog("info", trace, "refresh.existing_entries_loaded", {
           existingEntryCount: existingEntries.length,
         })
 
-        const entriesToSave = entries.map((entry) => ({
-          ...entry,
-          id: existingIdByKey.get(buildEntryIdentityKey(entry as any)) || entry.id,
-          read:
-            existingReadById.get(existingIdByKey.get(buildEntryIdentityKey(entry as any)) || "") ??
-            entry.read,
-          publishedAt: resolvePublishedAtMs(entry.publishedAt),
-          insertedAt: toTimestampMs(entry.insertedAt) ?? Date.now(),
-          readabilityUpdatedAt: toTimestampMs(entry.readabilityUpdatedAt),
-        }))
+        const entriesToSave = entries.map((entry) => {
+          const existingEntryId = resolveExistingEntryIdForRefresh(existingReuseIndex, entry as any)
+          return {
+            ...entry,
+            id: existingEntryId || entry.id,
+            read: existingReuseIndex.readById.get(existingEntryId || "") ?? entry.read,
+            publishedAt: resolvePublishedAtMs(entry.publishedAt),
+            insertedAt: toTimestampMs(entry.insertedAt) ?? Date.now(),
+            readabilityUpdatedAt: toTimestampMs(entry.readabilityUpdatedAt),
+          }
+        })
         const reusedEntryCount = entriesToSave.filter((entry) =>
-          existingReadById.has(entry.id),
+          existingReuseIndex.readById.has(entry.id),
         ).length
         refreshLog("info", trace, "refresh.persist_entries", {
           upsertEntryCount: entriesToSave.length,
