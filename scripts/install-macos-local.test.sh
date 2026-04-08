@@ -60,9 +60,53 @@ test_resolve_latest_dmg_missing() {
   rm -rf "$tmp_dir"
 }
 
+test_resolve_packaged_app_path() {
+  local tmp_dir
+  tmp_dir="$(mktemp -d)"
+  mkdir -p "$tmp_dir/溯洄.app"
+
+  local resolved
+  resolved="$(resolve_packaged_app_path "$tmp_dir/溯洄.app")"
+  assert_eq "$resolved" "$tmp_dir/溯洄.app" "should resolve packaged app path"
+
+  rm -rf "$tmp_dir"
+}
+
+test_resolve_packaged_app_path_missing() {
+  local tmp_dir
+  tmp_dir="$(mktemp -d)"
+
+  local output
+  if output="$(resolve_packaged_app_path "$tmp_dir/溯洄.app" 2>&1)"; then
+    echo "expected resolve_packaged_app_path to fail when app bundle does not exist" >&2
+    exit 1
+  fi
+
+  assert_contains "$output" "Packaged app bundle not found" "should show missing app diagnostic"
+  rm -rf "$tmp_dir"
+}
+
+test_is_packaged_app_ready() {
+  local tmp_dir
+  tmp_dir="$(mktemp -d)"
+  local app_path="$tmp_dir/溯洄.app"
+  mkdir -p "$app_path/Contents/MacOS" "$app_path/Contents/Resources"
+  touch "$app_path/Contents/MacOS/溯洄" "$app_path/Contents/Info.plist" "$app_path/Contents/Resources/app.asar"
+
+  if ! is_packaged_app_ready "$app_path"; then
+    echo "expected packaged app readiness check to pass" >&2
+    exit 1
+  fi
+
+  rm -rf "$tmp_dir"
+}
+
 main() {
   test_resolve_latest_dmg
   test_resolve_latest_dmg_missing
+  test_resolve_packaged_app_path
+  test_resolve_packaged_app_path_missing
+  test_is_packaged_app_ready
   echo "install-macos-local tests passed"
 }
 
