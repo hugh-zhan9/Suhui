@@ -15,7 +15,8 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 
 import { useGeneralSettingKey } from "~/atoms/settings/general"
 import { ROUTE_FEED_PENDING } from "~/constants/app"
-import { shouldFilterUnreadEntries } from "./query-selection"
+import { useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
+import { shouldIncludeEntryInUnreadOnly } from "./query-selection"
 import { dedupeEntryIdsPreserveOrder } from "./entry-id-utils"
 
 interface UseLocalEntriesOptions {
@@ -40,6 +41,7 @@ export const useLocalEntries = ({
   pageSize = 30,
 }: UseLocalEntriesOptions = {}): UseEntriesReturn => {
   const unreadOnly = useGeneralSettingKey("unreadOnly")
+  const activeEntryId = useRouteParamsSelector((params) => params.entryId)
   const hidePrivateSubscriptionsInTimeline = useGeneralSettingKey(
     "hidePrivateSubscriptionsInTimeline",
   )
@@ -78,21 +80,23 @@ export const useLocalEntries = ({
 
         return dedupeEntryIdsPreserveOrder(
           ids
-          .map((id) => {
-            const entry = state.data[id]
-            if (!entry) return null
-            if (
-              shouldFilterUnreadEntries({
-                isCollection: !!isCollection,
-                unreadOnly: Boolean(unreadOnly),
-              }) &&
-              entry.read
-            ) {
-              return null
-            }
-            return entry.id
-          })
-          .filter((id) => typeof id === "string"),
+            .map((id) => {
+              const entry = state.data[id]
+              if (!entry) return null
+              if (
+                !shouldIncludeEntryInUnreadOnly({
+                  isCollection: !!isCollection,
+                  unreadOnly: Boolean(unreadOnly),
+                  read: Boolean(entry.read),
+                  entryId: entry.id,
+                  activeEntryId,
+                })
+              ) {
+                return null
+              }
+              return entry.id
+            })
+            .filter((id) => typeof id === "string"),
         )
       },
       [
@@ -105,6 +109,7 @@ export const useLocalEntries = ({
         isCollection,
         showEntriesByView,
         unreadOnly,
+        activeEntryId,
       ],
     ),
   )

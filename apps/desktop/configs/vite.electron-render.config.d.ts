@@ -23,6 +23,7 @@ declare const _default: {
     rollupOptions: {
       input: {
         main: string
+        remote: string
       }
     }
     minify: boolean

@@ -9,10 +9,7 @@ export const shouldUseLocalEntriesQuery = ({
   return !remoteReady
 }
 
-export const normalizePendingFeedId = (
-  feedId: string | undefined,
-  pendingFeedId: string,
-) => {
+export const normalizePendingFeedId = (feedId: string | undefined, pendingFeedId: string) => {
   if (!feedId) return undefined
   if (feedId === pendingFeedId) return undefined
   return feedId
@@ -42,3 +39,21 @@ export const shouldFilterUnreadEntries = ({
   isCollection: boolean
   unreadOnly: boolean
 }) => unreadOnly && !isCollection
+
+export const shouldIncludeEntryInUnreadOnly = ({
+  isCollection,
+  unreadOnly,
+  read,
+  entryId,
+  activeEntryId,
+}: {
+  isCollection: boolean
+  unreadOnly: boolean
+  read: boolean
+  entryId: string
+  activeEntryId?: string
+}) => {
+  if (!shouldFilterUnreadEntries({ isCollection, unreadOnly })) return true
+  if (!read) return true
+  return entryId === activeEntryId
+}

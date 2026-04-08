@@ -6080,3 +6080,16 @@
 - `apps/desktop/layer/renderer/src/lib/freefolo-branding.test.ts`
 
 ---
+
+## [2026-04-08 09:34] [Bugfix]
+
+- **Change**: 修复 Unread only 下当前阅读文章被立即从列表移除的问题
+- **Risk Analysis**: 低风险。仅调整本地列表的 unreadOnly 过滤规则：当前激活且已读的文章会临时保留在列表中，切换到别的文章后再移除；未改动 markRead 时机。
+- **Risk Level**: S2（中级: 局部功能异常、可绕过但影响效率）
+- **Changed Files**:
+- `apps/desktop/layer/renderer/src/modules/entry-column/hooks/query-selection.ts`
+- `apps/desktop/layer/renderer/src/modules/entry-column/hooks/useEntriesByView.ts`
+- `apps/desktop/layer/renderer/src/modules/entry-column/hooks/useLocalEntries.ts`
+- `apps/desktop/layer/renderer/src/modules/entry-column/hooks/query-selection.unread-collection.test.ts`
+
+---
