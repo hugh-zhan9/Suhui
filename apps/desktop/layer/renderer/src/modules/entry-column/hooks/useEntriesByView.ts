@@ -23,7 +23,7 @@ import { useRouteParams } from "~/hooks/biz/useRouteParams"
 
 import {
   normalizeFeedIdForActiveSubscription,
-  shouldFilterUnreadEntries,
+  shouldIncludeEntryInUnreadOnly,
 } from "./query-selection"
 import { dedupeEntryIdsPreserveOrder } from "./entry-id-utils"
 
@@ -32,7 +32,15 @@ function getEntryIdsFromMultiplePlace(...entryIds: Array<string[] | undefined | 
 }
 
 const useLocalEntries = (): UseEntriesReturn => {
-  const { feedId, view, inboxId, listId, isCollection, isPendingEntry } = useRouteParams()
+  const {
+    feedId,
+    view,
+    inboxId,
+    listId,
+    isCollection,
+    isPendingEntry,
+    entryId: activeEntryId,
+  } = useRouteParams()
   const unreadOnly = useGeneralSettingKey("unreadOnly")
   const hidePrivateSubscriptionsInTimeline = useGeneralSettingKey(
     "hidePrivateSubscriptionsInTimeline",
@@ -62,11 +70,7 @@ const useLocalEntries = (): UseEntriesReturn => {
   const entryIdsByInboxId = useEntryIdsByInboxId(inboxId)
 
   const showEntriesByView =
-    !activeFeedId &&
-    folderIds.length === 0 &&
-    !isCollection &&
-    !inboxId &&
-    !listId
+    !activeFeedId && folderIds.length === 0 && !isCollection && !inboxId && !listId
 
   const allEntries = useEntryStore(
     useCallback(
@@ -84,21 +88,23 @@ const useLocalEntries = (): UseEntriesReturn => {
 
         return dedupeEntryIdsPreserveOrder(
           ids
-          .map((id) => {
-            const entry = state.data[id]
-            if (!entry) return null
-            if (
-              shouldFilterUnreadEntries({
-                isCollection: !!isCollection,
-                unreadOnly: Boolean(unreadOnly),
-              }) &&
-              entry.read
-            ) {
-              return null
-            }
-            return entry.id
-          })
-          .filter((id) => typeof id === "string"),
+            .map((id) => {
+              const entry = state.data[id]
+              if (!entry) return null
+              if (
+                !shouldIncludeEntryInUnreadOnly({
+                  isCollection: !!isCollection,
+                  unreadOnly: Boolean(unreadOnly),
+                  read: Boolean(entry.read),
+                  entryId: entry.id,
+                  activeEntryId,
+                })
+              ) {
+                return null
+              }
+              return entry.id
+            })
+            .filter((id) => typeof id === "string"),
         )
       },
       [
@@ -111,6 +117,7 @@ const useLocalEntries = (): UseEntriesReturn => {
         isCollection,
         showEntriesByView,
         unreadOnly,
+        activeEntryId,
       ],
     ),
   )
