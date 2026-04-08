@@ -88,4 +88,18 @@ describe("sortEntries", () => {
       "entry_1",
     ])
   })
+
+  it("uses insertedAt as a tie-breaker when publishedAt is the same", () => {
+    const tiedEntries = [
+      { id: "entry_1", read: false, publishedAt: 100, insertedAt: 10 },
+      { id: "entry_2", read: false, publishedAt: 100, insertedAt: 30 },
+      { id: "entry_3", read: false, publishedAt: 100, insertedAt: 20 },
+    ]
+
+    expect(sortEntries(tiedEntries, "newest").map((entry) => entry.id)).toEqual([
+      "entry_2",
+      "entry_3",
+      "entry_1",
+    ])
+  })
 })

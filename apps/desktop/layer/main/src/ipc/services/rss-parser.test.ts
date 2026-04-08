@@ -93,4 +93,86 @@ describe("rss parser", () => {
     expect(parsed.items).toHaveLength(1)
     expect(parsed.items[0]?.title).toBe("ok")
   })
+
+  it("应支持从 dc:date 提取发布时间", () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>DC Feed</title>
+    <item>
+      <title>with dc date</title>
+      <link>https://example.com/dc</link>
+      <guid>dc-1</guid>
+      <dc:date>2026-03-25T10:00:00Z</dc:date>
+    </item>
+  </channel>
+</rss>`
+
+    const parsed = parseRssFeed(xml)
+
+    expect(parsed.items[0]?.publishedAt).toBe(new Date("2026-03-25T10:00:00Z").getTime())
+  })
+
+  it("应先解码 pubDate 中的 HTML 实体再解析时区", () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Entity Date Feed</title>
+    <item>
+      <title>entity date</title>
+      <link>https://example.com/entity-date</link>
+      <guid>entity-date-1</guid>
+      <pubDate>Sat, 02 Aug 2025 15:00:00 &#43;0800</pubDate>
+    </item>
+  </channel>
+</rss>`
+
+    const parsed = parseRssFeed(xml)
+
+    expect(parsed.items[0]?.publishedAt).toBe(new Date("Sat, 02 Aug 2025 15:00:00 +0800").getTime())
+  })
+
+  it("应支持将 HKT 这类 RSS 时区缩写规范化为标准偏移", () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>HKT Feed</title>
+    <item>
+      <title>hkt date</title>
+      <link>https://example.com/hkt-date</link>
+      <guid>hkt-date-1</guid>
+      <pubDate>Thu, 12 Mar 2026 22:14:16 HKT</pubDate>
+    </item>
+  </channel>
+</rss>`
+
+    const parsed = parseRssFeed(xml)
+
+    expect(parsed.items[0]?.publishedAt).toBe(new Date("Thu, 12 Mar 2026 22:14:16 +0800").getTime())
+  })
+
+  it("缺失或无效发布时间时应返回 0，而不是当前时间", () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>No Date Feed</title>
+    <item>
+      <title>no date</title>
+      <link>https://example.com/no-date</link>
+      <guid>no-date-1</guid>
+    </item>
+    <item>
+      <title>bad date</title>
+      <link>https://example.com/bad-date</link>
+      <guid>bad-date-1</guid>
+      <pubDate>not-a-date</pubDate>
+    </item>
+  </channel>
+</rss>`
+
+    const parsed = parseRssFeed(xml)
+
+    expect(parsed.items[0]?.publishedAt).toBe(0)
+    expect(parsed.items[1]?.publishedAt).toBe(0)
+  })
 })

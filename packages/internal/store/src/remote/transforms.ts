@@ -78,7 +78,7 @@ export function transformSubscriptionFromApi(record: SubscriptionRecord): Subscr
  */
 export function transformEntryFromApi(record: EntryRecord): EntryModel {
   const normalizeTime = (value: number | null | undefined): number => {
-    if (value === null || value === undefined) return Date.now()
+    if (value === null || value === undefined) return 0
     return value
   }
 

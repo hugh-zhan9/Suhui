@@ -21,13 +21,13 @@ export class EntryApplicationService {
       return db.query.entriesTable.findMany({
         where: (entries, { and, eq }) =>
           and(eq(entries.feedId, feedId), unreadOnly ? eq(entries.read, false) : undefined),
-        orderBy: (entries, { desc }) => [desc(entries.publishedAt)],
+        orderBy: (entries, { desc }) => [desc(entries.publishedAt), desc(entries.insertedAt)],
       })
     }
 
     return db.query.entriesTable.findMany({
       where: unreadOnly ? (entries, { eq }) => eq(entries.read, false) : undefined,
-      orderBy: (entries, { desc }) => [desc(entries.publishedAt)],
+      orderBy: (entries, { desc }) => [desc(entries.publishedAt), desc(entries.insertedAt)],
     })
   }
 

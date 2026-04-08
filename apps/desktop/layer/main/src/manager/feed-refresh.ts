@@ -269,7 +269,8 @@ export class FeedRefreshService {
           read:
             existingReadById.get(existingIdByKey.get(buildEntryIdentityKey(entry as any)) || "") ??
             entry.read,
-          publishedAt: toTimestampMs(entry.publishedAt) ?? Date.now(),
+          // Missing publishedAt must stay "unknown" instead of being rewritten as fetch time.
+          publishedAt: toTimestampMs(entry.publishedAt) ?? 0,
           insertedAt: toTimestampMs(entry.insertedAt) ?? Date.now(),
           readabilityUpdatedAt: toTimestampMs(entry.readabilityUpdatedAt),
         }))

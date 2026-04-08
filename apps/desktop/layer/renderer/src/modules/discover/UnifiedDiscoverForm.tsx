@@ -57,7 +57,12 @@ const searchSchema = z.object({
 })
 
 const rssSchema = z.object({
-  keyword: z.string().url().startsWith("https://"),
+  keyword: z
+    .string()
+    .url()
+    .refine((value) => value.startsWith("https://") || value.startsWith("http://"), {
+      message: "RSS URL must start with http:// or https://",
+    }),
 })
 
 const rsshubSchema = z.object({

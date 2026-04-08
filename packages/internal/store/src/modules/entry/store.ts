@@ -697,9 +697,9 @@ class EntrySyncServices {
 
       // Sort by publishedAt descending
       entries.sort((a, b) => {
-        const dateA = a.publishedAt ?? 0
-        const dateB = b.publishedAt ?? 0
-        return dateB - dateA
+        const publishedCompare = (b.publishedAt ?? 0) - (a.publishedAt ?? 0)
+        if (publishedCompare !== 0) return publishedCompare
+        return (b.insertedAt ?? 0) - (a.insertedAt ?? 0)
       })
 
       // Apply cursor-based pagination
