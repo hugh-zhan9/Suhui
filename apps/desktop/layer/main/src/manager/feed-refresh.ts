@@ -13,10 +13,11 @@ import { buildEntryMediaPayload } from "../ipc/services/rss-entry-media"
 import { resolveHttpErrorMessage } from "../ipc/services/rss-http-error"
 import { parseRssFeed } from "../ipc/services/rss-parser"
 import {
-  buildEntryIdentityKey,
+  buildExistingEntryReuseIndex,
   buildFailedFeed,
   buildRefreshedFeed,
   buildStableLocalEntryId,
+  resolveExistingEntryIdForRefresh,
 } from "../ipc/services/rss-refresh"
 import { toTimestampMs } from "../ipc/services/rss-time"
 import { resolvePreviewFeedUrl } from "../ipc/services/rsshub-external"
@@ -246,34 +247,24 @@ export class FeedRefreshService {
             url: true,
             title: true,
             publishedAt: true,
+            insertedAt: true,
             read: true,
           },
         })
-        const existingIdByKey = new Map<string, string>()
-        const existingReadById = new Map<string, boolean>()
-        for (const existing of existingEntries) {
-          const key = buildEntryIdentityKey(existing as any)
-          if (!existingIdByKey.has(key)) {
-            existingIdByKey.set(key, existing.id)
-          }
-          const read =
-            typeof existing.read === "boolean"
-              ? existing.read
-              : existing.read === 1 || existing.read === "1"
-          existingReadById.set(existing.id, read)
-        }
+        const existingReuseIndex = buildExistingEntryReuseIndex(existingEntries as any)
 
-        const entriesToSave = entries.map((entry) => ({
-          ...entry,
-          id: existingIdByKey.get(buildEntryIdentityKey(entry as any)) || entry.id,
-          read:
-            existingReadById.get(existingIdByKey.get(buildEntryIdentityKey(entry as any)) || "") ??
-            entry.read,
-          // Missing publishedAt must stay "unknown" instead of being rewritten as fetch time.
-          publishedAt: toTimestampMs(entry.publishedAt) ?? 0,
-          insertedAt: toTimestampMs(entry.insertedAt) ?? Date.now(),
-          readabilityUpdatedAt: toTimestampMs(entry.readabilityUpdatedAt),
-        }))
+        const entriesToSave = entries.map((entry) => {
+          const existingEntryId = resolveExistingEntryIdForRefresh(existingReuseIndex, entry as any)
+          return {
+            ...entry,
+            id: existingEntryId || entry.id,
+            read: existingReuseIndex.readById.get(existingEntryId || "") ?? entry.read,
+            // Missing publishedAt must stay "unknown" instead of being rewritten as fetch time.
+            publishedAt: toTimestampMs(entry.publishedAt) ?? 0,
+            insertedAt: toTimestampMs(entry.insertedAt) ?? Date.now(),
+            readabilityUpdatedAt: toTimestampMs(entry.readabilityUpdatedAt),
+          }
+        })
         await EntryService.upsertMany(entriesToSave as any)
       }
 

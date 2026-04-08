@@ -24,6 +24,25 @@ type ParsedFeed = {
   siteUrl: string | null
 }
 
+type EntryIdentityLike = {
+  guid?: string | null
+  url?: string | null
+  title?: string | null
+  publishedAt?: string | number | Date | null
+}
+
+type ExistingEntryReuseCandidate = EntryIdentityLike & {
+  id: string
+  insertedAt?: number | null
+  read?: boolean | number | string | null
+}
+
+export type ExistingEntryReuseIndex = {
+  idByIdentityKey: Map<string, string>
+  idByTitlePublishedKey: Map<string, string>
+  readById: Map<string, boolean>
+}
+
 export const buildRefreshedFeed = (existing: FeedRow, parsed: ParsedFeed) => {
   return {
     ...existing,
@@ -71,18 +90,114 @@ export const buildStableLocalEntryId = ({
   return `local_entry_${feedId}_${digest}`
 }
 
-export const buildEntryIdentityKey = ({
-  guid,
-  url,
-  title,
-  publishedAt,
-}: {
-  guid?: string | null
-  url?: string | null
-  title?: string | null
-  publishedAt?: string | number | Date | null
-}) => {
-  if (guid) return `guid:${guid}`
-  if (url) return `url:${url}`
-  return `tp:${title || ""}|${publishedAt ? String(publishedAt) : ""}`
+const normalizeIdentityText = (value?: string | null) => value?.trim() || ""
+
+const normalizePublishedAtIdentityPart = (publishedAt?: string | number | Date | null) => {
+  if (publishedAt instanceof Date) {
+    return publishedAt.getTime() > 0 ? String(publishedAt.getTime()) : ""
+  }
+  if (typeof publishedAt === "number") {
+    return Number.isFinite(publishedAt) && publishedAt > 0 ? String(publishedAt) : ""
+  }
+  const normalized = typeof publishedAt === "string" ? publishedAt.trim() : ""
+  if (!normalized || normalized === "0") return ""
+  return normalized
+}
+
+export const buildEntryTitlePublishedKey = ({ title, publishedAt }: EntryIdentityLike) => {
+  const normalizedTitle = normalizeIdentityText(title)
+  const normalizedPublishedAt = normalizePublishedAtIdentityPart(publishedAt)
+  if (!normalizedTitle || !normalizedPublishedAt) return null
+  return `tp:${normalizedTitle}|${normalizedPublishedAt}`
+}
+
+export const buildEntryIdentityKey = ({ guid, url, title, publishedAt }: EntryIdentityLike) => {
+  const normalizedGuid = normalizeIdentityText(guid)
+  if (normalizedGuid) return `guid:${normalizedGuid}`
+
+  const normalizedUrl = normalizeIdentityText(url)
+  if (normalizedUrl) return `url:${normalizedUrl}`
+
+  return (
+    buildEntryTitlePublishedKey({ title, publishedAt }) ||
+    `tp:${title || ""}|${publishedAt ? String(publishedAt) : ""}`
+  )
+}
+
+const normalizeRead = (value: ExistingEntryReuseCandidate["read"]) => {
+  if (typeof value === "boolean") return value
+  if (typeof value === "number") return value === 1
+  if (typeof value === "string") return value === "1" || value.toLowerCase() === "true"
+  return false
+}
+
+const shouldPreferReuseCandidate = (
+  current: ExistingEntryReuseCandidate | undefined,
+  candidate: ExistingEntryReuseCandidate,
+) => {
+  if (!current) return true
+
+  const currentInsertedAt =
+    typeof current.insertedAt === "number" && Number.isFinite(current.insertedAt)
+      ? current.insertedAt
+      : Number.NEGATIVE_INFINITY
+  const candidateInsertedAt =
+    typeof candidate.insertedAt === "number" && Number.isFinite(candidate.insertedAt)
+      ? candidate.insertedAt
+      : Number.NEGATIVE_INFINITY
+
+  if (candidateInsertedAt !== currentInsertedAt) {
+    return candidateInsertedAt > currentInsertedAt
+  }
+
+  return candidate.id > current.id
+}
+
+export const buildExistingEntryReuseIndex = (
+  entries: ExistingEntryReuseCandidate[],
+): ExistingEntryReuseIndex => {
+  const candidateByIdentityKey = new Map<string, ExistingEntryReuseCandidate>()
+  const candidateByTitlePublishedKey = new Map<string, ExistingEntryReuseCandidate>()
+  const readById = new Map<string, boolean>()
+
+  for (const entry of entries) {
+    readById.set(entry.id, normalizeRead(entry.read))
+
+    const identityKey = buildEntryIdentityKey(entry)
+    const existingIdentityCandidate = candidateByIdentityKey.get(identityKey)
+    if (shouldPreferReuseCandidate(existingIdentityCandidate, entry)) {
+      candidateByIdentityKey.set(identityKey, entry)
+    }
+
+    const titlePublishedKey = buildEntryTitlePublishedKey(entry)
+    if (!titlePublishedKey) continue
+
+    const existingTitlePublishedCandidate = candidateByTitlePublishedKey.get(titlePublishedKey)
+    if (shouldPreferReuseCandidate(existingTitlePublishedCandidate, entry)) {
+      candidateByTitlePublishedKey.set(titlePublishedKey, entry)
+    }
+  }
+
+  return {
+    idByIdentityKey: new Map(
+      Array.from(candidateByIdentityKey.entries()).map(([key, entry]) => [key, entry.id]),
+    ),
+    idByTitlePublishedKey: new Map(
+      Array.from(candidateByTitlePublishedKey.entries()).map(([key, entry]) => [key, entry.id]),
+    ),
+    readById,
+  }
+}
+
+export const resolveExistingEntryIdForRefresh = (
+  index: ExistingEntryReuseIndex,
+  entry: EntryIdentityLike,
+) => {
+  const identityMatch = index.idByIdentityKey.get(buildEntryIdentityKey(entry))
+  if (identityMatch) return identityMatch
+
+  const titlePublishedKey = buildEntryTitlePublishedKey(entry)
+  if (!titlePublishedKey) return null
+
+  return index.idByTitlePublishedKey.get(titlePublishedKey) || null
 }
