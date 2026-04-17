@@ -1,4 +1,5 @@
-import { resolveDbType } from "./db-config"
+import type { DbConfigOverride, DbConfigSource } from "./db-config"
+import { resolveEffectiveDbConfig } from "./db-config"
 import type { EnvLoadInfo } from "./env-loader"
 
 export type DbConfigView = {
@@ -6,6 +7,8 @@ export type DbConfigView = {
   dbConn: string
   dbUser: string
   dbPasswordMasked: string
+  effectiveSource: DbConfigSource
+  overrideActive: boolean
   envSource?: string
   envCandidates: string[]
 }
@@ -13,16 +16,21 @@ export type DbConfigView = {
 export const buildDbConfigView = ({
   env,
   envInfo,
+  override,
 }: {
   env: Record<string, string | undefined>
   envInfo: EnvLoadInfo
+  override?: DbConfigOverride | null
 }): DbConfigView => {
-  const dbType = resolveDbType(env)
+  const effectiveConfig = resolveEffectiveDbConfig({ env, override })
+
   return {
-    dbType,
-    dbConn: env.DB_CONN ?? "",
-    dbUser: env.DB_USER ?? "",
-    dbPasswordMasked: env.DB_PASSWORD ? "***" : "",
+    dbType: effectiveConfig.dbType,
+    dbConn: effectiveConfig.dbConn,
+    dbUser: effectiveConfig.dbUser,
+    dbPasswordMasked: effectiveConfig.dbPassword ? "***" : "",
+    effectiveSource: effectiveConfig.source,
+    overrideActive: effectiveConfig.source === "store-override",
     envSource: envInfo.active,
     envCandidates: envInfo.candidates,
   }

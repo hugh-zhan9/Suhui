@@ -1,7 +1,7 @@
 import { IN_ELECTRON } from "@suhui/shared/constants"
 import { createBrowserRouter, createHashRouter } from "react-router"
 
-import { Component as App } from "./App"
+import { Component as App, StartupFallback } from "./App"
 import { ErrorElement } from "./components/common/ErrorElement"
 import { NotFound } from "./components/common/NotFound"
 // @ts-ignore
@@ -14,6 +14,7 @@ export const router = routerCreator([
   {
     path: "/",
     Component: App,
+    HydrateFallback: StartupFallback,
     children: tree,
     errorElement: <ErrorElement />,
   },

@@ -1,8 +1,15 @@
 import type { Credentials } from "@eneris/push-receiver/dist/types"
 import Store from "electron-store"
 
+type DbConfigOverride = {
+  dbConn: string
+  dbPassword?: string | null
+  dbUser?: string | null
+}
+
 // @keep-sorted
 type StoreData = {
+  dbConfigOverride?: DbConfigOverride | null
   "notifications-credentials"?: Credentials | null
   "notifications-persistent-ids"?: string[] | null
   appearance?: "light" | "dark" | "system" | null
@@ -26,4 +33,5 @@ export const store = new Store<StoreData>({ name: "db" })
 
 export enum StoreKey {
   CacheSizeLimit = "cacheSizeLimit",
+  DbConfigOverride = "dbConfigOverride",
 }

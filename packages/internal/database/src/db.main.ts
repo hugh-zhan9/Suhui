@@ -6,18 +6,49 @@ import { Pool } from "pg"
 import * as schema from "./schemas"
 
 export type MainDb = NodePgDatabase<typeof schema>
+export type MainDbHandles = {
+  config: PoolConfig
+  db: MainDb
+  pgPool: Pool
+  type: "postgres"
+}
 
 export let db: MainDb
 let pgPool: Pool
+let activeHandles: MainDbHandles | null = null
+
+export function createMainDBHandles(config: {
+  type: "postgres"
+  config: PoolConfig
+}): MainDbHandles {
+  const nextPool = new Pool(config.config)
+  const nextDb = drizzlePg(nextPool, { schema })
+  return {
+    type: "postgres",
+    config: config.config,
+    db: nextDb,
+    pgPool: nextPool,
+  }
+}
+
+export function activateMainDB(handles: MainDbHandles) {
+  activeHandles = handles
+  db = handles.db
+  pgPool = handles.pgPool
+  return handles
+}
+
+export function getActiveMainDBHandles() {
+  return activeHandles
+}
+
+export async function closeMainDBHandles(handles: MainDbHandles) {
+  await handles.pgPool.end()
+}
 
 export function initializeMainDB(config: { type: "postgres"; config: PoolConfig }) {
-  if (db) return { db, pgPool }
-
-  if (config.type === "postgres") {
-    pgPool = new Pool(config.config)
-    db = drizzlePg(pgPool, { schema })
-    return { db, pgPool }
-  }
+  if (activeHandles) return activeHandles
+  return activateMainDB(createMainDBHandles(config))
 }
 
 export function getMainDB() {
@@ -30,10 +61,9 @@ export function getMainPgPool() {
   return pgPool
 }
 
-export async function migrateMainDB() {
-  if (!db) throw new Error("Database not initialized")
-
-  if (!pgPool) throw new Error("Postgres not initialized")
+export async function migrateMainDB(handles = activeHandles) {
+  if (!handles) throw new Error("Database not initialized")
+  const pool = handles.pgPool
   const statements = [
     `CREATE TABLE IF NOT EXISTS feeds (\n` +
       `id text primary key,\n` +
@@ -180,6 +210,6 @@ export async function migrateMainDB() {
   ]
 
   for (const stmt of statements) {
-    await pgPool.query(stmt)
+    await pool.query(stmt)
   }
 }
