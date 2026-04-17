@@ -24,6 +24,7 @@ describe("buildPreviewDiagnostics", () => {
       remoteAddress: "93.184.216.34",
       remotePort: 443,
       lookup: async () => ({ address: "203.0.113.9" }),
+      resolveProxy: async () => "PROXY 127.0.0.1:7890",
     })
 
     expect(diagnostics).toEqual({
@@ -37,6 +38,10 @@ describe("buildPreviewDiagnostics", () => {
         https: "https://secure-proxy.local:8443",
         all: "socks5://all-proxy.local:1080",
         no: "localhost,127.0.0.1",
+      },
+      session: {
+        resolvedProxy: "PROXY 127.0.0.1:7890",
+        error: null,
       },
       dns: {
         host: "blog.einverne.info",

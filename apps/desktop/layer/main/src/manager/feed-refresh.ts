@@ -1,16 +1,15 @@
-import * as http from "node:http"
-import * as https from "node:https"
-
 import { EntryService } from "@suhui/database/services/entry"
 import { FeedService } from "@suhui/database/services/feed"
+import { session } from "electron"
 
 import { store } from "~/lib/store"
 import { DBManager } from "~/manager/db"
 import { drainPendingOps } from "~/manager/sync-applier"
 
 import { buildPreviewDiagnostics } from "../ipc/services/preview-feed-diagnostics"
+import { fetchFeedUrl } from "../ipc/services/feed-fetch"
+import { localFeedRefreshRequestTimeoutMs } from "../ipc/services/local-feed-refresh"
 import { buildEntryMediaPayload } from "../ipc/services/rss-entry-media"
-import { resolveHttpErrorMessage } from "../ipc/services/rss-http-error"
 import { parseRssFeed } from "../ipc/services/rss-parser"
 import {
   buildExistingEntryReuseIndex,
@@ -21,91 +20,6 @@ import {
 } from "../ipc/services/rss-refresh"
 import { toTimestampMs } from "../ipc/services/rss-time"
 import { resolvePreviewFeedUrl } from "../ipc/services/rsshub-external"
-
-/**
- * Fetches a URL using Node.js built-in http/https, follows up to 5 redirects.
- */
-type FetchResult = {
-  body: string
-  finalUrl: string
-  redirectChain: string[]
-  remoteAddress?: string
-  remotePort?: number
-}
-
-function fetchUrl(
-  url: string,
-  rsshubToken?: string | null,
-  redirectCount = 0,
-  redirectVisited = new Set<string>(),
-  redirectChain: string[] = [],
-): Promise<FetchResult> {
-  return new Promise((resolve, reject) => {
-    if (redirectCount > 12) {
-      reject(new Error("Too many redirects"))
-      return
-    }
-    const lib = url.startsWith("https") ? https : http
-    const headers: Record<string, string> = {
-      // Node.js request header values must be ASCII-only.
-      "User-Agent": "Suhui-RSS-Reader/1.0",
-      Accept: "application/rss+xml, application/atom+xml, application/xml, */*",
-    }
-    if (rsshubToken) {
-      headers["X-RSSHub-Token"] = rsshubToken
-    }
-    lib
-      .get(url, { headers }, (res) => {
-        if (
-          res.statusCode &&
-          res.statusCode >= 300 &&
-          res.statusCode < 400 &&
-          res.headers.location
-        ) {
-          const resolvedLocation = new URL(res.headers.location, url).toString()
-          if (redirectVisited.has(resolvedLocation)) {
-            reject(new Error(`Redirect loop detected: ${resolvedLocation}`))
-            return
-          }
-          const nextVisited = new Set(redirectVisited)
-          nextVisited.add(resolvedLocation)
-          resolve(
-            fetchUrl(resolvedLocation, rsshubToken, redirectCount + 1, nextVisited, [
-              ...redirectChain,
-              resolvedLocation,
-            ]),
-          )
-          return
-        }
-        if (res.statusCode && res.statusCode >= 400) {
-          const chunks: Buffer[] = []
-          res.on("data", (chunk) => chunks.push(chunk))
-          res.on("end", () => {
-            reject(
-              new Error(
-                resolveHttpErrorMessage(res.statusCode, Buffer.concat(chunks).toString("utf-8")),
-              ),
-            )
-          })
-          res.on("error", reject)
-          return
-        }
-        const chunks: Buffer[] = []
-        res.on("data", (chunk) => chunks.push(chunk))
-        res.on("end", () =>
-          resolve({
-            body: Buffer.concat(chunks).toString("utf-8"),
-            finalUrl: url,
-            redirectChain,
-            remoteAddress: res.socket?.remoteAddress,
-            remotePort: res.socket?.remotePort,
-          }),
-        )
-        res.on("error", reject)
-      })
-      .on("error", reject)
-  })
-}
 
 export class FeedRefreshService {
   public static async buildPreviewData(
@@ -127,11 +41,14 @@ export class FeedRefreshService {
         requestedUrl: resolvedUrl,
         finalUrl: resolvedUrl,
         redirectChain: [],
+        resolveProxy: (url) => session.defaultSession.resolveProxy(url),
       })
       console.info("[FeedRefreshService.buildPreviewData] diagnostics", beforeDiagnostics)
     }
 
-    const fetchResult = await fetchUrl(resolvedUrl)
+    const fetchResult = await fetchFeedUrl(resolvedUrl, {
+      timeoutMs: localFeedRefreshRequestTimeoutMs,
+    })
 
     if (diagnosticsEnabled) {
       const afterDiagnostics = await buildPreviewDiagnostics({
@@ -140,8 +57,7 @@ export class FeedRefreshService {
         requestedUrl: resolvedUrl,
         finalUrl: fetchResult.finalUrl,
         redirectChain: fetchResult.redirectChain,
-        remoteAddress: fetchResult.remoteAddress,
-        remotePort: fetchResult.remotePort,
+        resolveProxy: (url) => session.defaultSession.resolveProxy(url),
       })
       console.info("[FeedRefreshService.buildPreviewData] diagnostics", afterDiagnostics)
     }
