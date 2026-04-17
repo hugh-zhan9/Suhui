@@ -239,7 +239,7 @@ export class DbService extends IpcService {
   static override readonly groupName = "db"
 
   private async waitForDatabase() {
-    await DBManager.waitUntilReady()
+    await DBManager.waitUntilUsable()
   }
 
   private async buildPreviewData(

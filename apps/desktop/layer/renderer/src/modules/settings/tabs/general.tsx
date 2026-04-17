@@ -8,8 +8,9 @@ import { cn } from "@suhui/utils/utils"
 import { useQuery } from "@tanstack/react-query"
 import dayjs from "dayjs"
 import { useAtom } from "jotai"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { toast } from "sonner"
 
 import { currentSupportedLanguages } from "~/@types/constants"
 import { defaultResources } from "~/@types/default-resource"
@@ -24,7 +25,15 @@ import {
 import { useDialog } from "~/components/ui/modal/stacked/hooks"
 import { useMinimizeToTrayValue, useSetMinimizeToTray } from "~/hooks/biz/useTraySetting"
 import { fallbackLanguage } from "~/i18n"
-import { ipcServices } from "~/lib/client"
+import {
+  canSwitchRendererDbConfig,
+  getRendererDbConfig,
+  ipcServices,
+  resetRendererDbConfigOverride,
+  resetRendererAfterDatabaseSwitch,
+  switchRendererDbConfig,
+  type RendererDbConfigView,
+} from "~/lib/client"
 import { setTranslationCache } from "~/modules/entry-content/atoms"
 import { formatDisplayList, formatDisplayValue } from "~/modules/settings/utils/db-config-display"
 
@@ -193,28 +202,78 @@ export const SettingGeneral = () => {
   )
 }
 
-type DbConfigView = {
-  dbType: "postgres"
+type DbConfigDraft = {
   dbConn: string
   dbUser: string
-  dbPasswordMasked: string
-  envSource?: string
-  envCandidates: string[]
+  dbPassword: string
 }
 
 const DataSourceSection = () => {
   const { t } = useTranslation("settings")
+  const [draft, setDraft] = useState<DbConfigDraft>({
+    dbConn: "",
+    dbUser: "",
+    dbPassword: "",
+  })
+  const [isSaving, setIsSaving] = useState(false)
   const query = useQuery({
     queryKey: ["db", "config"],
-    queryFn: async () => {
-      const config = await ipcServices?.app.getDbConfig?.()
-      return (config ?? null) as DbConfigView | null
-    },
+    queryFn: getRendererDbConfig,
     refetchOnMount: "always",
   })
 
   const config = query.data
   const fallback = t("general.data_source.not_set")
+  const canSwitch = canSwitchRendererDbConfig()
+
+  useEffect(() => {
+    if (!config) return
+    setDraft({
+      dbConn: config.dbConn ?? "",
+      dbUser: config.dbUser ?? "",
+      dbPassword: "",
+    })
+  }, [config])
+
+  const hasChanges =
+    !!config &&
+    (draft.dbConn !== config.dbConn || draft.dbUser !== config.dbUser || !!draft.dbPassword)
+
+  const handleSave = async () => {
+    if (!hasChanges || isSaving) return
+
+    setIsSaving(true)
+    try {
+      await switchRendererDbConfig({
+        dbConn: draft.dbConn.trim(),
+        dbUser: draft.dbUser.trim(),
+        ...(draft.dbPassword ? { dbPassword: draft.dbPassword } : {}),
+      })
+      toast.success("数据库配置已保存，正在重新加载。")
+      await resetRendererAfterDatabaseSwitch()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "保存数据库配置失败。"
+      toast.error(message)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleResetOverride = async () => {
+    if (isSaving) return
+
+    setIsSaving(true)
+    try {
+      await resetRendererDbConfigOverride()
+      toast.success("已恢复环境变量数据库配置，正在重新加载。")
+      await resetRendererAfterDatabaseSwitch()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "恢复数据库配置失败。"
+      toast.error(message)
+    } finally {
+      setIsSaving(false)
+    }
+  }
 
   return (
     <SettingItemGroup>
@@ -222,15 +281,44 @@ const DataSourceSection = () => {
         {t("general.data_source.db_type")}: {formatDisplayValue(config?.dbType, fallback)}
       </SettingDescription>
       <SettingDescription>
-        {t("general.data_source.db_conn")}: {formatDisplayValue(config?.dbConn, fallback)}
+        有效配置来源: {config?.effectiveSource === "store-override" ? "应用内覆盖" : "环境变量"}
       </SettingDescription>
-      <SettingDescription>
-        {t("general.data_source.db_user")}: {formatDisplayValue(config?.dbUser, fallback)}
-      </SettingDescription>
-      <SettingDescription>
-        {t("general.data_source.db_password")}:{" "}
-        {formatDisplayValue(config?.dbPasswordMasked, fallback)}
-      </SettingDescription>
+      <div className="mt-4 space-y-3">
+        <label className="block text-sm font-medium text-text">
+          {t("general.data_source.db_conn")}
+          <Input
+            className="mt-2"
+            value={draft.dbConn}
+            onChange={(event) => {
+              setDraft((current) => ({ ...current, dbConn: event.target.value }))
+            }}
+            placeholder="127.0.0.1:5432/suhui"
+          />
+        </label>
+        <label className="block text-sm font-medium text-text">
+          {t("general.data_source.db_user")}
+          <Input
+            className="mt-2"
+            value={draft.dbUser}
+            onChange={(event) => {
+              setDraft((current) => ({ ...current, dbUser: event.target.value }))
+            }}
+            placeholder="postgres"
+          />
+        </label>
+        <label className="block text-sm font-medium text-text">
+          {t("general.data_source.db_password")}
+          <Input
+            className="mt-2"
+            type="password"
+            value={draft.dbPassword}
+            onChange={(event) => {
+              setDraft((current) => ({ ...current, dbPassword: event.target.value }))
+            }}
+            placeholder={config?.dbPasswordMasked ? "已设置，留空则保持现有值" : fallback}
+          />
+        </label>
+      </div>
       <SettingDescription>
         {t("general.data_source.env_source")}: {formatDisplayValue(config?.envSource, fallback)}
       </SettingDescription>
@@ -238,6 +326,29 @@ const DataSourceSection = () => {
         {t("general.data_source.env_candidates")}:{" "}
         {formatDisplayList(config?.envCandidates ?? [], fallback)}
       </SettingDescription>
+      <div className="mt-4 flex items-center gap-3">
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={!canSwitch || !hasChanges || isSaving || !draft.dbConn.trim()}
+          onClick={() => void handleSave()}
+        >
+          {isSaving ? `${t("actions.save")}...` : t("actions.save")}
+        </Button>
+        {config?.overrideActive && (
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={isSaving}
+            onClick={() => void handleResetOverride()}
+          >
+            恢复环境变量配置
+          </Button>
+        )}
+        {!canSwitch && (
+          <span className="text-xs text-text-secondary">当前构建尚未接入运行时数据库切换。</span>
+        )}
+      </div>
     </SettingItemGroup>
   )
 }

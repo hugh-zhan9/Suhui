@@ -6,16 +6,15 @@ import { IN_ELECTRON } from "@suhui/shared/constants"
 import { apiContext, authClientContext, queryClientContext } from "@suhui/store/context"
 import { getOS } from "@suhui/utils/utils"
 import * as React from "react"
-import { flushSync } from "react-dom"
 import ReactDOM from "react-dom/client"
 import { RouterProvider } from "react-router/dom"
 
 import { authClient } from "~/lib/auth"
 
-import { setAppIsReady } from "./atoms/app"
 import { ElECTRON_CUSTOM_TITLEBAR_HEIGHT } from "./constants"
 import { initializeApp } from "./initialize"
 import { registerAppGlobalShortcuts } from "./initialize/global-shortcuts"
+import { markShellReady } from "./initialize/readiness"
 import { followApi } from "./lib/api-client"
 import { ipcServices } from "./lib/client"
 import { queryClient } from "./lib/query-client"
@@ -49,11 +48,6 @@ window.addEventListener("unhandledrejection", (event) => {
   reportRendererError(buildRendererRejectionPayload({ reason: event.reason }))
 })
 
-initializeApp().finally(() => {
-  // eslint-disable-next-line @eslint-react/dom/no-flush-sync
-  flushSync(() => setAppIsReady(true))
-})
-
 const $container = document.querySelector("#root") as HTMLElement
 
 if (IN_ELECTRON) {
@@ -79,3 +73,6 @@ ReactDOM.createRoot($container).render(
     <RouterProvider router={router} />
   </React.StrictMode>,
 )
+
+initializeApp()
+markShellReady()

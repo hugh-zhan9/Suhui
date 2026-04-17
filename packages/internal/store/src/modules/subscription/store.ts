@@ -5,6 +5,11 @@ import { tracker } from "@suhui/tracker"
 import { omit } from "es-toolkit"
 
 import { api, queryClient } from "../../context"
+import {
+  markSubscriptionHydrateDirty,
+  reconcileHydratedSubscription,
+  runWithHydrateSource,
+} from "../../hydrate-phases"
 import { getRuntimeEnv } from "../../remote/env"
 import { transformSubscriptionFromApi, type SubscriptionRecord } from "../../remote/transforms"
 import type { Hydratable, Resetable } from "../../lib/base"
@@ -125,31 +130,79 @@ export const shouldUseLocalSubscriptionMutation = (win: any = globalThis.window)
 class SubscriptionActions implements Hydratable, Resetable {
   async hydrate() {
     const subscriptions = await SubscriptionService.getSubscriptionAll()
-    subscriptionActions.upsertManyInSession(
-      subscriptions.map((s) => dbStoreMorph.toSubscriptionModel(s)),
-    )
+    runWithHydrateSource("hydrate_critical", () => {
+      this.restoreHydratedSnapshotInSession(
+        subscriptions.map((s) => dbStoreMorph.toSubscriptionModel(s)),
+      )
+    })
   }
-  async upsertManyInSession(subscriptions: SubscriptionModel[]) {
-    immerSet((draft) => {
-      for (const subscription of subscriptions) {
-        const subscriptionSetId = getSubscriptionDBId(subscription)
-        const subscriptionStoreId = getSubscriptionStoreId(subscription)
 
-        draft.data[subscriptionStoreId] = subscription
-        draft.subscriptionIdSet.add(subscriptionSetId)
+  private rebuildDerivedState(draft: SubscriptionState) {
+    draft.feedIdByView = createEmptySetMap()
+    draft.listIdByView = createEmptySetMap()
+    draft.categories = createEmptySetMap()
+    draft.subscriptionIdSet = new Set()
 
-        if (subscription.feedId && subscription.type === "feed") {
-          draft.feedIdByView[subscription.view].add(subscription.feedId)
-          draft.feedIdByView[FeedViewType.All].add(subscription.feedId)
-          if (subscription.category) {
-            draft.categories[subscription.view].add(subscription.category)
-          }
-        }
-        if (subscription.listId && subscription.type === "list") {
-          draft.listIdByView[subscription.view].add(subscription.listId)
-          draft.listIdByView[FeedViewType.All].add(subscription.listId)
+    for (const subscription of Object.values(draft.data)) {
+      draft.subscriptionIdSet.add(getSubscriptionDBId(subscription))
+
+      if (subscription.feedId && subscription.type === "feed") {
+        draft.feedIdByView[subscription.view].add(subscription.feedId)
+        draft.feedIdByView[FeedViewType.All].add(subscription.feedId)
+        if (subscription.category) {
+          draft.categories[subscription.view].add(subscription.category)
         }
       }
+      if (subscription.listId && subscription.type === "list") {
+        draft.listIdByView[subscription.view].add(subscription.listId)
+        draft.listIdByView[FeedViewType.All].add(subscription.listId)
+      }
+    }
+  }
+
+  private hasCoveredFieldChange(current: SubscriptionModel, next: SubscriptionModel) {
+    return (
+      current.view !== next.view ||
+      current.category !== next.category ||
+      current.hideFromTimeline !== next.hideFromTimeline ||
+      current.isPrivate !== next.isPrivate ||
+      current.title !== next.title
+    )
+  }
+
+  private mergeSubscriptionForHydrate(
+    subscription: SubscriptionModel,
+    current?: SubscriptionModel,
+  ): SubscriptionModel {
+    return reconcileHydratedSubscription(subscription, current)
+  }
+
+  async upsertManyInSession(
+    subscriptions: SubscriptionModel[],
+    options?: { source?: "hydrate" | "runtime" | "rollback" },
+  ) {
+    immerSet((draft) => {
+      for (const subscription of subscriptions) {
+        const subscriptionStoreId = getSubscriptionStoreId(subscription)
+        const current = draft.data[subscriptionStoreId]
+        const nextSubscription =
+          options?.source === "hydrate"
+            ? this.mergeSubscriptionForHydrate(subscription, current)
+            : subscription
+
+        if (
+          options?.source !== "hydrate" &&
+          options?.source !== "rollback" &&
+          current &&
+          this.hasCoveredFieldChange(current, nextSubscription)
+        ) {
+          markSubscriptionHydrateDirty(subscriptionStoreId)
+        }
+
+        draft.data[subscriptionStoreId] = nextSubscription
+      }
+
+      this.rebuildDerivedState(draft)
     })
   }
 
@@ -162,7 +215,24 @@ class SubscriptionActions implements Hydratable, Resetable {
       draft.subscriptionIdSet = new Set()
     })
 
-    this.upsertManyInSession(subscriptions)
+    this.upsertManyInSession(subscriptions, { source: "runtime" })
+  }
+
+  restoreHydratedSnapshotInSession(subscriptions: SubscriptionModel[]) {
+    immerSet((draft) => {
+      const currentData = draft.data
+      draft.data = {}
+
+      for (const subscription of subscriptions) {
+        const subscriptionStoreId = getSubscriptionStoreId(subscription)
+        draft.data[subscriptionStoreId] = this.mergeSubscriptionForHydrate(
+          subscription,
+          currentData[subscriptionStoreId],
+        )
+      }
+
+      this.rebuildDerivedState(draft)
+    })
   }
   async upsertMany(
     subscriptions: SubscriptionModel[],
@@ -177,7 +247,9 @@ class SubscriptionActions implements Hydratable, Resetable {
           this.resetByView(options.resetBeforeUpsert)
         }
       }
-      this.upsertManyInSession(subscriptions)
+      runWithHydrateSource("user_write", () => {
+        this.upsertManyInSession(subscriptions)
+      })
     })
 
     tx.persist(() => {
@@ -304,37 +376,14 @@ class SubscriptionSyncService {
     }
     const tx = createTransaction(current)
 
-    let addNewCategory = false
     tx.store(() => {
-      immerSet((draft) => {
-        if (
-          subscription.category &&
-          !draft.categories[subscription.view].has(subscription.category)
-        ) {
-          addNewCategory = true
-          draft.categories[subscription.view].add(subscription.category)
-        }
-
-        if (subscription.type === "feed") {
-          draft.feedIdByView[current.view].delete(current.feedId!)
-          draft.feedIdByView[subscription.view].add(subscription.feedId!)
-        }
-
-        draft.data[subscriptionId] = subscription
+      runWithHydrateSource("user_write", () => {
+        subscriptionActions.upsertManyInSession([subscription], { source: "runtime" })
       })
     })
     tx.rollback((current) => {
-      immerSet((draft) => {
-        if (addNewCategory && subscription.category) {
-          draft.categories[subscription.view].delete(subscription.category)
-        }
-
-        if (subscription.type === "feed") {
-          draft.feedIdByView[subscription.view].delete(subscription.feedId!)
-          draft.feedIdByView[current.view].add(current.feedId!)
-        }
-
-        draft.data[subscriptionId] = current
+      runWithHydrateSource("user_write", () => {
+        subscriptionActions.upsertManyInSession([current], { source: "rollback" })
       })
     })
     tx.request(async () => {
@@ -624,21 +673,23 @@ class SubscriptionSyncService {
 
     const tx = createTransaction()
     tx.store(() => {
-      immerSet((draft) => {
-        for (const feedId of feedIds) {
-          const subscription = draft.data[feedId]
-          if (!subscription) continue
+      runWithHydrateSource("user_write", () => {
+        immerSet((draft) => {
+          for (const feedId of feedIds) {
+            const subscription = draft.data[feedId]
+            if (!subscription) continue
 
-          const currentView = subscription.view
-          draft.feedIdByView[currentView].delete(feedId)
-          draft.feedIdByView[newView].add(feedId)
-          subscription.view = newView
+            const currentView = subscription.view
+            draft.feedIdByView[currentView].delete(feedId)
+            draft.feedIdByView[newView].add(feedId)
+            subscription.view = newView
 
-          if (newCategory) {
-            draft.categories[newView].add(newCategory)
-            subscription.category = newCategory
+            if (newCategory) {
+              draft.categories[newView].add(newCategory)
+              subscription.category = newCategory
+            }
           }
-        }
+        })
       })
     })
 
@@ -694,14 +745,16 @@ class SubscriptionSyncService {
 
     const tx = createTransaction(current)
     tx.store(() => {
-      immerSet((draft) => {
-        if (!draft.data[listId]) {
-          return
-        }
+      runWithHydrateSource("user_write", () => {
+        immerSet((draft) => {
+          if (!draft.data[listId]) {
+            return
+          }
 
-        draft.data[listId].view = newView
-        draft.listIdByView[currentView].delete(listId)
-        draft.listIdByView[newView].add(listId)
+          draft.data[listId].view = newView
+          draft.listIdByView[currentView].delete(listId)
+          draft.listIdByView[newView].add(listId)
+        })
       })
     })
 
@@ -742,13 +795,15 @@ class SubscriptionSyncService {
 
     const tx = createTransaction()
     tx.store(() => {
-      immerSet((draft) => {
-        for (const feedId of feedIds) {
-          const subscription = draft.data[feedId]
-          if (!subscription) continue
-          subscription.category = null
-        }
-        draft.categories[view].delete(category)
+      runWithHydrateSource("user_write", () => {
+        immerSet((draft) => {
+          for (const feedId of feedIds) {
+            const subscription = draft.data[feedId]
+            if (!subscription) continue
+            subscription.category = null
+          }
+          draft.categories[view].delete(category)
+        })
       })
     })
 
@@ -816,20 +871,22 @@ class SubscriptionSyncService {
 
     const tx = createTransaction()
     tx.store(() => {
-      immerSet((draft) => {
-        for (const id of feedIds) {
-          const subscription = draft.data[id]
-          if (!subscription) continue
-          subscription.category = newCategory
-        }
-        draft.categories[view].add(newCategory)
-        draft.categories[view].delete(lastCategory)
+      runWithHydrateSource("user_write", () => {
+        immerSet((draft) => {
+          for (const id of feedIds) {
+            const subscription = draft.data[id]
+            if (!subscription) continue
+            subscription.category = newCategory
+          }
+          draft.categories[view].add(newCategory)
+          draft.categories[view].delete(lastCategory)
 
-        const lastCategoryOpenState = draft.categoryOpenStateByView[view][lastCategory]
-        if (typeof lastCategoryOpenState === "boolean") {
-          draft.categoryOpenStateByView[view][newCategory] = lastCategoryOpenState
-          delete draft.categoryOpenStateByView[view][lastCategory]
-        }
+          const lastCategoryOpenState = draft.categoryOpenStateByView[view][lastCategory]
+          if (typeof lastCategoryOpenState === "boolean") {
+            draft.categoryOpenStateByView[view][newCategory] = lastCategoryOpenState
+            delete draft.categoryOpenStateByView[view][lastCategory]
+          }
+        })
       })
     })
 

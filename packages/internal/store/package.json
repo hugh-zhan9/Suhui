@@ -46,6 +46,11 @@
       "require": "./src/hydrate.ts",
       "import": "./src/hydrate.ts"
     },
+    "./hydrate-phases": {
+      "types": "./src/hydrate-phases.ts",
+      "require": "./src/hydrate-phases.ts",
+      "import": "./src/hydrate-phases.ts"
+    },
     "./image/*": {
       "types": "./src/modules/image/*.ts",
       "require": "./src/modules/image/*.ts",

@@ -1,4 +1,5 @@
 import type { Resetable } from "./lib/base"
+import { resetHydratePhases } from "./hydrate-phases"
 import { collectionActions } from "./modules/collection/store"
 import { entryActions } from "./modules/entry/store"
 import { feedActions } from "./modules/feed/store"
@@ -26,5 +27,6 @@ const resets: Resetable[] = [
 ]
 
 export const resetStore = async () => {
+  resetHydratePhases()
   await Promise.all(resets.map((h) => h.reset()))
 }

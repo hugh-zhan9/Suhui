@@ -4,6 +4,19 @@ import { migrateFromIndexedDB } from "./migrate-indexed-db"
 import * as schema from "./schemas"
 
 export let db: PgRemoteDatabase<typeof schema>
+export const SKIP_NEXT_INDEXED_DB_MIGRATION_KEY = "follow:skip-next-indexeddb-migration"
+
+export const scheduleSkipNextIndexedDbMigration = () => {
+  globalThis.sessionStorage?.setItem(SKIP_NEXT_INDEXED_DB_MIGRATION_KEY, "1")
+}
+
+const consumeSkipNextIndexedDbMigration = () => {
+  const shouldSkip = globalThis.sessionStorage?.getItem(SKIP_NEXT_INDEXED_DB_MIGRATION_KEY) === "1"
+  if (shouldSkip) {
+    globalThis.sessionStorage?.removeItem(SKIP_NEXT_INDEXED_DB_MIGRATION_KEY)
+  }
+  return shouldSkip
+}
 
 export async function initializeDB() {
   const { electron } = window as any
@@ -14,7 +27,9 @@ export async function initializeDB() {
 
   // Start migration in background (don't block initial load if possible,
   // but better to run before the first query? Actually hydrate will run later)
-  void migrateFromIndexedDB()
+  if (!consumeSkipNextIndexedDbMigration()) {
+    void migrateFromIndexedDB()
+  }
 
   const { drizzle } = await import("drizzle-orm/pg-proxy")
   db = drizzle(

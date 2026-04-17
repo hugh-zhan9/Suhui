@@ -3,6 +3,7 @@ import { FEED_EXTRA_DATA_KEYS, FeedService } from "@suhui/database/services/feed
 import { getDateISOString, isBizId } from "@suhui/utils"
 
 import { api } from "../../context"
+import { markFeedHydrateDirty, reconcileHydratedFeed } from "../../hydrate-phases"
 import type { Hydratable, Resetable } from "../../lib/base"
 import { createImmerSetter, createTransaction, createZustandStore } from "../../lib/helper"
 import { useEntryStore } from "../entry/base"
@@ -80,25 +81,47 @@ const normalizeFeedTimestamp = (feed: FeedRow): FeedWithNormalizedUpdatedAt => {
 class FeedActions implements Hydratable, Resetable {
   async hydrate() {
     const feeds = await FeedService.getFeedAll()
-    feedActions.upsertManyInSession(feeds.map((feed) => normalizeFeedTimestamp(feed as FeedSchema)))
+    this.restoreHydratedSnapshotInSession(
+      feeds.map((feed) => normalizeFeedTimestamp(feed as FeedSchema)),
+    )
+  }
+
+  private buildFeedRecord(rawFeed: FeedSchema, currentFeed?: FeedModel): FeedModel {
+    const feed = normalizeFeedTimestamp(rawFeed)
+    const data = Object.fromEntries(
+      FEED_EXTRA_DATA_KEYS.filter((key) => (currentFeed || {})[key]).map((key) => [
+        key,
+        currentFeed?.[key],
+      ]),
+    )
+
+    return reconcileHydratedFeed(
+      {
+        ...feed,
+        ...data,
+        type: "feed",
+      },
+      currentFeed,
+    )
+  }
+
+  restoreHydratedSnapshotInSession(feeds: FeedSchema[]) {
+    immerSet((draft) => {
+      const currentFeeds = draft.feeds
+      draft.feeds = {}
+
+      for (const rawFeed of feeds) {
+        const feed = normalizeFeedTimestamp(rawFeed)
+        draft.feeds[feed.id] = this.buildFeedRecord(feed as FeedSchema, currentFeeds[feed.id])
+      }
+    })
   }
 
   upsertManyInSession(feeds: FeedSchema[]) {
     immerSet((draft) => {
       for (const rawFeed of feeds) {
         const feed = normalizeFeedTimestamp(rawFeed)
-        const data = Object.fromEntries(
-          FEED_EXTRA_DATA_KEYS.filter((key) => (draft.feeds[feed.id] || {})[key]).map((key) => [
-            key,
-            draft.feeds[feed.id]?.[key],
-          ]),
-        )
-
-        draft.feeds[feed.id] = {
-          ...feed,
-          ...data,
-          type: "feed",
-        }
+        draft.feeds[feed.id] = this.buildFeedRecord(feed as FeedSchema, draft.feeds[feed.id])
       }
     })
   }
@@ -122,6 +145,9 @@ class FeedActions implements Hydratable, Resetable {
     immerSet((state) => {
       const feed = state.feeds[feedId]
       if (!feed) return
+      if (patch.title !== undefined && patch.title !== feed.title) {
+        markFeedHydrateDirty(feedId)
+      }
       Object.assign(feed, patch)
     })
   }

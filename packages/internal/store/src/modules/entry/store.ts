@@ -4,6 +4,11 @@ import { cloneDeep } from "es-toolkit"
 import { debounce } from "es-toolkit/compat"
 
 import { api } from "../../context"
+import {
+  markEntryReadHydrateDirty,
+  reconcileHydratedEntry,
+  runWithHydrateSource,
+} from "../../hydrate-phases"
 import { getRuntimeEnv } from "../../remote/env"
 import { transformEntryFromApi, type EntryRecord } from "../../remote/transforms"
 import type { Hydratable, Resetable } from "../../lib/base"
@@ -35,7 +40,9 @@ const immerSet = createImmerSetter(useEntryStore)
 class EntryActions implements Hydratable, Resetable {
   async hydrate() {
     const entries = await EntryService.getEntriesToHydrate()
-    entryActions.upsertManyInSession(entries.map((e) => dbStoreMorph.toEntryModel(e)))
+    runWithHydrateSource("hydrate_critical", () => {
+      this.restoreHydratedSnapshotInSession(entries.map((e) => dbStoreMorph.toEntryModel(e)))
+    })
   }
 
   getFlattenMapEntries() {
@@ -232,6 +239,23 @@ class EntryActions implements Hydratable, Resetable {
     })
   }
 
+  restoreHydratedSnapshotInSession(entries: EntryModel[]) {
+    const dedupedEntries = this.dedupeEntriesById(entries)
+
+    immerSet((draft) => {
+      const currentData = draft.data
+      draft.data = {}
+      draft.entryIdSet = new Set()
+
+      for (const entry of dedupedEntries) {
+        draft.data[entry.id] = reconcileHydratedEntry(entry, currentData[entry.id])
+        draft.entryIdSet.add(entry.id)
+      }
+    })
+
+    this.rebuildIndexesInSession()
+  }
+
   rebuildIndexesInSession() {
     immerSet((draft) => {
       draft.entryIdByView = {
@@ -296,7 +320,9 @@ class EntryActions implements Hydratable, Resetable {
   async upsertMany(entries: EntryModel[]) {
     const tx = createTransaction()
     tx.store(() => {
-      this.upsertManyInSession(entries)
+      runWithHydrateSource("user_write", () => {
+        this.upsertManyInSession(entries)
+      })
     })
 
     tx.persist(() => {
@@ -402,6 +428,7 @@ class EntryActions implements Hydratable, Resetable {
           }
 
           if (entry.read !== read) {
+            markEntryReadHydrateDirty(entryId)
             entry.read = read
             affectedEntryIds.add(entryId)
           }
@@ -436,6 +463,7 @@ class EntryActions implements Hydratable, Resetable {
           }
 
           if (entry.read !== read) {
+            markEntryReadHydrateDirty(entry.id)
             entry.read = read
             affectedEntryIds.add(entry.id)
           }

@@ -16,6 +16,7 @@ import { registerAppTray } from "~/lib/tray"
 import { logger, revealLogFile } from "~/logger"
 import { AppManager } from "~/manager/app"
 import { DBManager } from "~/manager/db"
+import type { DbConfigOverride } from "~/manager/db-config"
 import type { DbConfigView } from "~/manager/db-config-view"
 import { buildDbConfigView } from "~/manager/db-config-view"
 import { getDesktopEnvInfo } from "~/manager/env-loader"
@@ -27,6 +28,12 @@ import { shouldShowMainWindowOnReady } from "./ready-to-show"
 
 interface WindowActionInput {
   action: "close" | "minimize" | "maximum"
+}
+
+interface SwitchDbConfigInput {
+  dbConn: string
+  dbUser?: string
+  dbPassword?: string
 }
 
 interface SearchInput {
@@ -69,12 +76,38 @@ export class AppService extends IpcService {
     return buildDbConfigView({
       env: process.env,
       envInfo: getDesktopEnvInfo(),
+      override:
+        (store.get(StoreKey.DbConfigOverride) as DbConfigOverride | null | undefined) ?? null,
     })
   }
 
   @IpcMethod()
   getDatabaseStatus(_context: IpcContext) {
     return DBManager.getStatus()
+  }
+
+  @IpcMethod()
+  async switchDbConfig(_context: IpcContext, input: SwitchDbConfigInput): Promise<DbConfigView> {
+    const currentConfig = DBManager.getEffectiveConfig()
+    const normalizedInput = {
+      dbConn: input.dbConn?.trim() ?? "",
+      dbUser: input.dbUser?.trim() ?? currentConfig.dbUser,
+      dbPassword: input.dbPassword ?? currentConfig.dbPassword,
+    }
+
+    if (!normalizedInput.dbConn) {
+      throw new Error("DB_CONN is required")
+    }
+
+    await DBManager.switchDatabase(normalizedInput)
+
+    return this.getDbConfig({} as IpcContext)
+  }
+
+  @IpcMethod()
+  async resetDbConfigOverride(_context: IpcContext): Promise<DbConfigView> {
+    await DBManager.switchDatabase(null)
+    return this.getDbConfig({} as IpcContext)
   }
 
   @IpcMethod()

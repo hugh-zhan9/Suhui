@@ -40,9 +40,42 @@ const buildSafeHeaders = createBuildSafeHeaders(env.VITE_WEB_URL, [
 ])
 const localFeedRefreshIntervalMs = 30 * 60 * 1000
 let localFeedRefreshRunning: Promise<void> | null = null
+let syncRunning: Promise<void> | null = null
+let dbCutoverPaused = false
+
+const runGitSync = async (reason: "startup" | "interval" | "quit") => {
+  if (dbCutoverPaused) {
+    logger.warn("[Sync] git sync skipped during DB cutover", { reason })
+    return
+  }
+  if (syncRunning) {
+    logger.warn("[Sync] git sync skipped because a previous run is still active", { reason })
+    return syncRunning
+  }
+
+  syncRunning = (async () => {
+    try {
+      await SyncManager.gitSync()
+    } finally {
+      syncRunning = null
+    }
+  })()
+
+  return syncRunning
+}
 
 const runLocalFeedRefresh = async (reason: "startup" | "interval") => {
   const source = reason === "startup" ? "startup-auto" : "interval-auto"
+  if (dbCutoverPaused) {
+    appendRefreshAuditLog({
+      level: "warn",
+      stage: "runner.skipped",
+      source,
+      reason: "db_cutover_in_progress",
+    })
+    logger.warn("[Refresh] local feed refresh skipped during DB cutover", { reason })
+    return
+  }
   if (localFeedRefreshRunning) {
     appendRefreshAuditLog({
       level: "warn",
@@ -98,6 +131,16 @@ export class BootstrapManager {
       return
     }
     appendBootLog(bootLogPath, "manager:single-instance-ok")
+
+    DBManager.registerCutoverParticipant("bootstrap-background-jobs", {
+      quiesce: async () => {
+        dbCutoverPaused = true
+        await Promise.allSettled([localFeedRefreshRunning, syncRunning].filter(Boolean))
+      },
+      resume: () => {
+        dbCutoverPaused = false
+      },
+    })
 
     logger.info("[Startup] DBManager.init:start")
     DBManager.init({ background: true })
@@ -207,13 +250,13 @@ export class BootstrapManager {
 
       // 延迟 5s 执行首次并设置定时同步以免阻塞启动
       setTimeout(() => {
-        SyncManager.gitSync().catch((err) => logger.error("[Sync] auto sync on start failed:", err))
+        runGitSync("startup").catch((err) => logger.error("[Sync] auto sync on start failed:", err))
         runLocalFeedRefresh("startup").catch((err) =>
           logger.error("[Refresh] auto local refresh on start failed:", err),
         )
         setInterval(
           () => {
-            SyncManager.gitSync().catch((err) => logger.error("[Sync] periodic sync failed:", err))
+            runGitSync("interval").catch((err) => logger.error("[Sync] periodic sync failed:", err))
           },
           10 * 60 * 1000,
         )
@@ -234,7 +277,7 @@ export class BootstrapManager {
         isSyncingAndQuitting = true
 
         try {
-          await SyncManager.gitSync()
+          await runGitSync("quit")
           logger.info("[Sync] auto sync on quit complete.")
         } catch (err) {
           logger.error("[Sync] auto sync on quit failed:", err)

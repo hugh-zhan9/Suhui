@@ -7,6 +7,11 @@ import { isEqual } from "es-toolkit"
 
 import { api } from "../../context"
 import { getRuntimeEnv } from "../../remote/env"
+import {
+  markUnreadHydrateDirty,
+  reconcileHydratedUnread,
+  runWithHydrateSource,
+} from "../../hydrate-phases"
 import type { Hydratable, Resetable } from "../../lib/base"
 import { createTransaction, createZustandStore } from "../../lib/helper"
 import { getEntry } from "../entry/getter"
@@ -349,13 +354,41 @@ class UnreadSyncService {
 class UnreadActions implements Hydratable, Resetable {
   async hydrate() {
     const unreads = await UnreadService.getUnreadAll()
-    this.upsertManyInSession(unreads)
+    runWithHydrateSource("hydrate_critical", () => {
+      this.restoreHydratedSnapshotInSession(unreads)
+    })
   }
 
-  upsertManyInSession(unreads: UnreadSchema[], options?: UnreadUpdateOptions) {
+  restoreHydratedSnapshotInSession(unreads: UnreadSchema[]) {
+    const state = useUnreadStore.getState()
+    const nextData: UnreadStoreModel = {}
+
+    for (const unread of unreads) {
+      nextData[unread.id] = reconcileHydratedUnread(unread, {
+        id: unread.id,
+        count: state.data[unread.id] ?? unread.count,
+      }).count
+    }
+
+    set({
+      data: nextData,
+    })
+  }
+
+  upsertManyInSession(
+    unreads: UnreadSchema[],
+    options?: UnreadUpdateOptions & { source?: "hydrate" | "runtime" | "rollback" },
+  ) {
     const state = useUnreadStore.getState()
     const nextData = options?.reset ? {} : { ...state.data }
     for (const unread of unreads) {
+      if (
+        options?.source !== "hydrate" &&
+        options?.source !== "rollback" &&
+        nextData[unread.id] !== unread.count
+      ) {
+        markUnreadHydrateDirty(unread.id)
+      }
       nextData[unread.id] = unread.count
     }
     set({
@@ -369,7 +402,11 @@ class UnreadActions implements Hydratable, Resetable {
       : Object.entries(unreads).map(([id, count]) => ({ id, count }))
 
     const tx = createTransaction()
-    tx.store(() => this.upsertManyInSession(normalizedUnreads, options))
+    tx.store(() =>
+      runWithHydrateSource("user_write", () =>
+        this.upsertManyInSession(normalizedUnreads, options),
+      ),
+    )
     tx.persist(() => UnreadService.upsertMany(normalizedUnreads, options))
     await tx.run()
   }
