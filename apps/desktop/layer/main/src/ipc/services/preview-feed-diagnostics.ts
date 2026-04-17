@@ -15,6 +15,7 @@ export type PreviewDiagnosticsInput = {
   remoteAddress?: string
   remotePort?: number
   lookup?: LookupFn
+  resolveProxy?: (url: string) => Promise<string>
 }
 
 type DnsDiagnostics = {
@@ -31,6 +32,11 @@ type ProxyDiagnostics = {
   no: string | null
 }
 
+type SessionProxyDiagnostics = {
+  resolvedProxy: string | null
+  error: string | null
+}
+
 type ConnectionDiagnostics = {
   remoteAddress: string | null
   remotePort: number | null
@@ -43,6 +49,7 @@ export type PreviewDiagnostics = {
   finalUrl: string
   redirectChain: string[]
   proxy: ProxyDiagnostics
+  session: SessionProxyDiagnostics
   dns: DnsDiagnostics
   connection: ConnectionDiagnostics
 }
@@ -64,12 +71,7 @@ function readProxyEnv(): ProxyDiagnostics {
 function parseHostPort(url: string): { host: string | null; port: number | null } {
   try {
     const parsed = new URL(url)
-    const port =
-      parsed.port !== ""
-        ? Number(parsed.port)
-        : parsed.protocol === "https:"
-          ? 443
-          : 80
+    const port = parsed.port !== "" ? Number(parsed.port) : parsed.protocol === "https:" ? 443 : 80
     return { host: parsed.hostname, port }
   } catch {
     return { host: null, port: null }
@@ -83,6 +85,8 @@ export async function buildPreviewDiagnostics(
   const lookup = input.lookup ?? dnsLookup
   let address: string | null = null
   let error: string | null = null
+  let resolvedProxy: string | null = null
+  let proxyError: string | null = null
 
   if (host) {
     try {
@@ -95,6 +99,14 @@ export async function buildPreviewDiagnostics(
     error = "Invalid URL host"
   }
 
+  if (input.resolveProxy) {
+    try {
+      resolvedProxy = await input.resolveProxy(input.finalUrl)
+    } catch (err) {
+      proxyError = err instanceof Error ? err.message : String(err)
+    }
+  }
+
   return {
     phase: input.phase,
     inputUrl: input.inputUrl,
@@ -102,6 +114,10 @@ export async function buildPreviewDiagnostics(
     finalUrl: input.finalUrl,
     redirectChain: input.redirectChain,
     proxy: readProxyEnv(),
+    session: {
+      resolvedProxy,
+      error: proxyError,
+    },
     dns: {
       host,
       port,

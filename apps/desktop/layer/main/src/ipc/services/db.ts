@@ -1,10 +1,9 @@
 import { randomUUID } from "node:crypto"
-import * as http from "node:http"
-import * as https from "node:https"
 
 import { EntryService } from "@suhui/database/services/entry"
 import { FeedService } from "@suhui/database/services/feed"
 import { SubscriptionService } from "@suhui/database/services/subscription"
+import { session } from "electron"
 import type { IpcContext } from "electron-ipc-decorator"
 import { IpcMethod, IpcService } from "electron-ipc-decorator"
 
@@ -17,6 +16,7 @@ import { appendRefreshAuditTrace } from "~/manager/refresh-audit-log"
 import { broadcastLocalFeedRefreshCompleted } from "~/manager/local-feed-refresh-events"
 
 import { mapExecuteResult } from "./db-execute-result"
+import { fetchFeedUrl } from "./feed-fetch"
 import {
   isLocalFeedRefreshCandidate,
   localFeedRefreshBatchConcurrency,
@@ -24,7 +24,6 @@ import {
 } from "./local-feed-refresh"
 import { findDuplicateFeed } from "./rss-dedup"
 import { buildEntryMediaPayload } from "./rss-entry-media"
-import { resolveHttpErrorMessage } from "./rss-http-error"
 import { parseRssFeed } from "./rss-parser"
 import {
   buildExistingEntryReuseIndex,
@@ -36,18 +35,6 @@ import {
 import { resolvePreviewFeedUrl } from "./rsshub-external"
 import { resolvePublishedAtMs, toTimestampMs } from "./rss-time"
 import { buildPreviewDiagnostics } from "./preview-feed-diagnostics"
-
-/**
- * Fetches a URL using Node.js built-in http/https, follows up to 5 redirects.
- */
-type FetchResult = {
-  body: string
-  finalUrl: string
-  redirectChain: string[]
-  remoteAddress?: string
-  remotePort?: number
-  statusCode?: number
-}
 
 type RefreshSource =
   | "manual-single"
@@ -129,112 +116,6 @@ const withTimeout = async <T>(
   }
 }
 
-function fetchUrl(
-  url: string,
-  rsshubToken?: string | null,
-  redirectCount = 0,
-  redirectVisited = new Set<string>(),
-  redirectChain: string[] = [],
-  trace?: RefreshTrace,
-): Promise<FetchResult> {
-  return new Promise((resolve, reject) => {
-    if (redirectCount > 12) {
-      if (trace) {
-        refreshLog("error", trace, "fetch.too_many_redirects", {
-          redirectCount,
-          redirectChain,
-        })
-      }
-      reject(new Error("Too many redirects"))
-      return
-    }
-    const lib = url.startsWith("https") ? https : http
-    const headers: Record<string, string> = {
-      // Node.js request header values must be ASCII-only.
-      "User-Agent": "Suhui-RSS-Reader/1.0",
-      Accept: "application/rss+xml, application/atom+xml, application/xml, */*",
-    }
-    if (rsshubToken) {
-      headers["X-RSSHub-Token"] = rsshubToken
-    }
-    const request = lib.get(url, { headers }, (res) => {
-      if (trace) {
-        refreshLog("info", trace, "fetch.response", {
-          requestUrl: url,
-          statusCode: res.statusCode,
-          location: res.headers.location || null,
-        })
-      }
-      if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-        const resolvedLocation = new URL(res.headers.location, url).toString()
-        if (redirectVisited.has(resolvedLocation)) {
-          reject(new Error(`Redirect loop detected: ${resolvedLocation}`))
-          return
-        }
-        const nextVisited = new Set(redirectVisited)
-        nextVisited.add(resolvedLocation)
-        resolve(
-          fetchUrl(
-            resolvedLocation,
-            rsshubToken,
-            redirectCount + 1,
-            nextVisited,
-            [...redirectChain, resolvedLocation],
-            trace,
-          ),
-        )
-        return
-      }
-      if (res.statusCode && res.statusCode >= 400) {
-        const chunks: Buffer[] = []
-        res.on("data", (chunk) => chunks.push(chunk))
-        res.on("end", () => {
-          reject(
-            new Error(
-              resolveHttpErrorMessage(res.statusCode, Buffer.concat(chunks).toString("utf-8")),
-            ),
-          )
-        })
-        res.on("error", reject)
-        return
-      }
-      const chunks: Buffer[] = []
-      res.on("data", (chunk) => chunks.push(chunk))
-      res.on("end", () =>
-        resolve({
-          body: Buffer.concat(chunks).toString("utf-8"),
-          finalUrl: url,
-          redirectChain,
-          remoteAddress: res.socket?.remoteAddress,
-          remotePort: res.socket?.remotePort,
-          statusCode: res.statusCode,
-        }),
-      )
-      res.on("error", reject)
-    })
-    request.setTimeout(localFeedRefreshRequestTimeoutMs, () => {
-      if (trace) {
-        refreshLog("error", trace, "fetch.request_timeout", {
-          requestUrl: url,
-          timeoutMs: localFeedRefreshRequestTimeoutMs,
-        })
-      }
-      request.destroy(
-        new Error(`Feed request timed out after ${localFeedRefreshRequestTimeoutMs}ms`),
-      )
-    })
-    request.on("error", (error) => {
-      if (trace) {
-        refreshLog("error", trace, "fetch.request_error", {
-          requestUrl: url,
-          reason: error.message,
-        })
-      }
-      reject(error)
-    })
-  })
-}
-
 export class DbService extends IpcService {
   static override readonly groupName = "db"
 
@@ -272,11 +153,35 @@ export class DbService extends IpcService {
         requestedUrl: resolvedUrl,
         finalUrl: resolvedUrl,
         redirectChain: [],
+        resolveProxy: (url) => session.defaultSession.resolveProxy(url),
       })
       console.info("[db.previewFeed] diagnostics", beforeDiagnostics)
     }
 
-    const fetchResult = await fetchUrl(resolvedUrl, undefined, 0, new Set<string>(), [], trace)
+    const fetchResult = await fetchFeedUrl(resolvedUrl, {
+      timeoutMs: localFeedRefreshRequestTimeoutMs,
+      onResponse: ({ requestUrl, statusCode, location }) => {
+        if (trace) {
+          refreshLog("info", trace, "fetch.response", {
+            requestUrl,
+            statusCode,
+            location,
+          })
+        }
+      },
+      onError: ({ requestUrl, error }) => {
+        if (!trace) return
+        const stage = error.message.includes("timed out")
+          ? "fetch.request_timeout"
+          : "fetch.request_error"
+        refreshLog("error", trace, stage, {
+          requestUrl,
+          reason: error.message,
+          timeoutMs:
+            stage === "fetch.request_timeout" ? localFeedRefreshRequestTimeoutMs : undefined,
+        })
+      },
+    })
 
     if (trace) {
       refreshLog("info", trace, "fetch.completed", {
@@ -285,8 +190,6 @@ export class DbService extends IpcService {
         redirectChain: fetchResult.redirectChain,
         statusCode: fetchResult.statusCode || null,
         bodyBytes: Buffer.byteLength(fetchResult.body, "utf-8"),
-        remoteAddress: fetchResult.remoteAddress || null,
-        remotePort: fetchResult.remotePort || null,
       })
     }
 
@@ -297,8 +200,7 @@ export class DbService extends IpcService {
         requestedUrl: resolvedUrl,
         finalUrl: fetchResult.finalUrl,
         redirectChain: fetchResult.redirectChain,
-        remoteAddress: fetchResult.remoteAddress,
-        remotePort: fetchResult.remotePort,
+        resolveProxy: (url) => session.defaultSession.resolveProxy(url),
       })
       console.info("[db.previewFeed] diagnostics", afterDiagnostics)
     }
