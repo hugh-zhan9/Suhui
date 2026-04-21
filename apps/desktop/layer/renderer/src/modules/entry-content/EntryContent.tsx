@@ -43,6 +43,7 @@ import type { EntryContentProps } from "./components/entry-content/types"
 import { getEntryContentLayout } from "./components/layouts"
 import type { EntryLayoutProps } from "./components/layouts/types"
 import { SourceContentPanel } from "./components/SourceContentView"
+import { normalizeSourceContentPanelSrc } from "./components/source-content-state"
 import { useEntryContent } from "./hooks"
 
 const contentVariants = {
@@ -233,7 +234,7 @@ const EntryContentImpl: Component<EntryContentProps> = ({
             </article>
           </m.div>
         </EntryScrollArea>
-        <SourceContentPanel src={safeUrl ?? "#"} />
+        <SourceContentPanel entryId={entryId} src={normalizeSourceContentPanelSrc(safeUrl)} />
       </Focusable>
     </div>
   )

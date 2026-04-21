@@ -47,7 +47,12 @@ export const ArticleLayout: React.FC<EntryLayoutProps> = ({
 
   return (
     <div className={cn(readableContentMaxWidthClassName, "mx-auto mt-1 px-4")}>
-      <EntryTitle entryId={entryId} compact={compact} containerClassName="mt-12" />
+      <EntryTitle
+        entryId={entryId}
+        compact={compact}
+        containerClassName="mt-12"
+        showOriginalAction
+      />
 
       <WrappedElementProvider boundingDetection>
         <div className="mx-auto mb-32 mt-6 max-w-full cursor-auto text-[0.94rem]">
