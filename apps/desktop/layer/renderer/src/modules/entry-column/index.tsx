@@ -16,6 +16,7 @@ import { FeedNotFound } from "~/components/errors/FeedNotFound"
 import { FEED_COLLECTION_LIST, HotkeyScope, ROUTE_FEED_PENDING } from "~/constants"
 import { useNavigateEntry } from "~/hooks/biz/useNavigateEntry"
 import { useRouteParams, useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
+import { appLog } from "~/lib/log"
 import { useFeedQuery } from "~/queries/feed"
 import { useFeedHeaderTitle } from "~/store/feed/hooks"
 
@@ -49,7 +50,7 @@ function EntryColumnContent() {
   }, [actions])
 
   const { entriesIds, groupedCounts } = state
-  console.log('[Antigravity] EntryColumnContent render:', {
+  console.log("[Antigravity] EntryColumnContent render:", {
     entriesIdsLen: entriesIds.length,
     isLoading: state.isLoading,
     isFetching: state.isFetching,
@@ -76,6 +77,15 @@ function EntryColumnContent() {
 
     if (isCollection || isPendingEntry) return
 
+    if (window.__startupReadTraceFlags?.enabled) {
+      appLog("[startup-read-trace] activeEntry-markRead-effect", {
+        label: window.__startupReadTraceFlags.label,
+        activeEntryId,
+        isCollection,
+        isPendingEntry,
+        view,
+      })
+    }
     // Mark as read for both local and remote feeds
     unreadSyncService.markRead(activeEntryId)
   }, [activeEntryId, isCollection, isPendingEntry])
@@ -119,6 +129,7 @@ function EntryColumnContent() {
   const aiTimelineEnabled = useAtomValue(aiTimelineEnabledAtom)
   const showAiTimelineLoading = aiTimelineEnabled && state.isLoading && !state.isFetchingNextPage
   const renderAsRead = useGeneralSettingKey("renderMarkUnread")
+  const traceFlags = window.__startupReadTraceFlags
   const handleRangeChange = useCallback(
     (e: Range) => {
       const [_, second] = rangeQueueRef.current
@@ -131,13 +142,25 @@ function EntryColumnContent() {
       }
 
       if (!renderAsRead) return
-      if (!getView(view)?.wideMode) {
+      const forcedWideMode = !!traceFlags?.forceWideRenderMarkRead
+      if (!getView(view)?.wideMode && !forcedWideMode) {
         return
+      }
+      if (traceFlags?.enabled) {
+        appLog("[startup-read-trace] handleRangeChange-renderMark", {
+          label: traceFlags.label,
+          view,
+          range: { startIndex: e.startIndex, endIndex: e.endIndex },
+          isInteracted: isInteracted.current,
+          viewWideMode: !!getView(view)?.wideMode,
+          forcedWideMode,
+          renderAsRead,
+        })
       }
       // For gird, render as mark read logic
       handleMarkReadInRange?.(e, isInteracted.current)
     },
-    [handleMarkReadInRange, renderAsRead, view],
+    [handleMarkReadInRange, renderAsRead, traceFlags, view],
   )
 
   const fetchNextPage = useCallback(() => {
@@ -206,23 +229,36 @@ function EntryColumnContent() {
 
 class DebugErrorBoundary extends Component<any, { hasError: boolean; error: any }> {
   constructor(props: any) {
-    super(props);
-    this.state = { hasError: false, error: null };
+    super(props)
+    this.state = { hasError: false, error: null }
   }
   static getDerivedStateFromError(error: any) {
-    return { hasError: true, error };
+    return { hasError: true, error }
   }
   override render() {
     if (this.state.hasError) {
       return (
-        <div style={{ color: 'red', padding: '20px', zIndex: 9999, flex: 1, backgroundColor: 'white', overflow: 'auto' }}>
+        <div
+          style={{
+            color: "red",
+            padding: "20px",
+            zIndex: 9999,
+            flex: 1,
+            backgroundColor: "white",
+            overflow: "auto",
+          }}
+        >
           <h2>React Render Crash</h2>
-          <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{this.state.error?.toString()}</pre>
-          <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: '12px' }}>{this.state.error?.stack}</pre>
+          <pre style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+            {this.state.error?.toString()}
+          </pre>
+          <pre style={{ whiteSpace: "pre-wrap", wordBreak: "break-word", fontSize: "12px" }}>
+            {this.state.error?.stack}
+          </pre>
         </div>
-      );
+      )
     }
-    return this.props.children;
+    return this.props.children
   }
 }
 

@@ -36,6 +36,11 @@ declare global {
 }
 
 export const initializeApp = () => {
+  const startupReadTraceFlags = window.__startupReadTraceFlags
+  if (startupReadTraceFlags?.enabled) {
+    appLog("[startup-read-trace] flags", startupReadTraceFlags)
+  }
+
   appLog(`${APP_NAME}: 溯源而读，回归纯粹`, repository.url)
 
   if (DEV) {

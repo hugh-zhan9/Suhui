@@ -6,6 +6,11 @@ declare global {
     api?: { canWindowBlur: boolean }
     platform: NodeJS.Platform
     __followDbType?: "postgres"
+    __startupReadTraceFlags?: {
+      enabled: boolean
+      forceWideRenderMarkRead: boolean
+      label: string
+    }
   }
   export const APP_NAME = "溯洄"
 }
