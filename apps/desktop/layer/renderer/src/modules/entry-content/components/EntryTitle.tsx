@@ -12,6 +12,7 @@ import { titleCase } from "title-case"
 import { useShallow } from "zustand/shallow"
 
 import { useShowAITranslation } from "~/atoms/ai-translation"
+import { useShowSourceContent } from "~/atoms/source-content"
 import { getGeneralSettings, useActionLanguage } from "~/atoms/settings/general"
 import { useUISettingKey } from "~/atoms/settings/ui"
 import { CommandActionButton } from "~/components/ui/button/CommandActionButton"
@@ -28,6 +29,7 @@ import { FeedIcon } from "~/modules/feed/feed-icon"
 import { getPreferredTitle } from "~/store/feed/hooks"
 
 import { EntryTranslation } from "../../entry-column/translation"
+import { shouldShowOriginalActionButton } from "./entry-original-action"
 import { EntryReadHistory } from "./entry-read-history"
 
 interface EntryLinkProps {
@@ -35,6 +37,7 @@ interface EntryLinkProps {
   compact?: boolean
   containerClassName?: string
   noRecentReader?: boolean
+  showOriginalAction?: boolean
 }
 
 export const EntryTitle = ({
@@ -42,6 +45,7 @@ export const EntryTitle = ({
   compact,
   containerClassName,
   noRecentReader,
+  showOriginalAction = false,
 }: EntryLinkProps) => {
   const entry = useEntry(
     entryId,
@@ -103,6 +107,7 @@ export const EntryTitle = ({
   })
 
   const dateFormat = useUISettingKey("dateFormat")
+  const showSourceContent = useShowSourceContent()
 
   const navigateEntry = useNavigateEntry()
   const { view, entryId: routeEntryId } = useRouteParams()
@@ -110,9 +115,16 @@ export const EntryTitle = ({
   const runCmdFn = useRunCommandFn()
   const toggleStar = runCmdFn(COMMAND_ID.entry.star, [{ entryId, view }])
   const toggleRead = runCmdFn(COMMAND_ID.entry.read, [{ entryId }])
+  const toggleSourceContent = runCmdFn(COMMAND_ID.entry.viewSourceContent, [
+    { entryId, siteUrl: feed?.siteUrl },
+  ])
   const exportView = subscription?.view ?? view
   const isCurrentEntryInRoute = routeEntryId === entryId
   const canShowExportAsPDF = isCurrentEntryInRoute && isPDFExportSupportedView(exportView)
+  const canShowOriginalAction = shouldShowOriginalActionButton({
+    showOriginalAction,
+    url: populatedFullHref,
+  })
 
   const iconEntry: FeedIconEntry = useMemo(
     () => ({
@@ -198,6 +210,14 @@ export const EntryTitle = ({
               onClick={toggleRead}
               id={`${entryId}/${COMMAND_ID.entry.read}/detail-title`}
             />
+            {canShowOriginalAction && (
+              <CommandActionButton
+                commandId={COMMAND_ID.entry.viewSourceContent}
+                active={showSourceContent}
+                onClick={toggleSourceContent}
+                id={`${entryId}/${COMMAND_ID.entry.viewSourceContent}/detail-title`}
+              />
+            )}
             {canShowExportAsPDF && (
               <ActionButton
                 tooltip="导出 PDF"
