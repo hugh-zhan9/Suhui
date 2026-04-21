@@ -30,6 +30,7 @@ export const feedsTable = pgTable("feeds", {
   latestEntryPublishedAt: text("latest_entry_published_at"),
   tipUserIds: jsonb("tip_users").$type<string[]>(),
   updatedAt: bigint("published_at", { mode: "number" }),
+  deletedAt: bigint("deleted_at", { mode: "number" }),
 })
 
 export const subscriptionsTable = pgTable("subscriptions", {
@@ -43,6 +44,7 @@ export const subscriptionsTable = pgTable("subscriptions", {
   title: text("title"),
   category: text("category"),
   createdAt: text("created_at"),
+  deletedAt: bigint("deleted_at", { mode: "number" }),
   type: text("type").notNull().$type<"feed" | "list" | "inbox">(),
   id: text("id").primaryKey(),
 })
@@ -51,6 +53,7 @@ export const inboxesTable = pgTable("inboxes", {
   id: text("id").primaryKey(),
   title: text("title"),
   secret: text("secret").notNull(),
+  deletedAt: bigint("deleted_at", { mode: "number" }),
 })
 
 export const listsTable = pgTable("lists", {
@@ -65,6 +68,7 @@ export const listsTable = pgTable("lists", {
   ownerUserId: text("owner_user_id"),
   subscriptionCount: integer("subscription_count"),
   purchaseAmount: text("purchase_amount"),
+  deletedAt: bigint("deleted_at", { mode: "number" }),
 })
 
 export const unreadTable = pgTable("unread", {
@@ -118,6 +122,7 @@ export const entriesTable = pgTable("entries", {
   read: boolean("read"),
   sources: jsonb("sources").$type<string[]>(),
   settings: jsonb("settings").$type<EntrySettings>(),
+  deletedAt: bigint("deleted_at", { mode: "number" }),
 })
 
 export const collectionsTable = pgTable("collections", {
@@ -125,6 +130,7 @@ export const collectionsTable = pgTable("collections", {
   entryId: text("entry_id").notNull().primaryKey(),
   createdAt: text("created_at"),
   view: integer("view").notNull().$type<FeedViewType>(),
+  deletedAt: bigint("deleted_at", { mode: "number" }),
 })
 
 export const summariesTable = pgTable(

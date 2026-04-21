@@ -10,8 +10,12 @@ interface UnreadUpdateOptions {
 }
 
 class UnreadServiceStatic implements Resetable {
-  async reset() {
+  async purgeAllForMaintenance() {
     await db.delete(unreadTable).execute()
+  }
+
+  async reset() {
+    await this.purgeAllForMaintenance()
   }
 
   async getUnreadAll() {
@@ -21,7 +25,7 @@ class UnreadServiceStatic implements Resetable {
   async upsertMany(unreads: UnreadSchema[], options?: UnreadUpdateOptions) {
     if (unreads.length === 0) return
     if (options?.reset) {
-      await db.delete(unreadTable).execute()
+      await this.purgeAllForMaintenance()
     }
     await db
       .insert(unreadTable)
@@ -32,7 +36,7 @@ class UnreadServiceStatic implements Resetable {
       })
   }
 
-  async deleteByIds(ids: string[]) {
+  async purgeByIdsForMaintenance(ids: string[]) {
     if (!ids || ids.length === 0) return
     await db.delete(unreadTable).where(inArray(unreadTable.id, ids)).execute()
   }

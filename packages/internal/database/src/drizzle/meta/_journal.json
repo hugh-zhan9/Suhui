@@ -281,6 +281,13 @@
       "when": 1772271585058,
       "tag": "0039_warm_gabe_jones",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "6",
+      "when": 1776424009000,
+      "tag": "0040_soft_delete_columns",
+      "breakpoints": true
     }
   ]
 }

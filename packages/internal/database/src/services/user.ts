@@ -26,8 +26,12 @@ class UserServiceStatic implements Resetable {
     await db.update(usersTable).set({ isMe: false }).where(eq(usersTable.isMe, true))
   }
 
-  async reset() {
+  async purgeAllForMaintenance() {
     await db.delete(usersTable).execute()
+  }
+
+  async reset() {
+    await this.purgeAllForMaintenance()
   }
 }
 

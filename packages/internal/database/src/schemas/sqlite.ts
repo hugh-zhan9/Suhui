@@ -23,6 +23,7 @@ export const feedsTable = sqliteTable("feeds", {
   latestEntryPublishedAt: text("latest_entry_published_at"),
   tipUserIds: text("tip_users", { mode: "json" }).$type<string[]>(),
   updatedAt: integer("published_at", { mode: "timestamp_ms" }),
+  deletedAt: integer("deleted_at", { mode: "timestamp_ms" }),
 })
 
 export const subscriptionsTable = sqliteTable("subscriptions", {
@@ -36,6 +37,7 @@ export const subscriptionsTable = sqliteTable("subscriptions", {
   title: text("title"),
   category: text("category"),
   createdAt: text("created_at"),
+  deletedAt: integer("deleted_at", { mode: "timestamp_ms" }),
   type: text("type").notNull().$type<"feed" | "list" | "inbox">(),
   id: text("id").primaryKey(),
 })
@@ -44,6 +46,7 @@ export const inboxesTable = sqliteTable("inboxes", {
   id: text("id").primaryKey(),
   title: text("title"),
   secret: text("secret").notNull(),
+  deletedAt: integer("deleted_at", { mode: "timestamp_ms" }),
 })
 
 export const listsTable = sqliteTable("lists", {
@@ -58,6 +61,7 @@ export const listsTable = sqliteTable("lists", {
   ownerUserId: text("owner_user_id"),
   subscriptionCount: integer("subscription_count"),
   purchaseAmount: text("purchase_amount"),
+  deletedAt: integer("deleted_at", { mode: "timestamp_ms" }),
 })
 
 export const unreadTable = sqliteTable("unread", {
@@ -110,6 +114,7 @@ export const entriesTable = sqliteTable("entries", {
   read: integer("read", { mode: "boolean" }),
   sources: text("sources", { mode: "json" }).$type<string[]>(),
   settings: text("settings", { mode: "json" }).$type<EntrySettings>(),
+  deletedAt: integer("deleted_at", { mode: "timestamp_ms" }),
 })
 
 export const collectionsTable = sqliteTable("collections", {
@@ -117,6 +122,7 @@ export const collectionsTable = sqliteTable("collections", {
   entryId: text("entry_id").notNull().primaryKey(),
   createdAt: text("created_at"),
   view: integer("view").notNull().$type<FeedViewType>(),
+  deletedAt: integer("deleted_at", { mode: "timestamp_ms" }),
 })
 
 export const summariesTable = sqliteTable(

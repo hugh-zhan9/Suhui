@@ -5,8 +5,12 @@ import type { Resetable } from "./internal/base"
 import { conflictUpdateAllExcept } from "./internal/utils"
 
 class ImageServiceStatic implements Resetable {
-  async reset() {
+  async purgeAllForMaintenance() {
     await db.delete(imagesTable).execute()
+  }
+
+  async reset() {
+    await this.purgeAllForMaintenance()
   }
 
   async upsertMany(imageColors: ImageSchema[]) {

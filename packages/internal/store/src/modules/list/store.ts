@@ -71,7 +71,7 @@ class ListActions implements Hydratable, Resetable {
     })
 
     tx.persist(() => {
-      return ListService.reset()
+      return ListService.purgeAllForMaintenance()
     })
 
     await tx.run()

@@ -1,21 +1,11 @@
 import type { FeedViewType } from "@suhui/constants"
-import { and, eq, inArray, notInArray, or, sql } from "drizzle-orm"
+import { and, eq, inArray, isNull, notInArray, or, sql } from "drizzle-orm"
 
 import { db } from "../db"
-import {
-  collectionsTable,
-  entriesTable,
-  feedsTable,
-  inboxesTable,
-  listsTable,
-  subscriptionsTable,
-  summariesTable,
-  translationsTable,
-} from "../schemas"
+import { subscriptionsTable } from "../schemas"
 import type { SubscriptionSchema } from "../schemas/types"
 import type { Resetable } from "./internal/base"
 import { recordSyncOp } from "./internal/sync-proxy"
-import { UnreadService } from "./unread"
 
 type DeleteTargets = {
   ids?: string[]
@@ -57,11 +47,16 @@ export const collectCleanupTargets = (results: SubscriptionDeleteResult[]) => {
 
 class SubscriptionServiceStatic implements Resetable {
   getSubscriptionAll() {
-    return db.query.subscriptionsTable.findMany()
+    return db.query.subscriptionsTable.findMany({
+      where: isNull(subscriptionsTable.deletedAt),
+    })
   }
 
-  async reset() {
+  async purgeAllForMaintenance() {
     await db.delete(subscriptionsTable).execute()
+  }
+  async reset() {
+    await this.purgeAllForMaintenance()
   }
   async upsertMany(subscriptions: SubscriptionSchema[]) {
     if (subscriptions.length === 0) return
@@ -74,10 +69,14 @@ class SubscriptionServiceStatic implements Resetable {
           category: sql`excluded.category`,
           createdAt: sql`excluded.created_at`,
           feedId: sql`excluded.feed_id`,
+          listId: sql`excluded.list_id`,
+          inboxId: sql`excluded.inbox_id`,
           isPrivate: sql`excluded.is_private`,
+          hideFromTimeline: sql`excluded.hide_from_timeline`,
           title: sql`excluded.title`,
           userId: sql`excluded.user_id`,
           view: sql`excluded.view`,
+          deletedAt: sql`excluded.deleted_at`,
         },
       })
   }
@@ -86,18 +85,21 @@ class SubscriptionServiceStatic implements Resetable {
     await db
       .update(subscriptionsTable)
       .set(subscription)
-      .where(eq(subscriptionsTable.id, subscription.id))
-    
+      .where(and(eq(subscriptionsTable.id, subscription.id), isNull(subscriptionsTable.deletedAt)))
+
     recordSyncOp("subscription.update", "subscription", subscription.id, subscription)
   }
 
   async patchMany({ feedIds, data }: { feedIds: string[]; data: Partial<SubscriptionSchema> }) {
     const subs = await db.query.subscriptionsTable.findMany({
-      where: inArray(subscriptionsTable.feedId, feedIds),
+      where: and(inArray(subscriptionsTable.feedId, feedIds), isNull(subscriptionsTable.deletedAt)),
       columns: { id: true },
     })
-    
-    await db.update(subscriptionsTable).set(data).where(inArray(subscriptionsTable.feedId, feedIds))
+
+    await db
+      .update(subscriptionsTable)
+      .set(data)
+      .where(and(inArray(subscriptionsTable.feedId, feedIds), isNull(subscriptionsTable.deletedAt)))
 
     for (const sub of subs) {
       recordSyncOp("subscription.update", "subscription", sub.id, data)
@@ -108,6 +110,7 @@ class SubscriptionServiceStatic implements Resetable {
     const notExistsIds = await db.query.subscriptionsTable.findMany({
       where: and(
         notInArray(subscriptionsTable.id, existsIds),
+        isNull(subscriptionsTable.deletedAt),
         typeof view === "number" ? eq(subscriptionsTable.view, view) : undefined,
       ),
       columns: {
@@ -136,80 +139,11 @@ class SubscriptionServiceStatic implements Resetable {
 
     const whereClause = conditions.length === 1 ? conditions[0]! : or(...conditions)
 
-    const results = await db.query.subscriptionsTable.findMany({
-      where: whereClause,
-      columns: {
-        feedId: true,
-        listId: true,
-        type: true,
-        inboxId: true,
-      },
-    })
-
-    await db.delete(subscriptionsTable).where(whereClause).execute()
-
-    if (!results || results.length === 0) return
-
-    const cleanup = collectCleanupTargets(results as SubscriptionDeleteResult[])
-
-    if (cleanup.feedIds.length > 0) {
-      const entries = await db.query.entriesTable.findMany({
-        where: inArray(entriesTable.feedId, cleanup.feedIds),
-        columns: { id: true },
-      })
-      const entryIds = entries.map((entry) => entry.id)
-
-      await db.delete(entriesTable).where(inArray(entriesTable.feedId, cleanup.feedIds)).execute()
-
-      if (entryIds.length > 0) {
-        await db.delete(collectionsTable).where(inArray(collectionsTable.entryId, entryIds)).execute()
-        await db.delete(summariesTable).where(inArray(summariesTable.entryId, entryIds)).execute()
-        await db.delete(translationsTable).where(inArray(translationsTable.entryId, entryIds)).execute()
-      }
-
-      await UnreadService.deleteByIds(cleanup.feedIds)
-
-      for (const feedId of cleanup.feedIds) {
-        await db.delete(feedsTable).where(eq(feedsTable.id, feedId)).execute()
-      }
-    }
-
-    if (cleanup.listIds.length > 0) {
-      await UnreadService.deleteByIds(cleanup.listIds)
-      for (const listId of cleanup.listIds) {
-        await db.delete(listsTable).where(eq(listsTable.id, listId)).execute()
-      }
-    }
-
-    if (cleanup.inboxIds.length > 0) {
-      const inboxEntries = await db.query.entriesTable.findMany({
-        where: inArray(entriesTable.inboxHandle, cleanup.inboxIds),
-        columns: { id: true },
-      })
-      const inboxEntryIds = inboxEntries.map((entry) => entry.id)
-
-      await db
-        .delete(entriesTable)
-        .where(inArray(entriesTable.inboxHandle, cleanup.inboxIds))
-        .execute()
-
-      if (inboxEntryIds.length > 0) {
-        await db
-          .delete(collectionsTable)
-          .where(inArray(collectionsTable.entryId, inboxEntryIds))
-          .execute()
-        await db.delete(summariesTable).where(inArray(summariesTable.entryId, inboxEntryIds)).execute()
-        await db
-          .delete(translationsTable)
-          .where(inArray(translationsTable.entryId, inboxEntryIds))
-          .execute()
-      }
-
-      await UnreadService.deleteByIds(cleanup.inboxIds)
-      for (const inboxId of cleanup.inboxIds) {
-        await db.delete(inboxesTable).where(eq(inboxesTable.id, inboxId)).execute()
-      }
-    }
+    await db
+      .update(subscriptionsTable)
+      .set({ deletedAt: Date.now() })
+      .where(and(whereClause, isNull(subscriptionsTable.deletedAt)))
+      .execute()
   }
 }
 export const SubscriptionService = new SubscriptionServiceStatic()

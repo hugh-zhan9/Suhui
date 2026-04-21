@@ -241,7 +241,7 @@ class UserActions implements Hydratable, Resetable {
     tx.store(() => {
       set(defaultState)
     })
-    tx.persist(() => UserService.reset())
+    tx.persist(() => UserService.purgeAllForMaintenance())
     await tx.run()
   }
 

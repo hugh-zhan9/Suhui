@@ -1,9 +1,13 @@
-import { and, between, eq, inArray, lt, or } from "drizzle-orm"
+import { and, between, eq, inArray, isNull, lt, or } from "drizzle-orm"
 
 import { db } from "../db"
 import { entriesTable } from "../schemas"
 import type { EntrySchema } from "../schemas/types"
 import type { Resetable } from "./internal/base"
+import {
+  getActiveVisibilityState,
+  isEntryVisibleForActiveRelations,
+} from "./internal/active-visibility"
 import { conflictUpdateAllExcept } from "./internal/utils"
 
 const entryJsonColumns = [
@@ -56,8 +60,12 @@ interface InsertedBeforeTimeRangeFilter {
 }
 
 class EntryServiceStatic implements Resetable {
-  async reset() {
+  async purgeAllForMaintenance() {
     await db.delete(entriesTable).execute()
+  }
+
+  async reset() {
+    await this.purgeAllForMaintenance()
   }
 
   async upsertMany(entries: EntrySchema[]) {
@@ -75,7 +83,7 @@ class EntryServiceStatic implements Resetable {
     await db
       .update(entriesTable)
       .set(sanitizeEntryJsonFields(entry))
-      .where(eq(entriesTable.id, entry.id))
+      .where(and(eq(entriesTable.id, entry.id), isNull(entriesTable.deletedAt)))
   }
 
   async patchMany({
@@ -90,12 +98,23 @@ class EntryServiceStatic implements Resetable {
     time?: PublishAtTimeRangeFilter | InsertedBeforeTimeRangeFilter
   }) {
     if (!entryIds && !feedIds) return
+    if (entry.read !== undefined) {
+      console.info("[startup-read-trace] EntryService.patchMany(read)", {
+        read: entry.read,
+        entryIds: entryIds?.slice(0, 20) ?? [],
+        entryIdsCount: entryIds?.length ?? 0,
+        feedIds: feedIds?.slice(0, 20) ?? [],
+        feedIdsCount: feedIds?.length ?? 0,
+        time: time ?? null,
+      })
+    }
     await db
       .update(entriesTable)
       .set(sanitizeEntryJsonFields(entry))
       .where(
         and(
           or(inArray(entriesTable.id, entryIds ?? []), inArray(entriesTable.feedId, feedIds ?? [])),
+          isNull(entriesTable.deletedAt),
           time && "startTime" in time
             ? between(entriesTable.publishedAt, time.startTime, time.endTime)
             : undefined,
@@ -107,61 +126,32 @@ class EntryServiceStatic implements Resetable {
   }
 
   getEntryMany(entryId: string[]) {
-    return db.query.entriesTable.findMany({ where: inArray(entriesTable.id, entryId) })
+    return db.query.entriesTable.findMany({
+      where: and(inArray(entriesTable.id, entryId), isNull(entriesTable.deletedAt)),
+    })
   }
 
   getEntryAll() {
-    return db.query.entriesTable.findMany()
+    return db.query.entriesTable.findMany({
+      where: isNull(entriesTable.deletedAt),
+    })
   }
 
   async getEntriesToHydrate() {
-    const [entries, subscriptions] = await Promise.all([
-      db.query.entriesTable.findMany({
-        orderBy: (t, { desc }) => desc(t.publishedAt),
-      }),
-      db.query.subscriptionsTable.findMany(),
-    ])
-
-    const entryIdCountMap = new Map<string, number>(
-      subscriptions.map((s) => [s.listId || s.inboxId || s.feedId || "", 0] as const),
-    )
-
-    const result: typeof entries = []
-    const idsToClear = new Set<string>()
-
-    for (const entry of entries) {
-      const possibleIdList = [
-        ...(entry.sources?.filter((s) => s !== "feed") ?? []),
-        entry.inboxHandle,
-        entry.feedId,
-      ].filter(Boolean) as string[]
-
-      if (possibleIdList.length === 0) continue
-
-      for (const id of possibleIdList) {
-        const count = entryIdCountMap.get(id)
-        if (count === undefined) continue
-
-        if (count >= 20) {
-          idsToClear.add(entry.id)
-        } else {
-          result.push(entry)
-          entryIdCountMap.set(id, count + 1)
-        }
-      }
-    }
-
-    await db
-      .delete(entriesTable)
-      .where(inArray(entriesTable.id, Array.from(idsToClear)))
-      .execute()
-
-    return result
+    const entries = await db.query.entriesTable.findMany({
+      where: isNull(entriesTable.deletedAt),
+      orderBy: (t, { desc }) => desc(t.publishedAt),
+    })
+    const visibility = await getActiveVisibilityState()
+    return entries.filter((entry) => isEntryVisibleForActiveRelations(entry, visibility))
   }
 
   async deleteMany(entryIds: string[]) {
     if (entryIds.length === 0) return
-    await db.delete(entriesTable).where(inArray(entriesTable.id, entryIds))
+    await db
+      .update(entriesTable)
+      .set({ deletedAt: Date.now() })
+      .where(and(inArray(entriesTable.id, entryIds), isNull(entriesTable.deletedAt)))
   }
 }
 

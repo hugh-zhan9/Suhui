@@ -11,23 +11,31 @@ class TranslationServiceStatic implements Resetable {
   }
 
   async getTranslationToHydrate() {
+    return db.query.translationsTable.findMany()
+  }
+
+  async purgeExpiredTranslations() {
     const translations = await db.query.translationsTable.findMany()
-    // Remove translations created before the last 7 days
     const translationsToClean = translations.filter(
       (translation) =>
         new Date(translation.createdAt) < new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
     )
+    if (translationsToClean.length === 0) return 0
     await db.delete(translationsTable).where(
       inArray(
         translationsTable.entryId,
         translationsToClean.map((t) => t.entryId),
       ),
     )
-    return translations
+    return translationsToClean.length
+  }
+
+  async purgeAllForMaintenance() {
+    await db.delete(translationsTable).execute()
   }
 
   async reset() {
-    await db.delete(translationsTable).execute()
+    await this.purgeAllForMaintenance()
   }
 
   async insertTranslation(data: Omit<TranslationSchema, "createdAt">) {
@@ -52,7 +60,7 @@ class TranslationServiceStatic implements Resetable {
       })
   }
 
-  async deleteTranslation(entryId: string) {
+  async purgeByEntryIdForMaintenance(entryId: string) {
     await db.delete(translationsTable).where(eq(translationsTable.entryId, entryId))
   }
 }

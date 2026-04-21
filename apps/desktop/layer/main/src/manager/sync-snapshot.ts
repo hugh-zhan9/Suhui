@@ -5,7 +5,7 @@ import { SyncManagerInstance } from "./sync"
 import { SubscriptionService } from "@suhui/database/services/subscription"
 import { CollectionService } from "@suhui/database/services/collection"
 import { EntryService } from "@suhui/database/services/entry"
-import { inArray } from "drizzle-orm"
+import { and, eq, inArray, isNull } from "drizzle-orm"
 
 export interface SyncSnapshot {
   deviceId: string
@@ -23,18 +23,22 @@ export async function compactSnapshot(manager: SyncManagerInstance): Promise<voi
   const db = DBManager.getDB()
 
   // 1. 获取全量订阅
-  const subscriptions = await db.query.subscriptionsTable.findMany()
+  const subscriptions = await db.query.subscriptionsTable.findMany({
+    where: (subscriptions) => isNull(subscriptions.deletedAt),
+  })
 
   // 2. 获取全量收藏 (由于数据量可能较大，这里不一次性展开，如果是轻量级收藏可以直接获取)
-  const collections = await db.query.collectionsTable.findMany()
+  const collections = await db.query.collectionsTable.findMany({
+    where: (collections) => isNull(collections.deletedAt),
+  })
 
   // 3. 获取全量已读条目 (数据量极大，考虑只保存最近一年或直接提取 ID)
   // 获取所有 read = true 的 entries
   const readEntriesRaw = await db.query.entriesTable.findMany({
-    where: (entries, { eq }) => eq(entries.read, true),
-    columns: { id: true }
+    where: (entries) => and(eq(entries.read, true), isNull(entries.deletedAt)),
+    columns: { id: true },
   })
-  const readEntries = readEntriesRaw.map(r => r.id)
+  const readEntries = readEntriesRaw.map((r) => r.id)
 
   const snapshot: SyncSnapshot = {
     deviceId: manager.getDeviceId(),
@@ -42,7 +46,7 @@ export async function compactSnapshot(manager: SyncManagerInstance): Promise<voi
     logicalClock: manager.getLogicalClock(),
     subscriptions,
     collections,
-    readEntries
+    readEntries,
   }
 
   const snapshotDir = path.join(repoPath, "snapshot")
@@ -67,7 +71,9 @@ export async function importFromSnapshot(manager: SyncManagerInstance): Promise<
 
     // 如果本设备已经有一定数据或已同步过，避免全量覆盖，通常在新设备初次接入时调用
     if (manager.getLogicalClock() > 0) {
-      console.warn("[SyncSnapshot] Local logical clock > 0, snapshot import should only run on fresh devices.")
+      console.warn(
+        "[SyncSnapshot] Local logical clock > 0, snapshot import should only run on fresh devices.",
+      )
       return
     }
 
@@ -91,7 +97,9 @@ export async function importFromSnapshot(manager: SyncManagerInstance): Promise<
       }
     }
 
-    console.info(`[SyncSnapshot] Imported snapshot from device ${snapshot.deviceId} at ${new Date(snapshot.timestamp).toISOString()}`)
+    console.info(
+      `[SyncSnapshot] Imported snapshot from device ${snapshot.deviceId} at ${new Date(snapshot.timestamp).toISOString()}`,
+    )
   } catch (err) {
     console.error("[SyncSnapshot] Failed to import snapshot:", err)
   }

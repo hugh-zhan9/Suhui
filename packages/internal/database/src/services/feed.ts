@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm"
+import { and, eq, isNull } from "drizzle-orm"
 
 import { db } from "../db"
 import { feedsTable } from "../schemas"
@@ -13,8 +13,11 @@ export const FEED_EXTRA_DATA_KEYS = [
 ] as const
 
 class FeedServiceStatic implements Resetable {
-  async reset() {
+  async purgeAllForMaintenance() {
     await db.delete(feedsTable).execute()
+  }
+  async reset() {
+    await this.purgeAllForMaintenance()
   }
   async upsertMany(feed: FeedSchema[]) {
     if (feed.length === 0) return
@@ -28,7 +31,9 @@ class FeedServiceStatic implements Resetable {
   }
 
   getFeedAll() {
-    return db.query.feedsTable.findMany()
+    return db.query.feedsTable.findMany({
+      where: isNull(feedsTable.deletedAt),
+    })
   }
 
   async refreshAll() {
@@ -36,7 +41,11 @@ class FeedServiceStatic implements Resetable {
   }
 
   async patch(feedId: string, patch: Partial<FeedSchema>) {
-    await db.update(feedsTable).set(patch).where(eq(feedsTable.id, feedId)).execute()
+    await db
+      .update(feedsTable)
+      .set(patch)
+      .where(and(eq(feedsTable.id, feedId), isNull(feedsTable.deletedAt)))
+      .execute()
   }
 }
 

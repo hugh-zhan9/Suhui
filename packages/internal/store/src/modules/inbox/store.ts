@@ -65,7 +65,7 @@ class InboxActions implements Hydratable, Resetable {
     })
 
     tx.persist(() => {
-      return InboxService.reset()
+      return InboxService.purgeAllForMaintenance()
     })
 
     await tx.run()

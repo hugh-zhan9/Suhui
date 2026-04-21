@@ -128,7 +128,7 @@ class SummaryActions implements Resetable, Hydratable {
       })
     })
     tx.persist(() => {
-      summaryService.reset()
+      summaryService.purgeAllForMaintenance()
     })
 
     await tx.run()

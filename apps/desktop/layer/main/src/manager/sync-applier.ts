@@ -1,7 +1,7 @@
 /**
  * SyncApplier — 处理 SyncOp 到真实本地数据库的回放逻辑
  */
-import { and, eq, lte } from "drizzle-orm"
+import { and, eq, isNull, lte } from "drizzle-orm"
 import { DBManager } from "./db"
 import { EntryService } from "@suhui/database/services/entry"
 import { SubscriptionService } from "@suhui/database/services/subscription"
@@ -54,7 +54,8 @@ export async function drainPendingOps(): Promise<void> {
     try {
       op = JSON.parse(record.opJson) as SyncOp
     } catch {
-      await db.update(pendingSyncOpsTable)
+      await db
+        .update(pendingSyncOpsTable)
         .set({ status: "failed" })
         .where(eq(pendingSyncOpsTable.opId, record.opId))
       continue
@@ -63,17 +64,18 @@ export async function drainPendingOps(): Promise<void> {
     try {
       await dbSyncApplier.applyOp(op)
       // 成功则状态更新
-      await db.update(pendingSyncOpsTable)
+      await db
+        .update(pendingSyncOpsTable)
         .set({ status: "applied", appliedAt: Date.now() })
         .where(eq(pendingSyncOpsTable.opId, record.opId))
-      
+
       // 添加到全局 applied_sync_ops
       await dbSyncApplier.markOpApplied(op.opId)
-
     } catch (err: any) {
       if (err.name === "OrphanError") {
         // 继续 pending, 延后 1 小时
-        await db.update(pendingSyncOpsTable)
+        await db
+          .update(pendingSyncOpsTable)
           .set({
             retryAfter: Date.now() + 60 * 60 * 1000,
             updatedAt: Date.now(),
@@ -82,7 +84,8 @@ export async function drainPendingOps(): Promise<void> {
       } else {
         // 其他错误直接 failed
         console.error(`[SyncApplier] Retry failed for op ${op.opId}:`, err)
-        await db.update(pendingSyncOpsTable)
+        await db
+          .update(pendingSyncOpsTable)
           .set({ status: "failed", updatedAt: Date.now() })
           .where(eq(pendingSyncOpsTable.opId, record.opId))
       }
@@ -94,7 +97,7 @@ export const dbSyncApplier: SyncOpApplier = {
   async isOpApplied(opId: string): Promise<boolean> {
     const db = DBManager.getDB()
     const record = await db.query.appliedSyncOpsTable.findFirst({
-      where: (ops, { eq }) => eq(ops.opId, opId)
+      where: (ops, { eq }) => eq(ops.opId, opId),
     })
     return !!record
   },
@@ -104,9 +107,9 @@ export const dbSyncApplier: SyncOpApplier = {
     await db
       .insert(appliedSyncOpsTable)
       .values({
-      opId,
-      appliedAt: Date.now(),
-    })
+        opId,
+        appliedAt: Date.now(),
+      })
       .onConflictDoNothing()
       .execute()
   },
@@ -116,12 +119,12 @@ export const dbSyncApplier: SyncOpApplier = {
     await db
       .insert(pendingSyncOpsTable)
       .values({
-      opId: op.opId,
-      opJson: JSON.stringify(op),
-      retryAfter: Date.now() + 60 * 60 * 1000, // Retry 1h later? Actually trigger immediately by refreshing, but set 1hr to pause continuous failing.
-      createdAt: Date.now(),
-      status: "pending",
-    })
+        opId: op.opId,
+        opJson: JSON.stringify(op),
+        retryAfter: Date.now() + 60 * 60 * 1000, // Retry 1h later? Actually trigger immediately by refreshing, but set 1hr to pause continuous failing.
+        createdAt: Date.now(),
+        status: "pending",
+      })
       .onConflictDoNothing()
       .execute()
   },
@@ -132,8 +135,8 @@ export const dbSyncApplier: SyncOpApplier = {
     // 工具函数：检查 entry 是否存在
     const ensureEntryExists = async (entryId: string) => {
       const entry = await db.query.entriesTable.findFirst({
-        where: (entries, { eq }) => eq(entries.id, entryId),
-        columns: { id: true }
+        where: (entries) => and(eq(entries.id, entryId), isNull(entries.deletedAt)),
+        columns: { id: true },
       })
       if (!entry) throw new OrphanError(`Entry ${entryId} not found yet`)
     }
@@ -172,15 +175,15 @@ export const dbSyncApplier: SyncOpApplier = {
       case "subscription.update": {
         if (!op.payload) break
         const existing = await db.query.subscriptionsTable.findFirst({
-          where: (subs, { eq }) => eq(subs.id, op.entityId),
-          columns: { id: true }
+          where: (subs) => and(eq(subs.id, op.entityId), isNull(subs.deletedAt)),
+          columns: { id: true },
         })
         if (!existing) {
           throw new OrphanError(`Subscription ${op.entityId} not found`)
         }
         await SubscriptionService.patch({
           ...op.payload,
-          id: op.entityId
+          id: op.entityId,
         } as any)
         break
       }
@@ -203,5 +206,5 @@ export const dbSyncApplier: SyncOpApplier = {
       default:
         console.warn(`[SyncApplier] Unknown op type: ${op.type}`)
     }
-  }
+  },
 }

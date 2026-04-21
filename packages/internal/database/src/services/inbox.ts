@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm"
+import { and, eq, isNull } from "drizzle-orm"
 
 import { db } from "../db"
 import { inboxesTable } from "../schemas"
@@ -7,16 +7,26 @@ import type { Resetable } from "./internal/base"
 import { conflictUpdateAllExcept } from "./internal/utils"
 
 class InboxServiceStatic implements Resetable {
-  async reset() {
+  async purgeAllForMaintenance() {
     await db.delete(inboxesTable).execute()
   }
 
+  async reset() {
+    await this.purgeAllForMaintenance()
+  }
+
   async deleteById(id: string) {
-    await db.delete(inboxesTable).where(eq(inboxesTable.id, id)).execute()
+    await db
+      .update(inboxesTable)
+      .set({ deletedAt: Date.now() })
+      .where(and(eq(inboxesTable.id, id), isNull(inboxesTable.deletedAt)))
+      .execute()
   }
 
   getInboxAll() {
-    return db.query.inboxesTable.findMany()
+    return db.query.inboxesTable.findMany({
+      where: isNull(inboxesTable.deletedAt),
+    })
   }
 
   async upsertMany(inboxes: InboxSchema[]) {

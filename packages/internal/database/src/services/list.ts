@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm"
+import { and, eq, isNull } from "drizzle-orm"
 
 import { db } from "../db"
 import { listsTable } from "../schemas"
@@ -7,8 +7,12 @@ import type { Resetable } from "./internal/base"
 import { conflictUpdateAllExcept } from "./internal/utils"
 
 class ListServiceStatic implements Resetable {
-  async reset() {
+  async purgeAllForMaintenance() {
     await db.delete(listsTable).execute()
+  }
+
+  async reset() {
+    await this.purgeAllForMaintenance()
   }
 
   async upsertMany(lists: ListSchema[]) {
@@ -23,11 +27,16 @@ class ListServiceStatic implements Resetable {
   }
 
   async deleteList(listId: string) {
-    await db.delete(listsTable).where(eq(listsTable.id, listId))
+    await db
+      .update(listsTable)
+      .set({ deletedAt: Date.now() })
+      .where(and(eq(listsTable.id, listId), isNull(listsTable.deletedAt)))
   }
 
   getListAll() {
-    return db.query.listsTable.findMany()
+    return db.query.listsTable.findMany({
+      where: isNull(listsTable.deletedAt),
+    })
   }
 }
 

@@ -44,7 +44,7 @@ class TranslationActions implements Hydratable, Resetable {
     tx.store(() => {
       set(defaultState)
     })
-    tx.persist(() => TranslationService.reset())
+    tx.persist(() => TranslationService.purgeAllForMaintenance())
 
     await tx.run()
   }

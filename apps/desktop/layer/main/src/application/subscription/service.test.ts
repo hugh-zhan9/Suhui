@@ -54,6 +54,7 @@ describe("SubscriptionApplicationService", () => {
         title: null,
         category: null,
         createdAt: new Date().toISOString(),
+        deletedAt: null,
       },
     ])
     vi.mocked(FeedService.getFeedAll).mockResolvedValue([
@@ -72,6 +73,7 @@ describe("SubscriptionApplicationService", () => {
         latestEntryPublishedAt: null,
         tipUserIds: null,
         updatedAt: null,
+        deletedAt: null,
       },
     ])
 
