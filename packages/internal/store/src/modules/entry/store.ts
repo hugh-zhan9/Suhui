@@ -528,7 +528,7 @@ class EntryActions implements Hydratable, Resetable {
     })
 
     tx.persist(() => {
-      return EntryService.reset()
+      return EntryService.purgeAllForMaintenance()
     })
 
     await tx.run()

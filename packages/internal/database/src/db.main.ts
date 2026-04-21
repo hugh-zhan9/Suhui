@@ -79,7 +79,8 @@ export async function migrateMainDB(handles = activeHandles) {
       `updates_per_week integer,\n` +
       `latest_entry_published_at text,\n` +
       `tip_users jsonb,\n` +
-      `published_at bigint\n` +
+      `published_at bigint,\n` +
+      `deleted_at bigint\n` +
       `);`,
     `CREATE TABLE IF NOT EXISTS subscriptions (\n` +
       `feed_id text,\n` +
@@ -92,10 +93,11 @@ export async function migrateMainDB(handles = activeHandles) {
       `title text,\n` +
       `category text,\n` +
       `created_at text,\n` +
+      `deleted_at bigint,\n` +
       `type text not null,\n` +
       `id text primary key\n` +
       `);`,
-    `CREATE TABLE IF NOT EXISTS inboxes (id text primary key, title text, secret text not null);`,
+    `CREATE TABLE IF NOT EXISTS inboxes (id text primary key, title text, secret text not null, deleted_at bigint);`,
     `CREATE TABLE IF NOT EXISTS lists (\n` +
       `id text primary key,\n` +
       `user_id text,\n` +
@@ -107,7 +109,8 @@ export async function migrateMainDB(handles = activeHandles) {
       `fee integer,\n` +
       `owner_user_id text,\n` +
       `subscription_count integer,\n` +
-      `purchase_amount text\n` +
+      `purchase_amount text,\n` +
+      `deleted_at bigint\n` +
       `);`,
     `CREATE TABLE IF NOT EXISTS unread (subscription_id text primary key, count integer not null);`,
     `CREATE TABLE IF NOT EXISTS users (\n` +
@@ -145,13 +148,15 @@ export async function migrateMainDB(handles = activeHandles) {
       `inbox_handle text,\n` +
       `read boolean,\n` +
       `sources jsonb,\n` +
-      `settings jsonb\n` +
+      `settings jsonb,\n` +
+      `deleted_at bigint\n` +
       `);`,
     `CREATE TABLE IF NOT EXISTS collections (\n` +
       `feed_id text,\n` +
       `entry_id text primary key,\n` +
       `created_at text,\n` +
-      `view integer not null\n` +
+      `view integer not null,\n` +
+      `deleted_at bigint\n` +
       `);`,
     `CREATE TABLE IF NOT EXISTS summaries (\n` +
       `entry_id text not null,\n` +
@@ -207,6 +212,12 @@ export async function migrateMainDB(handles = activeHandles) {
       `updated_at bigint,\n` +
       `applied_at bigint\n` +
       `);`,
+    `ALTER TABLE feeds ADD COLUMN IF NOT EXISTS deleted_at bigint;`,
+    `ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS deleted_at bigint;`,
+    `ALTER TABLE inboxes ADD COLUMN IF NOT EXISTS deleted_at bigint;`,
+    `ALTER TABLE lists ADD COLUMN IF NOT EXISTS deleted_at bigint;`,
+    `ALTER TABLE entries ADD COLUMN IF NOT EXISTS deleted_at bigint;`,
+    `ALTER TABLE collections ADD COLUMN IF NOT EXISTS deleted_at bigint;`,
   ]
 
   for (const stmt of statements) {

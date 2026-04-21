@@ -1,5 +1,7 @@
+import { and, eq, inArray, isNull } from "drizzle-orm"
 import { EntryService } from "@suhui/database/services/entry"
 import { FeedService } from "@suhui/database/services/feed"
+import { getActiveVisibilityState } from "@suhui/database/services/internal/active-visibility"
 import { session } from "electron"
 
 import { store } from "~/lib/store"
@@ -141,7 +143,7 @@ export class FeedRefreshService {
   static async refreshFeed(feedId: string) {
     const db = DBManager.getDB()
     const existingFeed = await db.query.feedsTable.findFirst({
-      where: (feeds, { eq }) => eq(feeds.id, feedId),
+      where: (feeds) => and(eq(feeds.id, feedId), isNull(feeds.deletedAt)),
     })
     if (!existingFeed?.url) {
       throw new Error(`Feed not found: ${feedId}`)
@@ -156,7 +158,8 @@ export class FeedRefreshService {
       const { entries } = preview
       if (entries.length > 0) {
         const existingEntries = await db.query.entriesTable.findMany({
-          where: (entriesTable, { eq }) => eq(entriesTable.feedId, feedId),
+          where: (entriesTable) =>
+            and(eq(entriesTable.feedId, feedId), isNull(entriesTable.deletedAt)),
           columns: {
             id: true,
             guid: true,
@@ -202,7 +205,17 @@ export class FeedRefreshService {
 
   static async refreshAll() {
     const db = DBManager.getDB()
+    const visibility = await getActiveVisibilityState()
+    const activeFeedIds = Array.from(visibility.activeFeedIds)
+    if (activeFeedIds.length === 0) {
+      return {
+        total: 0,
+        successCount: 0,
+        failCount: 0,
+      }
+    }
     const feeds = await db.query.feedsTable.findMany({
+      where: (feeds, { inArray }) => and(inArray(feeds.id, activeFeedIds), isNull(feeds.deletedAt)),
       columns: { id: true, url: true },
     })
 

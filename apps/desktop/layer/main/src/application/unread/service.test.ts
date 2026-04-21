@@ -1,27 +1,35 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
+const { getDB } = vi.hoisted(() => ({
+  getDB: vi.fn(),
+}))
+
 vi.mock("~/manager/db", () => ({
   DBManager: {
-    getDB: vi.fn(),
+    getDB,
   },
 }))
 
-import { DBManager } from "~/manager/db"
+vi.mock("@suhui/database/services/internal/active-visibility", () => ({
+  getActiveVisibilityState: vi.fn(async () => ({
+    activeFeedIds: new Set(["feed-1"]),
+    activeListIds: new Set<string>(),
+    activeInboxIds: new Set<string>(),
+    sourceIdBySubscriptionId: new Map([["feed/feed-1", "feed-1"]]),
+  })),
+}))
 
 import { unreadApplicationService } from "./service"
 
 describe("UnreadApplicationService", () => {
   beforeEach(() => {
-    vi.resetAllMocks()
-  })
-
-  it("normalizes legacy unread rows keyed by subscription id into feed ids", async () => {
-    vi.mocked(DBManager.getDB).mockReturnValue({
+    getDB.mockReset()
+    getDB.mockReturnValue({
       query: {
         unreadTable: {
           findMany: vi.fn().mockResolvedValue([
-            { id: "feed/feed-1", count: 3 },
-            { id: "feed-2", count: 2 },
+            { id: "feed/feed-1", count: 2 },
+            { id: "feed/deleted-feed", count: 999 },
           ]),
         },
         subscriptionsTable: {
@@ -36,22 +44,15 @@ describe("UnreadApplicationService", () => {
           ]),
         },
         entriesTable: {
-          findMany: vi.fn().mockResolvedValue([
-            { feedId: "feed-1", inboxHandle: null },
-            { feedId: "feed-1", inboxHandle: null },
-            { feedId: "feed-1", inboxHandle: null },
-            { feedId: "feed-2", inboxHandle: null },
-            { feedId: "feed-2", inboxHandle: null },
-          ]),
+          findMany: vi.fn().mockResolvedValue([{ feedId: "feed-1", inboxHandle: null }]),
         },
       },
-    } as any)
+    })
+  })
 
-    const unreadCounts = await unreadApplicationService.listUnreadCounts()
-
-    expect(unreadCounts).toEqual([
-      { id: "feed-1", count: 3 },
-      { id: "feed-2", count: 2 },
+  it("drops orphan unread rows that no longer belong to an active subscription", async () => {
+    await expect(unreadApplicationService.listUnreadCounts()).resolves.toEqual([
+      { id: "feed-1", count: 1 },
     ])
   })
 })

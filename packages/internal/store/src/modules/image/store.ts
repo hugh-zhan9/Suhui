@@ -48,7 +48,7 @@ class ImageActions implements Hydratable, Resetable {
     tx.store(() => {
       set(defaultState)
     })
-    tx.persist(() => ImagesService.reset())
+    tx.persist(() => ImagesService.purgeAllForMaintenance())
     await tx.run()
   }
 

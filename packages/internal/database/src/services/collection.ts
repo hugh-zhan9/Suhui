@@ -1,4 +1,4 @@
-import { eq, inArray } from "drizzle-orm"
+import { and, eq, inArray, isNull } from "drizzle-orm"
 
 import { db } from "../db"
 import { collectionsTable } from "../schemas"
@@ -8,15 +8,19 @@ import { conflictUpdateAllExcept } from "./internal/utils"
 import { recordSyncOp } from "./internal/sync-proxy"
 
 class CollectionServiceStatic implements Resetable {
-  async reset() {
+  async purgeAllForMaintenance() {
     await db.delete(collectionsTable).execute()
+  }
+
+  async reset() {
+    await this.purgeAllForMaintenance()
   }
 
   async upsertMany(collections: CollectionSchema[], options?: { reset?: boolean }) {
     if (collections.length === 0) return
 
     if (options?.reset) {
-      await db.delete(collectionsTable).execute()
+      await this.purgeAllForMaintenance()
     }
 
     await db
@@ -27,26 +31,36 @@ class CollectionServiceStatic implements Resetable {
         set: conflictUpdateAllExcept(collectionsTable, ["entryId"]),
       })
 
-    collections.forEach(c => recordSyncOp("collection.add", "collection", c.entryId, c))
+    collections.forEach((c) => recordSyncOp("collection.add", "collection", c.entryId, c))
   }
 
   async delete(entryId: string) {
-    await db.delete(collectionsTable).where(eq(collectionsTable.entryId, entryId))
+    await db
+      .update(collectionsTable)
+      .set({ deletedAt: Date.now() })
+      .where(and(eq(collectionsTable.entryId, entryId), isNull(collectionsTable.deletedAt)))
     recordSyncOp("collection.remove", "collection", entryId)
   }
 
   async deleteMany(entryId: string[]) {
     if (entryId.length === 0) return
-    await db.delete(collectionsTable).where(inArray(collectionsTable.entryId, entryId))
-    entryId.forEach(id => recordSyncOp("collection.remove", "collection", id))
+    await db
+      .update(collectionsTable)
+      .set({ deletedAt: Date.now() })
+      .where(and(inArray(collectionsTable.entryId, entryId), isNull(collectionsTable.deletedAt)))
+    entryId.forEach((id) => recordSyncOp("collection.remove", "collection", id))
   }
 
   getCollectionMany(entryId: string[]) {
-    return db.query.collectionsTable.findMany({ where: inArray(collectionsTable.entryId, entryId) })
+    return db.query.collectionsTable.findMany({
+      where: and(inArray(collectionsTable.entryId, entryId), isNull(collectionsTable.deletedAt)),
+    })
   }
 
   getCollectionAll() {
-    return db.query.collectionsTable.findMany()
+    return db.query.collectionsTable.findMany({
+      where: isNull(collectionsTable.deletedAt),
+    })
   }
 }
 

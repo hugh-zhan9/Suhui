@@ -170,7 +170,7 @@ class FeedActions implements Hydratable, Resetable {
     })
 
     tx.persist(() => {
-      return FeedService.reset()
+      return FeedService.purgeAllForMaintenance()
     })
 
     await tx.run()

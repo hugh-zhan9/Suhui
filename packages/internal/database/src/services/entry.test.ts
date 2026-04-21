@@ -1,8 +1,33 @@
-import { describe, expect, it } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
+
+const { findManyEntries, findManySubscriptions } = vi.hoisted(() => ({
+  findManyEntries: vi.fn(),
+  findManySubscriptions: vi.fn(),
+}))
+
+vi.mock("../db", () => ({
+  db: {
+    query: {
+      entriesTable: {
+        findMany: findManyEntries,
+      },
+      subscriptionsTable: {
+        findMany: findManySubscriptions,
+      },
+    },
+    delete: vi.fn(),
+  },
+}))
 
 import { sanitizeEntryJsonFields } from "./entry"
+import { EntryService } from "./entry"
 
 describe("sanitizeEntryJsonFields", () => {
+  beforeEach(() => {
+    findManyEntries.mockReset()
+    findManySubscriptions.mockReset()
+  })
+
   it("stringifies jsonb entry columns before postgres upsert", () => {
     const result = sanitizeEntryJsonFields({
       id: "entry_1",
@@ -35,5 +60,44 @@ describe("sanitizeEntryJsonFields", () => {
     })
 
     expect(result.media).toBeNull()
+  })
+
+  it("hydrates all database entries without trimming or deleting", async () => {
+    const rows = [
+      { id: "entry_2", feedId: "feed-1", inboxHandle: null, sources: null, publishedAt: 2 },
+      { id: "entry_1", feedId: "feed-1", inboxHandle: null, sources: null, publishedAt: 1 },
+    ] as any[]
+    findManyEntries.mockResolvedValue(rows)
+    findManySubscriptions.mockResolvedValue([
+      {
+        id: "feed/feed-1",
+        type: "feed",
+        feedId: "feed-1",
+        listId: null,
+        inboxId: null,
+      },
+    ])
+
+    await expect(EntryService.getEntriesToHydrate()).resolves.toEqual(rows)
+    expect(findManyEntries).toHaveBeenCalledTimes(1)
+  })
+
+  it("filters hydrate entries that no longer have an active root relation", async () => {
+    const rows = [
+      { id: "entry_1", feedId: "feed-1", inboxHandle: null, sources: null, publishedAt: 2 },
+      { id: "entry_2", feedId: "feed-2", inboxHandle: null, sources: null, publishedAt: 1 },
+    ] as any[]
+    findManyEntries.mockResolvedValue(rows)
+    findManySubscriptions.mockResolvedValue([
+      {
+        id: "feed/feed-1",
+        type: "feed",
+        feedId: "feed-1",
+        listId: null,
+        inboxId: null,
+      },
+    ])
+
+    await expect(EntryService.getEntriesToHydrate()).resolves.toEqual([rows[0]])
   })
 })

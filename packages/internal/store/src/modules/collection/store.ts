@@ -6,7 +6,6 @@ import { api } from "../../context"
 import type { Hydratable, Resetable } from "../../lib/base"
 import { createTransaction, createZustandStore } from "../../lib/helper"
 
-
 interface CollectionState {
   collections: Record<string, CollectionSchema>
 }
@@ -175,7 +174,7 @@ class CollectionActions implements Hydratable, Resetable {
     })
 
     tx.persist(() => {
-      return CollectionService.reset()
+      return CollectionService.purgeAllForMaintenance()
     })
 
     await tx.run()

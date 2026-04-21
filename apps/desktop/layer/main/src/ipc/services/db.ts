@@ -1,3 +1,4 @@
+import { and, eq, inArray, isNotNull, isNull } from "drizzle-orm"
 import { randomUUID } from "node:crypto"
 
 import { EntryService } from "@suhui/database/services/entry"
@@ -324,7 +325,9 @@ export class DbService extends IpcService {
   async getFeeds(_context: IpcContext) {
     await this.waitForDatabase()
     const db = DBManager.getDB()
-    return db.query.feedsTable.findMany()
+    return db.query.feedsTable.findMany({
+      where: (feeds) => isNull(feeds.deletedAt),
+    })
   }
 
   @IpcMethod()
@@ -333,7 +336,7 @@ export class DbService extends IpcService {
     const db = DBManager.getDB()
     return (
       db.query.entriesTable.findFirst({
-        where: (entries, { eq }) => eq(entries.id, entryId),
+        where: (entries) => and(eq(entries.id, entryId), isNull(entries.deletedAt)),
       }) ?? null
     )
   }
@@ -344,11 +347,12 @@ export class DbService extends IpcService {
     const db = DBManager.getDB()
     if (feedId) {
       return db.query.entriesTable.findMany({
-        where: (entries, { eq }) => eq(entries.feedId, feedId),
+        where: (entries) => and(eq(entries.feedId, feedId), isNull(entries.deletedAt)),
         orderBy: (entries, { desc }) => [desc(entries.publishedAt)],
       })
     }
     return db.query.entriesTable.findMany({
+      where: (entries) => isNull(entries.deletedAt),
       orderBy: (entries, { desc }) => [desc(entries.publishedAt)],
     })
   }
@@ -358,6 +362,12 @@ export class DbService extends IpcService {
     await this.waitForDatabase()
     const { entryIds, read } = payload
     if (!entryIds || entryIds.length === 0) return
+    logger.info("[startup-read-trace] db.updateReadStatus", {
+      count: entryIds.length,
+      read,
+      firstIds: entryIds.slice(0, 10),
+      stack: new Error().stack,
+    })
     await EntryService.patchMany({ entry: { read }, entryIds })
     for (const entryId of entryIds) {
       syncLogger.record({
@@ -422,6 +432,7 @@ export class DbService extends IpcService {
       const db = DBManager.getDB()
 
       const existingFeeds = await db.query.feedsTable.findMany({
+        where: (feeds) => isNull(feeds.deletedAt),
         columns: { id: true, url: true, siteUrl: true },
       })
 
@@ -434,11 +445,15 @@ export class DbService extends IpcService {
           duplicateFeedUrl: duplicateFeed.url,
         })
         const existingFeed = await db.query.feedsTable.findFirst({
-          where: (feeds, { eq }) => eq(feeds.id, duplicateFeed.id),
+          where: (feeds) => and(eq(feeds.id, duplicateFeed.id), isNull(feeds.deletedAt)),
         })
         const existingSubscription = await db.query.subscriptionsTable.findFirst({
-          where: (subscriptions, { and, eq }) =>
-            and(eq(subscriptions.feedId, duplicateFeed.id), eq(subscriptions.type, "feed")),
+          where: (subscriptions) =>
+            and(
+              eq(subscriptions.feedId, duplicateFeed.id),
+              eq(subscriptions.type, "feed"),
+              isNull(subscriptions.deletedAt),
+            ),
         })
 
         const subscription =
@@ -469,7 +484,7 @@ export class DbService extends IpcService {
         }
 
         const entries = await db.query.entriesTable.findMany({
-          where: (entries, { eq }) => eq(entries.feedId, duplicateFeed.id),
+          where: (entries) => and(eq(entries.feedId, duplicateFeed.id), isNull(entries.deletedAt)),
           orderBy: (entries, { desc }) => [desc(entries.publishedAt)],
           limit: 50,
         })
@@ -573,7 +588,7 @@ export class DbService extends IpcService {
       const db = DBManager.getDB()
       refreshLog("info", trace, "refresh.start")
       const existingFeed = await db.query.feedsTable.findFirst({
-        where: (feeds, { eq }) => eq(feeds.id, feedId),
+        where: (feeds) => and(eq(feeds.id, feedId), isNull(feeds.deletedAt)),
         columns: {
           id: true,
           url: true,
@@ -615,7 +630,8 @@ export class DbService extends IpcService {
       })
       if (entries.length > 0) {
         const existingEntries = await db.query.entriesTable.findMany({
-          where: (entriesTable, { eq }) => eq(entriesTable.feedId, feedId),
+          where: (entriesTable) =>
+            and(eq(entriesTable.feedId, feedId), isNull(entriesTable.deletedAt)),
           columns: {
             id: true,
             guid: true,
@@ -674,7 +690,7 @@ export class DbService extends IpcService {
       try {
         const db = DBManager.getDB()
         const existingFeed = await db.query.feedsTable.findFirst({
-          where: (feeds, { eq }) => eq(feeds.id, feedId),
+          where: (feeds) => and(eq(feeds.id, feedId), isNull(feeds.deletedAt)),
           columns: {
             id: true,
             url: true,
@@ -722,8 +738,12 @@ export class DbService extends IpcService {
     const db = DBManager.getDB()
     refreshLog("info", batchTrace, "batch.start")
     const subscriptions = await db.query.subscriptionsTable.findMany({
-      where: (subscriptions, { and, eq, isNotNull }) =>
-        and(eq(subscriptions.type, "feed"), isNotNull(subscriptions.feedId)),
+      where: (subscriptions) =>
+        and(
+          eq(subscriptions.type, "feed"),
+          isNotNull(subscriptions.feedId),
+          isNull(subscriptions.deletedAt),
+        ),
       columns: {
         feedId: true,
       },
@@ -746,7 +766,7 @@ export class DbService extends IpcService {
     })
 
     const feeds = await db.query.feedsTable.findMany({
-      where: (feeds, { inArray }) => inArray(feeds.id, feedIds),
+      where: (feeds) => and(inArray(feeds.id, feedIds), isNull(feeds.deletedAt)),
       columns: {
         id: true,
         url: true,
@@ -798,6 +818,20 @@ export class DbService extends IpcService {
           targetFeedId: current.id,
           entriesCount: result.entriesCount,
         })
+        if (
+          batchTrace.source === "manual-batch" ||
+          batchTrace.source === "startup-auto" ||
+          batchTrace.source === "interval-auto"
+        ) {
+          broadcastLocalFeedRefreshCompleted({
+            source: batchTrace.source,
+            result: {
+              refreshed: results.filter((result) => result.ok).length,
+              failed: results.filter((result) => !result.ok).length,
+              results: [...results],
+            },
+          })
+        }
       } catch (error) {
         results.push({
           feedId: current.id,
@@ -861,7 +895,8 @@ export class DbService extends IpcService {
     const idsToDelete = [...(targets.ids || [])]
     if (targets.feedIds?.length) {
       const subs = await db.query.subscriptionsTable.findMany({
-        where: (subscriptions, { inArray }) => inArray(subscriptions.feedId, targets.feedIds),
+        where: (subscriptions) =>
+          and(inArray(subscriptions.feedId, targets.feedIds), isNull(subscriptions.deletedAt)),
         columns: { id: true },
       })
       idsToDelete.push(...subs.map((s) => s.id))

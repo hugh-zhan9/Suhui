@@ -1,11 +1,14 @@
+import { and, eq, isNull } from "drizzle-orm"
 import { DBManager } from "~/manager/db"
+import { getActiveVisibilityState } from "@suhui/database/services/internal/active-visibility"
 
 export class UnreadApplicationService {
   async listUnreadCounts() {
     const db = DBManager.getDB()
-    const [unreads, subscriptions, unreadEntries] = await Promise.all([
+    const [unreads, subscriptions, unreadEntries, visibility] = await Promise.all([
       db.query.unreadTable.findMany(),
       db.query.subscriptionsTable.findMany({
+        where: (subscriptions) => isNull(subscriptions.deletedAt),
         columns: {
           id: true,
           type: true,
@@ -15,12 +18,13 @@ export class UnreadApplicationService {
         },
       }),
       db.query.entriesTable.findMany({
-        where: (entries, { eq }) => eq(entries.read, false),
+        where: (entries) => and(eq(entries.read, false), isNull(entries.deletedAt)),
         columns: {
           feedId: true,
           inboxHandle: true,
         },
       }),
+      getActiveVisibilityState(),
     ])
 
     const sourceIdBySubscriptionId = new Map<string, string>()
@@ -39,7 +43,8 @@ export class UnreadApplicationService {
 
     const mergedCountById = new Map<string, number>()
     for (const unread of unreads) {
-      const normalizedId = sourceIdBySubscriptionId.get(unread.id) ?? unread.id
+      const normalizedId = sourceIdBySubscriptionId.get(unread.id)
+      if (!normalizedId) continue
       mergedCountById.set(normalizedId, (mergedCountById.get(normalizedId) ?? 0) + unread.count)
     }
 
@@ -49,6 +54,13 @@ export class UnreadApplicationService {
     for (const entry of unreadEntries) {
       const sourceId = entry.inboxHandle || entry.feedId
       if (!sourceId) continue
+      if (
+        !visibility.activeFeedIds.has(sourceId) &&
+        !visibility.activeInboxIds.has(sourceId) &&
+        !visibility.activeListIds.has(sourceId)
+      ) {
+        continue
+      }
       derivedCountById.set(sourceId, (derivedCountById.get(sourceId) ?? 0) + 1)
     }
 

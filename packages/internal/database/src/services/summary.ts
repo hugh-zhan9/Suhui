@@ -6,8 +6,12 @@ import type { SummarySchema } from "../schemas/types"
 import type { Resetable } from "./internal/base"
 
 class SummaryServiceStatic implements Resetable {
-  async reset() {
+  async purgeAllForMaintenance() {
     await db.delete(summariesTable)
+  }
+
+  async reset() {
+    await this.purgeAllForMaintenance()
   }
 
   async insertSummary(data: Omit<SummarySchema, "createdAt">) {
@@ -43,7 +47,7 @@ class SummaryServiceStatic implements Resetable {
     return summaries
   }
 
-  async deleteSummary(entryId: string) {
+  async purgeByEntryIdForMaintenance(entryId: string) {
     await db.delete(summariesTable).where(eq(summariesTable.entryId, entryId))
   }
 }

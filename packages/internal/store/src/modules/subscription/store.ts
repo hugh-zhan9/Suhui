@@ -303,7 +303,7 @@ class SubscriptionActions implements Hydratable, Resetable {
     })
 
     tx.persist(() => {
-      return SubscriptionService.reset()
+      return SubscriptionService.purgeAllForMaintenance()
     })
 
     await tx.run()
