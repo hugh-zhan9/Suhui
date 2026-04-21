@@ -5,5 +5,10 @@ declare global {
     electron?: ElectronAPI
     api?: { canWindowBlur: boolean }
     platform: NodeJS.Platform
+    __startupReadTraceFlags?: {
+      enabled: boolean
+      forceWideRenderMarkRead: boolean
+      label: string
+    }
   }
 }

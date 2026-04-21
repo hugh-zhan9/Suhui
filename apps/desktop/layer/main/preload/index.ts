@@ -31,6 +31,18 @@ const api = {
   canWindowBlur: process.platform === "darwin" || (process.platform === "win32" && isWindows11),
 }
 
+const startupReadTraceFlags = {
+  enabled:
+    process.argv.includes("--debug-startup-read-trace") ||
+    process.argv.includes("--debug-startup-force-wide-read-trace"),
+  forceWideRenderMarkRead: process.argv.includes("--debug-startup-force-wide-read-trace"),
+  label: process.argv.includes("--debug-startup-force-wide-read-trace")
+    ? "force-wide"
+    : process.argv.includes("--debug-startup-read-trace")
+      ? "default"
+      : "off",
+}
+
 // Use `contextBridge` APIs to expose Electron APIs to
 // renderer only if context isolation is enabled, otherwise
 // just add to the DOM global.
@@ -40,6 +52,7 @@ if (process.contextIsolated) {
     contextBridge.exposeInMainWorld("api", api)
     contextBridge.exposeInMainWorld("platform", process.platform)
     contextBridge.exposeInMainWorld("__followDbType", "postgres" as "postgres")
+    contextBridge.exposeInMainWorld("__startupReadTraceFlags", startupReadTraceFlags)
   } catch (error) {
     console.error(error)
   }
@@ -52,6 +65,8 @@ if (process.contextIsolated) {
   window.platform = process.platform
   // @ts-ignore (define in dts)
   window.__followDbType = "postgres" as "postgres"
+  // @ts-ignore (define in dts)
+  window.__startupReadTraceFlags = startupReadTraceFlags
 
   Object.defineProperty(window.navigator, "clipboard", {
     get: () => {
