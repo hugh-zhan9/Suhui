@@ -1,7 +1,7 @@
 import type { IpcContext } from "electron-ipc-decorator"
 import { IpcMethod, IpcService } from "electron-ipc-decorator"
 
-import { requestDiscoverJSON } from "./discover-proxy"
+import { discoverApplicationService } from "~/application/discover/service"
 
 export class DiscoverService extends IpcService {
   static override readonly groupName = "discover"
@@ -11,7 +11,7 @@ export class DiscoverService extends IpcService {
     _context: IpcContext,
     input: { language?: string; view?: number; limit?: number },
   ) {
-    return await requestDiscoverJSON("/trending/feeds", input)
+    return await discoverApplicationService.getTrendingFeeds(input)
   }
 
   @IpcMethod()
@@ -19,16 +19,16 @@ export class DiscoverService extends IpcService {
     _context: IpcContext,
     input: { category?: string; categories?: string; lang?: string; namespace?: string },
   ) {
-    return await requestDiscoverJSON("/discover/rsshub", input)
+    return await discoverApplicationService.rsshub(input)
   }
 
   @IpcMethod()
   async rsshubAnalytics(_context: IpcContext, input: { lang?: string }) {
-    return await requestDiscoverJSON("/discover/rsshub-analytics", input)
+    return await discoverApplicationService.rsshubAnalytics(input)
   }
 
   @IpcMethod()
   async rsshubRoute(_context: IpcContext, input: { route: string }) {
-    return await requestDiscoverJSON("/discover/rsshub/route", input)
+    return await discoverApplicationService.rsshubRoute(input)
   }
 }

@@ -3,15 +3,16 @@ import { randomUUID } from "node:crypto"
 
 import { EntryService } from "@suhui/database/services/entry"
 import { FeedService } from "@suhui/database/services/feed"
-import { SubscriptionService } from "@suhui/database/services/subscription"
 import { session } from "electron"
 import type { IpcContext } from "electron-ipc-decorator"
 import { IpcMethod, IpcService } from "electron-ipc-decorator"
 
 import { store } from "~/lib/store"
+import { entryApplicationService } from "~/application/entry/service"
+import { feedApplicationService } from "~/application/feed/service"
+import { subscriptionApplicationService } from "~/application/subscription/service"
 import { DBManager } from "~/manager/db"
 import { drainPendingOps } from "~/manager/sync-applier"
-import { syncLogger } from "~/manager/sync-logger"
 import { logger } from "~/logger"
 import { appendRefreshAuditTrace } from "~/manager/refresh-audit-log"
 import { broadcastLocalFeedRefreshCompleted } from "~/manager/local-feed-refresh-events"
@@ -23,7 +24,6 @@ import {
   localFeedRefreshBatchConcurrency,
   localFeedRefreshRequestTimeoutMs,
 } from "./local-feed-refresh"
-import { findDuplicateFeed } from "./rss-dedup"
 import { buildEntryMediaPayload } from "./rss-entry-media"
 import { parseRssFeed } from "./rss-parser"
 import {
@@ -331,6 +331,12 @@ export class DbService extends IpcService {
   }
 
   @IpcMethod()
+  async getSubscriptions(_context: IpcContext) {
+    await this.waitForDatabase()
+    return subscriptionApplicationService.listSubscriptions()
+  }
+
+  @IpcMethod()
   async getEntry(_context: IpcContext, entryId: string) {
     await this.waitForDatabase()
     const db = DBManager.getDB()
@@ -368,14 +374,7 @@ export class DbService extends IpcService {
       firstIds: entryIds.slice(0, 10),
       stack: new Error().stack,
     })
-    await EntryService.patchMany({ entry: { read }, entryIds })
-    for (const entryId of entryIds) {
-      syncLogger.record({
-        type: read ? "entry.mark_read" : "entry.mark_unread",
-        entityType: "entry",
-        entityId: entryId,
-      })
-    }
+    await entryApplicationService.updateReadStatus(payload)
     console.info(`[DbService] Updated read=${read} for ${entryIds.length} entries`)
   }
 
@@ -395,12 +394,11 @@ export class DbService extends IpcService {
       throw new Error("[db.previewFeed] feed url is required")
     }
     try {
-      return await this.buildPreviewData(
-        inputUrl,
-        form.feedId,
-        form?.allowPublicRsshub === true,
-        true,
-      )
+      return await feedApplicationService.previewFeed({
+        url: inputUrl,
+        feedId: form.feedId,
+        allowPublicRsshub: form?.allowPublicRsshub === true,
+      })
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error)
       console.error("[db.previewFeed] failed", {
@@ -423,150 +421,18 @@ export class DbService extends IpcService {
     })
     try {
       await this.waitForDatabase()
-      const feedUrl = form.url
       refreshLog("info", trace, "add.start", {
         view: form.view,
         category: form.category || null,
         customTitle: form.title || null,
       })
-      const db = DBManager.getDB()
-
-      const existingFeeds = await db.query.feedsTable.findMany({
-        where: (feeds) => isNull(feeds.deletedAt),
-        columns: { id: true, url: true, siteUrl: true },
-      })
-
-      const preview = await this.buildPreviewData(feedUrl, undefined, false, false, trace)
-      const duplicateFeed = findDuplicateFeed(existingFeeds as any, feedUrl, preview.feed.siteUrl)
-
-      if (duplicateFeed) {
-        refreshLog("info", trace, "add.duplicate_feed_found", {
-          duplicateFeedId: duplicateFeed.id,
-          duplicateFeedUrl: duplicateFeed.url,
-        })
-        const existingFeed = await db.query.feedsTable.findFirst({
-          where: (feeds) => and(eq(feeds.id, duplicateFeed.id), isNull(feeds.deletedAt)),
-        })
-        const existingSubscription = await db.query.subscriptionsTable.findFirst({
-          where: (subscriptions) =>
-            and(
-              eq(subscriptions.feedId, duplicateFeed.id),
-              eq(subscriptions.type, "feed"),
-              isNull(subscriptions.deletedAt),
-            ),
-        })
-
-        const subscription =
-          existingSubscription ??
-          ({
-            id: `feed/${duplicateFeed.id}`,
-            feedId: duplicateFeed.id,
-            userId: "local_user_id",
-            view: form.view,
-            isPrivate: false,
-            hideFromTimeline: false,
-            title: form.title || existingFeed?.title || null,
-            category: form.category || null,
-            type: "feed" as const,
-            listId: null,
-            inboxId: null,
-            createdAt: new Date().toISOString(),
-          } as const)
-
-        if (!existingSubscription) {
-          await SubscriptionService.upsertMany([subscription] as any)
-          syncLogger.record({
-            type: "subscription.add",
-            entityType: "subscription",
-            entityId: subscription.id,
-            payload: subscription,
-          })
-        }
-
-        const entries = await db.query.entriesTable.findMany({
-          where: (entries) => and(eq(entries.feedId, duplicateFeed.id), isNull(entries.deletedAt)),
-          orderBy: (entries, { desc }) => [desc(entries.publishedAt)],
-          limit: 50,
-        })
-
-        refreshLog("info", trace, "add.duplicate_completed", {
-          duplicateFeedId: duplicateFeed.id,
-          subscriptionId: subscription.id,
-          existingEntryCount: entries.length,
-        })
-
-        return {
-          feed: existingFeed,
-          subscription,
-          entries,
-        }
-      }
-
-      // 1. Build preview payload via local fetch/parse pipeline
-      const feed = {
-        ...preview.feed,
-        title: form.title || preview.feed.title,
-        updatedAt: preview.feed.updatedAt ? new Date(preview.feed.updatedAt) : new Date(),
-      }
-      const feedId = feed.id
-      refreshLog("info", trace, "add.persist_feed", {
-        feedId,
-        title: feed.title,
-      })
-      await FeedService.upsertMany([feed] as any)
-
-      // 2. Build subscription row
-      const subId = `feed/${feedId}`
-      const subscription = {
-        id: subId,
-        feedId,
-        userId: "local_user_id",
-        view: form.view,
-        isPrivate: false,
-        hideFromTimeline: false,
-        title: form.title || preview.feed.title || null,
-        category: form.category || null,
-        type: "feed" as const,
-        listId: null,
-        inboxId: null,
-        createdAt: new Date().toISOString(),
-      }
-      await SubscriptionService.upsertMany([subscription] as any)
-      syncLogger.record({
-        type: "subscription.add",
-        entityType: "subscription",
-        entityId: subscription.id,
-        payload: subscription,
-      })
-
-      // 3. Persist preview entries (up to 50 latest)
-      const { entries } = preview
-
-      if (entries.length > 0) {
-        const entriesToSave = entries.map((entry) => ({
-          ...entry,
-          publishedAt: resolvePublishedAtMs(entry.publishedAt),
-          insertedAt: toTimestampMs(entry.insertedAt) ?? Date.now(),
-          readabilityUpdatedAt: toTimestampMs(entry.readabilityUpdatedAt),
-        }))
-        refreshLog("info", trace, "add.persist_entries", {
-          entryCount: entriesToSave.length,
-        })
-        await EntryService.upsertMany(entriesToSave as any)
-      }
-
+      const result = await subscriptionApplicationService.createSubscription(form)
       refreshLog("info", trace, "add.completed", {
-        feedId,
-        title: feed.title,
-        entryCount: entries.length,
+        feedId: (result as any)?.feed?.id || null,
+        title: (result as any)?.feed?.title || null,
+        entryCount: (result as any)?.entries?.length ?? 0,
       })
-
-      // 5. Return complete data so the renderer can hydrate the in-memory store immediately
-      return {
-        feed: { ...feed, type: "feed" as const },
-        subscription,
-        entries, // renderer will call entryActions.upsertManyInSession(entries)
-      }
+      return result
     } catch (e: any) {
       refreshLog("error", trace, "add.failed", {
         reason: e?.message || String(e),
@@ -891,30 +757,31 @@ export class DbService extends IpcService {
       (targets.inboxIds?.length ?? 0)
     if (totalTargets === 0) return
     console.info(`[DbService] Deleting subscriptions, targets=${totalTargets}`)
-    const db = DBManager.getDB()
-    const idsToDelete = [...(targets.ids || [])]
-    if (targets.feedIds?.length) {
-      const subs = await db.query.subscriptionsTable.findMany({
-        where: (subscriptions) =>
-          and(inArray(subscriptions.feedId, targets.feedIds), isNull(subscriptions.deletedAt)),
-        columns: { id: true },
-      })
-      idsToDelete.push(...subs.map((s) => s.id))
-    }
-
     try {
-      await SubscriptionService.deleteByTargets(targets)
-
-      for (const id of new Set(idsToDelete)) {
-        syncLogger.record({
-          type: "subscription.remove",
-          entityType: "subscription",
-          entityId: id,
-        })
-      }
+      await subscriptionApplicationService.deleteSubscriptionsByTargets(targets)
+      return
     } catch (e: any) {
       console.error("[DbService] deleteSubscriptionByTargets error:", e)
       throw new Error(`Failed to delete subscriptions: ${e.message}`)
     }
+  }
+
+  @IpcMethod()
+  async updateSubscription(
+    _context: IpcContext,
+    subscriptionId: string,
+    payload: { title?: string | null; category?: string | null; view?: number },
+  ) {
+    await this.waitForDatabase()
+    return subscriptionApplicationService.updateSubscription(subscriptionId, payload)
+  }
+
+  @IpcMethod()
+  async batchUpdateSubscriptions(
+    _context: IpcContext,
+    payload: { feedIds: string[]; category?: string | null; view?: number },
+  ) {
+    await this.waitForDatabase()
+    await subscriptionApplicationService.batchUpdateSubscriptions(payload)
   }
 }

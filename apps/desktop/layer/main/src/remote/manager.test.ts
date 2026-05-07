@@ -1,5 +1,62 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 
+vi.mock("~/application/discover/service", () => ({
+  discoverApplicationService: {
+    request: vi.fn().mockResolvedValue({}),
+  },
+}))
+
+vi.mock("~/application/feed/service", () => ({
+  feedApplicationService: {
+    previewFeed: vi.fn().mockResolvedValue({}),
+    refreshFeed: vi.fn().mockResolvedValue({}),
+    refreshAllFeeds: vi.fn().mockResolvedValue({}),
+  },
+}))
+
+vi.mock("~/application/import-export/service", () => ({
+  importExportApplicationService: {
+    exportData: vi.fn().mockResolvedValue({ version: 1 }),
+    importData: vi.fn().mockResolvedValue({}),
+  },
+}))
+
+vi.mock("~/application/pdf/service", () => ({
+  pdfApplicationService: {
+    renderEntryPdf: vi.fn().mockResolvedValue(Buffer.from("%PDF-1.7")),
+  },
+}))
+
+vi.mock("~/application/rsshub/service", () => ({
+  rsshubApplicationService: {
+    getConfig: vi.fn().mockReturnValue({ customUrl: "" }),
+    setConfig: vi.fn().mockImplementation((input) => ({ customUrl: input.customUrl || "" })),
+    precheck: vi.fn().mockReturnValue({ ok: true }),
+  },
+}))
+
+vi.mock("~/application/settings/service", () => ({
+  settingsApplicationService: {
+    getCapabilities: vi.fn().mockReturnValue({ auth: "none" }),
+    getSettings: vi.fn().mockReturnValue({ appearance: "system", rsshubCustomUrl: "" }),
+    updateSettings: vi.fn().mockImplementation((input) => ({
+      appearance: input.appearance || "system",
+      rsshubCustomUrl: input.rsshubCustomUrl || "",
+    })),
+  },
+}))
+
+vi.mock("~/application/subscription/service", () => ({
+  subscriptionApplicationService: {
+    listSubscriptions: vi.fn().mockResolvedValue([]),
+    createSubscription: vi.fn().mockResolvedValue({}),
+    deleteSubscription: vi.fn().mockResolvedValue(undefined),
+    deleteSubscriptionsByTargets: vi.fn().mockResolvedValue(undefined),
+    updateSubscription: vi.fn().mockResolvedValue({}),
+    batchUpdateSubscriptions: vi.fn().mockResolvedValue(undefined),
+  },
+}))
+
 import { RemoteServerManager } from "./manager"
 
 describe("RemoteServerManager", () => {
@@ -488,5 +545,184 @@ describe("RemoteServerManager", () => {
       category: "Work",
       view: 0,
     })
+  })
+
+  it("serves bootstrap, capabilities, and settings through injected providers", async () => {
+    const getBootstrap = vi.fn().mockResolvedValue({ subscriptions: [], unread: [] })
+    const getCapabilities = vi.fn().mockReturnValue({ auth: "none", pdfExport: true })
+    const getSettings = vi.fn().mockReturnValue({ appearance: "system", rsshubCustomUrl: "" })
+    const updateSettings = vi
+      .fn()
+      .mockReturnValue({ appearance: "dark", rsshubCustomUrl: "https://rsshub.example" })
+    const server = await RemoteServerManager.start({
+      host: "127.0.0.1",
+      port: 0,
+      getBootstrap,
+      getCapabilities,
+      getSettings,
+      updateSettings,
+    })
+
+    await expect(
+      fetch(`${server.baseUrl}/api/bootstrap`).then((res) => res.json()),
+    ).resolves.toEqual({
+      data: { subscriptions: [], unread: [] },
+    })
+    await expect(
+      fetch(`${server.baseUrl}/api/capabilities`).then((res) => res.json()),
+    ).resolves.toEqual({
+      data: { auth: "none", pdfExport: true },
+    })
+    const response = await fetch(`${server.baseUrl}/api/settings`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ appearance: "dark", rsshubCustomUrl: "https://rsshub.example" }),
+    })
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual({
+      data: { appearance: "dark", rsshubCustomUrl: "https://rsshub.example" },
+    })
+    expect(updateSettings).toHaveBeenCalledWith({
+      appearance: "dark",
+      rsshubCustomUrl: "https://rsshub.example",
+    })
+  })
+
+  it("supports batch subscription management routes", async () => {
+    const batchUpdateSubscriptions = vi.fn().mockResolvedValue(undefined)
+    const deleteSubscriptionsByTargets = vi.fn().mockResolvedValue(undefined)
+    const server = await RemoteServerManager.start({
+      host: "127.0.0.1",
+      port: 0,
+      batchUpdateSubscriptions,
+      deleteSubscriptionsByTargets,
+    })
+
+    const patchResponse = await fetch(`${server.baseUrl}/api/subscriptions`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ feedIds: ["feed_1", "feed_2"], category: "Work", view: 1 }),
+    })
+    expect(patchResponse.status).toBe(200)
+    expect(batchUpdateSubscriptions).toHaveBeenCalledWith({
+      feedIds: ["feed_1", "feed_2"],
+      category: "Work",
+      view: 1,
+    })
+
+    const deleteResponse = await fetch(`${server.baseUrl}/api/subscriptions`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ feedIds: ["feed_1"] }),
+    })
+    expect(deleteResponse.status).toBe(200)
+    expect(deleteSubscriptionsByTargets).toHaveBeenCalledWith({ feedIds: ["feed_1"] })
+  })
+
+  it("supports feed preview, rsshub, import/export, discover, and pdf routes", async () => {
+    const previewFeed = vi.fn().mockResolvedValue({ feed: { id: "feed_1" } })
+    const getRsshubConfig = vi.fn().mockReturnValue({ customUrl: "" })
+    const setRsshubConfig = vi.fn().mockReturnValue({ customUrl: "https://rsshub.example" })
+    const precheckRsshub = vi.fn().mockResolvedValue({ ok: true })
+    const discover = vi.fn().mockResolvedValue([{ id: "trend_1" }])
+    const exportData = vi.fn().mockResolvedValue({ version: 1, feeds: [] })
+    const importData = vi.fn().mockResolvedValue({ feeds: 1 })
+    const getEntry = vi.fn().mockResolvedValue({
+      id: "entry_1",
+      title: "Entry title",
+      content: "<p>Entry body</p>",
+      readabilityContent: null,
+      author: "Author",
+      publishedAt: 1_700_000_000_000,
+      url: "https://example.com/entry",
+    })
+    const renderEntryPdf = vi.fn().mockResolvedValue(Buffer.from("%PDF-1.7"))
+    const server = await RemoteServerManager.start({
+      host: "127.0.0.1",
+      port: 0,
+      getEntry,
+      previewFeed,
+      getRsshubConfig,
+      setRsshubConfig,
+      precheckRsshub,
+      discover,
+      exportData,
+      importData,
+      renderEntryPdf,
+    })
+
+    expect(
+      await fetch(`${server.baseUrl}/api/feeds/preview`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: "rsshub://example/route" }),
+      }).then((res) => res.status),
+    ).toBe(200)
+    expect(previewFeed).toHaveBeenCalledWith({ url: "rsshub://example/route" })
+
+    await fetch(`${server.baseUrl}/api/rsshub/config`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ customUrl: "https://rsshub.example" }),
+    })
+    expect(setRsshubConfig).toHaveBeenCalledWith({ customUrl: "https://rsshub.example" })
+
+    await fetch(`${server.baseUrl}/api/rsshub/precheck`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: "rsshub://example/route" }),
+    })
+    expect(precheckRsshub).toHaveBeenCalledWith({ url: "rsshub://example/route" })
+
+    await fetch(`${server.baseUrl}/api/discover/trending/feeds?limit=10`)
+    expect(discover).toHaveBeenCalledWith("/trending/feeds", { limit: "10" })
+
+    await expect(fetch(`${server.baseUrl}/api/export`).then((res) => res.json())).resolves.toEqual({
+      data: { version: 1, feeds: [] },
+    })
+
+    await fetch(`${server.baseUrl}/api/import`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ version: 1, feeds: [] }),
+    })
+    expect(importData).toHaveBeenCalledWith({ version: 1, feeds: [] })
+
+    const pdfResponse = await fetch(`${server.baseUrl}/api/entries/entry_1/pdf`)
+    expect(pdfResponse.status).toBe(200)
+    expect(pdfResponse.headers.get("content-type")).toContain("application/pdf")
+    expect(await pdfResponse.text()).toContain("%PDF-1.7")
+    expect(getEntry).toHaveBeenCalledWith("entry_1")
+    expect(renderEntryPdf).toHaveBeenCalledWith({
+      title: "Entry title",
+      contentHtml: "<p>Entry body</p>",
+      author: "Author",
+      publishedAt: expect.any(String),
+      url: "https://example.com/entry",
+    })
+    expect(getRsshubConfig).not.toHaveBeenCalled()
+  })
+
+  it("returns a clear error when pdf export has no entry content", async () => {
+    const getEntry = vi.fn().mockResolvedValue({
+      id: "entry_1",
+      title: "Entry title",
+      content: "",
+      readabilityContent: null,
+      description: "",
+    })
+    const renderEntryPdf = vi.fn()
+    const server = await RemoteServerManager.start({
+      host: "127.0.0.1",
+      port: 0,
+      getEntry,
+      renderEntryPdf,
+    })
+
+    const response = await fetch(`${server.baseUrl}/api/entries/entry_1/pdf`)
+
+    expect(response.status).toBe(422)
+    await expect(response.json()).resolves.toEqual({ error: "REMOTE_ENTRY_CONTENT_EMPTY" })
+    expect(renderEntryPdf).not.toHaveBeenCalled()
   })
 })

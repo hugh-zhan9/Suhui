@@ -106,6 +106,16 @@
       "require": "./src/remote/*.ts",
       "import": "./src/remote/*.ts"
     },
+    "./runtime": {
+      "types": "./src/runtime/index.ts",
+      "require": "./src/runtime/index.ts",
+      "import": "./src/runtime/index.ts"
+    },
+    "./runtime/*": {
+      "types": "./src/runtime/*.ts",
+      "require": "./src/runtime/*.ts",
+      "import": "./src/runtime/*.ts"
+    },
     "./unread/*": {
       "types": "./src/modules/unread/*.ts",
       "require": "./src/modules/unread/*.ts",

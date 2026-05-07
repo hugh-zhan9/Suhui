@@ -9,6 +9,7 @@ import { IpcMethod, IpcService } from "electron-ipc-decorator"
 import path from "pathe"
 
 import { START_IN_TRAY_ARGS } from "~/constants/app"
+import { pdfApplicationService } from "~/application/pdf/service"
 import { getCacheSize } from "~/lib/cleaner"
 import { i18n } from "~/lib/i18n"
 import { store, StoreKey } from "~/lib/store"
@@ -434,37 +435,12 @@ export class AppService extends IpcService {
       filePath = result.filePath
     }
 
-    const printWindow = new BrowserWindow({
-      show: false,
-      width: 1200,
-      height: 1600,
-      webPreferences: {
-        sandbox: true,
-        contextIsolation: true,
-        nodeIntegration: false,
-      },
-    })
-
     try {
-      if (!input.contentHtml || !input.contentHtml.trim()) {
-        return { success: false }
-      }
-
-      const printHtml = this.buildEntryPrintHtml(input)
-      await printWindow.loadURL(`data:text/html;charset=UTF-8,${encodeURIComponent(printHtml)}`)
-      await printWindow.webContents.executeJavaScript(
-        "document.fonts ? document.fonts.ready.then(() => true) : Promise.resolve(true)",
-      )
-
-      const pdfBuffer = await printWindow.webContents.printToPDF({
-        printBackground: true,
-        preferCSSPageSize: true,
-      })
+      const pdfBuffer = await pdfApplicationService.renderEntryPdf(input)
       await fsp.writeFile(filePath, pdfBuffer)
-    } finally {
-      if (!printWindow.isDestroyed()) {
-        printWindow.destroy()
-      }
+    } catch (error) {
+      console.error("[AppService] exportEntryAsPDF failed", error)
+      return { success: false }
     }
     return { success: true }
   }

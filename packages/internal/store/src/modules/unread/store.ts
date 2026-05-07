@@ -6,7 +6,7 @@ import type { MarkAllAsReadRequest } from "@follow-app/client-sdk"
 import { isEqual } from "es-toolkit"
 
 import { api } from "../../context"
-import { getRuntimeEnv } from "../../remote/env"
+import { runtimeClient } from "../../runtime"
 import {
   markUnreadHydrateDirty,
   reconcileHydratedUnread,
@@ -260,7 +260,6 @@ class UnreadSyncService {
     if (!entry || entry.read === read || (!entry.feedId && !entry.inboxHandle)) return
 
     const id: FeedIdOrInboxHandle = entry.inboxHandle || entry.feedId || ""
-    const { isRemote } = getRuntimeEnv()
 
     const tx = createTransaction()
     tx.store(() => {
@@ -273,16 +272,7 @@ class UnreadSyncService {
     })
 
     tx.request(async () => {
-      // [Remote Mode] Use HTTP API
-      if (isRemote) {
-        await fetch("/api/entries/read", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ entryIds: [entryId], read }),
-        })
-      }
-      // [Local Mode] No remote API call for read/unread status
-      // The store and persist layers handle state locally
+      await runtimeClient.entries.updateReadStatus({ entryIds: [entryId], read })
     })
 
     tx.rollback(() => {
@@ -291,25 +281,6 @@ class UnreadSyncService {
         unreadActions.addUnread(id)
       } else {
         unreadActions.removeUnread(id)
-      }
-    })
-
-    tx.persist(async () => {
-      // [Remote Mode] No local persistence, already handled by HTTP API
-      if (isRemote) return
-
-      // [Local Mode] Persist via IPC to main process SQLite
-      if (typeof window !== "undefined" && (window as any).electron?.ipcRenderer) {
-        await (window as any).electron.ipcRenderer.invoke("db.updateReadStatus", {
-          entryIds: [entryId],
-          read,
-        })
-      } else {
-        // Fallback for web (no-op for now)
-        return EntryService.patchMany({
-          entry: { read },
-          entryIds: [entryId],
-        })
       }
     })
 

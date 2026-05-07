@@ -8,14 +8,9 @@ import type { UnreadSchema } from "../../../database/src/schemas/types"
 import { feedActions } from "../modules/feed/store"
 import { subscriptionActions } from "../modules/subscription/store"
 import { unreadActions } from "../modules/unread/store"
+import { runtimeClient } from "../runtime"
 import { getRuntimeEnv } from "./env"
-import {
-  extractFeedsFromSubscriptions,
-  transformSubscriptionsFromApi,
-  transformUnreadsFromApi,
-  type SubscriptionRecord,
-  type UnreadRecord,
-} from "./transforms"
+import { transformUnreadsFromApi } from "./transforms"
 
 type SSEEventHandler = {
   onSubscriptionsUpdated?: () => void
@@ -49,7 +44,7 @@ class RemoteSSEHandler {
     this.isConnecting = true
 
     try {
-      this.eventSource = new EventSource("/events")
+      this.eventSource = runtimeClient.events.connect()
 
       this.eventSource.addEventListener("ready", () => {
         console.log("[RemoteSSEHandler] Connected")
@@ -119,12 +114,10 @@ class RemoteSSEHandler {
    */
   async refreshSubscriptions(): Promise<void> {
     try {
-      const response = await fetch("/api/subscriptions")
-      if (!response.ok) throw new Error(`HTTP ${response.status}`)
-
-      const { data } = (await response.json()) as { data: SubscriptionRecord[] }
-      const subscriptions = transformSubscriptionsFromApi(data)
-      const feeds = extractFeedsFromSubscriptions(data)
+      const { subscriptions, feeds } = await runtimeClient.subscriptions.list(undefined, {
+        subscriptions: [],
+        feeds: [],
+      })
 
       subscriptionActions.replaceManyInSession(subscriptions)
       feedActions.upsertManyInSession(feeds as any)
@@ -139,10 +132,7 @@ class RemoteSSEHandler {
    */
   async refreshUnread(): Promise<void> {
     try {
-      const response = await fetch("/api/unread")
-      if (!response.ok) throw new Error(`HTTP ${response.status}`)
-
-      const { data } = (await response.json()) as { data: UnreadRecord[] }
+      const data = await runtimeClient.unread.list()
       const unreads = transformUnreadsFromApi(data)
 
       unreadActions.upsertManyInSession(unreads as unknown as UnreadSchema[])

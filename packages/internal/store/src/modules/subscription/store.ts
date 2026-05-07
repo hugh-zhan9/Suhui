@@ -10,8 +10,7 @@ import {
   reconcileHydratedSubscription,
   runWithHydrateSource,
 } from "../../hydrate-phases"
-import { getRuntimeEnv } from "../../remote/env"
-import { transformSubscriptionFromApi, type SubscriptionRecord } from "../../remote/transforms"
+import { runtimeClient } from "../../runtime"
 import type { Hydratable, Resetable } from "../../lib/base"
 import { createImmerSetter, createTransaction, createZustandStore } from "../../lib/helper"
 import { apiMorph } from "../../morph/api"
@@ -312,60 +311,13 @@ class SubscriptionActions implements Hydratable, Resetable {
 
 class SubscriptionSyncService {
   async fetch(view?: FeedViewType) {
-    const { isRemote } = getRuntimeEnv()
-
-    // [Remote Mode] Fetch from HTTP API
-    if (isRemote) {
-      return this.fetchFromRemote(view)
-    }
-
-    // [Local Mode] Return subscriptions from the local Zustand store
     const storeData = get().data
     const allSubscriptions = Object.values(storeData)
-    const filtered =
-      view !== undefined ? allSubscriptions.filter((s: any) => s.view === view) : allSubscriptions
-
-    // Also gather associated feeds from the feed store
     const feedStore = (await import("../feed/store")).useFeedStore.getState()
-    const feedIds = new Set(filtered.map((s: any) => s.feedId).filter(Boolean))
-    const feeds = Object.values(feedStore.feeds).filter((f: any) => feedIds.has(f.id))
-
-    return { subscriptions: filtered, feeds }
-  }
-
-  /**
-   * [Remote Mode] Fetch subscriptions from HTTP API
-   */
-  private async fetchFromRemote(view?: FeedViewType) {
-    try {
-      const response = await fetch("/api/subscriptions")
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`)
-      }
-
-      const { data } = (await response.json()) as { data: SubscriptionRecord[] }
-      const subscriptions = (data || []).map(transformSubscriptionFromApi)
-
-      // Update store
-      subscriptionActions.upsertManyInSession(subscriptions)
-
-      // Filter by view if specified
-      const filtered =
-        view !== undefined ? subscriptions.filter((s) => s.view === view) : subscriptions
-
-      // Extract feeds from subscriptions
-      const feedIds = new Set(filtered.map((s) => s.feedId).filter(Boolean))
-      const feeds = Array.from(feedIds).map((id) => ({
-        id,
-        title: filtered.find((s) => s.feedId === id)?.title || null,
-        url: "",
-      }))
-
-      return { subscriptions: filtered, feeds }
-    } catch (error) {
-      console.error("[Remote] fetchFromRemote error:", error)
-      throw error
-    }
+    return runtimeClient.subscriptions.list(view, {
+      subscriptions: allSubscriptions,
+      feeds: Object.values(feedStore.feeds),
+    })
   }
 
   async edit(subscription: SubscriptionModel) {
@@ -387,16 +339,7 @@ class SubscriptionSyncService {
       })
     })
     tx.request(async () => {
-      if (shouldUseLocalSubscriptionMutation()) return
-      await api().subscriptions.update({
-        ...subscription,
-        feedId: subscription.feedId ?? undefined,
-        listId: subscription.listId ?? undefined,
-      })
-    })
-
-    tx.persist(() => {
-      return SubscriptionService.patch(storeDbMorph.toSubscriptionSchema(subscription))
+      await runtimeClient.subscriptions.update(subscription)
     })
 
     await tx.run()
@@ -408,107 +351,19 @@ class SubscriptionSyncService {
   }
 
   async subscribe(subscription: SubscriptionForm) {
-    let data: any = null
-    if (typeof window !== "undefined" && (window as any).electron?.ipcRenderer) {
-      // Local IPC mode
-      data = await (window as any).electron.ipcRenderer.invoke("db.addFeed", subscription)
-      if (!data) {
-        throw new Error("Failed to subscribe via local database")
-      }
-    } else {
-      // [Local Mode] Web fallback: fetch RSS via dev server proxy, parse locally
-      const proxyUrl = `/api/rss-proxy?url=${encodeURIComponent(subscription.url || "")}`
-      const response = await fetch(proxyUrl)
-      if (!response.ok) {
-        throw new Error(`Failed to fetch feed: ${response.status}`)
-      }
-      const xmlText = await response.text()
-      const parser = new DOMParser()
-      const xml = parser.parseFromString(xmlText, "text/xml")
-
-      // Parse RSS or Atom
-      const channel = xml.querySelector("rss > channel")
-      const atomFeed = xml.querySelector("feed")
-      const feedTitle =
-        channel?.querySelector("title")?.textContent?.trim() ||
-        atomFeed?.querySelector("title")?.textContent?.trim() ||
-        "Untitled Feed"
-      const siteUrl =
-        channel?.querySelector("link")?.textContent?.trim() ||
-        atomFeed?.querySelector("link[rel='alternate']")?.getAttribute("href") ||
-        ""
-      const description =
-        channel?.querySelector("description")?.textContent?.trim() ||
-        atomFeed?.querySelector("subtitle")?.textContent?.trim() ||
-        ""
-
-      // Use the feedId from the preview phase if already assigned
-      const feedId =
-        (subscription as any).feedId ||
-        `local_feed_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
-      const subId = `local_sub_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
-
-      data = {
-        feed: {
-          type: "feed" as const,
-          id: feedId,
-          title: subscription.title || feedTitle,
-          url: subscription.url || "",
-          description: description || null,
-          image: null,
-          errorAt: null,
-          siteUrl: siteUrl || null,
-          ownerUserId: null,
-          errorMessage: null,
-          subscriptionCount: null,
-          updatesPerWeek: null,
-          latestEntryPublishedAt: null,
-          tipUserIds: null,
-          updatedAt: null,
-        },
-        subscription: {
-          id: subId,
-          feedId,
-          userId: "local_user_id",
-          view: subscription.view,
-          isPrivate: false,
-          title: subscription.title || feedTitle || null,
-          category: subscription.category || null,
-          type: "feed" as const,
-          createdAt: new Date().toISOString(),
-        },
-      }
+    const data: any = await runtimeClient.subscriptions.create(subscription)
+    if (!data) {
+      throw new Error("Failed to subscribe via runtime service")
     }
 
     if (data.feed) {
-      feedActions.upsertMany([data.feed])
+      feedActions.upsertManyInSession([data.feed])
       tracker.subscribe({ feedId: data.feed.id, view: subscription.view })
     }
 
     // Insert to subscription first so that entry hydration can bind to its view!
-    if (
-      typeof window !== "undefined" &&
-      (window as any).electron?.ipcRenderer &&
-      data.subscription
-    ) {
-      // Local IPC mode: DB already persisted it, just update the in-memory store
+    if (data.subscription) {
       subscriptionActions.upsertManyInSession([dbStoreMorph.toSubscriptionModel(data.subscription)])
-    } else {
-      // Web fallback: construct the object and try to persist via network
-      await subscriptionActions.upsertMany([
-        {
-          ...subscription,
-          title: subscription.title ?? null,
-          category: subscription.category ?? null,
-
-          type: data.list ? "list" : "feed",
-          createdAt: new Date().toISOString(),
-          feedId: data.feed?.id ?? null,
-          listId: data.list?.id ?? null,
-          inboxId: null,
-          userId: whoami()?.id ?? "",
-        },
-      ])
     }
 
     // Immediately hydrate entry store with entries returned from IPC (or from web fallback)
@@ -572,11 +427,6 @@ class SubscriptionSyncService {
       })
     })
 
-    tx.request(async () => {
-      // [Local Mode] No remote API call needed for unsubscribe
-      // The store update above already removes the subscription from local state
-    })
-
     tx.rollback((current) => {
       immerSet((draft) => {
         for (const [index, id] of normalizedIds.entries()) {
@@ -609,15 +459,7 @@ class SubscriptionSyncService {
         listIds: subscriptionList.map((i) => i.listId).filter((i): i is string => !!i),
         inboxIds: subscriptionList.map((i) => i.inboxId).filter((i): i is string => !!i),
       }
-
-      if (typeof window !== "undefined" && (window as any).electron?.ipcRenderer) {
-        return (window as any).electron.ipcRenderer.invoke(
-          "db.deleteSubscriptionByTargets",
-          payload,
-        )
-      } else {
-        return SubscriptionService.deleteByTargets(payload)
-      }
+      return runtimeClient.subscriptions.deleteByTargets(payload)
     })
 
     await tx.run()
@@ -694,8 +536,7 @@ class SubscriptionSyncService {
     })
 
     tx.request(async () => {
-      if (shouldUseLocalSubscriptionMutation()) return
-      await api().subscriptions.batchUpdate({
+      await runtimeClient.subscriptions.batchUpdate({
         feedIds,
         category: newCategory,
         view: newView,
@@ -718,16 +559,6 @@ class SubscriptionSyncService {
             subscription.category = currentCategory
           }
         }
-      })
-    })
-
-    tx.persist(() => {
-      return SubscriptionService.patchMany({
-        feedIds,
-        data: {
-          view: newView,
-          category: newCategory,
-        },
       })
     })
 
@@ -808,10 +639,10 @@ class SubscriptionSyncService {
     })
 
     tx.request(async () => {
-      if (shouldUseLocalSubscriptionMutation()) return
-      await api().categories.delete({
-        feedIdList: feedIds,
-        deleteSubscriptions: false,
+      await runtimeClient.subscriptions.batchUpdate({
+        feedIds,
+        category: null,
+        view,
       })
     })
 
@@ -891,10 +722,10 @@ class SubscriptionSyncService {
     })
 
     tx.request(async () => {
-      if (shouldUseLocalSubscriptionMutation()) return
-      await api().categories.update({
-        feedIdList: feedIds,
+      await runtimeClient.subscriptions.batchUpdate({
+        feedIds,
         category: newCategory,
+        view,
       })
     })
 

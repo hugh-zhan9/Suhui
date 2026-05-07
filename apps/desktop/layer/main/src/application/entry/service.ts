@@ -6,6 +6,7 @@ import {
 } from "@suhui/database/services/internal/active-visibility"
 
 import { DBManager } from "~/manager/db"
+import { syncLogger } from "~/manager/sync-logger"
 
 export class EntryApplicationService {
   async getEntry(entryId: string) {
@@ -56,6 +57,13 @@ export class EntryApplicationService {
       entry: { read },
       entryIds,
     })
+    for (const entryId of entryIds) {
+      syncLogger.record({
+        type: read ? "entry.mark_read" : "entry.mark_unread",
+        entityType: "entry",
+        entityId: entryId,
+      })
+    }
   }
 }
 

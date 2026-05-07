@@ -1,6 +1,13 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http"
 import type { AddressInfo } from "node:net"
 
+import { discoverApplicationService } from "~/application/discover/service"
+import { feedApplicationService } from "~/application/feed/service"
+import { importExportApplicationService } from "~/application/import-export/service"
+import { pdfApplicationService } from "~/application/pdf/service"
+import type { EntryPdfInput } from "~/application/pdf/service"
+import { rsshubApplicationService } from "~/application/rsshub/service"
+import { settingsApplicationService, type RemoteSettings } from "~/application/settings/service"
 import { subscriptionApplicationService } from "~/application/subscription/service"
 
 import { getRemoteClientAsset, getRemoteClientHtml } from "./client"
@@ -14,10 +21,19 @@ type SubscriptionRecord = Awaited<
 type EntryRecord = any
 
 type RemoteServerDependencies = {
+  getBootstrap: () => Promise<unknown>
+  getCapabilities: () => Promise<unknown> | unknown
+  getSettings: () => Promise<RemoteSettings> | RemoteSettings
+  updateSettings: (payload: Partial<RemoteSettings>) => Promise<RemoteSettings> | RemoteSettings
   getSubscriptions: () => Promise<SubscriptionRecord[]>
   getEntries: (options?: { feedId?: string; unreadOnly?: boolean }) => Promise<EntryRecord[]>
   getEntry: (entryId: string) => Promise<EntryRecord | null>
   getUnreadCounts: () => Promise<Array<{ id: string; count: number }>>
+  previewFeed: (payload: {
+    url: string
+    feedId?: string
+    allowPublicRsshub?: boolean
+  }) => Promise<unknown>
   createSubscription: (payload: {
     url: string
     view: number
@@ -25,13 +41,31 @@ type RemoteServerDependencies = {
     title?: string
   }) => Promise<unknown>
   deleteSubscription: (subscriptionId: string) => Promise<void>
+  deleteSubscriptionsByTargets: (payload: {
+    ids?: string[]
+    feedIds?: string[]
+    listIds?: string[]
+    inboxIds?: string[]
+  }) => Promise<void>
   updateSubscription: (
     subscriptionId: string,
     payload: { title?: string | null; category?: string | null; view?: number },
   ) => Promise<unknown>
+  batchUpdateSubscriptions: (payload: {
+    feedIds: string[]
+    category?: string | null
+    view?: number
+  }) => Promise<void>
   updateReadStatus: (payload: { entryIds: string[]; read: boolean }) => Promise<void>
   refreshFeed: (feedId: string) => Promise<unknown>
   refreshAllFeeds: () => Promise<unknown>
+  getRsshubConfig: () => Promise<unknown> | unknown
+  setRsshubConfig: (payload: { customUrl?: string }) => Promise<unknown> | unknown
+  precheckRsshub: (payload: { url: string; allowPublicFallback?: boolean }) => Promise<unknown>
+  discover: (path: string, payload: Record<string, unknown>) => Promise<unknown>
+  exportData: () => Promise<unknown>
+  importData: (payload: unknown) => Promise<unknown>
+  renderEntryPdf: (payload: EntryPdfInput) => Promise<Buffer>
   getRemoteIndexHtml: () => Promise<string | null>
   getRemoteAsset: (
     pathname: string,
@@ -81,6 +115,22 @@ const text = (
   response.end(payload)
 }
 
+const binary = (
+  response: ServerResponse,
+  statusCode: number,
+  payload: Buffer,
+  contentType: string,
+  headers?: Record<string, string>,
+) => {
+  response.statusCode = statusCode
+  response.setHeader("Content-Type", contentType)
+  response.setHeader("Content-Length", payload.byteLength)
+  for (const [key, value] of Object.entries(headers ?? {})) {
+    response.setHeader(key, value)
+  }
+  response.end(payload)
+}
+
 const getBaseUrl = (host: string, port: number) => `http://${host}:${port}`
 const readJsonBody = async <T>(request: IncomingMessage): Promise<T> => {
   const chunks: Buffer[] = []
@@ -90,6 +140,19 @@ const readJsonBody = async <T>(request: IncomingMessage): Promise<T> => {
 
   const raw = Buffer.concat(chunks).toString("utf8")
   return JSON.parse(raw) as T
+}
+
+const toEntryPdfInput = (entry: EntryRecord): EntryPdfInput => {
+  const contentHtml = entry.readabilityContent || entry.content || entry.description || ""
+  const publishedAt = entry.publishedAt ? new Date(entry.publishedAt).toLocaleString() : undefined
+
+  return {
+    title: entry.title ?? undefined,
+    contentHtml,
+    author: entry.author ?? undefined,
+    publishedAt,
+    url: entry.url ?? undefined,
+  }
 }
 
 const writeSseEvent = (
@@ -147,6 +210,27 @@ const createRequestHandler =
       return
     }
 
+    if (method === "GET" && url.pathname === "/api/bootstrap") {
+      json(response, 200, { data: await deps.getBootstrap() })
+      return
+    }
+
+    if (method === "GET" && url.pathname === "/api/capabilities") {
+      json(response, 200, { data: await deps.getCapabilities() })
+      return
+    }
+
+    if (method === "GET" && url.pathname === "/api/settings") {
+      json(response, 200, { data: await deps.getSettings() })
+      return
+    }
+
+    if (method === "PATCH" && url.pathname === "/api/settings") {
+      const payload = await readJsonBody<Partial<RemoteSettings>>(request)
+      json(response, 200, { data: await deps.updateSettings(payload) })
+      return
+    }
+
     if (method === "GET" && url.pathname === "/api/entries") {
       const feedId = url.searchParams.get("feedId") || undefined
       const unreadOnly = ["1", "true"].includes(
@@ -157,10 +241,45 @@ const createRequestHandler =
       return
     }
 
+    if (
+      method === "GET" &&
+      url.pathname.startsWith("/api/entries/") &&
+      url.pathname.endsWith("/pdf")
+    ) {
+      const entryId = decodeURIComponent(
+        url.pathname.replace("/api/entries/", "").replace("/pdf", ""),
+      )
+      const entry = await deps.getEntry(entryId)
+      if (!entry) {
+        json(response, 404, { error: "REMOTE_ENTRY_NOT_FOUND" })
+        return
+      }
+      const pdfInput = toEntryPdfInput(entry)
+      if (!pdfInput.contentHtml?.trim()) {
+        json(response, 422, { error: "REMOTE_ENTRY_CONTENT_EMPTY" })
+        return
+      }
+      const buffer = await deps.renderEntryPdf(pdfInput)
+      binary(response, 200, buffer, "application/pdf", {
+        "Content-Disposition": `inline; filename="${entryId}.pdf"`,
+      })
+      return
+    }
+
     if (method === "GET" && url.pathname.startsWith("/api/entries/")) {
       const entryId = decodeURIComponent(url.pathname.replace("/api/entries/", ""))
       const entry = await deps.getEntry(entryId)
       json(response, 200, { data: entry })
+      return
+    }
+
+    if (method === "POST" && url.pathname === "/api/feeds/preview") {
+      const payload = await readJsonBody<{
+        url: string
+        feedId?: string
+        allowPublicRsshub?: boolean
+      }>(request)
+      json(response, 200, { data: await deps.previewFeed(payload) })
       return
     }
 
@@ -179,6 +298,29 @@ const createRequestHandler =
       }>(request)
       const result = await deps.createSubscription(payload)
       json(response, 200, { data: result })
+      return
+    }
+
+    if (method === "PATCH" && url.pathname === "/api/subscriptions") {
+      const payload = await readJsonBody<{
+        feedIds: string[]
+        category?: string | null
+        view?: number
+      }>(request)
+      await deps.batchUpdateSubscriptions(payload)
+      json(response, 200, { ok: true })
+      return
+    }
+
+    if (method === "DELETE" && url.pathname === "/api/subscriptions") {
+      const payload = await readJsonBody<{
+        ids?: string[]
+        feedIds?: string[]
+        listIds?: string[]
+        inboxIds?: string[]
+      }>(request)
+      await deps.deleteSubscriptionsByTargets(payload)
+      json(response, 200, { ok: true })
       return
     }
 
@@ -233,6 +375,41 @@ const createRequestHandler =
       return
     }
 
+    if (method === "GET" && url.pathname === "/api/rsshub/config") {
+      json(response, 200, { data: await deps.getRsshubConfig() })
+      return
+    }
+
+    if (method === "PUT" && url.pathname === "/api/rsshub/config") {
+      const payload = await readJsonBody<{ customUrl?: string }>(request)
+      json(response, 200, { data: await deps.setRsshubConfig(payload) })
+      return
+    }
+
+    if (method === "POST" && url.pathname === "/api/rsshub/precheck") {
+      const payload = await readJsonBody<{ url: string; allowPublicFallback?: boolean }>(request)
+      json(response, 200, { data: await deps.precheckRsshub(payload) })
+      return
+    }
+
+    if (method === "GET" && url.pathname.startsWith("/api/discover/")) {
+      const discoverPath = `/${url.pathname.replace("/api/discover/", "")}`
+      const payload = Object.fromEntries(url.searchParams.entries())
+      json(response, 200, { data: await deps.discover(discoverPath, payload) })
+      return
+    }
+
+    if (method === "GET" && url.pathname === "/api/export") {
+      json(response, 200, { data: await deps.exportData() })
+      return
+    }
+
+    if (method === "POST" && url.pathname === "/api/import") {
+      const payload = await readJsonBody<unknown>(request)
+      json(response, 200, { data: await deps.importData(payload) })
+      return
+    }
+
     json(response, 404, { error: "REMOTE_ROUTE_NOT_FOUND" })
   }
 
@@ -248,6 +425,23 @@ class RemoteServerManagerStatic {
   }
 
   private deps: RemoteServerDependencies = {
+    getCapabilities: () => settingsApplicationService.getCapabilities(),
+    getSettings: () => settingsApplicationService.getSettings(),
+    updateSettings: (payload) => settingsApplicationService.updateSettings(payload),
+    getBootstrap: async () => {
+      const { unreadApplicationService } = await import("~/application/unread/service")
+      const [subscriptions, unread, settings] = await Promise.all([
+        subscriptionApplicationService.listSubscriptions(),
+        unreadApplicationService.listUnreadCounts(),
+        Promise.resolve(settingsApplicationService.getSettings()),
+      ])
+      return {
+        subscriptions,
+        unread,
+        settings,
+        capabilities: settingsApplicationService.getCapabilities(),
+      }
+    },
     getSubscriptions: () => subscriptionApplicationService.listSubscriptions(),
     getEntries: async (options?: { feedId?: string; unreadOnly?: boolean }) => {
       const { entryApplicationService } = await import("~/application/entry/service")
@@ -272,6 +466,11 @@ class RemoteServerManagerStatic {
       this.broadcast("subscriptions.updated", {})
       this.broadcast("entries.updated", {})
     },
+    deleteSubscriptionsByTargets: async (payload) => {
+      await subscriptionApplicationService.deleteSubscriptionsByTargets(payload)
+      this.broadcast("subscriptions.updated", {})
+      this.broadcast("entries.updated", {})
+    },
     updateSubscription: async (subscriptionId, payload) => {
       const result = await subscriptionApplicationService.updateSubscription(
         subscriptionId,
@@ -281,6 +480,12 @@ class RemoteServerManagerStatic {
       this.broadcast("entries.updated", {})
       return result
     },
+    batchUpdateSubscriptions: async (payload) => {
+      await subscriptionApplicationService.batchUpdateSubscriptions(payload)
+      this.broadcast("subscriptions.updated", {})
+      this.broadcast("entries.updated", {})
+    },
+    previewFeed: (payload) => feedApplicationService.previewFeed(payload),
     updateReadStatus: async (payload) => {
       const { entryApplicationService } = await import("~/application/entry/service")
       await entryApplicationService.updateReadStatus(payload)
@@ -301,6 +506,18 @@ class RemoteServerManagerStatic {
       this.broadcast("subscriptions.updated", {})
       return result
     },
+    getRsshubConfig: () => rsshubApplicationService.getConfig(),
+    setRsshubConfig: (payload) => rsshubApplicationService.setConfig(payload),
+    precheckRsshub: (payload) => Promise.resolve(rsshubApplicationService.precheck(payload)),
+    discover: (path, payload) => discoverApplicationService.request(path, payload),
+    exportData: () => importExportApplicationService.exportData(),
+    importData: async (payload) => {
+      const result = await importExportApplicationService.importData(payload)
+      this.broadcast("subscriptions.updated", {})
+      this.broadcast("entries.updated", {})
+      return result
+    },
+    renderEntryPdf: (payload) => pdfApplicationService.renderEntryPdf(payload),
     getRemoteIndexHtml: () => getRemoteClientHtml(),
     getRemoteAsset: (pathname) => getRemoteClientAsset(pathname),
   }
@@ -314,16 +531,34 @@ class RemoteServerManagerStatic {
     const port = options?.port ?? REMOTE_SERVER_DEFAULT_PORT
     this.deps = {
       ...this.deps,
+      ...(options?.getBootstrap ? { getBootstrap: options.getBootstrap } : {}),
+      ...(options?.getCapabilities ? { getCapabilities: options.getCapabilities } : {}),
+      ...(options?.getSettings ? { getSettings: options.getSettings } : {}),
+      ...(options?.updateSettings ? { updateSettings: options.updateSettings } : {}),
       ...(options?.getSubscriptions ? { getSubscriptions: options.getSubscriptions } : {}),
       ...(options?.getEntries ? { getEntries: options.getEntries } : {}),
       ...(options?.getEntry ? { getEntry: options.getEntry } : {}),
       ...(options?.getUnreadCounts ? { getUnreadCounts: options.getUnreadCounts } : {}),
+      ...(options?.previewFeed ? { previewFeed: options.previewFeed } : {}),
       ...(options?.createSubscription ? { createSubscription: options.createSubscription } : {}),
       ...(options?.deleteSubscription ? { deleteSubscription: options.deleteSubscription } : {}),
+      ...(options?.deleteSubscriptionsByTargets
+        ? { deleteSubscriptionsByTargets: options.deleteSubscriptionsByTargets }
+        : {}),
       ...(options?.updateSubscription ? { updateSubscription: options.updateSubscription } : {}),
+      ...(options?.batchUpdateSubscriptions
+        ? { batchUpdateSubscriptions: options.batchUpdateSubscriptions }
+        : {}),
       ...(options?.updateReadStatus ? { updateReadStatus: options.updateReadStatus } : {}),
       ...(options?.refreshFeed ? { refreshFeed: options.refreshFeed } : {}),
       ...(options?.refreshAllFeeds ? { refreshAllFeeds: options.refreshAllFeeds } : {}),
+      ...(options?.getRsshubConfig ? { getRsshubConfig: options.getRsshubConfig } : {}),
+      ...(options?.setRsshubConfig ? { setRsshubConfig: options.setRsshubConfig } : {}),
+      ...(options?.precheckRsshub ? { precheckRsshub: options.precheckRsshub } : {}),
+      ...(options?.discover ? { discover: options.discover } : {}),
+      ...(options?.exportData ? { exportData: options.exportData } : {}),
+      ...(options?.importData ? { importData: options.importData } : {}),
+      ...(options?.renderEntryPdf ? { renderEntryPdf: options.renderEntryPdf } : {}),
       ...(options?.getRemoteIndexHtml ? { getRemoteIndexHtml: options.getRemoteIndexHtml } : {}),
       ...(options?.getRemoteAsset ? { getRemoteAsset: options.getRemoteAsset } : {}),
     }

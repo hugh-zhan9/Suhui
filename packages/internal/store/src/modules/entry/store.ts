@@ -9,8 +9,7 @@ import {
   reconcileHydratedEntry,
   runWithHydrateSource,
 } from "../../hydrate-phases"
-import { getRuntimeEnv } from "../../remote/env"
-import { transformEntryFromApi, type EntryRecord } from "../../remote/transforms"
+import { runtimeClient } from "../../runtime"
 import type { Hydratable, Resetable } from "../../lib/base"
 import { createImmerSetter, createTransaction } from "../../lib/helper"
 import { dbStoreMorph } from "../../morph/db-store"
@@ -537,111 +536,10 @@ class EntryActions implements Hydratable, Resetable {
 
 class EntrySyncServices {
   async fetchEntries(props: FetchEntriesProps) {
-    const { isRemote } = getRuntimeEnv()
-
-    // [Remote Mode] Fetch entries from HTTP API
-    if (isRemote) {
-      return this.fetchEntriesFromRemote(props)
-    }
-
-    // [Local Mode] Query entries from the local SQLite DB via IPC, then cache in store
-    const { feedId, feedIdList, read } = props
-
-    let entries: any[] = []
-
-    if (typeof window !== "undefined" && (window as any).electron?.ipcRenderer) {
-      const ipc = (window as any).electron.ipcRenderer
-      if (feedId) {
-        // feedId may be comma-separated (folder view)
-        const feedIds = Array.from(
-          new Set(
-            (feedId.includes(",") ? feedId.split(",") : [feedId])
-              .map((id) => id.trim())
-              .filter(Boolean),
-          ),
-        )
-        const results = await Promise.all(
-          feedIds.map((id: string) => ipc.invoke("db.getEntries", id)),
-        )
-        entries = results.flat()
-      } else if (feedIdList && feedIdList.length > 0) {
-        const uniqueFeedIds = Array.from(new Set(feedIdList))
-        const results = await Promise.all(
-          uniqueFeedIds.map((id: string) => ipc.invoke("db.getEntries", id)),
-        )
-        entries = results.flat()
-      } else {
-        // All entries (e.g., "All" view)
-        entries = await ipc.invoke("db.getEntries")
-      }
-    } else {
-      // Web fallback: read from in-memory store
-      const allEntries = Object.values(get().data) as any[]
-      if (feedId) {
-        const feedIds = new Set(feedId.split(","))
-        entries = allEntries.filter((e) => feedIds.has(e.feedId))
-      } else if (feedIdList && feedIdList.length > 0) {
-        const feedSet = new Set(feedIdList)
-        entries = allEntries.filter((e) => feedSet.has(e.feedId))
-      } else {
-        entries = allEntries
-      }
-    }
-
-    // Apply read/unread filter when explicitly requested (e.g. unreadOnly -> read=false).
-    if (typeof read === "boolean") {
-      entries = entries.filter((entry) => {
-        const rawRead = entry?.read
-        const normalizedRead =
-          typeof rawRead === "boolean" ? rawRead : rawRead === 1 || rawRead === "1"
-        return normalizedRead === read
-      })
-    }
-
-    // Guard against duplicate records when the same feed is requested multiple times.
-    const entryById = new Map<string, any>()
-    for (const entry of entries) {
-      const entryId = typeof entry?.id === "string" ? entry.id : undefined
-      if (!entryId) continue
-      if (!entryById.has(entryId)) {
-        entryById.set(entryId, entry)
-      }
-    }
-    entries = Array.from(entryById.values())
-
-    // Sort by publishedAt descending (raw rows may have Date or ISO string)
-    entries.sort((a, b) => {
-      const dateA =
-        a.publishedAt instanceof Date
-          ? a.publishedAt.getTime()
-          : new Date(a.publishedAt ?? 0).getTime()
-      const dateB =
-        b.publishedAt instanceof Date
-          ? b.publishedAt.getTime()
-          : new Date(b.publishedAt ?? 0).getTime()
-      return dateB - dateA
+    const entryModels = await runtimeClient.entries.list({
+      ...props,
+      localFallbackEntries: Object.values(get().data),
     })
-
-    // Apply cursor-based pagination: skip entries on or after the cursor date
-    // pageParam is the publishedAt ISO string of the LAST entry on the previous page
-    const { pageParam, limit } = props as any
-    if (pageParam) {
-      const cursorTime = new Date(pageParam).getTime()
-      entries = entries.filter((e) => {
-        const t =
-          e.publishedAt instanceof Date
-            ? e.publishedAt.getTime()
-            : new Date(e.publishedAt ?? 0).getTime()
-        return t < cursorTime
-      })
-    }
-
-    // Apply page size limit (default 20)
-    const pageSize = limit ?? 20
-    entries = entries.slice(0, pageSize)
-
-    // CRITICAL FIX: Convert raw DB rows to EntryModel before upserting into Zustand store
-    const entryModels = entries.map((e: any) => dbStoreMorph.toEntryModel(e))
 
     // Load into Zustand store for detail-view lookups
     if (entryModels.length > 0) {
@@ -656,7 +554,7 @@ class EntrySyncServices {
       "[Antigravity] fetchEntries returning page:",
       entryModels.length,
       "cursor:",
-      pageParam ?? "initial",
+      props.pageParam ?? "initial",
     )
 
     return {
@@ -664,150 +562,19 @@ class EntrySyncServices {
     } as any
   }
 
-  /**
-   * [Remote Mode] Fetch entries from HTTP API
-   */
-  private async fetchEntriesFromRemote(props: FetchEntriesProps) {
-    const { feedId, feedIdList, read, limit, pageParam } = props
-
-    const params = new URLSearchParams()
-
-    // Handle feedId (may be comma-separated for folder view)
-    if (feedId) {
-      // For folder view, we fetch all feeds and filter client-side
-      // API only supports single feedId, so we use the first one or fetch all
-      const feedIds = feedId.includes(",")
-        ? feedId
-            .split(",")
-            .map((id) => id.trim())
-            .filter(Boolean)
-        : [feedId]
-
-      if (feedIds.length === 1 && feedIds[0]) {
-        params.set("feedId", feedIds[0])
-      }
-      // For multiple feedIds, we'll handle client-side filtering below
-    } else if (feedIdList && feedIdList.length > 0) {
-      if (feedIdList.length === 1 && feedIdList[0]) {
-        params.set("feedId", feedIdList[0])
-      }
-    }
-
-    // Handle read/unread filter
-    if (read === false) {
-      params.set("unreadOnly", "1")
-    }
-
-    const url = `/api/entries${params.toString() ? `?${params.toString()}` : ""}`
-
-    try {
-      const response = await fetch(url)
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`)
-      }
-
-      const { data } = (await response.json()) as { data: EntryRecord[] }
-      let entries = data || []
-
-      // Client-side filtering for multiple feedIds (folder view)
-      if (feedId && feedId.includes(",")) {
-        const feedIdSet = new Set(
-          feedId
-            .split(",")
-            .map((id) => id.trim())
-            .filter(Boolean),
-        )
-        entries = entries.filter((e) => e.feedId && feedIdSet.has(e.feedId))
-      } else if (feedIdList && feedIdList.length > 1) {
-        const feedIdSet = new Set(feedIdList)
-        entries = entries.filter((e) => e.feedId && feedIdSet.has(e.feedId))
-      }
-
-      // Sort by publishedAt descending
-      entries.sort((a, b) => {
-        const publishedCompare = (b.publishedAt ?? 0) - (a.publishedAt ?? 0)
-        if (publishedCompare !== 0) return publishedCompare
-        return (b.insertedAt ?? 0) - (a.insertedAt ?? 0)
-      })
-
-      // Apply cursor-based pagination
-      if (pageParam) {
-        const cursorTime = new Date(pageParam).getTime()
-        entries = entries.filter((e) => {
-          const t = e.publishedAt ?? 0
-          return t < cursorTime
-        })
-      }
-
-      // Apply page size limit (default 20)
-      const pageSize = limit ?? 20
-      entries = entries.slice(0, pageSize)
-
-      // Convert to EntryModel
-      const entryModels = entries.map(transformEntryFromApi)
-
-      // Load into Zustand store
-      if (entryModels.length > 0) {
-        entryActions.upsertManyInSession(entryModels)
-      }
-
-      console.info(
-        "[Remote] fetchEntriesFromRemote returning page:",
-        entryModels.length,
-        "cursor:",
-        pageParam ?? "initial",
-      )
-
-      return {
-        data: entryModels.map((e) => ({ entries: e, feeds: { id: e.feedId, type: "feed" } })),
-      } as any
-    } catch (error) {
-      console.error("[Remote] fetchEntriesFromRemote error:", error)
-      throw error
-    }
-  }
-
   async fetchEntryDetail(entryId: EntryId | undefined, _isInbox?: boolean) {
     if (!entryId) return null
-
-    const { isRemote } = getRuntimeEnv()
 
     // In remote mode, list queries often cache partial records, so fetch the full
     // detail when正文/可读内容 still missing.
     const cached = getEntry(entryId)
     const hasFullContent = !!cached && !!(cached.content || cached.readabilityContent)
-    if (!isRemote && cached) return cached
-    if (isRemote && cached && hasFullContent) return cached
+    if (cached && hasFullContent) return cached
 
-    // [Remote Mode] Fetch from HTTP API
-    if (isRemote) {
-      try {
-        const response = await fetch(`/api/entries/${encodeURIComponent(entryId)}`)
-        if (!response.ok) {
-          if (response.status === 404) return null
-          throw new Error(`HTTP ${response.status}`)
-        }
-        const { data } = (await response.json()) as { data: EntryRecord | null }
-        if (data) {
-          const entryModel = transformEntryFromApi(data)
-          entryActions.upsertManyInSession([entryModel])
-          return entryModel
-        }
-        return null
-      } catch (error) {
-        console.error("[Remote] fetchEntryDetail error:", error)
-        return null
-      }
-    }
-
-    // Fallback: query DB directly via IPC
-    if (typeof window !== "undefined" && (window as any).electron?.ipcRenderer) {
-      const ipc = (window as any).electron.ipcRenderer
-      const entry = await ipc.invoke("db.getEntry", entryId)
-      if (entry) {
-        entryActions.upsertManyInSession([entry])
-        return entry
-      }
+    const entry = await runtimeClient.entries.getDetail(entryId)
+    if (entry) {
+      entryActions.upsertManyInSession([entry])
+      return entry
     }
 
     return null

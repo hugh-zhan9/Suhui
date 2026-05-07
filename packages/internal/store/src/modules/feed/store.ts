@@ -6,10 +6,10 @@ import { api } from "../../context"
 import { markFeedHydrateDirty, reconcileHydratedFeed } from "../../hydrate-phases"
 import type { Hydratable, Resetable } from "../../lib/base"
 import { createImmerSetter, createTransaction, createZustandStore } from "../../lib/helper"
+import { runtimeClient } from "../../runtime"
 import { useEntryStore } from "../entry/base"
 import { shouldTreatFeedAsRemoteBiz } from "./local-feed"
 import { whoami } from "../user/getters"
-import { shouldUseElectronLocalPreview } from "./local-preview"
 import type { FeedModel } from "./types"
 
 interface FeedState {
@@ -220,125 +220,24 @@ class FeedSyncServices {
       return null
     }
 
-    // [Local Mode] Prefer Electron IPC local preview; fallback to web proxy.
-    if (
-      shouldUseElectronLocalPreview(typeof window === "undefined" ? undefined : window, feedUrl)
-    ) {
-      let data: any
-      try {
-        data = await (window as any).electron.ipcRenderer.invoke("db.previewFeed", {
-          url: feedUrl,
-          feedId: id && isFeedId ? id : undefined,
-        })
-      } catch (error) {
-        const reason = error instanceof Error ? error.message : String(error)
-        console.error("[feedSyncServices.fetchFeedById] db.previewFeed failed", {
-          feedUrl,
-          feedId: id,
-          reason,
-        })
-        throw new Error(`本地预览订阅失败: ${reason}`)
+    try {
+      const data = await runtimeClient.feeds.preview({
+        url: feedUrl,
+        feedId: id && isFeedId ? id : undefined,
+      })
+      if (!(data as any)?.feed) {
+        throw new Error("Failed to preview feed via runtime service")
       }
-      if (!data?.feed) {
-        throw new Error("Failed to preview feed via local database")
-      }
-      feedActions.upsertMany([data.feed])
+      feedActions.upsertManyInSession([(data as any).feed])
       return data
-    }
-
-    const proxyUrl = `/api/rss-proxy?url=${encodeURIComponent(feedUrl)}`
-    const response = await fetch(proxyUrl)
-    if (!response.ok) {
-      throw new Error(`Failed to fetch feed: ${response.status}`)
-    }
-    const xmlText = await response.text()
-    const parser = new DOMParser()
-    const xml = parser.parseFromString(xmlText, "text/xml")
-
-    // Parse RSS or Atom
-    const channel = xml.querySelector("rss > channel")
-    const atomFeed = xml.querySelector("feed")
-    const feedTitle =
-      channel?.querySelector("title")?.textContent?.trim() ||
-      atomFeed?.querySelector("title")?.textContent?.trim() ||
-      "Untitled Feed"
-    const siteUrl =
-      channel?.querySelector("link")?.textContent?.trim() ||
-      atomFeed?.querySelector("link[rel='alternate']")?.getAttribute("href") ||
-      ""
-    const description =
-      channel?.querySelector("description")?.textContent?.trim() ||
-      atomFeed?.querySelector("subtitle")?.textContent?.trim() ||
-      ""
-
-    const nonce = Math.random().toString(36).slice(2, 15)
-    const feedId = id && isFeedId ? id : nonce
-
-    const finalData: FeedModel = {
-      type: "feed",
-      id: feedId,
-      title: feedTitle,
-      url: feedUrl,
-      description: description || null,
-      image: null,
-      errorAt: null,
-      siteUrl: siteUrl || null,
-      ownerUserId: null,
-      errorMessage: null,
-      subscriptionCount: null,
-      updatesPerWeek: null,
-      latestEntryPublishedAt: null,
-      tipUserIds: null,
-      updatedAt: null,
-    }
-    if (!id || !isFeedId) {
-      ;(finalData as any)["nonce"] = nonce
-    }
-    feedActions.upsertMany([finalData])
-
-    // Parse entries for preview
-    const itemEls = channel
-      ? Array.from(channel.querySelectorAll("item"))
-      : Array.from(atomFeed?.querySelectorAll("entry") || [])
-    const entries = itemEls.slice(0, 10).map((el) => {
-      const entryId = Math.random().toString(36).slice(2, 15)
-      const entryTitle = el.querySelector("title")?.textContent?.trim() || "Untitled"
-      const entryLink =
-        el.querySelector("link")?.textContent?.trim() ||
-        el.querySelector("link")?.getAttribute("href") ||
-        ""
-      const entryDesc =
-        el.querySelector("description")?.textContent?.trim() ||
-        el.querySelector("summary")?.textContent?.trim() ||
-        el.querySelector("content")?.textContent?.trim() ||
-        ""
-      const pubDateRaw =
-        el.querySelector("pubDate")?.textContent?.trim() ||
-        el.querySelector("published")?.textContent?.trim() ||
-        el.querySelector("updated")?.textContent?.trim() ||
-        ""
-      const pubDate = pubDateRaw ? new Date(pubDateRaw) : new Date()
-      return {
-        id: entryId,
-        title: entryTitle,
-        url: entryLink,
-        description: entryDesc,
-        guid: el.querySelector("guid")?.textContent?.trim() || entryId,
-        publishedAt: pubDate.toISOString(),
-        feedId,
-      }
-    })
-
-    return {
-      feed: finalData,
-      entries,
-      subscription: undefined,
-      analytics: {
-        updatesPerWeek: null,
-        subscriptionCount: null,
-        latestEntryPublishedAt: entries[0]?.publishedAt || null,
-        view: 1,
-      },
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error)
+      console.error("[feedSyncServices.fetchFeedById] preview failed", {
+        feedUrl,
+        feedId: id,
+        reason,
+      })
+      throw new Error(`本地预览订阅失败: ${reason}`)
     }
   }
 

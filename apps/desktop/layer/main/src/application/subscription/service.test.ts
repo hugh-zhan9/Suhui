@@ -24,6 +24,24 @@ vi.mock("@suhui/database/services/inbox", () => ({
   },
 }))
 
+vi.mock("~/manager/db", () => ({
+  DBManager: {
+    getDB: vi.fn(),
+  },
+}))
+
+vi.mock("~/manager/feed-refresh", () => ({
+  FeedRefreshService: {
+    buildPreviewData: vi.fn(),
+  },
+}))
+
+vi.mock("~/manager/sync-logger", () => ({
+  syncLogger: {
+    record: vi.fn(),
+  },
+}))
+
 import { FeedService } from "@suhui/database/services/feed"
 import { InboxService } from "@suhui/database/services/inbox"
 import { ListService } from "@suhui/database/services/list"

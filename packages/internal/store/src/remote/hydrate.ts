@@ -7,17 +7,10 @@ import { feedActions } from "../modules/feed/store"
 import type { UnreadSchema } from "../../../database/src/schemas/types"
 import { subscriptionActions } from "../modules/subscription/store"
 import { unreadActions } from "../modules/unread/store"
+import { runtimeClient } from "../runtime"
 import { getRuntimeEnv } from "./env"
 import { remoteSSEHandler } from "./sse-handler"
-import {
-  extractFeedsFromSubscriptions,
-  transformEntriesFromApi,
-  transformSubscriptionsFromApi,
-  transformUnreadsFromApi,
-  type SubscriptionRecord,
-  type UnreadRecord,
-  type EntryRecord,
-} from "./transforms"
+import { transformUnreadsFromApi } from "./transforms"
 
 export type RemoteHydrateStatus = {
   phase: "idle" | "loading" | "ready" | "error"
@@ -50,37 +43,24 @@ export const hydrateFromRemote = async (options?: RemoteHydrateOptions): Promise
   options?.onStatusChange?.(status)
 
   try {
-    // 并行加载订阅和未读数据
-    const [subscriptionsRes, unreadRes] = await Promise.all([
-      fetch("/api/subscriptions"),
-      fetch("/api/unread"),
-    ])
-
-    if (!subscriptionsRes.ok) {
-      throw new Error(`Failed to fetch subscriptions: HTTP ${subscriptionsRes.status}`)
-    }
-    if (!unreadRes.ok) {
-      throw new Error(`Failed to fetch unread: HTTP ${unreadRes.status}`)
-    }
-
-    const [subscriptionsData, unreadData] = await Promise.all([
-      subscriptionsRes.json() as Promise<{ data: SubscriptionRecord[] }>,
-      unreadRes.json() as Promise<{ data: UnreadRecord[] }>,
+    const [subscriptionsResult, unreadData] = await Promise.all([
+      runtimeClient.subscriptions.list(undefined, { subscriptions: [], feeds: [] }),
+      runtimeClient.unread.list(),
     ])
 
     // 转换并填充订阅
-    const subscriptions = transformSubscriptionsFromApi(subscriptionsData.data || [])
+    const subscriptions = subscriptionsResult.subscriptions
     subscriptionActions.replaceManyInSession(subscriptions)
     status.subscriptionsLoaded = subscriptions.length
 
     // 提取并填充 Feed 信息
-    const feeds = extractFeedsFromSubscriptions(subscriptionsData.data || [])
+    const feeds = subscriptionsResult.feeds
     if (feeds.length > 0) {
       feedActions.upsertManyInSession(feeds as any)
     }
 
     // 转换并填充未读数据
-    const unreads = transformUnreadsFromApi(unreadData.data || [])
+    const unreads = transformUnreadsFromApi(unreadData || [])
     unreadActions.upsertManyInSession(unreads as unknown as UnreadSchema[])
     status.unreadLoaded = unreads.length
 
@@ -113,11 +93,7 @@ export const hydrateFromRemote = async (options?: RemoteHydrateOptions): Promise
  */
 const loadInitialEntries = async (feedId: string): Promise<void> => {
   try {
-    const response = await fetch(`/api/entries?feedId=${encodeURIComponent(feedId)}`)
-    if (!response.ok) return
-
-    const { data } = (await response.json()) as { data: EntryRecord[] }
-    const entries = transformEntriesFromApi(data || [])
+    const entries = await runtimeClient.entries.list({ feedId })
 
     // 动态导入 entryActions 避免循环依赖
     const { entryActions } = await import("../modules/entry/store")

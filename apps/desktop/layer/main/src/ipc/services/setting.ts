@@ -1,10 +1,11 @@
 import { createRequire } from "node:module"
 
-import { app, nativeTheme } from "electron"
+import { app } from "electron"
 import type { IpcContext } from "electron-ipc-decorator"
 import { IpcMethod, IpcService } from "electron-ipc-decorator"
 
 import { WindowManager } from "~/manager/window"
+import { settingsApplicationService } from "~/application/settings/service"
 
 import { setProxyConfig, updateProxy } from "../../lib/proxy"
 import { store } from "../../lib/store"
@@ -45,12 +46,12 @@ export class SettingService extends IpcService {
 
   @IpcMethod()
   getAppearance(_context: IpcContext): "light" | "dark" | "system" {
-    return nativeTheme.themeSource
+    return settingsApplicationService.getSettings().appearance
   }
 
   @IpcMethod()
   setAppearance(_context: IpcContext, appearance: "light" | "dark" | "system"): void {
-    nativeTheme.themeSource = appearance
+    settingsApplicationService.updateSettings({ appearance })
   }
 
   @IpcMethod()
@@ -83,16 +84,11 @@ export class SettingService extends IpcService {
 
   @IpcMethod()
   getRsshubCustomUrl(_context: IpcContext): string {
-    return store.get("rsshubCustomUrl") ?? ""
+    return settingsApplicationService.getRsshubCustomUrl()
   }
 
   @IpcMethod()
   setRsshubCustomUrl(_context: IpcContext, url: string): void {
-    const trimmed = (url || "").trim()
-    if (!trimmed) {
-      store.delete("rsshubCustomUrl")
-      return
-    }
-    store.set("rsshubCustomUrl", trimmed)
+    settingsApplicationService.setRsshubCustomUrl(url)
   }
 }
