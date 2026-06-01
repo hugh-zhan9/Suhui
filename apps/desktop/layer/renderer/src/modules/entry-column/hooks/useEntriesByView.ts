@@ -22,7 +22,9 @@ import { ROUTE_FEED_PENDING } from "~/constants/app"
 import { useRouteParams } from "~/hooks/biz/useRouteParams"
 
 import {
+  getPendingActiveEntryId,
   normalizeFeedIdForActiveSubscription,
+  setPendingActiveEntryId,
   shouldIncludeEntryInUnreadOnly,
 } from "./query-selection"
 import { dedupeEntryIdsPreserveOrder } from "./entry-id-utils"
@@ -71,6 +73,12 @@ const useLocalEntries = (): UseEntriesReturn => {
 
   const showEntriesByView =
     !activeFeedId && folderIds.length === 0 && !isCollection && !inboxId && !listId
+  const pendingActiveEntryId = getPendingActiveEntryId()
+
+  useEffect(() => {
+    if (!activeEntryId || pendingActiveEntryId !== activeEntryId) return
+    setPendingActiveEntryId(null)
+  }, [activeEntryId, pendingActiveEntryId])
 
   const allEntries = useEntryStore(
     useCallback(
@@ -98,6 +106,7 @@ const useLocalEntries = (): UseEntriesReturn => {
                   read: Boolean(entry.read),
                   entryId: entry.id,
                   activeEntryId,
+                  pendingActiveEntryId,
                 })
               ) {
                 return null
@@ -118,6 +127,7 @@ const useLocalEntries = (): UseEntriesReturn => {
         showEntriesByView,
         unreadOnly,
         activeEntryId,
+        pendingActiveEntryId,
       ],
     ),
   )

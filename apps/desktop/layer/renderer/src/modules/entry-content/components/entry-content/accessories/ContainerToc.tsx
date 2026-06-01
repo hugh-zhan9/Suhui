@@ -6,7 +6,7 @@ import { useScrollViewElement } from "@suhui/components/ui/scroll-area/hooks.js"
 import { springScrollTo } from "@suhui/utils/scroller"
 import { cn } from "@suhui/utils/utils"
 import { useStore } from "jotai"
-import { memo, useEffect, useMemo, useState } from "react"
+import { memo, useEffect, useState } from "react"
 
 import { setAIPanelVisibility } from "~/atoms/settings/ai"
 import type { TocRef } from "~/components/ui/markdown/components/Toc"
@@ -19,30 +19,47 @@ const useReadPercent = () => {
   const { h } = useWrappedElementSize()
 
   const scrollElement = useScrollViewElement()
-  const [scrollTop, setScrollTop] = useState(0)
-
-  useEffect(() => {
-    const handler = () => {
-      if (scrollElement) {
-        setScrollTop(scrollElement.scrollTop)
-      }
-    }
-    handler()
-    scrollElement?.addEventListener("scroll", handler)
-    return () => {
-      scrollElement?.removeEventListener("scroll", handler)
-    }
-  }, [scrollElement])
+  const [readState, setReadState] = useState({ percent: 0, scrollTop: 0 })
 
   const store = useStore()
-  const readPercent = useMemo(() => {
-    const winHeight = getViewport(store).h
-    const deltaHeight = Math.min(scrollTop, winHeight)
+  useEffect(() => {
+    if (!scrollElement) return
 
-    return Math.floor(Math.min(Math.max(0, ((scrollTop - y + deltaHeight) / h) * 100), 100)) || 0
-  }, [store, scrollTop, h])
+    let frame = 0
+    let lastPercent = -1
+    let lastScrollTop = -1
 
-  return [readPercent, scrollTop]
+    const update = () => {
+      frame = 0
+      const scrollTop = scrollElement.scrollTop
+      const winHeight = getViewport(store).h
+      const deltaHeight = Math.min(scrollTop, winHeight)
+      const percent =
+        Math.floor(Math.min(Math.max(0, ((scrollTop - y + deltaHeight) / h) * 100), 100)) || 0
+
+      if (percent === lastPercent && scrollTop === lastScrollTop) return
+
+      lastPercent = percent
+      lastScrollTop = scrollTop
+      setReadState({ percent, scrollTop })
+    }
+
+    const handler = () => {
+      if (frame) return
+      frame = requestAnimationFrame(update)
+    }
+
+    update()
+    scrollElement.addEventListener("scroll", handler, { passive: true })
+    return () => {
+      scrollElement.removeEventListener("scroll", handler)
+      if (frame) {
+        cancelAnimationFrame(frame)
+      }
+    }
+  }, [h, scrollElement, store])
+
+  return [readState.percent, readState.scrollTop]
 }
 
 const BackTopIndicator: Component = memo(({ className }) => {

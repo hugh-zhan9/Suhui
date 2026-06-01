@@ -12,6 +12,7 @@ import { titleCase } from "title-case"
 import { useShallow } from "zustand/shallow"
 
 import { useShowAITranslation } from "~/atoms/ai-translation"
+import { useEntryIsInReadability } from "~/atoms/readability"
 import { useShowSourceContent } from "~/atoms/source-content"
 import { getGeneralSettings, useActionLanguage } from "~/atoms/settings/general"
 import { useUISettingKey } from "~/atoms/settings/ui"
@@ -29,7 +30,10 @@ import { FeedIcon } from "~/modules/feed/feed-icon"
 import { getPreferredTitle } from "~/store/feed/hooks"
 
 import { EntryTranslation } from "../../entry-column/translation"
-import { shouldShowOriginalActionButton } from "./entry-original-action"
+import {
+  shouldShowOriginalActionButton,
+  shouldShowReadabilityActionButton,
+} from "./entry-original-action"
 import { EntryReadHistory } from "./entry-read-history"
 
 interface EntryLinkProps {
@@ -108,6 +112,7 @@ export const EntryTitle = ({
 
   const dateFormat = useUISettingKey("dateFormat")
   const showSourceContent = useShowSourceContent()
+  const isInReadability = useEntryIsInReadability(entryId)
 
   const navigateEntry = useNavigateEntry()
   const { view, entryId: routeEntryId } = useRouteParams()
@@ -118,10 +123,17 @@ export const EntryTitle = ({
   const toggleSourceContent = runCmdFn(COMMAND_ID.entry.viewSourceContent, [
     { entryId, siteUrl: feed?.siteUrl },
   ])
+  const toggleReadability = runCmdFn(COMMAND_ID.entry.readability, [
+    { entryId, entryUrl: populatedFullHref ?? "" },
+  ])
   const exportView = subscription?.view ?? view
   const isCurrentEntryInRoute = routeEntryId === entryId
   const canShowExportAsPDF = isCurrentEntryInRoute && isPDFExportSupportedView(exportView)
   const canShowOriginalAction = shouldShowOriginalActionButton({
+    showOriginalAction,
+    url: populatedFullHref,
+  })
+  const canShowReadabilityAction = shouldShowReadabilityActionButton({
     showOriginalAction,
     url: populatedFullHref,
   })
@@ -210,6 +222,14 @@ export const EntryTitle = ({
               onClick={toggleRead}
               id={`${entryId}/${COMMAND_ID.entry.read}/detail-title`}
             />
+            {canShowReadabilityAction && (
+              <CommandActionButton
+                commandId={COMMAND_ID.entry.readability}
+                active={isInReadability}
+                onClick={toggleReadability}
+                id={`${entryId}/${COMMAND_ID.entry.readability}/detail-title`}
+              />
+            )}
             {canShowOriginalAction && (
               <CommandActionButton
                 commandId={COMMAND_ID.entry.viewSourceContent}

@@ -25,6 +25,19 @@ describe("query selection unread filter", () => {
     ).toBe(true)
   })
 
+  it("Unread only 下应保留正在切换为激活态的已读文章", () => {
+    expect(
+      querySelection.shouldIncludeEntryInUnreadOnly?.({
+        isCollection: false,
+        unreadOnly: true,
+        entryId: "entry_1",
+        activeEntryId: "entry_2",
+        pendingActiveEntryId: "entry_1",
+        read: true,
+      }),
+    ).toBe(true)
+  })
+
   it("切换到别的文章后，旧的已读文章应从未读列表消失", () => {
     expect(
       querySelection.shouldIncludeEntryInUnreadOnly?.({

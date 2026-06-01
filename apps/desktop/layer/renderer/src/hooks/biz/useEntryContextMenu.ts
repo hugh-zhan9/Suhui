@@ -6,9 +6,10 @@ import {
   MENU_ITEM_SEPARATOR,
   MenuItemSeparator,
   MenuItemText,
+  type MenuItemInput,
   useShowContextMenu,
 } from "~/atoms/context-menu"
-import { HIDE_ACTIONS_IN_ENTRY_CONTEXT_MENU, useEntryActions } from "~/hooks/biz/useEntryActions"
+import { HIDE_ACTIONS_IN_ENTRY_CONTEXT_MENU } from "~/hooks/biz/useEntryActions"
 import { useFeedActions } from "~/hooks/biz/useFeedActions"
 import { useContextMenu } from "~/hooks/common/useContextMenu"
 import { copyToClipboard } from "~/lib/clipboard"
@@ -17,15 +18,17 @@ export function useEntryContextMenu({
   entryId,
   view,
   feedId,
+  actionConfigs: providedActionConfigs,
 }: {
   entryId: string
   view: FeedViewType
   feedId: string
+  actionConfigs?: MenuItemInput[]
 }) {
   const { t } = useTranslation("common")
   const showContextMenu = useShowContextMenu()
 
-  const actionConfigs = useEntryActions({ entryId, view })
+  const actionConfigs = providedActionConfigs ?? []
   const feedItems = useFeedActions({ feedId, view, type: "entryList" })
 
   const [isContextMenuOpen, setIsContextMenuOpen] = useState(false)

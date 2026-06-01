@@ -43,7 +43,7 @@ export const useEntryContent = (entryId: string) => {
     const { inboxHandle, content, readabilityContent } = state
     return { inboxId: inboxHandle, content, readabilityContent }
   })
-  const { error, data, isPending } = usePrefetchEntryDetail(entryId)
+  const { error, data, isPending, isFetching } = usePrefetchEntryDetail(entryId)
 
   const isInReadabilityMode = useEntryIsInReadability(entryId)
   const isReadabilitySuccess = useEntryIsInReadabilitySuccess(entryId)
@@ -78,7 +78,7 @@ export const useEntryContent = (entryId: string) => {
     return {
       content,
       error,
-      isPending,
+      isPending: isPending || (isFetching && !content),
     }
   }, [
     contentTranslated?.content,
@@ -86,6 +86,7 @@ export const useEntryContent = (entryId: string) => {
     data?.content,
     entry?.content,
     error,
+    isFetching,
     isInReadabilityMode,
     isPending,
     entry?.readabilityContent,

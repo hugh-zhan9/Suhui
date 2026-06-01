@@ -46,14 +46,24 @@ export const shouldIncludeEntryInUnreadOnly = ({
   read,
   entryId,
   activeEntryId,
+  pendingActiveEntryId,
 }: {
   isCollection: boolean
   unreadOnly: boolean
   read: boolean
   entryId: string
   activeEntryId?: string
+  pendingActiveEntryId?: string | null
 }) => {
   if (!shouldFilterUnreadEntries({ isCollection, unreadOnly })) return true
   if (!read) return true
-  return entryId === activeEntryId
+  return entryId === activeEntryId || entryId === pendingActiveEntryId
 }
+
+let pendingActiveEntryId: string | null = null
+
+export const setPendingActiveEntryId = (entryId: string | null) => {
+  pendingActiveEntryId = entryId
+}
+
+export const getPendingActiveEntryId = () => pendingActiveEntryId

@@ -6,29 +6,22 @@ import { FeedViewType } from "@suhui/constants"
 import { useEntry } from "@suhui/store/entry/hooks"
 import { unreadSyncService } from "@suhui/store/unread/store"
 import { cn } from "@suhui/utils/utils"
-import { AnimatePresence } from "motion/react"
 import type { FC, MouseEvent, PropsWithChildren, TouchEvent } from "react"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { memo, useCallback, useMemo } from "react"
 import { NavLink } from "react-router"
 import { useDebounceCallback } from "usehooks-ts"
 
 import { useGeneralSettingKey } from "~/atoms/settings/general"
 import { FocusablePresets } from "~/components/common/Focusable"
-import { CommandActionButton } from "~/components/ui/button/CommandActionButton"
 import { useEntryIsRead } from "~/hooks/biz/useAsRead"
 import { useContextMenuActionShortCutTrigger } from "~/hooks/biz/useContextMenuActionShortCutTrigger"
-import {
-  EntryActionMenuItem,
-  HIDE_ACTIONS_IN_ENTRY_TOOLBAR_ACTIONS,
-  useEntryActions,
-  useSortedEntryActions,
-} from "~/hooks/biz/useEntryActions"
+import { useEntryActions } from "~/hooks/biz/useEntryActions"
 import { useEntryContextMenu } from "~/hooks/biz/useEntryContextMenu"
 import { getNavigateEntryPath, useNavigateEntry } from "~/hooks/biz/useNavigateEntry"
-import { getRouteParams, useRouteParams, useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
+import { getRouteParams, useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
 import { useShowEntryDetailsColumn } from "~/hooks/biz/useShowEntryDetailsColumn"
 import { useFeedSafeUrl } from "~/hooks/common/useFeedSafeUrl"
-import { useRequireLogin } from "~/hooks/common/useRequireLogin"
+import { setPendingActiveEntryId } from "../hooks/query-selection"
 
 export const EntryItemWrapper: FC<
   {
@@ -56,7 +49,6 @@ export const EntryItemWrapper: FC<
   const asRead = useEntryIsRead(entryId)
   const hoverMarkUnread = useGeneralSettingKey("hoverMarkUnread")
 
-  const [showAction, setShowAction] = useState(false)
   const handleMouseEnterMarkRead = useDebounceCallback(
     () => {
       if (!hoverMarkUnread) return
@@ -74,32 +66,14 @@ export const EntryItemWrapper: FC<
 
   const handleMouseEnter = useMemo(() => {
     return () => {
-      setShowAction(true)
       handleMouseEnterMarkRead()
     }
   }, [handleMouseEnterMarkRead])
   const handleMouseLeave = useMemo(() => {
-    return (e: React.MouseEvent) => {
+    return () => {
       handleMouseEnterMarkRead.cancel()
-      // If the mouse is over the action bar, don't hide the action bar
-      const { relatedTarget, currentTarget } = e
-      if (relatedTarget && relatedTarget instanceof Node && currentTarget.contains(relatedTarget)) {
-        return
-      }
-      setShowAction(false)
     }
   }, [handleMouseEnterMarkRead])
-
-  const isDropdownMenuOpen = useGlobalFocusableScopeSelector(
-    FocusablePresets.isNotFloatingLayerScope,
-  )
-
-  useEffect(() => {
-    // Hide the action bar when dropdown menu is open and click outside
-    if (isDropdownMenuOpen) {
-      setShowAction(false)
-    }
-  }, [isDropdownMenuOpen])
 
   const navigate = useNavigateEntry()
   const navigationPath = useMemo(() => {
@@ -129,18 +103,18 @@ export const EntryItemWrapper: FC<
       e.preventDefault()
       e.stopPropagation()
 
-      if (entry?.id) {
-        unreadSyncService.markRead(entry.id)
-      }
-
       const shouldNavigate = getRouteParams().entryId !== entry?.id
 
       if (!shouldNavigate) return
       if (!entry?.id) return
 
+      setPendingActiveEntryId(entry.id)
       navigate({
         view,
         entryId: entry.id,
+      })
+      queueMicrotask(() => {
+        void unreadSyncService.markRead(entry.id)
       })
     },
     [entry?.id, navigate, view],
@@ -149,6 +123,7 @@ export const EntryItemWrapper: FC<
     entryId,
     view,
     feedId: entry?.feedId || entry?.inboxId || "",
+    actionConfigs,
   })
 
   const isWide = !showEntryDetailsColumn
@@ -160,7 +135,7 @@ export const EntryItemWrapper: FC<
       <Link
         to={navigationPath}
         className={cn(
-          "relative block cursor-button overflow-visible duration-200 hover:bg-theme-item-hover",
+          "group/entry-item relative block cursor-button overflow-visible duration-150 hover:bg-theme-item-hover",
           !isWide ? "rounded-none @[650px]:rounded-md" : "rounded-md",
           isAll && "!rounded-none",
           (isActive || isContextMenuOpen) && "!bg-theme-item-active",
@@ -174,69 +149,57 @@ export const EntryItemWrapper: FC<
         {...(!isMobile ? { onTouchStart: handleClick } : {})}
       >
         {children}
-        <AnimatePresence>
-          {showAction && isWide && (
-            <ActionBar
-              openContextMenu={() => {
-                const { x, y } = getMousePosition()
-                void openContextMenuAt(x, y)
-              }}
-              entryId={entryId}
-              isFirstItem={!!isFirstItem}
-            />
-          )}
-        </AnimatePresence>
+        {isWide && (
+          <ActionBar
+            openContextMenu={() => {
+              const { x, y } = getMousePosition()
+              void openContextMenuAt(x, y)
+            }}
+            isFirstItem={!!isFirstItem}
+            isAll={isAll}
+            visible={isContextMenuOpen}
+          />
+        )}
       </Link>
     </div>
   )
 }
 
-const ActionBar = ({
-  entryId,
-  openContextMenu,
-  isFirstItem,
-}: {
-  entryId: string
-  openContextMenu: () => void
-  isFirstItem: boolean
-}) => {
-  const { view } = useRouteParams()
-
-  const { mainAction } = useSortedEntryActions({ entryId, view })
-  const { withLoginGuard } = useRequireLogin()
-
-  return (
-    <div
-      className={cn(
-        "absolute -right-2 top-0 -translate-y-1/2 rounded-lg border border-gray-200 bg-white/90 p-1 shadow-sm backdrop-blur-sm dark:border-neutral-900 dark:bg-neutral-900",
-        isFirstItem && "-right-2 top-4",
-        view === FeedViewType.All && "right-1 top-1/2",
-      )}
-      onClick={(e) => {
-        e.stopPropagation()
-        e.preventDefault()
-      }}
-    >
-      <div className="flex items-center gap-1">
-        {(
-          mainAction.filter(
-            (item) =>
-              item instanceof EntryActionMenuItem &&
-              !HIDE_ACTIONS_IN_ENTRY_TOOLBAR_ACTIONS.includes(item.id),
-          ) as EntryActionMenuItem[]
-        ).map((item) => {
-          const handler = item.requiresLogin ? withLoginGuard(item.onClick) : item.onClick
-          return (
-            <CommandActionButton key={item.id} onClick={handler} size="xs" commandId={item.id} />
-          )
-        })}
-
-        <ActionButton
-          onClick={openContextMenu}
-          size="xs"
-          icon={<i className="i-mingcute-more-1-fill" />}
-        />
+const ActionBar = memo(
+  ({
+    openContextMenu,
+    isFirstItem,
+    isAll,
+    visible,
+  }: {
+    openContextMenu: () => void
+    isFirstItem: boolean
+    isAll: boolean
+    visible: boolean
+  }) => {
+    return (
+      <div
+        className={cn(
+          "pointer-events-none absolute -right-2 top-0 -translate-y-1/2 rounded-lg border border-gray-200 bg-white/90 p-1 opacity-0 shadow-sm backdrop-blur-sm transition-opacity duration-100 group-hover/entry-item:pointer-events-auto group-hover/entry-item:opacity-100 dark:border-neutral-900 dark:bg-neutral-900",
+          isFirstItem && "-right-2 top-4",
+          isAll && "right-1 top-1/2",
+          visible && "pointer-events-auto opacity-100",
+        )}
+        onClick={(e) => {
+          e.stopPropagation()
+          e.preventDefault()
+        }}
+      >
+        <div className="flex items-center gap-1">
+          <ActionButton
+            onClick={openContextMenu}
+            size="xs"
+            icon={<i className="i-mingcute-more-1-fill" />}
+          />
+        </div>
       </div>
-    </div>
-  )
-}
+    )
+  },
+)
+
+ActionBar.displayName = "ActionBar"

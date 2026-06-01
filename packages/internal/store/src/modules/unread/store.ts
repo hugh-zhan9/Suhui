@@ -261,33 +261,32 @@ class UnreadSyncService {
 
     const id: FeedIdOrInboxHandle = entry.inboxHandle || entry.feedId || ""
 
-    const tx = createTransaction()
-    tx.store(() => {
-      entryActions.markEntryReadStatusInSession({ entryIds: [entryId], read })
-      if (read) {
-        unreadActions.removeUnread(id)
-      } else {
-        unreadActions.addUnread(id)
-      }
-    })
+    entryActions.markEntryReadStatusInSession({ entryIds: [entryId], read })
+    if (read) {
+      unreadActions.removeUnread(id)
+    } else {
+      unreadActions.addUnread(id)
+    }
 
-    tx.request(async () => {
-      await runtimeClient.entries.updateReadStatus({ entryIds: [entryId], read })
-    })
-
-    tx.rollback(() => {
+    const rollback = () => {
       entryActions.markEntryReadStatusInSession({ entryIds: [entryId], read: !read })
       if (read) {
         unreadActions.addUnread(id)
       } else {
         unreadActions.removeUnread(id)
       }
-    })
+    }
+
+    try {
+      await runtimeClient.entries.updateReadStatus({ entryIds: [entryId], read })
+    } catch (error) {
+      rollback()
+      throw error
+    }
 
     if (entry.feedId) {
       setFeedUnreadDirty(entry.feedId)
     }
-    await tx.run()
   }
 
   private async emitMarkReadEvent({ entryId, read }: { entryId: string; read: boolean }) {

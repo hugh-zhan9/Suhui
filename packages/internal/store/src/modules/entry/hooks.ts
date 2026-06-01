@@ -7,6 +7,7 @@ import { queryClient } from "../../context"
 import { useFeedUnreadIsDirty } from "../feed/hooks"
 import { useSyncUnreadWhenUnMatch } from "../unread/hooks"
 import {
+  getEntry,
   getEntryIdsByCategorySelector,
   getEntryIdsByFeedIdSelector,
   getEntryIdsByFeedIdsSelector,
@@ -152,7 +153,7 @@ export const useEntriesQuery = (
 
   const entriesIds = useMemo(() => {
     if (!query.data || query.isError) {
-      console.log('[Antigravity] entriesIds blocked:', {
+      console.log("[Antigravity] entriesIds blocked:", {
         hasData: !!query.data,
         isLoading: query.isLoading,
         isError: query.isError,
@@ -161,7 +162,7 @@ export const useEntriesQuery = (
       return []
     }
     const rawIds = deriveEntriesIds(query as any)
-    console.log('[Antigravity] entriesIds raw:', rawIds?.length, rawIds?.slice(0,3))
+    console.log("[Antigravity] entriesIds raw:", rawIds?.length, rawIds?.slice(0, 3))
     return rawIds
   }, [query.data, query.isLoading, query.isError])
 
@@ -180,6 +181,14 @@ export const usePrefetchEntryDetail = (entryId: string | undefined, isInbox?: bo
   return useQuery({
     queryKey: ["entry", entryId],
     queryFn: () => entrySyncServices.fetchEntryDetail(entryId, isInbox),
+    initialData: () => (entryId ? (getEntry(entryId) ?? undefined) : undefined),
+    initialDataUpdatedAt: () => {
+      const cached = entryId ? getEntry(entryId) : undefined
+      return cached?.content || cached?.readabilityContent ? Date.now() : 0
+    },
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    enabled: !!entryId,
   })
 }
 
