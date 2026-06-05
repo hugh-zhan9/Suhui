@@ -1,4 +1,4 @@
-import type { AnyColumn } from "drizzle-orm"
+import type { AnyColumn, SQL } from "drizzle-orm"
 import { and, eq, inArray, isNull, lt, or, sql } from "drizzle-orm"
 import { EntryService } from "@suhui/database/services/entry"
 import { FeedService } from "@suhui/database/services/feed"
@@ -179,7 +179,7 @@ const createActiveVisibilityWhere = (
   },
   visibility: ActiveVisibilityState,
 ) => {
-  const conditions = []
+  const conditions: SQL[] = []
   const feedIds = Array.from(visibility.activeFeedIds)
   const inboxIds = Array.from(visibility.activeInboxIds)
   const sourceIds = Array.from(

@@ -318,11 +318,12 @@ describe("AgentApplicationService", () => {
 
     expect(result.items.map((item) => item.id)).toEqual(["entry-1", "entry-2"])
     expect(result.page.hasMore).toBe(true)
+    const cursorEntry = entries[1]!
     expect(result.page.nextCursor).toEqual(
       encodeAgentEntriesCursor({
-        publishedAt: entries[1].publishedAt,
-        insertedAt: entries[1].insertedAt,
-        id: entries[1].id,
+        publishedAt: cursorEntry.publishedAt,
+        insertedAt: cursorEntry.insertedAt,
+        id: cursorEntry.id,
       }),
     )
     expect(findMany).toHaveBeenCalledWith(expect.objectContaining({ limit: 3 }))
