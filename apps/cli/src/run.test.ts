@@ -189,7 +189,7 @@ describe("runCli", () => {
     expect(result.exitCode).toBe(exitCodes.notFound)
     expect(result.stdout).toBe("")
     expect(JSON.parse(result.stderr)).toEqual({
-      error: { code: "SUHUI_NOT_FOUND", message: "Entry not found" },
+      error: { code: "SUHUI_ENTRY_NOT_FOUND", message: "Entry not found" },
     })
   })
 

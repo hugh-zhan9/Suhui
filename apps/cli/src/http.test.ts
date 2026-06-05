@@ -35,9 +35,30 @@ describe("fetchAgentJson", () => {
     await expect(
       fetchAgentJson("http://127.0.0.1:41595", "/api/agent/entries/missing", { fetchImpl }),
     ).rejects.toMatchObject({
-      code: "SUHUI_NOT_FOUND",
+      code: "SUHUI_ENTRY_NOT_FOUND",
       exitCode: exitCodes.notFound,
       message: "Entry not found",
+    })
+  })
+
+  it("preserves remote API validation error codes", async () => {
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse(
+        { error: { code: "SUHUI_INVALID_ENTRY_IDS", message: "entryIds must not be empty" } },
+        { status: 400 },
+      ),
+    )
+
+    await expect(
+      fetchAgentJson("http://127.0.0.1:41595", "/api/agent/entries/read", {
+        method: "POST",
+        body: { entryIds: [], read: true },
+        fetchImpl,
+      }),
+    ).rejects.toMatchObject({
+      code: "SUHUI_INVALID_ENTRY_IDS",
+      exitCode: exitCodes.error,
+      message: "entryIds must not be empty",
     })
   })
 

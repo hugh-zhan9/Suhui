@@ -31,8 +31,17 @@ const mapApiErrorExitCode = (status: number, code: string): ExitCode => {
   return exitCodes.error
 }
 
-const mapApiErrorCode = (status: number, code: string): CliErrorCode => {
-  if (status === 404 || code === "SUHUI_ENTRY_NOT_FOUND") return "SUHUI_NOT_FOUND"
+const knownRemoteErrorCodes = new Set<CliErrorCode>([
+  "SUHUI_INVALID_LIMIT",
+  "SUHUI_INVALID_CURSOR",
+  "SUHUI_INVALID_READ_FILTER",
+  "SUHUI_ENTRY_NOT_FOUND",
+  "SUHUI_INVALID_ENTRY_IDS",
+  "SUHUI_AGENT_INTERNAL_ERROR",
+])
+
+const mapApiErrorCode = (code: string): CliErrorCode => {
+  if (knownRemoteErrorCodes.has(code as CliErrorCode)) return code as CliErrorCode
   return "SUHUI_EXECUTION_ERROR"
 }
 
@@ -77,7 +86,7 @@ export const fetchAgentJson = async <T = unknown>(
 
     if (isFailureEnvelope(parsed)) {
       throw new CliError(
-        mapApiErrorCode(response.status, parsed.error.code),
+        mapApiErrorCode(parsed.error.code),
         parsed.error.message,
         mapApiErrorExitCode(response.status, parsed.error.code),
       )
