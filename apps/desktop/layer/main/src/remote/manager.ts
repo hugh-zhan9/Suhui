@@ -158,17 +158,21 @@ const readJsonBody = async <T>(request: IncomingMessage): Promise<T> => {
   return JSON.parse(raw) as T
 }
 
-const parseOptionalBoolean = (value: string | null) => {
+const parseOptionalBoolean = (name: string, value: string | null) => {
   if (value === null) return undefined
   const normalized = value.toLowerCase()
   if (normalized === "true" || normalized === "1") return true
   if (normalized === "false" || normalized === "0") return false
-  return undefined
+  throw new AgentApplicationError(
+    "SUHUI_INVALID_READ_FILTER",
+    `${name} must be true, false, 1, or 0`,
+    400,
+  )
 }
 
 const parseAgentEntriesOptions = (url: URL): AgentEntriesListOptions => {
   const feedId = url.searchParams.get("feedId") || undefined
-  const read = parseOptionalBoolean(url.searchParams.get("read"))
+  const read = parseOptionalBoolean("read", url.searchParams.get("read"))
   const limitValue = url.searchParams.get("limit")
   const cursor = url.searchParams.get("cursor") || undefined
   const withSummary = ["1", "true"].includes(
@@ -195,10 +199,11 @@ const writeAgentError = (response: ServerResponse, error: unknown) => {
     return
   }
 
+  console.error("[RemoteServerManager] agent api failed", error)
   json(response, 500, {
     error: {
       code: "SUHUI_AGENT_INTERNAL_ERROR",
-      message: error instanceof Error ? error.message : String(error),
+      message: "Agent API failed",
     },
   })
 }
@@ -536,112 +541,116 @@ class RemoteServerManagerStatic {
     baseUrl: null,
   }
 
-  private deps: RemoteServerDependencies = {
-    getCapabilities: () => settingsApplicationService.getCapabilities(),
-    getSettings: () => settingsApplicationService.getSettings(),
-    updateSettings: (payload) => settingsApplicationService.updateSettings(payload),
-    getBootstrap: async () => {
-      const { unreadApplicationService } = await import("~/application/unread/service")
-      const [subscriptions, unread, settings] = await Promise.all([
-        subscriptionApplicationService.listSubscriptions(),
-        unreadApplicationService.listUnreadCounts(),
-        Promise.resolve(settingsApplicationService.getSettings()),
-      ])
-      return {
-        subscriptions,
-        unread,
-        settings,
-        capabilities: settingsApplicationService.getCapabilities(),
-      }
-    },
-    getSubscriptions: () => subscriptionApplicationService.listSubscriptions(),
-    getEntries: async (options?: { feedId?: string; unreadOnly?: boolean }) => {
-      const { entryApplicationService } = await import("~/application/entry/service")
-      return entryApplicationService.listEntries(options)
-    },
-    getEntry: async (entryId: string) => {
-      const { entryApplicationService } = await import("~/application/entry/service")
-      return entryApplicationService.getEntry(entryId)
-    },
-    getAgentEntries: (options) => agentApplicationService.listEntries(options),
-    getAgentEntry: (entryId) => agentApplicationService.getEntry(entryId),
-    getAgentFeeds: () => agentApplicationService.listFeeds(),
-    updateAgentReadStatus: async (payload) => {
-      const result = await agentApplicationService.updateReadStatus(payload)
-      this.broadcast("entries.updated", {})
-      this.broadcast("subscriptions.updated", {})
-      return result
-    },
-    getUnreadCounts: async () => {
-      const { unreadApplicationService } = await import("~/application/unread/service")
-      return unreadApplicationService.listUnreadCounts()
-    },
-    createSubscription: async (payload) => {
-      const result = await subscriptionApplicationService.createSubscription(payload)
-      this.broadcast("subscriptions.updated", {})
-      this.broadcast("entries.updated", {})
-      return result
-    },
-    deleteSubscription: async (subscriptionId) => {
-      await subscriptionApplicationService.deleteSubscription(subscriptionId)
-      this.broadcast("subscriptions.updated", {})
-      this.broadcast("entries.updated", {})
-    },
-    deleteSubscriptionsByTargets: async (payload) => {
-      await subscriptionApplicationService.deleteSubscriptionsByTargets(payload)
-      this.broadcast("subscriptions.updated", {})
-      this.broadcast("entries.updated", {})
-    },
-    updateSubscription: async (subscriptionId, payload) => {
-      const result = await subscriptionApplicationService.updateSubscription(
-        subscriptionId,
-        payload,
-      )
-      this.broadcast("subscriptions.updated", {})
-      this.broadcast("entries.updated", {})
-      return result
-    },
-    batchUpdateSubscriptions: async (payload) => {
-      await subscriptionApplicationService.batchUpdateSubscriptions(payload)
-      this.broadcast("subscriptions.updated", {})
-      this.broadcast("entries.updated", {})
-    },
-    previewFeed: (payload) => feedApplicationService.previewFeed(payload),
-    updateReadStatus: async (payload) => {
-      const { entryApplicationService } = await import("~/application/entry/service")
-      await entryApplicationService.updateReadStatus(payload)
-      this.broadcast("entries.updated", {})
-      this.broadcast("subscriptions.updated", {})
-    },
-    refreshFeed: async (feedId) => {
-      const { feedApplicationService } = await import("~/application/feed/service")
-      const result = await feedApplicationService.refreshFeed(feedId)
-      this.broadcast("entries.updated", { feedId })
-      this.broadcast("subscriptions.updated", { feedId })
-      return result
-    },
-    refreshAllFeeds: async () => {
-      const { feedApplicationService } = await import("~/application/feed/service")
-      const result = await feedApplicationService.refreshAllFeeds()
-      this.broadcast("entries.updated", {})
-      this.broadcast("subscriptions.updated", {})
-      return result
-    },
-    getRsshubConfig: () => rsshubApplicationService.getConfig(),
-    setRsshubConfig: (payload) => rsshubApplicationService.setConfig(payload),
-    precheckRsshub: (payload) => Promise.resolve(rsshubApplicationService.precheck(payload)),
-    discover: (path, payload) => discoverApplicationService.request(path, payload),
-    exportData: () => importExportApplicationService.exportData(),
-    importData: async (payload) => {
-      const result = await importExportApplicationService.importData(payload)
-      this.broadcast("subscriptions.updated", {})
-      this.broadcast("entries.updated", {})
-      return result
-    },
-    renderEntryPdf: (payload) => pdfApplicationService.renderEntryPdf(payload),
-    getRemoteIndexHtml: () => getRemoteClientHtml(),
-    getRemoteAsset: (pathname) => getRemoteClientAsset(pathname),
+  private createDefaultDependencies(): RemoteServerDependencies {
+    return {
+      getCapabilities: () => settingsApplicationService.getCapabilities(),
+      getSettings: () => settingsApplicationService.getSettings(),
+      updateSettings: (payload) => settingsApplicationService.updateSettings(payload),
+      getBootstrap: async () => {
+        const { unreadApplicationService } = await import("~/application/unread/service")
+        const [subscriptions, unread, settings] = await Promise.all([
+          subscriptionApplicationService.listSubscriptions(),
+          unreadApplicationService.listUnreadCounts(),
+          Promise.resolve(settingsApplicationService.getSettings()),
+        ])
+        return {
+          subscriptions,
+          unread,
+          settings,
+          capabilities: settingsApplicationService.getCapabilities(),
+        }
+      },
+      getSubscriptions: () => subscriptionApplicationService.listSubscriptions(),
+      getEntries: async (options?: { feedId?: string; unreadOnly?: boolean }) => {
+        const { entryApplicationService } = await import("~/application/entry/service")
+        return entryApplicationService.listEntries(options)
+      },
+      getEntry: async (entryId: string) => {
+        const { entryApplicationService } = await import("~/application/entry/service")
+        return entryApplicationService.getEntry(entryId)
+      },
+      getAgentEntries: (options) => agentApplicationService.listEntries(options),
+      getAgentEntry: (entryId) => agentApplicationService.getEntry(entryId),
+      getAgentFeeds: () => agentApplicationService.listFeeds(),
+      updateAgentReadStatus: async (payload) => {
+        const result = await agentApplicationService.updateReadStatus(payload)
+        this.broadcast("entries.updated", {})
+        this.broadcast("subscriptions.updated", {})
+        return result
+      },
+      getUnreadCounts: async () => {
+        const { unreadApplicationService } = await import("~/application/unread/service")
+        return unreadApplicationService.listUnreadCounts()
+      },
+      createSubscription: async (payload) => {
+        const result = await subscriptionApplicationService.createSubscription(payload)
+        this.broadcast("subscriptions.updated", {})
+        this.broadcast("entries.updated", {})
+        return result
+      },
+      deleteSubscription: async (subscriptionId) => {
+        await subscriptionApplicationService.deleteSubscription(subscriptionId)
+        this.broadcast("subscriptions.updated", {})
+        this.broadcast("entries.updated", {})
+      },
+      deleteSubscriptionsByTargets: async (payload) => {
+        await subscriptionApplicationService.deleteSubscriptionsByTargets(payload)
+        this.broadcast("subscriptions.updated", {})
+        this.broadcast("entries.updated", {})
+      },
+      updateSubscription: async (subscriptionId, payload) => {
+        const result = await subscriptionApplicationService.updateSubscription(
+          subscriptionId,
+          payload,
+        )
+        this.broadcast("subscriptions.updated", {})
+        this.broadcast("entries.updated", {})
+        return result
+      },
+      batchUpdateSubscriptions: async (payload) => {
+        await subscriptionApplicationService.batchUpdateSubscriptions(payload)
+        this.broadcast("subscriptions.updated", {})
+        this.broadcast("entries.updated", {})
+      },
+      previewFeed: (payload) => feedApplicationService.previewFeed(payload),
+      updateReadStatus: async (payload) => {
+        const { entryApplicationService } = await import("~/application/entry/service")
+        await entryApplicationService.updateReadStatus(payload)
+        this.broadcast("entries.updated", {})
+        this.broadcast("subscriptions.updated", {})
+      },
+      refreshFeed: async (feedId) => {
+        const { feedApplicationService } = await import("~/application/feed/service")
+        const result = await feedApplicationService.refreshFeed(feedId)
+        this.broadcast("entries.updated", { feedId })
+        this.broadcast("subscriptions.updated", { feedId })
+        return result
+      },
+      refreshAllFeeds: async () => {
+        const { feedApplicationService } = await import("~/application/feed/service")
+        const result = await feedApplicationService.refreshAllFeeds()
+        this.broadcast("entries.updated", {})
+        this.broadcast("subscriptions.updated", {})
+        return result
+      },
+      getRsshubConfig: () => rsshubApplicationService.getConfig(),
+      setRsshubConfig: (payload) => rsshubApplicationService.setConfig(payload),
+      precheckRsshub: (payload) => Promise.resolve(rsshubApplicationService.precheck(payload)),
+      discover: (path, payload) => discoverApplicationService.request(path, payload),
+      exportData: () => importExportApplicationService.exportData(),
+      importData: async (payload) => {
+        const result = await importExportApplicationService.importData(payload)
+        this.broadcast("subscriptions.updated", {})
+        this.broadcast("entries.updated", {})
+        return result
+      },
+      renderEntryPdf: (payload) => pdfApplicationService.renderEntryPdf(payload),
+      getRemoteIndexHtml: () => getRemoteClientHtml(),
+      getRemoteAsset: (pathname) => getRemoteClientAsset(pathname),
+    }
   }
+
+  private deps: RemoteServerDependencies = this.createDefaultDependencies()
 
   async start(options?: StartOptions): Promise<StartResult> {
     if (this.server) {
@@ -651,7 +660,7 @@ class RemoteServerManagerStatic {
     const host = options?.host || REMOTE_SERVER_DEFAULT_HOST
     const port = options?.port ?? REMOTE_SERVER_DEFAULT_PORT
     this.deps = {
-      ...this.deps,
+      ...this.createDefaultDependencies(),
       ...(options?.getBootstrap ? { getBootstrap: options.getBootstrap } : {}),
       ...(options?.getCapabilities ? { getCapabilities: options.getCapabilities } : {}),
       ...(options?.getSettings ? { getSettings: options.getSettings } : {}),
@@ -718,7 +727,10 @@ class RemoteServerManagerStatic {
   }
 
   async stop() {
-    if (!this.server) return
+    if (!this.server) {
+      this.deps = this.createDefaultDependencies()
+      return
+    }
 
     const currentServer = this.server
     this.server = null
@@ -743,6 +755,7 @@ class RemoteServerManagerStatic {
       port: null,
       baseUrl: null,
     }
+    this.deps = this.createDefaultDependencies()
   }
 
   getStatus(): RemoteServerStatus {

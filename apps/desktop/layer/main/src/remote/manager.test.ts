@@ -325,6 +325,71 @@ describe("RemoteServerManager", () => {
     })
   })
 
+  it("rejects invalid agent read query values", async () => {
+    const getAgentEntries = vi.fn().mockResolvedValue({
+      items: [],
+      page: { limit: 20, hasMore: false, nextCursor: null },
+    })
+    const server = await RemoteServerManager.start({
+      host: "127.0.0.1",
+      port: 0,
+      getSubscriptions: vi.fn().mockResolvedValue([]),
+      getAgentEntries,
+    })
+
+    const response = await fetch(`${server.baseUrl}/api/agent/entries?read=flase`)
+
+    expect(response.status).toBe(400)
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "SUHUI_INVALID_READ_FILTER",
+        message: "read must be true, false, 1, or 0",
+      },
+    })
+    expect(getAgentEntries).not.toHaveBeenCalled()
+  })
+
+  it("sanitizes unexpected agent errors", async () => {
+    const getAgentEntries = vi.fn().mockRejectedValue(new Error("database password leaked"))
+    const server = await RemoteServerManager.start({
+      host: "127.0.0.1",
+      port: 0,
+      getSubscriptions: vi.fn().mockResolvedValue([]),
+      getAgentEntries,
+    })
+
+    const response = await fetch(`${server.baseUrl}/api/agent/entries`)
+
+    expect(response.status).toBe(500)
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "SUHUI_AGENT_INTERNAL_ERROR",
+        message: "Agent API failed",
+      },
+    })
+  })
+
+  it("does not persist injected agent providers after restart", async () => {
+    const getAgentFeeds = vi.fn().mockResolvedValue({ items: [] })
+    const server = await RemoteServerManager.start({
+      host: "127.0.0.1",
+      port: 0,
+      getAgentFeeds,
+    })
+    await fetch(`${server.baseUrl}/api/agent/feeds`)
+    expect(getAgentFeeds).toHaveBeenCalledTimes(1)
+
+    await RemoteServerManager.stop()
+    const restarted = await RemoteServerManager.start({
+      host: "127.0.0.1",
+      port: 0,
+    })
+    const response = await fetch(`${restarted.baseUrl}/api/agent/feeds`)
+
+    expect(response.status).toBe(200)
+    expect(getAgentFeeds).toHaveBeenCalledTimes(1)
+  })
+
   it("returns a 404 agent error when agent entry detail is missing", async () => {
     const getAgentEntry = vi.fn().mockResolvedValue(null)
     const server = await RemoteServerManager.start({

@@ -71,6 +71,7 @@ export type AgentReadStatusResult = {
 export type AgentErrorCode =
   | "SUHUI_INVALID_LIMIT"
   | "SUHUI_INVALID_CURSOR"
+  | "SUHUI_INVALID_READ_FILTER"
   | "SUHUI_ENTRY_NOT_FOUND"
   | "SUHUI_INVALID_ENTRY_IDS"
   | "SUHUI_AGENT_INTERNAL_ERROR"
