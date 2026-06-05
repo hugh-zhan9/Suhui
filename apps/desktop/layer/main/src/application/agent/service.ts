@@ -175,7 +175,7 @@ export class AgentApplicationService {
     const db = DBManager.getDB()
     const limit = normalizeLimit(options.limit)
     const cursor = options.cursor ? decodeAgentEntriesCursor(options.cursor) : null
-    const fetchLimit = limit + 1
+    const fetchLimit = Math.max(limit + 1, limit * 3)
 
     const rows = (await db.query.entriesTable.findMany({
       where: (entries) =>

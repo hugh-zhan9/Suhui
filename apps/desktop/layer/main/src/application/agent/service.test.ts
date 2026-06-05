@@ -295,6 +295,46 @@ describe("AgentApplicationService", () => {
     expect(result.page.nextCursor).toEqual(expect.any(String))
   })
 
+  it("fills a page with visible entries when earlier fetched rows are hidden", async () => {
+    const hiddenEntry = {
+      ...entries[0],
+      id: "hidden-entry",
+      publishedAt: 1710000004000,
+      insertedAt: 1710000005000,
+    }
+    const laterVisibleEntry = {
+      ...entries[2],
+      id: "entry-4",
+      title: "Later visible entry",
+      publishedAt: 1709999998000,
+      insertedAt: 1709999999000,
+    }
+    const orderedRows = [hiddenEntry, entries[0], entries[1], entries[2], laterVisibleEntry]
+    const findMany = vi.fn(async ({ limit }: { limit: number }) => orderedRows.slice(0, limit))
+    getDB.mockReturnValue({
+      query: {
+        entriesTable: {
+          findMany,
+          findFirst: vi.fn().mockResolvedValue(entries[0]),
+        },
+      },
+    })
+    isEntryVisibleForActiveRelations.mockImplementation((entry) => entry.id !== hiddenEntry.id)
+
+    const result = await agentApplicationService.listEntries({ limit: 2 })
+
+    expect(result.items.map((item) => item.id)).toEqual(["entry-1", "entry-2"])
+    expect(result.page.hasMore).toBe(true)
+    expect(result.page.nextCursor).toEqual(
+      encodeAgentEntriesCursor({
+        publishedAt: entries[1].publishedAt,
+        insertedAt: entries[1].insertedAt,
+        id: entries[1].id,
+      }),
+    )
+    expect(findMany).toHaveBeenCalledWith(expect.objectContaining({ limit: 6 }))
+  })
+
   it("returns entry detail with selected content source", async () => {
     const result = await agentApplicationService.getEntry("entry-1")
 
