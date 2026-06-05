@@ -130,7 +130,8 @@ const createBaseCommand = (argv: string[], env: CliEnv) => {
 }
 
 export const parseArgs = (argv: string[], env: CliEnv = process.env): CliCommand => {
-  const { args, baseUrl, format } = createBaseCommand(argv, env)
+  const normalizedArgv = argv[0] === "--" ? argv.slice(1) : argv
+  const { args, baseUrl, format } = createBaseCommand(normalizedArgv, env)
   const [group, action, ...rest] = args
 
   if (group === "entries" && action === "list") {

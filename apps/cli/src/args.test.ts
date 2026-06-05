@@ -13,6 +13,14 @@ describe("parseArgs", () => {
     })
   })
 
+  it("ignores a leading package-manager argument separator", () => {
+    expect(parseArgs(["--", "feeds", "list"], {})).toEqual({
+      kind: "feeds.list",
+      baseUrl: "http://127.0.0.1:41595",
+      format: "markdown",
+    })
+  })
+
   it("parses global options before and after the command", () => {
     expect(
       parseArgs(

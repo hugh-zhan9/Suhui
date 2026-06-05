@@ -133,6 +133,15 @@ describe("runCli", () => {
     expect(fetch).toHaveBeenCalledWith("http://127.0.0.1:41595/api/agent/feeds", expect.any(Object))
   })
 
+  it("accepts a leading package-manager argument separator", async () => {
+    const fetch = vi.fn(async () => jsonResponse({ data: { items: [] } }))
+
+    const result = await runCli({ argv: ["--", "feeds", "list"], env: {}, fetch })
+
+    expect(result.exitCode).toBe(exitCodes.success)
+    expect(fetch).toHaveBeenCalledWith("http://127.0.0.1:41595/api/agent/feeds", expect.any(Object))
+  })
+
   it("marks entries read and unread", async () => {
     const fetch = vi.fn(async () => jsonResponse({ data: { updated: 2, read: true } }))
 
