@@ -332,7 +332,56 @@ describe("AgentApplicationService", () => {
         id: entries[1].id,
       }),
     )
-    expect(findMany).toHaveBeenCalledWith(expect.objectContaining({ limit: 6 }))
+    expect(findMany).toHaveBeenCalledWith(expect.objectContaining({ limit: 50 }))
+  })
+
+  it("continues fetching batches when hidden rows consume the first bounded window", async () => {
+    const hiddenEntries = Array.from({ length: 51 }, (_, index) => ({
+      ...entries[0],
+      id: `hidden-entry-${index}`,
+      publishedAt: 1710000010000 - index * 2,
+      insertedAt: 1710000010001 - index * 2,
+    }))
+    const visibleEntries = [
+      {
+        ...entries[0],
+        id: "late-visible-entry-1",
+        publishedAt: 1710000010000 - hiddenEntries.length * 2,
+        insertedAt: 1710000010001 - hiddenEntries.length * 2,
+      },
+      {
+        ...entries[1],
+        id: "late-visible-entry-2",
+        publishedAt: 1710000010000 - (hiddenEntries.length + 1) * 2,
+        insertedAt: 1710000010001 - (hiddenEntries.length + 1) * 2,
+      },
+    ]
+    const orderedRows = [...hiddenEntries, ...visibleEntries]
+    let offset = 0
+    const findMany = vi.fn(async ({ limit }: { limit: number }) => {
+      const batch = orderedRows.slice(offset, offset + limit)
+      offset += limit
+      return batch
+    })
+    getDB.mockReturnValue({
+      query: {
+        entriesTable: {
+          findMany,
+          findFirst: vi.fn().mockResolvedValue(entries[0]),
+        },
+      },
+    })
+    isEntryVisibleForActiveRelations.mockImplementation((entry) => !entry.id.startsWith("hidden"))
+
+    const result = await agentApplicationService.listEntries({ limit: 2 })
+
+    expect(result.items.map((item) => item.id)).toEqual([
+      "late-visible-entry-1",
+      "late-visible-entry-2",
+    ])
+    expect(result.page.hasMore).toBe(false)
+    expect(result.page.nextCursor).toBeNull()
+    expect(findMany).toHaveBeenCalledTimes(2)
   })
 
   it("returns entry detail with selected content source", async () => {

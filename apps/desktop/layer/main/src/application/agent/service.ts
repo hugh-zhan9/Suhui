@@ -174,31 +174,48 @@ export class AgentApplicationService {
   async listEntries(options: AgentEntriesListOptions = {}): Promise<AgentEntriesListResult> {
     const db = DBManager.getDB()
     const limit = normalizeLimit(options.limit)
-    const cursor = options.cursor ? decodeAgentEntriesCursor(options.cursor) : null
-    const fetchLimit = Math.max(limit + 1, limit * 3)
-
-    const rows = (await db.query.entriesTable.findMany({
-      where: (entries) =>
-        and(
-          isNull(entries.deletedAt),
-          options.feedId ? eq(entries.feedId, options.feedId) : undefined,
-          typeof options.read === "boolean" ? eq(entries.read, options.read) : undefined,
-          createCursorWhere(entries, cursor),
-        ),
-      orderBy: (entries, { desc }) => [
-        desc(entries.publishedAt),
-        desc(entries.insertedAt),
-        desc(entries.id),
-      ],
-      limit: fetchLimit,
-    })) as EntryRow[]
-
     const [visibility, feedContext] = await Promise.all([
       getActiveVisibilityState(),
       buildFeedContext(),
     ])
 
-    const visibleRows = rows.filter((entry) => isEntryVisibleForActiveRelations(entry, visibility))
+    let cursor = options.cursor ? decodeAgentEntriesCursor(options.cursor) : null
+    const batchSize = Math.max(limit + 1, 50)
+    const maxBatches = 10
+    const visibleRows: EntryRow[] = []
+
+    for (let batchIndex = 0; batchIndex < maxBatches && visibleRows.length <= limit; batchIndex++) {
+      const rows = (await db.query.entriesTable.findMany({
+        where: (entries) =>
+          and(
+            isNull(entries.deletedAt),
+            options.feedId ? eq(entries.feedId, options.feedId) : undefined,
+            typeof options.read === "boolean" ? eq(entries.read, options.read) : undefined,
+            createCursorWhere(entries, cursor),
+          ),
+        orderBy: (entries, { desc }) => [
+          desc(entries.publishedAt),
+          desc(entries.insertedAt),
+          desc(entries.id),
+        ],
+        limit: batchSize,
+      })) as EntryRow[]
+
+      if (rows.length === 0) break
+
+      for (const entry of rows) {
+        if (isEntryVisibleForActiveRelations(entry, visibility)) {
+          visibleRows.push(entry)
+        }
+        if (visibleRows.length > limit) break
+      }
+
+      const lastRawRow = rows.at(-1)
+      cursor = lastRawRow ? toCursorShape(lastRawRow) : cursor
+
+      if (rows.length < batchSize) break
+    }
+
     const pageRows = visibleRows.slice(0, limit)
     const hasMore = visibleRows.length > limit
     const lastRow = pageRows.at(-1)
