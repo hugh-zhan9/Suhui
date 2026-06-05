@@ -88,7 +88,9 @@ export class AgentApplicationError extends Error {
 
 export const toIsoString = (value: unknown): string | null => {
   if (typeof value !== "number" || !Number.isFinite(value)) return null
-  return new Date(value).toISOString()
+  const date = new Date(value)
+  if (!Number.isFinite(date.getTime())) return null
+  return date.toISOString()
 }
 
 export const normalizeLimit = (value: unknown): number => {

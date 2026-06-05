@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import { decodeAgentEntriesCursor, encodeAgentEntriesCursor, isEntryAfterCursor } from "./cursor"
-import { selectAgentEntryContent } from "./types"
+import { AgentApplicationError, selectAgentEntryContent, toIsoString } from "./types"
 
 describe("agent cursor", () => {
   it("round-trips an opaque cursor", () => {
@@ -34,6 +34,45 @@ describe("agent cursor", () => {
     expect(isEntryAfterCursor({ publishedAt: 1000, insertedAt: 900, id: "entry-c" }, cursor)).toBe(
       false,
     )
+  })
+
+  it.each([
+    ["malformed input", "not-json"],
+    [
+      "missing fields",
+      Buffer.from(JSON.stringify({ publishedAt: 1710000000000, id: "entry-b" }), "utf8").toString(
+        "base64url",
+      ),
+    ],
+    [
+      "non-finite timestamps",
+      Buffer.from(
+        '{"publishedAt":1e999,"insertedAt":1710000001000,"id":"entry-b"}',
+        "utf8",
+      ).toString("base64url"),
+    ],
+    [
+      "empty id",
+      Buffer.from(
+        JSON.stringify({ publishedAt: 1710000000000, insertedAt: 1710000001000, id: "" }),
+        "utf8",
+      ).toString("base64url"),
+    ],
+  ])("rejects invalid cursor with %s", (_name, cursor) => {
+    expect(() => decodeAgentEntriesCursor(cursor)).toThrow(AgentApplicationError)
+
+    try {
+      decodeAgentEntriesCursor(cursor)
+    } catch (error) {
+      expect(error).toBeInstanceOf(AgentApplicationError)
+      expect((error as AgentApplicationError).code).toBe("SUHUI_INVALID_CURSOR")
+    }
+  })
+})
+
+describe("toIsoString", () => {
+  it("returns null for out-of-range date values", () => {
+    expect(toIsoString(1e100)).toBeNull()
   })
 })
 
