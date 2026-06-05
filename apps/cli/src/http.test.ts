@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest"
 
-import { SuhuiCliError, fetchAgentJson } from "./http.js"
-import { exitCodes } from "./types.js"
+import { fetchAgentJson } from "./http.js"
+import { CliError, exitCodes } from "./types.js"
 
 const jsonResponse = (body: unknown, init: ResponseInit = {}) =>
   new Response(JSON.stringify(body), {
@@ -35,7 +35,7 @@ describe("fetchAgentJson", () => {
     await expect(
       fetchAgentJson("http://127.0.0.1:41595", "/api/agent/entries/missing", { fetchImpl }),
     ).rejects.toMatchObject({
-      code: "SUHUI_ENTRY_NOT_FOUND",
+      code: "SUHUI_NOT_FOUND",
       exitCode: exitCodes.notFound,
       message: "Entry not found",
     })
@@ -59,7 +59,7 @@ describe("fetchAgentJson", () => {
 
     const result = fetchAgentJson("http://127.0.0.1:41595", "/api/agent/feeds", { fetchImpl })
 
-    await expect(result).rejects.toBeInstanceOf(SuhuiCliError)
+    await expect(result).rejects.toBeInstanceOf(CliError)
     await expect(result).rejects.toMatchObject({
       code: "SUHUI_UNEXPECTED_RESPONSE",
       exitCode: exitCodes.unexpectedResponse,

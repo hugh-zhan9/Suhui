@@ -80,6 +80,9 @@ describe("formatEntryDetailMarkdown", () => {
 
     expect(formatEntryDetailMarkdown(detail, { content: "summary" })).toContain("Short summary")
     expect(formatEntryDetailMarkdown(detail, { content: "summary" })).not.toContain("Full body")
+    expect(formatEntryDetailMarkdown(detail, { content: "summary", maxChars: 5 })).toContain(
+      "[Content truncated to 5 characters]",
+    )
 
     const metadataOnly = formatEntryDetailMarkdown(detail, { content: "metadata" })
     expect(metadataOnly).toContain("- Content source: content")
@@ -132,6 +135,25 @@ describe("formatFeedsMarkdown", () => {
     expect(markdown).toContain("- Unread: 3")
     expect(markdown).toContain("- Site URL: https://example.com")
     expect(markdown).toContain("- Feed URL: https://example.com/rss.xml")
+  })
+
+  it("keeps category headings stable", () => {
+    const markdown = formatFeedsMarkdown({
+      items: [
+        {
+          id: "feed-1",
+          subscriptionId: "feed/feed-1",
+          title: "Example Feed",
+          url: null,
+          siteUrl: null,
+          category: "Tech\n# Injected",
+          unreadCount: 0,
+        },
+      ],
+    })
+
+    expect(markdown).toContain("## Tech # Injected")
+    expect(markdown).not.toContain("\n# Injected")
   })
 })
 

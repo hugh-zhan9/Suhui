@@ -96,7 +96,9 @@ export const formatEntryDetailMarkdown = (
   lines.push("")
 
   if (contentMode === "summary") {
-    lines.push(detail.description?.trim() || "No summary available.")
+    lines.push(
+      truncateText(detail.description?.trim() || "No summary available.", options.maxChars),
+    )
     lines.push("")
   } else if (contentMode === "full") {
     const content = truncateText(htmlToMarkdown(detail.content), options.maxChars)
@@ -123,7 +125,7 @@ export const formatFeedsMarkdown = (result: AgentFeedsListResult) => {
 
   const feedsByCategory = new Map<string, AgentFeedListItem[]>()
   for (const feed of result.items) {
-    const category = feed.category?.trim() || "Uncategorized"
+    const category = stableHeading(feed.category, "Uncategorized")
     feedsByCategory.set(category, [...(feedsByCategory.get(category) ?? []), feed])
   }
 

@@ -1,4 +1,10 @@
-import { exitCodes, type AgentErrorBody, type ExitCode } from "./types.js"
+import {
+  CliError,
+  exitCodes,
+  type AgentErrorBody,
+  type CliErrorCode,
+  type ExitCode,
+} from "./types.js"
 
 type FetchImplementation = typeof fetch
 
@@ -7,17 +13,6 @@ type FetchAgentJsonOptions = {
   body?: unknown
   timeoutMs?: number | undefined
   fetchImpl?: FetchImplementation | undefined
-}
-
-export class SuhuiCliError extends Error {
-  constructor(
-    readonly code: string,
-    message: string,
-    readonly exitCode: ExitCode,
-  ) {
-    super(message)
-    this.name = "SuhuiCliError"
-  }
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -36,8 +31,13 @@ const mapApiErrorExitCode = (status: number, code: string): ExitCode => {
   return exitCodes.error
 }
 
+const mapApiErrorCode = (status: number, code: string): CliErrorCode => {
+  if (status === 404 || code === "SUHUI_ENTRY_NOT_FOUND") return "SUHUI_NOT_FOUND"
+  return "SUHUI_EXECUTION_ERROR"
+}
+
 const isUnavailableError = (error: unknown) => {
-  if (error instanceof SuhuiCliError) return false
+  if (error instanceof CliError) return false
   if (error instanceof Error && error.name === "AbortError") return true
   if (error instanceof TypeError) return true
   return false
@@ -76,22 +76,22 @@ export const fetchAgentJson = async <T = unknown>(
     }
 
     if (isFailureEnvelope(parsed)) {
-      throw new SuhuiCliError(
-        parsed.error.code,
+      throw new CliError(
+        mapApiErrorCode(response.status, parsed.error.code),
         parsed.error.message,
         mapApiErrorExitCode(response.status, parsed.error.code),
       )
     }
 
-    throw new SuhuiCliError(
+    throw new CliError(
       "SUHUI_UNEXPECTED_RESPONSE",
       "Suhui remote API returned an unexpected response shape",
       exitCodes.unexpectedResponse,
     )
   } catch (error) {
-    if (error instanceof SuhuiCliError) throw error
+    if (error instanceof CliError) throw error
     if (isUnavailableError(error)) {
-      throw new SuhuiCliError(
+      throw new CliError(
         "SUHUI_REMOTE_UNAVAILABLE",
         `Cannot connect to Suhui remote API at ${baseUrl}`,
         exitCodes.remoteUnavailable,
