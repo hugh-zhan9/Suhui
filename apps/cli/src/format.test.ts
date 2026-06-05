@@ -44,7 +44,7 @@ describe("formatEntriesListMarkdown", () => {
     expect(markdown).toContain("- Feed: Example Feed")
     expect(markdown).toContain("- ID: `entry-1`")
     expect(markdown).toContain("- State: unread")
-    expect(markdown).toContain("- Published: 2024-03-09T16:00:00.000Z")
+    expect(markdown).toContain(`- Published: ${new Date(1710000000000).toLocaleString()}`)
     expect(markdown).toContain("- URL: https://example.com/post")
     expect(markdown).toContain("Next cursor: `next-123`")
   })
@@ -69,6 +69,42 @@ describe("formatEntryDetailMarkdown", () => {
     expect(markdown).toContain("Read [this](https://example.com).")
     expect(markdown).toContain("- One")
   })
+
+  it("supports summary and metadata-only content modes", () => {
+    const detail: AgentEntryDetail = {
+      ...listResult.items[0]!,
+      content: "<p>Full body</p>",
+      contentSource: "content",
+      description: "Short summary",
+    }
+
+    expect(formatEntryDetailMarkdown(detail, { content: "summary" })).toContain("Short summary")
+    expect(formatEntryDetailMarkdown(detail, { content: "summary" })).not.toContain("Full body")
+
+    const metadataOnly = formatEntryDetailMarkdown(detail, { content: "metadata" })
+    expect(metadataOnly).toContain("- Content source: content")
+    expect(metadataOnly).not.toContain("Short summary\n")
+    expect(metadataOnly).not.toContain("Full body")
+  })
+
+  it("keeps metadata shape stable for markdown-sensitive values", () => {
+    const detail: AgentEntryDetail = {
+      ...listResult.items[0]!,
+      feedTitle: "Feed\n# Injected",
+      title: "Title\n## Injected",
+      author: "Author\n- injected",
+      content: "<p>Body</p>",
+      contentSource: "content",
+      description: "Summary\n# injected",
+    }
+
+    const markdown = formatEntryDetailMarkdown(detail)
+
+    expect(markdown).toContain("# Title ## Injected")
+    expect(markdown).toContain("- Feed: Feed # Injected")
+    expect(markdown).toContain("- Author: Author - injected")
+    expect(markdown).toContain("- Description: Summary # injected")
+  })
 })
 
 describe("formatFeedsMarkdown", () => {
@@ -90,10 +126,10 @@ describe("formatFeedsMarkdown", () => {
     const markdown = formatFeedsMarkdown(feeds)
 
     expect(markdown).toContain("# Suhui Feeds")
-    expect(markdown).toContain("## Example Feed")
+    expect(markdown).toContain("## Tech")
+    expect(markdown).toContain("### Example Feed")
     expect(markdown).toContain("- ID: `feed-1`")
     expect(markdown).toContain("- Unread: 3")
-    expect(markdown).toContain("- Category: Tech")
     expect(markdown).toContain("- Site URL: https://example.com")
     expect(markdown).toContain("- Feed URL: https://example.com/rss.xml")
   })
@@ -110,6 +146,15 @@ describe("htmlToMarkdown", () => {
     expect(markdown).toContain("Line\nnext")
     expect(markdown).toContain("```")
     expect(markdown).toContain("const x = 1;")
+  })
+
+  it("preserves plain angle brackets and code examples", () => {
+    const markdown = htmlToMarkdown(
+      '<p>Use 1 < 2 and 3 > 2.</p><pre><code>if (a < b) return "<tag>";</code></pre>',
+    )
+
+    expect(markdown).toContain("Use 1 < 2 and 3 > 2.")
+    expect(markdown).toContain('if (a < b) return "<tag>";')
   })
 })
 

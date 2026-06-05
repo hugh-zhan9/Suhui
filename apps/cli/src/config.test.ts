@@ -29,4 +29,13 @@ describe("resolveBaseUrl", () => {
       /Invalid base URL/,
     )
   })
+
+  it("rejects unsupported protocols and request paths", () => {
+    expect(() => resolveBaseUrl({ explicitBaseUrl: "ftp://localhost", env: {} })).toThrow(
+      /Invalid base URL/,
+    )
+    expect(() =>
+      resolveBaseUrl({ explicitBaseUrl: "http://localhost:41595/api?x=1", env: {} }),
+    ).toThrow(/Invalid base URL/)
+  })
 })

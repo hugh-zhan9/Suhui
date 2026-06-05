@@ -9,6 +9,8 @@ type ResolveBaseUrlOptions = {
 
 const trimTrailingSlash = (value: string) => value.replace(/\/+$/u, "")
 
+const isHttpProtocol = (protocol: string) => protocol === "http:" || protocol === "https:"
+
 export const resolveBaseUrl = ({
   explicitBaseUrl,
   env = process.env,
@@ -17,10 +19,16 @@ export const resolveBaseUrl = ({
 
   try {
     const url = new URL(rawValue)
-    if (!url.protocol || !url.host) {
-      throw new Error("URL must include protocol and host")
+    if (
+      !isHttpProtocol(url.protocol) ||
+      !url.host ||
+      url.pathname.replace(/\/+/gu, "") !== "" ||
+      url.search ||
+      url.hash
+    ) {
+      throw new Error("URL must be an HTTP(S) origin")
     }
-    return trimTrailingSlash(url.toString())
+    return trimTrailingSlash(url.origin)
   } catch {
     throw new Error(`Invalid base URL: ${rawValue}`)
   }

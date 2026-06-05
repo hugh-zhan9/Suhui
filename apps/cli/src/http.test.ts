@@ -57,14 +57,13 @@ describe("fetchAgentJson", () => {
   it("maps unexpected response shapes to exit code 4", async () => {
     const fetchImpl = vi.fn(async () => jsonResponse({ items: [] }))
 
-    await expect(
-      fetchAgentJson("http://127.0.0.1:41595", "/api/agent/feeds", { fetchImpl }),
-    ).rejects.toBeInstanceOf(SuhuiCliError)
-    await expect(
-      fetchAgentJson("http://127.0.0.1:41595", "/api/agent/feeds", { fetchImpl }),
-    ).rejects.toMatchObject({
+    const result = fetchAgentJson("http://127.0.0.1:41595", "/api/agent/feeds", { fetchImpl })
+
+    await expect(result).rejects.toBeInstanceOf(SuhuiCliError)
+    await expect(result).rejects.toMatchObject({
       code: "SUHUI_UNEXPECTED_RESPONSE",
       exitCode: exitCodes.unexpectedResponse,
     })
+    expect(fetchImpl).toHaveBeenCalledTimes(1)
   })
 })

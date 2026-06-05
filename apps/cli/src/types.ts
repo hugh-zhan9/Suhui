@@ -1,8 +1,11 @@
 export const defaultOutputFormat = "markdown" as const
+export const defaultMaxChars = 12_000
 
 export const outputFormats = ["markdown", "json"] as const
 
 export type OutputFormat = (typeof outputFormats)[number]
+
+export type ContentMode = "full" | "summary" | "metadata"
 
 export const exitCodes = {
   success: 0,
@@ -13,6 +16,56 @@ export const exitCodes = {
 } as const
 
 export type ExitCode = (typeof exitCodes)[keyof typeof exitCodes]
+
+export type CliErrorCode =
+  | "SUHUI_USAGE_ERROR"
+  | "SUHUI_REMOTE_UNAVAILABLE"
+  | "SUHUI_NOT_FOUND"
+  | "SUHUI_UNEXPECTED_RESPONSE"
+  | "SUHUI_EXECUTION_ERROR"
+
+export class CliError extends Error {
+  constructor(
+    readonly code: CliErrorCode,
+    message: string,
+    readonly exitCode: ExitCode,
+  ) {
+    super(message)
+    this.name = "CliError"
+  }
+}
+
+export type CliCommand =
+  | {
+      kind: "entries.list"
+      baseUrl: string
+      format: OutputFormat
+      feedId?: string
+      read?: boolean
+      limit?: number
+      cursor?: string
+      withSummary: boolean
+    }
+  | {
+      kind: "entries.get"
+      baseUrl: string
+      format: OutputFormat
+      entryId: string
+      content: ContentMode
+      maxChars: number
+    }
+  | {
+      kind: "feeds.list"
+      baseUrl: string
+      format: OutputFormat
+    }
+  | {
+      kind: "entries.read"
+      baseUrl: string
+      format: OutputFormat
+      entryIds: string[]
+      read: boolean
+    }
 
 export type AgentFormatTimestamp = number | null
 
