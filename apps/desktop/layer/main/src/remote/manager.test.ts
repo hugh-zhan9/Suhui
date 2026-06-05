@@ -14,6 +14,15 @@ vi.mock("~/application/feed/service", () => ({
   },
 }))
 
+vi.mock("~/application/agent/service", () => ({
+  agentApplicationService: {
+    listEntries: vi.fn().mockResolvedValue({ items: [], page: { limit: 20, hasMore: false } }),
+    getEntry: vi.fn().mockResolvedValue(null),
+    listFeeds: vi.fn().mockResolvedValue({ items: [] }),
+    updateReadStatus: vi.fn().mockResolvedValue({ updated: 0, read: true }),
+  },
+}))
+
 vi.mock("~/application/import-export/service", () => ({
   importExportApplicationService: {
     exportData: vi.fn().mockResolvedValue({ version: 1 }),
@@ -258,6 +267,154 @@ describe("RemoteServerManager", () => {
     expect(getEntries).toHaveBeenCalledWith({
       feedId: "feed_1",
       unreadOnly: true,
+    })
+  })
+
+  it("serves agent entries from the injected provider with parsed query options", async () => {
+    const getAgentEntries = vi.fn().mockResolvedValue({
+      items: [
+        {
+          id: "entry_1",
+          feedId: "feed_1",
+          title: "Agent Entry",
+          read: false,
+        },
+      ],
+      page: {
+        limit: 15,
+        hasMore: false,
+        nextCursor: null,
+      },
+    })
+
+    const server = await RemoteServerManager.start({
+      host: "127.0.0.1",
+      port: 0,
+      getSubscriptions: vi.fn().mockResolvedValue([]),
+      getAgentEntries,
+    })
+
+    const response = await fetch(
+      `${server.baseUrl}/api/agent/entries?feedId=feed_1&read=false&limit=15&cursor=cursor_1&withSummary=true`,
+    )
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual({
+      data: {
+        items: [
+          {
+            id: "entry_1",
+            feedId: "feed_1",
+            title: "Agent Entry",
+            read: false,
+          },
+        ],
+        page: {
+          limit: 15,
+          hasMore: false,
+          nextCursor: null,
+        },
+      },
+    })
+    expect(getAgentEntries).toHaveBeenCalledWith({
+      feedId: "feed_1",
+      read: false,
+      limit: 15,
+      cursor: "cursor_1",
+      withSummary: true,
+    })
+  })
+
+  it("returns a 404 agent error when agent entry detail is missing", async () => {
+    const getAgentEntry = vi.fn().mockResolvedValue(null)
+    const server = await RemoteServerManager.start({
+      host: "127.0.0.1",
+      port: 0,
+      getSubscriptions: vi.fn().mockResolvedValue([]),
+      getAgentEntry,
+    })
+
+    const response = await fetch(`${server.baseUrl}/api/agent/entries/missing_entry`)
+
+    expect(response.status).toBe(404)
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "SUHUI_ENTRY_NOT_FOUND",
+        message: "Entry not found",
+      },
+    })
+    expect(getAgentEntry).toHaveBeenCalledWith("missing_entry")
+  })
+
+  it("serves agent feeds from the injected provider", async () => {
+    const getAgentFeeds = vi.fn().mockResolvedValue({
+      items: [
+        {
+          id: "feed_1",
+          subscriptionId: "feed/feed_1",
+          title: "Feed One",
+          unreadCount: 3,
+        },
+      ],
+    })
+    const server = await RemoteServerManager.start({
+      host: "127.0.0.1",
+      port: 0,
+      getSubscriptions: vi.fn().mockResolvedValue([]),
+      getAgentFeeds,
+    })
+
+    const response = await fetch(`${server.baseUrl}/api/agent/feeds`)
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual({
+      data: {
+        items: [
+          {
+            id: "feed_1",
+            subscriptionId: "feed/feed_1",
+            title: "Feed One",
+            unreadCount: 3,
+          },
+        ],
+      },
+    })
+    expect(getAgentFeeds).toHaveBeenCalledTimes(1)
+  })
+
+  it("updates agent read status through the injected provider", async () => {
+    const updateAgentReadStatus = vi.fn().mockResolvedValue({
+      updated: 2,
+      read: true,
+    })
+    const server = await RemoteServerManager.start({
+      host: "127.0.0.1",
+      port: 0,
+      getSubscriptions: vi.fn().mockResolvedValue([]),
+      updateAgentReadStatus,
+    })
+
+    const response = await fetch(`${server.baseUrl}/api/agent/entries/read`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        entryIds: ["entry_1", "entry_2"],
+        read: true,
+      }),
+    })
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual({
+      data: {
+        updated: 2,
+        read: true,
+      },
+    })
+    expect(updateAgentReadStatus).toHaveBeenCalledWith({
+      entryIds: ["entry_1", "entry_2"],
+      read: true,
     })
   })
 

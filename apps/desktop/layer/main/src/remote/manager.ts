@@ -1,6 +1,15 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http"
 import type { AddressInfo } from "node:net"
 
+import { agentApplicationService } from "~/application/agent/service"
+import { AgentApplicationError } from "~/application/agent/types"
+import type {
+  AgentEntriesListOptions,
+  AgentEntriesListResult,
+  AgentEntryDetail,
+  AgentFeedsListResult,
+  AgentReadStatusResult,
+} from "~/application/agent/types"
 import { discoverApplicationService } from "~/application/discover/service"
 import { feedApplicationService } from "~/application/feed/service"
 import { importExportApplicationService } from "~/application/import-export/service"
@@ -28,6 +37,13 @@ type RemoteServerDependencies = {
   getSubscriptions: () => Promise<SubscriptionRecord[]>
   getEntries: (options?: { feedId?: string; unreadOnly?: boolean }) => Promise<EntryRecord[]>
   getEntry: (entryId: string) => Promise<EntryRecord | null>
+  getAgentEntries: (options?: AgentEntriesListOptions) => Promise<AgentEntriesListResult>
+  getAgentEntry: (entryId: string) => Promise<AgentEntryDetail | null>
+  getAgentFeeds: () => Promise<AgentFeedsListResult>
+  updateAgentReadStatus: (payload: {
+    entryIds: string[]
+    read: boolean
+  }) => Promise<AgentReadStatusResult>
   getUnreadCounts: () => Promise<Array<{ id: string; count: number }>>
   previewFeed: (payload: {
     url: string
@@ -142,6 +158,51 @@ const readJsonBody = async <T>(request: IncomingMessage): Promise<T> => {
   return JSON.parse(raw) as T
 }
 
+const parseOptionalBoolean = (value: string | null) => {
+  if (value === null) return undefined
+  const normalized = value.toLowerCase()
+  if (normalized === "true" || normalized === "1") return true
+  if (normalized === "false" || normalized === "0") return false
+  return undefined
+}
+
+const parseAgentEntriesOptions = (url: URL): AgentEntriesListOptions => {
+  const feedId = url.searchParams.get("feedId") || undefined
+  const read = parseOptionalBoolean(url.searchParams.get("read"))
+  const limitValue = url.searchParams.get("limit")
+  const cursor = url.searchParams.get("cursor") || undefined
+  const withSummary = ["1", "true"].includes(
+    (url.searchParams.get("withSummary") || "").toLowerCase(),
+  )
+
+  return {
+    ...(feedId ? { feedId } : {}),
+    ...(typeof read === "boolean" ? { read } : {}),
+    ...(limitValue ? { limit: Number(limitValue) } : {}),
+    ...(cursor ? { cursor } : {}),
+    ...(withSummary ? { withSummary } : {}),
+  }
+}
+
+const writeAgentError = (response: ServerResponse, error: unknown) => {
+  if (error instanceof AgentApplicationError) {
+    json(response, error.statusCode, {
+      error: {
+        code: error.code,
+        message: error.message,
+      },
+    })
+    return
+  }
+
+  json(response, 500, {
+    error: {
+      code: "SUHUI_AGENT_INTERNAL_ERROR",
+      message: error instanceof Error ? error.message : String(error),
+    },
+  })
+}
+
 const toEntryPdfInput = (entry: EntryRecord): EntryPdfInput => {
   const contentHtml = entry.readabilityContent || entry.content || entry.description || ""
   const publishedAt = entry.publishedAt ? new Date(entry.publishedAt).toLocaleString() : undefined
@@ -228,6 +289,57 @@ const createRequestHandler =
     if (method === "PATCH" && url.pathname === "/api/settings") {
       const payload = await readJsonBody<Partial<RemoteSettings>>(request)
       json(response, 200, { data: await deps.updateSettings(payload) })
+      return
+    }
+
+    if (method === "GET" && url.pathname === "/api/agent/entries") {
+      try {
+        const result = await deps.getAgentEntries(parseAgentEntriesOptions(url))
+        json(response, 200, { data: result })
+      } catch (error) {
+        writeAgentError(response, error)
+      }
+      return
+    }
+
+    if (method === "GET" && url.pathname === "/api/agent/feeds") {
+      try {
+        const result = await deps.getAgentFeeds()
+        json(response, 200, { data: result })
+      } catch (error) {
+        writeAgentError(response, error)
+      }
+      return
+    }
+
+    if (method === "GET" && url.pathname.startsWith("/api/agent/entries/")) {
+      try {
+        const entryId = decodeURIComponent(url.pathname.replace("/api/agent/entries/", ""))
+        const entry = await deps.getAgentEntry(entryId)
+        if (!entry) {
+          json(response, 404, {
+            error: {
+              code: "SUHUI_ENTRY_NOT_FOUND",
+              message: "Entry not found",
+            },
+          })
+          return
+        }
+        json(response, 200, { data: entry })
+      } catch (error) {
+        writeAgentError(response, error)
+      }
+      return
+    }
+
+    if (method === "POST" && url.pathname === "/api/agent/entries/read") {
+      try {
+        const payload = await readJsonBody<{ entryIds: string[]; read: boolean }>(request)
+        const result = await deps.updateAgentReadStatus(payload)
+        json(response, 200, { data: result })
+      } catch (error) {
+        writeAgentError(response, error)
+      }
       return
     }
 
@@ -451,6 +563,15 @@ class RemoteServerManagerStatic {
       const { entryApplicationService } = await import("~/application/entry/service")
       return entryApplicationService.getEntry(entryId)
     },
+    getAgentEntries: (options) => agentApplicationService.listEntries(options),
+    getAgentEntry: (entryId) => agentApplicationService.getEntry(entryId),
+    getAgentFeeds: () => agentApplicationService.listFeeds(),
+    updateAgentReadStatus: async (payload) => {
+      const result = await agentApplicationService.updateReadStatus(payload)
+      this.broadcast("entries.updated", {})
+      this.broadcast("subscriptions.updated", {})
+      return result
+    },
     getUnreadCounts: async () => {
       const { unreadApplicationService } = await import("~/application/unread/service")
       return unreadApplicationService.listUnreadCounts()
@@ -538,6 +659,12 @@ class RemoteServerManagerStatic {
       ...(options?.getSubscriptions ? { getSubscriptions: options.getSubscriptions } : {}),
       ...(options?.getEntries ? { getEntries: options.getEntries } : {}),
       ...(options?.getEntry ? { getEntry: options.getEntry } : {}),
+      ...(options?.getAgentEntries ? { getAgentEntries: options.getAgentEntries } : {}),
+      ...(options?.getAgentEntry ? { getAgentEntry: options.getAgentEntry } : {}),
+      ...(options?.getAgentFeeds ? { getAgentFeeds: options.getAgentFeeds } : {}),
+      ...(options?.updateAgentReadStatus
+        ? { updateAgentReadStatus: options.updateAgentReadStatus }
+        : {}),
       ...(options?.getUnreadCounts ? { getUnreadCounts: options.getUnreadCounts } : {}),
       ...(options?.previewFeed ? { previewFeed: options.previewFeed } : {}),
       ...(options?.createSubscription ? { createSubscription: options.createSubscription } : {}),
