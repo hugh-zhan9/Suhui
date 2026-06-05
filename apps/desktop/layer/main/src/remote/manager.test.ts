@@ -67,6 +67,7 @@ vi.mock("~/application/subscription/service", () => ({
 }))
 
 import { RemoteServerManager } from "./manager"
+import { agentReadStatusMaxEntryIds } from "~/application/agent/types"
 
 describe("RemoteServerManager", () => {
   const readChunkWithTimeout = async (
@@ -481,6 +482,89 @@ describe("RemoteServerManager", () => {
       entryIds: ["entry_1", "entry_2"],
       read: true,
     })
+  })
+
+  it.each([
+    [
+      "missing read",
+      { entryIds: ["entry_1"] },
+      "SUHUI_INVALID_READ_STATUS",
+      "read must be true or false",
+    ],
+    [
+      "null read",
+      { entryIds: ["entry_1"], read: null },
+      "SUHUI_INVALID_READ_STATUS",
+      "read must be true or false",
+    ],
+    [
+      "non-array entryIds",
+      { entryIds: "entry_1", read: true },
+      "SUHUI_INVALID_ENTRY_IDS",
+      "entryIds must be a non-empty string array",
+    ],
+    [
+      "non-string entry ID",
+      { entryIds: ["entry_1", 1], read: true },
+      "SUHUI_INVALID_ENTRY_IDS",
+      "entryIds must be a non-empty string array",
+    ],
+    [
+      "too many entry IDs",
+      {
+        entryIds: Array.from({ length: agentReadStatusMaxEntryIds + 1 }, (_, index) => {
+          return `entry_${index}`
+        }),
+        read: true,
+      },
+      "SUHUI_INVALID_ENTRY_IDS",
+      `entryIds must include at most ${agentReadStatusMaxEntryIds} ids`,
+    ],
+  ])("rejects invalid agent read status payloads: %s", async (_name, body, code, message) => {
+    const updateAgentReadStatus = vi.fn().mockResolvedValue({ updated: 1, read: true })
+    const server = await RemoteServerManager.start({
+      host: "127.0.0.1",
+      port: 0,
+      getSubscriptions: vi.fn().mockResolvedValue([]),
+      updateAgentReadStatus,
+    })
+
+    const response = await fetch(`${server.baseUrl}/api/agent/entries/read`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    })
+
+    expect(response.status).toBe(400)
+    await expect(response.json()).resolves.toEqual({
+      error: { code, message },
+    })
+    expect(updateAgentReadStatus).not.toHaveBeenCalled()
+  })
+
+  it("rejects malformed agent read status JSON as a 400 client error", async () => {
+    const updateAgentReadStatus = vi.fn().mockResolvedValue({ updated: 1, read: true })
+    const server = await RemoteServerManager.start({
+      host: "127.0.0.1",
+      port: 0,
+      getSubscriptions: vi.fn().mockResolvedValue([]),
+      updateAgentReadStatus,
+    })
+
+    const response = await fetch(`${server.baseUrl}/api/agent/entries/read`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{",
+    })
+
+    expect(response.status).toBe(400)
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "SUHUI_INVALID_JSON",
+        message: "request body must be valid JSON",
+      },
+    })
+    expect(updateAgentReadStatus).not.toHaveBeenCalled()
   })
 
   it("serves entry detail from the injected provider", async () => {

@@ -62,6 +62,25 @@ describe("fetchAgentJson", () => {
     })
   })
 
+  it.each([
+    ["SUHUI_INVALID_READ_STATUS", "read must be true or false"],
+    ["SUHUI_INVALID_JSON", "request body must be valid JSON"],
+  ])("preserves remote API validation error code %s", async (code, message) => {
+    const fetchImpl = vi.fn(async () => jsonResponse({ error: { code, message } }, { status: 400 }))
+
+    await expect(
+      fetchAgentJson("http://127.0.0.1:41595", "/api/agent/entries/read", {
+        method: "POST",
+        body: { entryIds: ["entry-1"], read: true },
+        fetchImpl,
+      }),
+    ).rejects.toMatchObject({
+      code,
+      exitCode: exitCodes.error,
+      message,
+    })
+  })
+
   it("maps network failures and timeouts to remote unavailable", async () => {
     const fetchImpl = vi.fn(async () => {
       throw new TypeError("fetch failed")

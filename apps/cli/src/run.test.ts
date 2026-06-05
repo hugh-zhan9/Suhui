@@ -169,7 +169,7 @@ describe("runCli", () => {
       exitCode: exitCodes.error,
       stdout: "",
     })
-    expect(result.stderr).toContain("Error:")
+    expect(result.stderr).toContain("Error [SUHUI_USAGE_ERROR]:")
   })
 
   it("preserves remote API errors and JSON error formatting", async () => {
@@ -204,5 +204,31 @@ describe("runCli", () => {
 
     expect(result.exitCode).toBe(exitCodes.error)
     expect(result.stderr).toContain("boom")
+  })
+
+  it.each([
+    [
+      "entries list",
+      ["entries", "list"],
+      { items: null, page: { limit: 20, nextCursor: null, hasMore: false } },
+    ],
+    [
+      "entries get",
+      ["entries", "get", "entry-1"],
+      { ...entry, content: null, contentSource: "content", description: null },
+    ],
+    ["feeds list", ["feeds", "list"], { items: [{ id: "feed-1" }] }],
+    ["read status", ["entries", "mark-read", "entry-1"], { updated: "1", read: true }],
+  ])("maps malformed %s success data to exit code 4", async (_name, argv, data) => {
+    const fetch = vi.fn(async () => jsonResponse({ data }))
+
+    const result = await runCli({ argv, env: {}, fetch })
+
+    expect(result).toMatchObject({
+      exitCode: exitCodes.unexpectedResponse,
+      stdout: "",
+    })
+    expect(result.stderr).toContain("SUHUI_UNEXPECTED_RESPONSE")
+    expect(result.stderr).toContain("unexpected response")
   })
 })

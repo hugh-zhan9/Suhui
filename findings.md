@@ -1,5 +1,18 @@
 # 发现与决策
 
+## Suhui Agent CLI 发现（2026-06-05）
+
+- Agent CLI 必须把 remote API 的成功响应也当作不可信输入校验；只依赖 TypeScript 泛型会让 malformed `{ data }` 进入 formatter，导致错误退出码或伪成功输出。
+- CLI 默认 Markdown 错误输出也必须包含稳定错误码；只在 JSON 模式提供 `error.code` 不足以满足 agent 调用方排障。
+- CLI response validator 中，复用 type guard 时要避免过早把对象收窄为基础类型后再访问扩展字段；详情 schema 应使用共享字段检查 helper，而不是直接在收窄后的 list item 上访问 `content/contentSource/description`。
+- Agent entries list 的 DB 查询即使已有 active visibility SQL 条件，仍需要保留 `isEntryVisibleForActiveRelations` 二次过滤；因此分页不能只取 `limit + 1` 后过滤，否则前面隐藏 rows 会吞掉后面的可见 rows。
+- Agent entries list 应使用 bounded batch + keyset cursor 继续扫描，并用 `publishedAt/insertedAt/id` 推进；同时必须有每请求扫描上限，当前为 `agentEntriesMaxScanRows = agentEntriesMaxLimit * 5`，到达上限时用 last scanned row 返回 continuation cursor，避免隐藏 rows 极多时全量扫描。
+- Agent entries list 只需要元信息和可选摘要；列表查询必须用 `columns` 投影排除 `content` / `readabilityContent`，避免 agent 列表请求加载大正文。
+- Agent read-status 是显式 ID 写接口，服务层和 HTTP route 都需要校验 payload：`read` 必须是 boolean，`entryIds` 必须是非空 string array，并需要上限保护，当前上限为 `agentReadStatusMaxEntryIds = 500`。
+- `/api/agent/entries/read` 的 malformed JSON 是客户端输入错误，应返回 `400 SUHUI_INVALID_JSON`，不能落入通用 500 sanitizer。
+- CLI 的 known remote error code 列表必须跟 `/api/agent/*` 稳定错误码同步；否则服务端新增的稳定错误会被折叠成 `SUHUI_EXECUTION_ERROR`，削弱 agent 排障能力。
+- `@suhui/electron-main typecheck` 仍被历史 rootDir/file-list 与旧测试类型问题阻塞；本轮新增 typecheck 问题已修复，Agent CLI 验证以 focused tests、CLI typecheck/build 和 smoke 为准。
+
 ## 需求
 
 - 用户希望当本机运行 `Suhui` app 时，可通过浏览器以 `IP + 端口` 访问。

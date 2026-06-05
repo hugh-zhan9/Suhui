@@ -2,7 +2,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from "node:ht
 import type { AddressInfo } from "node:net"
 
 import { agentApplicationService } from "~/application/agent/service"
-import { AgentApplicationError } from "~/application/agent/types"
+import { AgentApplicationError, agentReadStatusMaxEntryIds } from "~/application/agent/types"
 import type {
   AgentEntriesListOptions,
   AgentEntriesListResult,
@@ -155,7 +155,11 @@ const readJsonBody = async <T>(request: IncomingMessage): Promise<T> => {
   }
 
   const raw = Buffer.concat(chunks).toString("utf8")
-  return JSON.parse(raw) as T
+  try {
+    return JSON.parse(raw) as T
+  } catch {
+    throw new AgentApplicationError("SUHUI_INVALID_JSON", "request body must be valid JSON", 400)
+  }
 }
 
 const parseOptionalBoolean = (name: string, value: string | null) => {
@@ -185,6 +189,41 @@ const parseAgentEntriesOptions = (url: URL): AgentEntriesListOptions => {
     ...(limitValue ? { limit: Number(limitValue) } : {}),
     ...(cursor ? { cursor } : {}),
     ...(withSummary ? { withSummary } : {}),
+  }
+}
+
+const validateAgentReadStatusPayload = (
+  payload: unknown,
+): { entryIds: string[]; read: boolean } => {
+  const value = payload as { entryIds?: unknown; read?: unknown } | null
+
+  if (typeof value?.read !== "boolean") {
+    throw new AgentApplicationError("SUHUI_INVALID_READ_STATUS", "read must be true or false", 400)
+  }
+
+  if (
+    !Array.isArray(value.entryIds) ||
+    value.entryIds.length === 0 ||
+    value.entryIds.some((entryId) => typeof entryId !== "string")
+  ) {
+    throw new AgentApplicationError(
+      "SUHUI_INVALID_ENTRY_IDS",
+      "entryIds must be a non-empty string array",
+      400,
+    )
+  }
+
+  if (value.entryIds.length > agentReadStatusMaxEntryIds) {
+    throw new AgentApplicationError(
+      "SUHUI_INVALID_ENTRY_IDS",
+      `entryIds must include at most ${agentReadStatusMaxEntryIds} ids`,
+      400,
+    )
+  }
+
+  return {
+    entryIds: value.entryIds,
+    read: value.read,
   }
 }
 
@@ -339,7 +378,7 @@ const createRequestHandler =
 
     if (method === "POST" && url.pathname === "/api/agent/entries/read") {
       try {
-        const payload = await readJsonBody<{ entryIds: string[]; read: boolean }>(request)
+        const payload = validateAgentReadStatusPayload(await readJsonBody<unknown>(request))
         const result = await deps.updateAgentReadStatus(payload)
         json(response, 200, { data: result })
       } catch (error) {

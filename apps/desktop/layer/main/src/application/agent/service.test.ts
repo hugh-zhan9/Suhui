@@ -1,7 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { decodeAgentEntriesCursor, encodeAgentEntriesCursor, isEntryAfterCursor } from "./cursor"
-import { AgentApplicationError, selectAgentEntryContent, toIsoString } from "./types"
+import {
+  AgentApplicationError,
+  agentEntriesMaxLimit,
+  agentEntriesMaxScanRows,
+  agentReadStatusMaxEntryIds,
+  selectAgentEntryContent,
+  toIsoString,
+} from "./types"
 
 const {
   getDB,
@@ -18,7 +25,7 @@ const {
   getSubscriptionAll: vi.fn(),
   listUnreadCounts: vi.fn(),
   recordSync: vi.fn(),
-  isEntryVisibleForActiveRelations: vi.fn(() => true),
+  isEntryVisibleForActiveRelations: vi.fn((_entry?: { id?: string }) => true),
 }))
 
 vi.mock("@suhui/database/services/entry", () => ({
@@ -293,6 +300,17 @@ describe("AgentApplicationService", () => {
     expect(result.page.limit).toBe(2)
     expect(result.page.hasMore).toBe(true)
     expect(result.page.nextCursor).toEqual(expect.any(String))
+
+    const findMany = getDB.mock.results[0]!.value.query.entriesTable.findMany
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        columns: expect.objectContaining({
+          description: true,
+          content: false,
+          readabilityContent: false,
+        }),
+      }),
+    )
   })
 
   it("uses DB-visible rows to fill a page and compute the next cursor", async () => {
@@ -326,11 +344,20 @@ describe("AgentApplicationService", () => {
         id: cursorEntry.id,
       }),
     )
-    expect(findMany).toHaveBeenCalledWith(expect.objectContaining({ limit: 3 }))
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        limit: agentEntriesMaxLimit + 1,
+        columns: expect.objectContaining({
+          description: false,
+          content: false,
+          readabilityContent: false,
+        }),
+      }),
+    )
   })
 
-  it("does not lose later visible rows when DB visibility filtering removes hidden rows", async () => {
-    const hiddenEntries = Array.from({ length: 51 }, (_, index) => ({
+  it("advances through multiple DB batches to find later visible rows", async () => {
+    const hiddenEntries = Array.from({ length: agentEntriesMaxLimit + 5 }, (_, index) => ({
       ...entries[0],
       id: `hidden-entry-${index}`,
       publishedAt: 1710000010000 - index * 2,
@@ -350,7 +377,14 @@ describe("AgentApplicationService", () => {
         insertedAt: 1710000010001 - (hiddenEntries.length + 1) * 2,
       },
     ]
-    const findMany = vi.fn(async ({ limit }: { limit: number }) => visibleEntries.slice(0, limit))
+    const orderedRows = [...hiddenEntries, ...visibleEntries]
+    isEntryVisibleForActiveRelations.mockImplementation(
+      (entry?: { id?: string }) => !entry?.id?.startsWith("hidden-entry-"),
+    )
+    const findMany = vi.fn(async ({ limit }: { limit: number }) => {
+      const offset = (findMany.mock.calls.length - 1) * limit
+      return orderedRows.slice(offset, offset + limit)
+    })
     getDB.mockReturnValue({
       query: {
         entriesTable: {
@@ -368,8 +402,69 @@ describe("AgentApplicationService", () => {
     ])
     expect(result.page.hasMore).toBe(false)
     expect(result.page.nextCursor).toBeNull()
-    expect(findMany).toHaveBeenCalledTimes(1)
-    expect(hiddenEntries).toHaveLength(51)
+    expect(findMany).toHaveBeenCalledTimes(2)
+    expect(findMany).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ limit: agentEntriesMaxLimit + 1 }),
+    )
+    expect(findMany).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ limit: agentEntriesMaxLimit + 1 }),
+    )
+    expect(isEntryVisibleForActiveRelations).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "hidden-entry-0" }),
+      expect.any(Object),
+    )
+  })
+
+  it("stops scanning at the per-request cap and returns a cursor from the last scanned row", async () => {
+    const hiddenEntries = Array.from({ length: agentEntriesMaxScanRows + 5 }, (_, index) => ({
+      ...entries[0],
+      id: `hidden-entry-${index}`,
+      publishedAt: 1710000020000 - index * 2,
+      insertedAt: 1710000020001 - index * 2,
+    }))
+    const visibleEntry = {
+      ...entries[0],
+      id: "after-cap-visible-entry",
+      publishedAt: 1710000020000 - hiddenEntries.length * 2,
+      insertedAt: 1710000020001 - hiddenEntries.length * 2,
+    }
+    const orderedRows = [...hiddenEntries, visibleEntry]
+    isEntryVisibleForActiveRelations.mockImplementation(
+      (entry?: { id?: string }) => !entry?.id?.startsWith("hidden-entry-"),
+    )
+    const findMany = vi.fn(async ({ limit }: { limit: number }) => {
+      const offset = findMany.mock.calls
+        .slice(0, -1)
+        .reduce((scanned, [call]) => scanned + (call as { limit: number }).limit, 0)
+      return orderedRows.slice(offset, offset + limit)
+    })
+    getDB.mockReturnValue({
+      query: {
+        entriesTable: {
+          findMany,
+          findFirst: vi.fn().mockResolvedValue(entries[0]),
+        },
+      },
+    })
+
+    const result = await agentApplicationService.listEntries({ limit: 2 })
+
+    expect(result.items).toEqual([])
+    expect(result.page.hasMore).toBe(true)
+    const lastScannedRow = hiddenEntries[agentEntriesMaxScanRows - 1]!
+    expect(result.page.nextCursor).toEqual(
+      encodeAgentEntriesCursor({
+        publishedAt: lastScannedRow.publishedAt,
+        insertedAt: lastScannedRow.insertedAt,
+        id: lastScannedRow.id,
+      }),
+    )
+    expect(findMany).toHaveBeenCalledTimes(
+      Math.ceil(agentEntriesMaxScanRows / (agentEntriesMaxLimit + 1)),
+    )
+    expect(isEntryVisibleForActiveRelations).toHaveBeenCalledTimes(agentEntriesMaxScanRows)
   })
 
   it("returns entry detail with selected content source", async () => {
@@ -468,6 +563,45 @@ describe("AgentApplicationService", () => {
   it("rejects empty entry ids", async () => {
     await expect(
       agentApplicationService.updateReadStatus({ entryIds: [" ", ""], read: false }),
+    ).rejects.toMatchObject({
+      code: "SUHUI_INVALID_ENTRY_IDS",
+      statusCode: 400,
+    })
+    expect(patchMany).not.toHaveBeenCalled()
+    expect(recordSync).not.toHaveBeenCalled()
+  })
+
+  it("rejects too many read status ids before patching", async () => {
+    await expect(
+      agentApplicationService.updateReadStatus({
+        entryIds: Array.from({ length: agentReadStatusMaxEntryIds + 1 }, (_, index) => {
+          return `entry-${index}`
+        }),
+        read: true,
+      }),
+    ).rejects.toMatchObject({
+      code: "SUHUI_INVALID_ENTRY_IDS",
+      statusCode: 400,
+    })
+    expect(patchMany).not.toHaveBeenCalled()
+    expect(recordSync).not.toHaveBeenCalled()
+  })
+
+  it("rejects invalid read status payloads before patching", async () => {
+    await expect(
+      agentApplicationService.updateReadStatus({ entryIds: ["entry-1"], read: null } as any),
+    ).rejects.toMatchObject({
+      code: "SUHUI_INVALID_READ_STATUS",
+      statusCode: 400,
+    })
+    await expect(
+      agentApplicationService.updateReadStatus({ entryIds: "entry-1", read: true } as any),
+    ).rejects.toMatchObject({
+      code: "SUHUI_INVALID_ENTRY_IDS",
+      statusCode: 400,
+    })
+    await expect(
+      agentApplicationService.updateReadStatus({ entryIds: ["entry-1", 1], read: true } as any),
     ).rejects.toMatchObject({
       code: "SUHUI_INVALID_ENTRY_IDS",
       statusCode: 400,

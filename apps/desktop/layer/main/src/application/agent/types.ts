@@ -1,5 +1,7 @@
 export const agentEntriesDefaultLimit = 20
 export const agentEntriesMaxLimit = 100
+export const agentEntriesMaxScanRows = agentEntriesMaxLimit * 5
+export const agentReadStatusMaxEntryIds = 500
 
 export type AgentFormatTimestamp = number | null
 
@@ -72,6 +74,8 @@ export type AgentErrorCode =
   | "SUHUI_INVALID_LIMIT"
   | "SUHUI_INVALID_CURSOR"
   | "SUHUI_INVALID_READ_FILTER"
+  | "SUHUI_INVALID_READ_STATUS"
+  | "SUHUI_INVALID_JSON"
   | "SUHUI_ENTRY_NOT_FOUND"
   | "SUHUI_INVALID_ENTRY_IDS"
   | "SUHUI_AGENT_INTERNAL_ERROR"

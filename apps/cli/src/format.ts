@@ -254,5 +254,5 @@ export const formatError = (error: CliError, format: OutputFormat) => {
       },
     })
   }
-  return `Error: ${stableInline(error.message, "Unknown error")}\n`
+  return `Error [${error.code}]: ${stableInline(error.message, "Unknown error")}\n`
 }

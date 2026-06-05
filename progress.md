@@ -1,5 +1,63 @@
 # 进度日志
 
+## 会话：2026-06-05
+
+### Suhui Agent CLI plan 执行收尾
+
+- **状态：** complete
+- 执行的操作：
+  - 读取 `AI-CONTEXT.md` 和 `docs/loopx/design/Suhui Agent CLI需求设计文档.md`
+  - 按 `docs/loopx/plans/2026-06-05-suhui-agent-cli.md` 继续完成剩余实现与验证
+  - 修复 CLI 对 malformed success response 的处理：返回退出码 `4`，stderr 暴露 `SUHUI_UNEXPECTED_RESPONSE`
+  - 修复 CLI 默认 Markdown 错误输出不含稳定错误码的问题
+  - 修复 CLI response validator 的 TypeScript 收窄问题，确保 `typecheck` 和 `build` 通过
+  - 修复 Agent entries list 在 active visibility 二次过滤后可能丢失后续可见文章的问题
+  - 为 Agent entries list 增加列投影，避免列表接口加载正文大字段
+  - 修复 Agent read-status payload 校验：`read` 必须是 boolean，`entryIds` 必须是非空 string array，并增加 500 个 ID 上限
+  - 修复 `/api/agent/entries/read` malformed JSON 返回 500 的问题，改为 `400 SUHUI_INVALID_JSON`
+  - 根据 final-review 反馈为 Agent entries list 增加每请求扫描上限和 continuation cursor，避免隐藏 rows 过多时全量扫描
+  - 根据 final-review 反馈补齐 CLI 对 `SUHUI_INVALID_READ_STATUS`、`SUHUI_INVALID_JSON` 的远端错误码保留
+  - 补强对应 focused tests
+  - 完成 per-task spec review 与 code-quality review；review 反馈均已修复并复审通过
+  - 更新 Agent CLI plan 当前实现快照
+- 创建/修改的文件：
+  - `apps/cli/src/format.ts`
+  - `apps/cli/src/run.ts`
+  - `apps/cli/src/run.test.ts`
+  - `apps/desktop/layer/main/src/application/agent/service.ts`
+  - `apps/desktop/layer/main/src/application/agent/service.test.ts`
+  - `apps/desktop/layer/main/src/application/agent/types.ts`
+  - `apps/desktop/layer/main/src/remote/manager.ts`
+  - `apps/desktop/layer/main/src/remote/manager.test.ts`
+  - `docs/loopx/plans/2026-06-05-suhui-agent-cli.md`
+  - `progress.md`
+  - `findings.md`
+
+### Suhui Agent CLI 验证结果
+
+| 测试                         | 输入                                                                                                          | 预期结果                                 | 实际结果                                                                                   | 状态 |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------ | ---- |
+| Agent API focused tests      | `pnpm --filter @suhui/electron-main test -- src/application/agent/service.test.ts src/remote/manager.test.ts` | 通过                                     | `48` files / `197` tests passed                                                            | 通过 |
+| CLI focused tests            | `pnpm --filter @suhui/cli test`                                                                               | 通过                                     | `5` files / `45` tests passed                                                              | 通过 |
+| CLI typecheck                | `pnpm --filter @suhui/cli typecheck`                                                                          | 通过                                     | exit `0`                                                                                   | 通过 |
+| CLI build                    | `pnpm --filter @suhui/cli build`                                                                              | 通过并生成 `dist/index.js`               | exit `0`，`apps/cli/dist/index.js` 可执行                                                  | 通过 |
+| CLI remote unavailable smoke | `pnpm --filter @suhui/cli dev -- feeds list; printf '\nEXIT_CODE:%s\n' $?`                                    | stderr 含 remote unavailable，退出码 `2` | stderr 含 `SUHUI_REMOTE_UNAVAILABLE`，`EXIT_CODE:2`                                        | 通过 |
+| 主进程 typecheck             | `pnpm --filter @suhui/electron-main typecheck`                                                                | 无新增本轮错误                           | 本轮新增 `service.test.ts` 类型错误已修复；命令仍被历史 TS6059/TS6307 和旧测试类型问题阻塞 | 阻塞 |
+
+### Suhui Agent CLI 错误日志
+
+| 时间戳     | 错误                                                                  | 尝试次数 | 解决方案                                                                                   |
+| ---------- | --------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------ |
+| 2026-06-05 | CLI malformed success response 返回 `0/1` 而不是 `4`                  | 1        | 增加 runtime response-shape validation，统一抛 `SUHUI_UNEXPECTED_RESPONSE`                 |
+| 2026-06-05 | 默认 Markdown stderr 不显示稳定错误码                                 | 1        | 错误格式改为 `Error [CODE]: message`                                                       |
+| 2026-06-05 | CLI validator 通过测试但 `typecheck/build` 失败                       | 1        | 拆出字段检查 helper，避免 `isEntryDetail` 被收窄为 list item 后访问详情字段                |
+| 2026-06-05 | Agent entries list 可能因 active visibility 二次过滤丢失后续可见 rows | 1        | 使用 bounded batch 扫描并用 keyset cursor 推进                                             |
+| 2026-06-05 | Agent read-status payload 校验不足                                    | 1        | 服务层和路由层都校验 `read`、`entryIds` shape 与数量上限                                   |
+| 2026-06-05 | malformed JSON 被映射成 500                                           | 1        | `readJsonBody` 将 JSON parse 错误转成 `400 SUHUI_INVALID_JSON`                             |
+| 2026-06-05 | main typecheck 暴露本轮新增测试 mock 参数类型错误                     | 1        | 放宽 mock 参数类型并用 optional chaining；剩余 typecheck 错误为历史基线                    |
+| 2026-06-05 | final-review 发现 entries list 在隐藏 rows 极多时仍可能扫描过多       | 1        | 增加 `agentEntriesMaxScanRows`，到达上限时返回基于 last scanned row 的 continuation cursor |
+| 2026-06-05 | final-review 发现 CLI 未保留新增远端错误码                            | 1        | 将 `SUHUI_INVALID_READ_STATUS` 与 `SUHUI_INVALID_JSON` 加入 CLI known remote error codes   |
+
 ## 会话：2026-03-31
 
 ### 阶段 5：41595 一致性缺口补充文档

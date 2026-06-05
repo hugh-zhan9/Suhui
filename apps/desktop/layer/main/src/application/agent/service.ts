@@ -22,6 +22,9 @@ import {
   type AgentEntryListItem,
   type AgentFeedsListResult,
   type AgentReadStatusResult,
+  agentEntriesMaxLimit,
+  agentEntriesMaxScanRows,
+  agentReadStatusMaxEntryIds,
   normalizeLimit,
   selectAgentEntryContent,
   toIsoString,
@@ -60,7 +63,23 @@ type SubscriptionRow = {
 
 const unknownFeedTitle = "Unknown Feed"
 
-const normalizeEntryIds = (entryIds: string[]) => {
+const normalizeEntryIds = (entryIds: unknown) => {
+  if (!Array.isArray(entryIds) || entryIds.some((entryId) => typeof entryId !== "string")) {
+    throw new AgentApplicationError(
+      "SUHUI_INVALID_ENTRY_IDS",
+      "entryIds must be a non-empty string array",
+      400,
+    )
+  }
+
+  if (entryIds.length > agentReadStatusMaxEntryIds) {
+    throw new AgentApplicationError(
+      "SUHUI_INVALID_ENTRY_IDS",
+      `entryIds must include at most ${agentReadStatusMaxEntryIds} ids`,
+      400,
+    )
+  }
+
   const normalized: string[] = []
   const seen = new Set<string>()
 
@@ -80,6 +99,14 @@ const normalizeEntryIds = (entryIds: string[]) => {
   }
 
   return normalized
+}
+
+const normalizeReadStatus = (read: unknown) => {
+  if (typeof read !== "boolean") {
+    throw new AgentApplicationError("SUHUI_INVALID_READ_STATUS", "read must be true or false", 400)
+  }
+
+  return read
 }
 
 const sourceIdForSubscription = (subscription: SubscriptionRow) => {
@@ -218,29 +245,81 @@ export class AgentApplicationService {
       buildFeedContext(),
     ])
 
-    const cursor = options.cursor ? decodeAgentEntriesCursor(options.cursor) : null
-    const rows = (await db.query.entriesTable.findMany({
-      where: (entries) =>
-        and(
-          isNull(entries.deletedAt),
-          createActiveVisibilityWhere(entries, visibility),
-          options.feedId ? eq(entries.feedId, options.feedId) : undefined,
-          typeof options.read === "boolean" ? eq(entries.read, options.read) : undefined,
-          createCursorWhere(entries, cursor),
-        ),
-      orderBy: (entries, { desc }) => [
-        desc(entries.publishedAt),
-        desc(entries.insertedAt),
-        desc(entries.id),
-      ],
-      limit: limit + 1,
-    })) as EntryRow[]
+    const initialCursor = options.cursor ? decodeAgentEntriesCursor(options.cursor) : null
+    const visibleRows: EntryRow[] = []
+    const batchLimit = agentEntriesMaxLimit + 1
+    let queryCursor = initialCursor
+    let scannedRows = 0
+    let lastScannedRow: EntryRow | null = null
+    let scanCapHit = false
 
-    const visibleRows = rows.filter((entry) => isEntryVisibleForActiveRelations(entry, visibility))
+    while (visibleRows.length < limit + 1 && scannedRows < agentEntriesMaxScanRows) {
+      const remainingScanRows = agentEntriesMaxScanRows - scannedRows
+      const queryLimit = Math.min(batchLimit, remainingScanRows)
+      const rows = (await db.query.entriesTable.findMany({
+        where: (entries) =>
+          and(
+            isNull(entries.deletedAt),
+            createActiveVisibilityWhere(entries, visibility),
+            options.feedId ? eq(entries.feedId, options.feedId) : undefined,
+            typeof options.read === "boolean" ? eq(entries.read, options.read) : undefined,
+            createCursorWhere(entries, queryCursor),
+          ),
+        orderBy: (entries, { desc }) => [
+          desc(entries.publishedAt),
+          desc(entries.insertedAt),
+          desc(entries.id),
+        ],
+        columns: {
+          id: true,
+          feedId: true,
+          title: true,
+          url: true,
+          author: true,
+          publishedAt: true,
+          insertedAt: true,
+          read: true,
+          description: options.withSummary === true,
+          inboxHandle: true,
+          sources: true,
+          content: false,
+          readabilityContent: false,
+        },
+        limit: queryLimit,
+      })) as EntryRow[]
+
+      if (rows.length === 0) break
+
+      const previousCursor = queryCursor ? JSON.stringify(queryCursor) : null
+
+      for (const row of rows) {
+        lastScannedRow = row
+        scannedRows += 1
+        if (isEntryVisibleForActiveRelations(row, visibility)) {
+          visibleRows.push(row)
+          if (visibleRows.length >= limit + 1) break
+        }
+        if (scannedRows >= agentEntriesMaxScanRows) break
+      }
+
+      if (visibleRows.length >= limit + 1 || rows.length < queryLimit || !lastScannedRow) break
+
+      if (scannedRows >= agentEntriesMaxScanRows) {
+        scanCapHit = true
+        break
+      }
+
+      queryCursor = toCursorShape(lastScannedRow)
+      if (JSON.stringify(queryCursor) === previousCursor) break
+    }
 
     const pageRows = visibleRows.slice(0, limit)
-    const hasMore = visibleRows.length > limit
+    const hasVisibleOverflow = visibleRows.length > limit
+    const hasScanCapContinuation =
+      scanCapHit && visibleRows.length <= limit && lastScannedRow !== null
+    const hasMore = hasVisibleOverflow || hasScanCapContinuation
     const lastRow = pageRows.at(-1)
+    const cursorRow = hasVisibleOverflow ? lastRow : hasScanCapContinuation ? lastScannedRow : null
 
     return {
       items: pageRows.map((entry) =>
@@ -254,7 +333,7 @@ export class AgentApplicationService {
       page: {
         limit,
         hasMore,
-        nextCursor: hasMore && lastRow ? encodeAgentEntriesCursor(toCursorShape(lastRow)) : null,
+        nextCursor: cursorRow ? encodeAgentEntriesCursor(toCursorShape(cursorRow)) : null,
       },
     }
   }
@@ -319,7 +398,7 @@ export class AgentApplicationService {
     read: boolean
   }): Promise<AgentReadStatusResult> {
     const entryIds = normalizeEntryIds(payload.entryIds)
-    const { read } = payload
+    const read = normalizeReadStatus(payload.read)
     const db = DBManager.getDB()
     const existingRows = (await db.query.entriesTable.findMany({
       where: (entries) => and(inArray(entries.id, entryIds), isNull(entries.deletedAt)),
