@@ -1,9 +1,10 @@
 import type { AnyColumn } from "drizzle-orm"
-import { and, eq, isNull, lt, or } from "drizzle-orm"
+import { and, eq, inArray, isNull, lt, or, sql } from "drizzle-orm"
 import { EntryService } from "@suhui/database/services/entry"
 import { FeedService } from "@suhui/database/services/feed"
 import {
   getActiveVisibilityState,
+  type ActiveVisibilityState,
   isEntryVisibleForActiveRelations,
 } from "@suhui/database/services/internal/active-visibility"
 import { SubscriptionService } from "@suhui/database/services/subscription"
@@ -170,6 +171,44 @@ const createCursorWhere = (
   )
 }
 
+const createActiveVisibilityWhere = (
+  entries: {
+    feedId: AnyColumn
+    inboxHandle: AnyColumn
+    sources: AnyColumn
+  },
+  visibility: ActiveVisibilityState,
+) => {
+  const conditions = []
+  const feedIds = Array.from(visibility.activeFeedIds)
+  const inboxIds = Array.from(visibility.activeInboxIds)
+  const sourceIds = Array.from(
+    new Set([
+      ...visibility.activeFeedIds,
+      ...visibility.activeListIds,
+      ...visibility.activeInboxIds,
+    ]),
+  )
+
+  if (feedIds.length > 0) {
+    conditions.push(inArray(entries.feedId, feedIds))
+  }
+  if (inboxIds.length > 0) {
+    conditions.push(inArray(entries.inboxHandle, inboxIds))
+  }
+  if (sourceIds.length > 0) {
+    conditions.push(
+      sql`${entries.sources} ?| array[${sql.join(
+        sourceIds.map((id) => sql`${id}`),
+        sql`, `,
+      )}]`,
+    )
+  }
+
+  if (conditions.length === 0) return sql`false`
+  return conditions.length === 1 ? conditions[0]! : or(...conditions)
+}
+
 export class AgentApplicationService {
   async listEntries(options: AgentEntriesListOptions = {}): Promise<AgentEntriesListResult> {
     const db = DBManager.getDB()
@@ -179,42 +218,25 @@ export class AgentApplicationService {
       buildFeedContext(),
     ])
 
-    let cursor = options.cursor ? decodeAgentEntriesCursor(options.cursor) : null
-    const batchSize = Math.max(limit + 1, 50)
-    const maxBatches = 10
-    const visibleRows: EntryRow[] = []
+    const cursor = options.cursor ? decodeAgentEntriesCursor(options.cursor) : null
+    const rows = (await db.query.entriesTable.findMany({
+      where: (entries) =>
+        and(
+          isNull(entries.deletedAt),
+          createActiveVisibilityWhere(entries, visibility),
+          options.feedId ? eq(entries.feedId, options.feedId) : undefined,
+          typeof options.read === "boolean" ? eq(entries.read, options.read) : undefined,
+          createCursorWhere(entries, cursor),
+        ),
+      orderBy: (entries, { desc }) => [
+        desc(entries.publishedAt),
+        desc(entries.insertedAt),
+        desc(entries.id),
+      ],
+      limit: limit + 1,
+    })) as EntryRow[]
 
-    for (let batchIndex = 0; batchIndex < maxBatches && visibleRows.length <= limit; batchIndex++) {
-      const rows = (await db.query.entriesTable.findMany({
-        where: (entries) =>
-          and(
-            isNull(entries.deletedAt),
-            options.feedId ? eq(entries.feedId, options.feedId) : undefined,
-            typeof options.read === "boolean" ? eq(entries.read, options.read) : undefined,
-            createCursorWhere(entries, cursor),
-          ),
-        orderBy: (entries, { desc }) => [
-          desc(entries.publishedAt),
-          desc(entries.insertedAt),
-          desc(entries.id),
-        ],
-        limit: batchSize,
-      })) as EntryRow[]
-
-      if (rows.length === 0) break
-
-      for (const entry of rows) {
-        if (isEntryVisibleForActiveRelations(entry, visibility)) {
-          visibleRows.push(entry)
-        }
-        if (visibleRows.length > limit) break
-      }
-
-      const lastRawRow = rows.at(-1)
-      cursor = lastRawRow ? toCursorShape(lastRawRow) : cursor
-
-      if (rows.length < batchSize) break
-    }
+    const visibleRows = rows.filter((entry) => isEntryVisibleForActiveRelations(entry, visibility))
 
     const pageRows = visibleRows.slice(0, limit)
     const hasMore = visibleRows.length > limit
@@ -298,13 +320,27 @@ export class AgentApplicationService {
   }): Promise<AgentReadStatusResult> {
     const entryIds = normalizeEntryIds(payload.entryIds)
     const { read } = payload
+    const db = DBManager.getDB()
+    const existingRows = (await db.query.entriesTable.findMany({
+      where: (entries) => and(inArray(entries.id, entryIds), isNull(entries.deletedAt)),
+      columns: { id: true },
+    })) as Array<{ id: string }>
+    const existingIds = new Set(existingRows.map((entry) => entry.id))
+    const targetEntryIds = entryIds.filter((entryId) => existingIds.has(entryId))
+
+    if (targetEntryIds.length === 0) {
+      return {
+        updated: 0,
+        read,
+      }
+    }
 
     await EntryService.patchMany({
-      entryIds,
+      entryIds: targetEntryIds,
       entry: { read },
     })
 
-    for (const entryId of entryIds) {
+    for (const entryId of targetEntryIds) {
       syncLogger.record({
         type: read ? "entry.mark_read" : "entry.mark_unread",
         entityType: "entry",
@@ -313,7 +349,7 @@ export class AgentApplicationService {
     }
 
     return {
-      updated: entryIds.length,
+      updated: targetEntryIds.length,
       read,
     }
   }

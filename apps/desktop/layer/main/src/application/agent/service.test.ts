@@ -295,13 +295,7 @@ describe("AgentApplicationService", () => {
     expect(result.page.nextCursor).toEqual(expect.any(String))
   })
 
-  it("fills a page with visible entries when earlier fetched rows are hidden", async () => {
-    const hiddenEntry = {
-      ...entries[0],
-      id: "hidden-entry",
-      publishedAt: 1710000004000,
-      insertedAt: 1710000005000,
-    }
+  it("uses DB-visible rows to fill a page and compute the next cursor", async () => {
     const laterVisibleEntry = {
       ...entries[2],
       id: "entry-4",
@@ -309,7 +303,7 @@ describe("AgentApplicationService", () => {
       publishedAt: 1709999998000,
       insertedAt: 1709999999000,
     }
-    const orderedRows = [hiddenEntry, entries[0], entries[1], entries[2], laterVisibleEntry]
+    const orderedRows = [entries[0], entries[1], entries[2], laterVisibleEntry]
     const findMany = vi.fn(async ({ limit }: { limit: number }) => orderedRows.slice(0, limit))
     getDB.mockReturnValue({
       query: {
@@ -319,7 +313,6 @@ describe("AgentApplicationService", () => {
         },
       },
     })
-    isEntryVisibleForActiveRelations.mockImplementation((entry) => entry.id !== hiddenEntry.id)
 
     const result = await agentApplicationService.listEntries({ limit: 2 })
 
@@ -332,10 +325,10 @@ describe("AgentApplicationService", () => {
         id: entries[1].id,
       }),
     )
-    expect(findMany).toHaveBeenCalledWith(expect.objectContaining({ limit: 50 }))
+    expect(findMany).toHaveBeenCalledWith(expect.objectContaining({ limit: 3 }))
   })
 
-  it("continues fetching batches when hidden rows consume the first bounded window", async () => {
+  it("does not lose later visible rows when DB visibility filtering removes hidden rows", async () => {
     const hiddenEntries = Array.from({ length: 51 }, (_, index) => ({
       ...entries[0],
       id: `hidden-entry-${index}`,
@@ -356,13 +349,7 @@ describe("AgentApplicationService", () => {
         insertedAt: 1710000010001 - (hiddenEntries.length + 1) * 2,
       },
     ]
-    const orderedRows = [...hiddenEntries, ...visibleEntries]
-    let offset = 0
-    const findMany = vi.fn(async ({ limit }: { limit: number }) => {
-      const batch = orderedRows.slice(offset, offset + limit)
-      offset += limit
-      return batch
-    })
+    const findMany = vi.fn(async ({ limit }: { limit: number }) => visibleEntries.slice(0, limit))
     getDB.mockReturnValue({
       query: {
         entriesTable: {
@@ -371,7 +358,6 @@ describe("AgentApplicationService", () => {
         },
       },
     })
-    isEntryVisibleForActiveRelations.mockImplementation((entry) => !entry.id.startsWith("hidden"))
 
     const result = await agentApplicationService.listEntries({ limit: 2 })
 
@@ -381,7 +367,8 @@ describe("AgentApplicationService", () => {
     ])
     expect(result.page.hasMore).toBe(false)
     expect(result.page.nextCursor).toBeNull()
-    expect(findMany).toHaveBeenCalledTimes(2)
+    expect(findMany).toHaveBeenCalledTimes(1)
+    expect(hiddenEntries).toHaveLength(51)
   })
 
   it("returns entry detail with selected content source", async () => {
@@ -424,6 +411,16 @@ describe("AgentApplicationService", () => {
   })
 
   it("updates read status with normalized ids and sync log records", async () => {
+    const findMany = vi.fn().mockResolvedValue([{ id: "entry-1" }, { id: "entry-2" }])
+    getDB.mockReturnValue({
+      query: {
+        entriesTable: {
+          findMany,
+          findFirst: vi.fn().mockResolvedValue(entries[0]),
+        },
+      },
+    })
+
     const result = await agentApplicationService.updateReadStatus({
       entryIds: [" entry-1 ", "entry-2", "entry-1", ""],
       read: true,
@@ -445,6 +442,26 @@ describe("AgentApplicationService", () => {
       entityType: "entry",
       entityId: "entry-2",
     })
+  })
+
+  it("does not patch or log read status for missing entries", async () => {
+    getDB.mockReturnValue({
+      query: {
+        entriesTable: {
+          findMany: vi.fn().mockResolvedValue([]),
+          findFirst: vi.fn().mockResolvedValue(entries[0]),
+        },
+      },
+    })
+
+    const result = await agentApplicationService.updateReadStatus({
+      entryIds: ["missing-entry"],
+      read: false,
+    })
+
+    expect(result).toEqual({ updated: 0, read: false })
+    expect(patchMany).not.toHaveBeenCalled()
+    expect(recordSync).not.toHaveBeenCalled()
   })
 
   it("rejects empty entry ids", async () => {
