@@ -1,9 +1,13 @@
 #!/usr/bin/env node
 
-const message = [
-  "Suhui CLI is not implemented yet.",
-  "This workspace scaffold is reserved for the upcoming agent CLI commands.",
-].join("\n")
+import { runCli } from "./run.js"
 
-console.error(message)
-process.exitCode = 1
+const result = await runCli({
+  argv: process.argv.slice(2),
+  env: process.env,
+  fetch: globalThis.fetch,
+})
+
+if (result.stdout) process.stdout.write(result.stdout)
+if (result.stderr) process.stderr.write(result.stderr)
+process.exitCode = result.exitCode
