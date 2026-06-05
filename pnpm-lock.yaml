@@ -152,6 +152,21 @@ importers:
         specifier: 3.2.4
         version: 3.2.4(@edge-runtime/vm@3.2.0)(@types/debug@4.1.12)(@types/node@25.2.3)(happy-dom@20.6.1(bufferutil@4.1.0))(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
 
+  apps/cli:
+    devDependencies:
+      '@types/node':
+        specifier: 25.2.3
+        version: 25.2.3
+      tsx:
+        specifier: 4.21.0
+        version: 4.21.0
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+      vitest:
+        specifier: 3.2.4
+        version: 3.2.4(@edge-runtime/vm@3.2.0)(@types/debug@4.1.12)(@types/node@25.2.3)(happy-dom@20.6.1(bufferutil@4.1.0))(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
+
   apps/desktop:
     dependencies:
       '@protobufjs/aspromise':
