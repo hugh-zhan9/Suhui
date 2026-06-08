@@ -30,6 +30,13 @@ vi.mock("~/application/import-export/service", () => ({
   },
 }))
 
+vi.mock("~/application/collection/service", () => ({
+  collectionApplicationService: {
+    listCollections: vi.fn().mockResolvedValue([]),
+    updateEntryStar: vi.fn().mockResolvedValue(undefined),
+  },
+}))
+
 vi.mock("~/application/pdf/service", () => ({
   pdfApplicationService: {
     renderEntryPdf: vi.fn().mockResolvedValue(Buffer.from("%PDF-1.7")),
@@ -621,6 +628,39 @@ describe("RemoteServerManager", () => {
     expect(getUnreadCounts).toHaveBeenCalledTimes(1)
   })
 
+  it("serves collections from the injected provider", async () => {
+    const getCollections = vi.fn().mockResolvedValue([
+      {
+        entryId: "entry_1",
+        feedId: "feed_1",
+        view: 1,
+        createdAt: "2026-05-09T00:00:00.000Z",
+      },
+    ])
+
+    const server = await RemoteServerManager.start({
+      host: "127.0.0.1",
+      port: 0,
+      getSubscriptions: vi.fn().mockResolvedValue([]),
+      getEntries: vi.fn().mockResolvedValue([]),
+      getCollections,
+    })
+
+    const response = await fetch(`${server.baseUrl}/api/collections`)
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual({
+      data: [
+        {
+          entryId: "entry_1",
+          feedId: "feed_1",
+          view: 1,
+          createdAt: "2026-05-09T00:00:00.000Z",
+        },
+      ],
+    })
+    expect(getCollections).toHaveBeenCalledTimes(1)
+  })
+
   it("broadcasts remote events to connected sse clients", async () => {
     const abortController = new AbortController()
     const server = await RemoteServerManager.start({
@@ -678,6 +718,37 @@ describe("RemoteServerManager", () => {
     expect(updateReadStatus).toHaveBeenCalledWith({
       entryIds: ["entry_1"],
       read: true,
+    })
+  })
+
+  it("updates entry star state through the injected provider", async () => {
+    const updateEntryStar = vi.fn().mockResolvedValue(undefined)
+    const server = await RemoteServerManager.start({
+      host: "127.0.0.1",
+      port: 0,
+      getSubscriptions: vi.fn().mockResolvedValue([]),
+      getEntries: vi.fn().mockResolvedValue([]),
+      updateEntryStar,
+    })
+
+    const response = await fetch(`${server.baseUrl}/api/entries/star`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        entryId: "entry_1",
+        starred: true,
+        view: 1,
+      }),
+    })
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual({ ok: true })
+    expect(updateEntryStar).toHaveBeenCalledWith({
+      entryId: "entry_1",
+      starred: true,
+      view: 1,
     })
   })
 

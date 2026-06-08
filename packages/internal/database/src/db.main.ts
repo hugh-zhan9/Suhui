@@ -1,6 +1,6 @@
 import type { NodePgDatabase } from "drizzle-orm/node-postgres"
 import { drizzle as drizzlePg } from "drizzle-orm/node-postgres"
-import type { PoolConfig } from "pg"
+import type { PoolClient, PoolConfig } from "pg"
 import { Pool } from "pg"
 
 import * as schema from "./schemas"
@@ -22,6 +22,12 @@ export function createMainDBHandles(config: {
   config: PoolConfig
 }): MainDbHandles {
   const nextPool = new Pool(config.config)
+  nextPool.on("error", (error: Error, client: PoolClient) => {
+    console.warn("[DB] Postgres pool idle client error", {
+      error: error.message,
+      processID: client.processID,
+    })
+  })
   const nextDb = drizzlePg(nextPool, { schema })
   return {
     type: "postgres",

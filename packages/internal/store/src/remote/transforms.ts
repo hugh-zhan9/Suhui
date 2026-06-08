@@ -46,11 +46,20 @@ export type UnreadRecord = {
   count: number
 }
 
+/** API 返回的收藏记录格式 */
+export type CollectionRecord = {
+  entryId: string
+  feedId?: string | null
+  view?: number | null
+  createdAt?: string | null
+}
+
 // ============ Store Model 类型导入 ============
 
 import type { SubscriptionModel } from "../modules/subscription/types"
 import type { EntryModel } from "../modules/entry/types"
 import type { FeedModel } from "../modules/feed/types"
+import type { CollectionSchema } from "../../../database/src/schemas/types"
 
 // ============ 转换器实现 ============
 
@@ -119,6 +128,15 @@ export function transformUnreadFromApi(record: UnreadRecord): { id: string; coun
   }
 }
 
+export function transformCollectionFromApi(record: CollectionRecord): CollectionSchema {
+  return {
+    entryId: record.entryId,
+    feedId: record.feedId || null,
+    view: (record.view ?? 0) as CollectionSchema["view"],
+    createdAt: record.createdAt || new Date().toISOString(),
+  }
+}
+
 /**
  * 从订阅记录中提取 Feed 信息
  */
@@ -155,6 +173,10 @@ export function transformUnreadsFromApi(
   records: UnreadRecord[],
 ): Array<{ id: string; count: number }> {
   return records.map(transformUnreadFromApi)
+}
+
+export function transformCollectionsFromApi(records: CollectionRecord[]): CollectionSchema[] {
+  return records.map(transformCollectionFromApi)
 }
 
 /**

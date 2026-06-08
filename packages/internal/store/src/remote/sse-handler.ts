@@ -5,6 +5,7 @@
 
 import { queryClient } from "../context"
 import type { UnreadSchema } from "../../../database/src/schemas/types"
+import { collectionActions } from "../modules/collection/store"
 import { feedActions } from "../modules/feed/store"
 import { subscriptionActions } from "../modules/subscription/store"
 import { unreadActions } from "../modules/unread/store"
@@ -141,6 +142,15 @@ class RemoteSSEHandler {
     }
   }
 
+  async refreshCollections(): Promise<void> {
+    try {
+      const collections = await runtimeClient.collections.list()
+      collectionActions.upsertManyInSession(collections, { reset: true })
+    } catch (error) {
+      console.error("[RemoteSSEHandler] Failed to refresh collections:", error)
+    }
+  }
+
   /**
    * 使条目查询缓存失效
    */
@@ -170,6 +180,7 @@ class RemoteSSEHandler {
   private handleEntriesUpdated(feedId?: string): void {
     this.invalidateEntriesQuery(feedId)
     void this.refreshUnread()
+    void this.refreshCollections()
   }
 
   private handleConnectionError(): void {

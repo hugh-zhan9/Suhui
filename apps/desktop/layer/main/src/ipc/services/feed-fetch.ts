@@ -19,6 +19,10 @@ type FeedFetchOptions = {
 
 const DEFAULT_MAX_REDIRECTS = 12
 
+const isRedirectCancelledError = (error: Error) => {
+  return error.message.toLowerCase().includes("redirect was cancelled")
+}
+
 const createHeaders = (rsshubToken?: string | null) => {
   const headers = new Headers({
     // Request header values must stay ASCII-safe.
@@ -114,6 +118,43 @@ export async function fetchFeedUrl(
         error instanceof Error
           ? error
           : new Error(typeof error === "string" ? error : String(error))
+      if (redirectChain.length === 0 && isRedirectCancelledError(normalizedError)) {
+        try {
+          const response = await fetchWithTimeout(timeoutMs, "Feed request", (controller) =>
+            session.defaultSession.fetch(requestUrl, {
+              headers,
+              redirect: "follow",
+              signal: controller.signal,
+            }),
+          )
+
+          onResponse?.({
+            requestUrl,
+            statusCode: response.status,
+            location: response.headers.get("location"),
+          })
+
+          if (response.status >= 400) {
+            const body = await response.text()
+            throw new Error(resolveHttpErrorMessage(response.status, body))
+          }
+
+          const finalUrl = response.url || requestUrl
+          return {
+            body: await response.text(),
+            finalUrl,
+            redirectChain: finalUrl !== requestUrl ? [finalUrl] : [],
+            statusCode: response.status,
+          }
+        } catch (fallbackError) {
+          const normalizedFallbackError =
+            fallbackError instanceof Error
+              ? fallbackError
+              : new Error(typeof fallbackError === "string" ? fallbackError : String(fallbackError))
+          onError?.({ requestUrl, error: normalizedFallbackError })
+          throw normalizedFallbackError
+        }
+      }
       onError?.({ requestUrl, error: normalizedError })
       throw normalizedError
     }

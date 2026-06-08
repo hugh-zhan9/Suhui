@@ -27,6 +27,43 @@ interface MarkAllButtonProps {
   shortcut?: boolean
 }
 
+const requestMarkAllReadWithUndo = ({
+  filter,
+  onDone,
+  t,
+}: {
+  filter?: MarkAllFilter
+  onDone?: () => void
+  t: (key: any, options?: any) => string
+}) => {
+  let cancel = false
+  const routeParams = getRouteParams()
+  const undo = () => {
+    toast.dismiss(id)
+    if (cancel) return
+    cancel = true
+  }
+  const id = toast.warning("", {
+    description: <ConfirmMarkAllReadInfo undo={undo} />,
+    duration: 3000,
+    onAutoClose() {
+      if (cancel) return
+      void markAllByRoute(routeParams, filter).then(onDone)
+    },
+    action: {
+      label: (
+        <span className="flex items-center gap-1">
+          {t("mark_all_read_button.undo")}
+          <Kbd className="inline-flex items-center border border-border bg-transparent text-white">
+            $mod+z
+          </Kbd>
+        </span>
+      ),
+      onClick: undo,
+    },
+  })
+}
+
 export const MarkAllReadButton = ({
   ref,
   className,
@@ -55,32 +92,7 @@ export const MarkAllReadButton = ({
       if (!ensureLogin()) {
         return
       }
-      let cancel = false
-      const undo = () => {
-        toast.dismiss(id)
-        if (cancel) return
-        cancel = true
-      }
-      const routerParams = getRouteParams()
-      const id = toast.warning("", {
-        description: <ConfirmMarkAllReadInfo undo={undo} />,
-        duration: 3000,
-        onAutoClose() {
-          if (cancel) return
-          markAllByRoute(routerParams)
-        },
-        action: {
-          label: (
-            <span className="flex items-center gap-1">
-              {t("mark_all_read_button.undo")}
-              <Kbd className="inline-flex items-center border border-border bg-transparent text-white">
-                $mod+z
-              </Kbd>
-            </span>
-          ),
-          onClick: undo,
-        },
-      })
+      requestMarkAllReadWithUndo({ t })
     })
   }, [ensureLogin, t])
 
@@ -106,7 +118,7 @@ export const MarkAllReadButton = ({
       ref={ref}
       onClick={() => {
         if (!ensureLogin()) return
-        markAllByRoute(getRouteParams())
+        requestMarkAllReadWithUndo({ t })
       }}
     >
       <i className="i-mgc-check-circle-cute-re" />
@@ -141,6 +153,7 @@ export const FlatMarkAllReadButton: FC<
   }
 > = (props) => {
   const t = useI18n()
+  const { t: i18nT } = useTranslation()
   const { ensureLogin } = useRequireLogin()
 
   const { className, filter, which, buttonClassName, iconClassName } = props
@@ -158,9 +171,12 @@ export const FlatMarkAllReadButton: FC<
       )}
       onClick={() => {
         if (!ensureLogin()) return
-        markAllByRoute(getRouteParams(), filter)
-          .then(() => setStatus("done"))
-          .catch(() => setStatus("initial"))
+        setStatus("confirm")
+        requestMarkAllReadWithUndo({
+          filter,
+          t: i18nT,
+          onDone: () => setStatus("done"),
+        })
       }}
     >
       <i key={2} className={cn("i-mgc-check-circle-cute-re", iconClassName)} />

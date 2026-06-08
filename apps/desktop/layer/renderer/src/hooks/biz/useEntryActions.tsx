@@ -395,18 +395,6 @@ export const useEntryActions = ({ entryId, view }: { entryId: string; view: Feed
         entryId,
       }),
       new EntryActionMenuItem({
-        id: COMMAND_ID.entry.readAbove,
-        onClick: runCmdFn(COMMAND_ID.entry.readAbove, [{ publishedAt: entry.publishedAt }]),
-        hide: !!isCollection,
-        entryId,
-      }),
-      new EntryActionMenuItem({
-        id: COMMAND_ID.entry.readBelow,
-        onClick: runCmdFn(COMMAND_ID.entry.readBelow, [{ publishedAt: entry.publishedAt }]),
-        hide: !!isCollection,
-        entryId,
-      }),
-      new EntryActionMenuItem({
         id: COMMAND_ID.entry.share,
         onClick: runCmdFn(COMMAND_ID.entry.share, [{ entryId }]),
         hide: !entry.url,

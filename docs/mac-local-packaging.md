@@ -23,8 +23,9 @@ pnpm install:macos-local
 
 说明：
 
-- 脚本会自动关闭旧应用、执行 `pnpm --filter suhui build:electron-vite` 与 `FOLO_NO_SIGN=1 electron-forge package`、直接安装打包产出的 `.app`、重新做一次本地 ad-hoc 签名、清理 quarantine，并直接启动应用。
+- 脚本会自动关闭旧应用、执行 `pnpm --filter suhui build:electron-vite` 与 `FOLO_NO_SIGN=1 node scripts/run-electron-forge.mjs package`、直接安装打包产出的 `.app`、重新做一次本地 ad-hoc 签名、清理 quarantine，并直接启动应用。
 - 无签名模式会设置 `FOLO_NO_SIGN=1`，用于本地验证。
+- Electron Forge 会统一通过 `scripts/run-electron-forge.mjs` 启动；该脚本默认启用 `ELECTRON_GET_USE_PROXY=1`，并在未显式指定镜像时默认使用 `https://npmmirror.com/mirrors/electron/` 作为 Electron 下载镜像。
 - 这样可以绕开本机上偶发的 `electron-forge make` 悬挂不退出问题。
 
 已验证说明：

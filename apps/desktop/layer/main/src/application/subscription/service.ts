@@ -130,7 +130,7 @@ export class SubscriptionApplicationService {
     const feed = {
       ...preview.feed,
       title: payload.title || preview.feed.title,
-      updatedAt: preview.feed.updatedAt ? new Date(preview.feed.updatedAt) : new Date(),
+      updatedAt: toTimestampMs(preview.feed.updatedAt) ?? Date.now(),
     }
     await FeedService.upsertMany([feed] as any)
 

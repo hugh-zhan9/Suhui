@@ -66,6 +66,35 @@ describe("fetchFeedUrl", () => {
     })
   })
 
+  it("falls back to automatic redirects when Electron cancels manual redirects", async () => {
+    fetchMock.mockRejectedValueOnce(new Error("Redirect was cancelled")).mockResolvedValueOnce({
+      status: 200,
+      headers: new Headers(),
+      text: vi.fn().mockResolvedValue("<feed />"),
+      url: "https://www.gugegt.com/feed/",
+    } as any)
+
+    await expect(fetchFeedUrl("https://www.gugegt.com/feed", { timeoutMs: 1000 })).resolves.toEqual(
+      {
+        body: "<feed />",
+        finalUrl: "https://www.gugegt.com/feed/",
+        redirectChain: ["https://www.gugegt.com/feed/"],
+        statusCode: 200,
+      },
+    )
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      "https://www.gugegt.com/feed",
+      expect.objectContaining({ redirect: "manual" }),
+    )
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      "https://www.gugegt.com/feed",
+      expect.objectContaining({ redirect: "follow" }),
+    )
+  })
+
   it("times out unresolved requests", async () => {
     vi.useFakeTimers()
     fetchMock.mockImplementation((_url, init) => {

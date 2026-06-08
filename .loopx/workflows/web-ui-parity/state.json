@@ -1,0 +1,103 @@
+{
+  "slug": "web-ui-parity",
+  "skill": "clarify",
+  "profile": "standard",
+  "clarify_current_round": 6,
+  "clarify_max_rounds": 15,
+  "clarify_target_ambiguity_threshold": 0.2,
+  "clarify_ambiguity_score": 0.14,
+  "clarify_non_goals_resolved": true,
+  "clarify_decision_boundaries_resolved": true,
+  "clarify_pressure_pass_complete": true,
+  "unresolved_ambiguity_count": 0,
+  "plan_current_iteration": 1,
+  "plan_max_iterations": 5,
+  "plan_consensus_mode": true,
+  "plan_deliberate_mode": false,
+  "plan_principles_resolved": true,
+  "plan_options_reviewed": true,
+  "plan_architect_review_status": "complete",
+  "plan_critic_verdict": "approve",
+  "plan_package_status": "complete",
+  "plan_acceptance_criteria_testable": true,
+  "plan_verification_steps_resolved": true,
+  "plan_execution_inputs_resolved": true,
+  "summary": {
+    "intent": "Replace the rough remote Web UI with a UI that is consistent with the desktop app.",
+    "repo_evidence": [
+      "Current remote UI is hand-built in apps/desktop/layer/renderer/src/remote/remote-app.tsx with custom header, pills, panels, and raw form controls.",
+      "Desktop UI has reusable layout/component surfaces in modules/app-layout, modules/subscription-column, modules/entry-column, modules/entry-content, modules/settings.",
+      "Remote runtime and main-process application services are already available from the prior full-web-client build."
+    ],
+    "confirmed": [
+      "User selected option A: strong UI consistency. Web should reuse/closely mirror the desktop main reader framework and component shape: subscription column, entry list, reading pane, visual tokens, empty states, list items, reader content, and desktop-like settings/modal styling while hiding unsupported browser-native controls.",
+      "User confirmed first-pass non-goals: no window controls, tray, dock badge, open-at-login, system notifications, system fonts, native folder picker, system proxy, Electron menu/command palette/shortcut parity, desktop integration entrypoints, AI/translation/summary online surfaces, player/corner media window.",
+      "User selected desktop-like modal/drawer placement for management capabilities: the first screen should be a desktop-like three-pane reader, while subscription management, batch operations, settings/RSSHub, import/export, and similar management workflows should live in polished desktop-style modals or drawers.",
+      "User confirmed controlled browser degradations: Web parity means desktop-like visual/read workflow parity, not 1:1 replication of every Electron-native interaction. Browser download may replace native save dialog; native folder picker remains hidden; command palette/shortcuts are not first-pass acceptance; settings expose Web-safe groups only; toolbar/action menus may replace hard-to-reuse context menus; mobile may be responsive folded parity.",
+      "User selected success-criteria option B: desktop/wide-browser screenshot verification is required; mobile responsive support is desirable but not a hard screenshot gate for the first pass."
+    ],
+    "non_goals": [
+      "window controls",
+      "tray",
+      "dock badge",
+      "open-at-login",
+      "system notifications",
+      "system fonts",
+      "native folder picker",
+      "system proxy",
+      "Electron menu/command palette/shortcut parity",
+      "desktop integration entrypoints",
+      "AI/translation/summary online surfaces",
+      "player/corner media window"
+    ],
+    "pressure_pass": "Confirmed that strong desktop UI consistency allows browser-appropriate degradation and does not require copying every Electron-native behavior.",
+    "success_criteria": [
+      "First screen is desktop-like three-pane reader: subscription/category column, entry list, reading pane.",
+      "Use existing desktop design tokens/component style: typography, spacing, borders, hover, selected, empty and loading states.",
+      "No raw full-screen management form panels; management workflows use desktop-style modal/drawer surfaces.",
+      "Subscription management, batch management, settings/RSSHub, and import/export are accessible without polluting the main reading layout.",
+      "Entry list, reading content, toolbar/actions, connection state, refresh state, empty states, and error states look production-quality and consistent with desktop.",
+      "Verification must include at least one desktop/wide-browser screenshot; mobile screenshot is not a first-pass hard gate."
+    ]
+  },
+  "spec_path": ".loopx/specs/clarify-web-ui-parity-20260508211654.md",
+  "plan_artifacts": {
+    "context": ".loopx/context/web-ui-parity-20260508212834.md",
+    "plan": ".loopx/workflows/web-ui-parity/plan.md",
+    "architecture": ".loopx/workflows/web-ui-parity/architecture.md",
+    "development_plan": ".loopx/workflows/web-ui-parity/development-plan.md",
+    "test_plan": ".loopx/workflows/web-ui-parity/test-plan.md",
+    "prd": ".loopx/plans/prd-web-ui-parity.md",
+    "test_spec": ".loopx/plans/test-spec-web-ui-parity.md"
+  },
+  "requested_transition": "none",
+  "build_run_id": "build-web-ui-parity-20260508224411",
+  "build_current_iteration": 1,
+  "build_max_iterations": 10,
+  "build_parallel_mode": true,
+  "build_lane_statuses": {
+    "baseline_and_guardrails": "complete",
+    "remote_ui_implementation": "complete",
+    "reader_shell": "complete",
+    "management_drawer": "complete",
+    "settings_import_export": "complete",
+    "pdf_export_polish": "complete",
+    "tests": "complete",
+    "screenshot_acceptance": "complete",
+    "execution_record": "complete"
+  },
+  "build_verification_status": "passed",
+  "build_architect_verification_status": "approved",
+  "build_deslop_status": "complete",
+  "build_regression_status": "passed",
+  "build_blockers": [],
+  "build_progress_artifact_paths": [".loopx/workflows/web-ui-parity/execution-record.md"],
+  "build_support_evidence_paths": [
+    ".loopx/workflows/web-ui-parity/support/mock-remote-server.mjs",
+    ".loopx/workflows/web-ui-parity/support/remote-wide.png",
+    ".loopx/workflows/web-ui-parity/support/remote-management.png",
+    ".loopx/workflows/web-ui-parity/support/remote-settings.png"
+  ],
+  "execution_record_status": "complete",
+  "review_handoff_ready": true
+}

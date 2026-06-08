@@ -5,6 +5,7 @@
 
 import { feedActions } from "../modules/feed/store"
 import type { UnreadSchema } from "../../../database/src/schemas/types"
+import { collectionActions } from "../modules/collection/store"
 import { subscriptionActions } from "../modules/subscription/store"
 import { unreadActions } from "../modules/unread/store"
 import { runtimeClient } from "../runtime"
@@ -17,6 +18,7 @@ export type RemoteHydrateStatus = {
   error?: string
   subscriptionsLoaded: number
   unreadLoaded: number
+  collectionsLoaded: number
 }
 
 type RemoteHydrateOptions = {
@@ -39,13 +41,15 @@ export const hydrateFromRemote = async (options?: RemoteHydrateOptions): Promise
     phase: "loading",
     subscriptionsLoaded: 0,
     unreadLoaded: 0,
+    collectionsLoaded: 0,
   }
   options?.onStatusChange?.(status)
 
   try {
-    const [subscriptionsResult, unreadData] = await Promise.all([
+    const [subscriptionsResult, unreadData, collections] = await Promise.all([
       runtimeClient.subscriptions.list(undefined, { subscriptions: [], feeds: [] }),
       runtimeClient.unread.list(),
+      runtimeClient.collections.list(),
     ])
 
     // 转换并填充订阅
@@ -64,6 +68,9 @@ export const hydrateFromRemote = async (options?: RemoteHydrateOptions): Promise
     unreadActions.upsertManyInSession(unreads as unknown as UnreadSchema[])
     status.unreadLoaded = unreads.length
 
+    collectionActions.upsertManyInSession(collections, { reset: true })
+    status.collectionsLoaded = collections.length
+
     // 可选：加载初始条目
     if (options?.loadEntries && options.initialFeedId) {
       await loadInitialEntries(options.initialFeedId)
@@ -76,7 +83,7 @@ export const hydrateFromRemote = async (options?: RemoteHydrateOptions): Promise
     options?.onStatusChange?.(status)
 
     console.log(
-      `[hydrateFromRemote] Hydration complete: ${status.subscriptionsLoaded} subscriptions, ${status.unreadLoaded} unread counts`,
+      `[hydrateFromRemote] Hydration complete: ${status.subscriptionsLoaded} subscriptions, ${status.unreadLoaded} unread counts, ${status.collectionsLoaded} collections`,
     )
   } catch (error) {
     status.phase = "error"
@@ -110,6 +117,7 @@ export const resetRemoteStore = (): void => {
   subscriptionActions.reset()
   feedActions.reset()
   unreadActions.reset()
+  collectionActions.upsertManyInSession([], { reset: true })
 
   // 断开 SSE
   remoteSSEHandler.disconnect()

@@ -10,6 +10,7 @@ import type {
   AgentFeedsListResult,
   AgentReadStatusResult,
 } from "~/application/agent/types"
+import { collectionApplicationService } from "~/application/collection/service"
 import { discoverApplicationService } from "~/application/discover/service"
 import { feedApplicationService } from "~/application/feed/service"
 import { importExportApplicationService } from "~/application/import-export/service"
@@ -44,6 +45,7 @@ type RemoteServerDependencies = {
     entryIds: string[]
     read: boolean
   }) => Promise<AgentReadStatusResult>
+  getCollections: () => Promise<unknown[]>
   getUnreadCounts: () => Promise<Array<{ id: string; count: number }>>
   previewFeed: (payload: {
     url: string
@@ -73,6 +75,7 @@ type RemoteServerDependencies = {
     view?: number
   }) => Promise<void>
   updateReadStatus: (payload: { entryIds: string[]; read: boolean }) => Promise<void>
+  updateEntryStar: (payload: { entryId: string; starred: boolean; view: number }) => Promise<void>
   refreshFeed: (feedId: string) => Promise<unknown>
   refreshAllFeeds: () => Promise<unknown>
   getRsshubConfig: () => Promise<unknown> | unknown
@@ -445,6 +448,11 @@ const createRequestHandler =
       return
     }
 
+    if (method === "GET" && url.pathname === "/api/collections") {
+      json(response, 200, { data: await deps.getCollections() })
+      return
+    }
+
     if (method === "POST" && url.pathname === "/api/subscriptions") {
       const payload = await readJsonBody<{
         url: string
@@ -502,6 +510,17 @@ const createRequestHandler =
     if (method === "POST" && url.pathname === "/api/entries/read") {
       const payload = await readJsonBody<{ entryIds: string[]; read: boolean }>(request)
       await deps.updateReadStatus(payload)
+      json(response, 200, { ok: true })
+      return
+    }
+
+    if (method === "POST" && url.pathname === "/api/entries/star") {
+      const payload = await readJsonBody<{
+        entryId: string
+        starred: boolean
+        view: number
+      }>(request)
+      await deps.updateEntryStar(payload)
       json(response, 200, { ok: true })
       return
     }
@@ -617,6 +636,7 @@ class RemoteServerManagerStatic {
         this.broadcast("subscriptions.updated", {})
         return result
       },
+      getCollections: () => collectionApplicationService.listCollections(),
       getUnreadCounts: async () => {
         const { unreadApplicationService } = await import("~/application/unread/service")
         return unreadApplicationService.listUnreadCounts()
@@ -657,6 +677,10 @@ class RemoteServerManagerStatic {
         await entryApplicationService.updateReadStatus(payload)
         this.broadcast("entries.updated", {})
         this.broadcast("subscriptions.updated", {})
+      },
+      updateEntryStar: async (payload) => {
+        await collectionApplicationService.updateEntryStar(payload)
+        this.broadcast("entries.updated", {})
       },
       refreshFeed: async (feedId) => {
         const { feedApplicationService } = await import("~/application/feed/service")
@@ -713,6 +737,7 @@ class RemoteServerManagerStatic {
       ...(options?.updateAgentReadStatus
         ? { updateAgentReadStatus: options.updateAgentReadStatus }
         : {}),
+      ...(options?.getCollections ? { getCollections: options.getCollections } : {}),
       ...(options?.getUnreadCounts ? { getUnreadCounts: options.getUnreadCounts } : {}),
       ...(options?.previewFeed ? { previewFeed: options.previewFeed } : {}),
       ...(options?.createSubscription ? { createSubscription: options.createSubscription } : {}),
@@ -725,6 +750,7 @@ class RemoteServerManagerStatic {
         ? { batchUpdateSubscriptions: options.batchUpdateSubscriptions }
         : {}),
       ...(options?.updateReadStatus ? { updateReadStatus: options.updateReadStatus } : {}),
+      ...(options?.updateEntryStar ? { updateEntryStar: options.updateEntryStar } : {}),
       ...(options?.refreshFeed ? { refreshFeed: options.refreshFeed } : {}),
       ...(options?.refreshAllFeeds ? { refreshAllFeeds: options.refreshAllFeeds } : {}),
       ...(options?.getRsshubConfig ? { getRsshubConfig: options.getRsshubConfig } : {}),

@@ -163,7 +163,7 @@
   "entry_actions.toggle_ai_translation": "切換 AI 翻譯",
   "entry_actions.unstar": "取消收藏",
   "entry_actions.unstarred": "已取消收藏",
-  "entry_actions.view_source_content": "查看原始內容",
+  "entry_actions.view_source_content": "閱讀原文",
   "entry_actions.view_source_content_description": "嘗試以源網站的風格閱讀此文章的內容",
   "entry_actions.source_content_failed": "原始頁面載入失敗",
   "entry_actions.source_content_degraded": "原始頁面可能被阻止嵌入或載入過慢",

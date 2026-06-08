@@ -9,8 +9,10 @@ import type { FeedModel } from "../modules/feed/types"
 import type { SubscriptionForm, SubscriptionModel } from "../modules/subscription/types"
 import { getRuntimeEnv } from "../remote/env"
 import {
+  transformCollectionsFromApi,
   transformEntryFromApi,
   transformSubscriptionFromApi,
+  type CollectionRecord,
   type EntryRecord,
   type SubscriptionRecord,
   type UnreadRecord,
@@ -515,6 +517,37 @@ export const runtimeClient = {
     async list(): Promise<UnreadRecord[]> {
       const { data } = await jsonRequest<{ data: UnreadRecord[] }>("/api/unread")
       return data || []
+    },
+  },
+
+  collections: {
+    async list() {
+      const { data } = await jsonRequest<{ data: CollectionRecord[] }>("/api/collections")
+      return transformCollectionsFromApi(data || [])
+    },
+
+    async updateEntryStar(payload: { entryId: string; starred: boolean; view: number }) {
+      if (getRuntimeEnv().isRemote) {
+        await jsonRequest("/api/entries/star", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        })
+        return
+      }
+
+      const { collectionSyncService } = await import("../modules/collection/store")
+      if (payload.starred) {
+        await collectionSyncService.starEntry({
+          entryId: payload.entryId,
+          view: payload.view,
+          invalidate: true,
+        })
+      } else {
+        await collectionSyncService.unstarEntry({
+          entryId: payload.entryId,
+          invalidate: true,
+        })
+      }
     },
   },
 

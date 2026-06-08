@@ -24,7 +24,6 @@ import { navigateEntry } from "~/hooks/biz/useNavigateEntry"
 import { getRouteParams } from "~/hooks/biz/useRouteParams"
 import { ipcServices } from "~/lib/client"
 import { copyToClipboard } from "~/lib/clipboard"
-import { markAllByRoute } from "~/modules/entry-column/hooks/useMarkAll"
 import { useGalleryModal } from "~/modules/entry-content/hooks"
 
 import { useRegisterFollowCommand } from "../hooks/use-register-command"
@@ -292,17 +291,6 @@ export const useRegisterEntryCommands = () => {
         },
       },
       {
-        id: COMMAND_ID.entry.readAbove,
-        label: t("entry_actions.mark_above_as_read"),
-        category,
-        run: ({ publishedAt }: { publishedAt: string }) => {
-          return markAllByRoute(getRouteParams(), {
-            startTime: new Date(publishedAt).getTime() + 1,
-            endTime: Date.now(),
-          })
-        },
-      },
-      {
         id: COMMAND_ID.entry.read,
         label: t("entry_actions.mark_as_read"),
         category,
@@ -320,17 +308,6 @@ export const useRegisterEntryCommands = () => {
           } else {
             read.mutate({ entryId })
           }
-        },
-      },
-      {
-        id: COMMAND_ID.entry.readBelow,
-        label: t("entry_actions.mark_below_as_read"),
-        category,
-        run: ({ publishedAt }: { publishedAt: string }) => {
-          return markAllByRoute(getRouteParams(), {
-            startTime: 1,
-            endTime: new Date(publishedAt).getTime() - 1,
-          })
         },
       },
       {
@@ -412,16 +389,6 @@ export type ReadCommand = Command<{
   fn: (data: { entryId: string }) => void
 }>
 
-export type ReadAboveCommand = Command<{
-  id: typeof COMMAND_ID.entry.readAbove
-  fn: (data: { publishedAt: string }) => void
-}>
-
-export type ReadBelowCommand = Command<{
-  id: typeof COMMAND_ID.entry.readBelow
-  fn: (data: { publishedAt: string }) => void
-}>
-
 export type ToggleAITranslationCommand = Command<{
   id: typeof COMMAND_ID.entry.toggleAITranslation
   fn: () => void
@@ -447,8 +414,6 @@ export type EntryCommand =
   | ViewSourceContentCommand
   | ShareCommand
   | ReadCommand
-  | ReadAboveCommand
-  | ReadBelowCommand
   | ToggleAITranslationCommand
   | ImageGalleryCommand
   | ReadabilityCommand

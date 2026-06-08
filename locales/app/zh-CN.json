@@ -163,7 +163,7 @@
   "entry_actions.toggle_ai_translation": "切换 AI 翻译",
   "entry_actions.unstar": "取消收藏",
   "entry_actions.unstarred": "取消收藏",
-  "entry_actions.view_source_content": "查看原文",
+  "entry_actions.view_source_content": "阅读原文",
   "entry_actions.view_source_content_description": "尝试以源网站的风格阅读此文章的内容",
   "entry_actions.source_content_failed": "原网页加载失败",
   "entry_actions.source_content_degraded": "原网页可能被阻止嵌入或加载过慢",

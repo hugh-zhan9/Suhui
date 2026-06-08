@@ -211,7 +211,7 @@ build_local_app_bundle() {
 
   CURRENT_STEP="package-local-app"
   rm -rf "$PACKAGE_OUTPUT_DIR"
-  FOLO_NO_SIGN=1 pnpm --filter "$DESKTOP_PACKAGE" exec electron-forge package --platform=darwin --arch=arm64 &
+  FOLO_NO_SIGN=1 pnpm --filter "$DESKTOP_PACKAGE" exec node scripts/run-electron-forge.mjs package --platform=darwin --arch=arm64 &
   PACKAGE_PID="$!"
 
   wait_for_packaged_app "$PACKAGED_APP_PATH" "$PACKAGE_PID" 180

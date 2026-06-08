@@ -1,4 +1,4 @@
-/* 远程端样式主题变量由 remote main 预先引入的 @suhui/components/tailwind 提供 */
+/* Remote client uses the same theme variables loaded from @suhui/components/tailwind. */
 
 :root {
   color-scheme: light dark;
@@ -15,26 +15,893 @@ body,
 body {
   margin: 0;
   background: var(--fo-background);
-  color: var(--fo-foreground);
+  color: var(--fo-text);
 }
 
-/* 断线提示样式 */
-.remote-offline-banner {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
-  padding: 8px 16px;
-  background: var(--fo-destructive);
-  color: white;
-  text-align: center;
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.remote-desktop-reader {
+  --remote-border: color-mix(in srgb, var(--fo-text) 10%, transparent);
+  --remote-border-strong: color-mix(in srgb, var(--fo-text) 15%, transparent);
+  --remote-muted-surface: color-mix(in srgb, var(--fo-text) 4%, transparent);
+  --remote-hover-surface: color-mix(in srgb, var(--fo-text) 7%, transparent);
+  --remote-active-surface: color-mix(in srgb, var(--fo-accent) 12%, transparent);
+  --remote-control-height: 32px;
+  display: flex;
+  height: 100vh;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--fo-background);
+  color: var(--fo-text);
+}
+
+.remote-desktop-sidebar {
+  display: flex;
+  height: 100%;
+  min-width: 232px;
+  flex-shrink: 0;
+  flex-direction: column;
+  border-right: 1px solid var(--remote-border);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--fo-background) 88%, transparent), transparent),
+    var(--fo-sidebar);
+  padding-top: 10px;
+}
+
+.remote-desktop-timeline {
+  display: flex;
+  height: 100%;
+  min-width: 340px;
+  flex-shrink: 0;
+  flex-direction: column;
+  border-right: 1px solid var(--remote-border);
+  background: var(--fo-background);
+}
+
+.remote-desktop-reader-pane {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  background: var(--fo-background);
+}
+
+.remote-pane-hidden {
+  display: none;
+}
+
+.remote-sidebar-header {
+  display: flex;
+  flex-shrink: 0;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 12px 10px;
+}
+
+.remote-app-mark {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+}
+
+.remote-app-icon {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  background: var(--fo-accent);
+  color: var(--fo-accent-foreground);
+  font-size: 17px;
+}
+
+.remote-app-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.remote-app-title {
+  overflow: hidden;
   font-size: 14px;
+  font-weight: 650;
+  line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* 内容区 prose 样式 */
-.prose {
+.remote-connection {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--fo-text-secondary);
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.remote-connection-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--fo-red);
+}
+
+.remote-connection-dot.is-online {
+  background: #22c55e;
+}
+
+.remote-sidebar-actions,
+.remote-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.remote-sidebar-actions {
+  margin-left: auto;
+}
+
+.remote-view-tabs {
+  display: grid;
+  flex-shrink: 0;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  padding: 0 10px 10px;
+}
+
+.remote-view-tab {
+  display: inline-flex;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fo-text-secondary);
+  cursor: default;
+}
+
+.remote-view-tab:hover {
+  background: var(--remote-hover-surface);
+  color: var(--fo-text);
+}
+
+.remote-view-tab.is-active {
+  background: var(--fo-background);
+  color: var(--fo-accent);
+  box-shadow: 0 1px 2px color-mix(in srgb, #000 10%, transparent);
+}
+
+.remote-view-icon {
+  font-size: 15px;
+}
+
+.remote-source-scroll,
+.remote-entry-scroll,
+.remote-reader-scroll,
+.remote-subscription-table,
+.remote-settings-main {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.remote-source-scroll {
+  flex: 1;
+  padding: 0 8px 12px;
+}
+
+.remote-source-group {
+  margin-top: 10px;
+}
+
+.remote-source-group-title {
+  padding: 5px 8px 4px;
+  color: var(--fo-text-tertiary);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 14px;
+  text-transform: uppercase;
+}
+
+.remote-source-group-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.remote-source-row {
+  display: flex;
+  width: calc(100% - 16px);
+  min-height: 34px;
+  align-items: center;
+  gap: 8px;
+  margin: 0 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fo-text);
+  padding: 0 8px;
+  text-align: left;
+}
+
+.remote-source-row:hover {
+  background: var(--remote-hover-surface);
+}
+
+.remote-source-row.is-active {
+  background: var(--fo-accent);
+  color: var(--fo-accent-foreground);
+}
+
+.remote-source-all {
+  flex-shrink: 0;
+  margin-bottom: 2px;
+}
+
+.remote-source-icon {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: var(--remote-muted-surface);
+  color: var(--fo-text-secondary);
+  font-size: 12px;
+}
+
+.remote-source-row.is-active .remote-source-icon {
+  background: color-mix(in srgb, #fff 16%, transparent);
+  color: currentColor;
+}
+
+.remote-source-title {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.remote-unread-badge {
+  display: inline-flex;
+  min-width: 18px;
+  height: 18px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--fo-accent);
+  color: var(--fo-accent-foreground);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  line-height: 18px;
+  padding: 0 5px;
+}
+
+.remote-source-row.is-active .remote-unread-badge {
+  background: color-mix(in srgb, #fff 20%, transparent);
+}
+
+.remote-timeline-header,
+.remote-reader-header,
+.remote-overlay-header {
+  display: flex;
+  min-height: 58px;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--remote-border);
+  padding: 0 12px;
+}
+
+.remote-timeline-title-block,
+.remote-reader-title-block {
+  min-width: 0;
+  flex: 1;
+}
+
+.remote-timeline-title,
+.remote-reader-title,
+.remote-overlay-title {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 19px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.remote-timeline-subtitle,
+.remote-reader-kicker,
+.remote-overlay-subtitle {
+  overflow: hidden;
+  color: var(--fo-text-secondary);
+  font-size: 11px;
+  line-height: 15px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.remote-entry-scroll,
+.remote-reader-scroll {
+  flex: 1;
+}
+
+.remote-entry-list {
+  padding: 8px;
+}
+
+.remote-entry-item {
+  position: relative;
+  display: flex;
+  width: 100%;
+  gap: 8px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  cursor: default;
+  padding: 11px 10px 11px 12px;
+  text-align: left;
+}
+
+.remote-entry-item.is-unread {
+  background: color-mix(in srgb, #2563eb 8%, transparent);
+}
+
+.remote-entry-item.is-read {
+  opacity: 0.76;
+}
+
+.remote-entry-item:hover {
+  background: var(--remote-hover-surface);
+  opacity: 1;
+}
+
+.remote-entry-item.is-active {
+  background: var(--remote-active-surface);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fo-accent) 25%, transparent);
+  opacity: 1;
+}
+
+.remote-entry-item:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--fo-accent) 60%, transparent);
+  outline-offset: 1px;
+}
+
+.remote-entry-unread-dot {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+  margin-top: 8px;
+  border-radius: 999px;
+  background: #2563eb;
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, #2563eb 18%, transparent),
+    0 1px 3px color-mix(in srgb, #000 18%, transparent);
+}
+
+.remote-entry-unread-dot.is-read {
+  background: transparent;
+  box-shadow: none;
+}
+
+.remote-entry-body {
+  min-width: 0;
+  flex: 1;
+}
+
+.remote-entry-feed-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  color: var(--fo-text-secondary);
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 15px;
+}
+
+.remote-entry-feed {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.remote-entry-time {
+  flex-shrink: 0;
+  margin-left: auto;
+  color: var(--fo-text-tertiary);
+}
+
+.remote-entry-title {
+  display: -webkit-box;
+  margin-top: 3px;
+  overflow: hidden;
+  color: var(--fo-text);
+  font-size: 14px;
+  font-weight: 620;
+  line-height: 20px;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.remote-entry-title.is-read {
+  color: color-mix(in srgb, var(--fo-text-secondary) 82%, transparent);
+  font-weight: 440;
+}
+
+.remote-entry-title.is-unread {
+  color: var(--fo-text);
+  font-weight: 720;
+}
+
+.remote-entry-description {
+  display: -webkit-box;
+  margin-top: 4px;
+  overflow: hidden;
+  color: var(--fo-text-secondary);
+  font-size: 12px;
+  line-height: 18px;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.remote-load-more {
+  height: 32px;
+}
+
+.remote-loading-more {
+  padding: 12px 0;
+  color: var(--fo-text-secondary);
+  font-size: 12px;
+  text-align: center;
+}
+
+.remote-reader-header {
+  padding: 0 14px;
+}
+
+.remote-mobile-back {
+  display: none;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fo-text-secondary);
+}
+
+.remote-article-shell {
+  width: min(760px, calc(100% - 72px));
+  margin: 0 auto;
+  padding: 46px 0 72px;
+}
+
+.remote-article-title {
+  margin: 0;
+  color: var(--fo-text);
+  font-size: 33px;
+  font-weight: 650;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
+.remote-article-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+  color: var(--fo-text-secondary);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.remote-article-meta span:not(:first-child)::before {
+  content: "/";
+  margin-right: 8px;
+  color: var(--fo-text-tertiary);
+}
+
+.remote-action-error {
+  margin-top: 18px;
+  border: 1px solid color-mix(in srgb, var(--fo-red) 25%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--fo-red) 9%, transparent);
+  color: var(--fo-red);
+  font-size: 13px;
+  padding: 8px 10px;
+}
+
+.remote-entry-content {
+  margin-top: 32px;
+  color: var(--fo-text);
+  font-size: 16px;
   line-height: 1.75;
+}
+
+.remote-icon-button {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fo-text-secondary);
+  text-decoration: none;
+}
+
+.remote-filter-button {
+  display: inline-flex;
+  height: 32px;
+  min-width: 74px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--remote-border);
+  border-radius: 8px;
+  background: var(--fo-background);
+  color: var(--fo-text-secondary);
+  font-size: 12px;
+  font-weight: 650;
+  padding: 0 10px;
+}
+
+.remote-filter-button:hover {
+  background: var(--remote-hover-surface);
+  color: var(--fo-text);
+}
+
+.remote-filter-button.is-active {
+  border-color: color-mix(in srgb, #2563eb 42%, var(--remote-border));
+  background: color-mix(in srgb, #2563eb 12%, var(--fo-background));
+  color: #2563eb;
+}
+
+.remote-entry-star-button {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fo-text-tertiary);
+  font-size: 15px;
+  opacity: 0;
+}
+
+.remote-entry-item:hover .remote-entry-star-button,
+.remote-entry-item.is-active .remote-entry-star-button,
+.remote-entry-star-button.is-starred,
+.remote-reader-header .remote-entry-star-button {
+  opacity: 1;
+}
+
+.remote-entry-star-button:hover {
+  background: var(--remote-hover-surface);
+  color: #f59e0b;
+}
+
+.remote-entry-star-button.is-starred {
+  color: #f59e0b;
+}
+
+.remote-entry-star-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.remote-icon-button:hover,
+.remote-icon-button.is-active {
+  background: var(--remote-hover-surface);
+  color: var(--fo-accent);
+}
+
+.remote-icon-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.remote-control-button,
+.remote-primary-button,
+.remote-secondary-button,
+.remote-danger-button {
+  display: inline-flex;
+  min-height: var(--remote-control-height);
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 8px;
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 550;
+  line-height: 1;
+}
+
+.remote-control-button,
+.remote-secondary-button {
+  border: 1px solid var(--remote-border);
+  background: var(--fo-background);
+  color: var(--fo-text);
+}
+
+.remote-control-button:hover,
+.remote-secondary-button:hover {
+  background: var(--remote-hover-surface);
+}
+
+.remote-primary-button {
+  border: 1px solid var(--fo-accent);
+  background: var(--fo-accent);
+  color: var(--fo-accent-foreground);
+}
+
+.remote-danger-button {
+  border: 1px solid color-mix(in srgb, var(--fo-red) 28%, transparent);
+  background: color-mix(in srgb, var(--fo-red) 10%, transparent);
+  color: var(--fo-red);
+}
+
+.remote-control-button:disabled,
+.remote-primary-button:disabled,
+.remote-secondary-button:disabled,
+.remote-danger-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.remote-field {
+  width: 100%;
+  min-width: 0;
+  height: 34px;
+  border: 1px solid var(--remote-border);
+  border-radius: 8px;
+  background: var(--fo-background);
+  color: var(--fo-text);
+  font-size: 13px;
+  outline: none;
+  padding: 0 10px;
+}
+
+.remote-field-short {
+  max-width: 220px;
+}
+
+.remote-field:focus {
+  border-color: color-mix(in srgb, var(--fo-accent) 55%, var(--remote-border));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--fo-accent) 12%, transparent);
+}
+
+.remote-textarea {
+  width: 100%;
+  min-height: 220px;
+  resize: vertical;
+  border: 1px solid var(--remote-border);
+  border-radius: 9px;
+  background: var(--fo-background);
+  color: var(--fo-text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  outline: none;
+  padding: 10px;
+}
+
+.remote-overlay-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: flex-end;
+  background: color-mix(in srgb, #000 18%, transparent);
+}
+
+.remote-overlay-panel {
+  display: flex;
+  width: min(1180px, calc(100vw - 32px));
+  height: 100%;
+  flex-direction: column;
+  border-left: 1px solid var(--remote-border-strong);
+  background: var(--fo-background);
+  box-shadow: 0 18px 60px color-mix(in srgb, #000 24%, transparent);
+}
+
+.remote-overlay-header {
+  padding: 0 18px;
+}
+
+.remote-overlay-grid {
+  display: grid;
+  min-height: 0;
+  flex: 1;
+  grid-template-columns: 320px minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.remote-overlay-side {
+  min-height: 0;
+  overflow-y: auto;
+  border-right: 1px solid var(--remote-border);
+  background: var(--remote-muted-surface);
+  padding: 16px;
+}
+
+.remote-form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.remote-two-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.remote-divider {
+  height: 1px;
+  margin: 18px 0;
+  background: var(--remote-border);
+}
+
+.remote-inline-message,
+.remote-inline-status {
+  margin-top: 12px;
+  color: var(--fo-text-secondary);
+  font-size: 12px;
+}
+
+.remote-subscription-table {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 14px;
+}
+
+.remote-subscription-row {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 24px minmax(180px, 1fr) minmax(120px, 160px) minmax(116px, 140px) minmax(
+      136px,
+      170px
+    );
+  gap: 8px;
+  align-items: center;
+  border: 1px solid var(--remote-border);
+  border-radius: 10px;
+  background: var(--fo-background);
+  padding: 8px;
+}
+
+.remote-row-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.remote-settings-layout {
+  display: grid;
+  min-height: 0;
+  flex: 1;
+  grid-template-columns: 220px minmax(0, 1fr);
+}
+
+.remote-settings-nav {
+  border-right: 1px solid var(--remote-border);
+  background: var(--remote-muted-surface);
+  padding: 14px;
+}
+
+.remote-settings-nav div {
+  border-radius: 8px;
+  color: var(--fo-text-secondary);
+  font-size: 13px;
+  padding: 8px 10px;
+}
+
+.remote-settings-nav div.is-active {
+  background: var(--fo-background);
+  color: var(--fo-text);
+  font-weight: 600;
+}
+
+.remote-settings-main {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 20px;
+}
+
+.remote-inline-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 130px;
+  gap: 8px;
+}
+
+.remote-data-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.remote-settings-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.remote-section-title {
+  margin-bottom: 10px;
+}
+
+.remote-section-title div {
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.remote-section-title span {
+  display: block;
+  margin-top: 2px;
+  color: var(--fo-text-secondary);
+  font-size: 12px;
+}
+
+.remote-empty-state {
+  display: flex;
+  height: 100%;
+  min-height: 220px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  color: var(--fo-text-secondary);
+  padding: 24px;
+  text-align: center;
+}
+
+.remote-empty-icon {
+  display: inline-flex;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: var(--remote-muted-surface);
+  color: var(--fo-text-secondary);
+  font-size: 20px;
+}
+
+.remote-empty-title {
+  margin-top: 12px;
+  color: var(--fo-text);
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.remote-empty-description {
+  max-width: 260px;
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 18px;
 }
 
 .prose h1,
@@ -43,7 +910,7 @@ body {
 .prose h4 {
   margin-top: 1.5em;
   margin-bottom: 0.5em;
-  font-weight: 600;
+  font-weight: 650;
 }
 
 .prose p {
@@ -52,7 +919,7 @@ body {
 }
 
 .prose a {
-  color: var(--fo-primary);
+  color: var(--fo-accent);
   text-decoration: underline;
 }
 
@@ -63,17 +930,17 @@ body {
 }
 
 .prose pre {
-  background: var(--fo-muted);
-  padding: 1em;
-  border-radius: 8px;
   overflow-x: auto;
+  border-radius: 8px;
+  background: var(--remote-muted-surface);
+  padding: 1em;
 }
 
 .prose code {
-  background: var(--fo-muted);
-  padding: 0.2em 0.4em;
   border-radius: 4px;
+  background: var(--remote-muted-surface);
   font-size: 0.9em;
+  padding: 0.2em 0.4em;
 }
 
 .prose pre code {
@@ -82,18 +949,112 @@ body {
 }
 
 .prose blockquote {
-  border-left: 4px solid var(--fo-border);
+  border-left: 4px solid var(--remote-border);
   margin: 1em 0;
+  color: var(--fo-text-secondary);
   padding-left: 1em;
-  color: var(--fo-muted-foreground);
 }
 
-.prose ul,
-.prose ol {
-  padding-left: 1.5em;
+.prose ol,
+.prose ul {
   margin: 1em 0;
+  padding-left: 1.5em;
 }
 
 .prose li {
   margin: 0.5em 0;
+}
+
+.remote-mobile-switcher {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .remote-desktop-reader {
+    flex-direction: column;
+  }
+
+  .remote-mobile-switcher {
+    display: flex;
+    height: 48px;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--remote-border);
+    background: color-mix(in srgb, var(--fo-background) 92%, transparent);
+    padding: 0 8px;
+  }
+
+  .remote-mobile-title {
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+    font-size: 14px;
+    font-weight: 650;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .remote-mobile-segments {
+    display: grid;
+    width: 190px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    border: 1px solid var(--remote-border);
+    border-radius: 9px;
+    background: var(--remote-muted-surface);
+    padding: 2px;
+  }
+
+  .remote-mobile-segment {
+    height: 30px;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--fo-text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .remote-mobile-segment.is-active {
+    background: var(--fo-background);
+    color: var(--fo-text);
+  }
+
+  .remote-desktop-sidebar,
+  .remote-desktop-timeline,
+  .remote-desktop-reader-pane {
+    width: 100% !important;
+    min-width: 0;
+    flex: 1;
+    border-right: 0;
+  }
+
+  .remote-mobile-back {
+    display: inline-flex;
+  }
+
+  .remote-article-shell {
+    width: min(100% - 32px, 760px);
+    padding: 28px 0 52px;
+  }
+
+  .remote-article-title {
+    font-size: 27px;
+  }
+
+  .remote-overlay-grid,
+  .remote-settings-layout,
+  .remote-data-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .remote-overlay-side,
+  .remote-settings-nav {
+    border-right: 0;
+    border-bottom: 1px solid var(--remote-border);
+  }
+
+  .remote-inline-form {
+    grid-template-columns: 1fr;
+  }
 }
