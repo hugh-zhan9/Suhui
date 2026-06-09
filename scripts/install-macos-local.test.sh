@@ -32,34 +32,6 @@ assert_contains() {
   fi
 }
 
-test_resolve_latest_dmg() {
-  local tmp_dir
-  tmp_dir="$(mktemp -d)"
-  touch "$tmp_dir/溯洄-1.3.0-macos-arm64.dmg"
-  sleep 1
-  touch "$tmp_dir/溯洄-1.3.1-macos-arm64.dmg"
-
-  local latest
-  latest="$(resolve_latest_dmg_path "$tmp_dir")"
-  assert_eq "$latest" "$tmp_dir/溯洄-1.3.1-macos-arm64.dmg" "should pick newest dmg"
-
-  rm -rf "$tmp_dir"
-}
-
-test_resolve_latest_dmg_missing() {
-  local tmp_dir
-  tmp_dir="$(mktemp -d)"
-
-  local output
-  if output="$(resolve_latest_dmg_path "$tmp_dir" 2>&1)"; then
-    echo "expected resolve_latest_dmg_path to fail when no dmg exists" >&2
-    exit 1
-  fi
-
-  assert_contains "$output" "No DMG artifact found" "should show missing dmg diagnostic"
-  rm -rf "$tmp_dir"
-}
-
 test_resolve_packaged_app_path() {
   local tmp_dir
   tmp_dir="$(mktemp -d)"
@@ -101,12 +73,140 @@ test_is_packaged_app_ready() {
   rm -rf "$tmp_dir"
 }
 
+test_validate_install_arch() {
+  local old_install_arch output
+  old_install_arch="$INSTALL_ARCH"
+
+  INSTALL_ARCH="arm64"
+  validate_install_arch
+
+  INSTALL_ARCH="x64"
+  validate_install_arch
+
+  INSTALL_ARCH="sparc"
+  if output="$(validate_install_arch 2>&1)"; then
+    echo "expected validate_install_arch to fail for unsupported architecture" >&2
+    exit 1
+  fi
+
+  assert_contains "$output" "Unsupported install architecture" "should show unsupported architecture diagnostic"
+
+  INSTALL_ARCH="$old_install_arch"
+}
+
+test_replace_installed_app() {
+  local tmp_dir old_installed_app_path old_temp_installed_app_path old_previous_installed_app_path
+  tmp_dir="$(mktemp -d)"
+  old_installed_app_path="$INSTALLED_APP_PATH"
+  old_temp_installed_app_path="$TEMP_INSTALLED_APP_PATH"
+  old_previous_installed_app_path="$PREVIOUS_INSTALLED_APP_PATH"
+
+  INSTALLED_APP_PATH="$tmp_dir/Applications/溯洄.app"
+  TEMP_INSTALLED_APP_PATH=""
+  PREVIOUS_INSTALLED_APP_PATH=""
+
+  mkdir -p "$INSTALLED_APP_PATH" "$tmp_dir/new.app"
+  printf 'old\n' >"$INSTALLED_APP_PATH/version.txt"
+  printf 'new\n' >"$tmp_dir/new.app/version.txt"
+
+  replace_installed_app "$tmp_dir/new.app"
+
+  assert_eq "$(cat "$INSTALLED_APP_PATH/version.txt")" "new" "should replace installed app with prepared app"
+
+  INSTALLED_APP_PATH="$old_installed_app_path"
+  TEMP_INSTALLED_APP_PATH="$old_temp_installed_app_path"
+  PREVIOUS_INSTALLED_APP_PATH="$old_previous_installed_app_path"
+  rm -rf "$tmp_dir"
+}
+
+test_link_cli_tool() {
+  local tmp_dir old_cli_source_path old_cli_bin_dir old_cli_bin_path
+  tmp_dir="$(mktemp -d)"
+  old_cli_source_path="$CLI_SOURCE_PATH"
+  old_cli_bin_dir="$CLI_BIN_DIR"
+  old_cli_bin_path="$CLI_BIN_PATH"
+
+  CLI_SOURCE_PATH="$tmp_dir/dist/index.js"
+  CLI_BIN_DIR="$tmp_dir/bin"
+  CLI_BIN_PATH="$CLI_BIN_DIR/suhui"
+
+  mkdir -p "$(dirname "$CLI_SOURCE_PATH")"
+  printf '#!/usr/bin/env node\n' >"$CLI_SOURCE_PATH"
+  chmod +x "$CLI_SOURCE_PATH"
+
+  link_cli_tool >/dev/null 2>&1
+
+  assert_eq "$(readlink "$CLI_BIN_PATH")" "$CLI_SOURCE_PATH" "should link suhui cli into bin dir"
+
+  CLI_SOURCE_PATH="$old_cli_source_path"
+  CLI_BIN_DIR="$old_cli_bin_dir"
+  CLI_BIN_PATH="$old_cli_bin_path"
+  rm -rf "$tmp_dir"
+}
+
+test_link_cli_tool_existing_file() {
+  local tmp_dir old_cli_source_path old_cli_bin_dir old_cli_bin_path output
+  tmp_dir="$(mktemp -d)"
+  old_cli_source_path="$CLI_SOURCE_PATH"
+  old_cli_bin_dir="$CLI_BIN_DIR"
+  old_cli_bin_path="$CLI_BIN_PATH"
+
+  CLI_SOURCE_PATH="$tmp_dir/dist/index.js"
+  CLI_BIN_DIR="$tmp_dir/bin"
+  CLI_BIN_PATH="$CLI_BIN_DIR/suhui"
+
+  mkdir -p "$(dirname "$CLI_SOURCE_PATH")" "$CLI_BIN_DIR"
+  printf '#!/usr/bin/env node\n' >"$CLI_SOURCE_PATH"
+  chmod +x "$CLI_SOURCE_PATH"
+  printf 'existing\n' >"$CLI_BIN_PATH"
+
+  if output="$(link_cli_tool 2>&1)"; then
+    echo "expected link_cli_tool to fail when CLI target is a regular file" >&2
+    exit 1
+  fi
+
+  assert_contains "$output" "not a symlink" "should show existing CLI target diagnostic"
+  assert_eq "$(cat "$CLI_BIN_PATH")" "existing" "should not overwrite existing CLI target"
+
+  CLI_SOURCE_PATH="$old_cli_source_path"
+  CLI_BIN_DIR="$old_cli_bin_dir"
+  CLI_BIN_PATH="$old_cli_bin_path"
+  rm -rf "$tmp_dir"
+}
+
+test_link_cli_tool_missing() {
+  local tmp_dir old_cli_source_path old_cli_bin_dir old_cli_bin_path output
+  tmp_dir="$(mktemp -d)"
+  old_cli_source_path="$CLI_SOURCE_PATH"
+  old_cli_bin_dir="$CLI_BIN_DIR"
+  old_cli_bin_path="$CLI_BIN_PATH"
+
+  CLI_SOURCE_PATH="$tmp_dir/missing/index.js"
+  CLI_BIN_DIR="$tmp_dir/bin"
+  CLI_BIN_PATH="$CLI_BIN_DIR/suhui"
+
+  if output="$(link_cli_tool 2>&1)"; then
+    echo "expected link_cli_tool to fail when CLI executable is missing" >&2
+    exit 1
+  fi
+
+  assert_contains "$output" "CLI executable not found" "should show missing CLI diagnostic"
+
+  CLI_SOURCE_PATH="$old_cli_source_path"
+  CLI_BIN_DIR="$old_cli_bin_dir"
+  CLI_BIN_PATH="$old_cli_bin_path"
+  rm -rf "$tmp_dir"
+}
+
 main() {
-  test_resolve_latest_dmg
-  test_resolve_latest_dmg_missing
   test_resolve_packaged_app_path
   test_resolve_packaged_app_path_missing
   test_is_packaged_app_ready
+  test_validate_install_arch
+  test_replace_installed_app
+  test_link_cli_tool
+  test_link_cli_tool_existing_file
+  test_link_cli_tool_missing
   echo "install-macos-local tests passed"
 }
 
