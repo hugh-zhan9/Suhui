@@ -2,7 +2,7 @@ import type { FeedViewType } from "@suhui/constants"
 import { and, eq, inArray, isNull, notInArray, or, sql } from "drizzle-orm"
 
 import { db } from "../db"
-import { subscriptionsTable } from "../schemas"
+import { feedsTable, subscriptionsTable } from "../schemas"
 import type { SubscriptionSchema } from "../schemas/types"
 import type { Resetable } from "./internal/base"
 import { recordSyncOp } from "./internal/sync-proxy"
@@ -45,11 +45,70 @@ export const collectCleanupTargets = (results: SubscriptionDeleteResult[]) => {
   }
 }
 
+const normalizeFeedUrlForSubscriptionDedup = (value?: string | null) => {
+  if (!value) return null
+  try {
+    const url = new URL(value)
+    url.hash = ""
+    url.search = ""
+    const pathname = url.pathname.replace(/\/+$/, "")
+    return `${url.protocol}//${url.host}${pathname}`
+  } catch {
+    return value.trim().replace(/\/+$/, "")
+  }
+}
+
+export const deduplicateFeedSubscriptionsByUrl = <
+  T extends Pick<SubscriptionSchema, "feedId" | "type">,
+>(
+  subscriptions: T[],
+  feeds: Array<{ id?: string | null; feedId?: string | null; url?: string | null }>,
+): T[] => {
+  const feedUrlById = new Map<string, string | null>()
+  for (const feed of feeds) {
+    const id = feed.id || feed.feedId
+    if (id) {
+      feedUrlById.set(id, feed.url ?? null)
+    }
+  }
+
+  const seenFeedUrlKeys = new Set<string>()
+  return subscriptions.filter((subscription) => {
+    if (subscription.type !== "feed" || !subscription.feedId) return true
+
+    const key = normalizeFeedUrlForSubscriptionDedup(feedUrlById.get(subscription.feedId))
+    if (!key) return true
+    if (seenFeedUrlKeys.has(key)) return false
+
+    seenFeedUrlKeys.add(key)
+    return true
+  })
+}
+
 class SubscriptionServiceStatic implements Resetable {
-  getSubscriptionAll() {
-    return db.query.subscriptionsTable.findMany({
+  async getSubscriptionAll() {
+    const subscriptions = await db.query.subscriptionsTable.findMany({
       where: isNull(subscriptionsTable.deletedAt),
     })
+
+    const feedIds = Array.from(
+      new Set(
+        subscriptions
+          .filter((subscription) => subscription.type === "feed" && subscription.feedId)
+          .map((subscription) => subscription.feedId!),
+      ),
+    )
+    if (feedIds.length === 0) return subscriptions
+
+    const feeds = await db.query.feedsTable.findMany({
+      where: and(inArray(feedsTable.id, feedIds), isNull(feedsTable.deletedAt)),
+      columns: {
+        id: true,
+        url: true,
+      },
+    })
+
+    return deduplicateFeedSubscriptionsByUrl(subscriptions, feeds as any)
   }
 
   async purgeAllForMaintenance() {

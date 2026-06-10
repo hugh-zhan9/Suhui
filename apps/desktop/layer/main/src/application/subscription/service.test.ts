@@ -167,4 +167,85 @@ describe("SubscriptionApplicationService", () => {
       }),
     ])
   })
+
+  it("serializes concurrent creates for the same feed URL", async () => {
+    const storedFeeds: any[] = []
+    const storedSubscriptions: any[] = []
+    let previewIndex = 0
+
+    vi.mocked(DBManager.getDB).mockReturnValue({
+      query: {
+        feedsTable: {
+          findMany: vi.fn(async () =>
+            storedFeeds.map((feed) => ({
+              id: feed.id,
+              url: feed.url,
+              siteUrl: feed.siteUrl,
+            })),
+          ),
+          findFirst: vi.fn(async () => storedFeeds[0] ?? null),
+        },
+        subscriptionsTable: {
+          findFirst: vi.fn(async () => storedSubscriptions[0] ?? null),
+        },
+        entriesTable: {
+          findMany: vi.fn(async () => []),
+        },
+      },
+    } as any)
+
+    vi.mocked(FeedService.upsertMany).mockImplementation(async (feeds: any[]) => {
+      storedFeeds.push(...feeds)
+    })
+    vi.mocked(SubscriptionService.upsertMany).mockImplementation(async (subscriptions: any[]) => {
+      storedSubscriptions.push(...subscriptions)
+    })
+    vi.mocked(EntryService.upsertMany).mockResolvedValue(undefined)
+    vi.mocked(FeedRefreshService.buildPreviewData).mockImplementation(async () => {
+      previewIndex += 1
+      return {
+        feed: {
+          type: "feed",
+          id: `local_feed_${previewIndex}`,
+          url: "https://blog.yasking.org/rss.xml",
+          title: "Yasking",
+          description: null,
+          image: null,
+          siteUrl: "https://blog.yasking.org",
+          errorAt: null,
+          ownerUserId: null,
+          errorMessage: null,
+          subscriptionCount: null,
+          updatesPerWeek: null,
+          latestEntryPublishedAt: null,
+          tipUserIds: null,
+          updatedAt: 1779980720051,
+        },
+        entries: [],
+        subscription: undefined,
+        analytics: {
+          updatesPerWeek: null,
+          subscriptionCount: null,
+          latestEntryPublishedAt: null,
+          view: 1,
+        },
+      }
+    })
+
+    const [first, second] = await Promise.all([
+      subscriptionApplicationService.createSubscription({
+        url: "https://blog.yasking.org/rss.xml",
+        view: 1,
+      }),
+      subscriptionApplicationService.createSubscription({
+        url: "https://blog.yasking.org/rss.xml",
+        view: 1,
+      }),
+    ])
+
+    expect(FeedRefreshService.buildPreviewData).toHaveBeenCalledTimes(1)
+    expect(FeedService.upsertMany).toHaveBeenCalledTimes(1)
+    expect(SubscriptionService.upsertMany).toHaveBeenCalledTimes(1)
+    expect(second.subscription.feedId).toBe(first.subscription.feedId)
+  })
 })

@@ -5,7 +5,7 @@ import { ListService } from "@suhui/database/services/list"
 import { SubscriptionService } from "@suhui/database/services/subscription"
 import { and, eq, inArray, isNull, or } from "drizzle-orm"
 
-import { findDuplicateFeed } from "~/ipc/services/rss-dedup"
+import { findDuplicateFeed, normalizeFeedUrlForDedup } from "~/ipc/services/rss-dedup"
 import { resolvePublishedAtMs, toTimestampMs } from "~/ipc/services/rss-time"
 import { DBManager } from "~/manager/db"
 import { FeedRefreshService } from "~/manager/feed-refresh"
@@ -23,6 +23,30 @@ type DeleteTargetsPayload = {
   feedIds?: string[]
   listIds?: string[]
   inboxIds?: string[]
+}
+
+const createSubscriptionLocks = new Map<string, Promise<void>>()
+
+const runSerializedByFeedUrl = async <T>(feedUrl: string, task: () => Promise<T>): Promise<T> => {
+  const lockKey = normalizeFeedUrlForDedup(feedUrl) || feedUrl.trim()
+  const previous = createSubscriptionLocks.get(lockKey) || Promise.resolve()
+  let releaseCurrent!: () => void
+  const current = new Promise<void>((resolve) => {
+    releaseCurrent = resolve
+  })
+  const tail = previous.catch(() => undefined).then(() => current)
+
+  createSubscriptionLocks.set(lockKey, tail)
+  await previous.catch(() => undefined)
+
+  try {
+    return await task()
+  } finally {
+    releaseCurrent()
+    if (createSubscriptionLocks.get(lockKey) === tail) {
+      createSubscriptionLocks.delete(lockKey)
+    }
+  }
 }
 
 export class SubscriptionApplicationService {
@@ -65,66 +89,26 @@ export class SubscriptionApplicationService {
       throw new Error("Feed URL is required")
     }
 
+    return runSerializedByFeedUrl(feedUrl, () => this.createSubscriptionUnlocked(payload, feedUrl))
+  }
+
+  private async createSubscriptionUnlocked(payload: CreateSubscriptionPayload, feedUrl: string) {
     const db = DBManager.getDB()
     const existingFeeds = await db.query.feedsTable.findMany({
       where: (feeds) => isNull(feeds.deletedAt),
       columns: { id: true, url: true, siteUrl: true },
     })
 
+    const duplicateByInputUrl = findDuplicateFeed(existingFeeds as any, feedUrl)
+    if (duplicateByInputUrl) {
+      return this.resolveDuplicateFeedSubscription(db, duplicateByInputUrl, payload)
+    }
+
     const preview = await FeedRefreshService.buildPreviewData(feedUrl)
     const duplicateFeed = findDuplicateFeed(existingFeeds as any, feedUrl, preview.feed.siteUrl)
 
     if (duplicateFeed) {
-      const existingFeed = await db.query.feedsTable.findFirst({
-        where: (feeds) => and(eq(feeds.id, duplicateFeed.id), isNull(feeds.deletedAt)),
-      })
-      const existingSubscription = await db.query.subscriptionsTable.findFirst({
-        where: (subscriptions) =>
-          and(
-            eq(subscriptions.feedId, duplicateFeed.id),
-            eq(subscriptions.type, "feed"),
-            isNull(subscriptions.deletedAt),
-          ),
-      })
-
-      const subscription =
-        existingSubscription ??
-        ({
-          id: `feed/${duplicateFeed.id}`,
-          feedId: duplicateFeed.id,
-          userId: "local_user_id",
-          view: payload.view,
-          isPrivate: false,
-          hideFromTimeline: false,
-          title: payload.title || existingFeed?.title || null,
-          category: payload.category || null,
-          type: "feed" as const,
-          listId: null,
-          inboxId: null,
-          createdAt: new Date().toISOString(),
-        } as const)
-
-      if (!existingSubscription) {
-        await SubscriptionService.upsertMany([subscription] as any)
-        syncLogger.record({
-          type: "subscription.add",
-          entityType: "subscription",
-          entityId: subscription.id,
-          payload: subscription,
-        })
-      }
-
-      const entries = await db.query.entriesTable.findMany({
-        where: (entries) => and(eq(entries.feedId, duplicateFeed.id), isNull(entries.deletedAt)),
-        orderBy: (entries, { desc }) => [desc(entries.publishedAt)],
-        limit: 50,
-      })
-
-      return {
-        feed: existingFeed,
-        subscription,
-        entries,
-      }
+      return this.resolveDuplicateFeedSubscription(db, duplicateFeed, payload)
     }
 
     const feed = {
@@ -168,6 +152,63 @@ export class SubscriptionApplicationService {
       feed: { ...feed, type: "feed" as const },
       subscription,
       entries: preview.entries,
+    }
+  }
+
+  private async resolveDuplicateFeedSubscription(
+    db: ReturnType<typeof DBManager.getDB>,
+    duplicateFeed: { id: string },
+    payload: CreateSubscriptionPayload,
+  ) {
+    const existingFeed = await db.query.feedsTable.findFirst({
+      where: (feeds) => and(eq(feeds.id, duplicateFeed.id), isNull(feeds.deletedAt)),
+    })
+    const existingSubscription = await db.query.subscriptionsTable.findFirst({
+      where: (subscriptions) =>
+        and(
+          eq(subscriptions.feedId, duplicateFeed.id),
+          eq(subscriptions.type, "feed"),
+          isNull(subscriptions.deletedAt),
+        ),
+    })
+
+    const subscription =
+      existingSubscription ??
+      ({
+        id: `feed/${duplicateFeed.id}`,
+        feedId: duplicateFeed.id,
+        userId: "local_user_id",
+        view: payload.view,
+        isPrivate: false,
+        hideFromTimeline: false,
+        title: payload.title || existingFeed?.title || null,
+        category: payload.category || null,
+        type: "feed" as const,
+        listId: null,
+        inboxId: null,
+        createdAt: new Date().toISOString(),
+      } as const)
+
+    if (!existingSubscription) {
+      await SubscriptionService.upsertMany([subscription] as any)
+      syncLogger.record({
+        type: "subscription.add",
+        entityType: "subscription",
+        entityId: subscription.id,
+        payload: subscription,
+      })
+    }
+
+    const entries = await db.query.entriesTable.findMany({
+      where: (entries) => and(eq(entries.feedId, duplicateFeed.id), isNull(entries.deletedAt)),
+      orderBy: (entries, { desc }) => [desc(entries.publishedAt)],
+      limit: 50,
+    })
+
+    return {
+      feed: existingFeed,
+      subscription,
+      entries,
     }
   }
 

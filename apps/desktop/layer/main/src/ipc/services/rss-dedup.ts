@@ -4,7 +4,7 @@ type FeedLike = {
   siteUrl: string | null
 }
 
-const normalizeUrl = (value?: string | null) => {
+export const normalizeFeedUrlForDedup = (value?: string | null) => {
   if (!value) return null
   try {
     const url = new URL(value)
@@ -18,13 +18,31 @@ const normalizeUrl = (value?: string | null) => {
   }
 }
 
+const normalizeSiteHostForDedup = (value?: string | null) => {
+  if (!value) return null
+  try {
+    const url = new URL(value)
+    return url.hostname.toLowerCase().replace(/^www\./, "")
+  } catch {
+    return null
+  }
+}
+
 export const findDuplicateFeed = (
   existingFeeds: FeedLike[],
   nextFeedUrl: string,
-  _nextSiteUrl?: string | null,
+  nextSiteUrl?: string | null,
 ) => {
-  const nextFeedNormalized = normalizeUrl(nextFeedUrl)
+  const nextFeedNormalized = normalizeFeedUrlForDedup(nextFeedUrl)
   if (!nextFeedNormalized) return
 
-  return existingFeeds.find((feed) => normalizeUrl(feed.url) === nextFeedNormalized)
+  const duplicateByFeedUrl = existingFeeds.find(
+    (feed) => normalizeFeedUrlForDedup(feed.url) === nextFeedNormalized,
+  )
+  if (duplicateByFeedUrl) return duplicateByFeedUrl
+
+  const nextSiteHost = normalizeSiteHostForDedup(nextSiteUrl)
+  if (!nextSiteHost) return
+
+  return existingFeeds.find((feed) => normalizeSiteHostForDedup(feed.siteUrl) === nextSiteHost)
 }
