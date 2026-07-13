@@ -1,246 +1,182 @@
 import { FeedViewType, getView } from "@suhui/constants"
-import { useCollectionEntryList } from "@suhui/store/collection/hooks"
-import { isOnboardingEntryUrl } from "@suhui/store/constants/onboarding"
-import {
-  useEntryIdsByFeedId,
-  useEntryIdsByFeedIds,
-  useEntryIdsByInboxId,
-  useEntryIdsByListId,
-  useEntryIdsByView,
-} from "@suhui/store/entry/hooks"
+import { useEntriesQuery } from "@suhui/store/entry/hooks"
 import { entryActions, useEntryStore } from "@suhui/store/entry/store"
-import type { UseEntriesReturn } from "@suhui/store/entry/types"
-import { fallbackReturn } from "@suhui/store/entry/utils"
-import { useFolderFeedsByFeedId, useIsSubscribed } from "@suhui/store/subscription/hooks"
+import type { FetchEntriesProps, FetchEntriesPropsSettings } from "@suhui/store/entry/types"
+import { getRuntimeEnv } from "@suhui/store/remote"
+import { toEntryListQuery } from "@suhui/store/runtime/client"
+import { useIsSubscribed, useFolderFeedsByFeedId } from "@suhui/store/subscription/hooks"
 import { unreadSyncService } from "@suhui/store/unread/store"
-import { isBizId } from "@suhui/utils/utils"
-import { debounce } from "es-toolkit/compat"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo } from "react"
 
 import { useGeneralSettingKey } from "~/atoms/settings/general"
 import { ROUTE_FEED_PENDING } from "~/constants/app"
+import type { BizRouteParams } from "~/hooks/biz/useRouteParams"
 import { useRouteParams } from "~/hooks/biz/useRouteParams"
 
+import { dedupeEntryIdsPreserveOrder } from "./entry-id-utils"
 import {
   getPendingActiveEntryId,
   normalizeFeedIdForActiveSubscription,
   setPendingActiveEntryId,
-  shouldIncludeEntryInUnreadOnly,
 } from "./query-selection"
-import { dedupeEntryIdsPreserveOrder } from "./entry-id-utils"
 
-function getEntryIdsFromMultiplePlace(...entryIds: Array<string[] | undefined | null>) {
-  return entryIds.find((ids) => ids?.length) ?? []
+type EntriesByViewQueryProps = Omit<FetchEntriesProps, "pageParam" | "read" | "excludePrivate"> &
+  FetchEntriesPropsSettings
+
+const normalizeFeedIds = (feedIds: string[]) =>
+  Array.from(new Set(feedIds.map((id) => id.trim()).filter(Boolean))).sort()
+
+export const buildEntriesByViewQueryProps = ({
+  route,
+  folderFeedIds,
+  activeFeedId,
+  unreadOnly,
+  hidePrivateSubscriptionsInTimeline,
+}: {
+  route: BizRouteParams
+  folderFeedIds: string[]
+  activeFeedId?: string
+  unreadOnly: boolean
+  hidePrivateSubscriptionsInTimeline: boolean
+}): EntriesByViewQueryProps => {
+  if (route.isCollection) {
+    return {
+      isCollection: true,
+      ...(route.view === FeedViewType.All ? {} : { view: route.view }),
+      unreadOnly: false,
+    }
+  }
+  if (route.listId) return { listId: route.listId, unreadOnly }
+  if (route.inboxId) return { inboxId: route.inboxId, unreadOnly }
+  if (activeFeedId) return { feedId: activeFeedId, unreadOnly }
+
+  const normalizedFolderFeedIds = normalizeFeedIds(folderFeedIds)
+  if (normalizedFolderFeedIds.length > 0) {
+    return { feedIdList: normalizedFolderFeedIds, unreadOnly }
+  }
+
+  return {
+    ...(route.view === FeedViewType.All ? {} : { view: route.view }),
+    unreadOnly,
+    hidePrivateSubscriptionsInTimeline,
+  }
 }
 
-const useLocalEntries = (): UseEntriesReturn => {
-  const {
-    feedId,
-    view,
-    inboxId,
-    listId,
-    isCollection,
-    isPendingEntry,
-    entryId: activeEntryId,
-  } = useRouteParams()
+export const getEntriesByViewQueryIdentity = (props: EntriesByViewQueryProps) =>
+  toEntryListQuery({
+    ...props,
+    pageParam: undefined,
+    read: props.unreadOnly ? false : undefined,
+    excludePrivate: props.hidePrivateSubscriptionsInTimeline,
+  })
+
+export const includeActiveEntryInQueryPageOrder = ({
+  pageIds,
+  activeEntryId,
+  activeEntryLoaded,
+}: {
+  pageIds: string[]
+  activeEntryId?: string
+  activeEntryLoaded: boolean
+}) =>
+  dedupeEntryIdsPreserveOrder(
+    activeEntryId && activeEntryLoaded && !pageIds.includes(activeEntryId)
+      ? [activeEntryId, ...pageIds]
+      : pageIds,
+  )
+
+export const isEntriesQueryReady = (query: { isSuccess: boolean }) => query.isSuccess
+
+export const useEntriesByView = ({ onReset }: { onReset?: () => void }) => {
+  const route = useRouteParams()
+  const { view, listId, entryId: activeEntryId } = route
   const unreadOnly = useGeneralSettingKey("unreadOnly")
   const hidePrivateSubscriptionsInTimeline = useGeneralSettingKey(
     "hidePrivateSubscriptionsInTimeline",
   )
-
-  const folderIds = useFolderFeedsByFeedId({
-    feedId,
-    view,
-  })
-  const isSubscribed = useIsSubscribed(feedId)
-  const allowUnsubscribedFeed = !isSubscribed && isPendingEntry
+  const folderFeedIds = useFolderFeedsByFeedId({ feedId: route.feedId, view })
+  const isSubscribed = useIsSubscribed(route.feedId)
   const activeFeedId = useMemo(
     () =>
       normalizeFeedIdForActiveSubscription({
-        feedId,
+        feedId: route.feedId,
         pendingFeedId: ROUTE_FEED_PENDING,
         isSubscribed,
-        allowUnsubscribedFeed,
+        allowUnsubscribedFeed: !isSubscribed && route.isPendingEntry,
       }),
-    [feedId, isSubscribed, allowUnsubscribedFeed],
+    [isSubscribed, route.feedId, route.isPendingEntry],
   )
-  const entryIdsByView = useEntryIdsByView(view, hidePrivateSubscriptionsInTimeline)
-  const entryIdsByCollections = useCollectionEntryList(view)
-  const entryIdsByFeedId = useEntryIdsByFeedId(activeFeedId)
-  const entryIdsByCategory = useEntryIdsByFeedIds(folderIds)
-  const entryIdsByListId = useEntryIdsByListId(listId)
-  const entryIdsByInboxId = useEntryIdsByInboxId(inboxId)
+  const queryProps = useMemo(
+    () =>
+      buildEntriesByViewQueryProps({
+        route,
+        folderFeedIds,
+        activeFeedId,
+        unreadOnly: Boolean(unreadOnly),
+        hidePrivateSubscriptionsInTimeline: Boolean(hidePrivateSubscriptionsInTimeline),
+      }),
+    [activeFeedId, folderFeedIds, hidePrivateSubscriptionsInTimeline, route, unreadOnly],
+  )
+  const query = useEntriesQuery(queryProps)
+  const activeEntryLoaded = useEntryStore((state) =>
+    activeEntryId ? Boolean(state.data[activeEntryId]) : false,
+  )
+  const entryIds = useMemo(
+    () =>
+      includeActiveEntryInQueryPageOrder({
+        pageIds: query.entriesIds,
+        activeEntryId,
+        activeEntryLoaded,
+      }),
+    [activeEntryId, activeEntryLoaded, query.entriesIds],
+  )
 
-  const showEntriesByView =
-    !activeFeedId && folderIds.length === 0 && !isCollection && !inboxId && !listId
   const pendingActiveEntryId = getPendingActiveEntryId()
-
   useEffect(() => {
     if (!activeEntryId || pendingActiveEntryId !== activeEntryId) return
     setPendingActiveEntryId(null)
   }, [activeEntryId, pendingActiveEntryId])
 
-  const allEntries = useEntryStore(
-    useCallback(
-      (state) => {
-        const ids = isCollection
-          ? entryIdsByCollections
-          : showEntriesByView
-            ? (entryIdsByView ?? [])
-            : (getEntryIdsFromMultiplePlace(
-                entryIdsByFeedId,
-                entryIdsByCategory,
-                entryIdsByListId,
-                entryIdsByInboxId,
-              ) ?? [])
-
-        return dedupeEntryIdsPreserveOrder(
-          ids
-            .map((id) => {
-              const entry = state.data[id]
-              if (!entry) return null
-              if (
-                !shouldIncludeEntryInUnreadOnly({
-                  isCollection: !!isCollection,
-                  unreadOnly: Boolean(unreadOnly),
-                  read: Boolean(entry.read),
-                  entryId: entry.id,
-                  activeEntryId,
-                  pendingActiveEntryId,
-                })
-              ) {
-                return null
-              }
-              return entry.id
-            })
-            .filter((id) => typeof id === "string"),
-        )
-      },
-      [
-        entryIdsByCategory,
-        entryIdsByCollections,
-        entryIdsByFeedId,
-        entryIdsByInboxId,
-        entryIdsByListId,
-        entryIdsByView,
-        isCollection,
-        showEntriesByView,
-        unreadOnly,
-        activeEntryId,
-        pendingActiveEntryId,
-      ],
-    ),
-  )
-
-  const [page, setPage] = useState(0)
-  const pageSize = 30
-  const totalPage = useMemo(
-    () => (allEntries ? Math.ceil(allEntries.length / pageSize) : 0),
-    [allEntries],
-  )
-
-  const entries = useMemo(() => {
-    return dedupeEntryIdsPreserveOrder(allEntries?.slice(0, (page + 1) * pageSize) || [])
-  }, [allEntries, page, pageSize])
-
-  const hasNext = useMemo(() => {
-    return entries.length < (allEntries?.length || 0)
-  }, [entries.length, allEntries])
-
-  const refetch = useCallback(async () => {
-    setPage(0)
-  }, [])
-
-  const fetchNextPage = useCallback(
-    debounce(async () => {
-      setPage(page + 1)
-    }, 300),
-    [page],
-  )
-
-  useEffect(() => {
-    setPage(0)
-  }, [view, activeFeedId])
-
-  return {
-    entriesIds: entries,
-    hasNext,
-    refetch,
-    fetchNextPage: fetchNextPage as () => Promise<void>,
-    isLoading: false,
-    isRefetching: false,
-    isReady: true,
-    isFetchingNextPage: false,
-    isFetching: false,
-    hasNextPage: page < totalPage,
-    error: null,
-  }
-}
-
-export const useEntriesByView = ({ onReset }: { onReset?: () => void }) => {
-  const { view, listId, isCollection } = useRouteParams()
-
-  const localQuery = useLocalEntries()
-  const query = localQuery
-  const entryIds: string[] = useMemo(
-    () => dedupeEntryIdsPreserveOrder(query.entriesIds || []),
-    [query.entriesIds],
-  )
-
   const isFetchingFirstPage = query.isFetching && !query.isFetchingNextPage
-
   useEffect(() => {
-    if (isFetchingFirstPage) {
-      onReset?.()
-    }
+    if (isFetchingFirstPage) onReset?.()
   }, [isFetchingFirstPage, onReset, query.queryKey])
 
   const groupByDate = useGeneralSettingKey("groupByDate")
   const groupedCounts: number[] | undefined = useMemo(() => {
     const viewDefinition = getView(view)
-    if (viewDefinition?.gridMode || view === FeedViewType.All) {
-      return
-    }
-    if (!groupByDate) {
-      return
-    }
-    const entriesId2Map = entryActions.getFlattenMapEntries()
-    const counts = [] as number[]
+    if (viewDefinition?.gridMode || view === FeedViewType.All || !groupByDate) return
+
+    const entriesById = entryActions.getFlattenMapEntries()
+    const counts: number[] = []
     let lastDate = ""
     for (const id of entryIds) {
-      const entry = entriesId2Map[id]
-      if (!entry) {
-        continue
-      }
-      if (isOnboardingEntryUrl(entry.url)) {
-        continue
-      }
+      const entry = entriesById[id]
+      if (!entry) continue
       const date = new Date(listId ? entry.insertedAt : entry.publishedAt).toDateString()
       if (date !== lastDate) {
         counts.push(1)
         lastDate = date
       } else {
-        const last = counts.pop()
-        if (last) counts.push(last + 1)
+        counts[counts.length - 1] = (counts[counts.length - 1] ?? 0) + 1
       }
     }
-
     return counts
-  }, [groupByDate, listId, entryIds, view])
+  }, [entryIds, groupByDate, listId, view])
 
   return {
     ...query,
-
-    type: "local" as const,
-    refetch: useCallback(() => {
-      const promise = query.refetch()
+    type: getRuntimeEnv().isRemote ? ("remote" as const) : ("local" as const),
+    fetchNextPage: async () => {
+      await query.fetchNextPage()
+    },
+    refetch: useCallback(async () => {
+      await query.refetch()
       unreadSyncService.resetFromRemote()
-      return promise
     }, [query]),
     entriesIds: entryIds,
     groupedCounts,
-    isFetching: query.isFetching,
-    isFetchingNextPage: query.isFetchingNextPage,
-    isLoading: query.isLoading,
+    isReady: isEntriesQueryReady(query),
+    fetchedTime: query.dataUpdatedAt,
   }
 }

@@ -1,5 +1,67 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 
+vi.mock("electron", () => ({
+  session: {
+    defaultSession: {
+      resolveProxy: vi.fn(),
+    },
+  },
+  ipcMain: {
+    handle: vi.fn(),
+    on: vi.fn(),
+    removeHandler: vi.fn(),
+    removeAllListeners: vi.fn(),
+  },
+}))
+
+vi.mock("electron-ipc-decorator", () => ({
+  IpcMethod: () => (_target: unknown, _key: string, descriptor: PropertyDescriptor) => descriptor,
+  IpcService: class {},
+}))
+
+vi.mock("~/lib/store", () => ({
+  store: {
+    get: vi.fn(),
+    set: vi.fn(),
+    delete: vi.fn(),
+  },
+}))
+
+vi.mock("~/logger", () => ({
+  logger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    log: vi.fn(),
+  },
+}))
+
+vi.mock("~/manager/db", () => ({
+  DBManager: {
+    waitUntilUsable: vi.fn().mockResolvedValue(undefined),
+    getDB: vi.fn(),
+    getDialect: vi.fn(),
+  },
+}))
+
+vi.mock("~/manager/sync-applier", () => ({
+  drainPendingOps: vi.fn(),
+}))
+
+vi.mock("~/manager/sync-logger", () => ({
+  syncLogger: {
+    record: vi.fn(),
+  },
+}))
+
+vi.mock("~/manager/refresh-audit-log", () => ({
+  appendRefreshAuditTrace: vi.fn(),
+}))
+
+vi.mock("~/manager/local-feed-refresh-events", () => ({
+  broadcastLocalFeedRefreshCompleted: vi.fn(),
+}))
+
 vi.mock("~/application/discover/service", () => ({
   discoverApplicationService: {
     request: vi.fn().mockResolvedValue({}),
@@ -20,6 +82,16 @@ vi.mock("~/application/agent/service", () => ({
     getEntry: vi.fn().mockResolvedValue(null),
     listFeeds: vi.fn().mockResolvedValue({ items: [] }),
     updateReadStatus: vi.fn().mockResolvedValue({ updated: 0, read: true }),
+  },
+}))
+
+vi.mock("~/application/entry/query-service", () => ({
+  entryQueryService: {
+    list: vi.fn().mockResolvedValue({
+      items: [],
+      page: { limit: 20, hasMore: false, nextCursor: null },
+    }),
+    getDetail: vi.fn().mockResolvedValue(null),
   },
 }))
 
@@ -75,6 +147,10 @@ vi.mock("~/application/subscription/service", () => ({
 
 import { RemoteServerManager } from "./manager"
 import { agentReadStatusMaxEntryIds } from "~/application/agent/types"
+import { encodeEntryCursor } from "~/application/entry/query-cursor"
+import { entryQueryService } from "~/application/entry/query-service"
+import type { EntryListQuery } from "~/application/entry/query-types"
+import { DbService } from "~/ipc/services/db"
 
 describe("RemoteServerManager", () => {
   const readChunkWithTimeout = async (
@@ -174,7 +250,10 @@ describe("RemoteServerManager", () => {
       host: "127.0.0.1",
       port: 0,
       getSubscriptions: vi.fn().mockResolvedValue([]),
-      getEntries: vi.fn().mockResolvedValue([]),
+      listEntries: vi.fn().mockResolvedValue({
+        items: [],
+        page: { limit: 20, hasMore: false, nextCursor: null },
+      }),
       getRemoteIndexHtml,
       getRemoteAsset,
     })
@@ -206,24 +285,29 @@ describe("RemoteServerManager", () => {
     abortController.abort()
   })
 
-  it("serves entries from the injected provider", async () => {
-    const getEntries = vi.fn().mockResolvedValue([
-      {
-        id: "entry_1",
-        feedId: "feed_1",
-        title: "Entry One",
-        publishedAt: 1710000000000,
-      },
-    ])
+  it("returns a bounded additive HTTP page and preserves repeated feed scopes", async () => {
+    const listEntries = vi.fn().mockResolvedValue({
+      items: [
+        {
+          id: "entry_1",
+          feedId: "feed_1",
+          title: "Entry One",
+          publishedAt: 1710000000000,
+        },
+      ],
+      page: { limit: 2, hasMore: true, nextCursor: "opaque-cursor" },
+    })
 
     const server = await RemoteServerManager.start({
       host: "127.0.0.1",
       port: 0,
       getSubscriptions: vi.fn().mockResolvedValue([]),
-      getEntries,
+      listEntries,
     })
 
-    const response = await fetch(`${server.baseUrl}/api/entries?feedId=feed_1`)
+    const response = await fetch(
+      `${server.baseUrl}/api/entries?feedId=feed_1&feedId=feed_2&unreadOnly=true&limit=2`,
+    )
     expect(response.status).toBe(200)
     await expect(response.json()).resolves.toEqual({
       data: [
@@ -234,48 +318,185 @@ describe("RemoteServerManager", () => {
           publishedAt: 1710000000000,
         },
       ],
+      page: { limit: 2, hasMore: true, nextCursor: "opaque-cursor" },
     })
-    expect(getEntries).toHaveBeenCalledWith({
-      feedId: "feed_1",
-      unreadOnly: false,
+    expect(listEntries).toHaveBeenCalledWith({
+      scope: { kind: "feeds", feedIds: ["feed_1", "feed_2"] },
+      read: false,
+      limit: 2,
     })
   })
 
-  it("serves unread-only entries from the injected provider", async () => {
-    const getEntries = vi.fn().mockResolvedValue([
+  it("preserves identical items and page semantics through IPC and HTTP", async () => {
+    const query: EntryListQuery = {
+      scope: { kind: "feeds", feedIds: ["feed_1", "feed_2"] },
+      read: false,
+      limit: 2,
+    }
+    const page = {
+      items: [
+        {
+          id: "entry_1",
+          feedId: "feed_1",
+          title: "Entry One",
+          recordKind: "summary",
+          read: false,
+        },
+      ],
+      page: { limit: 2, hasMore: true, nextCursor: "opaque-cursor" },
+    }
+    const list = vi.mocked(entryQueryService.list)
+    list.mockClear()
+    list.mockResolvedValueOnce(page as never).mockResolvedValueOnce(page as never)
+
+    const ipcPage = await new DbService().listEntries({} as any, query)
+    const server = await RemoteServerManager.start({ host: "127.0.0.1", port: 0 })
+    const response = await fetch(
+      `${server.baseUrl}/api/entries?feedId=feed_1&feedId=feed_2&unreadOnly=true&limit=2`,
+    )
+    const httpPage = await response.json()
+
+    expect(response.status).toBe(200)
+    expect({ items: httpPage.data, page: httpPage.page }).toEqual(ipcPage)
+    expect(list).toHaveBeenNthCalledWith(1, query)
+    expect(list).toHaveBeenNthCalledWith(2, query)
+  })
+
+  it.each([
+    [
+      "list",
+      "?listId=list_1&read=true&limit=7",
       {
-        id: "entry_2",
-        feedId: "feed_1",
-        title: "Unread Entry",
-        read: false,
-        publishedAt: 1710000001000,
+        scope: { kind: "list", listId: "list_1" },
+        read: true,
+        limit: 7,
       },
-    ])
+    ],
+    [
+      "inbox",
+      "?inboxId=inbox_1&unreadOnly=1",
+      {
+        scope: { kind: "inbox", inboxId: "inbox_1" },
+        read: false,
+      },
+    ],
+    [
+      "collection",
+      "?isCollection=true&view=2",
+      {
+        scope: { kind: "collection", view: 2 },
+      },
+    ],
+    [
+      "timeline view/excludePrivate",
+      "?view=1&excludePrivate=true",
+      {
+        scope: { kind: "timeline", view: 1, excludePrivate: true },
+      },
+    ],
+  ] as const)("normalizes positive HTTP %s queries", async (_name, query, expected) => {
+    const listEntries = vi.fn().mockResolvedValue({
+      items: [],
+      page: { limit: 20, hasMore: false, nextCursor: null },
+    })
+    const server = await RemoteServerManager.start({
+      host: "127.0.0.1",
+      port: 0,
+      listEntries,
+    })
+
+    const response = await fetch(`${server.baseUrl}/api/entries${query}`)
+
+    expect(response.status).toBe(200)
+    expect(listEntries).toHaveBeenCalledWith(expected)
+  })
+
+  it("preserves an opaque HTTP cursor during normalization", async () => {
+    const cursor = encodeEntryCursor({
+      v: 1,
+      publishedAt: 1710000000000,
+      insertedAt: 1710000001000,
+      id: "entry_1",
+    })
+    const listEntries = vi.fn().mockResolvedValue({
+      items: [],
+      page: { limit: 20, hasMore: false, nextCursor: null },
+    })
+    const server = await RemoteServerManager.start({
+      host: "127.0.0.1",
+      port: 0,
+      listEntries,
+    })
+
+    const response = await fetch(
+      `${server.baseUrl}/api/entries?feedId=feed_1&cursor=${encodeURIComponent(cursor)}`,
+    )
+
+    expect(response.status).toBe(200)
+    expect(listEntries).toHaveBeenCalledWith({
+      scope: { kind: "feeds", feedIds: ["feed_1"] },
+      cursor,
+    })
+  })
+
+  it("defaults the HTTP list to a bounded timeline page", async () => {
+    const listEntries = vi.fn().mockResolvedValue({
+      items: [],
+      page: { limit: 20, hasMore: false, nextCursor: null },
+    })
 
     const server = await RemoteServerManager.start({
       host: "127.0.0.1",
       port: 0,
       getSubscriptions: vi.fn().mockResolvedValue([]),
-      getEntries,
+      listEntries,
     })
 
-    const response = await fetch(`${server.baseUrl}/api/entries?feedId=feed_1&unreadOnly=1`)
+    const response = await fetch(`${server.baseUrl}/api/entries`)
     expect(response.status).toBe(200)
     await expect(response.json()).resolves.toEqual({
-      data: [
-        {
-          id: "entry_2",
-          feedId: "feed_1",
-          title: "Unread Entry",
-          read: false,
-          publishedAt: 1710000001000,
-        },
-      ],
+      data: [],
+      page: { limit: 20, hasMore: false, nextCursor: null },
     })
-    expect(getEntries).toHaveBeenCalledWith({
-      feedId: "feed_1",
-      unreadOnly: true,
+    expect(listEntries).toHaveBeenCalledWith({ scope: { kind: "timeline" } })
+  })
+
+  it.each([
+    ["?feedId=f1&listId=l1", "SUHUI_INVALID_ENTRY_SCOPE"],
+    ["?feedId=f1&excludePrivate=true", "SUHUI_INVALID_ENTRY_SCOPE"],
+    ["?unreadOnly=true&read=true", "SUHUI_INVALID_READ_FILTER"],
+    ["?limit=101", "SUHUI_INVALID_LIMIT"],
+    ["?cursor=broken", "SUHUI_INVALID_CURSOR"],
+  ])("returns a stable 400 for %s", async (query, code) => {
+    const listEntries = vi.fn().mockImplementation(async (input) => {
+      if (input.cursor) {
+        const { EntryQueryError } = await import("~/application/entry/query-types")
+        throw new EntryQueryError("SUHUI_INVALID_CURSOR", "cursor is invalid")
+      }
+      return { items: [], page: { limit: 20, hasMore: false, nextCursor: null } }
     })
+    const server = await RemoteServerManager.start({ host: "127.0.0.1", port: 0, listEntries })
+
+    const response = await fetch(`${server.baseUrl}/api/entries${query}`)
+
+    expect(response.status).toBe(400)
+    await expect(response.json()).resolves.toMatchObject({ error: { code } })
+  })
+
+  it("redacts unexpected entry list failures", async () => {
+    const listEntries = vi
+      .fn()
+      .mockRejectedValue(new Error('select * from entries password="secret" /Users/private'))
+    const server = await RemoteServerManager.start({ host: "127.0.0.1", port: 0, listEntries })
+
+    const response = await fetch(`${server.baseUrl}/api/entries`)
+    const body = await response.text()
+
+    expect(response.status).toBe(500)
+    expect(body).toContain("SUHUI_ENTRY_QUERY_INTERNAL_ERROR")
+    expect(body).not.toContain("select *")
+    expect(body).not.toContain("secret")
+    expect(body).not.toContain("/Users/private")
   })
 
   it("serves agent entries from the injected provider with parsed query options", async () => {
@@ -586,7 +807,10 @@ describe("RemoteServerManager", () => {
       host: "127.0.0.1",
       port: 0,
       getSubscriptions: vi.fn().mockResolvedValue([]),
-      getEntries: vi.fn().mockResolvedValue([]),
+      listEntries: vi.fn().mockResolvedValue({
+        items: [],
+        page: { limit: 20, hasMore: false, nextCursor: null },
+      }),
       getEntry,
     })
 
@@ -603,6 +827,24 @@ describe("RemoteServerManager", () => {
     expect(getEntry).toHaveBeenCalledWith("entry_1")
   })
 
+  it("uses active-relations visibility for default remote detail and PDF", async () => {
+    const getDetail = vi.mocked(entryQueryService.getDetail)
+    getDetail.mockClear()
+    getDetail.mockResolvedValue({
+      id: "entry_1",
+      title: "Entry One",
+      content: "<p>Hello</p>",
+      readabilityContent: null,
+    } as never)
+
+    const server = await RemoteServerManager.start({ host: "127.0.0.1", port: 0 })
+
+    expect((await fetch(`${server.baseUrl}/api/entries/entry_1`)).status).toBe(200)
+    expect((await fetch(`${server.baseUrl}/api/entries/entry_1/pdf`)).status).toBe(200)
+    expect(getDetail).toHaveBeenNthCalledWith(1, "entry_1", "active-relations")
+    expect(getDetail).toHaveBeenNthCalledWith(2, "entry_1", "active-relations")
+  })
+
   it("serves unread counts from the injected provider", async () => {
     const getUnreadCounts = vi.fn().mockResolvedValue([
       { id: "feed_1", count: 3 },
@@ -613,7 +855,10 @@ describe("RemoteServerManager", () => {
       host: "127.0.0.1",
       port: 0,
       getSubscriptions: vi.fn().mockResolvedValue([]),
-      getEntries: vi.fn().mockResolvedValue([]),
+      listEntries: vi.fn().mockResolvedValue({
+        items: [],
+        page: { limit: 20, hasMore: false, nextCursor: null },
+      }),
       getUnreadCounts,
     })
 
@@ -642,7 +887,10 @@ describe("RemoteServerManager", () => {
       host: "127.0.0.1",
       port: 0,
       getSubscriptions: vi.fn().mockResolvedValue([]),
-      getEntries: vi.fn().mockResolvedValue([]),
+      listEntries: vi.fn().mockResolvedValue({
+        items: [],
+        page: { limit: 20, hasMore: false, nextCursor: null },
+      }),
       getCollections,
     })
 
@@ -667,7 +915,10 @@ describe("RemoteServerManager", () => {
       host: "127.0.0.1",
       port: 0,
       getSubscriptions: vi.fn().mockResolvedValue([]),
-      getEntries: vi.fn().mockResolvedValue([]),
+      listEntries: vi.fn().mockResolvedValue({
+        items: [],
+        page: { limit: 20, hasMore: false, nextCursor: null },
+      }),
     })
 
     const response = await fetch(`${server.baseUrl}/events`, {
@@ -697,7 +948,10 @@ describe("RemoteServerManager", () => {
       host: "127.0.0.1",
       port: 0,
       getSubscriptions: vi.fn().mockResolvedValue([]),
-      getEntries: vi.fn().mockResolvedValue([]),
+      listEntries: vi.fn().mockResolvedValue({
+        items: [],
+        page: { limit: 20, hasMore: false, nextCursor: null },
+      }),
       getUnreadCounts: vi.fn().mockResolvedValue([]),
       updateReadStatus,
     })
@@ -727,7 +981,10 @@ describe("RemoteServerManager", () => {
       host: "127.0.0.1",
       port: 0,
       getSubscriptions: vi.fn().mockResolvedValue([]),
-      getEntries: vi.fn().mockResolvedValue([]),
+      listEntries: vi.fn().mockResolvedValue({
+        items: [],
+        page: { limit: 20, hasMore: false, nextCursor: null },
+      }),
       updateEntryStar,
     })
 
@@ -761,7 +1018,10 @@ describe("RemoteServerManager", () => {
       host: "127.0.0.1",
       port: 0,
       getSubscriptions: vi.fn().mockResolvedValue([]),
-      getEntries: vi.fn().mockResolvedValue([]),
+      listEntries: vi.fn().mockResolvedValue({
+        items: [],
+        page: { limit: 20, hasMore: false, nextCursor: null },
+      }),
       getUnreadCounts: vi.fn().mockResolvedValue([]),
       updateReadStatus: vi.fn().mockResolvedValue(undefined),
       refreshFeed,
@@ -791,7 +1051,10 @@ describe("RemoteServerManager", () => {
       host: "127.0.0.1",
       port: 0,
       getSubscriptions: vi.fn().mockResolvedValue([]),
-      getEntries: vi.fn().mockResolvedValue([]),
+      listEntries: vi.fn().mockResolvedValue({
+        items: [],
+        page: { limit: 20, hasMore: false, nextCursor: null },
+      }),
       getUnreadCounts: vi.fn().mockResolvedValue([]),
       updateReadStatus: vi.fn().mockResolvedValue(undefined),
       refreshFeed: vi.fn().mockResolvedValue(undefined),
@@ -821,7 +1084,10 @@ describe("RemoteServerManager", () => {
       host: "127.0.0.1",
       port: 0,
       getSubscriptions: vi.fn().mockResolvedValue([]),
-      getEntries: vi.fn().mockResolvedValue([]),
+      listEntries: vi.fn().mockResolvedValue({
+        items: [],
+        page: { limit: 20, hasMore: false, nextCursor: null },
+      }),
       getUnreadCounts: vi.fn().mockResolvedValue([]),
       updateReadStatus: vi.fn().mockResolvedValue(undefined),
       refreshFeed: vi.fn().mockResolvedValue(undefined),
@@ -860,7 +1126,10 @@ describe("RemoteServerManager", () => {
       host: "127.0.0.1",
       port: 0,
       getSubscriptions: vi.fn().mockResolvedValue([]),
-      getEntries: vi.fn().mockResolvedValue([]),
+      listEntries: vi.fn().mockResolvedValue({
+        items: [],
+        page: { limit: 20, hasMore: false, nextCursor: null },
+      }),
       getUnreadCounts: vi.fn().mockResolvedValue([]),
       updateReadStatus: vi.fn().mockResolvedValue(undefined),
       refreshFeed: vi.fn().mockResolvedValue(undefined),
@@ -888,7 +1157,10 @@ describe("RemoteServerManager", () => {
       host: "127.0.0.1",
       port: 0,
       getSubscriptions: vi.fn().mockResolvedValue([]),
-      getEntries: vi.fn().mockResolvedValue([]),
+      listEntries: vi.fn().mockResolvedValue({
+        items: [],
+        page: { limit: 20, hasMore: false, nextCursor: null },
+      }),
       getUnreadCounts: vi.fn().mockResolvedValue([]),
       updateReadStatus: vi.fn().mockResolvedValue(undefined),
       refreshFeed: vi.fn().mockResolvedValue(undefined),

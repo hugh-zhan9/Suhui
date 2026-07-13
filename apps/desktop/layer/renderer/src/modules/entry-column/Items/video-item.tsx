@@ -16,12 +16,13 @@ import { FeedTitle } from "~/modules/feed/feed-title"
 
 import { GridItem } from "../templates/grid-item-template"
 import type { EntryItemStatelessProps, UniversalItemProps } from "../types"
+import { registerVisibleVideoDetailPrefetchRow } from "../hooks/visible-detail-prefetch"
 
 const ViewTag = IN_ELECTRON ? "webview" : "iframe"
 
 export function VideoItem({ entryId, translation }: UniversalItemProps) {
   const entry = useEntry(entryId, (state) => {
-    const { id, url, content } = state
+    const { id, url, content, description, recordKind } = state
 
     const attachments = state.attachments || []
     const { duration_in_seconds } =
@@ -34,7 +35,7 @@ export function VideoItem({ entryId, translation }: UniversalItemProps) {
     const media = state.media || []
     const firstMedia = media[0]
 
-    return { attachments, duration, firstMedia, id, url, media, content }
+    return { attachments, duration, firstMedia, id, url, media, content, description, recordKind }
   })
 
   const isActive = useRouteParamsSelector(({ entryId }) => entryId === entry?.id)
@@ -68,6 +69,27 @@ export function VideoItem({ entryId, translation }: UniversalItemProps) {
       target: ref,
     },
   )
+
+  useEffect(() => {
+    if (!entry || (!hovered && !isActive)) return
+    return registerVisibleVideoDetailPrefetchRow({
+      id: entry.id,
+      url: entry.url,
+      attachments: entry.attachments,
+      media: entry.media,
+      description: entry.description,
+      recordKind: entry.recordKind,
+    })
+  }, [
+    entry?.attachments,
+    entry?.description,
+    entry?.id,
+    entry?.media,
+    entry?.recordKind,
+    entry?.url,
+    hovered,
+    isActive,
+  ])
 
   const [showPreview, setShowPreview] = useState(false)
   useEffect(() => {

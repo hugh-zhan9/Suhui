@@ -100,11 +100,11 @@ export const hydrateFromRemote = async (options?: RemoteHydrateOptions): Promise
  */
 const loadInitialEntries = async (feedId: string): Promise<void> => {
   try {
-    const entries = await runtimeClient.entries.list({ feedId })
+    const page = await runtimeClient.entries.list({ feedId })
 
     // 动态导入 entryActions 避免循环依赖
     const { entryActions } = await import("../modules/entry/store")
-    entryActions.upsertManyInSession(entries)
+    entryActions.upsertSummaries(page.data)
   } catch (error) {
     console.error("[loadInitialEntries] Failed to load initial entries:", error)
   }

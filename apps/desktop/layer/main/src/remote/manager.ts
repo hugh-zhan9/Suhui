@@ -3,6 +3,13 @@ import type { AddressInfo } from "node:net"
 
 import { agentApplicationService } from "~/application/agent/service"
 import { AgentApplicationError, agentReadStatusMaxEntryIds } from "~/application/agent/types"
+import { entryQueryService } from "~/application/entry/query-service"
+import {
+  type EntryListQuery,
+  EntryQueryError,
+  type EntrySummaryPage,
+  normalizeEntryListLimit,
+} from "~/application/entry/query-types"
 import type {
   AgentEntriesListOptions,
   AgentEntriesListResult,
@@ -36,7 +43,7 @@ type RemoteServerDependencies = {
   getSettings: () => Promise<RemoteSettings> | RemoteSettings
   updateSettings: (payload: Partial<RemoteSettings>) => Promise<RemoteSettings> | RemoteSettings
   getSubscriptions: () => Promise<SubscriptionRecord[]>
-  getEntries: (options?: { feedId?: string; unreadOnly?: boolean }) => Promise<EntryRecord[]>
+  listEntries: (query: EntryListQuery) => Promise<EntrySummaryPage>
   getEntry: (entryId: string) => Promise<EntryRecord | null>
   getAgentEntries: (options?: AgentEntriesListOptions) => Promise<AgentEntriesListResult>
   getAgentEntry: (entryId: string) => Promise<AgentEntryDetail | null>
@@ -177,6 +184,101 @@ const parseOptionalBoolean = (name: string, value: string | null) => {
   )
 }
 
+const parseEntryBoolean = (
+  name: string,
+  value: string | null,
+  code: "SUHUI_INVALID_ENTRY_SCOPE" | "SUHUI_INVALID_READ_FILTER",
+) => {
+  if (value === null) return undefined
+  const normalized = value.toLowerCase()
+  if (normalized === "true" || normalized === "1") return true
+  if (normalized === "false" || normalized === "0") return false
+  throw new EntryQueryError(code, `${name} must be true, false, 1, or 0`)
+}
+
+const parseEntryView = (value: string | null) => {
+  if (value === null) return undefined
+  const view = Number(value)
+  if (!Number.isInteger(view)) {
+    throw new EntryQueryError("SUHUI_INVALID_ENTRY_SCOPE", "view must be an integer")
+  }
+  return view
+}
+
+export const parseRemoteEntryListQuery = (searchParams: URLSearchParams): EntryListQuery => {
+  const hasFeeds = searchParams.has("feedId")
+  const hasList = searchParams.has("listId")
+  const hasInbox = searchParams.has("inboxId")
+  const isCollection = parseEntryBoolean(
+    "isCollection",
+    searchParams.get("isCollection"),
+    "SUHUI_INVALID_ENTRY_SCOPE",
+  )
+  const explicitScopeCount = [hasFeeds, hasList, hasInbox, isCollection === true].filter(
+    Boolean,
+  ).length
+  if (explicitScopeCount > 1) {
+    throw new EntryQueryError(
+      "SUHUI_INVALID_ENTRY_SCOPE",
+      "feedId, listId, inboxId, and isCollection are mutually exclusive",
+    )
+  }
+
+  const excludePrivate = parseEntryBoolean(
+    "excludePrivate",
+    searchParams.get("excludePrivate"),
+    "SUHUI_INVALID_ENTRY_SCOPE",
+  )
+  if (explicitScopeCount > 0 && searchParams.has("excludePrivate")) {
+    throw new EntryQueryError(
+      "SUHUI_INVALID_ENTRY_SCOPE",
+      "excludePrivate is only valid for timeline queries",
+    )
+  }
+
+  const view = parseEntryView(searchParams.get("view"))
+  const scope: EntryListQuery["scope"] = hasFeeds
+    ? { kind: "feeds", feedIds: searchParams.getAll("feedId") }
+    : hasList
+      ? { kind: "list", listId: searchParams.get("listId") ?? "" }
+      : hasInbox
+        ? { kind: "inbox", inboxId: searchParams.get("inboxId") ?? "" }
+        : isCollection === true
+          ? { kind: "collection", ...(view === undefined ? {} : { view }) }
+          : {
+              kind: "timeline",
+              ...(view === undefined ? {} : { view }),
+              ...(excludePrivate === undefined ? {} : { excludePrivate }),
+            }
+
+  const read = parseEntryBoolean("read", searchParams.get("read"), "SUHUI_INVALID_READ_FILTER")
+  const unreadOnly = parseEntryBoolean(
+    "unreadOnly",
+    searchParams.get("unreadOnly"),
+    "SUHUI_INVALID_READ_FILTER",
+  )
+  if (unreadOnly === true && read === true) {
+    throw new EntryQueryError(
+      "SUHUI_INVALID_READ_FILTER",
+      "unreadOnly=true conflicts with read=true",
+    )
+  }
+
+  const limitValue = searchParams.get("limit")
+  const limit = limitValue === null ? undefined : normalizeEntryListLimit(Number(limitValue))
+  const cursorValue = searchParams.get("cursor")
+  if (cursorValue !== null && !cursorValue) {
+    throw new EntryQueryError("SUHUI_INVALID_CURSOR", "cursor must be a non-empty string")
+  }
+
+  return {
+    scope,
+    ...(unreadOnly === true ? { read: false } : read === undefined ? {} : { read }),
+    ...(limit === undefined ? {} : { limit }),
+    ...(cursorValue === null ? {} : { cursor: cursorValue }),
+  }
+}
+
 const parseAgentEntriesOptions = (url: URL): AgentEntriesListOptions => {
   const feedId = url.searchParams.get("feedId") || undefined
   const read = parseOptionalBoolean("read", url.searchParams.get("read"))
@@ -246,6 +348,26 @@ const writeAgentError = (response: ServerResponse, error: unknown) => {
     error: {
       code: "SUHUI_AGENT_INTERNAL_ERROR",
       message: "Agent API failed",
+    },
+  })
+}
+
+const writeEntryQueryError = (response: ServerResponse, error: unknown) => {
+  if (error instanceof EntryQueryError) {
+    json(response, error.statusCode, {
+      error: {
+        code: error.code,
+        message: error.message,
+      },
+    })
+    return
+  }
+
+  console.error("[RemoteServerManager] entry query failed")
+  json(response, 500, {
+    error: {
+      code: "SUHUI_ENTRY_QUERY_INTERNAL_ERROR",
+      message: "Entry query failed",
     },
   })
 }
@@ -391,12 +513,12 @@ const createRequestHandler =
     }
 
     if (method === "GET" && url.pathname === "/api/entries") {
-      const feedId = url.searchParams.get("feedId") || undefined
-      const unreadOnly = ["1", "true"].includes(
-        (url.searchParams.get("unreadOnly") || "").toLowerCase(),
-      )
-      const entries = await deps.getEntries({ feedId, unreadOnly })
-      json(response, 200, { data: entries })
+      try {
+        const result = await deps.listEntries(parseRemoteEntryListQuery(url.searchParams))
+        json(response, 200, { data: result.items, page: result.page })
+      } catch (error) {
+        writeEntryQueryError(response, error)
+      }
       return
     }
 
@@ -619,14 +741,8 @@ class RemoteServerManagerStatic {
         }
       },
       getSubscriptions: () => subscriptionApplicationService.listSubscriptions(),
-      getEntries: async (options?: { feedId?: string; unreadOnly?: boolean }) => {
-        const { entryApplicationService } = await import("~/application/entry/service")
-        return entryApplicationService.listEntries(options)
-      },
-      getEntry: async (entryId: string) => {
-        const { entryApplicationService } = await import("~/application/entry/service")
-        return entryApplicationService.getEntry(entryId)
-      },
+      listEntries: (query) => entryQueryService.list(query),
+      getEntry: (entryId) => entryQueryService.getDetail(entryId, "active-relations"),
       getAgentEntries: (options) => agentApplicationService.listEntries(options),
       getAgentEntry: (entryId) => agentApplicationService.getEntry(entryId),
       getAgentFeeds: () => agentApplicationService.listFeeds(),
@@ -729,7 +845,7 @@ class RemoteServerManagerStatic {
       ...(options?.getSettings ? { getSettings: options.getSettings } : {}),
       ...(options?.updateSettings ? { updateSettings: options.updateSettings } : {}),
       ...(options?.getSubscriptions ? { getSubscriptions: options.getSubscriptions } : {}),
-      ...(options?.getEntries ? { getEntries: options.getEntries } : {}),
+      ...(options?.listEntries ? { listEntries: options.listEntries } : {}),
       ...(options?.getEntry ? { getEntry: options.getEntry } : {}),
       ...(options?.getAgentEntries ? { getAgentEntries: options.getAgentEntries } : {}),
       ...(options?.getAgentEntry ? { getAgentEntry: options.getAgentEntry } : {}),

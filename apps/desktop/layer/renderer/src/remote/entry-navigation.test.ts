@@ -56,6 +56,31 @@ describe("getPreferredEntryIdAfterReadChange", () => {
       }),
     ).toBe("entry_2")
   })
+
+  it("advances after optimistic unread removal using the pre-removal query-page order", async () => {
+    const pageEntries = [
+      { id: "e1", read: false },
+      { id: "e2", read: false },
+      { id: "e3", read: false },
+    ]
+    let activeId: string | null = "e1"
+    const selectionHistory: Array<string | null> = [activeId]
+
+    const nextId = getPreferredEntryIdAfterReadChange({
+      entries: pageEntries,
+      activeEntryId: activeId,
+      changedEntryId: "e1",
+      nextRead: true,
+      unreadOnly: true,
+    })
+    const visibleIds = pageEntries.filter((entry) => entry.id !== "e1").map((entry) => entry.id)
+    activeId = nextId
+    selectionHistory.push(activeId)
+
+    expect(visibleIds).toEqual(["e2", "e3"])
+    expect(activeId).toBe("e2")
+    expect(selectionHistory).toEqual(["e1", "e2"])
+  })
 })
 
 describe("sortEntries", () => {

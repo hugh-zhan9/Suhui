@@ -1,9 +1,10 @@
-import type { FeedViewType } from "@suhui/constants"
+import { FeedViewType } from "@suhui/constants"
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query"
 import { useCallback, useMemo } from "react"
 
 import { FEED_COLLECTION_LIST } from "../../constants/app"
 import { queryClient } from "../../context"
+import { toEntryListQuery } from "../../runtime/client"
 import { useFeedUnreadIsDirty } from "../feed/hooks"
 import { useSyncUnreadWhenUnMatch } from "../unread/hooks"
 import {
@@ -17,8 +18,13 @@ import {
   getEntryIsInboxSelector,
   getHasEntrySelector,
 } from "./getter"
-import { entrySyncServices, useEntryStore } from "./store"
-import type { EntryModel, FetchEntriesProps, FetchEntriesPropsSettings } from "./types"
+import { entryActions, entrySyncServices, useEntryStore } from "./store"
+import type {
+  EntryModel,
+  EntryQueryHookPage,
+  FetchEntriesProps,
+  FetchEntriesPropsSettings,
+} from "./types"
 
 export const invalidateEntriesQuery = ({
   views,
@@ -31,16 +37,20 @@ export const invalidateEntriesQuery = ({
     predicate: (query) => {
       const { queryKey } = query
       if (Array.isArray(queryKey) && queryKey[0] === "entries") {
-        const feedId = queryKey[1]
-        const view = queryKey[4]
-
-        const isCollection = queryKey[7]
+        const entryQuery = queryKey[1] as ReturnType<typeof toEntryListQuery> | undefined
+        const scope = entryQuery?.scope
         if (views) {
-          return views.includes(view as FeedViewType)
+          return (
+            scope?.kind === "timeline" &&
+            views.includes((scope.view ?? FeedViewType.All) as FeedViewType)
+          )
         }
 
         if (collection) {
-          return isCollection === true || feedId === FEED_COLLECTION_LIST
+          return (
+            scope?.kind === "collection" ||
+            (scope?.kind === "feeds" && scope.feedIds.includes(FEED_COLLECTION_LIST))
+          )
         }
       }
       return false
@@ -53,7 +63,7 @@ const defaultStaleTime = 10 * (60 * 1000) // 10 minutes
 export const deriveEntriesIds = (query: {
   data?: {
     pages?: Array<{
-      data?: Array<{ entries?: { id?: unknown } }>
+      data?: Array<{ id?: unknown }>
     }>
   }
   isLoading: boolean
@@ -63,10 +73,19 @@ export const deriveEntriesIds = (query: {
     return []
   }
 
-  const rawIds = query.data?.pages?.flatMap((page) => page.data?.map((entry) => entry.entries?.id))
+  const rawIds = query.data?.pages?.flatMap((page) => page.data?.map((entry) => entry.id))
   const ids = rawIds?.filter((id): id is string => typeof id === "string") || []
   return Array.from(new Set(ids))
 }
+
+export const getEntryNextPageParam = (lastPage: EntryQueryHookPage) =>
+  lastPage.page.hasMore ? (lastPage.page.nextCursor ?? undefined) : undefined
+
+export const getEntriesQueryKey = (props: FetchEntriesProps) => [
+  "entries",
+  toEntryListQuery({ ...props, pageParam: undefined }),
+  Boolean(props.aiSort),
+]
 
 export const useEntriesQuery = (
   props?: Omit<FetchEntriesProps, "pageParam" | "read" | "excludePrivate"> &
@@ -90,21 +109,15 @@ export const useEntriesQuery = (
 
   const isPop =
     "history" in globalThis && "isPop" in globalThis.history && !!globalThis.history.isPop
-  const queryKey = useMemo(
-    () => [
-      "entries",
-      feedId,
-      inboxId,
-      listId,
-      view,
-      limit,
-      feedIdList,
-      isCollection,
-      unreadOnly,
-      hidePrivateSubscriptionsInTimeline,
-      aiSort,
-    ],
+  const fetchProps = useMemo(
+    () => ({
+      ...props,
+      limit: aiSort ? 100 : limit,
+      read: unreadOnly ? false : undefined,
+      excludePrivate: hidePrivateSubscriptionsInTimeline,
+    }),
     [
+      props,
       feedId,
       inboxId,
       listId,
@@ -117,27 +130,17 @@ export const useEntriesQuery = (
       aiSort,
     ],
   )
+  const queryKey = useMemo(() => getEntriesQueryKey(fetchProps), [fetchProps])
 
   const query = useInfiniteQuery({
     queryKey,
     queryFn: ({ pageParam }) =>
       entrySyncServices.fetchEntries({
-        ...props,
-        limit: aiSort ? 100 : limit,
+        ...fetchProps,
         pageParam,
-        read: unreadOnly ? false : undefined,
-        excludePrivate: hidePrivateSubscriptionsInTimeline,
       }),
 
-    getNextPageParam: (lastPage) => {
-      if (aiSort) return null
-      const lastEntry = lastPage.data?.at(-1)
-      if (!lastEntry) return undefined
-      const publishedAt = lastEntry.entries.publishedAt
-      if (!publishedAt) return undefined
-      // Serialize to ISO string to ensure it's always a valid cursor string
-      return publishedAt instanceof Date ? publishedAt.toISOString() : String(publishedAt)
-    },
+    getNextPageParam: (lastPage) => (aiSort ? undefined : getEntryNextPageParam(lastPage)),
     initialPageParam: undefined as undefined | string,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
@@ -173,6 +176,8 @@ export const useEntriesQuery = (
       ...query,
       entriesIds,
       queryKey,
+      hasNext: Boolean(query.hasNextPage),
+      isReady: query.isSuccess,
     }
   }, [entriesIds, query, queryKey])
 }
@@ -183,8 +188,7 @@ export const usePrefetchEntryDetail = (entryId: string | undefined, isInbox?: bo
     queryFn: () => entrySyncServices.fetchEntryDetail(entryId, isInbox),
     initialData: () => (entryId ? (getEntry(entryId) ?? undefined) : undefined),
     initialDataUpdatedAt: () => {
-      const cached = entryId ? getEntry(entryId) : undefined
-      return cached?.content || cached?.readabilityContent ? Date.now() : 0
+      return entryId && entryActions.isDetailLoaded(entryId) ? Date.now() : 0
     },
     staleTime: 10 * 60 * 1000,
     gcTime: 30 * 60 * 1000,

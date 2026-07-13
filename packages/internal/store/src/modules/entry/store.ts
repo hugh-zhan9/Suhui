@@ -33,6 +33,27 @@ type Category = string
 type ListId = string
 export { useEntryStore } from "./base"
 
+const summaryFields = [
+  "id",
+  "title",
+  "url",
+  "description",
+  "guid",
+  "author",
+  "authorUrl",
+  "authorAvatar",
+  "insertedAt",
+  "publishedAt",
+  "media",
+  "categories",
+  "attachments",
+  "language",
+  "feedId",
+  "inboxHandle",
+  "read",
+  "sources",
+] as const satisfies ReadonlyArray<keyof EntryModel>
+
 const get = useEntryStore.getState
 const immerSet = createImmerSetter(useEntryStore)
 
@@ -184,7 +205,11 @@ class EntryActions implements Hydratable, Resetable {
     }
   }
 
-  upsertManyInSession(entries: EntryModel[], options?: FetchEntriesPropsSettings) {
+  private upsertProjectionInSession(
+    entries: EntryModel[],
+    projection: "summary" | "detail",
+    options?: FetchEntriesPropsSettings,
+  ) {
     if (entries.length === 0) return
     const { unreadOnly, hidePrivateSubscriptionsInTimeline } = options || {}
     const dedupedEntries = this.dedupeEntriesById(entries)
@@ -192,9 +217,29 @@ class EntryActions implements Hydratable, Resetable {
     immerSet((draft) => {
       for (const entry of dedupedEntries) {
         draft.entryIdSet.add(entry.id)
-        draft.data[entry.id] = entry
+        const current = draft.data[entry.id]
+        if (projection === "summary") {
+          const merged = current ? { ...current } : ({ id: entry.id } as EntryModel)
+          for (const field of summaryFields) {
+            if (field === "read" && current && draft.dirtyReadEntryIds.has(entry.id)) continue
+            if (field in entry) {
+              ;(merged as any)[field] = entry[field]
+            }
+          }
+          merged.recordKind = current?.recordKind === "detail" ? "detail" : "summary"
+          draft.data[entry.id] = merged
+        } else {
+          draft.data[entry.id] = {
+            ...current,
+            ...entry,
+            ...(current && draft.dirtyReadEntryIds.has(entry.id) ? { read: current.read } : {}),
+            recordKind: "detail",
+          }
+          draft.detailLoadedEntryIds.add(entry.id)
+        }
 
-        const { feedId, inboxHandle, read, sources } = entry
+        const mergedEntry = draft.data[entry.id]!
+        const { feedId, inboxHandle, read, sources } = mergedEntry
         if (unreadOnly && read) continue
 
         if (inboxHandle) {
@@ -238,17 +283,51 @@ class EntryActions implements Hydratable, Resetable {
     })
   }
 
+  upsertSummaries(entries: EntryModel[], options?: FetchEntriesPropsSettings) {
+    this.upsertProjectionInSession(entries, "summary", options)
+  }
+
+  upsertDetails(entries: EntryModel[], options?: FetchEntriesPropsSettings) {
+    this.upsertProjectionInSession(entries, "detail", options)
+  }
+
+  isDetailLoaded(entryId: string) {
+    return get().detailLoadedEntryIds.has(entryId)
+  }
+
+  markReadMutationSettled(entryIds: string[]) {
+    if (entryIds.length === 0) return
+    immerSet((draft) => {
+      entryIds.forEach((entryId) => draft.dirtyReadEntryIds.delete(entryId))
+    })
+  }
+
+  upsertManyInSession(entries: EntryModel[], options?: FetchEntriesPropsSettings) {
+    const summaries = entries.filter((entry) => entry.recordKind === "summary")
+    const details = entries.filter((entry) => entry.recordKind !== "summary")
+    if (summaries.length > 0) this.upsertSummaries(summaries, options)
+    if (details.length > 0) this.upsertDetails(details, options)
+  }
+
   restoreHydratedSnapshotInSession(entries: EntryModel[]) {
     const dedupedEntries = this.dedupeEntriesById(entries)
 
     immerSet((draft) => {
       const currentData = draft.data
+      const currentDirtyReadEntryIds = draft.dirtyReadEntryIds
       draft.data = {}
       draft.entryIdSet = new Set()
+      draft.detailLoadedEntryIds = new Set()
+      draft.dirtyReadEntryIds = currentDirtyReadEntryIds
 
       for (const entry of dedupedEntries) {
-        draft.data[entry.id] = reconcileHydratedEntry(entry, currentData[entry.id])
+        const isDetail = entry.recordKind !== "summary"
+        draft.data[entry.id] = {
+          ...reconcileHydratedEntry(entry, currentData[entry.id]),
+          recordKind: isDetail ? "detail" : "summary",
+        }
         draft.entryIdSet.add(entry.id)
+        if (isDetail) draft.detailLoadedEntryIds.add(entry.id)
       }
     })
 
@@ -429,6 +508,7 @@ class EntryActions implements Hydratable, Resetable {
           if (entry.read !== read) {
             markEntryReadHydrateDirty(entryId)
             entry.read = read
+            draft.dirtyReadEntryIds.add(entryId)
             affectedEntryIds.add(entryId)
           }
         }
@@ -464,6 +544,7 @@ class EntryActions implements Hydratable, Resetable {
           if (entry.read !== read) {
             markEntryReadHydrateDirty(entry.id)
             entry.read = read
+            draft.dirtyReadEntryIds.add(entry.id)
             affectedEntryIds.add(entry.id)
           }
         }
@@ -515,6 +596,8 @@ class EntryActions implements Hydratable, Resetable {
     immerSet((draft) => {
       delete draft.data[entryId]
       draft.entryIdSet.delete(entryId)
+      draft.detailLoadedEntryIds.delete(entryId)
+      draft.dirtyReadEntryIds.delete(entryId)
       draft.entryIdByInbox[entry.inboxHandle!]?.delete(entryId)
       draft.entryIdByView[FeedViewType.All].delete(entryId)
     })
@@ -536,44 +619,39 @@ class EntryActions implements Hydratable, Resetable {
 
 class EntrySyncServices {
   async fetchEntries(props: FetchEntriesProps) {
-    const entryModels = await runtimeClient.entries.list({
+    const result = await runtimeClient.entries.list({
       ...props,
       localFallbackEntries: Object.values(get().data),
     })
 
     // Load into Zustand store for detail-view lookups
-    if (entryModels.length > 0) {
+    if (result.data.length > 0) {
       try {
-        entryActions.upsertManyInSession(entryModels)
+        entryActions.upsertSummaries(result.data)
       } catch (err) {
-        console.error("[Antigravity] upsertManyInSession error", err)
+        console.error("[Antigravity] upsertSummaries error", err)
       }
     }
 
     console.info(
       "[Antigravity] fetchEntries returning page:",
-      entryModels.length,
+      result.data.length,
       "cursor:",
       props.pageParam ?? "initial",
     )
 
-    return {
-      data: entryModels.map((e: any) => ({ entries: e, feeds: { id: e.feedId, type: "feed" } })),
-    } as any
+    return result
   }
 
   async fetchEntryDetail(entryId: EntryId | undefined, _isInbox?: boolean) {
     if (!entryId) return null
 
-    // In remote mode, list queries often cache partial records, so fetch the full
-    // detail when正文/可读内容 still missing.
     const cached = getEntry(entryId)
-    const hasFullContent = !!cached && !!(cached.content || cached.readabilityContent)
-    if (cached && hasFullContent) return cached
+    if (cached && entryActions.isDetailLoaded(entryId)) return cached
 
     const entry = await runtimeClient.entries.getDetail(entryId)
     if (entry) {
-      entryActions.upsertManyInSession([entry])
+      entryActions.upsertDetails([entry])
       return entry
     }
 

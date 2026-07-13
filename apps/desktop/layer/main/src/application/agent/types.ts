@@ -99,12 +99,21 @@ export const toIsoString = (value: unknown): string | null => {
 }
 
 export const normalizeLimit = (value: unknown): number => {
-  if (value === undefined || value === null || value === "") return agentEntriesDefaultLimit
-  const parsed = typeof value === "number" ? value : Number(value)
-  if (!Number.isFinite(parsed)) {
-    throw new AgentApplicationError("SUHUI_INVALID_LIMIT", "limit must be a number", 400)
+  if (value === undefined) return agentEntriesDefaultLimit
+  if (
+    typeof value !== "number" ||
+    !Number.isFinite(value) ||
+    !Number.isInteger(value) ||
+    value < 1 ||
+    value > agentEntriesMaxLimit
+  ) {
+    throw new AgentApplicationError(
+      "SUHUI_INVALID_LIMIT",
+      `limit must be an integer from 1 through ${agentEntriesMaxLimit}`,
+      400,
+    )
   }
-  return Math.max(1, Math.min(agentEntriesMaxLimit, Math.trunc(parsed)))
+  return value
 }
 
 export const selectAgentEntryContent = (entry: {

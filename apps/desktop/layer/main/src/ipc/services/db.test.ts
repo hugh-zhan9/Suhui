@@ -9,6 +9,11 @@ const { broadcastLocalFeedRefreshCompleted } = vi.hoisted(() => ({
   broadcastLocalFeedRefreshCompleted: vi.fn(),
 }))
 
+const { queryList, queryGetDetail } = vi.hoisted(() => ({
+  queryList: vi.fn(),
+  queryGetDetail: vi.fn(),
+}))
+
 vi.mock("electron", () => ({
   session: {
     defaultSession: {
@@ -71,6 +76,13 @@ vi.mock("~/manager/local-feed-refresh-events", () => ({
   broadcastLocalFeedRefreshCompleted,
 }))
 
+vi.mock("~/application/entry/query-service", () => ({
+  entryQueryService: {
+    list: queryList,
+    getDetail: queryGetDetail,
+  },
+}))
+
 import { beforeEach, describe, expect, it } from "vitest"
 import { DbService } from "./db"
 
@@ -80,6 +92,46 @@ describe("DbService", () => {
     waitUntilUsable.mockResolvedValue(undefined)
     getDB.mockReset()
     broadcastLocalFeedRefreshCompleted.mockReset()
+    queryList.mockReset()
+    queryGetDetail.mockReset()
+  })
+
+  it("maps db.listEntries directly and keeps deprecated getEntries bounded", async () => {
+    queryList
+      .mockResolvedValueOnce({
+        items: [],
+        page: { limit: 20, hasMore: false, nextCursor: null },
+      })
+      .mockResolvedValueOnce({
+        items: [{ id: "entry-1", recordKind: "summary" }],
+        page: { limit: 100, hasMore: false, nextCursor: null },
+      })
+
+    const service = new DbService()
+    const page = await service.listEntries({} as any, { scope: { kind: "timeline" } })
+
+    expect(queryList).toHaveBeenCalledWith({ scope: { kind: "timeline" } })
+    expect(page.page.limit).toBe(20)
+
+    await expect(service.getEntries({} as any, "feed-1")).resolves.toEqual([
+      { id: "entry-1", recordKind: "summary" },
+    ])
+    expect(queryList).toHaveBeenLastCalledWith({
+      scope: { kind: "feeds", feedIds: ["feed-1"] },
+      limit: 100,
+    })
+  })
+
+  it("uses the desktop-non-deleted detail visibility policy", async () => {
+    queryGetDetail.mockResolvedValue({ id: "entry-1", recordKind: "detail" })
+
+    const service = new DbService()
+
+    await expect(service.getEntry({} as any, "entry-1")).resolves.toEqual({
+      id: "entry-1",
+      recordKind: "detail",
+    })
+    expect(queryGetDetail).toHaveBeenCalledWith("entry-1", "desktop-non-deleted")
   })
 
   it("should expose preview and local refresh methods", () => {

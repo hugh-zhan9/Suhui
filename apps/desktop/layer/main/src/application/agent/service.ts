@@ -1,19 +1,15 @@
-import type { AnyColumn, SQL } from "drizzle-orm"
-import { and, eq, inArray, isNull, lt, or, sql } from "drizzle-orm"
+import { and, inArray, isNull } from "drizzle-orm"
 import { EntryService } from "@suhui/database/services/entry"
 import { FeedService } from "@suhui/database/services/feed"
-import {
-  getActiveVisibilityState,
-  type ActiveVisibilityState,
-  isEntryVisibleForActiveRelations,
-} from "@suhui/database/services/internal/active-visibility"
 import { SubscriptionService } from "@suhui/database/services/subscription"
 
+import { encodeEntryCursor } from "~/application/entry/query-cursor"
+import { entryQueryService } from "~/application/entry/query-service"
 import { unreadApplicationService } from "~/application/unread/service"
 import { DBManager } from "~/manager/db"
 import { syncLogger } from "~/manager/sync-logger"
 
-import { decodeAgentEntriesCursor, encodeAgentEntriesCursor } from "./cursor"
+import { decodeAgentEntriesCursor } from "./cursor"
 import {
   AgentApplicationError,
   type AgentEntriesListOptions,
@@ -22,8 +18,6 @@ import {
   type AgentEntryListItem,
   type AgentFeedsListResult,
   type AgentReadStatusResult,
-  agentEntriesMaxLimit,
-  agentEntriesMaxScanRows,
   agentReadStatusMaxEntryIds,
   normalizeLimit,
   selectAgentEntryContent,
@@ -171,158 +165,22 @@ const mapEntryListItem = (
   return item
 }
 
-const toCursorShape = (entry: EntryRow) => ({
-  publishedAt: entry.publishedAt,
-  insertedAt: entry.insertedAt,
-  id: entry.id,
-})
-
-const createCursorWhere = (
-  entries: {
-    publishedAt: AnyColumn
-    insertedAt: AnyColumn
-    id: AnyColumn
-  },
-  cursor: ReturnType<typeof decodeAgentEntriesCursor> | null,
-) => {
-  if (!cursor) return undefined
-
-  return or(
-    lt(entries.publishedAt, cursor.publishedAt),
-    and(eq(entries.publishedAt, cursor.publishedAt), lt(entries.insertedAt, cursor.insertedAt)),
-    and(
-      eq(entries.publishedAt, cursor.publishedAt),
-      eq(entries.insertedAt, cursor.insertedAt),
-      lt(entries.id, cursor.id),
-    ),
-  )
-}
-
-const createActiveVisibilityWhere = (
-  entries: {
-    feedId: AnyColumn
-    inboxHandle: AnyColumn
-    sources: AnyColumn
-  },
-  visibility: ActiveVisibilityState,
-) => {
-  const conditions: SQL[] = []
-  const feedIds = Array.from(visibility.activeFeedIds)
-  const inboxIds = Array.from(visibility.activeInboxIds)
-  const sourceIds = Array.from(
-    new Set([
-      ...visibility.activeFeedIds,
-      ...visibility.activeListIds,
-      ...visibility.activeInboxIds,
-    ]),
-  )
-
-  if (feedIds.length > 0) {
-    conditions.push(inArray(entries.feedId, feedIds))
-  }
-  if (inboxIds.length > 0) {
-    conditions.push(inArray(entries.inboxHandle, inboxIds))
-  }
-  if (sourceIds.length > 0) {
-    conditions.push(
-      sql`${entries.sources} ?| array[${sql.join(
-        sourceIds.map((id) => sql`${id}`),
-        sql`, `,
-      )}]`,
-    )
-  }
-
-  if (conditions.length === 0) return sql`false`
-  return conditions.length === 1 ? conditions[0]! : or(...conditions)
-}
-
 export class AgentApplicationService {
   async listEntries(options: AgentEntriesListOptions = {}): Promise<AgentEntriesListResult> {
-    const db = DBManager.getDB()
     const limit = normalizeLimit(options.limit)
-    const [visibility, feedContext] = await Promise.all([
-      getActiveVisibilityState(),
+    const incomingCursor = options.cursor ? decodeAgentEntriesCursor(options.cursor) : null
+    const [page, feedContext] = await Promise.all([
+      entryQueryService.list({
+        scope: options.feedId ? { kind: "feeds", feedIds: [options.feedId] } : { kind: "timeline" },
+        limit,
+        ...(typeof options.read === "boolean" ? { read: options.read } : {}),
+        ...(incomingCursor ? { cursor: encodeEntryCursor({ v: 1, ...incomingCursor }) } : {}),
+      }),
       buildFeedContext(),
     ])
 
-    const initialCursor = options.cursor ? decodeAgentEntriesCursor(options.cursor) : null
-    const visibleRows: EntryRow[] = []
-    const batchLimit = agentEntriesMaxLimit + 1
-    let queryCursor = initialCursor
-    let scannedRows = 0
-    let lastScannedRow: EntryRow | null = null
-    let scanCapHit = false
-
-    while (visibleRows.length < limit + 1 && scannedRows < agentEntriesMaxScanRows) {
-      const remainingScanRows = agentEntriesMaxScanRows - scannedRows
-      const queryLimit = Math.min(batchLimit, remainingScanRows)
-      const rows = (await db.query.entriesTable.findMany({
-        where: (entries) =>
-          and(
-            isNull(entries.deletedAt),
-            createActiveVisibilityWhere(entries, visibility),
-            options.feedId ? eq(entries.feedId, options.feedId) : undefined,
-            typeof options.read === "boolean" ? eq(entries.read, options.read) : undefined,
-            createCursorWhere(entries, queryCursor),
-          ),
-        orderBy: (entries, { desc }) => [
-          desc(entries.publishedAt),
-          desc(entries.insertedAt),
-          desc(entries.id),
-        ],
-        columns: {
-          id: true,
-          feedId: true,
-          title: true,
-          url: true,
-          author: true,
-          publishedAt: true,
-          insertedAt: true,
-          read: true,
-          description: options.withSummary === true,
-          inboxHandle: true,
-          sources: true,
-          content: false,
-          readabilityContent: false,
-        },
-        limit: queryLimit,
-      })) as EntryRow[]
-
-      if (rows.length === 0) break
-
-      const previousCursor = queryCursor ? JSON.stringify(queryCursor) : null
-
-      for (const row of rows) {
-        lastScannedRow = row
-        scannedRows += 1
-        if (isEntryVisibleForActiveRelations(row, visibility)) {
-          visibleRows.push(row)
-          if (visibleRows.length >= limit + 1) break
-        }
-        if (scannedRows >= agentEntriesMaxScanRows) break
-      }
-
-      if (visibleRows.length >= limit + 1 || rows.length < queryLimit || !lastScannedRow) break
-
-      if (scannedRows >= agentEntriesMaxScanRows) {
-        scanCapHit = true
-        break
-      }
-
-      queryCursor = toCursorShape(lastScannedRow)
-      if (JSON.stringify(queryCursor) === previousCursor) break
-    }
-
-    const pageRows = visibleRows.slice(0, limit)
-    const hasVisibleOverflow = visibleRows.length > limit
-    const hasScanCapContinuation =
-      scanCapHit && visibleRows.length <= limit && lastScannedRow !== null
-    const hasMore = hasVisibleOverflow || hasScanCapContinuation
-    const lastRow = pageRows.at(-1)
-    const cursorRow = hasVisibleOverflow ? lastRow : hasScanCapContinuation ? lastScannedRow : null
-
     return {
-      items: pageRows.map((entry) =>
+      items: page.items.map((entry) =>
         mapEntryListItem(
           entry,
           feedContext.feedById,
@@ -332,27 +190,21 @@ export class AgentApplicationService {
       ),
       page: {
         limit,
-        hasMore,
-        nextCursor: cursorRow ? encodeAgentEntriesCursor(toCursorShape(cursorRow)) : null,
+        hasMore: page.page.hasMore,
+        nextCursor: page.page.nextCursor,
       },
     }
   }
 
   async getEntry(entryId: string): Promise<AgentEntryDetail | null> {
-    const db = DBManager.getDB()
-    const entry =
-      ((await db.query.entriesTable.findFirst({
-        where: (entries) => and(eq(entries.id, entryId), isNull(entries.deletedAt)),
-      })) as EntryRow | undefined) ?? null
+    const entry = (await entryQueryService.getDetail(
+      entryId,
+      "active-relations",
+    )) as EntryRow | null
 
     if (!entry) return null
 
-    const [visibility, feedContext] = await Promise.all([
-      getActiveVisibilityState(),
-      buildFeedContext(),
-    ])
-
-    if (!isEntryVisibleForActiveRelations(entry, visibility)) return null
+    const feedContext = await buildFeedContext()
 
     const selectedContent = selectAgentEntryContent(entry)
     return {

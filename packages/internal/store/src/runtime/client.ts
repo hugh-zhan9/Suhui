@@ -4,7 +4,12 @@ import { SubscriptionService } from "@suhui/database/services/subscription"
 
 import { dbStoreMorph } from "../morph/db-store"
 import { buildSubscriptionDbId, storeDbMorph } from "../morph/store-db"
-import type { EntryModel, FetchEntriesProps } from "../modules/entry/types"
+import type {
+  EntryModel,
+  FetchEntriesProps,
+  RuntimeEntryListQuery,
+  RuntimeEntrySummaryPage,
+} from "../modules/entry/types"
 import type { FeedModel } from "../modules/feed/types"
 import type { SubscriptionForm, SubscriptionModel } from "../modules/subscription/types"
 import { getRuntimeEnv } from "../remote/env"
@@ -60,154 +65,185 @@ const jsonRequest = async <T>(url: string, init?: RequestInit): Promise<T> => {
   return response.json() as Promise<T>
 }
 
-const fetchRemoteEntries = async (props: FetchEntriesProps): Promise<EntryModel[]> => {
-  const { feedId, feedIdList, read, limit, pageParam } = props
-  const params = new URLSearchParams()
-
-  if (feedId) {
-    const feedIds = feedId.includes(",")
-      ? feedId
-          .split(",")
-          .map((id) => id.trim())
-          .filter(Boolean)
-      : [feedId]
-    if (feedIds.length === 1 && feedIds[0]) {
-      params.set("feedId", feedIds[0])
-    }
-  } else if (feedIdList?.length === 1 && feedIdList[0]) {
-    params.set("feedId", feedIdList[0])
-  }
-
-  if (read === false) {
-    params.set("unreadOnly", "1")
-  }
-
-  const { data } = await jsonRequest<{ data: EntryRecord[] }>(
-    `/api/entries${params.toString() ? `?${params.toString()}` : ""}`,
-  )
-  let entries = data || []
-
-  if (feedId && feedId.includes(",")) {
-    const feedIdSet = new Set(
-      feedId
-        .split(",")
+const normalizeIds = (ids: Array<string | undefined>) =>
+  Array.from(
+    new Set(
+      ids
+        .flatMap((id) => id?.split(",") ?? [])
         .map((id) => id.trim())
         .filter(Boolean),
-    )
-    entries = entries.filter((entry) => entry.feedId && feedIdSet.has(entry.feedId))
-  } else if (feedIdList && feedIdList.length > 1) {
-    const feedIdSet = new Set(feedIdList)
-    entries = entries.filter((entry) => entry.feedId && feedIdSet.has(entry.feedId))
+    ),
+  )
+
+export const toEntryListQuery = (props: FetchEntriesProps): RuntimeEntryListQuery => {
+  const feedIds = normalizeIds([props.feedId, ...(props.feedIdList ?? [])]).sort()
+  const view = props.view === FeedViewType.All ? undefined : props.view
+  const scope: RuntimeEntryListQuery["scope"] = props.listId
+    ? { kind: "list", listId: props.listId }
+    : props.inboxId
+      ? { kind: "inbox", inboxId: props.inboxId }
+      : props.isCollection
+        ? { kind: "collection", ...(view === undefined ? {} : { view }) }
+        : feedIds.length > 0
+          ? { kind: "feeds", feedIds }
+          : {
+              kind: "timeline",
+              ...(view === undefined ? {} : { view }),
+              ...(props.excludePrivate === undefined
+                ? {}
+                : { excludePrivate: props.excludePrivate }),
+            }
+
+  return {
+    scope,
+    ...(props.read === undefined ? {} : { read: props.read }),
+    ...(props.limit === undefined ? {} : { limit: props.limit }),
+    ...(props.pageParam === undefined ? {} : { cursor: props.pageParam }),
   }
-
-  entries.sort((a, b) => {
-    const publishedCompare = (b.publishedAt ?? 0) - (a.publishedAt ?? 0)
-    if (publishedCompare !== 0) return publishedCompare
-    return (b.insertedAt ?? 0) - (a.insertedAt ?? 0)
-  })
-
-  if (pageParam) {
-    const cursorTime = new Date(pageParam).getTime()
-    entries = entries.filter((entry) => (entry.publishedAt ?? 0) < cursorTime)
-  }
-
-  return entries.slice(0, limit ?? 20).map(transformEntryFromApi)
 }
 
-const fetchDesktopEntries = async (props: FetchEntriesProps): Promise<EntryModel[]> => {
+const appendRemoteEntryQuery = (params: URLSearchParams, query: RuntimeEntryListQuery) => {
+  switch (query.scope.kind) {
+    case "timeline":
+      if (query.scope.view !== undefined) params.set("view", String(query.scope.view))
+      if (query.scope.excludePrivate !== undefined) {
+        params.set("excludePrivate", String(query.scope.excludePrivate))
+      }
+      break
+    case "feeds":
+      query.scope.feedIds.forEach((feedId) => params.append("feedId", feedId))
+      break
+    case "list":
+      params.set("listId", query.scope.listId)
+      break
+    case "inbox":
+      params.set("inboxId", query.scope.inboxId)
+      break
+    case "collection":
+      params.set("isCollection", "true")
+      if (query.scope.view !== undefined) params.set("view", String(query.scope.view))
+      break
+  }
+  if (query.read !== undefined) params.set("read", String(query.read))
+  if (query.limit !== undefined) params.set("limit", String(query.limit))
+  if (query.cursor !== undefined) params.set("cursor", query.cursor)
+}
+
+const fetchRemoteEntries = async (props: FetchEntriesProps): Promise<RuntimeEntrySummaryPage> => {
+  const query = toEntryListQuery(props)
+  const params = new URLSearchParams()
+  appendRemoteEntryQuery(params, query)
+
+  const response = await jsonRequest<{
+    data: EntryRecord[]
+    page: RuntimeEntrySummaryPage["page"]
+  }>(`/api/entries${params.toString() ? `?${params.toString()}` : ""}`)
+  return {
+    data: (response.data ?? []).map(transformEntryFromApi),
+    page: response.page,
+  }
+}
+
+const fetchDesktopEntries = async (props: FetchEntriesProps): Promise<RuntimeEntrySummaryPage> => {
   const ipc = getIpc()
-  if (!ipc) return []
+  if (!ipc)
+    return { data: [], page: { limit: props.limit ?? 20, hasMore: false, nextCursor: null } }
 
-  const { feedId, feedIdList, read, pageParam, limit } = props
-  let entries: any[] = []
-
-  if (feedId) {
-    const feedIds = Array.from(
-      new Set(
-        (feedId.includes(",") ? feedId.split(",") : [feedId])
-          .map((id) => id.trim())
-          .filter(Boolean),
-      ),
-    )
-    const results = await Promise.all(feedIds.map((id) => ipc.invoke("db.getEntries", id)))
-    entries = results.flat() as any[]
-  } else if (feedIdList && feedIdList.length > 0) {
-    const results = await Promise.all(
-      Array.from(new Set(feedIdList)).map((id) => ipc.invoke("db.getEntries", id)),
-    )
-    entries = results.flat() as any[]
-  } else {
-    entries = (await ipc.invoke("db.getEntries")) as any[]
+  const result = (await ipc.invoke("db.listEntries", toEntryListQuery(props))) as {
+    items: any[]
+    page: RuntimeEntrySummaryPage["page"]
   }
-
-  if (typeof read === "boolean") {
-    entries = entries.filter((entry) => {
-      const rawRead = entry?.read
-      const normalizedRead =
-        typeof rawRead === "boolean" ? rawRead : rawRead === 1 || rawRead === "1"
-      return normalizedRead === read
-    })
+  return {
+    data: (result.items ?? []).map((entry) => dbStoreMorph.toEntryModel(entry)),
+    page: result.page,
   }
-
-  const entryById = new Map<string, any>()
-  for (const entry of entries) {
-    if (typeof entry?.id === "string" && !entryById.has(entry.id)) {
-      entryById.set(entry.id, entry)
-    }
-  }
-  entries = Array.from(entryById.values())
-
-  entries.sort((a, b) => {
-    const dateA =
-      a.publishedAt instanceof Date
-        ? a.publishedAt.getTime()
-        : new Date(a.publishedAt ?? 0).getTime()
-    const dateB =
-      b.publishedAt instanceof Date
-        ? b.publishedAt.getTime()
-        : new Date(b.publishedAt ?? 0).getTime()
-    return dateB - dateA
-  })
-
-  if (pageParam) {
-    const cursorTime = new Date(pageParam).getTime()
-    entries = entries.filter((entry) => {
-      const time =
-        entry.publishedAt instanceof Date
-          ? entry.publishedAt.getTime()
-          : new Date(entry.publishedAt ?? 0).getTime()
-      return time < cursorTime
-    })
-  }
-
-  return entries.slice(0, limit ?? 20).map((entry) => dbStoreMorph.toEntryModel(entry))
 }
 
-const filterLocalEntries = (props: RuntimeFetchEntriesOptions): EntryModel[] => {
-  const { feedId, feedIdList, read, pageParam, limit } = props
+const encodeMemoryCursor = (entry: EntryModel) =>
+  `memory-v1:${encodeURIComponent(JSON.stringify([entry.publishedAt, entry.insertedAt, entry.id]))}`
+
+const decodeMemoryCursor = (cursor: string | undefined) => {
+  if (!cursor?.startsWith("memory-v1:")) return null
+  try {
+    const value = JSON.parse(decodeURIComponent(cursor.slice("memory-v1:".length)))
+    if (!Array.isArray(value) || value.length !== 3) return null
+    return { publishedAt: Number(value[0]), insertedAt: Number(value[1]), id: String(value[2]) }
+  } catch {
+    return null
+  }
+}
+
+const compareEntries = (a: EntryModel, b: EntryModel) =>
+  b.publishedAt - a.publishedAt || b.insertedAt - a.insertedAt || b.id.localeCompare(a.id)
+
+const isAfterMemoryCursor = (
+  entry: EntryModel,
+  cursor: { publishedAt: number; insertedAt: number; id: string },
+) =>
+  entry.publishedAt < cursor.publishedAt ||
+  (entry.publishedAt === cursor.publishedAt && entry.insertedAt < cursor.insertedAt) ||
+  (entry.publishedAt === cursor.publishedAt &&
+    entry.insertedAt === cursor.insertedAt &&
+    entry.id < cursor.id)
+
+const toRuntimeSummary = (entry: EntryModel): EntryModel =>
+  ({
+    id: entry.id,
+    title: entry.title,
+    url: entry.url,
+    description: entry.description,
+    guid: entry.guid,
+    author: entry.author,
+    authorUrl: entry.authorUrl,
+    authorAvatar: entry.authorAvatar,
+    insertedAt: entry.insertedAt,
+    publishedAt: entry.publishedAt,
+    media: entry.media,
+    categories: entry.categories,
+    attachments: entry.attachments,
+    language: entry.language,
+    feedId: entry.feedId,
+    inboxHandle: entry.inboxHandle,
+    read: entry.read ?? false,
+    sources: entry.sources,
+    recordKind: "summary",
+  }) as EntryModel
+
+const filterLocalEntries = (props: RuntimeFetchEntriesOptions): RuntimeEntrySummaryPage => {
+  const query = toEntryListQuery(props)
+  const scope = query.scope
   let entries = props.localFallbackEntries ?? []
 
-  if (feedId) {
-    const feedIds = new Set(feedId.split(","))
-    entries = entries.filter((entry) => entry.feedId && feedIds.has(entry.feedId))
-  } else if (feedIdList && feedIdList.length > 0) {
-    const feedSet = new Set(feedIdList)
-    entries = entries.filter((entry) => entry.feedId && feedSet.has(entry.feedId))
+  if (scope.kind === "feeds") {
+    const feedSet = new Set(scope.feedIds)
+    entries = entries.filter((entry) => !!entry.feedId && feedSet.has(entry.feedId))
+  } else if (scope.kind === "inbox") {
+    entries = entries.filter((entry) => entry.inboxHandle === scope.inboxId)
+  } else if (scope.kind === "list") {
+    entries = entries.filter((entry) => entry.sources?.includes(scope.listId))
   }
 
-  if (typeof read === "boolean") {
-    entries = entries.filter((entry) => entry.read === read)
+  if (typeof query.read === "boolean") {
+    entries = entries.filter((entry) => !!entry.read === query.read)
   }
 
   entries = Array.from(new Map(entries.map((entry) => [entry.id, entry])).values())
-  entries.sort((a, b) => (b.publishedAt ?? 0) - (a.publishedAt ?? 0))
+  entries.sort(compareEntries)
 
-  if (pageParam) {
-    const cursorTime = new Date(pageParam).getTime()
-    entries = entries.filter((entry) => (entry.publishedAt ?? 0) < cursorTime)
+  const cursor = decodeMemoryCursor(query.cursor)
+  if (cursor) entries = entries.filter((entry) => isAfterMemoryCursor(entry, cursor))
+
+  const limit = query.limit ?? 20
+  const hasMore = entries.length > limit
+  const data = entries.splice(0, limit).map(toRuntimeSummary)
+  return {
+    data,
+    page: {
+      limit,
+      hasMore,
+      nextCursor: hasMore && data.length > 0 ? encodeMemoryCursor(data[data.length - 1]!) : null,
+    },
   }
-
-  return entries.slice(0, limit ?? 20)
 }
 
 const parseFeedViaProxy = async (subscription: SubscriptionForm) => {
@@ -271,7 +307,7 @@ const parseFeedViaProxy = async (subscription: SubscriptionForm) => {
 
 export const runtimeClient = {
   entries: {
-    async list(props: RuntimeFetchEntriesOptions): Promise<EntryModel[]> {
+    async list(props: RuntimeFetchEntriesOptions): Promise<RuntimeEntrySummaryPage> {
       if (getRuntimeEnv().isRemote) return fetchRemoteEntries(props)
       if (getIpc()) return fetchDesktopEntries(props)
       return filterLocalEntries(props)

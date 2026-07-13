@@ -9,6 +9,8 @@ import { IpcMethod, IpcService } from "electron-ipc-decorator"
 
 import { store } from "~/lib/store"
 import { entryApplicationService } from "~/application/entry/service"
+import { entryQueryService } from "~/application/entry/query-service"
+import type { EntryListQuery } from "~/application/entry/query-types"
 import { feedApplicationService } from "~/application/feed/service"
 import { subscriptionApplicationService } from "~/application/subscription/service"
 import { DBManager } from "~/manager/db"
@@ -339,28 +341,23 @@ export class DbService extends IpcService {
   @IpcMethod()
   async getEntry(_context: IpcContext, entryId: string) {
     await this.waitForDatabase()
-    const db = DBManager.getDB()
-    return (
-      db.query.entriesTable.findFirst({
-        where: (entries) => and(eq(entries.id, entryId), isNull(entries.deletedAt)),
-      }) ?? null
-    )
+    return entryQueryService.getDetail(entryId, "desktop-non-deleted")
+  }
+
+  @IpcMethod()
+  async listEntries(_context: IpcContext, query: EntryListQuery) {
+    await this.waitForDatabase()
+    return entryQueryService.list(query)
   }
 
   @IpcMethod()
   async getEntries(_context: IpcContext, feedId?: string) {
     await this.waitForDatabase()
-    const db = DBManager.getDB()
-    if (feedId) {
-      return db.query.entriesTable.findMany({
-        where: (entries) => and(eq(entries.feedId, feedId), isNull(entries.deletedAt)),
-        orderBy: (entries, { desc }) => [desc(entries.publishedAt)],
-      })
-    }
-    return db.query.entriesTable.findMany({
-      where: (entries) => isNull(entries.deletedAt),
-      orderBy: (entries, { desc }) => [desc(entries.publishedAt)],
+    const result = await entryQueryService.list({
+      scope: feedId ? { kind: "feeds", feedIds: [feedId] } : { kind: "timeline" },
+      limit: 100,
     })
+    return result.items
   }
 
   @IpcMethod()

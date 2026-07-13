@@ -3,8 +3,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { decodeAgentEntriesCursor, encodeAgentEntriesCursor, isEntryAfterCursor } from "./cursor"
 import {
   AgentApplicationError,
-  agentEntriesMaxLimit,
-  agentEntriesMaxScanRows,
   agentReadStatusMaxEntryIds,
   selectAgentEntryContent,
   toIsoString,
@@ -17,7 +15,8 @@ const {
   getSubscriptionAll,
   listUnreadCounts,
   recordSync,
-  isEntryVisibleForActiveRelations,
+  queryList,
+  queryDetail,
 } = vi.hoisted(() => ({
   getDB: vi.fn(),
   patchMany: vi.fn(),
@@ -25,7 +24,15 @@ const {
   getSubscriptionAll: vi.fn(),
   listUnreadCounts: vi.fn(),
   recordSync: vi.fn(),
-  isEntryVisibleForActiveRelations: vi.fn((_entry?: { id?: string }) => true),
+  queryList: vi.fn(),
+  queryDetail: vi.fn(),
+}))
+
+vi.mock("~/application/entry/query-service", () => ({
+  entryQueryService: {
+    list: queryList,
+    getDetail: queryDetail,
+  },
 }))
 
 vi.mock("@suhui/database/services/entry", () => ({
@@ -44,19 +51,6 @@ vi.mock("@suhui/database/services/subscription", () => ({
   SubscriptionService: {
     getSubscriptionAll,
   },
-}))
-
-vi.mock("@suhui/database/services/internal/active-visibility", () => ({
-  getActiveVisibilityState: vi.fn(async () => ({
-    activeFeedIds: new Set(["feed-1", "feed-2"]),
-    activeListIds: new Set<string>(),
-    activeInboxIds: new Set<string>(),
-    sourceIdBySubscriptionId: new Map([
-      ["feed/feed-1", "feed-1"],
-      ["feed/feed-2", "feed-2"],
-    ]),
-  })),
-  isEntryVisibleForActiveRelations,
 }))
 
 vi.mock("~/manager/db", () => ({
@@ -262,6 +256,11 @@ describe("AgentApplicationService", () => {
       { id: "feed-1", count: 3 },
       { id: "feed-2", count: 0 },
     ])
+    queryList.mockResolvedValue({
+      items: entries.slice(0, 2).map((entry) => ({ ...entry, recordKind: "summary" })),
+      page: { limit: 2, hasMore: true, nextCursor: "shared-next-cursor" },
+    })
+    queryDetail.mockResolvedValue({ ...entries[0], recordKind: "detail" })
   })
 
   it("lists lightweight entries with feed titles, optional summaries, and cursor metadata", async () => {
@@ -299,172 +298,41 @@ describe("AgentApplicationService", () => {
     ])
     expect(result.page.limit).toBe(2)
     expect(result.page.hasMore).toBe(true)
-    expect(result.page.nextCursor).toEqual(expect.any(String))
-
-    const findMany = getDB.mock.results[0]!.value.query.entriesTable.findMany
-    expect(findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        columns: expect.objectContaining({
-          description: true,
-          content: false,
-          readabilityContent: false,
-        }),
-      }),
-    )
+    expect(result.page.nextCursor).toBe("shared-next-cursor")
+    expect(queryList).toHaveBeenCalledWith({
+      scope: { kind: "timeline" },
+      limit: 2,
+    })
   })
 
-  it("uses DB-visible rows to fill a page and compute the next cursor", async () => {
-    const laterVisibleEntry = {
-      ...entries[2],
-      id: "entry-4",
-      title: "Later visible entry",
-      publishedAt: 1709999998000,
-      insertedAt: 1709999999000,
-    }
-    const orderedRows = [entries[0], entries[1], entries[2], laterVisibleEntry]
-    const findMany = vi.fn(async ({ limit }: { limit: number }) => orderedRows.slice(0, limit))
-    getDB.mockReturnValue({
-      query: {
-        entriesTable: {
-          findMany,
-          findFirst: vi.fn().mockResolvedValue(entries[0]),
-        },
-      },
+  it.each([0, 101, 1.5, "2", Number.NaN, Number.POSITIVE_INFINITY])(
+    "rejects invalid agent limit %p",
+    async (limit) => {
+      await expect(
+        agentApplicationService.listEntries({ limit: limit as number }),
+      ).rejects.toMatchObject({ code: "SUHUI_INVALID_LIMIT", statusCode: 400 })
+      expect(queryList).not.toHaveBeenCalled()
+    },
+  )
+
+  it("translates the previous agent cursor into the shared versioned cursor", async () => {
+    const cursor = encodeAgentEntriesCursor({ publishedAt: 100, insertedAt: 90, id: "entry-b" })
+
+    await agentApplicationService.listEntries({
+      feedId: "feed-1",
+      read: false,
+      limit: 2,
+      cursor,
     })
 
-    const result = await agentApplicationService.listEntries({ limit: 2 })
-
-    expect(result.items.map((item) => item.id)).toEqual(["entry-1", "entry-2"])
-    expect(result.page.hasMore).toBe(true)
-    const cursorEntry = entries[1]!
-    expect(result.page.nextCursor).toEqual(
-      encodeAgentEntriesCursor({
-        publishedAt: cursorEntry.publishedAt,
-        insertedAt: cursorEntry.insertedAt,
-        id: cursorEntry.id,
-      }),
-    )
-    expect(findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        limit: agentEntriesMaxLimit + 1,
-        columns: expect.objectContaining({
-          description: false,
-          content: false,
-          readabilityContent: false,
-        }),
-      }),
-    )
-  })
-
-  it("advances through multiple DB batches to find later visible rows", async () => {
-    const hiddenEntries = Array.from({ length: agentEntriesMaxLimit + 5 }, (_, index) => ({
-      ...entries[0],
-      id: `hidden-entry-${index}`,
-      publishedAt: 1710000010000 - index * 2,
-      insertedAt: 1710000010001 - index * 2,
-    }))
-    const visibleEntries = [
-      {
-        ...entries[0],
-        id: "late-visible-entry-1",
-        publishedAt: 1710000010000 - hiddenEntries.length * 2,
-        insertedAt: 1710000010001 - hiddenEntries.length * 2,
-      },
-      {
-        ...entries[1],
-        id: "late-visible-entry-2",
-        publishedAt: 1710000010000 - (hiddenEntries.length + 1) * 2,
-        insertedAt: 1710000010001 - (hiddenEntries.length + 1) * 2,
-      },
-    ]
-    const orderedRows = [...hiddenEntries, ...visibleEntries]
-    isEntryVisibleForActiveRelations.mockImplementation(
-      (entry?: { id?: string }) => !entry?.id?.startsWith("hidden-entry-"),
-    )
-    const findMany = vi.fn(async ({ limit }: { limit: number }) => {
-      const offset = (findMany.mock.calls.length - 1) * limit
-      return orderedRows.slice(offset, offset + limit)
+    expect(queryList).toHaveBeenCalledWith({
+      scope: { kind: "feeds", feedIds: ["feed-1"] },
+      read: false,
+      limit: 2,
+      cursor: Buffer.from(
+        JSON.stringify({ v: 1, publishedAt: 100, insertedAt: 90, id: "entry-b" }),
+      ).toString("base64url"),
     })
-    getDB.mockReturnValue({
-      query: {
-        entriesTable: {
-          findMany,
-          findFirst: vi.fn().mockResolvedValue(entries[0]),
-        },
-      },
-    })
-
-    const result = await agentApplicationService.listEntries({ limit: 2 })
-
-    expect(result.items.map((item) => item.id)).toEqual([
-      "late-visible-entry-1",
-      "late-visible-entry-2",
-    ])
-    expect(result.page.hasMore).toBe(false)
-    expect(result.page.nextCursor).toBeNull()
-    expect(findMany).toHaveBeenCalledTimes(2)
-    expect(findMany).toHaveBeenNthCalledWith(
-      1,
-      expect.objectContaining({ limit: agentEntriesMaxLimit + 1 }),
-    )
-    expect(findMany).toHaveBeenNthCalledWith(
-      2,
-      expect.objectContaining({ limit: agentEntriesMaxLimit + 1 }),
-    )
-    expect(isEntryVisibleForActiveRelations).toHaveBeenCalledWith(
-      expect.objectContaining({ id: "hidden-entry-0" }),
-      expect.any(Object),
-    )
-  })
-
-  it("stops scanning at the per-request cap and returns a cursor from the last scanned row", async () => {
-    const hiddenEntries = Array.from({ length: agentEntriesMaxScanRows + 5 }, (_, index) => ({
-      ...entries[0],
-      id: `hidden-entry-${index}`,
-      publishedAt: 1710000020000 - index * 2,
-      insertedAt: 1710000020001 - index * 2,
-    }))
-    const visibleEntry = {
-      ...entries[0],
-      id: "after-cap-visible-entry",
-      publishedAt: 1710000020000 - hiddenEntries.length * 2,
-      insertedAt: 1710000020001 - hiddenEntries.length * 2,
-    }
-    const orderedRows = [...hiddenEntries, visibleEntry]
-    isEntryVisibleForActiveRelations.mockImplementation(
-      (entry?: { id?: string }) => !entry?.id?.startsWith("hidden-entry-"),
-    )
-    const findMany = vi.fn(async ({ limit }: { limit: number }) => {
-      const offset = findMany.mock.calls
-        .slice(0, -1)
-        .reduce((scanned, [call]) => scanned + (call as { limit: number }).limit, 0)
-      return orderedRows.slice(offset, offset + limit)
-    })
-    getDB.mockReturnValue({
-      query: {
-        entriesTable: {
-          findMany,
-          findFirst: vi.fn().mockResolvedValue(entries[0]),
-        },
-      },
-    })
-
-    const result = await agentApplicationService.listEntries({ limit: 2 })
-
-    expect(result.items).toEqual([])
-    expect(result.page.hasMore).toBe(true)
-    const lastScannedRow = hiddenEntries[agentEntriesMaxScanRows - 1]!
-    expect(result.page.nextCursor).toEqual(
-      encodeAgentEntriesCursor({
-        publishedAt: lastScannedRow.publishedAt,
-        insertedAt: lastScannedRow.insertedAt,
-        id: lastScannedRow.id,
-      }),
-    )
-    expect(findMany).toHaveBeenCalledTimes(
-      Math.ceil(agentEntriesMaxScanRows / (agentEntriesMaxLimit + 1)),
-    )
-    expect(isEntryVisibleForActiveRelations).toHaveBeenCalledTimes(agentEntriesMaxScanRows)
   })
 
   it("returns entry detail with selected content source", async () => {
@@ -477,6 +345,7 @@ describe("AgentApplicationService", () => {
       content: "<article>First readable</article>",
       contentSource: "readabilityContent",
     })
+    expect(queryDetail).toHaveBeenCalledWith("entry-1", "active-relations")
   })
 
   it("lists feed metadata with unread counts", async () => {

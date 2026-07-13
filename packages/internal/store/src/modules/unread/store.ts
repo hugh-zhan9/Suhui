@@ -108,6 +108,7 @@ class UnreadSyncService {
         entryIds: affectedEntryIds,
         read: !read,
       })
+      entryActions.markReadMutationSettled(affectedEntryIds)
 
       unreadActions.upsertManyInSession(currentUnreadList)
     })
@@ -156,6 +157,7 @@ class UnreadSyncService {
     })
 
     await tx.run()
+    entryActions.markReadMutationSettled(affectedEntryIds)
 
     await invalidateEntriesForUnreadMutation()
   }
@@ -270,6 +272,7 @@ class UnreadSyncService {
 
     const rollback = () => {
       entryActions.markEntryReadStatusInSession({ entryIds: [entryId], read: !read })
+      entryActions.markReadMutationSettled([entryId])
       if (read) {
         unreadActions.addUnread(id)
       } else {
@@ -279,6 +282,7 @@ class UnreadSyncService {
 
     try {
       await runtimeClient.entries.updateReadStatus({ entryIds: [entryId], read })
+      entryActions.markReadMutationSettled([entryId])
     } catch (error) {
       rollback()
       throw error

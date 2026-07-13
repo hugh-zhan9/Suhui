@@ -1,52 +1,20 @@
-import { and, eq, isNull } from "drizzle-orm"
 import { EntryService } from "@suhui/database/services/entry"
-import {
-  getActiveVisibilityState,
-  isEntryVisibleForActiveRelations,
-} from "@suhui/database/services/internal/active-visibility"
 
-import { DBManager } from "~/manager/db"
 import { syncLogger } from "~/manager/sync-logger"
+
+import { entryQueryService } from "./query-service"
 
 export class EntryApplicationService {
   async getEntry(entryId: string) {
-    const db = DBManager.getDB()
-    const entry =
-      (await db.query.entriesTable.findFirst({
-        where: (entries) => and(eq(entries.id, entryId), isNull(entries.deletedAt)),
-      })) ?? null
-    if (!entry) return null
-    const visibility = await getActiveVisibilityState()
-    return isEntryVisibleForActiveRelations(entry, visibility) ? entry : null
+    return entryQueryService.getDetail(entryId, "desktop-non-deleted")
   }
 
   async listEntries(options?: { feedId?: string; unreadOnly?: boolean }) {
-    const db = DBManager.getDB()
-    const feedId = options?.feedId
-    const unreadOnly = options?.unreadOnly ?? false
-
-    if (feedId) {
-      const entries = await db.query.entriesTable.findMany({
-        where: (entries) =>
-          and(
-            eq(entries.feedId, feedId),
-            isNull(entries.deletedAt),
-            unreadOnly ? eq(entries.read, false) : undefined,
-          ),
-        orderBy: (entries, { desc }) => [desc(entries.publishedAt), desc(entries.insertedAt)],
-      })
-      const visibility = await getActiveVisibilityState()
-      return entries.filter((entry) => isEntryVisibleForActiveRelations(entry, visibility))
-    }
-
-    const entries = await db.query.entriesTable.findMany({
-      where: unreadOnly
-        ? (entries) => and(eq(entries.read, false), isNull(entries.deletedAt))
-        : (entries) => isNull(entries.deletedAt),
-      orderBy: (entries, { desc }) => [desc(entries.publishedAt), desc(entries.insertedAt)],
+    const page = await entryQueryService.list({
+      scope: options?.feedId ? { kind: "feeds", feedIds: [options.feedId] } : { kind: "timeline" },
+      ...(options?.unreadOnly ? { read: false } : {}),
     })
-    const visibility = await getActiveVisibilityState()
-    return entries.filter((entry) => isEntryVisibleForActiveRelations(entry, visibility))
+    return page.items
   }
 
   async updateReadStatus(payload: { entryIds: string[]; read: boolean }) {

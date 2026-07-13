@@ -8,7 +8,35 @@ export type EntryModel = Omit<
   insertedAt: number
   publishedAt: number
   readabilityUpdatedAt: number | null
+  recordKind?: "summary" | "detail"
 }
+
+export type RuntimeEntryListScope =
+  | { kind: "timeline"; view?: number; excludePrivate?: boolean }
+  | { kind: "feeds"; feedIds: string[] }
+  | { kind: "list"; listId: string }
+  | { kind: "inbox"; inboxId: string }
+  | { kind: "collection"; view?: number }
+
+export type RuntimeEntryListQuery = {
+  scope: RuntimeEntryListScope
+  read?: boolean
+  limit?: number
+  cursor?: string
+}
+
+export type RuntimeEntryPage = {
+  limit: number
+  hasMore: boolean
+  nextCursor: string | null
+}
+
+export type RuntimeEntrySummaryPage = {
+  data: EntryModel[]
+  page: RuntimeEntryPage
+}
+
+export type EntryQueryHookPage = RuntimeEntrySummaryPage
 export type FetchEntriesProps = {
   feedId?: string
   feedIdList?: string[]
@@ -46,7 +74,7 @@ export type UseEntriesReturn = {
   hasNextPage: boolean
   error: Error | null
   fetchedTime?: number
-  queryKey?: (string | number | boolean | string[] | undefined)[]
+  queryKey?: readonly unknown[]
 }
 
 export type UseEntriesControl = Pick<

@@ -1,1 +1,1 @@
-export { runtimeClient } from "./client"
+export { runtimeClient, toEntryListQuery } from "./client"

@@ -38,6 +38,11 @@ export type EntryRecord = {
   extra?: any
   language?: string | null
   insertedAt?: number | null
+  readabilityUpdatedAt?: number | null
+  inboxHandle?: string | null
+  sources?: string[] | null
+  settings?: any
+  recordKind?: "summary" | "detail"
 }
 
 /** API 返回的未读记录格式 */
@@ -97,7 +102,7 @@ export function transformEntryFromApi(record: EntryRecord): EntryModel {
     url: record.url || null,
     content: record.content || null,
     readabilityContent: record.readabilityContent || null,
-    readabilityUpdatedAt: null,
+    readabilityUpdatedAt: record.readabilityUpdatedAt ?? null,
     description: record.description || null,
     guid: record.guid || record.id,
     author: record.author || null,
@@ -111,10 +116,11 @@ export function transformEntryFromApi(record: EntryRecord): EntryModel {
     extra: record.extra || null,
     language: record.language || null,
     feedId: record.feedId || null,
-    inboxHandle: null,
+    inboxHandle: record.inboxHandle ?? null,
     read: record.read ?? false,
-    sources: null,
-    settings: null,
+    sources: record.sources ?? null,
+    settings: record.settings ?? null,
+    recordKind: record.recordKind,
   }
 }
 

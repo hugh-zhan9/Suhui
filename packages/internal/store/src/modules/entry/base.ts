@@ -16,6 +16,8 @@ export interface EntryState {
   entryIdByInbox: Record<InboxId, Set<EntryId>>
   entryIdByList: Record<ListId, Set<EntryId>>
   entryIdSet: Set<EntryId>
+  detailLoadedEntryIds: Set<EntryId>
+  dirtyReadEntryIds: Set<EntryId>
 }
 
 export const defaultState: EntryState = {
@@ -34,6 +36,8 @@ export const defaultState: EntryState = {
   entryIdByInbox: {},
   entryIdByList: {},
   entryIdSet: new Set(),
+  detailLoadedEntryIds: new Set(),
+  dirtyReadEntryIds: new Set(),
 }
 
 export const useEntryStore = createZustandStore<EntryState>("entry")(() => defaultState)

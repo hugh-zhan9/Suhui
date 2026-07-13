@@ -54,6 +54,7 @@ type StartupSnapshotUnreadRow = {
 }
 
 type StartupSnapshotEntrySummaryRow = {
+  recordKind: "summary"
   id: string
   feedId: string | null
   inboxHandle: string | null
@@ -212,6 +213,7 @@ const buildSnapshotPayload = async (): Promise<StartupSnapshotPayload | null> =>
     .filter((entry): entry is NonNullable<EntryState["data"][string]> => !!entry)
     .slice(0, 200)
     .map((entry) => ({
+      recordKind: "summary" as const,
       id: entry.id,
       feedId: entry.feedId ?? null,
       inboxHandle: entry.inboxHandle ?? null,
@@ -414,7 +416,13 @@ export const restoreStartupSnapshot = async (): Promise<StartupSnapshotRestoreRe
         parsed.subscriptions.map(({ id: _id, ...subscription }) => subscription) as never,
       )
       unreadActions.restoreHydratedSnapshotInSession(parsed.unreads as never)
-      entryActions.restoreHydratedSnapshotInSession(parsed.entries as never)
+      entryActions.restoreHydratedSnapshotInSession(
+        parsed.entries.map(({ summary, ...entry }) => ({
+          ...entry,
+          description: summary,
+          recordKind: "summary" as const,
+        })) as never,
+      )
     })
 
     recordStartupMetric("snapshot_restore_ms", performance.now() - startedAt)

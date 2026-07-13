@@ -39,6 +39,8 @@ const localStoragePersister = createSyncStoragePersister({
   key: QUERY_PERSIST_KEY,
 })
 
+export const ENTRY_QUERY_PERSIST_BUSTER = "entry-summary-page-v1"
+
 declare module "@tanstack/react-query" {
   interface Meta {
     queryMeta: { persist?: boolean }
@@ -49,6 +51,7 @@ declare module "@tanstack/react-query" {
 
 export const persistConfig: OmitKeyof<PersistQueryClientOptions, "queryClient"> = {
   persister: localStoragePersister,
+  buster: ENTRY_QUERY_PERSIST_BUSTER,
   // 7 day
   maxAge: 7 * 24 * 60 * 60 * 1000,
   dehydrateOptions: {

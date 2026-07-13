@@ -244,7 +244,21 @@ describe("startup snapshot", () => {
     expect(feedUpsertManyInSession).toHaveBeenCalledTimes(1)
     expect(subscriptionReplaceManyInSession).toHaveBeenCalledTimes(1)
     expect(unreadRestoreHydratedSnapshotInSession).toHaveBeenCalledTimes(1)
-    expect(entryRestoreHydratedSnapshotInSession).toHaveBeenCalledTimes(1)
+    expect(entryRestoreHydratedSnapshotInSession).toHaveBeenCalledWith([
+      {
+        id: "entry_1",
+        feedId: "feed_1",
+        inboxHandle: null,
+        title: "Entry 1",
+        description: "Summary 1",
+        publishedAt: 1,
+        insertedAt: 1,
+        read: false,
+        sources: [],
+        author: "Author 1",
+        recordKind: "summary",
+      },
+    ])
   })
 
   it("treats malformed snapshots as corrupt without blocking startup", async () => {
@@ -289,6 +303,7 @@ describe("startup snapshot", () => {
       startupSessionId: "startup-3",
       feeds: [{ id: "feed_1", title: "Example Feed" }],
       subscriptions: [{ id: "feed/feed_1", feedId: "feed_1" }],
+      entries: [{ id: "entry_1", recordKind: "summary", summary: "Summary 1" }],
     })
     expect(firstSnapshot.feeds[0]).not.toHaveProperty("type")
 

@@ -209,6 +209,8 @@ const refreshButton = document.getElementById("refresh-feed-button");
 let activeFeedId = null;
 let subscriptionsCache = [];
 let unreadCache = {};
+let entriesCache = [];
+let entriesNextCursor = null;
 
 const renderSubscriptions = (items) => {
   if (!items || items.length === 0) {
@@ -266,7 +268,10 @@ const renderEntries = (items) => {
     })
     .join("");
 
-  entryPanel.innerHTML = '<ul class="list">' + list + '</ul>';
+  const loadMore = entriesNextCursor
+    ? '<div class="item-actions"><button id="load-more-entries" class="item-button">Load more</button></div>'
+    : '';
+  entryPanel.innerHTML = '<ul class="list">' + list + '</ul>' + loadMore;
   entryPanel.querySelectorAll("[data-entry-id]").forEach((node) => {
     node.addEventListener("click", async () => {
       const entryId = node.getAttribute("data-entry-id");
@@ -293,6 +298,13 @@ const renderEntries = (items) => {
       }
     });
   });
+  const loadMoreButton = document.getElementById("load-more-entries");
+  if (loadMoreButton) {
+    loadMoreButton.addEventListener("click", () => {
+      if (!activeFeedId || !entriesNextCursor) return;
+      void loadEntries(activeFeedId, entriesNextCursor, true);
+    });
+  }
 };
 
 const setStatus = (label) => {
@@ -380,15 +392,23 @@ const refreshAllFeeds = async () => {
   }
 };
 
-const loadEntries = async (feedId) => {
-  entryPanel.innerHTML = '<p class="empty">Loading entries...</p>';
+const loadEntries = async (feedId, cursor = null, append = false) => {
+  if (!append) {
+    entryPanel.innerHTML = '<p class="empty">Loading entries...</p>';
+    entriesCache = [];
+    entriesNextCursor = null;
+  }
   try {
-    const response = await fetch("/api/entries?feedId=" + encodeURIComponent(feedId));
+    const query = new URLSearchParams({ feedId });
+    if (cursor) query.set("cursor", cursor);
+    const response = await fetch("/api/entries?" + query.toString());
     if (!response.ok) {
       throw new Error("HTTP " + response.status);
     }
     const payload = await response.json();
-    renderEntries(payload.data || []);
+    entriesCache = append ? entriesCache.concat(payload.data || []) : payload.data || [];
+    entriesNextCursor = payload.page?.nextCursor || null;
+    renderEntries(entriesCache);
   } catch (error) {
     entryPanel.innerHTML = '<p class="empty">Failed to load entries.</p>';
     console.error("[remote-shell] failed to load entries", error);
