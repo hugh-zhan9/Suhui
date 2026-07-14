@@ -18,6 +18,7 @@ export interface EntryState {
   entryIdSet: Set<EntryId>
   detailLoadedEntryIds: Set<EntryId>
   dirtyReadEntryIds: Set<EntryId>
+  startupSnapshotEntryIds: Set<EntryId>
 }
 
 export const defaultState: EntryState = {
@@ -38,6 +39,7 @@ export const defaultState: EntryState = {
   entryIdSet: new Set(),
   detailLoadedEntryIds: new Set(),
   dirtyReadEntryIds: new Set(),
+  startupSnapshotEntryIds: new Set(),
 }
 
 export const useEntryStore = createZustandStore<EntryState>("entry")(() => defaultState)

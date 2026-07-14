@@ -52,6 +52,7 @@ export type FetchEntriesProps = {
 }
 
 export type FetchEntriesPropsSettings = {
+  enabled?: boolean
   hidePrivateSubscriptionsInTimeline?: boolean
   unreadOnly?: boolean
 }

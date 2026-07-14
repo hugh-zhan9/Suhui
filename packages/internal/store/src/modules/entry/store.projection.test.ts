@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 vi.mock("@suhui/database/services/entry", () => ({
   EntryService: {
-    getEntriesToHydrate: vi.fn(async () => []),
     patch: vi.fn(),
     patchMany: vi.fn(),
     upsertMany: vi.fn(),
@@ -90,11 +89,11 @@ describe("entry projection merges", () => {
     expect(getEntry("e1")?.read).toBe(true)
   })
 
-  it("restores summary snapshots without suppressing detail fetch and preserves dirty reads", async () => {
+  it("restores startup summaries without suppressing detail fetch and preserves dirty reads", async () => {
     startHydrateInteractive("projection-test")
     entryActions.upsertSummaries([entry({ recordKind: "summary", read: false })])
     entryActions.markEntryReadStatusInSession({ entryIds: ["e1"], read: true })
-    entryActions.restoreHydratedSnapshotInSession([
+    entryActions.restoreStartupSummariesInSession([
       entry({ recordKind: "summary", read: false, content: undefined }),
     ])
 
@@ -114,5 +113,39 @@ describe("entry projection merges", () => {
       recordKind: "detail",
     })
     expect(entryActions.isDetailLoaded("e1")).toBe(true)
+  })
+
+  it("retains opened details while removing stale prior snapshot summaries", () => {
+    entryActions.restoreStartupSummariesInSession([
+      entry({ id: "stale", recordKind: "summary" }),
+      entry({ id: "dirty", recordKind: "summary", read: false }),
+    ])
+    entryActions.upsertDetails([entry({ id: "opened", recordKind: "detail", content: "body" })])
+    entryActions.markEntryReadStatusInSession({ entryIds: ["dirty"], read: true })
+
+    entryActions.restoreStartupSummariesInSession([
+      entry({ id: "dirty", recordKind: "summary", read: false }),
+      entry({ id: "snapshot-only", recordKind: "summary", read: false }),
+    ])
+
+    expect(getEntry("opened")?.content).toBe("body")
+    expect(entryActions.isDetailLoaded("opened")).toBe(true)
+    expect(getEntry("dirty")?.read).toBe(true)
+    expect(getEntry("stale")).toBeUndefined()
+  })
+
+  it("retains summaries protected by the current query page across repeated restore", () => {
+    entryActions.restoreStartupSummariesInSession([
+      entry({ id: "page-entry", recordKind: "summary" }),
+    ])
+    entryActions.restoreStartupSummariesInSession(
+      [entry({ id: "next-entry", recordKind: "summary" })],
+      { protectedEntryIds: ["page-entry"] },
+    )
+    entryActions.restoreStartupSummariesInSession(
+      [entry({ id: "final-entry", recordKind: "summary" })],
+      { protectedEntryIds: ["page-entry"] },
+    )
+    expect(getEntry("page-entry")).toBeDefined()
   })
 })

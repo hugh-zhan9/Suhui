@@ -7,10 +7,33 @@ const feedState = {
       url: "https://example.com/rss.xml",
       title: "Example Feed",
       siteUrl: "https://example.com",
+      image: null,
+      description: null,
+      errorAt: null,
+      errorMessage: null,
+      updatedAt: null,
       type: "feed",
     },
   },
 }
+
+const routeEntries: Array<Record<string, unknown>> = [
+  {
+    id: "entry_1",
+    feedId: "feed_1",
+    inboxHandle: null,
+    title: "Entry 1",
+    description: "Summary 1",
+    publishedAt: 1,
+    insertedAt: 1,
+    read: false,
+    sources: [],
+    author: "Author 1",
+    content: "body",
+    readabilityContent: "readable",
+    readabilityUpdatedAt: 1,
+  },
+]
 
 const subscriptionState = {
   data: {
@@ -72,21 +95,10 @@ vi.mock("@suhui/store/entry/base", () => ({
   useEntryStore: {
     getState: () => ({
       data: {
-        entry_1: {
-          id: "entry_1",
-          feedId: "feed_1",
-          inboxHandle: null,
-          title: "Entry 1",
-          description: "Summary 1",
-          publishedAt: 1,
-          insertedAt: 1,
-          read: false,
-          sources: [],
-          author: "Author 1",
-        },
+        ...Object.fromEntries(routeEntries.map((entry) => [entry.id, entry])),
       },
       entryIdByFeed: {
-        feed_1: new Set(["entry_1"]),
+        feed_1: new Set(routeEntries.map((entry) => entry.id as string)),
       },
       entryIdByInbox: {},
       entryIdByView: {
@@ -99,7 +111,7 @@ vi.mock("@suhui/store/entry/base", () => ({
 
 vi.mock("@suhui/store/entry/store", () => ({
   entryActions: {
-    restoreHydratedSnapshotInSession: entryRestoreHydratedSnapshotInSession,
+    restoreStartupSummariesInSession: entryRestoreHydratedSnapshotInSession,
   },
 }))
 
@@ -176,6 +188,21 @@ describe("startup snapshot", () => {
     subscriptionReplaceManyInSession.mockReset()
     unreadRestoreHydratedSnapshotInSession.mockReset()
     entryRestoreHydratedSnapshotInSession.mockReset()
+    routeEntries.splice(0, routeEntries.length, {
+      id: "entry_1",
+      feedId: "feed_1",
+      inboxHandle: null,
+      title: "Entry 1",
+      description: "Summary 1",
+      publishedAt: 1,
+      insertedAt: 1,
+      read: false,
+      sources: [],
+      author: "Author 1",
+      content: "body",
+      readabilityContent: "readable",
+      readabilityUpdatedAt: 1,
+    })
     Object.defineProperty(globalThis, "localStorage", {
       configurable: true,
       value: createStorage(),
@@ -206,6 +233,11 @@ describe("startup snapshot", () => {
             url: "https://example.com/rss.xml",
             title: "Example Feed",
             siteUrl: "https://example.com",
+            image: null,
+            description: null,
+            errorAt: null,
+            errorMessage: null,
+            updatedAt: null,
           },
         ],
         subscriptions: [
@@ -225,6 +257,7 @@ describe("startup snapshot", () => {
         unreads: [{ id: "feed_1", count: 3 }],
         entries: [
           {
+            recordKind: "summary",
             id: "entry_1",
             feedId: "feed_1",
             inboxHandle: null,
@@ -244,21 +277,59 @@ describe("startup snapshot", () => {
     expect(feedUpsertManyInSession).toHaveBeenCalledTimes(1)
     expect(subscriptionReplaceManyInSession).toHaveBeenCalledTimes(1)
     expect(unreadRestoreHydratedSnapshotInSession).toHaveBeenCalledTimes(1)
-    expect(entryRestoreHydratedSnapshotInSession).toHaveBeenCalledWith([
-      {
-        id: "entry_1",
+    expect(entryRestoreHydratedSnapshotInSession).toHaveBeenCalledWith(
+      [
+        {
+          id: "entry_1",
+          feedId: "feed_1",
+          inboxHandle: null,
+          title: "Entry 1",
+          description: "Summary 1",
+          publishedAt: 1,
+          insertedAt: 1,
+          read: false,
+          sources: [],
+          author: "Author 1",
+          recordKind: "summary",
+        },
+      ],
+      { protectedEntryIds: new Set() },
+    )
+  })
+
+  it("persists at most 100 summary rows without body fields", async () => {
+    routeEntries.splice(
+      0,
+      routeEntries.length,
+      ...Array.from({ length: 150 }, (_, index) => ({
+        id: `entry_${index}`,
         feedId: "feed_1",
         inboxHandle: null,
-        title: "Entry 1",
-        description: "Summary 1",
-        publishedAt: 1,
-        insertedAt: 1,
+        title: `Entry ${index}`,
+        description: `Summary ${index}`,
+        publishedAt: index,
+        insertedAt: index,
         read: false,
         sources: [],
-        author: "Author 1",
-        recordKind: "summary",
-      },
-    ])
+        author: null,
+        content: "body",
+        readabilityContent: "readable",
+        readabilityUpdatedAt: index,
+      })),
+    )
+    initializeStartupSnapshot({ startupSessionId: "startup-cap" })
+    await markStartupSnapshotInteractive()
+
+    const key = await getStartupSnapshotStorageKeyForTests()
+    const payload = JSON.parse(localStorage.getItem(key) || "null")
+    expect(payload.version).toBe(2)
+    expect(payload.entries).toHaveLength(100)
+    expect(
+      payload.entries.every((entry: { recordKind: string }) => entry.recordKind === "summary"),
+    ).toBe(true)
+    expect(payload.entries[0]).not.toHaveProperty("content")
+    expect(payload.entries[0]).not.toHaveProperty("readabilityContent")
+    expect(payload.entries[0]).not.toHaveProperty("readabilityUpdatedAt")
   })
 
   it("treats malformed snapshots as corrupt without blocking startup", async () => {
@@ -267,6 +338,63 @@ describe("startup snapshot", () => {
     localStorage.setItem(key, "{bad json")
 
     await expect(restoreStartupSnapshot()).resolves.toBe("corrupt")
+  })
+
+  it("rejects structurally invalid summary rows as corrupt", async () => {
+    initializeStartupSnapshot({ startupSessionId: "startup-schema" })
+    const key = await getStartupSnapshotStorageKeyForTests()
+    localStorage.setItem(
+      key,
+      JSON.stringify({
+        version: STARTUP_SNAPSHOT_VERSION,
+        dbIdentity: "postgres://localhost/suhui",
+        userIdentity: "local_user_id",
+        feeds: [],
+        subscriptions: [],
+        unreads: [],
+        entries: [{ id: "entry_1" }],
+      }),
+    )
+
+    await expect(restoreStartupSnapshot()).resolves.toBe("corrupt")
+    expect(feedUpsertManyInSession).not.toHaveBeenCalled()
+    expect(subscriptionReplaceManyInSession).not.toHaveBeenCalled()
+    expect(unreadRestoreHydratedSnapshotInSession).not.toHaveBeenCalled()
+    expect(entryRestoreHydratedSnapshotInSession).not.toHaveBeenCalled()
+  })
+
+  it("rejects malformed metadata after valid rows atomically", async () => {
+    initializeStartupSnapshot({ startupSessionId: "startup-atomic" })
+    const key = await getStartupSnapshotStorageKeyForTests()
+    localStorage.setItem(
+      key,
+      JSON.stringify({
+        version: STARTUP_SNAPSHOT_VERSION,
+        savedAt: Date.now(),
+        startupSessionId: "startup-0",
+        dbIdentity: "postgres://localhost/suhui",
+        userIdentity: "local_user_id",
+        feeds: [
+          {
+            id: "feed_1",
+            url: null,
+            title: null,
+            siteUrl: null,
+            image: null,
+            description: null,
+            errorAt: null,
+            errorMessage: null,
+            updatedAt: null,
+          },
+          { id: "bad" },
+        ],
+        subscriptions: [],
+        unreads: [],
+        entries: [],
+      }),
+    )
+    await expect(restoreStartupSnapshot()).resolves.toBe("corrupt")
+    expect(feedUpsertManyInSession).not.toHaveBeenCalled()
   })
 
   it("treats older snapshot payload versions as old_version", async () => {

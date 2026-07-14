@@ -1,12 +1,11 @@
 import type { FeedViewType } from "@suhui/constants"
-import { EntryService } from "@suhui/database/services/entry"
 import { FeedService } from "@suhui/database/services/feed"
 import { SubscriptionService } from "@suhui/database/services/subscription"
 import { UnreadService } from "@suhui/database/services/unread"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { getHydratePhaseState, resetHydratePhases, startHydrateInteractive } from "./hydrate-phases"
-import { hydrateDatabaseToStore } from "./hydrate"
+import { hydrateCriticalToStore, hydrateDatabaseToStore } from "./hydrate"
 import { collectionActions } from "./modules/collection/store"
 import { useEntryStore, defaultState as defaultEntryState } from "./modules/entry/base"
 import { entryActions } from "./modules/entry/store"
@@ -126,9 +125,8 @@ describe("hydrateDatabaseToStore", () => {
     resetStores()
   })
 
-  it("runs critical hydrate in order and returns before deferred hydrate finishes", async () => {
+  it("hydrates only route metadata in the critical barrier", async () => {
     const order: string[] = []
-    const deferredHydrate = createDeferred<void>()
 
     vi.spyOn(feedActions, "hydrate").mockImplementation(async () => {
       order.push("feed")
@@ -139,12 +137,39 @@ describe("hydrateDatabaseToStore", () => {
     vi.spyOn(userActions, "hydrate").mockImplementation(async () => {
       order.push("user")
     })
-    vi.spyOn(entryActions, "hydrate").mockImplementation(async () => {
-      order.push("entry")
-    })
     vi.spyOn(unreadActions, "hydrate").mockImplementation(async () => {
       order.push("unread")
     })
+
+    if ("hydrate" in entryActions) {
+      vi.spyOn(
+        entryActions as typeof entryActions & { hydrate: () => Promise<void> },
+        "hydrate",
+      ).mockImplementation(async () => {
+        order.push("entry")
+      })
+    }
+
+    await hydrateCriticalToStore()
+
+    expect(order).toEqual(["feed", "subscription", "user", "unread"])
+    expect("hydrate" in entryActions).toBe(false)
+  })
+
+  it("returns before deferred hydrate finishes", async () => {
+    const order: string[] = []
+    const deferredHydrate = createDeferred<void>()
+
+    vi.spyOn(feedActions, "hydrate").mockResolvedValue()
+    vi.spyOn(subscriptionActions, "hydrate").mockResolvedValue()
+    vi.spyOn(userActions, "hydrate").mockResolvedValue()
+    vi.spyOn(unreadActions, "hydrate").mockResolvedValue()
+    if ("hydrate" in entryActions) {
+      vi.spyOn(
+        entryActions as typeof entryActions & { hydrate: () => Promise<void> },
+        "hydrate",
+      ).mockResolvedValue()
+    }
     vi.spyOn(inboxActions, "hydrate").mockImplementation(async () => {
       order.push("inbox")
     })
@@ -168,7 +193,6 @@ describe("hydrateDatabaseToStore", () => {
 
     await hydrateDatabaseToStore()
 
-    expect(order.slice(0, 5)).toEqual(["feed", "subscription", "user", "entry", "unread"])
     expect(order).toContain("image:start")
     expect(order).not.toContain("image:end")
     expect(getHydratePhaseState().phase).toBe("deferred")
@@ -190,7 +214,7 @@ describe("hydrateDatabaseToStore", () => {
 
     feedActions.upsertManyInSession([localFeed])
     subscriptionActions.upsertManyInSession([localSubscription])
-    entryActions.upsertManyInSession([localEntry])
+    entryActions.upsertSummaries([{ ...localEntry, recordKind: "summary" }])
     unreadActions.upsertManyInSession([{ id: "feed-1", count: 5 }])
 
     startHydrateInteractive()
@@ -219,15 +243,12 @@ describe("hydrateDatabaseToStore", () => {
         view: 0,
       }),
     ] as any)
-    vi.spyOn(EntryService, "getEntriesToHydrate").mockResolvedValue([
-      baseEntry({ read: false }),
-    ] as any)
     vi.spyOn(UnreadService, "getUnreadAll").mockResolvedValue([{ id: "feed-1", count: 9 }] as any)
 
     await feedActions.hydrate()
     await subscriptionActions.hydrate()
-    await entryActions.hydrate()
     await unreadActions.hydrate()
+    entryActions.upsertSummaries([{ ...baseEntry({ read: false }), recordKind: "summary" } as any])
 
     expect(useFeedStore.getState().feeds["feed-1"]?.title).toBe("User edited title")
     expect(useSubscriptionStore.getState().data["feed-1"]).toMatchObject({

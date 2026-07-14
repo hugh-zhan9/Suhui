@@ -6,7 +6,12 @@ import {
   setStartupReadiness,
 } from "~/atoms/app"
 
-import { markStartupMetric, resetStartupMetricsForTests } from "./startup-metrics"
+import {
+  beginStartupMetricsSession,
+  markStartupMetric,
+  recordStartupCountMetric,
+  resetStartupMetricsForTests,
+} from "./startup-metrics"
 
 const mergeReadinessState = (
   patch: Partial<ReturnType<typeof createInitialStartupReadinessState>>,
@@ -16,6 +21,9 @@ const mergeReadinessState = (
     shellReady: prev.shellReady || !!patch.shellReady,
     dbUsable: prev.dbUsable || !!patch.dbUsable,
     interactive: prev.interactive || !!patch.interactive,
+    routeScopeReady: prev.routeScopeReady || !!patch.routeScopeReady,
+    desktopInitialEntriesReady:
+      prev.desktopInitialEntriesReady || !!patch.desktopInitialEntriesReady,
     hydrateCriticalDone: prev.hydrateCriticalDone || !!patch.hydrateCriticalDone,
     ready: prev.ready || !!patch.ready,
     snapshotRestoreSettled: prev.snapshotRestoreSettled || !!patch.snapshotRestoreSettled,
@@ -75,6 +83,7 @@ export const createStartupSessionId = () => {
 export const beginStartupSession = (startupSessionId: string) => {
   pendingHydrateCriticalDone = false
   pendingReady = false
+  beginStartupMetricsSession()
   setAppIsReady(false)
   setStartupReadiness({
     ...createInitialStartupReadinessState(),
@@ -106,6 +115,25 @@ export const markSnapshotRestoreSettled = () => {
   }
 
   maybePromoteInteractive()
+}
+
+export const markRouteScopeReady = () => {
+  if (getStartupReadiness().routeScopeReady) {
+    return
+  }
+
+  mergeReadinessState({ routeScopeReady: true })
+  markStartupMetric("route_scope_ready_ms")
+}
+
+export const markDesktopInitialEntriesReady = (entryRows: number) => {
+  if (getStartupReadiness().desktopInitialEntriesReady) {
+    return
+  }
+
+  recordStartupCountMetric("desktop_startup_entry_rows", entryRows)
+  mergeReadinessState({ desktopInitialEntriesReady: true })
+  markStartupMetric("desktop_initial_entries_ready_ms")
 }
 
 export const markHydrateCriticalDone = () => {

@@ -91,6 +91,11 @@ export const useEntriesQuery = (
   props?: Omit<FetchEntriesProps, "pageParam" | "read" | "excludePrivate"> &
     FetchEntriesPropsSettings,
 ) => {
+  const enabled = props?.enabled
+  const entryQueryProps = useMemo(() => {
+    const { enabled: _enabled, ...queryProps } = props || {}
+    return queryProps
+  }, [props])
   const {
     feedId,
     inboxId,
@@ -102,7 +107,7 @@ export const useEntriesQuery = (
     unreadOnly,
     hidePrivateSubscriptionsInTimeline,
     aiSort,
-  } = props || {}
+  } = entryQueryProps
 
   const fetchUnread = unreadOnly
   const feedUnreadDirty = useFeedUnreadIsDirty((feedId as string) || "")
@@ -111,7 +116,7 @@ export const useEntriesQuery = (
     "history" in globalThis && "isPop" in globalThis.history && !!globalThis.history.isPop
   const fetchProps = useMemo(
     () => ({
-      ...props,
+      ...entryQueryProps,
       limit: aiSort ? 100 : limit,
       read: unreadOnly ? false : undefined,
       excludePrivate: hidePrivateSubscriptionsInTimeline,
@@ -151,7 +156,7 @@ export const useEntriesQuery = (
       // Force refetch unread entries when feed is dirty
       // HACK: disable refetch when the router is pop to previous page
       isPop ? Infinity : fetchUnread && feedUnreadDirty ? 0 : defaultStaleTime,
-    enabled: !!props,
+    enabled: enabled !== false && !!props,
   })
 
   const entriesIds = useMemo(() => {

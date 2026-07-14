@@ -3,7 +3,6 @@ import { initializeDB, migrateDB } from "@suhui/database/db"
 import type { Hydratable } from "./lib/base"
 import { markHydrateCriticalDone, markHydrateReady, resetHydratePhases } from "./hydrate-phases"
 import { collectionActions } from "./modules/collection/store"
-import { entryActions } from "./modules/entry/store"
 import { feedActions } from "./modules/feed/store"
 import { imageActions } from "./modules/image/store"
 import { inboxActions } from "./modules/inbox/store"
@@ -18,7 +17,6 @@ const criticalHydrates: Hydratable[] = [
   feedActions,
   subscriptionActions,
   userActions,
-  entryActions,
   unreadActions,
 ]
 

@@ -7,6 +7,8 @@ export type StartupReadinessState = {
   shellReady: boolean
   dbUsable: boolean
   interactive: boolean
+  routeScopeReady: boolean
+  desktopInitialEntriesReady: boolean
   hydrateCriticalDone: boolean
   ready: boolean
   snapshotRestoreSettled: boolean
@@ -17,6 +19,8 @@ export const createInitialStartupReadinessState = (): StartupReadinessState => (
   shellReady: false,
   dbUsable: false,
   interactive: false,
+  routeScopeReady: false,
+  desktopInitialEntriesReady: false,
   hydrateCriticalDone: false,
   ready: false,
   snapshotRestoreSettled: false,

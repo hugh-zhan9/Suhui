@@ -9,7 +9,7 @@ import { getStorageNS } from "@suhui/utils/ns"
 
 import { getRendererDbConfig } from "~/lib/client"
 import { appLog } from "~/lib/log"
-import { registerRendererPersistResetHook } from "~/lib/query-client"
+import { queryClient, registerRendererPersistResetHook } from "~/lib/query-client"
 import { getRouteParams } from "~/hooks/biz/useRouteParams"
 import { ElectronCloseEvent } from "~/providers/invalidate-query-provider"
 
@@ -20,7 +20,8 @@ import {
 } from "./startup-metrics"
 
 export const STARTUP_SNAPSHOT_NAMESPACE = "renderer-startup-snapshot"
-export const STARTUP_SNAPSHOT_VERSION = 1
+export const STARTUP_SNAPSHOT_VERSION = 2
+export const STARTUP_SNAPSHOT_ENTRY_LIMIT = 100
 export const STARTUP_SNAPSHOT_USER_WRITE_EVENT = "renderer-startup-snapshot:user-write"
 
 type StartupSnapshotFeedRow = {
@@ -211,7 +212,7 @@ const buildSnapshotPayload = async (): Promise<StartupSnapshotPayload | null> =>
   const entries = selectEntryIdsForSnapshot()
     .map((id) => entryState.data[id])
     .filter((entry): entry is NonNullable<EntryState["data"][string]> => !!entry)
-    .slice(0, 200)
+    .slice(0, STARTUP_SNAPSHOT_ENTRY_LIMIT)
     .map((entry) => ({
       recordKind: "summary" as const,
       id: entry.id,
@@ -326,6 +327,59 @@ const unbindSnapshotLifecycle = () => {
   snapshotState.listenersBound = false
 }
 
+const isObject = (value: unknown): value is Record<string, unknown> =>
+  !!value && typeof value === "object" && !Array.isArray(value)
+const isString = (value: unknown): value is string => typeof value === "string"
+const isNullableString = (value: unknown): value is string | null =>
+  value === null || typeof value === "string"
+const isNullableNumber = (value: unknown): value is number | null =>
+  value === null || (typeof value === "number" && Number.isFinite(value))
+const isFiniteNumber = (value: unknown): value is number =>
+  typeof value === "number" && Number.isFinite(value)
+
+const isFeedRow = (value: unknown): value is StartupSnapshotFeedRow =>
+  isObject(value) &&
+  isString(value.id) &&
+  isNullableString(value.url) &&
+  isNullableString(value.title) &&
+  isNullableString(value.siteUrl) &&
+  isNullableString(value.image) &&
+  isNullableString(value.description) &&
+  isNullableString(value.errorAt) &&
+  isNullableString(value.errorMessage) &&
+  isNullableNumber(value.updatedAt)
+
+const isSubscriptionRow = (value: unknown): value is StartupSnapshotSubscriptionRow =>
+  isObject(value) &&
+  isString(value.id) &&
+  isNullableString(value.feedId) &&
+  isNullableString(value.listId) &&
+  isNullableString(value.inboxId) &&
+  isString(value.type) &&
+  isFiniteNumber(value.view) &&
+  isNullableString(value.category) &&
+  isNullableString(value.title) &&
+  typeof value.isPrivate === "boolean" &&
+  typeof value.hideFromTimeline === "boolean"
+
+const isUnreadRow = (value: unknown): value is StartupSnapshotUnreadRow =>
+  isObject(value) && isString(value.id) && isFiniteNumber(value.count) && value.count >= 0
+
+const isEntryRow = (value: unknown): value is StartupSnapshotEntrySummaryRow =>
+  isObject(value) &&
+  value.recordKind === "summary" &&
+  isString(value.id) &&
+  isNullableString(value.feedId) &&
+  isNullableString(value.inboxHandle) &&
+  isNullableString(value.title) &&
+  isNullableString(value.summary) &&
+  isFiniteNumber(value.publishedAt) &&
+  isFiniteNumber(value.insertedAt) &&
+  typeof value.read === "boolean" &&
+  Array.isArray(value.sources) &&
+  value.sources.every(isString) &&
+  isNullableString(value.author)
+
 const isSnapshotPayload = (value: unknown): value is StartupSnapshotPayload => {
   if (!value || typeof value !== "object") {
     return false
@@ -334,13 +388,33 @@ const isSnapshotPayload = (value: unknown): value is StartupSnapshotPayload => {
   const payload = value as Partial<StartupSnapshotPayload>
   return (
     payload.version === STARTUP_SNAPSHOT_VERSION &&
+    isFiniteNumber(payload.savedAt) &&
+    isString(payload.startupSessionId) &&
     Array.isArray(payload.feeds) &&
+    payload.feeds.every(isFeedRow) &&
     Array.isArray(payload.subscriptions) &&
+    payload.subscriptions.every(isSubscriptionRow) &&
     Array.isArray(payload.unreads) &&
+    payload.unreads.every(isUnreadRow) &&
     Array.isArray(payload.entries) &&
+    payload.entries.every(isEntryRow) &&
     typeof payload.dbIdentity === "string" &&
     typeof payload.userIdentity === "string"
   )
+}
+
+const getCurrentEntryPageIds = () => {
+  const ids = new Set<string>()
+  for (const [, data] of queryClient.getQueriesData({ queryKey: ["entries"] })) {
+    if (!isObject(data) || !Array.isArray(data.pages)) continue
+    for (const page of data.pages) {
+      if (!isObject(page) || !Array.isArray(page.data)) continue
+      for (const entry of page.data) {
+        if (isObject(entry) && isString(entry.id)) ids.add(entry.id)
+      }
+    }
+  }
+  return ids
 }
 
 export const initializeStartupSnapshot = ({
@@ -416,12 +490,13 @@ export const restoreStartupSnapshot = async (): Promise<StartupSnapshotRestoreRe
         parsed.subscriptions.map(({ id: _id, ...subscription }) => subscription) as never,
       )
       unreadActions.restoreHydratedSnapshotInSession(parsed.unreads as never)
-      entryActions.restoreHydratedSnapshotInSession(
-        parsed.entries.map(({ summary, ...entry }) => ({
+      entryActions.restoreStartupSummariesInSession(
+        parsed.entries.slice(0, STARTUP_SNAPSHOT_ENTRY_LIMIT).map(({ summary, ...entry }) => ({
           ...entry,
           description: summary,
           recordKind: "summary" as const,
         })) as never,
+        { protectedEntryIds: getCurrentEntryPageIds() },
       )
     })
 

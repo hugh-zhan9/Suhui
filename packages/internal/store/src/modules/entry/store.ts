@@ -10,9 +10,8 @@ import {
   runWithHydrateSource,
 } from "../../hydrate-phases"
 import { runtimeClient } from "../../runtime"
-import type { Hydratable, Resetable } from "../../lib/base"
+import type { Resetable } from "../../lib/base"
 import { createImmerSetter, createTransaction } from "../../lib/helper"
-import { dbStoreMorph } from "../../morph/db-store"
 import { storeDbMorph } from "../../morph/store-db"
 import { getSubscriptionById } from "../subscription/getter"
 import { getDefaultCategory } from "../subscription/utils"
@@ -54,17 +53,12 @@ const summaryFields = [
   "sources",
 ] as const satisfies ReadonlyArray<keyof EntryModel>
 
+const startupSnapshotEntryLimit = 100
+
 const get = useEntryStore.getState
 const immerSet = createImmerSetter(useEntryStore)
 
-class EntryActions implements Hydratable, Resetable {
-  async hydrate() {
-    const entries = await EntryService.getEntriesToHydrate()
-    runWithHydrateSource("hydrate_critical", () => {
-      this.restoreHydratedSnapshotInSession(entries.map((e) => dbStoreMorph.toEntryModel(e)))
-    })
-  }
-
+class EntryActions implements Resetable {
   getFlattenMapEntries() {
     const state = get()
     return state.data
@@ -309,28 +303,42 @@ class EntryActions implements Hydratable, Resetable {
     if (details.length > 0) this.upsertDetails(details, options)
   }
 
-  restoreHydratedSnapshotInSession(entries: EntryModel[]) {
-    const dedupedEntries = this.dedupeEntriesById(entries)
+  restoreStartupSummariesInSession(
+    entries: EntryModel[],
+    options?: { protectedEntryIds?: Iterable<string> },
+  ) {
+    const protectedEntryIds = new Set(options?.protectedEntryIds ?? [])
+    const incoming = this.dedupeEntriesById(entries)
+      .filter((entry) => entry.recordKind === "summary")
+      .slice(0, startupSnapshotEntryLimit)
+      .map((entry) => ({ ...entry, recordKind: "summary" as const }))
+    const incomingIds = new Set(incoming.map(({ id }) => id))
 
     immerSet((draft) => {
-      const currentData = draft.data
-      const currentDirtyReadEntryIds = draft.dirtyReadEntryIds
-      draft.data = {}
-      draft.entryIdSet = new Set()
-      draft.detailLoadedEntryIds = new Set()
-      draft.dirtyReadEntryIds = currentDirtyReadEntryIds
+      const priorSnapshotIds = draft.startupSnapshotEntryIds ?? new Set<string>()
+      for (const entryId of priorSnapshotIds) {
+        if (incomingIds.has(entryId)) continue
 
-      for (const entry of dedupedEntries) {
-        const isDetail = entry.recordKind !== "summary"
-        draft.data[entry.id] = {
-          ...reconcileHydratedEntry(entry, currentData[entry.id]),
-          recordKind: isDetail ? "detail" : "summary",
+        const current = draft.data[entryId]
+        if (!current) continue
+        if (
+          protectedEntryIds.has(entryId) ||
+          current.recordKind === "detail" ||
+          draft.detailLoadedEntryIds.has(entryId) ||
+          draft.dirtyReadEntryIds.has(entryId)
+        ) {
+          continue
         }
-        draft.entryIdSet.add(entry.id)
-        if (isDetail) draft.detailLoadedEntryIds.add(entry.id)
+
+        delete draft.data[entryId]
       }
+
+      draft.startupSnapshotEntryIds = incomingIds
     })
 
+    this.upsertSummaries(
+      incoming.map((entry) => reconcileHydratedEntry(entry, get().data[entry.id])),
+    )
     this.rebuildIndexesInSession()
   }
 

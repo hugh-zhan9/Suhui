@@ -4,10 +4,6 @@ import { db } from "../db"
 import { entriesTable } from "../schemas"
 import type { EntrySchema } from "../schemas/types"
 import type { Resetable } from "./internal/base"
-import {
-  getActiveVisibilityState,
-  isEntryVisibleForActiveRelations,
-} from "./internal/active-visibility"
 import { conflictUpdateAllExcept } from "./internal/utils"
 
 const entryJsonColumns = [
@@ -135,15 +131,6 @@ class EntryServiceStatic implements Resetable {
     return db.query.entriesTable.findMany({
       where: isNull(entriesTable.deletedAt),
     })
-  }
-
-  async getEntriesToHydrate() {
-    const entries = await db.query.entriesTable.findMany({
-      where: isNull(entriesTable.deletedAt),
-      orderBy: (t, { desc }) => desc(t.publishedAt),
-    })
-    const visibility = await getActiveVisibilityState()
-    return entries.filter((entry) => isEntryVisibleForActiveRelations(entry, visibility))
   }
 
   async deleteMany(entryIds: string[]) {

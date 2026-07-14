@@ -10,12 +10,15 @@ import { appIsReady, getStartupReadiness } from "~/atoms/app"
 import {
   beginStartupSession,
   markDbUsable,
+  markDesktopInitialEntriesReady,
   markHydrateCriticalDone,
   markReady,
+  markRouteScopeReady,
   markShellReady,
   markSnapshotRestoreSettled,
   resetStartupReadinessForTests,
 } from "./readiness"
+import { getStartupCountMetricsForTests, getStartupMetricsForTests } from "./startup-metrics"
 
 describe("startup readiness", () => {
   it("promotes interactive only after shell, db usable, and snapshot restore settle", () => {
@@ -65,6 +68,61 @@ describe("startup readiness", () => {
       hydrateCriticalDone: true,
       ready: true,
     })
+  })
+
+  it("keeps interactive independent from metadata and initial entries", () => {
+    resetStartupReadinessForTests()
+    resetHydratePhases()
+    beginStartupSession("session-independent")
+
+    markShellReady()
+    markDbUsable()
+    markSnapshotRestoreSettled()
+
+    expect(getStartupReadiness()).toMatchObject({
+      interactive: true,
+      routeScopeReady: false,
+      desktopInitialEntriesReady: false,
+    })
+  })
+
+  it("records route and initial-page readiness once", () => {
+    resetStartupReadinessForTests()
+    resetHydratePhases()
+    beginStartupSession("session-readiness-metrics")
+
+    markRouteScopeReady()
+    markRouteScopeReady()
+    markDesktopInitialEntriesReady(20)
+    markDesktopInitialEntriesReady(0)
+
+    expect(getStartupReadiness()).toMatchObject({
+      routeScopeReady: true,
+      desktopInitialEntriesReady: true,
+    })
+    expect(getStartupMetricsForTests().has("route_scope_ready_ms")).toBe(true)
+    expect(getStartupMetricsForTests().has("desktop_initial_entries_ready_ms")).toBe(true)
+    expect(getStartupCountMetricsForTests().get("desktop_startup_entry_rows")).toBe(20)
+  })
+
+  it("resets route and initial-page readiness for a new startup session", () => {
+    resetStartupReadinessForTests()
+    resetHydratePhases()
+    beginStartupSession("session-old")
+    markRouteScopeReady()
+    markDesktopInitialEntriesReady(20)
+
+    beginStartupSession("session-new")
+
+    expect(getStartupReadiness()).toMatchObject({
+      routeScopeReady: false,
+      desktopInitialEntriesReady: false,
+      startupSessionId: "session-new",
+    })
+
+    markRouteScopeReady()
+    markDesktopInitialEntriesReady(0)
+    expect(getStartupCountMetricsForTests().get("desktop_startup_entry_rows")).toBe(0)
   })
 
   it("does not reopen the startup barrier when critical hydrate already finished", () => {

@@ -8,10 +8,12 @@ import { useIsSubscribed, useFolderFeedsByFeedId } from "@suhui/store/subscripti
 import { unreadSyncService } from "@suhui/store/unread/store"
 import { useCallback, useEffect, useMemo } from "react"
 
+import { useStartupReadiness } from "~/atoms/app"
 import { useGeneralSettingKey } from "~/atoms/settings/general"
 import { ROUTE_FEED_PENDING } from "~/constants/app"
 import type { BizRouteParams } from "~/hooks/biz/useRouteParams"
 import { useRouteParams } from "~/hooks/biz/useRouteParams"
+import { markDesktopInitialEntriesReady } from "~/initialize/readiness"
 
 import { dedupeEntryIdsPreserveOrder } from "./entry-id-utils"
 import {
@@ -89,6 +91,8 @@ export const isEntriesQueryReady = (query: { isSuccess: boolean }) => query.isSu
 
 export const useEntriesByView = ({ onReset }: { onReset?: () => void }) => {
   const route = useRouteParams()
+  const { routeScopeReady } = useStartupReadiness()
+  const isRemote = getRuntimeEnv().isRemote
   const { view, listId, entryId: activeEntryId } = route
   const unreadOnly = useGeneralSettingKey("unreadOnly")
   const hidePrivateSubscriptionsInTimeline = useGeneralSettingKey(
@@ -117,7 +121,19 @@ export const useEntriesByView = ({ onReset }: { onReset?: () => void }) => {
       }),
     [activeFeedId, folderFeedIds, hidePrivateSubscriptionsInTimeline, route, unreadOnly],
   )
-  const query = useEntriesQuery(queryProps)
+  const query = useEntriesQuery({
+    ...queryProps,
+    enabled: isRemote || routeScopeReady,
+  })
+
+  const firstPage = query.data?.pages?.[0]
+  useEffect(() => {
+    if (isRemote || !routeScopeReady || !query.isSuccess || !firstPage) {
+      return
+    }
+
+    markDesktopInitialEntriesReady(firstPage.data.length)
+  }, [firstPage, isRemote, query.isSuccess, routeScopeReady])
   const activeEntryLoaded = useEntryStore((state) =>
     activeEntryId ? Boolean(state.data[activeEntryId]) : false,
   )
@@ -166,7 +182,7 @@ export const useEntriesByView = ({ onReset }: { onReset?: () => void }) => {
 
   return {
     ...query,
-    type: getRuntimeEnv().isRemote ? ("remote" as const) : ("local" as const),
+    type: isRemote ? ("remote" as const) : ("local" as const),
     fetchNextPage: async () => {
       await query.fetchNextPage()
     },

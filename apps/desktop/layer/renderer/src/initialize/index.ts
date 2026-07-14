@@ -20,6 +20,7 @@ import {
   createStartupSessionId,
   markHydrateCriticalDone,
   markReady,
+  markRouteScopeReady,
   markSnapshotRestoreSettled,
 } from "./readiness"
 import { initializeSettings } from "./settings"
@@ -121,6 +122,7 @@ export const initializeApp = () => {
   const hydrateCriticalPromise = apm("hydrateCriticalToStore", () =>
     hydrateCriticalToStore({ migrateDatabase: true }),
   ).then(async () => {
+    markRouteScopeReady()
     markHydrateCriticalDone()
     await forceStartupSnapshotRefresh()
     return Math.trunc(performance.now() - hydrateStartedAt)
