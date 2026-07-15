@@ -1,4 +1,3 @@
-import { collectionsTable } from "@suhui/database/schemas/index"
 import type { ActiveVisibilityState } from "@suhui/database/services/internal/active-visibility"
 import type { AnyColumn, SQL } from "drizzle-orm"
 import { and, eq, inArray, isNull, or, sql } from "drizzle-orm"
@@ -131,8 +130,13 @@ const createScopeWhere = (
       return eq(entries.inboxHandle, scope.inboxId)
     }
     case "collection": {
-      return sql`exists (select 1 from ${collectionsTable} where ${collectionsTable.entryId} = ${entries.id} and ${collectionsTable.deletedAt} is null${
-        typeof scope.view === "number" ? sql` and ${collectionsTable.view} = ${scope.view}` : sql``
+      // Relational query callbacks rewrite schema columns to the outer table alias. Keep the
+      // correlated collection identifiers explicit so only entries.id receives that rewrite.
+      const collections = sql.identifier("entry_collections")
+      return sql`exists (select 1 from ${sql.identifier("collections")} ${collections} where ${collections}.${sql.identifier("entry_id")} = ${entries.id} and ${collections}.${sql.identifier("deleted_at")} is null${
+        typeof scope.view === "number"
+          ? sql` and ${collections}.${sql.identifier("view")} = ${scope.view}`
+          : sql``
       })`
     }
   }

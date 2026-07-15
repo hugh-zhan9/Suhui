@@ -244,6 +244,16 @@ describe("EntryQueryService", () => {
     )
   })
 
+  it("keeps collection subquery columns on their explicit alias", async () => {
+    await service.list({ scope: { kind: "collection", view: 1 } })
+
+    const whereSql = renderWhere(findMany.mock.calls[0]![0].where)
+    expect(whereSql).toContain('from "collections" "entry_collections"')
+    expect(whereSql).toContain('"entry_collections"."entry_id" = "entries"."id"')
+    expect(whereSql).toContain('"entry_collections"."view" = $')
+    expect(whereSql).not.toContain('"entries"."entry_id"')
+  })
+
   it("returns a last page without a cursor", async () => {
     findMany.mockResolvedValue([summaryRow()])
 

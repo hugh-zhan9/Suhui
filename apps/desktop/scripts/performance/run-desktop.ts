@@ -319,6 +319,40 @@ const phaseQueryMetrics = [
   "entry_fetch_to_store_ms",
 ] as const
 
+const desktopFeedSwitchTimelineIds = ["all", "articles"] as const
+
+export const clearDesktopFeedSwitchPhaseMetrics = (metrics: Map<string, number>) => {
+  metrics.delete("desktop_feed_usable_ms")
+  for (const metric of phaseQueryMetrics) metrics.delete(metric)
+}
+
+export const selectDesktopFeedSwitchTimelineId = (
+  timelines: readonly { timelineId: string; active: boolean }[],
+) =>
+  desktopFeedSwitchTimelineIds.find((timelineId) =>
+    timelines.some((timeline) => timeline.timelineId === timelineId && !timeline.active),
+  )
+
+const switchDesktopFeedView = async (page: Page) => {
+  const timelineButtons = page.locator("[data-performance-timeline-id]")
+  await timelineButtons.first().waitFor({ state: "visible" })
+  const timelines = await timelineButtons.evaluateAll((buttons) =>
+    buttons.map((button) => ({
+      timelineId: button.getAttribute("data-performance-timeline-id") ?? "",
+      active: button.getAttribute("data-active") === "true",
+    })),
+  )
+  const targetTimelineId = selectDesktopFeedSwitchTimelineId(timelines)
+  if (!targetTimelineId) {
+    throw new Error("Desktop performance harness could not find a different feed view")
+  }
+
+  const target = page.locator(`[data-performance-timeline-id=${JSON.stringify(targetTimelineId)}]`)
+  await target.click()
+  await target.waitFor({ state: "visible" })
+  await waitFor(async () => (await target.getAttribute("data-active")) === "true")
+}
+
 export const sampleDesktopPhaseMetrics = (
   feedMetrics: ReadonlyMap<string, number>,
   unreadMetrics: ReadonlyMap<string, number>,
@@ -383,6 +417,10 @@ export async function runDesktopLaunch(input: {
       await unreadToggle.click()
       launched.collector.metrics.delete("desktop_unread_usable_ms")
     }
+    await waitFor(() => launched.collector.metrics.has("desktop_feed_usable_ms"))
+    await waitFor(() => phaseQueryMetrics.every((metric) => launched.collector.metrics.has(metric)))
+    clearDesktopFeedSwitchPhaseMetrics(launched.collector.metrics)
+    await switchDesktopFeedView(launched.page)
     await waitFor(() => launched.collector.metrics.has("desktop_feed_usable_ms"))
     await waitFor(() => phaseQueryMetrics.every((metric) => launched.collector.metrics.has(metric)))
     const feedMetrics = new Map(launched.collector.metrics)

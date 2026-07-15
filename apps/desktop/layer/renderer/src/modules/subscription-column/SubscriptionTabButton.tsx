@@ -158,6 +158,8 @@ const ViewAllSwitchButton: FC<{
 
   return (
     <ActionButton
+      data-performance-timeline-id={timelineId}
+      data-active={isActive}
       shortcutScope={FocusablePresets.isNotFloatingLayerScope}
       key={item.name}
       tooltip={t(item.name, { ns: "common" })}
@@ -219,6 +221,8 @@ const ViewSwitchButton: FC<{
 
   return (
     <ActionButton
+      data-performance-timeline-id={timelineId}
+      data-active={isActive}
       shortcutScope={FocusablePresets.isNotFloatingLayerScope}
       ref={setNodeRef}
       key={item.name}
