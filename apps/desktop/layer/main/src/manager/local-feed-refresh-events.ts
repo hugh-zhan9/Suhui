@@ -36,5 +36,13 @@ export const broadcastLocalFeedRefreshCompleted = (input: unknown) => {
     if (window.isDestroyed()) continue
     window.webContents.send(LOCAL_FEED_REFRESH_COMPLETED_CHANNEL, payload)
   }
+  console.info(
+    "[PerformanceMetric]",
+    JSON.stringify({
+      metric: "refresh_batch_event_count",
+      batchId: payload.batchId,
+      value: 1,
+    }),
+  )
   return 1
 }

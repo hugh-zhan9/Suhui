@@ -1,76 +1,30 @@
 import { FeedViewType, getView } from "@suhui/constants"
 import { useEntriesQuery } from "@suhui/store/entry/hooks"
 import { entryActions, useEntryStore } from "@suhui/store/entry/store"
-import type { FetchEntriesProps, FetchEntriesPropsSettings } from "@suhui/store/entry/types"
 import { getRuntimeEnv } from "@suhui/store/remote"
-import { toEntryListQuery } from "@suhui/store/runtime/client"
 import { useIsSubscribed, useFolderFeedsByFeedId } from "@suhui/store/subscription/hooks"
 import { unreadSyncService } from "@suhui/store/unread/store"
-import { useCallback, useEffect, useMemo } from "react"
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react"
 
-import { useStartupReadiness } from "~/atoms/app"
+import { useStartupReadinessSelector } from "~/atoms/app"
 import { useGeneralSettingKey } from "~/atoms/settings/general"
 import { ROUTE_FEED_PENDING } from "~/constants/app"
-import type { BizRouteParams } from "~/hooks/biz/useRouteParams"
 import { useRouteParams } from "~/hooks/biz/useRouteParams"
-import { markDesktopInitialEntriesReady } from "~/initialize/readiness"
+import {
+  getRouteScopeReadyAt,
+  markDesktopInitialEntriesReady,
+  markDesktopInitialEntriesTerminalError,
+} from "~/initialize/readiness"
 
 import { dedupeEntryIdsPreserveOrder } from "./entry-id-utils"
+import { buildEntriesByViewQueryProps, getEntriesByViewQueryIdentity } from "./entries-query-props"
 import {
   getPendingActiveEntryId,
   normalizeFeedIdForActiveSubscription,
   setPendingActiveEntryId,
 } from "./query-selection"
 
-type EntriesByViewQueryProps = Omit<FetchEntriesProps, "pageParam" | "read" | "excludePrivate"> &
-  FetchEntriesPropsSettings
-
-const normalizeFeedIds = (feedIds: string[]) =>
-  Array.from(new Set(feedIds.map((id) => id.trim()).filter(Boolean))).sort()
-
-export const buildEntriesByViewQueryProps = ({
-  route,
-  folderFeedIds,
-  activeFeedId,
-  unreadOnly,
-  hidePrivateSubscriptionsInTimeline,
-}: {
-  route: BizRouteParams
-  folderFeedIds: string[]
-  activeFeedId?: string
-  unreadOnly: boolean
-  hidePrivateSubscriptionsInTimeline: boolean
-}): EntriesByViewQueryProps => {
-  if (route.isCollection) {
-    return {
-      isCollection: true,
-      ...(route.view === FeedViewType.All ? {} : { view: route.view }),
-      unreadOnly: false,
-    }
-  }
-  if (route.listId) return { listId: route.listId, unreadOnly }
-  if (route.inboxId) return { inboxId: route.inboxId, unreadOnly }
-  if (activeFeedId) return { feedId: activeFeedId, unreadOnly }
-
-  const normalizedFolderFeedIds = normalizeFeedIds(folderFeedIds)
-  if (normalizedFolderFeedIds.length > 0) {
-    return { feedIdList: normalizedFolderFeedIds, unreadOnly }
-  }
-
-  return {
-    ...(route.view === FeedViewType.All ? {} : { view: route.view }),
-    unreadOnly,
-    hidePrivateSubscriptionsInTimeline,
-  }
-}
-
-export const getEntriesByViewQueryIdentity = (props: EntriesByViewQueryProps) =>
-  toEntryListQuery({
-    ...props,
-    pageParam: undefined,
-    read: props.unreadOnly ? false : undefined,
-    excludePrivate: props.hidePrivateSubscriptionsInTimeline,
-  })
+export { buildEntriesByViewQueryProps, getEntriesByViewQueryIdentity } from "./entries-query-props"
 
 export const includeActiveEntryInQueryPageOrder = ({
   pageIds,
@@ -91,7 +45,8 @@ export const isEntriesQueryReady = (query: { isSuccess: boolean }) => query.isSu
 
 export const useEntriesByView = ({ onReset }: { onReset?: () => void }) => {
   const route = useRouteParams()
-  const { routeScopeReady } = useStartupReadiness()
+  const routeScopeReady = useStartupReadinessSelector((state) => state.routeScopeReady)
+  const startupSessionId = useStartupReadinessSelector((state) => state.startupSessionId)
   const isRemote = getRuntimeEnv().isRemote
   const { view, listId, entryId: activeEntryId } = route
   const unreadOnly = useGeneralSettingKey("unreadOnly")
@@ -121,19 +76,76 @@ export const useEntriesByView = ({ onReset }: { onReset?: () => void }) => {
       }),
     [activeFeedId, folderFeedIds, hidePrivateSubscriptionsInTimeline, route, unreadOnly],
   )
+  const queryEnabled = isRemote || routeScopeReady
+  const queryIdentity = JSON.stringify(getEntriesByViewQueryIdentity(queryProps))
+  const metricIdentity = JSON.stringify([startupSessionId, queryIdentity])
+  const queryTimingRef = useRef<
+    { startupSessionId: string | null; identity: string; startedAt: number } | undefined
+  >(undefined)
+  if (
+    !isRemote &&
+    queryEnabled &&
+    (!queryTimingRef.current ||
+      queryTimingRef.current.identity !== queryIdentity ||
+      queryTimingRef.current.startupSessionId !== startupSessionId)
+  ) {
+    const startsNewSession = queryTimingRef.current?.startupSessionId !== startupSessionId
+    queryTimingRef.current = {
+      startupSessionId,
+      identity: queryIdentity,
+      startedAt: startsNewSession
+        ? (getRouteScopeReadyAt() ?? performance.now())
+        : performance.now(),
+    }
+  }
   const query = useEntriesQuery({
     ...queryProps,
-    enabled: isRemote || routeScopeReady,
+    enabled: queryEnabled,
   })
 
   const firstPage = query.data?.pages?.[0]
-  useEffect(() => {
-    if (isRemote || !routeScopeReady || !query.isSuccess || !firstPage) {
+  const recordedUsableMetricsRef = useRef(new Set<string>())
+  useLayoutEffect(() => {
+    const queryTiming = queryTimingRef.current
+    if (isRemote || !routeScopeReady) {
+      return
+    }
+
+    if (query.isError) {
+      markDesktopInitialEntriesTerminalError()
+      return
+    }
+
+    if (
+      !query.isSuccess ||
+      !firstPage ||
+      !queryTiming ||
+      queryTiming.identity !== queryIdentity ||
+      queryTiming.startupSessionId !== startupSessionId
+    ) {
       return
     }
 
     markDesktopInitialEntriesReady(firstPage.data.length)
-  }, [firstPage, isRemote, query.isSuccess, routeScopeReady])
+    const metric = queryProps.unreadOnly ? "desktop_unread_usable_ms" : "desktop_feed_usable_ms"
+    if (!recordedUsableMetricsRef.current.has(metricIdentity)) {
+      recordedUsableMetricsRef.current.add(metricIdentity)
+      console.info("[PerformanceMetric]", {
+        metric,
+        value: Math.max(0, Math.round((performance.now() - queryTiming.startedAt) * 100) / 100),
+      })
+    }
+  }, [
+    firstPage,
+    isRemote,
+    metricIdentity,
+    query.isError,
+    query.isSuccess,
+    queryIdentity,
+    queryProps.unreadOnly,
+    routeScopeReady,
+    startupSessionId,
+  ])
   const activeEntryLoaded = useEntryStore((state) =>
     activeEntryId ? Boolean(state.data[activeEntryId]) : false,
   )

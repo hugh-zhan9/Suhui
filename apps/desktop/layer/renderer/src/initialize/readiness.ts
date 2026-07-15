@@ -24,6 +24,8 @@ const mergeReadinessState = (
     routeScopeReady: prev.routeScopeReady || !!patch.routeScopeReady,
     desktopInitialEntriesReady:
       prev.desktopInitialEntriesReady || !!patch.desktopInitialEntriesReady,
+    desktopInitialEntriesTerminalError:
+      prev.desktopInitialEntriesTerminalError || !!patch.desktopInitialEntriesTerminalError,
     hydrateCriticalDone: prev.hydrateCriticalDone || !!patch.hydrateCriticalDone,
     ready: prev.ready || !!patch.ready,
     snapshotRestoreSettled: prev.snapshotRestoreSettled || !!patch.snapshotRestoreSettled,
@@ -33,6 +35,7 @@ const mergeReadinessState = (
 
 let pendingHydrateCriticalDone = false
 let pendingReady = false
+let routeScopeReadyAt: number | undefined
 
 const applyPendingLaterPhases = () => {
   const state = getStartupReadiness()
@@ -83,6 +86,7 @@ export const createStartupSessionId = () => {
 export const beginStartupSession = (startupSessionId: string) => {
   pendingHydrateCriticalDone = false
   pendingReady = false
+  routeScopeReadyAt = undefined
   beginStartupMetricsSession()
   setAppIsReady(false)
   setStartupReadiness({
@@ -122,9 +126,11 @@ export const markRouteScopeReady = () => {
     return
   }
 
+  routeScopeReadyAt = markStartupMetric("route_scope_ready_ms")
   mergeReadinessState({ routeScopeReady: true })
-  markStartupMetric("route_scope_ready_ms")
 }
+
+export const getRouteScopeReadyAt = () => routeScopeReadyAt
 
 export const markDesktopInitialEntriesReady = (entryRows: number) => {
   if (getStartupReadiness().desktopInitialEntriesReady) {
@@ -134,6 +140,15 @@ export const markDesktopInitialEntriesReady = (entryRows: number) => {
   recordStartupCountMetric("desktop_startup_entry_rows", entryRows)
   mergeReadinessState({ desktopInitialEntriesReady: true })
   markStartupMetric("desktop_initial_entries_ready_ms")
+}
+
+export const markDesktopInitialEntriesTerminalError = () => {
+  const state = getStartupReadiness()
+  if (state.desktopInitialEntriesReady || state.desktopInitialEntriesTerminalError) {
+    return
+  }
+
+  mergeReadinessState({ desktopInitialEntriesTerminalError: true })
 }
 
 export const markHydrateCriticalDone = () => {
@@ -166,6 +181,7 @@ export const markReady = () => {
 export const resetStartupReadinessForTests = () => {
   pendingHydrateCriticalDone = false
   pendingReady = false
+  routeScopeReadyAt = undefined
   setStartupReadiness(createInitialStartupReadinessState())
   setAppIsReady(false)
   resetStartupMetricsForTests()

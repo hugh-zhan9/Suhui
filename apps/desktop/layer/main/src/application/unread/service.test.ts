@@ -1,4 +1,5 @@
-import { entriesTable, unreadTable } from "@suhui/database/schemas/index"
+import { entriesTable, subscriptionsTable, unreadTable } from "@suhui/database/schemas/index"
+import { sql } from "drizzle-orm"
 import { drizzle } from "drizzle-orm/node-postgres"
 import { PgDialect } from "drizzle-orm/pg-core"
 import { beforeEach, describe, expect, it, vi } from "vitest"
@@ -37,6 +38,35 @@ describe("UnreadApplicationService", () => {
     queryRows.derived = [{ id: "feed-1", count: 3 }]
     queryStates.length = 0
     getDB.mockReset()
+    const createSelect = (selection: Record<string, unknown>) => {
+      const state: (typeof queryStates)[number] = { selection, groupBy: [] }
+      queryStates.push(state)
+      const builder = {
+        from(table: unknown) {
+          state.from = table
+          return builder
+        },
+        innerJoin(_table: unknown, on: unknown) {
+          state.join = on
+          return builder
+        },
+        where(where: unknown) {
+          state.where = where
+          return builder
+        },
+        groupBy(...columns: unknown[]) {
+          state.groupBy = columns
+          return Promise.resolve(state.from === unreadTable ? queryRows.legacy : queryRows.derived)
+        },
+        as() {
+          return {
+            kind: sql<string>`"active_sources"."kind"`,
+            sourceId: sql<string>`"active_sources"."source_id"`,
+          }
+        },
+      }
+      return builder
+    }
     getDB.mockReturnValue({
       query: {
         unreadTable: {
@@ -60,31 +90,8 @@ describe("UnreadApplicationService", () => {
           findMany: entriesFindMany.mockResolvedValue([{ feedId: "feed-1", inboxHandle: null }]),
         },
       },
-      select: vi.fn((selection: Record<string, unknown>) => {
-        const state: (typeof queryStates)[number] = { selection, groupBy: [] }
-        queryStates.push(state)
-        const builder = {
-          from(table: unknown) {
-            state.from = table
-            return builder
-          },
-          innerJoin(_table: unknown, on: unknown) {
-            state.join = on
-            return builder
-          },
-          where(where: unknown) {
-            state.where = where
-            return builder
-          },
-          groupBy(...columns: unknown[]) {
-            state.groupBy = columns
-            return Promise.resolve(
-              state.from === unreadTable ? queryRows.legacy : queryRows.derived,
-            )
-          },
-        }
-        return builder
-      }),
+      select: vi.fn(createSelect),
+      selectDistinct: vi.fn(createSelect),
     })
   })
 
@@ -106,9 +113,20 @@ describe("UnreadApplicationService", () => {
       .toUpperCase()
     expect(executedSql).toContain("IS NOT TRUE")
     expect(executedSql).toContain("GROUP BY")
-    expect(executedSql).toContain("EXISTS")
-    expect(executedSql).toContain('"SUBSCRIPTIONS"."DELETED_AT" IS NULL')
+    expect(executedSql).not.toContain("EXISTS")
+    expect(executedSql).not.toContain(" OR ")
+    expect(entryQuery!.join).toBeDefined()
     expect(executedSql).toContain('"ENTRIES"."DELETED_AT" IS NULL')
+    const activeSourceQuery = queryStates.find(
+      (query) => query.from === subscriptionsTable && "kind" in query.selection,
+    )
+    expect(activeSourceQuery).toBeDefined()
+    expect(renderSql(activeSourceQuery!.where).toUpperCase()).toContain(
+      '"SUBSCRIPTIONS"."DELETED_AT" IS NULL',
+    )
+    const joinSql = renderSql(entryQuery!.join).toUpperCase()
+    expect(joinSql).toContain('"KIND" = CASE')
+    expect(joinSql).toContain('"SOURCE_ID" = COALESCE')
   })
 
   it("normalizes legacy feed, list, and inbox sources when other source columns overlap", async () => {
@@ -142,7 +160,7 @@ describe("UnreadApplicationService", () => {
     expect(legacyQuery!.groupBy).toHaveLength(1)
   })
 
-  it("compiles one PostgreSQL-valid legacy grouping expression without type placeholders", async () => {
+  it("compiles legacy grouping and a deduplicated kind-safe active-source join", async () => {
     const pgQuery = vi.fn((query: { text: string }, _params?: unknown[]) =>
       Promise.resolve({
         rows: query.text.includes('from "unread"') ? [["legacy-feed", 2]] : [["derived-feed", 3]],
@@ -166,5 +184,26 @@ describe("UnreadApplicationService", () => {
     expect(compiledSql).toContain(`where ${sourceExpression} IS NOT NULL`)
     expect(compiledSql).toContain(`group by ${sourceExpression}`)
     expect(params).toEqual([])
+
+    const derivedCall = pgQuery.mock.calls.find(([candidate]) =>
+      candidate.text.includes('from "entries"'),
+    )
+    expect(derivedCall).toBeDefined()
+    const derivedSql = derivedCall![0].text.replace(/\s+/g, " ").trim()
+    expect(derivedSql).toContain("inner join (select distinct")
+    expect(derivedSql).toContain('as "kind"')
+    expect(derivedSql).toContain('as "source_id"')
+    expect(derivedSql).toContain('"kind" = CASE')
+    expect(derivedSql).toContain('"source_id" = COALESCE')
+    expect(derivedSql).toContain(`WHEN 'feed' THEN 'feed'`)
+    expect(derivedSql).toContain(`WHEN 'inbox' THEN 'inbox'`)
+    expect(derivedSql).not.toContain(`WHEN 'list'`)
+    expect(derivedSql).not.toContain("EXISTS")
+    expect(derivedSql).not.toContain(" OR ")
+    expect(derivedSql).toContain('"subscriptions"."deleted_at" is null')
+    expect(derivedSql).toContain('"entries"."read" IS NOT TRUE')
+    expect(derivedSql).toContain('"entries"."deleted_at" is null')
+    expect(derivedSql).toContain("COALESCE")
+    expect(derivedSql).toContain("IS NOT NULL")
   })
 })

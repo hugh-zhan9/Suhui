@@ -11,11 +11,15 @@ import {
   markRouteScopeReady,
   resetStartupReadinessForTests,
 } from "~/initialize/readiness"
-import { getStartupCountMetricsForTests } from "~/initialize/startup-metrics"
+import {
+  getStartupCountMetricsForTests,
+  getStartupMetricsForTests,
+} from "~/initialize/startup-metrics"
 
 const testState = vi.hoisted(() => ({
   route: null as any,
   isRemote: false,
+  unreadOnly: false,
   query: {
     data: undefined as any,
     dataUpdatedAt: 0,
@@ -62,7 +66,11 @@ vi.mock("@suhui/store/unread/store", () => ({
 }))
 vi.mock("~/atoms/settings/general", () => ({
   useGeneralSettingKey: (key: string) =>
-    key === "unreadOnly" || key === "hidePrivateSubscriptionsInTimeline" ? false : undefined,
+    key === "unreadOnly"
+      ? testState.unreadOnly
+      : key === "hidePrivateSubscriptionsInTimeline"
+        ? false
+        : undefined,
 }))
 vi.mock("~/hooks/biz/useRouteParams", () => ({
   useRouteParams: () => testState.route,
@@ -185,6 +193,7 @@ describe("useEntriesByView startup readiness", () => {
     beginStartupSession("route-test")
     testState.route = route()
     testState.isRemote = false
+    testState.unreadOnly = false
     testState.query = {
       data: undefined,
       dataUpdatedAt: 0,
@@ -236,6 +245,7 @@ describe("useEntriesByView startup readiness", () => {
     [20, Array.from({ length: 20 }, (_, index) => ({ id: `e${index}` }))],
     [0, []],
   ])("marks a successful first page with %i rows ready", async (rowCount, rows) => {
+    const info = vi.spyOn(console, "info").mockImplementation(() => {})
     markRouteScopeReady()
     testState.query = {
       ...testState.query,
@@ -248,9 +258,168 @@ describe("useEntriesByView startup readiness", () => {
 
     expect(getStartupReadiness().desktopInitialEntriesReady).toBe(true)
     expect(getStartupCountMetricsForTests().get("desktop_startup_entry_rows")).toBe(rowCount)
+    expect(info).toHaveBeenCalledWith(
+      "[PerformanceMetric]",
+      expect.objectContaining({ metric: "desktop_feed_usable_ms", value: expect.any(Number) }),
+    )
+  })
+
+  it.each(["prefetch-in-flight", "prefetch-complete"] as const)(
+    "measures the initial feed commit from route-scope readiness when %s",
+    async (prefetchState) => {
+      const info = vi.spyOn(console, "info").mockImplementation(() => {})
+      let now = 10
+      vi.spyOn(performance, "now").mockImplementation(() => now)
+      markRouteScopeReady()
+
+      testState.query = {
+        ...testState.query,
+        isFetching: prefetchState === "prefetch-in-flight",
+      }
+      if (prefetchState === "prefetch-in-flight") {
+        now = 40
+        await render()
+      }
+
+      now = 110
+      testState.query = {
+        ...testState.query,
+        data: { pages: [{ data: [], page: { hasMore: false, nextCursor: null, limit: 20 } }] },
+        isFetching: false,
+        isSuccess: true,
+      }
+      await render()
+
+      expect(info).toHaveBeenCalledWith("[PerformanceMetric]", {
+        metric: "desktop_feed_usable_ms",
+        value: 100,
+      })
+    },
+  )
+
+  it("starts the same initial query identity again for a new startup session", async () => {
+    const info = vi.spyOn(console, "info").mockImplementation(() => {})
+    let now = 10
+    vi.spyOn(performance, "now").mockImplementation(() => now)
+    markRouteScopeReady()
+
+    now = 20
+    testState.query = {
+      ...testState.query,
+      data: { pages: [{ data: [], page: { hasMore: false, nextCursor: null, limit: 20 } }] },
+      isSuccess: true,
+    }
+    await render()
+
+    testState.query = {
+      ...testState.query,
+      data: undefined,
+      isSuccess: false,
+    }
+    await act(async () => beginStartupSession("route-test-2"))
+    now = 100
+    await act(async () => markRouteScopeReady())
+
+    now = 160
+    testState.query = {
+      ...testState.query,
+      data: { pages: [{ data: [], page: { hasMore: false, nextCursor: null, limit: 20 } }] },
+      isSuccess: true,
+    }
+    await render()
+
+    expect(
+      info.mock.calls
+        .filter(
+          ([label, payload]) =>
+            label === "[PerformanceMetric]" && payload.metric === "desktop_feed_usable_ms",
+        )
+        .map(([, payload]) => payload.value),
+    ).toEqual([10, 60])
+  })
+
+  it("starts an unread phase at the query switch without resetting when fetching appears", async () => {
+    const info = vi.spyOn(console, "info").mockImplementation(() => {})
+    let now = 10
+    vi.spyOn(performance, "now").mockImplementation(() => now)
+    markRouteScopeReady()
+
+    now = 20
+    testState.query = {
+      ...testState.query,
+      data: { pages: [{ data: [], page: { hasMore: false, nextCursor: null, limit: 20 } }] },
+      isSuccess: true,
+    }
+    await render()
+
+    now = 100
+    testState.unreadOnly = true
+    testState.query = {
+      ...testState.query,
+      data: undefined,
+      isSuccess: false,
+      queryKey: ["entries", { read: false }],
+    }
+    await render()
+
+    now = 130
+    testState.query = {
+      ...testState.query,
+      isFetching: true,
+    }
+    await render()
+
+    now = 160
+    testState.query = {
+      ...testState.query,
+      data: { pages: [{ data: [], page: { hasMore: false, nextCursor: null, limit: 20 } }] },
+      isFetching: false,
+      isSuccess: true,
+    }
+    await render()
+
+    expect(info).toHaveBeenCalledWith("[PerformanceMetric]", {
+      metric: "desktop_unread_usable_ms",
+      value: 60,
+    })
+  })
+
+  it("emits once for each successful query identity", async () => {
+    const info = vi.spyOn(console, "info").mockImplementation(() => {})
+    markRouteScopeReady()
+    testState.query = {
+      ...testState.query,
+      data: { pages: [{ data: [], page: { hasMore: false, nextCursor: null, limit: 20 } }] },
+      isSuccess: true,
+    }
+    await render()
+    await render()
+
+    testState.route = route({ view: FeedViewType.Videos, timelineId: "videos" })
+    testState.query = {
+      ...testState.query,
+      data: undefined,
+      isSuccess: false,
+      queryKey: ["entries", { scope: { kind: "timeline", view: FeedViewType.Videos } }],
+    }
+    await render()
+    testState.query = {
+      ...testState.query,
+      data: { pages: [{ data: [], page: { hasMore: false, nextCursor: null, limit: 20 } }] },
+      isSuccess: true,
+    }
+    await render()
+
+    expect(
+      info.mock.calls.filter(
+        ([label, payload]) =>
+          label === "[PerformanceMetric]" && payload.metric === "desktop_feed_usable_ms",
+      ),
+    ).toHaveLength(2)
   })
 
   it("keeps page errors visible and does not count them as initial-page readiness", async () => {
+    const info = vi.spyOn(console, "info").mockImplementation(() => {})
     const error = new Error("page failed")
     markRouteScopeReady()
     testState.query = {
@@ -264,7 +433,37 @@ describe("useEntriesByView startup readiness", () => {
     expect(latestResult?.error).toBe(error)
     await latestResult?.refetch()
     expect(testState.query.refetch).toHaveBeenCalledTimes(1)
-    expect(getStartupReadiness().desktopInitialEntriesReady).toBe(false)
+    expect(getStartupReadiness()).toMatchObject({
+      desktopInitialEntriesReady: false,
+      desktopInitialEntriesTerminalError: true,
+    })
+    expect(getStartupCountMetricsForTests().has("desktop_startup_entry_rows")).toBe(false)
+    expect(getStartupMetricsForTests().has("desktop_initial_entries_ready_ms")).toBe(false)
+    expect(info).not.toHaveBeenCalledWith(
+      "[PerformanceMetric]",
+      expect.objectContaining({ metric: "desktop_feed_usable_ms" }),
+    )
+
+    testState.query = {
+      ...testState.query,
+      data: { pages: [{ data: [], page: { hasMore: false, nextCursor: null, limit: 20 } }] },
+      error: null,
+      isError: false,
+      isSuccess: true,
+    }
+    await render()
+
+    expect(getStartupReadiness().desktopInitialEntriesReady).toBe(true)
+    expect(info).toHaveBeenCalledWith(
+      "[PerformanceMetric]",
+      expect.objectContaining({ metric: "desktop_feed_usable_ms" }),
+    )
+
+    await act(async () => beginStartupSession("route-error-reset"))
+    expect(getStartupReadiness()).toMatchObject({
+      desktopInitialEntriesReady: false,
+      desktopInitialEntriesTerminalError: false,
+    })
   })
 
   it("does not apply the Desktop metadata gate or readiness metric to Remote", async () => {

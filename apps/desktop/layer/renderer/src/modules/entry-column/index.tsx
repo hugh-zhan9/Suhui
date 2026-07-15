@@ -33,6 +33,7 @@ import { useEntryMarkReadHandler } from "./hooks/useEntryMarkReadHandler"
 import { useNavigateFirstEntry } from "./hooks/useNavigateFirstEntry"
 import { EntryListHeader } from "./layouts/EntryListHeader"
 import { EntryEmptyList, EntryList } from "./list"
+import { PersistentEntryListBody } from "./PersistentEntryListBody"
 import { EntryRootStateContext } from "./store/EntryColumnContext"
 
 function EntryColumnContent() {
@@ -50,13 +51,15 @@ function EntryColumnContent() {
   }, [actions])
 
   const { entriesIds, groupedCounts } = state
-  console.log("[Antigravity] EntryColumnContent render:", {
-    entriesIdsLen: entriesIds.length,
-    isLoading: state.isLoading,
-    isFetching: state.isFetching,
-    type: state.type,
-    entriesIds: entriesIds.slice(0, 3),
-  })
+  if ((globalThis as any).__suhuiPerformanceDebug === true) {
+    console.log("[Antigravity] EntryColumnContent render:", {
+      entriesIdsLen: entriesIds.length,
+      isLoading: state.isLoading,
+      isFetching: state.isFetching,
+      type: state.type,
+      entriesIds: entriesIds.slice(0, 3),
+    })
+  }
   useSnapEntryIdList(entriesIds)
 
   const {
@@ -189,18 +192,17 @@ function EntryColumnContent() {
       <EntryListHeader refetch={actions.refetch} isRefreshing={isRefreshing} />
 
       <EntryColumnWrapper onScroll={handleCombinedScroll} key={`${routeFeedId}-${view}`}>
-        {entriesIds.length === 0 ? (
-          state.isLoading ? (
-            <EntryItemSkeleton view={view} />
-          ) : (
-            <EntryEmptyList allRead />
-          )
-        ) : (
+        <PersistentEntryListBody
+          entriesIds={entriesIds}
+          isLoading={state.isLoading}
+          loadingFallback={<EntryItemSkeleton view={view} />}
+          emptyFallback={<EntryEmptyList allRead />}
+        >
           <ListComponent
             gap={view === FeedViewType.SocialMedia ? 10 : undefined}
             listRef={listRef}
             onRangeChange={handleRangeChange}
-            hasNextPage={state.hasNextPage}
+            hasNextPage={entriesIds.length > 0 && state.hasNextPage}
             view={view}
             feedId={routeFeedId || ""}
             entriesIds={entriesIds}
@@ -212,7 +214,7 @@ function EntryColumnContent() {
               isCollection ? void 0 : <FooterMarkItem view={view} fetchedTime={state.fetchedTime} />
             }
           />
-        )}
+        </PersistentEntryListBody>
       </EntryColumnWrapper>
 
       <AITimelineLoadingOverlay

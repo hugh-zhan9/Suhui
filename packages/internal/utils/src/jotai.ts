@@ -51,6 +51,7 @@ const createAtomSelector = <T>(atom: Atom<T>) => {
         useCallback((a) => selector(a as T), deps),
         shallow,
       ),
+      options,
     )
 
   return useHook

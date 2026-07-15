@@ -8,6 +8,10 @@ const bootstrapProviders = vi.hoisted(() => ({
   listUnreadCounts: vi.fn().mockResolvedValue([]),
 }))
 
+const localFeedRefreshEvents = vi.hoisted(() => ({
+  broadcastLocalFeedRefreshCompleted: vi.fn(),
+}))
+
 vi.mock("electron", () => ({
   session: {
     defaultSession: {
@@ -67,7 +71,7 @@ vi.mock("~/manager/refresh-audit-log", () => ({
 }))
 
 vi.mock("~/manager/local-feed-refresh-events", () => ({
-  broadcastLocalFeedRefreshCompleted: vi.fn(),
+  broadcastLocalFeedRefreshCompleted: localFeedRefreshEvents.broadcastLocalFeedRefreshCompleted,
 }))
 
 vi.mock("~/application/discover/service", () => ({
@@ -180,6 +184,10 @@ describe("RemoteServerManager", () => {
 
   afterEach(async () => {
     await RemoteServerManager.stop()
+    delete process.env.SUHUI_PERFORMANCE_HARNESS
+    delete process.env.SUHUI_PERFORMANCE_PROFILE_ID
+    delete process.env.SUHUI_PERFORMANCE_CAPABILITY
+    localFeedRefreshEvents.broadcastLocalFeedRefreshCompleted.mockReset()
   })
 
   it("serves health and status endpoints", async () => {
@@ -203,6 +211,68 @@ describe("RemoteServerManager", () => {
       port: server.port,
       baseUrl: server.baseUrl,
     })
+  })
+
+  it("keeps the performance refresh route disabled outside a marked harness launch", async () => {
+    const server = await RemoteServerManager.start({ host: "127.0.0.1", port: 0 })
+    const response = await fetch(`${server.baseUrl}/__performance__/refresh-event`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ batchId: "batch-1", feedIds: ["feed-1"] }),
+    })
+    expect(response.status).toBe(404)
+    expect(localFeedRefreshEvents.broadcastLocalFeedRefreshCompleted).not.toHaveBeenCalled()
+  })
+
+  it("requires the launch-scoped performance capability", async () => {
+    process.env.SUHUI_PERFORMANCE_HARNESS = "1"
+    process.env.SUHUI_PERFORMANCE_PROFILE_ID = "suhui-performance-t002-normal"
+    process.env.SUHUI_PERFORMANCE_CAPABILITY = "a".repeat(64)
+    const server = await RemoteServerManager.start({ host: "127.0.0.1", port: 0 })
+    const response = await fetch(`${server.baseUrl}/__performance__/refresh-event`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Suhui-Performance-Capability": "b".repeat(64),
+      },
+      body: JSON.stringify({ batchId: "batch-1", feedIds: ["feed-1"] }),
+    })
+    expect(response.status).toBe(403)
+    expect(localFeedRefreshEvents.broadcastLocalFeedRefreshCompleted).not.toHaveBeenCalled()
+  })
+
+  it("validates and broadcasts an authorized bounded performance refresh event", async () => {
+    const capability = "c".repeat(64)
+    process.env.SUHUI_PERFORMANCE_HARNESS = "1"
+    process.env.SUHUI_PERFORMANCE_PROFILE_ID = "suhui-performance-t002-normal"
+    process.env.SUHUI_PERFORMANCE_CAPABILITY = capability
+    localFeedRefreshEvents.broadcastLocalFeedRefreshCompleted.mockReturnValue(1)
+    const server = await RemoteServerManager.start({ host: "127.0.0.1", port: 0 })
+    const request = (body: unknown) =>
+      fetch(`${server.baseUrl}/__performance__/refresh-event`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Suhui-Performance-Capability": capability,
+        },
+        body: JSON.stringify(body),
+      })
+
+    expect((await request({ batchId: "batch-1", feedIds: [] })).status).toBe(400)
+    expect(localFeedRefreshEvents.broadcastLocalFeedRefreshCompleted).not.toHaveBeenCalled()
+
+    const response = await request({ batchId: "batch-1", feedIds: ["feed-1", "feed-2"] })
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual({ eventCount: 1, feedCount: 2 })
+    expect(localFeedRefreshEvents.broadcastLocalFeedRefreshCompleted).toHaveBeenCalledTimes(1)
+    expect(localFeedRefreshEvents.broadcastLocalFeedRefreshCompleted).toHaveBeenCalledWith(
+      expect.objectContaining({
+        batchId: "batch-1",
+        reason: "refresh",
+        source: "performance-harness",
+        feedIds: ["feed-1", "feed-2"],
+      }),
+    )
   })
 
   it("serves subscriptions from the injected provider", async () => {

@@ -106,11 +106,9 @@ export const Component = () => {
           type="button"
           title={collapsed ? "展开文章列表" : "折叠文章列表"}
           onClick={toggleCollapse}
-          className="absolute top-1/2 z-10 -translate-y-1/2 flex h-8 w-4 -translate-x-0.5 items-center justify-center rounded-sm bg-fill-secondary opacity-0 shadow transition-opacity hover:bg-accent hover:text-accent-foreground group-hover:opacity-100"
+          className="hover:text-accent-foreground absolute top-1/2 z-10 flex h-8 w-4 -translate-x-0.5 -translate-y-1/2 items-center justify-center rounded-sm bg-fill-secondary opacity-0 shadow transition-opacity hover:bg-accent group-hover:opacity-100"
         >
-          <i
-            className={`size-3 ${collapsed ? "i-mingcute-right-line" : "i-mingcute-left-line"}`}
-          />
+          <i className={`size-3 ${collapsed ? "i-mingcute-right-line" : "i-mingcute-left-line"}`} />
         </button>
 
         {/* Visual divider line */}

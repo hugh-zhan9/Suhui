@@ -164,4 +164,37 @@ describe("broadcastLocalFeedRefreshCompleted", () => {
     expect(eventCount).toBe(0)
     expect(send).not.toHaveBeenCalled()
   })
+
+  it.each([1, 10, 50])("emits exactly one sanitized metric for a %i-feed batch", (count) => {
+    const send = vi.fn()
+    const info = vi.spyOn(console, "info").mockImplementation(() => {})
+    getAllWindows.mockReturnValue([
+      {
+        isDestroyed: () => false,
+        webContents: { send },
+      },
+    ])
+    const changeSet = createEntryChangeEventV1({
+      batchId: `batch_${count}`,
+      reason: "refresh",
+      source: "performance-harness",
+      scope: "feeds",
+      refreshed: count,
+      failed: 0,
+      feedIds: Array.from({ length: count }, (_, index) => `feed_${index}`),
+      completedAt: 123,
+    })
+
+    expect(broadcastLocalFeedRefreshCompleted(changeSet)).toBe(1)
+    expect(send).toHaveBeenCalledTimes(1)
+    expect(info).toHaveBeenCalledWith(
+      "[PerformanceMetric]",
+      JSON.stringify({
+        metric: "refresh_batch_event_count",
+        batchId: `batch_${count}`,
+        value: 1,
+      }),
+    )
+    info.mockRestore()
+  })
 })

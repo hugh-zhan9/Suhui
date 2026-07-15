@@ -6,7 +6,7 @@ import { cn, getOS } from "@suhui/utils/utils"
 import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { Outlet } from "react-router"
 
-import { useAppIsReady, useStartupReadiness } from "./atoms/app"
+import { useAppIsReady, useStartupReadinessSelector } from "./atoms/app"
 import { useUISettingKey } from "./atoms/settings/ui"
 import { markStartupSnapshotInteractive } from "./initialize/startup-snapshot"
 import { applyAfterReadyCallbacks } from "./initialize/queue"
@@ -88,7 +88,7 @@ const useDatabaseStatus = () => {
 
 const AppLayer = () => {
   const appIsReady = useAppIsReady()
-  const readiness = useStartupReadiness()
+  const shellReady = useStartupReadinessSelector((state) => state.shellReady)
   const dbStatus = useDatabaseStatus()
   useSettingSync()
 
@@ -100,12 +100,12 @@ const AppLayer = () => {
 
   const onceShellReady = useRef(false)
   useLayoutEffect(() => {
-    if (readiness.shellReady && !onceShellReady.current) {
+    if (shellReady && !onceShellReady.current) {
       onceShellReady.current = true
       ipcServices?.app.readyToShowMainWindow()
       nextFrame(removeAppSkeleton)
     }
-  }, [readiness.shellReady])
+  }, [shellReady])
 
   const onceInteractive = useRef(false)
   useEffect(() => {

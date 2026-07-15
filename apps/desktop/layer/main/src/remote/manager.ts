@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto"
+import { randomUUID, timingSafeEqual } from "node:crypto"
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http"
 import type { AddressInfo } from "node:net"
 
@@ -34,6 +34,7 @@ import type { EntryPdfInput } from "~/application/pdf/service"
 import { rsshubApplicationService } from "~/application/rsshub/service"
 import { settingsApplicationService, type RemoteSettings } from "~/application/settings/service"
 import { subscriptionApplicationService } from "~/application/subscription/service"
+import { broadcastLocalFeedRefreshCompleted } from "~/manager/local-feed-refresh-events"
 
 import { getRemoteClientAsset, getRemoteClientHtml } from "./client"
 import { REMOTE_SERVER_DEFAULT_HOST, REMOTE_SERVER_DEFAULT_PORT } from "./config"
@@ -231,6 +232,20 @@ const json = (response: ServerResponse, statusCode: number, payload: unknown) =>
   response.statusCode = statusCode
   response.setHeader("Content-Type", "application/json; charset=utf-8")
   response.end(JSON.stringify(payload))
+}
+
+const jsonEntryList = (response: ServerResponse, payload: unknown) => {
+  const serialized = JSON.stringify(payload)
+  console.info(
+    "[PerformanceMetric]",
+    JSON.stringify({
+      metric: "entry_list_payload_bytes",
+      value: Buffer.byteLength(serialized),
+    }),
+  )
+  response.statusCode = 200
+  response.setHeader("Content-Type", "application/json; charset=utf-8")
+  response.end(serialized)
 }
 
 const text = (
@@ -496,6 +511,30 @@ const writeSseEvent = (
   response.write(`event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`)
 }
 
+const isLoopbackPeer = (address: string | undefined) =>
+  address === "127.0.0.1" || address === "::1" || address === "::ffff:127.0.0.1"
+
+const isAuthorizedPerformanceHarnessRequest = (request: IncomingMessage) => {
+  const expected = process.env.SUHUI_PERFORMANCE_CAPABILITY
+  const profileId = process.env.SUHUI_PERFORMANCE_PROFILE_ID
+  const provided = request.headers["x-suhui-performance-capability"]
+  if (
+    process.env.SUHUI_PERFORMANCE_HARNESS !== "1" ||
+    !profileId?.startsWith("suhui-performance-") ||
+    !expected ||
+    !/^[a-f0-9]{64}$/.test(expected) ||
+    typeof provided !== "string" ||
+    !isLoopbackPeer(request.socket.remoteAddress)
+  ) {
+    return false
+  }
+  const expectedBytes = Buffer.from(expected)
+  const providedBytes = Buffer.from(provided)
+  return (
+    expectedBytes.length === providedBytes.length && timingSafeEqual(expectedBytes, providedBytes)
+  )
+}
+
 const createRequestHandler =
   (
     deps: RemoteServerDependencies,
@@ -509,6 +548,46 @@ const createRequestHandler =
 
     if (method === "GET" && url.pathname === "/health") {
       json(response, 200, { ok: true })
+      return
+    }
+
+    if (method === "POST" && url.pathname === "/__performance__/refresh-event") {
+      if (
+        process.env.SUHUI_PERFORMANCE_HARNESS !== "1" ||
+        !process.env.SUHUI_PERFORMANCE_PROFILE_ID?.startsWith("suhui-performance-")
+      ) {
+        json(response, 404, { error: "REMOTE_ROUTE_NOT_FOUND" })
+        return
+      }
+      if (!isAuthorizedPerformanceHarnessRequest(request)) {
+        json(response, 403, { error: "PERFORMANCE_HARNESS_FORBIDDEN" })
+        return
+      }
+      const payload = await readJsonBody<{ batchId: string; feedIds: string[] }>(request)
+      if (
+        typeof payload.batchId !== "string" ||
+        !Array.isArray(payload.feedIds) ||
+        payload.feedIds.length < 1 ||
+        payload.feedIds.length > 50 ||
+        payload.feedIds.some((feedId) => typeof feedId !== "string" || !feedId.trim())
+      ) {
+        json(response, 400, { error: "INVALID_PERFORMANCE_REFRESH_EVENT" })
+        return
+      }
+      const changeSet = createEntryChangeEventV1({
+        batchId: payload.batchId,
+        reason: "refresh",
+        source: "performance-harness",
+        scope: "feeds",
+        feedIds: payload.feedIds,
+        refreshed: payload.feedIds.length,
+        failed: 0,
+        completedAt: Date.now(),
+      })
+      json(response, 200, {
+        eventCount: broadcastLocalFeedRefreshCompleted(changeSet),
+        feedCount: changeSet.feedIds.length,
+      })
       return
     }
 
@@ -638,7 +717,7 @@ const createRequestHandler =
     if (method === "GET" && url.pathname === "/api/entries") {
       try {
         const result = await deps.listEntries(parseRemoteEntryListQuery(url.searchParams))
-        json(response, 200, { data: result.items, page: result.page })
+        jsonEntryList(response, { data: result.items, page: result.page })
       } catch (error) {
         writeEntryQueryError(response, error)
       }

@@ -218,6 +218,7 @@ export const EntryListHeader: FC<{
             {!isCollection && (
               <>
                 <ActionButton
+                  id="performance-unread-toggle"
                   tooltip={
                     !unreadOnly
                       ? t("entry_list_header.show_unread_only")

@@ -627,6 +627,7 @@ class EntryActions implements Resetable {
 
 class EntrySyncServices {
   async fetchEntries(props: FetchEntriesProps) {
+    const startedAt = performance.now()
     const result = await runtimeClient.entries.list({
       ...props,
       localFallbackEntries: Object.values(get().data),
@@ -641,12 +642,18 @@ class EntrySyncServices {
       }
     }
 
-    console.info(
-      "[Antigravity] fetchEntries returning page:",
-      result.data.length,
-      "cursor:",
-      props.pageParam ?? "initial",
-    )
+    if ((globalThis as any).__suhuiPerformanceDebug === true) {
+      console.info(
+        "[Antigravity] fetchEntries returning page:",
+        result.data.length,
+        "cursor:",
+        props.pageParam ?? "initial",
+      )
+    }
+    console.info("[PerformanceMetric]", {
+      metric: "entry_fetch_to_store_ms",
+      value: Math.max(0, Math.round((performance.now() - startedAt) * 100) / 100),
+    })
 
     return result
   }

@@ -4,7 +4,7 @@ import { ActionButton } from "@suhui/components/ui/button/index.js"
 import { RootPortal } from "@suhui/components/ui/portal/index.js"
 import { FeedViewType } from "@suhui/constants"
 import { useTypeScriptHappyCallback } from "@suhui/hooks"
-import { ELECTRON_BUILD } from "@suhui/shared/constants"
+import { ELECTRON_BUILD, IN_ELECTRON } from "@suhui/shared/constants"
 import { usePrefetchSubscription } from "@suhui/store/subscription/hooks"
 import { usePrefetchUnread } from "@suhui/store/unread/hooks"
 import { EventBus } from "@suhui/utils/event-bus"
@@ -15,6 +15,7 @@ import { AnimatePresence, m } from "motion/react"
 import type { FC, PropsWithChildren } from "react"
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 
+import { useStartupReadinessSelector } from "~/atoms/app"
 import { useRootContainerElement } from "~/atoms/dom"
 import { useUISettingKey } from "~/atoms/settings/ui"
 import { setTimelineColumnShow, useSubscriptionColumnShow } from "~/atoms/sidebar"
@@ -34,6 +35,7 @@ import { SubscriptionListGuard } from "./subscription-list/SubscriptionListGuard
 import { SubscriptionColumnHeader } from "./SubscriptionColumnHeader"
 import { SubscriptionTabButton } from "./SubscriptionTabButton"
 import { buildTimelineSwitchNavigation } from "./timeline-switch"
+import { useStartupFrameDeferredMount } from "./useStartupFrameDeferredMount"
 
 const lethargy = new Lethargy()
 
@@ -43,6 +45,19 @@ export function SubscriptionColumn({
 }: PropsWithChildren<{ className?: string }>) {
   const { isLoading: isSubscriptionLoading } = usePrefetchSubscription()
   usePrefetchUnread()
+  const desktopInitialEntriesReady = useStartupReadinessSelector(
+    (state) => state.desktopInitialEntriesReady,
+  )
+  const desktopInitialEntriesTerminalError = useStartupReadinessSelector(
+    (state) => state.desktopInitialEntriesTerminalError,
+  )
+  const startupSessionId = useStartupReadinessSelector((state) => state.startupSessionId)
+  const shouldMountSubscriptionList = useStartupFrameDeferredMount({
+    inElectron: IN_ELECTRON,
+    desktopInitialEntriesReady,
+    desktopInitialEntriesTerminalError,
+    startupSessionId,
+  })
 
   const carouselRef = useRef<HTMLDivElement>(null)
   const timelineList = useTimelineList({
@@ -163,11 +178,13 @@ export function SubscriptionColumn({
         <SwipeWrapper active={timelineId!}>
           {timelineList.map((timelineId) => (
             <section key={timelineId} className="h-full w-feed-col shrink-0 snap-center">
-              <SubscriptionListGuard
-                key={timelineId}
-                view={parseView(timelineId) ?? FeedViewType.Articles}
-                isSubscriptionLoading={isSubscriptionLoading}
-              />
+              {shouldMountSubscriptionList && (
+                <SubscriptionListGuard
+                  key={timelineId}
+                  view={parseView(timelineId) ?? FeedViewType.Articles}
+                  isSubscriptionLoading={isSubscriptionLoading}
+                />
+              )}
             </section>
           ))}
         </SwipeWrapper>

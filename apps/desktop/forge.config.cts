@@ -16,7 +16,11 @@ import yaml from "js-yaml"
 import path, { resolve } from "pathe"
 import { rimraf, rimrafSync } from "rimraf"
 
-import { packagerIgnorePatterns } from "./scripts/forge-ignore"
+import {
+  packagerIgnorePatterns,
+  retainedPackagedModules,
+  unsignedForgeOutputRoot,
+} from "./scripts/forge-ignore"
 import {
   adhocSignPackagedApp,
   resolveAdhocSignTargets,
@@ -30,7 +34,6 @@ const isMicrosoftStore =
   process.argv.find((arg) => arg.startsWith("--ms"))?.split("=")[1] === "true"
 const isNoSignBuild = process.env.FOLO_NO_SIGN === "1"
 const enableFuses = !isNoSignBuild
-const noSignOutDir = "/tmp/suhui-forge-out"
 
 const isStaging = mode === "staging"
 
@@ -46,25 +49,7 @@ const ymlMapsMap = {
   win32: "latest.yml",
 }
 
-const keepModules = new Set([
-  "font-list",
-  "vscode-languagedetection",
-  "bindings",
-  "file-uri-to-path",
-  "pg",
-  "pg-connection-string",
-  "pg-pool",
-  "pg-protocol",
-  "pg-types",
-  "pgpass",
-  "pg-int8",
-  "postgres-array",
-  "postgres-bytea",
-  "postgres-date",
-  "postgres-interval",
-  "split2",
-  "xtend",
-])
+const keepModules = new Set(retainedPackagedModules)
 const keepLanguages = new Set(["en", "en_GB", "en-US", "en_US"])
 
 const resolveRetainedModuleSource = (moduleName: string) => {
@@ -141,7 +126,7 @@ const cleanSourcesOnly = async (buildPath, electronVersion, platform, arch, call
 }
 
 const config: ForgeConfig = {
-  ...(isNoSignBuild ? { outDir: noSignOutDir } : {}),
+  ...(isNoSignBuild ? { outDir: unsignedForgeOutputRoot } : {}),
   hooks: {
     postPackage: async (_forgeConfig, packageResult) => {
       if (!shouldAdhocSignPackagedApp({ platform: packageResult.platform, isNoSignBuild })) {

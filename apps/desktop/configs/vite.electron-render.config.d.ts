@@ -1,4 +1,13 @@
 declare const _default: {
+  resolve: {
+    alias: {
+      "virtual:sidebar-owner-hooks": string
+      "~": string
+      "@pkg": string
+      "@locales": string
+      "@suhui/electron-main": string
+    }
+  }
   plugins: (
     | import("vite").Plugin<any>
     | import("vite").Plugin<any>[]
@@ -45,14 +54,6 @@ declare const _default: {
   }
   optimizeDeps: {
     exclude: string[]
-  }
-  resolve: {
-    alias: {
-      "~": string
-      "@pkg": string
-      "@locales": string
-      "@suhui/electron-main": string
-    }
   }
   base: string
 }

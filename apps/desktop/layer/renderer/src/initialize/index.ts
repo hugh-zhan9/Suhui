@@ -14,6 +14,7 @@ import { subscribeNetworkStatus } from "../atoms/network"
 import { appLog } from "../lib/log"
 import { initAnalytics } from "./analytics"
 import { registerHistoryStack } from "./history"
+import { prefetchDesktopInitialEntries } from "./initial-entries-prefetch"
 import { doMigration } from "./migrates"
 import {
   beginStartupSession,
@@ -121,6 +122,9 @@ export const initializeApp = () => {
   const hydrateCriticalPromise = apm("hydrateCriticalToStore", () =>
     hydrateCriticalToStore({ migrateDatabase: true }),
   ).then(async () => {
+    if (IN_ELECTRON) {
+      void prefetchDesktopInitialEntries()
+    }
     markRouteScopeReady()
     markHydrateCriticalDone()
     await forceStartupSnapshotRefresh()

@@ -15,23 +15,32 @@ export class UnreadApplicationService {
       ${entriesTable.inboxHandle},
       ${entriesTable.feedId}
     )`
-    const hasActiveSubscription = sql`EXISTS (
-      SELECT 1
-      FROM ${subscriptionsTable}
-      WHERE ${subscriptionsTable.deletedAt} IS NULL
-        AND (
-          (
-            ${entriesTable.inboxHandle} IS NOT NULL
-            AND ${subscriptionsTable.type} = ${"inbox"}
-            AND ${subscriptionsTable.inboxId} = ${entriesTable.inboxHandle}
-          )
-          OR (
-            ${entriesTable.inboxHandle} IS NULL
-            AND ${subscriptionsTable.type} = ${"feed"}
-            AND ${subscriptionsTable.feedId} = ${entriesTable.feedId}
-          )
-        )
-    )`
+    const entrySourceKind = sql<string>`CASE
+      WHEN ${entriesTable.inboxHandle} IS NOT NULL THEN 'inbox'
+      ELSE 'feed'
+    END`
+    const activeSubscriptionKind = sql<string>`CASE ${subscriptionsTable.type}
+      WHEN 'feed' THEN 'feed'
+      WHEN 'inbox' THEN 'inbox'
+    END`
+    const activeSubscriptionSourceId = sql<string>`CASE ${subscriptionsTable.type}
+      WHEN 'feed' THEN ${subscriptionsTable.feedId}
+      WHEN 'inbox' THEN ${subscriptionsTable.inboxId}
+    END`
+    const activeSources = db
+      .selectDistinct({
+        kind: activeSubscriptionKind.as("kind"),
+        sourceId: activeSubscriptionSourceId.as("source_id"),
+      })
+      .from(subscriptionsTable)
+      .where(
+        and(
+          isNull(subscriptionsTable.deletedAt),
+          sql`${activeSubscriptionKind} IS NOT NULL`,
+          sql`${activeSubscriptionSourceId} IS NOT NULL`,
+        ),
+      )
+      .as("active_sources")
 
     const [unreads, unreadEntries] = await Promise.all([
       db
@@ -52,12 +61,15 @@ export class UnreadApplicationService {
           count: count(entriesTable.id),
         })
         .from(entriesTable)
+        .innerJoin(
+          activeSources,
+          and(eq(activeSources.kind, entrySourceKind), eq(activeSources.sourceId, entrySourceId)),
+        )
         .where(
           and(
             sql`${entriesTable.read} IS NOT TRUE`,
             isNull(entriesTable.deletedAt),
             sql`${entrySourceId} IS NOT NULL`,
-            hasActiveSubscription,
           ),
         )
         .groupBy(entrySourceId),

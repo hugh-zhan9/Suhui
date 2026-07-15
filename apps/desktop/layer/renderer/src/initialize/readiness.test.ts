@@ -9,7 +9,9 @@ import { appIsReady, getStartupReadiness } from "~/atoms/app"
 
 import {
   beginStartupSession,
+  getRouteScopeReadyAt,
   markDbUsable,
+  markDesktopInitialEntriesTerminalError,
   markDesktopInitialEntriesReady,
   markHydrateCriticalDone,
   markReady,
@@ -90,7 +92,6 @@ describe("startup readiness", () => {
     resetStartupReadinessForTests()
     resetHydratePhases()
     beginStartupSession("session-readiness-metrics")
-
     markRouteScopeReady()
     markRouteScopeReady()
     markDesktopInitialEntriesReady(20)
@@ -101,6 +102,7 @@ describe("startup readiness", () => {
       desktopInitialEntriesReady: true,
     })
     expect(getStartupMetricsForTests().has("route_scope_ready_ms")).toBe(true)
+    expect(getRouteScopeReadyAt()).toBe(getStartupMetricsForTests().get("route_scope_ready_ms"))
     expect(getStartupMetricsForTests().has("desktop_initial_entries_ready_ms")).toBe(true)
     expect(getStartupCountMetricsForTests().get("desktop_startup_entry_rows")).toBe(20)
   })
@@ -110,13 +112,15 @@ describe("startup readiness", () => {
     resetHydratePhases()
     beginStartupSession("session-old")
     markRouteScopeReady()
-    markDesktopInitialEntriesReady(20)
+    markDesktopInitialEntriesTerminalError()
 
     beginStartupSession("session-new")
 
+    expect(getRouteScopeReadyAt()).toBeUndefined()
     expect(getStartupReadiness()).toMatchObject({
       routeScopeReady: false,
       desktopInitialEntriesReady: false,
+      desktopInitialEntriesTerminalError: false,
       startupSessionId: "session-new",
     })
 

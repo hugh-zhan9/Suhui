@@ -1,0 +1,29 @@
+{
+  "schema": "suhui.performance-prior-evidence.v1",
+  "ownerPlanCommit": "95a5e62b691ad44e652061a90841e07bacb2d50b",
+  "bundle": {
+    "sourceLabel": "plan-05 T-002 implementer evidence",
+    "desktopInitialRequests": 4,
+    "remoteInitialRequests": 4,
+    "desktopInitialJsBytes": 3400157,
+    "remoteInitialJsBytes": 1015558,
+    "sharedInitialJsBytes": 986459,
+    "sharedInitialCssBytes": 516900
+  },
+  "sidebar": {
+    "sourceLabel": "plan-05 T-003 sidebar profile",
+    "subscriptions400": {
+      "domNodes": 1923,
+      "initialDurationMs": 47.194,
+      "unrelatedRenders": 0,
+      "selectedRenders": 1
+    },
+    "subscriptions800": {
+      "domNodes": 3843,
+      "initialDurationMs": 90.028,
+      "unrelatedRenders": 0,
+      "selectedRenders": 1
+    },
+    "virtualization": "not_entered"
+  }
+}

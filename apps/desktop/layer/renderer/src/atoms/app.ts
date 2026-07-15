@@ -9,6 +9,7 @@ export type StartupReadinessState = {
   interactive: boolean
   routeScopeReady: boolean
   desktopInitialEntriesReady: boolean
+  desktopInitialEntriesTerminalError: boolean
   hydrateCriticalDone: boolean
   ready: boolean
   snapshotRestoreSettled: boolean
@@ -21,14 +22,22 @@ export const createInitialStartupReadinessState = (): StartupReadinessState => (
   interactive: false,
   routeScopeReady: false,
   desktopInitialEntriesReady: false,
+  desktopInitialEntriesTerminalError: false,
   hydrateCriticalDone: false,
   ready: false,
   snapshotRestoreSettled: false,
   startupSessionId: null,
 })
 
-export const [, , useStartupReadiness, , getStartupReadiness, setStartupReadiness] =
-  createAtomHooks(atom<StartupReadinessState>(createInitialStartupReadinessState()))
+export const [
+  ,
+  ,
+  useStartupReadiness,
+  ,
+  getStartupReadiness,
+  setStartupReadiness,
+  useStartupReadinessSelector,
+] = createAtomHooks(atom<StartupReadinessState>(createInitialStartupReadinessState()))
 
 export const [, , useAppIsReady, , appIsReady, setAppIsReady] = createAtomHooks(atom(false))
 export const [, , useAppMessagingToken, , appMessagingToken, setAppMessagingToken] =

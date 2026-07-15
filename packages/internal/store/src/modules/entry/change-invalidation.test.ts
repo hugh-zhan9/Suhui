@@ -464,6 +464,38 @@ describe("entry change invalidation coordinator", () => {
     })
   })
 
+  it.each([1, 10, 50])(
+    "keeps one active renderer refetch and at most N reloads for a %i-feed batch",
+    async (feedCount) => {
+      const feedIds = Array.from({ length: feedCount }, (_, index) => `feed-${index}`)
+      const activeTimeline = createQuery({
+        queryKey: entryQueryKey({ kind: "timeline" }),
+        data: entryPages({ id: "entry-0", feedId: feedIds[0] }),
+        active: true,
+      })
+      const harness = createHarness([activeTimeline])
+
+      await harness.coordinator.handle(
+        change({
+          batchId: `batch-${feedCount}`,
+          feedIds,
+          refreshed: feedCount,
+        }),
+        "ipc",
+      )
+
+      expect(harness.invalidateQueries).toHaveBeenCalledTimes(1)
+      expect(activeTimeline.refetchCount).toBe(1)
+      expect(activeTimeline.refetchCount).toBeLessThanOrEqual(feedCount)
+      expect(harness.refreshUnread).toHaveBeenCalledTimes(1)
+      expect(harness.recordRefreshRendererRefetchCount).toHaveBeenCalledWith({
+        metric: "refresh_renderer_refetch_count",
+        batchId: `batch-${feedCount}`,
+        value: 1,
+      })
+    },
+  )
+
   it("settles read IDs before invalidating only cached pages that contain them", async () => {
     const order: string[] = []
     const withEntry = createQuery({

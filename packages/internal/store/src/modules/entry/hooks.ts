@@ -141,6 +141,48 @@ export const invalidateEntriesQuery = ({
 
 const defaultStaleTime = 10 * (60 * 1000) // 10 minutes
 
+type EntriesQueryProps = Omit<FetchEntriesProps, "pageParam" | "read" | "excludePrivate"> &
+  FetchEntriesPropsSettings
+
+export const getEntriesInfiniteQueryOptions = (
+  props: EntriesQueryProps,
+  {
+    feedUnreadDirty,
+    isPop,
+  }: {
+    feedUnreadDirty: boolean
+    isPop: boolean
+  },
+) => {
+  const { enabled, ...entryQueryProps } = props
+  const { aiSort, limit, unreadOnly } = entryQueryProps
+  const fetchUnread = Boolean(unreadOnly)
+  const fetchProps = {
+    ...entryQueryProps,
+    limit: aiSort ? 100 : limit,
+    read: unreadOnly ? false : undefined,
+    excludePrivate: entryQueryProps.hidePrivateSubscriptionsInTimeline,
+  }
+
+  return {
+    queryKey: getEntriesQueryKey(fetchProps),
+    queryFn: ({ pageParam }: { pageParam: undefined | string }) =>
+      entrySyncServices.fetchEntries({
+        ...fetchProps,
+        pageParam,
+      }),
+    experimental_prefetchInRender: true,
+    getNextPageParam: (lastPage: EntryQueryHookPage) =>
+      aiSort ? undefined : getEntryNextPageParam(lastPage),
+    initialPageParam: undefined as undefined | string,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: fetchUnread && feedUnreadDirty && !isPop ? ("always" as const) : false,
+    staleTime: isPop ? Infinity : fetchUnread && feedUnreadDirty ? 0 : defaultStaleTime,
+    enabled: enabled !== false,
+  }
+}
+
 export const deriveEntriesIds = (query: {
   data?: {
     pages?: Array<{
@@ -168,90 +210,45 @@ export const getEntriesQueryKey = (props: FetchEntriesProps) => [
   Boolean(props.aiSort),
 ]
 
-export const useEntriesQuery = (
-  props?: Omit<FetchEntriesProps, "pageParam" | "read" | "excludePrivate"> &
-    FetchEntriesPropsSettings,
-) => {
+export const useEntriesQuery = (props?: EntriesQueryProps) => {
   const enabled = props?.enabled
   const entryQueryProps = useMemo(() => {
     const { enabled: _enabled, ...queryProps } = props || {}
     return queryProps
   }, [props])
-  const {
-    feedId,
-    inboxId,
-    listId,
-    view,
-    limit,
-    feedIdList,
-    isCollection,
-    unreadOnly,
-    hidePrivateSubscriptionsInTimeline,
-    aiSort,
-  } = entryQueryProps
+  const { feedId } = entryQueryProps
 
-  const fetchUnread = unreadOnly
   const feedUnreadDirty = useFeedUnreadIsDirty((feedId as string) || "")
 
   const isPop =
     "history" in globalThis && "isPop" in globalThis.history && !!globalThis.history.isPop
-  const fetchProps = useMemo(
-    () => ({
-      ...entryQueryProps,
-      limit: aiSort ? 100 : limit,
-      read: unreadOnly ? false : undefined,
-      excludePrivate: hidePrivateSubscriptionsInTimeline,
-    }),
-    [
-      props,
-      feedId,
-      inboxId,
-      listId,
-      view,
-      limit,
-      feedIdList,
-      isCollection,
-      unreadOnly,
-      hidePrivateSubscriptionsInTimeline,
-      aiSort,
-    ],
+  const queryOptions = useMemo(
+    () =>
+      getEntriesInfiniteQueryOptions(
+        { ...entryQueryProps, enabled: enabled !== false && !!props },
+        { feedUnreadDirty, isPop },
+      ),
+    [enabled, entryQueryProps, feedUnreadDirty, isPop, props],
   )
-  const queryKey = useMemo(() => getEntriesQueryKey(fetchProps), [fetchProps])
-
-  const query = useInfiniteQuery({
-    queryKey,
-    queryFn: ({ pageParam }) =>
-      entrySyncServices.fetchEntries({
-        ...fetchProps,
-        pageParam,
-      }),
-
-    getNextPageParam: (lastPage) => (aiSort ? undefined : getEntryNextPageParam(lastPage)),
-    initialPageParam: undefined as undefined | string,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-    // DON'T refetch when the router is pop to previous page
-    refetchOnMount: fetchUnread && feedUnreadDirty && !isPop ? "always" : false,
-
-    staleTime:
-      // Force refetch unread entries when feed is dirty
-      // HACK: disable refetch when the router is pop to previous page
-      isPop ? Infinity : fetchUnread && feedUnreadDirty ? 0 : defaultStaleTime,
-    enabled: enabled !== false && !!props,
-  })
+  const queryKey = queryOptions.queryKey
+  const query = useInfiniteQuery(queryOptions)
 
   const entriesIds = useMemo(() => {
     if (!query.data || query.isError) {
-      console.log("[Antigravity] entriesIds blocked:", {
-        hasData: !!query.data,
-        isLoading: query.isLoading,
-        isError: query.isError,
-        pagesCount: query.data?.pages?.length,
-      })
+      if ((globalThis as any).__suhuiPerformanceDebug === true) {
+        console.log("[Antigravity] entriesIds blocked:", {
+          hasData: !!query.data,
+          isLoading: query.isLoading,
+          isError: query.isError,
+          pagesCount: query.data?.pages?.length,
+        })
+      }
       return []
     }
     const rawIds = deriveEntriesIds(query as any)
-    console.log("[Antigravity] entriesIds raw:", rawIds?.length, rawIds?.slice(0, 3))
+    if ((globalThis as any).__suhuiPerformanceDebug === true) {
+      console.log("[Antigravity] entriesIds raw:", rawIds?.length, rawIds?.slice(0, 3))
+    }
     return rawIds
   }, [query.data, query.isLoading, query.isError])
 
