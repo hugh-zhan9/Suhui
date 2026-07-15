@@ -211,6 +211,78 @@ let subscriptionsCache = [];
 let unreadCache = {};
 let entriesCache = [];
 let entriesNextCursor = null;
+let eventStreamDisconnected = false;
+const processedBatchIds = new Map();
+const processedBatchTtlMs = 5 * 60 * 1000;
+const processedBatchLimit = 512;
+
+const parseEntryChangeEventV1 = (input) => {
+  if (!input || typeof input !== "object" || Array.isArray(input) || input.version !== 1) {
+    return null;
+  }
+  const reasons = new Set(["refresh", "read", "collection", "subscription", "import"]);
+  const scopes = new Set(["feeds", "all"]);
+  const batchId = typeof input.batchId === "string" ? input.batchId.trim() : "";
+  const source = typeof input.source === "string" ? input.source.trim() : "";
+  if (
+    !batchId ||
+    !source ||
+    !reasons.has(input.reason) ||
+    !scopes.has(input.scope) ||
+    !Array.isArray(input.feedIds) ||
+    input.feedIds.some((feedId) => typeof feedId !== "string") ||
+    !Number.isInteger(input.completedAt) ||
+    input.completedAt < 0
+  ) {
+    return null;
+  }
+  const feedIds = Array.from(new Set(input.feedIds.map((feedId) => feedId.trim()).filter(Boolean)));
+  if (input.scope === "feeds" && feedIds.length === 0 && input.reason !== "refresh") return null;
+  if (input.refreshed !== undefined && (!Number.isInteger(input.refreshed) || input.refreshed < 0)) {
+    return null;
+  }
+  if (input.failed !== undefined && (!Number.isInteger(input.failed) || input.failed < 0)) return null;
+  if (
+    input.scope === "feeds" &&
+    input.reason === "refresh" &&
+    input.refreshed !== undefined &&
+    input.refreshed !== feedIds.length
+  ) {
+    return null;
+  }
+  if (
+    input.entryIds !== undefined &&
+    (!Array.isArray(input.entryIds) || input.entryIds.some((entryId) => typeof entryId !== "string"))
+  ) {
+    return null;
+  }
+  const entryIds = input.entryIds
+    ? Array.from(new Set(input.entryIds.map((entryId) => entryId.trim()).filter(Boolean)))
+    : undefined;
+  const feedId = typeof input.feedId === "string" ? input.feedId.trim() : "";
+  if (input.feedId !== undefined && !feedId) return null;
+  if (feedId && (input.scope !== "feeds" || feedIds.length !== 1 || feedIds[0] !== feedId)) return null;
+  return {
+    ...input,
+    batchId,
+    source,
+    feedIds,
+    ...(entryIds ? { entryIds } : {}),
+    ...(feedId ? { feedId } : {}),
+  };
+};
+
+const pruneProcessedBatchIds = (now) => {
+  for (const [batchId, processedAt] of processedBatchIds) {
+    if (now - processedAt <= processedBatchTtlMs) continue;
+    processedBatchIds.delete(batchId);
+  }
+  while (processedBatchIds.size > processedBatchLimit) {
+    const oldestBatchId = processedBatchIds.keys().next().value;
+    if (oldestBatchId === undefined) break;
+    processedBatchIds.delete(oldestBatchId);
+  }
+};
 
 const renderSubscriptions = (items) => {
   if (!items || items.length === 0) {
@@ -278,7 +350,7 @@ const renderEntries = (items) => {
       if (!entryId || node.hasAttribute("disabled")) return;
       node.setAttribute("disabled", "true");
       try {
-        await fetch("/api/entries/read", {
+        const response = await fetch("/api/entries/read", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -288,10 +360,11 @@ const renderEntries = (items) => {
             read: true,
           }),
         });
-        await loadSubscriptions();
-        if (activeFeedId) {
-          await loadEntries(activeFeedId);
+        if (!response.ok) {
+          throw new Error("HTTP " + response.status);
         }
+        const payload = await response.json();
+        await handleEntryChange(payload.changeSet);
       } catch (error) {
         node.removeAttribute("disabled");
         console.error("[remote-shell] failed to update read status", error);
@@ -320,26 +393,70 @@ const syncRefreshButton = () => {
   }
 };
 
+const handleEntryChange = async (input) => {
+  const change = parseEntryChangeEventV1(input);
+  if (!change) return "ignored-invalid";
+  const now = Date.now();
+  pruneProcessedBatchIds(now);
+  if (processedBatchIds.has(change.batchId)) return "duplicate";
+  processedBatchIds.set(change.batchId, now);
+  pruneProcessedBatchIds(now);
+
+  switch (change.reason) {
+    case "refresh":
+      if (change.feedIds.length === 0) return "handled";
+      await Promise.all([
+        loadUnread(),
+        activeFeedId && change.feedIds.includes(activeFeedId)
+          ? loadEntries(activeFeedId)
+          : Promise.resolve(),
+      ]);
+      break;
+    case "read":
+      await Promise.all([
+        loadUnread(),
+        activeFeedId &&
+        change.entryIds &&
+        entriesCache.some((entry) => change.entryIds.includes(entry.id))
+          ? loadEntries(activeFeedId)
+          : Promise.resolve(),
+      ]);
+      break;
+    case "subscription":
+    case "import":
+      await loadSubscriptions();
+      break;
+    case "collection":
+      break;
+  }
+  return "handled";
+};
+
+const handleServerEvent = (event) => {
+  try {
+    void handleEntryChange(JSON.parse(event.data || "{}"));
+  } catch (error) {
+    console.error("[remote-shell] failed to parse server event", error);
+  }
+};
+
 const connectEvents = () => {
   const eventSource = new EventSource("/events");
   eventSource.addEventListener("ready", () => {
     setStatus("Connected · Realtime online");
+    if (!eventStreamDisconnected) return;
+    eventStreamDisconnected = false;
+    void loadSubscriptions();
   });
   eventSource.addEventListener("ping", () => {
     setStatus("Connected · Realtime online");
   });
   eventSource.onerror = () => {
+    eventStreamDisconnected = true;
     setStatus("Disconnected");
   };
-  eventSource.addEventListener("subscriptions.updated", () => {
-    void loadSubscriptions();
-  });
-  eventSource.addEventListener("entries.updated", (event) => {
-    if (!activeFeedId) return;
-    const payload = JSON.parse(event.data || "{}");
-    if (payload.feedId && payload.feedId !== activeFeedId) return;
-    void loadEntries(activeFeedId);
-  });
+  eventSource.addEventListener("subscriptions.updated", handleServerEvent);
+  eventSource.addEventListener("entries.updated", handleServerEvent);
 };
 
 const refreshActiveFeed = async () => {
@@ -353,9 +470,9 @@ const refreshActiveFeed = async () => {
     if (!response.ok) {
       throw new Error("HTTP " + response.status);
     }
+    const payload = await response.json();
     setStatus("Connected · Refresh complete");
-    await loadSubscriptions();
-    await loadEntries(activeFeedId);
+    await handleEntryChange(payload.changeSet);
   } catch (error) {
     setStatus("Connected · Refresh failed");
     console.error("[remote-shell] failed to refresh feed", error);
@@ -378,11 +495,9 @@ const refreshAllFeeds = async () => {
     if (!response.ok) {
       throw new Error("HTTP " + response.status);
     }
+    const payload = await response.json();
     setStatus("Connected · Refresh all complete");
-    await loadSubscriptions();
-    if (activeFeedId) {
-      await loadEntries(activeFeedId);
-    }
+    await handleEntryChange(payload.changeSet);
   } catch (error) {
     setStatus("Connected · Refresh all failed");
     console.error("[remote-shell] failed to refresh all feeds", error);
@@ -412,6 +527,20 @@ const loadEntries = async (feedId, cursor = null, append = false) => {
   } catch (error) {
     entryPanel.innerHTML = '<p class="empty">Failed to load entries.</p>';
     console.error("[remote-shell] failed to load entries", error);
+  }
+};
+
+const loadUnread = async () => {
+  try {
+    const response = await fetch("/api/unread");
+    if (!response.ok) {
+      throw new Error("HTTP " + response.status);
+    }
+    const payload = await response.json();
+    unreadCache = Object.fromEntries((payload.data || []).map((item) => [item.id, item.count]));
+    renderSubscriptions(subscriptionsCache);
+  } catch (error) {
+    console.error("[remote-shell] failed to load unread metadata", error);
   }
 };
 

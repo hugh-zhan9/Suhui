@@ -1,29 +1,14 @@
-import { syncSuccessfulLocalRefreshFeeds } from "../modules/entry-column/layouts/entry-refresh"
+import {
+  entryChangeInvalidationCoordinator,
+  type EntryChangeInvalidationCoordinator,
+} from "@suhui/store/entry/change-invalidation"
 
-type FetchEntries = (args: { feedId: string }) => Promise<unknown>
+type HandleEntryChange = EntryChangeInvalidationCoordinator["handle"]
 
-type LocalFeedRefreshCompletedPayload = {
-  source?: string
-  results?: Array<{
-    feedId?: string
-    ok?: boolean
-  }>
-}
-
-export const shouldHandleBackgroundLocalFeedRefresh = (source?: string) =>
-  source === "startup-auto" || source === "interval-auto"
-
-export const syncLocalFeedRefreshCompleted = async ({
+export const syncLocalFeedRefreshCompleted = ({
   payload,
-  fetchEntries,
+  handleChange = entryChangeInvalidationCoordinator.handle,
 }: {
-  payload?: LocalFeedRefreshCompletedPayload
-  fetchEntries: FetchEntries
-}) => {
-  if (!shouldHandleBackgroundLocalFeedRefresh(payload?.source)) return
-
-  await syncSuccessfulLocalRefreshFeeds({
-    result: payload,
-    fetchEntries,
-  })
-}
+  payload?: unknown
+  handleChange?: HandleEntryChange
+}) => handleChange(payload, "ipc")

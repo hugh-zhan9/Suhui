@@ -1,9 +1,11 @@
 import { FeedViewType } from "@suhui/constants"
 import { EntryService } from "@suhui/database/services/entry"
 import { SubscriptionService } from "@suhui/database/services/subscription"
+import type { EntryChangeResponse } from "@suhui/shared/entry-change"
 
 import { dbStoreMorph } from "../morph/db-store"
 import { buildSubscriptionDbId, storeDbMorph } from "../morph/store-db"
+import { entryChangeInvalidationCoordinator } from "../modules/entry/change-invalidation"
 import type {
   EntryModel,
   FetchEntriesProps,
@@ -63,6 +65,17 @@ const jsonRequest = async <T>(url: string, init?: RequestInit): Promise<T> => {
   })
   if (!response.ok) throw new Error(`HTTP ${response.status}`)
   return response.json() as Promise<T>
+}
+
+const handleRemoteMutationResponse = <T extends object>(
+  response: EntryChangeResponse<T>,
+): EntryChangeResponse<T> => {
+  void entryChangeInvalidationCoordinator.handle(response.changeSet, "response").catch(() => {
+    console.error("[RuntimeClient] Remote mutation cache calibration failed", {
+      batchId: response.batchId,
+    })
+  })
+  return response
 }
 
 const normalizeIds = (ids: Array<string | undefined>) =>
@@ -335,11 +348,14 @@ export const runtimeClient = {
 
     async updateReadStatus(payload: { entryIds: string[]; read: boolean }) {
       if (getRuntimeEnv().isRemote) {
-        await jsonRequest("/api/entries/read", {
-          method: "POST",
-          body: JSON.stringify(payload),
-        })
-        return
+        const response = await jsonRequest<EntryChangeResponse<{ ok: boolean }>>(
+          "/api/entries/read",
+          {
+            method: "POST",
+            body: JSON.stringify(payload),
+          },
+        )
+        return handleRemoteMutationResponse(response)
       }
 
       const ipc = getIpc()
@@ -414,11 +430,14 @@ export const runtimeClient = {
 
     async create(subscription: SubscriptionForm): Promise<any> {
       if (getRuntimeEnv().isRemote) {
-        const { data } = await jsonRequest<{ data: unknown }>("/api/subscriptions", {
-          method: "POST",
-          body: JSON.stringify(subscription),
-        })
-        return data
+        const response = await jsonRequest<EntryChangeResponse<{ data: unknown }>>(
+          "/api/subscriptions",
+          {
+            method: "POST",
+            body: JSON.stringify(subscription),
+          },
+        )
+        return handleRemoteMutationResponse(response)
       }
 
       const ipc = getIpc()
@@ -447,11 +466,14 @@ export const runtimeClient = {
       payload: { title?: string | null; category?: string | null; view?: number },
     ) {
       if (getRuntimeEnv().isRemote) {
-        await jsonRequest(`/api/subscriptions/${encodeURIComponent(subscriptionId)}`, {
-          method: "PATCH",
-          body: JSON.stringify(payload),
-        })
-        return
+        const response = await jsonRequest<EntryChangeResponse<{ data?: unknown }>>(
+          `/api/subscriptions/${encodeURIComponent(subscriptionId)}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify(payload),
+          },
+        )
+        return handleRemoteMutationResponse(response)
       }
 
       const ipc = getIpc()
@@ -465,11 +487,14 @@ export const runtimeClient = {
 
     async deleteByTargets(payload: SubscriptionDeleteTargets) {
       if (getRuntimeEnv().isRemote) {
-        await jsonRequest("/api/subscriptions", {
-          method: "DELETE",
-          body: JSON.stringify(payload),
-        })
-        return
+        const response = await jsonRequest<EntryChangeResponse<{ ok: boolean }>>(
+          "/api/subscriptions",
+          {
+            method: "DELETE",
+            body: JSON.stringify(payload),
+          },
+        )
+        return handleRemoteMutationResponse(response)
       }
 
       const ipc = getIpc()
@@ -483,11 +508,14 @@ export const runtimeClient = {
 
     async batchUpdate(payload: { feedIds: string[]; category?: string | null; view?: number }) {
       if (getRuntimeEnv().isRemote) {
-        await jsonRequest("/api/subscriptions", {
-          method: "PATCH",
-          body: JSON.stringify(payload),
-        })
-        return
+        const response = await jsonRequest<EntryChangeResponse<{ ok: boolean }>>(
+          "/api/subscriptions",
+          {
+            method: "PATCH",
+            body: JSON.stringify(payload),
+          },
+        )
+        return handleRemoteMutationResponse(response)
       }
 
       const ipc = getIpc()
@@ -536,9 +564,15 @@ export const runtimeClient = {
 
     async refresh(feedId?: string) {
       if (getRuntimeEnv().isRemote) {
-        return feedId
-          ? jsonRequest(`/api/feeds/${encodeURIComponent(feedId)}/refresh`, { method: "POST" })
-          : jsonRequest("/api/feeds/refresh-all", { method: "POST" })
+        const response = feedId
+          ? await jsonRequest<EntryChangeResponse<{ data: unknown }>>(
+              `/api/feeds/${encodeURIComponent(feedId)}/refresh`,
+              { method: "POST" },
+            )
+          : await jsonRequest<EntryChangeResponse<{ data: unknown }>>("/api/feeds/refresh-all", {
+              method: "POST",
+            })
+        return handleRemoteMutationResponse(response)
       }
 
       const ipc = getIpc()
@@ -564,11 +598,14 @@ export const runtimeClient = {
 
     async updateEntryStar(payload: { entryId: string; starred: boolean; view: number }) {
       if (getRuntimeEnv().isRemote) {
-        await jsonRequest("/api/entries/star", {
-          method: "POST",
-          body: JSON.stringify(payload),
-        })
-        return
+        const response = await jsonRequest<EntryChangeResponse<{ ok: boolean }>>(
+          "/api/entries/star",
+          {
+            method: "POST",
+            body: JSON.stringify(payload),
+          },
+        )
+        return handleRemoteMutationResponse(response)
       }
 
       const { collectionSyncService } = await import("../modules/collection/store")
@@ -618,11 +655,11 @@ export const runtimeClient = {
     },
 
     async importData(payload: unknown) {
-      const { data } = await jsonRequest<{ data: unknown }>("/api/import", {
+      const response = await jsonRequest<EntryChangeResponse<{ data: unknown }>>("/api/import", {
         method: "POST",
         body: typeof payload === "string" ? payload : JSON.stringify(payload),
       })
-      return data
+      return handleRemoteMutationResponse(response)
     },
   },
 

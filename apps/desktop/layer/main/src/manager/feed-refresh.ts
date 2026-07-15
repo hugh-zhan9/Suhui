@@ -212,6 +212,7 @@ export class FeedRefreshService {
         total: 0,
         successCount: 0,
         failCount: 0,
+        results: [] as Array<{ feedId: string; ok: boolean }>,
       }
     }
     const feeds = await db.query.feedsTable.findMany({
@@ -224,7 +225,11 @@ export class FeedRefreshService {
     // 控制并发，目前简单使用 Promise.all，可以考虑使用限制并发的库或简单循环
     const results = await Promise.allSettled(targets.map((feed) => this.refreshFeed(feed.id)))
 
-    const successCount = results.filter((r) => r.status === "fulfilled").length
+    const refreshResults = results.map((result, index) => ({
+      feedId: targets[index]!.id,
+      ok: result.status === "fulfilled",
+    }))
+    const successCount = refreshResults.filter((result) => result.ok).length
     const failCount = targets.length - successCount
 
     console.info(
@@ -235,6 +240,7 @@ export class FeedRefreshService {
       total: targets.length,
       successCount,
       failCount,
+      results: refreshResults,
     }
   }
 }

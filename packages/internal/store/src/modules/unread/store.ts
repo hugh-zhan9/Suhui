@@ -159,7 +159,7 @@ class UnreadSyncService {
     await tx.run()
     entryActions.markReadMutationSettled(affectedEntryIds)
 
-    await invalidateEntriesForUnreadMutation()
+    await invalidateEntriesForUnreadMutation(affectedEntryIds)
   }
 
   async markBatchAsRead({

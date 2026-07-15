@@ -2,7 +2,10 @@ import { describe, expect, it, vi } from "vitest"
 
 import { invalidateEntriesForUnreadMutation } from "./invalidate-entries"
 
-const invalidateQueriesMock = vi.fn()
+const { handleChangeMock, invalidateQueriesMock } = vi.hoisted(() => ({
+  handleChangeMock: vi.fn(),
+  invalidateQueriesMock: vi.fn(),
+}))
 
 vi.mock("../../context", () => ({
   queryClient: () => ({
@@ -10,12 +13,34 @@ vi.mock("../../context", () => ({
   }),
 }))
 
+vi.mock("../entry/change-invalidation", () => ({
+  entryChangeInvalidationCoordinator: {
+    handle: handleChangeMock,
+  },
+}))
+
 describe("invalidateEntriesForUnreadMutation", () => {
-  it("应触发 entries 查询失效，确保 unreadOnly 视图立即刷新", async () => {
-    await invalidateEntriesForUnreadMutation()
-    expect(invalidateQueriesMock).toHaveBeenCalledOnce()
-    expect(invalidateQueriesMock).toHaveBeenCalledWith({
-      queryKey: ["entries"],
-    })
+  it("delegates unread-only calibration to reason=read with the affected entry IDs", async () => {
+    handleChangeMock.mockResolvedValueOnce("handled")
+
+    await Reflect.apply(invalidateEntriesForUnreadMutation, undefined, [
+      [" entry-1 ", "entry-1", "", "entry-2"],
+    ])
+
+    expect(handleChangeMock).toHaveBeenCalledOnce()
+    expect(handleChangeMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        version: 1,
+        batchId: expect.any(String),
+        reason: "read",
+        source: "unread-mutation",
+        scope: "all",
+        feedIds: [],
+        entryIds: ["entry-1", "entry-2"],
+        completedAt: expect.any(Number),
+      }),
+      "response",
+    )
+    expect(invalidateQueriesMock).not.toHaveBeenCalled()
   })
 })

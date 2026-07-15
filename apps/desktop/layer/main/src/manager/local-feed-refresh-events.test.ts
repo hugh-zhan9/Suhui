@@ -15,6 +15,7 @@ import {
   broadcastLocalFeedRefreshCompleted,
   collectSuccessfulLocalRefreshFeedIds,
 } from "./local-feed-refresh-events"
+import { createEntryChangeEventV1, parseEntryChangeEventV1 } from "@suhui/shared/entry-change"
 
 describe("collectSuccessfulLocalRefreshFeedIds", () => {
   it("returns only successful unique feed ids", () => {
@@ -25,10 +26,77 @@ describe("collectSuccessfulLocalRefreshFeedIds", () => {
           { feedId: "feed_2", ok: false },
           { feedId: "feed_3", ok: true },
           { feedId: "feed_1", ok: true },
+          { feedId: " feed_4 ", ok: true },
           { feedId: "", ok: true },
         ],
       }),
-    ).toEqual(["feed_1", "feed_3"])
+    ).toEqual(["feed_1", "feed_3", "feed_4"])
+  })
+})
+
+describe("EntryChangeEventV1", () => {
+  it("normalizes identifiers and strips unknown or private payload fields", () => {
+    const parsed = parseEntryChangeEventV1({
+      version: 1,
+      batchId: " batch_1 ",
+      reason: "refresh",
+      source: "startup-auto",
+      scope: "feeds",
+      feedIds: [" feed_1 ", "feed_1", "", "feed_2"],
+      entryIds: [" entry_1 ", "entry_1"],
+      refreshed: 2,
+      failed: 0,
+      completedAt: 123,
+      content: "private body",
+      title: "private title",
+      url: "https://example.com/private?token=secret",
+      sqlParameters: ["secret"],
+      connectionString: "postgres://secret",
+      localPath: "/Users/private",
+    })
+
+    expect(parsed).toEqual({
+      version: 1,
+      batchId: "batch_1",
+      reason: "refresh",
+      source: "startup-auto",
+      scope: "feeds",
+      feedIds: ["feed_1", "feed_2"],
+      entryIds: ["entry_1"],
+      refreshed: 2,
+      failed: 0,
+      completedAt: 123,
+    })
+    expect(JSON.stringify(parsed)).not.toMatch(
+      /private body|private title|token=secret|sqlParameters|connectionString|localPath/,
+    )
+  })
+
+  it("rejects invalid schemas while allowing a zero-success refresh response", () => {
+    expect(
+      parseEntryChangeEventV1({
+        version: 1,
+        batchId: "batch_1",
+        reason: "read",
+        source: "remote",
+        scope: "feeds",
+        feedIds: [],
+        completedAt: 123,
+      }),
+    ).toBeNull()
+
+    expect(
+      createEntryChangeEventV1({
+        batchId: "batch_2",
+        reason: "refresh",
+        source: "startup-auto",
+        scope: "feeds",
+        feedIds: [],
+        refreshed: 0,
+        failed: 1,
+        completedAt: 124,
+      }),
+    ).toMatchObject({ version: 1, batchId: "batch_2", feedIds: [] })
   })
 })
 
@@ -55,31 +123,21 @@ describe("broadcastLocalFeedRefreshCompleted", () => {
       },
     ])
 
-    broadcastLocalFeedRefreshCompleted({
+    const changeSet = createEntryChangeEventV1({
+      batchId: "batch_1",
+      reason: "refresh",
       source: "interval-auto",
-      result: {
-        refreshed: 2,
-        failed: 1,
-        results: [
-          { feedId: "feed_1", ok: true },
-          { feedId: "feed_2", ok: false },
-          { feedId: "feed_3", ok: true },
-        ],
-      },
+      scope: "feeds",
+      refreshed: 2,
+      failed: 1,
+      feedIds: ["feed_1", "feed_3"],
+      completedAt: 123,
     })
+    const eventCount = broadcastLocalFeedRefreshCompleted(changeSet)
 
-    expect(sendA).toHaveBeenCalledWith(LOCAL_FEED_REFRESH_COMPLETED_CHANNEL, {
-      source: "interval-auto",
-      refreshed: 2,
-      failed: 1,
-      feedIds: ["feed_1", "feed_3"],
-    })
-    expect(sendB).toHaveBeenCalledWith(LOCAL_FEED_REFRESH_COMPLETED_CHANNEL, {
-      source: "interval-auto",
-      refreshed: 2,
-      failed: 1,
-      feedIds: ["feed_1", "feed_3"],
-    })
+    expect(eventCount).toBe(1)
+    expect(sendA).toHaveBeenCalledWith(LOCAL_FEED_REFRESH_COMPLETED_CHANNEL, changeSet)
+    expect(sendB).toHaveBeenCalledWith(LOCAL_FEED_REFRESH_COMPLETED_CHANNEL, changeSet)
   })
 
   it("skips broadcasting when there are no successful feeds", () => {
@@ -91,15 +149,19 @@ describe("broadcastLocalFeedRefreshCompleted", () => {
       },
     ])
 
-    broadcastLocalFeedRefreshCompleted({
+    const eventCount = broadcastLocalFeedRefreshCompleted({
+      version: 1,
+      batchId: "batch_1",
+      reason: "refresh",
       source: "startup-auto",
-      result: {
-        refreshed: 0,
-        failed: 1,
-        results: [{ feedId: "feed_1", ok: false }],
-      },
+      scope: "feeds",
+      refreshed: 0,
+      failed: 1,
+      feedIds: [],
+      completedAt: 123,
     })
 
+    expect(eventCount).toBe(0)
     expect(send).not.toHaveBeenCalled()
   })
 })

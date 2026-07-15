@@ -700,12 +700,13 @@ describe("RemoteServerManager", () => {
     })
 
     expect(response.status).toBe(200)
-    await expect(response.json()).resolves.toEqual({
-      data: {
-        updated: 2,
-        read: true,
-      },
+    const payload = await response.json()
+    expect(payload).toMatchObject({
+      data: { updated: 2, read: true },
+      batchId: expect.any(String),
+      changeSet: { reason: "read", entryIds: ["entry_1", "entry_2"] },
     })
+    expect(payload.batchId).toBe(payload.changeSet.batchId)
     expect(updateAgentReadStatus).toHaveBeenCalledWith({
       entryIds: ["entry_1", "entry_2"],
       read: true,
@@ -944,6 +945,7 @@ describe("RemoteServerManager", () => {
 
   it("updates read status through the injected provider", async () => {
     const updateReadStatus = vi.fn().mockResolvedValue(undefined)
+    const broadcast = vi.spyOn(RemoteServerManager, "broadcast")
     const server = await RemoteServerManager.start({
       host: "127.0.0.1",
       port: 0,
@@ -968,7 +970,16 @@ describe("RemoteServerManager", () => {
     })
 
     expect(response.status).toBe(200)
-    await expect(response.json()).resolves.toEqual({ ok: true })
+    const responsePayload = await response.json()
+    expect(responsePayload).toMatchObject({
+      ok: true,
+      batchId: expect.any(String),
+      changeSet: { reason: "read", entryIds: ["entry_1"] },
+    })
+    expect(responsePayload.batchId).toBe(responsePayload.changeSet.batchId)
+    expect(broadcast).toHaveBeenCalledTimes(1)
+    expect(broadcast).toHaveBeenCalledWith("entries.updated", responsePayload.changeSet)
+    broadcast.mockRestore()
     expect(updateReadStatus).toHaveBeenCalledWith({
       entryIds: ["entry_1"],
       read: true,
@@ -977,6 +988,7 @@ describe("RemoteServerManager", () => {
 
   it("updates entry star state through the injected provider", async () => {
     const updateEntryStar = vi.fn().mockResolvedValue(undefined)
+    const broadcast = vi.spyOn(RemoteServerManager, "broadcast")
     const server = await RemoteServerManager.start({
       host: "127.0.0.1",
       port: 0,
@@ -1001,7 +1013,16 @@ describe("RemoteServerManager", () => {
     })
 
     expect(response.status).toBe(200)
-    await expect(response.json()).resolves.toEqual({ ok: true })
+    const responsePayload = await response.json()
+    expect(responsePayload).toMatchObject({
+      ok: true,
+      batchId: expect.any(String),
+      changeSet: { reason: "collection", entryIds: ["entry_1"] },
+    })
+    expect(responsePayload.batchId).toBe(responsePayload.changeSet.batchId)
+    expect(broadcast).toHaveBeenCalledTimes(1)
+    expect(broadcast).toHaveBeenCalledWith("entries.updated", responsePayload.changeSet)
+    broadcast.mockRestore()
     expect(updateEntryStar).toHaveBeenCalledWith({
       entryId: "entry_1",
       starred: true,
@@ -1032,13 +1053,55 @@ describe("RemoteServerManager", () => {
     })
 
     expect(response.status).toBe(200)
-    await expect(response.json()).resolves.toEqual({
-      data: {
-        feed: { id: "feed_1" },
-        entriesCount: 2,
+    const payload = await response.json()
+    expect(payload).toMatchObject({
+      data: { feed: { id: "feed_1" }, entriesCount: 2 },
+      batchId: expect.any(String),
+      changeSet: {
+        version: 1,
+        batchId: expect.any(String),
+        reason: "refresh",
+        source: "remote",
+        scope: "feeds",
+        feedIds: ["feed_1"],
+        feedId: "feed_1",
+        refreshed: 1,
+        failed: 0,
+        completedAt: expect.any(Number),
       },
     })
+    expect(payload.batchId).toBe(payload.changeSet.batchId)
     expect(refreshFeed).toHaveBeenCalledWith("feed_1")
+  })
+
+  it("keeps mutation response and SSE batch IDs identical with exact reason mapping", async () => {
+    const abortController = new AbortController()
+    const server = await RemoteServerManager.start({
+      host: "127.0.0.1",
+      port: 0,
+      refreshFeed: vi.fn().mockResolvedValue({
+        feed: { id: "feed_1" },
+        entriesCount: 2,
+      }),
+    })
+    const eventsResponse = await fetch(`${server.baseUrl}/events`, {
+      signal: abortController.signal,
+    })
+    const reader = eventsResponse.body!.getReader()
+    await readChunkWithTimeout(reader)
+
+    const response = await fetch(`${server.baseUrl}/api/feeds/feed_1/refresh`, {
+      method: "POST",
+    })
+    const payload = await response.json()
+    const eventChunk = new TextDecoder().decode((await readChunkWithTimeout(reader)).value)
+    const eventPayload = JSON.parse(eventChunk.match(/data: (.+)\n\n/)?.[1] ?? "{}")
+
+    expect(eventChunk).toContain("event: entries.updated")
+    expect(eventPayload.batchId).toBe(payload.batchId)
+    expect(eventPayload).toEqual(payload.changeSet)
+    expect(eventPayload).toMatchObject({ reason: "refresh", feedId: "feed_1" })
+    abortController.abort()
   })
 
   it("refreshes all feeds through the injected provider", async () => {
@@ -1046,6 +1109,12 @@ describe("RemoteServerManager", () => {
       total: 4,
       successCount: 4,
       failCount: 0,
+      results: [
+        { feedId: "feed_1", ok: true },
+        { feedId: "feed_2", ok: true },
+        { feedId: "feed_3", ok: true },
+        { feedId: "feed_4", ok: true },
+      ],
     })
     const server = await RemoteServerManager.start({
       host: "127.0.0.1",
@@ -1066,20 +1135,85 @@ describe("RemoteServerManager", () => {
     })
 
     expect(response.status).toBe(200)
-    await expect(response.json()).resolves.toEqual({
+    const payload = await response.json()
+    expect(payload).toMatchObject({
       data: {
         total: 4,
         successCount: 4,
         failCount: 0,
       },
+      batchId: expect.any(String),
+      changeSet: {
+        reason: "refresh",
+        feedIds: ["feed_1", "feed_2", "feed_3", "feed_4"],
+        refreshed: 4,
+        failed: 0,
+      },
     })
+    expect(payload.batchId).toBe(payload.changeSet.batchId)
     expect(refreshAllFeeds).toHaveBeenCalledTimes(1)
+  })
+
+  it("publishes one refresh-all event with only unique successful feed IDs and none on zero success", async () => {
+    const broadcast = vi.spyOn(RemoteServerManager, "broadcast")
+    const refreshAllFeeds = vi
+      .fn()
+      .mockResolvedValueOnce({
+        total: 4,
+        successCount: 2,
+        failCount: 2,
+        results: [
+          { feedId: "feed_1", ok: true },
+          { feedId: "feed_2", ok: false },
+          { feedId: "feed_1", ok: true },
+          { feedId: " feed_3 ", ok: true },
+        ],
+      })
+      .mockResolvedValueOnce({
+        total: 2,
+        successCount: 0,
+        failCount: 2,
+        results: [
+          { feedId: "feed_1", ok: false },
+          { feedId: "feed_2", ok: false },
+        ],
+      })
+    const server = await RemoteServerManager.start({
+      host: "127.0.0.1",
+      port: 0,
+      refreshAllFeeds,
+    })
+
+    const partialResponse = await fetch(`${server.baseUrl}/api/feeds/refresh-all`, {
+      method: "POST",
+    })
+    const partialPayload = await partialResponse.json()
+
+    expect(partialPayload.changeSet.feedIds).toEqual(["feed_1", "feed_3"])
+    expect(partialPayload.batchId).toBe(partialPayload.changeSet.batchId)
+    expect(broadcast).toHaveBeenCalledTimes(1)
+    expect(broadcast).toHaveBeenCalledWith("entries.updated", partialPayload.changeSet)
+
+    broadcast.mockClear()
+    const zeroResponse = await fetch(`${server.baseUrl}/api/feeds/refresh-all`, {
+      method: "POST",
+    })
+    const zeroPayload = await zeroResponse.json()
+
+    expect(zeroPayload).toMatchObject({
+      batchId: expect.any(String),
+      changeSet: { reason: "refresh", feedIds: [], refreshed: 0, failed: 2 },
+    })
+    expect(zeroPayload.batchId).toBe(zeroPayload.changeSet.batchId)
+    expect(broadcast).not.toHaveBeenCalled()
+    broadcast.mockRestore()
   })
 
   it("creates a subscription through the injected provider", async () => {
     const createSubscription = vi.fn().mockResolvedValue({
       subscription: { id: "feed/feed_1", feedId: "feed_1", title: "Feed One" },
     })
+    const broadcast = vi.spyOn(RemoteServerManager, "broadcast")
     const server = await RemoteServerManager.start({
       host: "127.0.0.1",
       port: 0,
@@ -1108,11 +1242,18 @@ describe("RemoteServerManager", () => {
     })
 
     expect(response.status).toBe(200)
-    await expect(response.json()).resolves.toEqual({
+    const payload = await response.json()
+    expect(payload).toMatchObject({
       data: {
         subscription: { id: "feed/feed_1", feedId: "feed_1", title: "Feed One" },
       },
+      batchId: expect.any(String),
+      changeSet: { reason: "subscription", scope: "all" },
     })
+    expect(payload.batchId).toBe(payload.changeSet.batchId)
+    expect(broadcast).toHaveBeenCalledTimes(1)
+    expect(broadcast).toHaveBeenCalledWith("subscriptions.updated", payload.changeSet)
+    broadcast.mockRestore()
     expect(createSubscription).toHaveBeenCalledWith({
       url: "https://example.com/feed.xml",
       view: 1,
@@ -1142,7 +1283,13 @@ describe("RemoteServerManager", () => {
     })
 
     expect(response.status).toBe(200)
-    await expect(response.json()).resolves.toEqual({ ok: true })
+    const payload = await response.json()
+    expect(payload).toMatchObject({
+      ok: true,
+      batchId: expect.any(String),
+      changeSet: { reason: "subscription", scope: "all" },
+    })
+    expect(payload.batchId).toBe(payload.changeSet.batchId)
     expect(deleteSubscription).toHaveBeenCalledWith("feed/feed_1")
   })
 
@@ -1181,14 +1328,18 @@ describe("RemoteServerManager", () => {
     })
 
     expect(response.status).toBe(200)
-    await expect(response.json()).resolves.toEqual({
+    const responsePayload = await response.json()
+    expect(responsePayload).toMatchObject({
       data: {
         id: "feed/feed_1",
         title: "Renamed Feed",
         category: "Work",
         view: 0,
       },
+      batchId: expect.any(String),
+      changeSet: { reason: "subscription", scope: "all" },
     })
+    expect(responsePayload.batchId).toBe(responsePayload.changeSet.batchId)
     expect(updateSubscription).toHaveBeenCalledWith("feed/feed_1", {
       title: "Renamed Feed",
       category: "Work",
@@ -1286,6 +1437,7 @@ describe("RemoteServerManager", () => {
       url: "https://example.com/entry",
     })
     const renderEntryPdf = vi.fn().mockResolvedValue(Buffer.from("%PDF-1.7"))
+    const broadcast = vi.spyOn(RemoteServerManager, "broadcast")
     const server = await RemoteServerManager.start({
       host: "127.0.0.1",
       port: 0,
@@ -1330,11 +1482,20 @@ describe("RemoteServerManager", () => {
       data: { version: 1, feeds: [] },
     })
 
-    await fetch(`${server.baseUrl}/api/import`, {
+    const importResponse = await fetch(`${server.baseUrl}/api/import`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ version: 1, feeds: [] }),
     })
+    const importPayload = await importResponse.json()
+    expect(importPayload).toMatchObject({
+      data: { feeds: 1 },
+      batchId: expect.any(String),
+      changeSet: { reason: "import", scope: "all" },
+    })
+    expect(importPayload.batchId).toBe(importPayload.changeSet.batchId)
+    expect(broadcast).toHaveBeenCalledWith("entries.updated", importPayload.changeSet)
+    broadcast.mockRestore()
     expect(importData).toHaveBeenCalledWith({ version: 1, feeds: [] })
 
     const pdfResponse = await fetch(`${server.baseUrl}/api/entries/entry_1/pdf`)

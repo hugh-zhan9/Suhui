@@ -1,5 +1,13 @@
+import { randomUUID } from "node:crypto"
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http"
 import type { AddressInfo } from "node:net"
+
+import {
+  createEntryChangeEventV1,
+  type EntryChangeEventV1,
+  type EntryChangeReason,
+  type EntryChangeScope,
+} from "@suhui/shared/entry-change"
 
 import { agentApplicationService } from "~/application/agent/service"
 import { AgentApplicationError, agentReadStatusMaxEntryIds } from "~/application/agent/types"
@@ -123,6 +131,70 @@ type RemoteServerStatus = RunningServerStatus | StoppedServerStatus
 type StartResult = RunningServerStatus
 type RemoteEventName = "ready" | "ping" | "entries.updated" | "subscriptions.updated"
 type RemoteEventPayload = Record<string, unknown>
+type RemoteMutationEventName = Extract<RemoteEventName, "entries.updated" | "subscriptions.updated">
+
+type RemoteMutationChange = {
+  reason: EntryChangeReason
+  scope: EntryChangeScope
+  feedIds: string[]
+  entryIds?: string[]
+  refreshed?: number
+  failed?: number
+  feedId?: string
+}
+
+const completeRemoteMutation = async <T>({
+  operation,
+  buildChange,
+  event,
+  broadcast,
+}: {
+  operation: () => Promise<T>
+  buildChange: (result: T) => RemoteMutationChange
+  event: RemoteMutationEventName
+  broadcast: (event: RemoteMutationEventName, changeSet: EntryChangeEventV1) => void
+}) => {
+  const batchId = randomUUID()
+  const result = await operation()
+  const changeSet = createEntryChangeEventV1({
+    batchId,
+    source: "remote",
+    completedAt: Date.now(),
+    ...buildChange(result),
+  })
+  if (changeSet.reason !== "refresh" || changeSet.feedIds.length > 0) {
+    broadcast(event, changeSet)
+  }
+  return { result, batchId, changeSet }
+}
+
+const getRefreshAllChange = (input: unknown): RemoteMutationChange => {
+  const value = input && typeof input === "object" ? (input as Record<string, unknown>) : {}
+  const rawResults = Array.isArray(value.results) ? value.results : []
+  const feedIds: string[] = []
+  const seen = new Set<string>()
+  for (const rawResult of rawResults) {
+    if (!rawResult || typeof rawResult !== "object") continue
+    const result = rawResult as Record<string, unknown>
+    if (result.ok !== true || typeof result.feedId !== "string") continue
+    const feedId = result.feedId.trim()
+    if (!feedId || seen.has(feedId)) continue
+    seen.add(feedId)
+    feedIds.push(feedId)
+  }
+
+  const successCount = Number.isInteger(value.successCount)
+    ? (value.successCount as number)
+    : feedIds.length
+  const failCount = Number.isInteger(value.failCount) ? (value.failCount as number) : 0
+  return {
+    reason: "refresh",
+    scope: "feeds",
+    feedIds,
+    refreshed: Math.max(successCount, 0),
+    failed: Math.max(failCount, 0),
+  }
+}
 
 const json = (response: ServerResponse, statusCode: number, payload: unknown) => {
   response.statusCode = statusCode
@@ -398,6 +470,7 @@ const createRequestHandler =
     deps: RemoteServerDependencies,
     getStatus: () => RemoteServerStatus,
     onSseConnect: (request: IncomingMessage, response: ServerResponse<IncomingMessage>) => void,
+    broadcast: (event: RemoteMutationEventName, changeSet: EntryChangeEventV1) => void,
   ) =>
   async (request: IncomingMessage, response: ServerResponse) => {
     const method = request.method || "GET"
@@ -504,8 +577,22 @@ const createRequestHandler =
     if (method === "POST" && url.pathname === "/api/agent/entries/read") {
       try {
         const payload = validateAgentReadStatusPayload(await readJsonBody<unknown>(request))
-        const result = await deps.updateAgentReadStatus(payload)
-        json(response, 200, { data: result })
+        const mutation = await completeRemoteMutation({
+          operation: () => deps.updateAgentReadStatus(payload),
+          buildChange: () => ({
+            reason: "read",
+            scope: "all",
+            feedIds: [],
+            entryIds: payload.entryIds,
+          }),
+          event: "entries.updated",
+          broadcast,
+        })
+        json(response, 200, {
+          data: mutation.result,
+          batchId: mutation.batchId,
+          changeSet: mutation.changeSet,
+        })
       } catch (error) {
         writeAgentError(response, error)
       }
@@ -582,8 +669,21 @@ const createRequestHandler =
         category?: string
         title?: string
       }>(request)
-      const result = await deps.createSubscription(payload)
-      json(response, 200, { data: result })
+      const mutation = await completeRemoteMutation({
+        operation: () => deps.createSubscription(payload),
+        buildChange: () => ({
+          reason: "subscription",
+          scope: "all",
+          feedIds: [],
+        }),
+        event: "subscriptions.updated",
+        broadcast,
+      })
+      json(response, 200, {
+        data: mutation.result,
+        batchId: mutation.batchId,
+        changeSet: mutation.changeSet,
+      })
       return
     }
 
@@ -593,8 +693,17 @@ const createRequestHandler =
         category?: string | null
         view?: number
       }>(request)
-      await deps.batchUpdateSubscriptions(payload)
-      json(response, 200, { ok: true })
+      const mutation = await completeRemoteMutation({
+        operation: () => deps.batchUpdateSubscriptions(payload),
+        buildChange: () => ({
+          reason: "subscription",
+          scope: "all",
+          feedIds: payload.feedIds,
+        }),
+        event: "subscriptions.updated",
+        broadcast,
+      })
+      json(response, 200, { ok: true, batchId: mutation.batchId, changeSet: mutation.changeSet })
       return
     }
 
@@ -605,15 +714,29 @@ const createRequestHandler =
         listIds?: string[]
         inboxIds?: string[]
       }>(request)
-      await deps.deleteSubscriptionsByTargets(payload)
-      json(response, 200, { ok: true })
+      const mutation = await completeRemoteMutation({
+        operation: () => deps.deleteSubscriptionsByTargets(payload),
+        buildChange: () => ({
+          reason: "subscription",
+          scope: "all",
+          feedIds: payload.feedIds ?? [],
+        }),
+        event: "subscriptions.updated",
+        broadcast,
+      })
+      json(response, 200, { ok: true, batchId: mutation.batchId, changeSet: mutation.changeSet })
       return
     }
 
     if (method === "DELETE" && url.pathname.startsWith("/api/subscriptions/")) {
       const subscriptionId = decodeURIComponent(url.pathname.replace("/api/subscriptions/", ""))
-      await deps.deleteSubscription(subscriptionId)
-      json(response, 200, { ok: true })
+      const mutation = await completeRemoteMutation({
+        operation: () => deps.deleteSubscription(subscriptionId),
+        buildChange: () => ({ reason: "subscription", scope: "all", feedIds: [] }),
+        event: "subscriptions.updated",
+        broadcast,
+      })
+      json(response, 200, { ok: true, batchId: mutation.batchId, changeSet: mutation.changeSet })
       return
     }
 
@@ -624,15 +747,34 @@ const createRequestHandler =
         category?: string | null
         view?: number
       }>(request)
-      const result = await deps.updateSubscription(subscriptionId, payload)
-      json(response, 200, { data: result })
+      const mutation = await completeRemoteMutation({
+        operation: () => deps.updateSubscription(subscriptionId, payload),
+        buildChange: () => ({ reason: "subscription", scope: "all", feedIds: [] }),
+        event: "subscriptions.updated",
+        broadcast,
+      })
+      json(response, 200, {
+        data: mutation.result,
+        batchId: mutation.batchId,
+        changeSet: mutation.changeSet,
+      })
       return
     }
 
     if (method === "POST" && url.pathname === "/api/entries/read") {
       const payload = await readJsonBody<{ entryIds: string[]; read: boolean }>(request)
-      await deps.updateReadStatus(payload)
-      json(response, 200, { ok: true })
+      const mutation = await completeRemoteMutation({
+        operation: () => deps.updateReadStatus(payload),
+        buildChange: () => ({
+          reason: "read",
+          scope: "all",
+          feedIds: [],
+          entryIds: payload.entryIds,
+        }),
+        event: "entries.updated",
+        broadcast,
+      })
+      json(response, 200, { ok: true, batchId: mutation.batchId, changeSet: mutation.changeSet })
       return
     }
 
@@ -642,14 +784,33 @@ const createRequestHandler =
         starred: boolean
         view: number
       }>(request)
-      await deps.updateEntryStar(payload)
-      json(response, 200, { ok: true })
+      const mutation = await completeRemoteMutation({
+        operation: () => deps.updateEntryStar(payload),
+        buildChange: () => ({
+          reason: "collection",
+          scope: "all",
+          feedIds: [],
+          entryIds: [payload.entryId],
+        }),
+        event: "entries.updated",
+        broadcast,
+      })
+      json(response, 200, { ok: true, batchId: mutation.batchId, changeSet: mutation.changeSet })
       return
     }
 
     if (method === "POST" && url.pathname === "/api/feeds/refresh-all") {
-      const result = await deps.refreshAllFeeds()
-      json(response, 200, { data: result })
+      const mutation = await completeRemoteMutation({
+        operation: () => deps.refreshAllFeeds(),
+        buildChange: getRefreshAllChange,
+        event: "entries.updated",
+        broadcast,
+      })
+      json(response, 200, {
+        data: mutation.result,
+        batchId: mutation.batchId,
+        changeSet: mutation.changeSet,
+      })
       return
     }
 
@@ -661,8 +822,24 @@ const createRequestHandler =
       const feedId = decodeURIComponent(
         url.pathname.replace("/api/feeds/", "").replace("/refresh", ""),
       )
-      const result = await deps.refreshFeed(feedId)
-      json(response, 200, { data: result })
+      const mutation = await completeRemoteMutation({
+        operation: () => deps.refreshFeed(feedId),
+        buildChange: () => ({
+          reason: "refresh",
+          scope: "feeds",
+          feedIds: [feedId],
+          feedId,
+          refreshed: 1,
+          failed: 0,
+        }),
+        event: "entries.updated",
+        broadcast,
+      })
+      json(response, 200, {
+        data: mutation.result,
+        batchId: mutation.batchId,
+        changeSet: mutation.changeSet,
+      })
       return
     }
 
@@ -703,7 +880,17 @@ const createRequestHandler =
 
     if (method === "POST" && url.pathname === "/api/import") {
       const payload = await readJsonBody<unknown>(request)
-      json(response, 200, { data: await deps.importData(payload) })
+      const mutation = await completeRemoteMutation({
+        operation: () => deps.importData(payload),
+        buildChange: () => ({ reason: "import", scope: "all", feedIds: [] }),
+        event: "entries.updated",
+        broadcast,
+      })
+      json(response, 200, {
+        data: mutation.result,
+        batchId: mutation.batchId,
+        changeSet: mutation.changeSet,
+      })
       return
     }
 
@@ -747,10 +934,7 @@ class RemoteServerManagerStatic {
       getAgentEntry: (entryId) => agentApplicationService.getEntry(entryId),
       getAgentFeeds: () => agentApplicationService.listFeeds(),
       updateAgentReadStatus: async (payload) => {
-        const result = await agentApplicationService.updateReadStatus(payload)
-        this.broadcast("entries.updated", {})
-        this.broadcast("subscriptions.updated", {})
-        return result
+        return agentApplicationService.updateReadStatus(payload)
       },
       getCollections: () => collectionApplicationService.listCollections(),
       getUnreadCounts: async () => {
@@ -758,59 +942,35 @@ class RemoteServerManagerStatic {
         return unreadApplicationService.listUnreadCounts()
       },
       createSubscription: async (payload) => {
-        const result = await subscriptionApplicationService.createSubscription(payload)
-        this.broadcast("subscriptions.updated", {})
-        this.broadcast("entries.updated", {})
-        return result
+        return subscriptionApplicationService.createSubscription(payload)
       },
       deleteSubscription: async (subscriptionId) => {
         await subscriptionApplicationService.deleteSubscription(subscriptionId)
-        this.broadcast("subscriptions.updated", {})
-        this.broadcast("entries.updated", {})
       },
       deleteSubscriptionsByTargets: async (payload) => {
         await subscriptionApplicationService.deleteSubscriptionsByTargets(payload)
-        this.broadcast("subscriptions.updated", {})
-        this.broadcast("entries.updated", {})
       },
       updateSubscription: async (subscriptionId, payload) => {
-        const result = await subscriptionApplicationService.updateSubscription(
-          subscriptionId,
-          payload,
-        )
-        this.broadcast("subscriptions.updated", {})
-        this.broadcast("entries.updated", {})
-        return result
+        return subscriptionApplicationService.updateSubscription(subscriptionId, payload)
       },
       batchUpdateSubscriptions: async (payload) => {
         await subscriptionApplicationService.batchUpdateSubscriptions(payload)
-        this.broadcast("subscriptions.updated", {})
-        this.broadcast("entries.updated", {})
       },
       previewFeed: (payload) => feedApplicationService.previewFeed(payload),
       updateReadStatus: async (payload) => {
         const { entryApplicationService } = await import("~/application/entry/service")
         await entryApplicationService.updateReadStatus(payload)
-        this.broadcast("entries.updated", {})
-        this.broadcast("subscriptions.updated", {})
       },
       updateEntryStar: async (payload) => {
         await collectionApplicationService.updateEntryStar(payload)
-        this.broadcast("entries.updated", {})
       },
       refreshFeed: async (feedId) => {
         const { feedApplicationService } = await import("~/application/feed/service")
-        const result = await feedApplicationService.refreshFeed(feedId)
-        this.broadcast("entries.updated", { feedId })
-        this.broadcast("subscriptions.updated", { feedId })
-        return result
+        return feedApplicationService.refreshFeed(feedId)
       },
       refreshAllFeeds: async () => {
         const { feedApplicationService } = await import("~/application/feed/service")
-        const result = await feedApplicationService.refreshAllFeeds()
-        this.broadcast("entries.updated", {})
-        this.broadcast("subscriptions.updated", {})
-        return result
+        return feedApplicationService.refreshAllFeeds()
       },
       getRsshubConfig: () => rsshubApplicationService.getConfig(),
       setRsshubConfig: (payload) => rsshubApplicationService.setConfig(payload),
@@ -818,10 +978,7 @@ class RemoteServerManagerStatic {
       discover: (path, payload) => discoverApplicationService.request(path, payload),
       exportData: () => importExportApplicationService.exportData(),
       importData: async (payload) => {
-        const result = await importExportApplicationService.importData(payload)
-        this.broadcast("subscriptions.updated", {})
-        this.broadcast("entries.updated", {})
-        return result
+        return importExportApplicationService.importData(payload)
       },
       renderEntryPdf: (payload) => pdfApplicationService.renderEntryPdf(payload),
       getRemoteIndexHtml: () => getRemoteClientHtml(),
@@ -885,6 +1042,7 @@ class RemoteServerManagerStatic {
         this.deps,
         () => this.getStatus(),
         (incomingRequest, sseResponse) => this.handleSseConnect(incomingRequest, sseResponse),
+        (event, changeSet) => this.broadcast(event, changeSet),
       )(request, response)
     })
 

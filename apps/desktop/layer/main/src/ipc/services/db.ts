@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto"
 
 import { EntryService } from "@suhui/database/services/entry"
 import { FeedService } from "@suhui/database/services/feed"
+import { createEntryChangeEventV1 } from "@suhui/shared/entry-change"
 import { session } from "electron"
 import type { IpcContext } from "electron-ipc-decorator"
 import { IpcMethod, IpcService } from "electron-ipc-decorator"
@@ -68,6 +69,18 @@ type BatchRefreshResult = {
   error?: string
 }
 
+const collectSuccessfulBatchFeedIds = (results: BatchRefreshResult[]) => {
+  const seen = new Set<string>()
+  const feedIds: string[] = []
+  for (const result of results) {
+    const feedId = result.feedId.trim()
+    if (!result.ok || !feedId || seen.has(feedId)) continue
+    seen.add(feedId)
+    feedIds.push(feedId)
+  }
+  return feedIds
+}
+
 const buildRefreshTrace = (
   mode: RefreshTrace["mode"],
   data: Omit<RefreshTrace, "traceId" | "mode"> & { traceId?: string },
@@ -86,17 +99,16 @@ const refreshLog = (
   stage: string,
   extra: Record<string, unknown> = {},
 ) => {
-  logger[level]("[RefreshTrace]", {
-    traceId: trace.traceId,
-    batchTraceId: trace.batchTraceId,
-    source: trace.source,
-    mode: trace.mode,
-    feedId: trace.feedId,
-    feedUrl: trace.feedUrl,
-    stage,
-    ...extra,
+  const event = appendRefreshAuditTrace(trace, level, stage, extra)
+  logger[level]("[RefreshTrace]", event)
+}
+
+const recordRefreshBatchEventCount = (batchId: string, value: 0 | 1) => {
+  logger.info("[PerformanceMetric]", {
+    metric: "refresh_batch_event_count",
+    batchId,
+    value,
   })
-  appendRefreshAuditTrace(trace, level, stage, extra)
 }
 
 const withTimeout = async <T>(
@@ -544,9 +556,29 @@ export class DbService extends IpcService {
         entriesCount: entries.length,
       })
 
-      return {
+      const refreshResult = {
         feed: refreshedFeed,
         entriesCount: entries.length,
+      }
+      if (meta?.batchTraceId) return refreshResult
+
+      const changeSet = createEntryChangeEventV1({
+        batchId: trace.traceId,
+        reason: "refresh",
+        source: trace.source,
+        scope: "feeds",
+        feedIds: [feedId],
+        refreshed: 1,
+        failed: 0,
+        completedAt: Date.now(),
+        feedId,
+      })
+      broadcastLocalFeedRefreshCompleted(changeSet)
+      recordRefreshBatchEventCount(changeSet.batchId, 1)
+      return {
+        ...refreshResult,
+        batchId: changeSet.batchId,
+        changeSet,
       }
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error)
@@ -621,8 +653,23 @@ export class DbService extends IpcService {
     )
 
     if (feedIds.length === 0) {
-      refreshLog("info", batchTrace, "batch.no_subscriptions")
-      return { total: 0, refreshed: 0, failed: 0, results: [] as any[] }
+      const batchResult = { total: 0, refreshed: 0, failed: 0, results: [] as BatchRefreshResult[] }
+      const changeSet = createEntryChangeEventV1({
+        batchId: batchTrace.traceId,
+        reason: "refresh",
+        source: batchTrace.source,
+        scope: "feeds",
+        feedIds: [],
+        refreshed: 0,
+        failed: 0,
+        completedAt: Date.now(),
+      })
+      refreshLog("info", batchTrace, "batch.no_subscriptions", {
+        batchId: changeSet.batchId,
+        refresh_batch_event_count: 0,
+      })
+      recordRefreshBatchEventCount(changeSet.batchId, 0)
+      return { ...batchResult, batchId: changeSet.batchId, changeSet }
     }
     refreshLog("info", batchTrace, "batch.subscription_ids_loaded", {
       subscribedFeedCount: feedIds.length,
@@ -681,20 +728,6 @@ export class DbService extends IpcService {
           targetFeedId: current.id,
           entriesCount: result.entriesCount,
         })
-        if (
-          batchTrace.source === "manual-batch" ||
-          batchTrace.source === "startup-auto" ||
-          batchTrace.source === "interval-auto"
-        ) {
-          broadcastLocalFeedRefreshCompleted({
-            source: batchTrace.source,
-            result: {
-              refreshed: results.filter((result) => result.ok).length,
-              failed: results.filter((result) => !result.ok).length,
-              results: [...results],
-            },
-          })
-        }
       } catch (error) {
         results.push({
           feedId: current.id,
@@ -716,29 +749,40 @@ export class DbService extends IpcService {
       ),
     )
 
-    refreshLog("info", batchTrace, "batch.completed", {
-      total: localFeeds.length,
-      refreshed: results.filter((result) => result.ok).length,
-      failed: results.filter((result) => !result.ok).length,
-      durationMs: Date.now() - batchStartedAt,
-    })
     const batchResult = {
       total: localFeeds.length,
       refreshed: results.filter((result) => result.ok).length,
       failed: results.filter((result) => !result.ok).length,
       results,
     }
-    if (
-      batchTrace.source === "manual-batch" ||
-      batchTrace.source === "startup-auto" ||
-      batchTrace.source === "interval-auto"
-    ) {
-      broadcastLocalFeedRefreshCompleted({
-        source: batchTrace.source,
-        result: batchResult,
-      })
+    const changeSet = createEntryChangeEventV1({
+      batchId: batchTrace.traceId,
+      reason: "refresh",
+      source: batchTrace.source,
+      scope: "feeds",
+      feedIds: collectSuccessfulBatchFeedIds(batchResult.results),
+      refreshed: batchResult.refreshed,
+      failed: batchResult.failed,
+      completedAt: Date.now(),
+    })
+    const refreshBatchEventCount = changeSet.feedIds.length > 0 ? 1 : 0
+    refreshLog("info", batchTrace, "batch.completed", {
+      batchId: changeSet.batchId,
+      total: localFeeds.length,
+      refreshed: batchResult.refreshed,
+      failed: batchResult.failed,
+      durationMs: Date.now() - batchStartedAt,
+      refresh_batch_event_count: refreshBatchEventCount,
+    })
+    if (refreshBatchEventCount === 1) {
+      broadcastLocalFeedRefreshCompleted(changeSet)
     }
-    return batchResult
+    recordRefreshBatchEventCount(changeSet.batchId, refreshBatchEventCount)
+    return {
+      ...batchResult,
+      batchId: changeSet.batchId,
+      changeSet,
+    }
   }
 
   @IpcMethod()

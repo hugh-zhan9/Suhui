@@ -4,7 +4,6 @@ import { RotatingRefreshIcon } from "@suhui/components/ui/loading/index.jsx"
 import { EllipsisHorizontalTextWithTooltip } from "@suhui/components/ui/typography/index.js"
 import { FeedViewType, getView } from "@suhui/constants"
 import { useIsOnline } from "@suhui/hooks"
-import { entrySyncServices } from "@suhui/store/entry/store"
 import { getFeedById } from "@suhui/store/feed/getter"
 import { useFeedById } from "@suhui/store/feed/hooks"
 import { useIsLoggedIn, useWhoami } from "@suhui/store/user/hooks"
@@ -114,9 +113,7 @@ export const EntryListHeader: FC<{
         await refreshLocalFeedAndSyncEntries({
           feedId,
           ipc,
-          fetchEntries: entrySyncServices.fetchEntries.bind(entrySyncServices),
         })
-        await refetch()
         return
       } catch (error) {
         console.warn("[EntryListHeader] local feed refresh failed, fallback to refetch", {
@@ -133,8 +130,8 @@ export const EntryListHeader: FC<{
       try {
         await refreshAllLocalFeedsAndSyncEntries({
           ipc,
-          fetchEntries: entrySyncServices.fetchEntries.bind(entrySyncServices),
         })
+        return
       } catch (error) {
         console.warn("[EntryListHeader] batch local feed refresh failed, fallback to refetch", {
           feedId,

@@ -24,7 +24,88 @@ import type {
   EntryQueryHookPage,
   FetchEntriesProps,
   FetchEntriesPropsSettings,
+  RuntimeEntryListQuery,
 } from "./types"
+
+export type EntryListQueryDescriptor = Pick<RuntimeEntryListQuery, "scope" | "read">
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  !!value && typeof value === "object" && !Array.isArray(value)
+
+const normalizeDescriptorId = (value: unknown) => {
+  if (typeof value !== "string") return null
+  const normalized = value.trim()
+  return normalized || null
+}
+
+const normalizeDescriptorView = (value: unknown) => {
+  if (value === undefined || value === FeedViewType.All) return undefined
+  return typeof value === "number" && Number.isInteger(value) ? value : null
+}
+
+export const getEntryListQueryDescriptor = (queryKey: unknown): EntryListQueryDescriptor | null => {
+  if (!Array.isArray(queryKey) || queryKey[0] !== "entries" || !isRecord(queryKey[1])) {
+    return null
+  }
+
+  const rawQuery = queryKey[1]
+  if (!isRecord(rawQuery.scope)) return null
+  if (rawQuery.read !== undefined && typeof rawQuery.read !== "boolean") return null
+
+  const rawScope = rawQuery.scope
+  let scope: RuntimeEntryListQuery["scope"]
+  switch (rawScope.kind) {
+    case "timeline": {
+      const view = normalizeDescriptorView(rawScope.view)
+      if (view === null) return null
+      if (rawScope.excludePrivate !== undefined && typeof rawScope.excludePrivate !== "boolean") {
+        return null
+      }
+      scope = {
+        kind: "timeline",
+        ...(view === undefined ? {} : { view }),
+        ...(rawScope.excludePrivate === undefined
+          ? {}
+          : { excludePrivate: rawScope.excludePrivate }),
+      }
+      break
+    }
+    case "feeds": {
+      if (!Array.isArray(rawScope.feedIds)) return null
+      const feedIds = rawScope.feedIds.map(normalizeDescriptorId)
+      if (feedIds.some((feedId) => feedId === null)) return null
+      const normalizedFeedIds = Array.from(new Set(feedIds as string[])).sort()
+      if (normalizedFeedIds.length === 0) return null
+      scope = { kind: "feeds", feedIds: normalizedFeedIds }
+      break
+    }
+    case "list": {
+      const listId = normalizeDescriptorId(rawScope.listId)
+      if (!listId) return null
+      scope = { kind: "list", listId }
+      break
+    }
+    case "inbox": {
+      const inboxId = normalizeDescriptorId(rawScope.inboxId)
+      if (!inboxId) return null
+      scope = { kind: "inbox", inboxId }
+      break
+    }
+    case "collection": {
+      const view = normalizeDescriptorView(rawScope.view)
+      if (view === null) return null
+      scope = { kind: "collection", ...(view === undefined ? {} : { view }) }
+      break
+    }
+    default:
+      return null
+  }
+
+  return {
+    scope,
+    ...(rawQuery.read === undefined ? {} : { read: rawQuery.read }),
+  }
+}
 
 export const invalidateEntriesQuery = ({
   views,

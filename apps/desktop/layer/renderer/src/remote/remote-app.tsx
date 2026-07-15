@@ -50,7 +50,7 @@ export function RemoteApp() {
   const [activeFeedId, setActiveFeedId] = useState<string | null>(null)
   const [activeEntryId, setActiveEntryId] = useState<string | null>(null)
   const [unreadOnly, setUnreadOnly] = useState(false)
-  const [connected, setConnected] = useState(true)
+  const [connected, setConnected] = useState(false)
   const [mobilePane, setMobilePane] = useState<Pane>("entries")
   const [overlay, setOverlay] = useState<Overlay>(null)
 
@@ -446,7 +446,6 @@ function RemoteDesktopTimeline({
     setRefreshing(true)
     try {
       await onRefresh()
-      await Promise.all([remoteSSEHandler.refreshSubscriptions(), remoteSSEHandler.refreshUnread()])
     } finally {
       setRefreshing(false)
     }
@@ -620,7 +619,6 @@ function RemoteEntryStarButton({
         starred: nextStarred,
         view,
       })
-      await remoteSSEHandler.refreshCollections()
     } catch (error) {
       if (snapshot) collectionActions.upsertManyInSession([snapshot])
       else collectionActions.deleteInSession(entryId)
@@ -795,15 +793,11 @@ function RemoteSubscriptionsOverlay({
   >({})
 
   const selectedFeedIds = Array.from(selected)
-  const refreshRemoteStores = async () => {
-    await Promise.all([remoteSSEHandler.refreshSubscriptions(), remoteSSEHandler.refreshUnread()])
-  }
   const run = async (task: () => Promise<void>, success: string) => {
     setBusy(true)
     setMessage(null)
     try {
       await task()
-      await refreshRemoteStores()
       setMessage(success)
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Action failed")
@@ -1119,10 +1113,6 @@ function RemoteSettingsOverlay({ onClose }: { onClose: () => void }) {
                     run(async () => {
                       const payload = parseRemoteImportPayload(importText)
                       await runtimeClient.importExport.importData(payload)
-                      await Promise.all([
-                        remoteSSEHandler.refreshSubscriptions(),
-                        remoteSSEHandler.refreshUnread(),
-                      ])
                     }, "Import completed")
                   }
                 >

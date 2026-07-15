@@ -1,15 +1,29 @@
+import type { EntryChangeResponse } from "@suhui/shared/entry-change"
+import {
+  entryChangeInvalidationCoordinator,
+  type EntryChangeInvalidationCoordinator,
+} from "@suhui/store/entry/change-invalidation"
+
 type IpcInvoker = {
   invoke: (channel: string, ...args: any[]) => Promise<unknown>
 }
 
-type FetchEntries = (args: { feedId: string }) => Promise<unknown>
+type HandleEntryChange = EntryChangeInvalidationCoordinator["handle"]
+
+type SingleRefreshResult = {
+  feed?: unknown
+  entriesCount?: number
+}
 
 type BatchRefreshResult = {
+  total?: number
   refreshed?: number
   failed?: number
   results?: Array<{
     feedId?: string
     ok?: boolean
+    entriesCount?: number
+    error?: string
   }>
 }
 
@@ -41,58 +55,33 @@ export const shouldUseBatchLocalRefresh = ({
 export const refreshLocalFeedAndSyncEntries = async ({
   feedId,
   ipc,
-  fetchEntries,
+  handleChange = entryChangeInvalidationCoordinator.handle,
 }: {
   feedId: string
   ipc: IpcInvoker
-  fetchEntries: FetchEntries
+  handleChange?: HandleEntryChange
 }) => {
-  await ipc.invoke("db.refreshFeed", feedId, { source: "manual-single" })
-  await fetchEntries({ feedId })
-}
+  const result = (await ipc.invoke("db.refreshFeed", feedId, {
+    source: "manual-single",
+  })) as EntryChangeResponse<SingleRefreshResult>
 
-export const extractSuccessfulLocalRefreshFeedIds = (result?: BatchRefreshResult) => {
-  if (!result?.results?.length) return []
-
-  return Array.from(
-    new Set(
-      result.results
-        .filter((item) => item?.ok && typeof item.feedId === "string" && !!item.feedId)
-        .map((item) => item.feedId as string),
-    ),
-  )
-}
-
-export const syncSuccessfulLocalRefreshFeeds = async ({
-  result,
-  fetchEntries,
-}: {
-  result?: BatchRefreshResult
-  fetchEntries: FetchEntries
-}) => {
-  const feedIds = extractSuccessfulLocalRefreshFeedIds(result)
-  if (feedIds.length === 0) return
-
-  await Promise.all(feedIds.map((feedId) => fetchEntries({ feedId })))
+  const handleResult = await handleChange(result.changeSet, "response")
+  if (handleResult === "ignored-invalid") throw new TypeError("Invalid refresh ChangeSet")
+  return result
 }
 
 export const refreshAllLocalFeedsAndSyncEntries = async ({
   ipc,
-  fetchEntries,
+  handleChange = entryChangeInvalidationCoordinator.handle,
 }: {
   ipc: IpcInvoker
-  fetchEntries?: FetchEntries
+  handleChange?: HandleEntryChange
 }) => {
   const result = (await ipc.invoke("db.refreshLocalSubscribedFeeds", {
     source: "manual-batch",
-  })) as BatchRefreshResult | undefined
+  })) as EntryChangeResponse<BatchRefreshResult>
 
-  if (fetchEntries) {
-    await syncSuccessfulLocalRefreshFeeds({
-      result,
-      fetchEntries,
-    })
-  }
-
+  const handleResult = await handleChange(result.changeSet, "response")
+  if (handleResult === "ignored-invalid") throw new TypeError("Invalid refresh ChangeSet")
   return result
 }

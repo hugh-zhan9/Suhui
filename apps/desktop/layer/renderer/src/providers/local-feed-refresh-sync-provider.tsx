@@ -1,18 +1,7 @@
-import { entrySyncServices } from "@suhui/store/entry/store"
+import type { EntryChangeEventV1 } from "@suhui/shared/entry-change"
 import { useEffect, useRef } from "react"
 
 import { syncLocalFeedRefreshCompleted } from "~/lib/local-feed-refresh-sync"
-
-type LocalFeedRefreshCompletedPayload = {
-  source?: string
-  refreshed?: number
-  failed?: number
-  feedIds?: string[]
-  results?: Array<{
-    feedId?: string
-    ok?: boolean
-  }>
-}
 
 export const LocalFeedRefreshSyncProvider = () => {
   const syncQueueRef = useRef(Promise.resolve())
@@ -23,22 +12,15 @@ export const LocalFeedRefreshSyncProvider = () => {
 
     const dispose = ipc.on(
       "local-feed-refresh-completed",
-      (_event, payload: LocalFeedRefreshCompletedPayload) => {
+      (_event, payload: EntryChangeEventV1) => {
         syncQueueRef.current = syncQueueRef.current
           .catch(() => {})
-          .then(() =>
-            syncLocalFeedRefreshCompleted({
-              payload: payload?.results
-                ? payload
-                : {
-                    ...payload,
-                    results: payload?.feedIds?.map((feedId) => ({ feedId, ok: true })),
-                  },
-              fetchEntries: entrySyncServices.fetchEntries.bind(entrySyncServices),
-            }),
-          )
+          .then(async () => {
+            await syncLocalFeedRefreshCompleted({ payload })
+          })
           .catch((error) => {
             console.warn("[LocalFeedRefreshSyncProvider] failed to sync background refresh", {
+              batchId: payload?.batchId,
               reason: error instanceof Error ? error.message : String(error),
               source: payload?.source,
             })

@@ -351,7 +351,8 @@ class SubscriptionSyncService {
   }
 
   async subscribe(subscription: SubscriptionForm) {
-    const data: any = await runtimeClient.subscriptions.create(subscription)
+    const response: any = await runtimeClient.subscriptions.create(subscription)
+    const data = response?.data ?? response
     if (!data) {
       throw new Error("Failed to subscribe via runtime service")
     }
@@ -459,7 +460,7 @@ class SubscriptionSyncService {
         listIds: subscriptionList.map((i) => i.listId).filter((i): i is string => !!i),
         inboxIds: subscriptionList.map((i) => i.inboxId).filter((i): i is string => !!i),
       }
-      return runtimeClient.subscriptions.deleteByTargets(payload)
+      await runtimeClient.subscriptions.deleteByTargets(payload)
     })
 
     await tx.run()

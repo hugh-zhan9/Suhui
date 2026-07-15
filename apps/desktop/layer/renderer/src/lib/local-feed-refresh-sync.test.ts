@@ -1,51 +1,49 @@
+import { createEntryChangeEventV1 } from "@suhui/shared/entry-change"
 import { describe, expect, it, vi } from "vitest"
 
-import {
-  syncLocalFeedRefreshCompleted,
-  shouldHandleBackgroundLocalFeedRefresh,
-} from "./local-feed-refresh-sync"
+import { syncLocalFeedRefreshCompleted } from "./local-feed-refresh-sync"
 
-describe("shouldHandleBackgroundLocalFeedRefresh", () => {
-  it("handles only startup and interval auto refresh events", () => {
-    expect(shouldHandleBackgroundLocalFeedRefresh("startup-auto")).toBe(true)
-    expect(shouldHandleBackgroundLocalFeedRefresh("interval-auto")).toBe(true)
-    expect(shouldHandleBackgroundLocalFeedRefresh("manual-batch")).toBe(false)
-    expect(shouldHandleBackgroundLocalFeedRefresh(undefined)).toBe(false)
+const createChangeSet = (source: string) =>
+  createEntryChangeEventV1({
+    batchId: `batch-${source}`,
+    reason: "refresh",
+    source,
+    scope: "feeds",
+    feedIds: ["feed_1"],
+    refreshed: 1,
+    failed: 0,
+    completedAt: 123,
   })
-})
 
 describe("syncLocalFeedRefreshCompleted", () => {
-  it("syncs successful feed ids for background refresh events", async () => {
-    const fetchEntries = vi.fn().mockResolvedValue({ data: [] })
+  it.each(["manual-single", "manual-batch", "startup-auto", "interval-auto"])(
+    "routes %s events through the shared coordinator",
+    async (source) => {
+      const payload = createChangeSet(source)
+      const handleChange = vi.fn().mockResolvedValue("handled")
 
-    await syncLocalFeedRefreshCompleted({
-      payload: {
-        source: "startup-auto",
-        results: [
-          { feedId: "feed_1", ok: true },
-          { feedId: "feed_2", ok: false },
-          { feedId: "feed_3", ok: true },
-        ],
-      },
-      fetchEntries,
-    })
+      await expect(syncLocalFeedRefreshCompleted({ payload, handleChange })).resolves.toBe(
+        "handled",
+      )
 
-    expect(fetchEntries).toHaveBeenCalledTimes(2)
-    expect(fetchEntries).toHaveBeenNthCalledWith(1, { feedId: "feed_1" })
-    expect(fetchEntries).toHaveBeenNthCalledWith(2, { feedId: "feed_3" })
-  })
+      expect(handleChange).toHaveBeenCalledOnce()
+      expect(handleChange).toHaveBeenCalledWith(payload, "ipc")
+    },
+  )
 
-  it("ignores manual batch events because the active renderer already syncs inline", async () => {
-    const fetchEntries = vi.fn().mockResolvedValue({ data: [] })
+  it("lets the coordinator reject malformed event payloads", async () => {
+    const handleChange = vi.fn().mockResolvedValue("ignored-invalid")
 
-    await syncLocalFeedRefreshCompleted({
-      payload: {
-        source: "manual-batch",
-        results: [{ feedId: "feed_1", ok: true }],
-      },
-      fetchEntries,
-    })
+    await expect(
+      syncLocalFeedRefreshCompleted({
+        payload: { source: "startup-auto", feedIds: ["feed_1"] },
+        handleChange,
+      }),
+    ).resolves.toBe("ignored-invalid")
 
-    expect(fetchEntries).not.toHaveBeenCalled()
+    expect(handleChange).toHaveBeenCalledWith(
+      { source: "startup-auto", feedIds: ["feed_1"] },
+      "ipc",
+    )
   })
 })
