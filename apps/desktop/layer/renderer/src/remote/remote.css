@@ -130,11 +130,25 @@ textarea {
   width: 6px;
   height: 6px;
   border-radius: 999px;
+  background: var(--fo-text-tertiary);
+}
+
+.remote-connection-dot.is-connected {
+  background: #22c55e;
+}
+
+.remote-connection-dot.is-disconnected {
   background: var(--fo-red);
 }
 
-.remote-connection-dot.is-online {
-  background: #22c55e;
+.remote-connection-dot.is-connecting {
+  animation: remote-connection-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes remote-connection-pulse {
+  50% {
+    opacity: 0.35;
+  }
 }
 
 .remote-sidebar-actions,
@@ -339,6 +353,52 @@ textarea {
 
 .remote-entry-list {
   padding: 8px;
+}
+
+.remote-pane-status {
+  display: flex;
+  min-height: 220px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 8px;
+  padding: 18px;
+}
+
+.remote-pane-status-title {
+  color: var(--fo-text);
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 18px;
+}
+
+.remote-pane-status-description {
+  max-width: 300px;
+  color: var(--fo-text-secondary);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.remote-skeleton-list {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.remote-skeleton-row {
+  width: 100%;
+  height: 52px;
+  border-radius: 6px;
+  background: var(--remote-muted-surface);
+  animation: remote-skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes remote-skeleton-pulse {
+  50% {
+    opacity: 0.45;
+  }
 }
 
 .remote-entry-item {

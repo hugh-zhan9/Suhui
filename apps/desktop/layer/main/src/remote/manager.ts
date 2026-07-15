@@ -42,11 +42,27 @@ import { getRemoteShellHtml, getRemoteShellScript } from "./shell"
 type SubscriptionRecord = Awaited<
   ReturnType<typeof subscriptionApplicationService.listSubscriptions>
 >[number]
+type CollectionRecord = Awaited<
+  ReturnType<typeof collectionApplicationService.listCollections>
+>[number]
+type BootstrapFeed = {
+  id: string
+  title: string | null
+  url: string
+}
+type RemoteBootstrapPayload = {
+  subscriptions: SubscriptionRecord[]
+  feeds: BootstrapFeed[]
+  unread: Array<{ id: string; count: number }>
+  collections: CollectionRecord[]
+  settings: RemoteSettings
+  capabilities: unknown
+}
 
 type EntryRecord = any
 
 type RemoteServerDependencies = {
-  getBootstrap: () => Promise<unknown>
+  getBootstrap: () => Promise<RemoteBootstrapPayload>
   getCapabilities: () => Promise<unknown> | unknown
   getSettings: () => Promise<RemoteSettings> | RemoteSettings
   updateSettings: (payload: Partial<RemoteSettings>) => Promise<RemoteSettings> | RemoteSettings
@@ -141,6 +157,21 @@ type RemoteMutationChange = {
   refreshed?: number
   failed?: number
   feedId?: string
+}
+
+const extractBootstrapFeeds = (subscriptions: SubscriptionRecord[]): BootstrapFeed[] => {
+  const feeds = new Map<string, BootstrapFeed>()
+  for (const subscription of subscriptions) {
+    if (subscription.type !== "feed" || !subscription.feedId || feeds.has(subscription.feedId)) {
+      continue
+    }
+    feeds.set(subscription.feedId, {
+      id: subscription.feedId,
+      title: subscription.title ?? null,
+      url: "",
+    })
+  }
+  return Array.from(feeds.values())
 }
 
 const completeRemoteMutation = async <T>({
@@ -514,7 +545,12 @@ const createRequestHandler =
     }
 
     if (method === "GET" && url.pathname === "/api/bootstrap") {
-      json(response, 200, { data: await deps.getBootstrap() })
+      try {
+        json(response, 200, { data: await deps.getBootstrap() })
+      } catch {
+        console.error("[RemoteServerManager] bootstrap failed")
+        json(response, 500, { error: "REMOTE_BOOTSTRAP_FAILED" })
+      }
       return
     }
 
@@ -915,16 +951,20 @@ class RemoteServerManagerStatic {
       updateSettings: (payload) => settingsApplicationService.updateSettings(payload),
       getBootstrap: async () => {
         const { unreadApplicationService } = await import("~/application/unread/service")
-        const [subscriptions, unread, settings] = await Promise.all([
+        const [subscriptions, unread, collections, settings, capabilities] = await Promise.all([
           subscriptionApplicationService.listSubscriptions(),
           unreadApplicationService.listUnreadCounts(),
+          collectionApplicationService.listCollections(),
           Promise.resolve(settingsApplicationService.getSettings()),
+          Promise.resolve(settingsApplicationService.getCapabilities()),
         ])
         return {
           subscriptions,
+          feeds: extractBootstrapFeeds(subscriptions),
           unread,
+          collections,
           settings,
-          capabilities: settingsApplicationService.getCapabilities(),
+          capabilities,
         }
       },
       getSubscriptions: () => subscriptionApplicationService.listSubscriptions(),

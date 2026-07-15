@@ -14,12 +14,19 @@ import { getEntry } from "@suhui/store/entry/getter"
 import { useEntry, useEntriesQuery } from "@suhui/store/entry/hooks"
 import { entrySyncServices } from "@suhui/store/entry/store"
 import { useFeedById } from "@suhui/store/feed/hooks"
-import { remoteSSEHandler } from "@suhui/store/remote/sse-handler"
 import { runtimeClient } from "@suhui/store/runtime"
 import { useSubscriptionStore } from "@suhui/store/subscription/store"
 import { unreadSyncService, useUnreadStore } from "@suhui/store/unread/store"
 import { cn } from "@suhui/utils/utils"
-import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react"
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent } from "react"
+
+import {
+  useRemoteBootstrap,
+  useRemoteConnection,
+  type RemoteBootstrapViewState,
+  type RemoteConnectionPhase,
+} from "./remote-bootstrap"
+import { markRemoteDataReadyIfComplete, markRemoteMetric } from "./remote-performance"
 
 import {
   buildRemoteFeedGroups,
@@ -45,12 +52,14 @@ export function RemoteApp() {
   const isMobile = useMobile()
   const subscriptionState = useSubscriptionStore()
   const unreadState = useUnreadStore()
+  const bootstrap = useRemoteBootstrap()
+  const connectionPhase = useRemoteConnection()
 
   const [activeView, setActiveView] = useState<FeedViewType>(FeedViewType.All)
   const [activeFeedId, setActiveFeedId] = useState<string | null>(null)
   const [activeEntryId, setActiveEntryId] = useState<string | null>(null)
   const [unreadOnly, setUnreadOnly] = useState(false)
-  const [connected, setConnected] = useState(false)
+  const [initialEntriesReady, setInitialEntriesReady] = useState(false)
   const [mobilePane, setMobilePane] = useState<Pane>("entries")
   const [overlay, setOverlay] = useState<Overlay>(null)
 
@@ -73,11 +82,16 @@ export function RemoteApp() {
     [subscriptions],
   )
 
-  useEffect(() => {
-    remoteSSEHandler.setHandlers({
-      onConnectionChange: (isConnected) => setConnected(isConnected),
-    })
+  useLayoutEffect(() => {
+    markRemoteMetric("remote_shell_visible_ms")
   }, [])
+
+  useEffect(() => {
+    markRemoteDataReadyIfComplete({
+      bootstrapReady: bootstrap.phase === "ready",
+      initialEntriesReady,
+    })
+  }, [bootstrap.phase, initialEntriesReady])
 
   useEffect(() => {
     if (availableViews.length === 0) return
@@ -138,7 +152,11 @@ export function RemoteApp() {
   }
 
   return (
-    <div className={layoutContract.root} data-remote-layout="desktop-reader">
+    <div
+      className={layoutContract.root}
+      data-remote-layout="desktop-reader"
+      data-testid="remote-reader-shell"
+    >
       {isMobile && (
         <MobilePaneSwitcher
           activePane={mobilePane}
@@ -158,7 +176,8 @@ export function RemoteApp() {
         activeFeedId={activeFeedId}
         activeView={activeView}
         availableViews={availableViews}
-        connected={connected}
+        bootstrap={bootstrap}
+        connectionPhase={connectionPhase}
         feedGroups={feedGroups}
         feedList={feedList}
         hidden={isMobile && mobilePane !== "feeds"}
@@ -175,11 +194,13 @@ export function RemoteApp() {
         activeFeedIdsForView={activeFeedIdsForView}
         activeFeedTitle={activeFeedTitle}
         activeView={activeView}
+        bootstrapPhase={bootstrap.phase}
         hidden={isMobile && mobilePane !== "entries"}
         isMobile={isMobile}
         onOpenSubscriptions={() => setOverlay("subscriptions")}
         onRefresh={() => runtimeClient.feeds.refresh(activeFeedId || undefined)}
         onSelectEntry={selectEntry}
+        onInitialEntriesReady={() => setInitialEntriesReady(true)}
         onSyncEntrySelection={setActiveEntryId}
         onToggleUnreadOnly={() => setUnreadOnly((value) => !value)}
         unreadOnly={unreadOnly}
@@ -237,7 +258,8 @@ function RemoteDesktopSidebar({
   activeFeedId,
   activeView,
   availableViews,
-  connected,
+  bootstrap,
+  connectionPhase,
   feedGroups,
   feedList,
   hidden,
@@ -250,7 +272,8 @@ function RemoteDesktopSidebar({
   activeFeedId: string | null
   activeView: FeedViewType
   availableViews: ReturnType<typeof getRemoteAvailableViews>
-  connected: boolean
+  bootstrap: RemoteBootstrapViewState
+  connectionPhase: RemoteConnectionPhase
   feedGroups: RemoteFeedGroup[]
   feedList: RemoteFeedSummary[]
   hidden: boolean
@@ -274,9 +297,13 @@ function RemoteDesktopSidebar({
           </div>
           <div className="remote-app-copy">
             <div className="remote-app-title">Suhui</div>
-            <div className="remote-connection">
-              <span className={cn("remote-connection-dot", connected && "is-online")} />
-              {connected ? "Remote connected" : "Remote offline"}
+            <div className="remote-connection" data-connection-phase={connectionPhase}>
+              <span className={cn("remote-connection-dot", `is-${connectionPhase}`)} />
+              {connectionPhase === "connected"
+                ? "Remote connected"
+                : connectionPhase === "connecting"
+                  ? "Remote connecting"
+                  : "Remote disconnected"}
             </div>
           </div>
         </div>
@@ -291,31 +318,46 @@ function RemoteDesktopSidebar({
       </div>
 
       <nav className="remote-view-tabs" aria-label="Timeline views">
-        {availableViews.map((view) => (
-          <button
-            key={view.view}
-            className={cn("remote-view-tab", activeView === view.view && "is-active")}
-            title={remoteViewLabelFor(view.view)}
-            onClick={() => onSelectView(view.view)}
-          >
-            <span className="remote-view-icon">{view.icon}</span>
-          </button>
-        ))}
+        {bootstrap.phase === "ready" &&
+          availableViews.map((view) => (
+            <button
+              key={view.view}
+              className={cn("remote-view-tab", activeView === view.view && "is-active")}
+              title={remoteViewLabelFor(view.view)}
+              onClick={() => onSelectView(view.view)}
+            >
+              <span className="remote-view-icon">{view.icon}</span>
+            </button>
+          ))}
       </nav>
 
-      <button
-        className={cn("remote-source-row remote-source-all", activeFeedId === null && "is-active")}
-        onClick={() => onSelectFeed(null)}
-      >
-        <span className="remote-source-icon">
-          <i className="i-mgc-inbox-cute-fi" />
-        </span>
-        <span className="remote-source-title">All Feeds</span>
-        {totalUnread > 0 && <UnreadBadge count={totalUnread} />}
-      </button>
+      {bootstrap.phase === "ready" && (
+        <button
+          className={cn(
+            "remote-source-row remote-source-all",
+            activeFeedId === null && "is-active",
+          )}
+          onClick={() => onSelectFeed(null)}
+        >
+          <span className="remote-source-icon">
+            <i className="i-mgc-inbox-cute-fi" />
+          </span>
+          <span className="remote-source-title">All Feeds</span>
+          {totalUnread > 0 && <UnreadBadge count={totalUnread} />}
+        </button>
+      )}
 
       <div className="remote-source-scroll">
-        {feedGroups.length === 0 ? (
+        {bootstrap.phase === "loading" ? (
+          <RemotePaneSkeleton label="Loading subscriptions" rows={7} />
+        ) : bootstrap.phase === "error" ? (
+          <RemotePaneError
+            action="Retry metadata"
+            description={bootstrap.error || "The desktop host did not return metadata."}
+            onRetry={bootstrap.retry}
+            title="Subscriptions unavailable"
+          />
+        ) : feedGroups.length === 0 ? (
           <RemoteEmptyState
             icon="i-mgc-rss-cute-fi"
             title="No subscriptions"
@@ -372,11 +414,13 @@ function RemoteDesktopTimeline({
   activeFeedIdsForView,
   activeFeedTitle,
   activeView,
+  bootstrapPhase,
   hidden,
   isMobile,
   onOpenSubscriptions,
   onRefresh,
   onSelectEntry,
+  onInitialEntriesReady,
   onSyncEntrySelection,
   onToggleUnreadOnly,
   unreadOnly,
@@ -386,29 +430,48 @@ function RemoteDesktopTimeline({
   activeFeedIdsForView: string[]
   activeFeedTitle: string
   activeView: FeedViewType
+  bootstrapPhase: RemoteBootstrapViewState["phase"]
   hidden: boolean
   isMobile: boolean
   onOpenSubscriptions: () => void
   onRefresh: () => Promise<unknown> | unknown
   onSelectEntry: (entryId: string | null) => void
+  onInitialEntriesReady: () => void
   onSyncEntrySelection: (entryId: string | null) => void
   onToggleUnreadOnly: () => void
   unreadOnly: boolean
 }) {
   const [refreshing, setRefreshing] = useState(false)
   const feedIdList = activeFeedId ? undefined : activeFeedIdsForView
+  const hasEntryScope = !!activeFeedId || !!feedIdList?.length
   const entriesQuery = useEntriesQuery(
-    activeFeedId || (feedIdList && feedIdList.length > 0)
+    hasEntryScope
       ? {
           ...(activeFeedId ? { feedId: activeFeedId } : { feedIdList }),
+          enabled: bootstrapPhase === "ready",
           unreadOnly,
-          limit: 100,
+          limit: 20,
         }
       : undefined,
   )
   const entryIds = entriesQuery.entriesIds
   const loadMoreRef = useRef<HTMLDivElement | null>(null)
   const previousEntryIdsRef = useRef<string[]>([])
+  const initialReadyRecordedRef = useRef(false)
+
+  useEffect(() => {
+    const confirmedEmpty = bootstrapPhase === "ready" && !hasEntryScope
+    if (initialReadyRecordedRef.current || (!confirmedEmpty && !entriesQuery.isSuccess)) return
+    initialReadyRecordedRef.current = true
+    markRemoteMetric("remote_initial_entries_ready_ms")
+    onInitialEntriesReady()
+  }, [bootstrapPhase, entriesQuery.isSuccess, hasEntryScope, onInitialEntriesReady])
+
+  useEffect(() => {
+    if (bootstrapPhase === "ready" && entriesQuery.isError) {
+      markRemoteMetric("remote_entries_error_visible_ms")
+    }
+  }, [bootstrapPhase, entriesQuery.isError])
 
   useEffect(() => {
     const node = loadMoreRef.current
@@ -488,17 +551,26 @@ function RemoteDesktopTimeline({
       </header>
 
       <div className="remote-entry-scroll">
-        {(!activeFeedId && activeFeedIdsForView.length === 0) || entriesQuery.isLoading ? (
+        {bootstrapPhase === "error" ? (
           <RemoteEmptyState
-            icon={
-              entriesQuery.isLoading ? "i-mgc-loading-3-cute-re animate-spin" : "i-mgc-rss-cute-fi"
-            }
-            title={entriesQuery.isLoading ? "Loading entries" : "No feeds in this view"}
-            description={
-              entriesQuery.isLoading
-                ? "Fetching local entries from the desktop host."
-                : "Choose another view or add a subscription."
-            }
+            icon="i-mgc-information-cute-re"
+            title="Entries waiting for subscriptions"
+            description="Retry metadata from the subscriptions pane."
+          />
+        ) : bootstrapPhase === "loading" || entriesQuery.isLoading ? (
+          <RemotePaneSkeleton label="Loading entries" rows={6} />
+        ) : entriesQuery.isError ? (
+          <RemotePaneError
+            action="Retry entries"
+            description="The entry page could not be loaded. Your subscriptions remain available."
+            onRetry={() => void entriesQuery.refetch()}
+            title="Entries unavailable"
+          />
+        ) : !activeFeedId && activeFeedIdsForView.length === 0 ? (
+          <RemoteEmptyState
+            icon="i-mgc-rss-cute-fi"
+            title="No feeds in this view"
+            description="Choose another view or add a subscription."
           />
         ) : entryIds.length === 0 ? (
           <RemoteEmptyState
@@ -1244,6 +1316,41 @@ function RemoteEmptyState({
       </div>
       <div className="remote-empty-title">{title}</div>
       <div className="remote-empty-description">{description}</div>
+    </div>
+  )
+}
+
+function RemotePaneSkeleton({ label, rows }: { label: string; rows: number }) {
+  return (
+    <div className="remote-pane-status" aria-live="polite">
+      <div className="remote-pane-status-title">{label}</div>
+      <div className="remote-skeleton-list" aria-hidden="true">
+        {Array.from({ length: rows }, (_, index) => (
+          <div className="remote-skeleton-row" key={index} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function RemotePaneError({
+  action,
+  description,
+  onRetry,
+  title,
+}: {
+  action: string
+  description: string
+  onRetry: () => void
+  title: string
+}) {
+  return (
+    <div className="remote-pane-status" role="alert">
+      <div className="remote-pane-status-title">{title}</div>
+      <div className="remote-pane-status-description">{description}</div>
+      <button className="remote-secondary-button" onClick={onRetry}>
+        {action}
+      </button>
     </div>
   )
 }

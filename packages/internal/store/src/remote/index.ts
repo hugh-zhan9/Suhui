@@ -5,6 +5,17 @@
 
 export { getRuntimeEnv, markRemoteRuntime } from "./env"
 export {
+  applyRemoteBootstrapInSession,
+  beginRemoteBootstrapLoading,
+  failRemoteBootstrapLoading,
+  resetRemoteBootstrapStores,
+  useRemoteBootstrapStore,
+  type RemoteBootstrapPayload,
+  type RemoteBootstrapPhase,
+  type RemoteBootstrapState,
+  type RemoteSettings,
+} from "./bootstrap"
+export {
   type SubscriptionRecord,
   type EntryRecord,
   type UnreadRecord,
@@ -14,7 +25,8 @@ export {
   transformSubscriptionsFromApi,
   transformEntriesFromApi,
   transformUnreadsFromApi,
+  parseRemoteBootstrapPayload,
+  transformRemoteBootstrapFromApi,
   extractFeedsFromSubscriptions,
 } from "./transforms"
-export { hydrateFromRemote, resetRemoteStore, type RemoteHydrateStatus } from "./hydrate"
 export { remoteSSEHandler } from "./sse-handler"

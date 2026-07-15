@@ -1,5 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 
+const bootstrapProviders = vi.hoisted(() => ({
+  getCapabilities: vi.fn().mockReturnValue({ auth: "none" }),
+  getSettings: vi.fn().mockReturnValue({ appearance: "system", rsshubCustomUrl: "" }),
+  listCollections: vi.fn().mockResolvedValue([]),
+  listSubscriptions: vi.fn().mockResolvedValue([]),
+  listUnreadCounts: vi.fn().mockResolvedValue([]),
+}))
+
 vi.mock("electron", () => ({
   session: {
     defaultSession: {
@@ -104,7 +112,7 @@ vi.mock("~/application/import-export/service", () => ({
 
 vi.mock("~/application/collection/service", () => ({
   collectionApplicationService: {
-    listCollections: vi.fn().mockResolvedValue([]),
+    listCollections: bootstrapProviders.listCollections,
     updateEntryStar: vi.fn().mockResolvedValue(undefined),
   },
 }))
@@ -125,8 +133,8 @@ vi.mock("~/application/rsshub/service", () => ({
 
 vi.mock("~/application/settings/service", () => ({
   settingsApplicationService: {
-    getCapabilities: vi.fn().mockReturnValue({ auth: "none" }),
-    getSettings: vi.fn().mockReturnValue({ appearance: "system", rsshubCustomUrl: "" }),
+    getCapabilities: bootstrapProviders.getCapabilities,
+    getSettings: bootstrapProviders.getSettings,
     updateSettings: vi.fn().mockImplementation((input) => ({
       appearance: input.appearance || "system",
       rsshubCustomUrl: input.rsshubCustomUrl || "",
@@ -136,12 +144,18 @@ vi.mock("~/application/settings/service", () => ({
 
 vi.mock("~/application/subscription/service", () => ({
   subscriptionApplicationService: {
-    listSubscriptions: vi.fn().mockResolvedValue([]),
+    listSubscriptions: bootstrapProviders.listSubscriptions,
     createSubscription: vi.fn().mockResolvedValue({}),
     deleteSubscription: vi.fn().mockResolvedValue(undefined),
     deleteSubscriptionsByTargets: vi.fn().mockResolvedValue(undefined),
     updateSubscription: vi.fn().mockResolvedValue({}),
     batchUpdateSubscriptions: vi.fn().mockResolvedValue(undefined),
+  },
+}))
+
+vi.mock("~/application/unread/service", () => ({
+  unreadApplicationService: {
+    listUnreadCounts: bootstrapProviders.listUnreadCounts,
   },
 }))
 
@@ -1348,7 +1362,15 @@ describe("RemoteServerManager", () => {
   })
 
   it("serves bootstrap, capabilities, and settings through injected providers", async () => {
-    const getBootstrap = vi.fn().mockResolvedValue({ subscriptions: [], unread: [] })
+    const bootstrap = {
+      subscriptions: [],
+      feeds: [],
+      unread: [],
+      collections: [],
+      settings: { appearance: "system", rsshubCustomUrl: "" },
+      capabilities: { auth: "none", pdfExport: true },
+    }
+    const getBootstrap = vi.fn().mockResolvedValue(bootstrap)
     const getCapabilities = vi.fn().mockReturnValue({ auth: "none", pdfExport: true })
     const getSettings = vi.fn().mockReturnValue({ appearance: "system", rsshubCustomUrl: "" })
     const updateSettings = vi
@@ -1366,8 +1388,9 @@ describe("RemoteServerManager", () => {
     await expect(
       fetch(`${server.baseUrl}/api/bootstrap`).then((res) => res.json()),
     ).resolves.toEqual({
-      data: { subscriptions: [], unread: [] },
+      data: bootstrap,
     })
+    expect(getBootstrap).toHaveBeenCalledTimes(1)
     await expect(
       fetch(`${server.baseUrl}/api/capabilities`).then((res) => res.json()),
     ).resolves.toEqual({
@@ -1386,6 +1409,77 @@ describe("RemoteServerManager", () => {
       appearance: "dark",
       rsshubCustomUrl: "https://rsshub.example",
     })
+  })
+
+  it("assembles one complete bootstrap envelope from the default providers", async () => {
+    const subscriptions = [
+      {
+        id: "feed/feed_1",
+        type: "feed" as const,
+        feedId: "feed_1",
+        listId: null,
+        inboxId: null,
+        userId: "local_user",
+        view: 1,
+        isPrivate: false,
+        title: "Feed One",
+        category: "Tech",
+      },
+    ]
+    bootstrapProviders.listSubscriptions.mockResolvedValueOnce(subscriptions as never)
+    bootstrapProviders.listUnreadCounts.mockResolvedValueOnce([{ id: "feed_1", count: 3 }])
+    bootstrapProviders.listCollections.mockResolvedValueOnce([
+      { entryId: "entry_1", feedId: "feed_1", view: 1 },
+    ] as never)
+    bootstrapProviders.getSettings.mockReturnValueOnce({
+      appearance: "system",
+      rsshubCustomUrl: "",
+    })
+    bootstrapProviders.getCapabilities.mockReturnValueOnce({
+      auth: "none",
+      pdfExport: true,
+    } as never)
+
+    const server = await RemoteServerManager.start({ host: "127.0.0.1", port: 0 })
+    const response = await fetch(`${server.baseUrl}/api/bootstrap`)
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual({
+      data: {
+        subscriptions,
+        feeds: [{ id: "feed_1", title: "Feed One", url: "" }],
+        unread: [{ id: "feed_1", count: 3 }],
+        collections: [{ entryId: "entry_1", feedId: "feed_1", view: 1 }],
+        settings: { appearance: "system", rsshubCustomUrl: "" },
+        capabilities: { auth: "none", pdfExport: true },
+      },
+    })
+  })
+
+  it("sanitizes bootstrap provider failures", async () => {
+    const getBootstrap = vi
+      .fn()
+      .mockRejectedValue(
+        new Error(
+          'select * from entries password="secret" /Users/private?token=hidden postgres://local',
+        ),
+      )
+    const server = await RemoteServerManager.start({
+      host: "127.0.0.1",
+      port: 0,
+      getBootstrap,
+    })
+
+    const response = await fetch(`${server.baseUrl}/api/bootstrap?token=hidden`)
+    const body = await response.text()
+
+    expect(response.status).toBe(500)
+    expect(body).toContain("REMOTE_BOOTSTRAP_FAILED")
+    expect(body).not.toContain("select *")
+    expect(body).not.toContain("secret")
+    expect(body).not.toContain("/Users/private")
+    expect(body).not.toContain("token=hidden")
+    expect(body).not.toContain("postgres://")
   })
 
   it("supports batch subscription management routes", async () => {

@@ -86,7 +86,7 @@ class RemoteSSEHandler {
       console.error("[RemoteSSEHandler] Failed to create EventSource")
       this.isConnecting = false
       this.needsReconnectCompensation = true
-      this.setConnected(false)
+      this.setConnected(false, true)
       this.scheduleReconnect()
     }
   }
@@ -159,15 +159,15 @@ class RemoteSSEHandler {
     })
   }
 
-  private setConnected(connected: boolean): void {
-    if (this.connected === connected) return
+  private setConnected(connected: boolean, notifyWhenUnchanged = false): void {
+    if (this.connected === connected && !notifyWhenUnchanged) return
     this.connected = connected
     this.handlers.onConnectionChange?.(connected)
   }
 
   private handleConnectionError(): void {
     this.needsReconnectCompensation = true
-    this.setConnected(false)
+    this.setConnected(false, true)
     this.scheduleReconnect()
   }
 

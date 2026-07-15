@@ -15,7 +15,9 @@ import type {
 import type { FeedModel } from "../modules/feed/types"
 import type { SubscriptionForm, SubscriptionModel } from "../modules/subscription/types"
 import { getRuntimeEnv } from "../remote/env"
+import type { RemoteBootstrapPayload, RemoteSettings } from "../remote/bootstrap"
 import {
+  parseRemoteBootstrapPayload,
   transformCollectionsFromApi,
   transformEntryFromApi,
   transformSubscriptionFromApi,
@@ -43,11 +45,6 @@ type SubscriptionDeleteTargets = {
   feedIds?: string[]
   listIds?: string[]
   inboxIds?: string[]
-}
-
-type RemoteSettings = {
-  appearance: "light" | "dark" | "system"
-  rsshubCustomUrl: string
 }
 
 const getIpc = (): IpcRendererLike | null => {
@@ -319,6 +316,22 @@ const parseFeedViaProxy = async (subscription: SubscriptionForm) => {
 }
 
 export const runtimeClient = {
+  bootstrap: {
+    async get(): Promise<RemoteBootstrapPayload> {
+      const response = await jsonRequest<unknown>("/api/bootstrap")
+      if (
+        typeof response !== "object" ||
+        response === null ||
+        Array.isArray(response) ||
+        Object.keys(response).length !== 1 ||
+        !Object.hasOwn(response, "data")
+      ) {
+        throw new Error("Invalid remote bootstrap: envelope")
+      }
+      return parseRemoteBootstrapPayload((response as { data: unknown }).data)
+    },
+  },
+
   entries: {
     async list(props: RuntimeFetchEntriesOptions): Promise<RuntimeEntrySummaryPage> {
       if (getRuntimeEnv().isRemote) return fetchRemoteEntries(props)

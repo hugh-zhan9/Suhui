@@ -44,6 +44,48 @@ describe("runtimeClient", () => {
     setIpc(null)
   })
 
+  it("loads and validates metadata with one bootstrap request", async () => {
+    const payload = {
+      subscriptions: [],
+      feeds: [],
+      unread: [],
+      collections: [],
+      settings: { appearance: "system", rsshubCustomUrl: "" },
+      capabilities: { pdfExport: true },
+    }
+    const fetchMock = vi.fn(async () => jsonResponse({ data: payload }))
+    vi.stubGlobal("fetch", fetchMock)
+
+    await expect(runtimeClient.bootstrap.get()).resolves.toEqual(payload)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/bootstrap",
+      expect.objectContaining({ headers: {} }),
+    )
+  })
+
+  it("rejects a malformed bootstrap envelope", async () => {
+    const fetchMock = vi.fn(async () =>
+      jsonResponse({
+        data: {
+          subscriptions: [],
+          feeds: [],
+          unread: [],
+          collections: [],
+          settings: { appearance: "system", rsshubCustomUrl: "" },
+          capabilities: {},
+        },
+        extra: true,
+      }),
+    )
+    vi.stubGlobal("fetch", fetchMock)
+
+    await expect(runtimeClient.bootstrap.get()).rejects.toThrow(
+      "Invalid remote bootstrap: envelope",
+    )
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
   it("sends one normalized HTTP query and returns the server page unchanged", async () => {
     const fetchMock = vi.fn(async () =>
       jsonResponse({

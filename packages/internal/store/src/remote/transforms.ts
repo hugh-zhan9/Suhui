@@ -3,18 +3,23 @@
  * 将 HTTP API 返回的数据格式转换为 Store Model 格式
  */
 
-import type { FeedViewType } from "@suhui/constants"
+import { FeedViewType } from "@suhui/constants"
+
+import type { RemoteBootstrapPayload, RemoteSettings } from "./bootstrap"
 
 // ============ API 响应类型定义 ============
 
 /** API 返回的订阅记录格式 */
 export type SubscriptionRecord = {
   id: string
-  type?: string
+  type: "feed" | "list" | "inbox"
   category?: string | null
   title?: string | null
   feedId?: string | null
-  view?: number | null
+  listId?: string | null
+  inboxId?: string | null
+  view: number
+  createdAt?: string | null
 }
 
 /** API 返回的条目记录格式 */
@@ -55,8 +60,121 @@ export type UnreadRecord = {
 export type CollectionRecord = {
   entryId: string
   feedId?: string | null
-  view?: number | null
+  view: number
   createdAt?: string | null
+}
+
+const REMOTE_BOOTSTRAP_KEYS = [
+  "subscriptions",
+  "feeds",
+  "unread",
+  "collections",
+  "settings",
+  "capabilities",
+] as const
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value)
+
+const feedViewValues = new Set<number>(
+  Object.values(FeedViewType).filter((value): value is number => typeof value === "number"),
+)
+
+const isFeedView = (value: unknown): value is FeedViewType =>
+  typeof value === "number" && Number.isInteger(value) && feedViewValues.has(value)
+
+const isNonEmptyString = (value: unknown): value is string =>
+  typeof value === "string" && value.trim().length > 0
+
+const isAbsent = (value: unknown): value is null | undefined =>
+  value === undefined || value === null
+
+const invalidBootstrap = (group: string): never => {
+  throw new Error(`Invalid remote bootstrap: ${group}`)
+}
+
+const hasOptionalType = (record: Record<string, unknown>, key: string, type: "string" | "number") =>
+  record[key] === undefined || record[key] === null || typeof record[key] === type
+
+const hasOptionalNonEmptyString = (record: Record<string, unknown>, key: string) =>
+  isAbsent(record[key]) || isNonEmptyString(record[key])
+
+const hasMatchingSubscriptionSource = (record: Record<string, unknown>): boolean => {
+  switch (record.type) {
+    case "feed":
+      return isNonEmptyString(record.feedId) && isAbsent(record.listId) && isAbsent(record.inboxId)
+    case "list":
+      return isAbsent(record.feedId) && isNonEmptyString(record.listId) && isAbsent(record.inboxId)
+    case "inbox":
+      return isAbsent(record.feedId) && isAbsent(record.listId) && isNonEmptyString(record.inboxId)
+    default:
+      return false
+  }
+}
+
+const isSubscriptionRecord = (value: unknown): value is SubscriptionRecord =>
+  isRecord(value) &&
+  isNonEmptyString(value.id) &&
+  hasOptionalType(value, "category", "string") &&
+  hasOptionalType(value, "title", "string") &&
+  hasOptionalNonEmptyString(value, "feedId") &&
+  hasOptionalNonEmptyString(value, "listId") &&
+  hasOptionalNonEmptyString(value, "inboxId") &&
+  isFeedView(value.view) &&
+  hasOptionalType(value, "createdAt", "string") &&
+  hasMatchingSubscriptionSource(value)
+
+const isFeedRecord = (value: unknown): value is RemoteBootstrapPayload["feeds"][number] =>
+  isRecord(value) &&
+  isNonEmptyString(value.id) &&
+  hasOptionalType(value, "title", "string") &&
+  hasOptionalType(value, "url", "string")
+
+const isUnreadRecord = (value: unknown): value is UnreadRecord =>
+  isRecord(value) &&
+  isNonEmptyString(value.id) &&
+  typeof value.count === "number" &&
+  Number.isInteger(value.count) &&
+  value.count >= 0
+
+const isCollectionRecord = (value: unknown): value is CollectionRecord =>
+  isRecord(value) &&
+  isNonEmptyString(value.entryId) &&
+  hasOptionalNonEmptyString(value, "feedId") &&
+  isFeedView(value.view) &&
+  hasOptionalType(value, "createdAt", "string")
+
+const isRemoteSettings = (value: unknown): value is RemoteSettings =>
+  isRecord(value) &&
+  (value.appearance === "light" || value.appearance === "dark" || value.appearance === "system") &&
+  typeof value.rsshubCustomUrl === "string"
+
+export function parseRemoteBootstrapPayload(value: unknown): RemoteBootstrapPayload {
+  if (!isRecord(value)) return invalidBootstrap("payload")
+  const payload = value
+  const keys = Object.keys(payload)
+  if (
+    keys.length !== REMOTE_BOOTSTRAP_KEYS.length ||
+    REMOTE_BOOTSTRAP_KEYS.some((key) => !Object.hasOwn(payload, key))
+  ) {
+    invalidBootstrap("metadata groups")
+  }
+  if (!Array.isArray(payload.subscriptions) || !payload.subscriptions.every(isSubscriptionRecord)) {
+    invalidBootstrap("subscriptions")
+  }
+  if (!Array.isArray(payload.feeds) || !payload.feeds.every(isFeedRecord)) {
+    invalidBootstrap("feeds")
+  }
+  if (!Array.isArray(payload.unread) || !payload.unread.every(isUnreadRecord)) {
+    invalidBootstrap("unread")
+  }
+  if (!Array.isArray(payload.collections) || !payload.collections.every(isCollectionRecord)) {
+    invalidBootstrap("collections")
+  }
+  if (!isRemoteSettings(payload.settings)) invalidBootstrap("settings")
+  if (!isRecord(payload.capabilities)) invalidBootstrap("capabilities")
+
+  return payload as RemoteBootstrapPayload
 }
 
 // ============ Store Model 类型导入 ============
@@ -73,17 +191,17 @@ import type { CollectionSchema } from "../../../database/src/schemas/types"
  */
 export function transformSubscriptionFromApi(record: SubscriptionRecord): SubscriptionModel {
   return {
-    type: (record.type as "feed" | "list" | "inbox") || "feed",
-    feedId: record.feedId || null,
-    listId: null,
-    inboxId: null,
+    type: record.type,
+    feedId: record.feedId ?? null,
+    listId: record.listId ?? null,
+    inboxId: record.inboxId ?? null,
     userId: "remote-user", // 远程端使用固定用户 ID
-    view: (record.view as FeedViewType) ?? 0,
+    view: record.view as FeedViewType,
     isPrivate: false,
     hideFromTimeline: false,
     title: record.title || null,
     category: record.category || null,
-    createdAt: new Date().toISOString(),
+    createdAt: record.createdAt || new Date(0).toISOString(),
   }
 }
 
@@ -137,9 +255,9 @@ export function transformUnreadFromApi(record: UnreadRecord): { id: string; coun
 export function transformCollectionFromApi(record: CollectionRecord): CollectionSchema {
   return {
     entryId: record.entryId,
-    feedId: record.feedId || null,
-    view: (record.view ?? 0) as CollectionSchema["view"],
-    createdAt: record.createdAt || new Date().toISOString(),
+    feedId: record.feedId ?? null,
+    view: record.view as CollectionSchema["view"],
+    createdAt: record.createdAt || new Date(0).toISOString(),
   }
 }
 
@@ -183,6 +301,18 @@ export function transformUnreadsFromApi(
 
 export function transformCollectionsFromApi(records: CollectionRecord[]): CollectionSchema[] {
   return records.map(transformCollectionFromApi)
+}
+
+export function transformRemoteBootstrapFromApi(value: unknown) {
+  const payload = parseRemoteBootstrapPayload(value)
+  return {
+    subscriptions: transformSubscriptionsFromApi(payload.subscriptions),
+    feeds: payload.feeds,
+    unread: transformUnreadsFromApi(payload.unread),
+    collections: transformCollectionsFromApi(payload.collections),
+    settings: payload.settings,
+    capabilities: payload.capabilities,
+  }
 }
 
 /**

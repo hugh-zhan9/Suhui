@@ -1,71 +1,78 @@
-import { and, eq, isNull } from "drizzle-orm"
+import { entriesTable, subscriptionsTable, unreadTable } from "@suhui/database/schemas/index"
+import { and, count, eq, isNull, sql } from "drizzle-orm"
+
 import { DBManager } from "~/manager/db"
-import { getActiveVisibilityState } from "@suhui/database/services/internal/active-visibility"
 
 export class UnreadApplicationService {
   async listUnreadCounts() {
     const db = DBManager.getDB()
-    const [unreads, subscriptions, unreadEntries, visibility] = await Promise.all([
-      db.query.unreadTable.findMany(),
-      db.query.subscriptionsTable.findMany({
-        where: (subscriptions) => isNull(subscriptions.deletedAt),
-        columns: {
-          id: true,
-          type: true,
-          feedId: true,
-          listId: true,
-          inboxId: true,
-        },
-      }),
-      db.query.entriesTable.findMany({
-        where: (entries) => and(eq(entries.read, false), isNull(entries.deletedAt)),
-        columns: {
-          feedId: true,
-          inboxHandle: true,
-        },
-      }),
-      getActiveVisibilityState(),
+    const subscriptionSourceId = sql<string>`CASE ${subscriptionsTable.type}
+      WHEN 'feed' THEN ${subscriptionsTable.feedId}
+      WHEN 'list' THEN ${subscriptionsTable.listId}
+      ELSE ${subscriptionsTable.inboxId}
+    END`
+    const entrySourceId = sql<string>`COALESCE(
+      ${entriesTable.inboxHandle},
+      ${entriesTable.feedId}
+    )`
+    const hasActiveSubscription = sql`EXISTS (
+      SELECT 1
+      FROM ${subscriptionsTable}
+      WHERE ${subscriptionsTable.deletedAt} IS NULL
+        AND (
+          (
+            ${entriesTable.inboxHandle} IS NOT NULL
+            AND ${subscriptionsTable.type} = ${"inbox"}
+            AND ${subscriptionsTable.inboxId} = ${entriesTable.inboxHandle}
+          )
+          OR (
+            ${entriesTable.inboxHandle} IS NULL
+            AND ${subscriptionsTable.type} = ${"feed"}
+            AND ${subscriptionsTable.feedId} = ${entriesTable.feedId}
+          )
+        )
+    )`
+
+    const [unreads, unreadEntries] = await Promise.all([
+      db
+        .select({
+          id: subscriptionSourceId,
+          count: sql<number>`SUM(${unreadTable.count})`.mapWith(Number),
+        })
+        .from(unreadTable)
+        .innerJoin(
+          subscriptionsTable,
+          and(eq(unreadTable.id, subscriptionsTable.id), isNull(subscriptionsTable.deletedAt)),
+        )
+        .where(sql`${subscriptionSourceId} IS NOT NULL`)
+        .groupBy(subscriptionSourceId),
+      db
+        .select({
+          id: entrySourceId,
+          count: count(entriesTable.id),
+        })
+        .from(entriesTable)
+        .where(
+          and(
+            sql`${entriesTable.read} IS NOT TRUE`,
+            isNull(entriesTable.deletedAt),
+            sql`${entrySourceId} IS NOT NULL`,
+            hasActiveSubscription,
+          ),
+        )
+        .groupBy(entrySourceId),
     ])
-
-    const sourceIdBySubscriptionId = new Map<string, string>()
-    for (const subscription of subscriptions) {
-      const sourceId =
-        subscription.type === "feed"
-          ? subscription.feedId
-          : subscription.type === "list"
-            ? subscription.listId
-            : subscription.inboxId
-
-      if (sourceId) {
-        sourceIdBySubscriptionId.set(subscription.id, sourceId)
-      }
-    }
 
     const mergedCountById = new Map<string, number>()
     for (const unread of unreads) {
-      const normalizedId = sourceIdBySubscriptionId.get(unread.id)
-      if (!normalizedId) continue
-      mergedCountById.set(normalizedId, (mergedCountById.get(normalizedId) ?? 0) + unread.count)
+      if (!unread.id) continue
+      mergedCountById.set(unread.id, unread.count)
     }
 
-    const derivedCountById = new Map<string, number>()
-
-    // Derive unread counts from entries as the source of truth for remote mode.
     for (const entry of unreadEntries) {
-      const sourceId = entry.inboxHandle || entry.feedId
-      if (!sourceId) continue
-      if (
-        !visibility.activeFeedIds.has(sourceId) &&
-        !visibility.activeInboxIds.has(sourceId) &&
-        !visibility.activeListIds.has(sourceId)
-      ) {
-        continue
-      }
-      derivedCountById.set(sourceId, (derivedCountById.get(sourceId) ?? 0) + 1)
-    }
-
-    for (const [id, count] of derivedCountById.entries()) {
-      mergedCountById.set(id, count)
+      if (!entry.id) continue
+      // Derived entry counts remain the source of truth when both stores contain a source.
+      mergedCountById.set(entry.id, entry.count)
     }
 
     return Array.from(mergedCountById.entries()).map(([id, count]) => ({ id, count }))

@@ -157,6 +157,22 @@ describe("RemoteSSEHandler", () => {
     expect(onConnectionChange).toHaveBeenLastCalledWith(true)
   })
 
+  it("reports a first connection failure before ready and can later recover", () => {
+    const onConnectionChange = vi.fn()
+    remoteSSEHandler.setHandlers({ onConnectionChange })
+    remoteSSEHandler.connect()
+
+    eventSource.emitError()
+    expect(onConnectionChange.mock.calls.map(([connected]) => connected)).toEqual([false, false])
+
+    eventSource.emit("ready")
+    expect(onConnectionChange.mock.calls.map(([connected]) => connected)).toEqual([
+      false,
+      false,
+      true,
+    ])
+  })
+
   it.each([1, 10, 50])("routes one %i-feed refresh event through the coordinator", async (size) => {
     const payload = change({
       batchId: `batch-refresh-${size}`,

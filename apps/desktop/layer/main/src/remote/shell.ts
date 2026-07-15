@@ -133,6 +133,17 @@ const remoteShellHtml = `<!doctype html>
         color: #5b6470;
         font-size: 14px;
       }
+      .request-state {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        min-height: 24px;
+        margin-bottom: 12px;
+      }
+      .request-state[hidden] {
+        display: none;
+      }
       @media (prefers-color-scheme: dark) {
         body {
           background: linear-gradient(180deg, #11161b 0%, #171d24 100%);
@@ -183,14 +194,25 @@ const remoteShellHtml = `<!doctype html>
                 <button id="refresh-feed-button" class="item-button" disabled>Refresh</button>
               </div>
             </div>
+            <div id="bootstrap-state" class="request-state">
+              <p id="bootstrap-state-message" class="empty">Loading subscriptions...</p>
+              <button id="bootstrap-retry-button" class="item-button" hidden>Retry</button>
+            </div>
             <div id="subscription-panel">
               <p class="empty">Loading...</p>
             </div>
           </section>
           <section>
             <h2 class="section-title">Entries</h2>
+            <div id="entries-state" class="request-state" hidden>
+              <p id="entries-state-message" class="empty"></p>
+              <button id="entries-retry-button" class="item-button" hidden>Retry entries</button>
+            </div>
             <div id="entry-panel">
               <p class="empty">Choose a subscription.</p>
+            </div>
+            <div class="item-actions">
+              <button id="load-more-entries" class="item-button" hidden>Load more</button>
             </div>
           </section>
         </div>
@@ -206,11 +228,25 @@ const entryPanel = document.getElementById("entry-panel");
 const status = document.getElementById("remote-status");
 const refreshAllButton = document.getElementById("refresh-all-button");
 const refreshButton = document.getElementById("refresh-feed-button");
+const bootstrapState = document.getElementById("bootstrap-state");
+const bootstrapStateMessage = document.getElementById("bootstrap-state-message");
+const bootstrapRetryButton = document.getElementById("bootstrap-retry-button");
+const entriesState = document.getElementById("entries-state");
+const entriesStateMessage = document.getElementById("entries-state-message");
+const entriesRetryButton = document.getElementById("entries-retry-button");
+const loadMoreButton = document.getElementById("load-more-entries");
 let activeFeedId = null;
 let subscriptionsCache = [];
 let unreadCache = {};
 let entriesCache = [];
-let entriesNextCursor = null;
+let nextEntryCursor = null;
+let entriesHasMore = false;
+let entriesPending = false;
+let entriesRequestVersion = 0;
+let bootstrapPending = false;
+let bootstrapOwnerPending = false;
+let trailingBootstrapRequested = false;
+let trailingBootstrapReloadEntries = false;
 let eventStreamDisconnected = false;
 const processedBatchIds = new Map();
 const processedBatchTtlMs = 5 * 60 * 1000;
@@ -313,7 +349,9 @@ const renderSubscriptions = (items) => {
       activeFeedId = nextFeedId;
       renderSubscriptions(subscriptionsCache);
       syncRefreshButton();
-      void loadEntries(nextFeedId);
+      entriesCache = [];
+      renderEntries(entriesCache);
+      void loadEntries(nextFeedId, { append: false });
     });
   });
 };
@@ -340,10 +378,7 @@ const renderEntries = (items) => {
     })
     .join("");
 
-  const loadMore = entriesNextCursor
-    ? '<div class="item-actions"><button id="load-more-entries" class="item-button">Load more</button></div>'
-    : '';
-  entryPanel.innerHTML = '<ul class="list">' + list + '</ul>' + loadMore;
+  entryPanel.innerHTML = '<ul class="list">' + list + '</ul>';
   entryPanel.querySelectorAll("[data-entry-id]").forEach((node) => {
     node.addEventListener("click", async () => {
       const entryId = node.getAttribute("data-entry-id");
@@ -371,13 +406,7 @@ const renderEntries = (items) => {
       }
     });
   });
-  const loadMoreButton = document.getElementById("load-more-entries");
-  if (loadMoreButton) {
-    loadMoreButton.addEventListener("click", () => {
-      if (!activeFeedId || !entriesNextCursor) return;
-      void loadEntries(activeFeedId, entriesNextCursor, true);
-    });
-  }
+  syncEntryActions();
 };
 
 const setStatus = (label) => {
@@ -393,6 +422,75 @@ const syncRefreshButton = () => {
   }
 };
 
+const setBootstrapState = (kind, message) => {
+  if (!bootstrapState || !bootstrapStateMessage || !bootstrapRetryButton) return;
+  bootstrapState.hidden = kind === "ready";
+  bootstrapStateMessage.textContent = message;
+  bootstrapRetryButton.hidden = kind !== "error";
+  bootstrapRetryButton.toggleAttribute("disabled", bootstrapPending);
+};
+
+const setEntriesState = (kind, message) => {
+  if (!entriesState || !entriesStateMessage || !entriesRetryButton) return;
+  entriesState.hidden = kind === "ready";
+  entriesStateMessage.textContent = message;
+  entriesRetryButton.hidden = kind !== "error";
+  entriesRetryButton.toggleAttribute("disabled", entriesPending);
+};
+
+const syncEntryActions = () => {
+  if (!loadMoreButton) return;
+  loadMoreButton.hidden = !entriesHasMore || !nextEntryCursor;
+  loadMoreButton.toggleAttribute("disabled", entriesPending);
+};
+
+const isRecord = (value) => typeof value === "object" && value !== null && !Array.isArray(value);
+const isNonEmptyString = (value) => typeof value === "string" && value.trim().length > 0;
+const isAbsent = (value) => value === undefined || value === null;
+
+const normalizeOptionalString = (record, key) => {
+  const value = record[key];
+  if (isAbsent(value)) return null;
+  if (typeof value !== "string") throw new Error("Invalid bootstrap subscription");
+  return value;
+};
+
+const normalizeSubscription = (value) => {
+  if (!isRecord(value) || !isNonEmptyString(value.id)) {
+    throw new Error("Invalid bootstrap subscription");
+  }
+  const feedId = isAbsent(value.feedId) ? null : value.feedId;
+  const listId = isAbsent(value.listId) ? null : value.listId;
+  const inboxId = isAbsent(value.inboxId) ? null : value.inboxId;
+  const sourceMatches =
+    (value.type === "feed" && isNonEmptyString(feedId) && listId === null && inboxId === null) ||
+    (value.type === "list" && feedId === null && isNonEmptyString(listId) && inboxId === null) ||
+    (value.type === "inbox" && feedId === null && listId === null && isNonEmptyString(inboxId));
+  if (!sourceMatches) throw new Error("Invalid bootstrap subscription");
+
+  return {
+    ...value,
+    id: value.id.trim(),
+    feedId: typeof feedId === "string" ? feedId.trim() : null,
+    listId: typeof listId === "string" ? listId.trim() : null,
+    inboxId: typeof inboxId === "string" ? inboxId.trim() : null,
+    title: normalizeOptionalString(value, "title"),
+    category: normalizeOptionalString(value, "category"),
+  };
+};
+
+const normalizeUnread = (value) => {
+  if (
+    !isRecord(value) ||
+    !isNonEmptyString(value.id) ||
+    !Number.isInteger(value.count) ||
+    value.count < 0
+  ) {
+    throw new Error("Invalid bootstrap unread count");
+  }
+  return { id: value.id.trim(), count: value.count };
+};
+
 const handleEntryChange = async (input) => {
   const change = parseEntryChangeEventV1(input);
   if (!change) return "ignored-invalid";
@@ -405,26 +503,22 @@ const handleEntryChange = async (input) => {
   switch (change.reason) {
     case "refresh":
       if (change.feedIds.length === 0) return "handled";
-      await Promise.all([
-        loadUnread(),
-        activeFeedId && change.feedIds.includes(activeFeedId)
-          ? loadEntries(activeFeedId)
-          : Promise.resolve(),
-      ]);
+      await loadBootstrap({
+        reloadEntries: Boolean(activeFeedId && change.feedIds.includes(activeFeedId)),
+      });
       break;
     case "read":
-      await Promise.all([
-        loadUnread(),
-        activeFeedId &&
-        change.entryIds &&
-        entriesCache.some((entry) => change.entryIds.includes(entry.id))
-          ? loadEntries(activeFeedId)
-          : Promise.resolve(),
-      ]);
+      await loadBootstrap({
+        reloadEntries: Boolean(
+          activeFeedId &&
+          change.entryIds &&
+          entriesCache.some((entry) => change.entryIds.includes(entry.id)),
+        ),
+      });
       break;
     case "subscription":
     case "import":
-      await loadSubscriptions();
+      await loadBootstrap({ reloadEntries: true });
       break;
     case "collection":
       break;
@@ -446,7 +540,7 @@ const connectEvents = () => {
     setStatus("Connected · Realtime online");
     if (!eventStreamDisconnected) return;
     eventStreamDisconnected = false;
-    void loadSubscriptions();
+    void loadBootstrap({ reloadEntries: true });
   });
   eventSource.addEventListener("ping", () => {
     setStatus("Connected · Realtime online");
@@ -507,74 +601,160 @@ const refreshAllFeeds = async () => {
   }
 };
 
-const loadEntries = async (feedId, cursor = null, append = false) => {
+const loadEntries = async (feedId, { append = false } = {}) => {
+  if (!feedId || feedId !== activeFeedId) return;
+  if (append && (entriesPending || !entriesHasMore || !nextEntryCursor)) return;
+
+  const requestVersion = append ? entriesRequestVersion : ++entriesRequestVersion;
+  const requestedCursor = append ? nextEntryCursor : null;
+  entriesPending = true;
   if (!append) {
-    entryPanel.innerHTML = '<p class="empty">Loading entries...</p>';
-    entriesCache = [];
-    entriesNextCursor = null;
+    nextEntryCursor = null;
+    entriesHasMore = false;
+    setEntriesState("loading", "Loading entries...");
   }
+  syncEntryActions();
   try {
-    const query = new URLSearchParams({ feedId });
-    if (cursor) query.set("cursor", cursor);
-    const response = await fetch("/api/entries?" + query.toString());
+    const params = new URLSearchParams({ feedId });
+    params.set("limit", "20");
+    if (append && nextEntryCursor) params.set("cursor", nextEntryCursor);
+    const response = await fetch("/api/entries?" + params.toString());
     if (!response.ok) {
       throw new Error("HTTP " + response.status);
     }
     const payload = await response.json();
-    entriesCache = append ? entriesCache.concat(payload.data || []) : payload.data || [];
-    entriesNextCursor = payload.page?.nextCursor || null;
+    if (
+      !payload ||
+      !Array.isArray(payload.data) ||
+      !payload.page ||
+      typeof payload.page.hasMore !== "boolean" ||
+      (payload.page.nextCursor !== null && typeof payload.page.nextCursor !== "string")
+    ) {
+      throw new Error("Invalid entries response");
+    }
+    if (requestVersion !== entriesRequestVersion || feedId !== activeFeedId) return;
+    if (append && requestedCursor !== nextEntryCursor) return;
+    if (append) {
+      const existingIds = new Set(entriesCache.map((entry) => entry.id));
+      entriesCache = entriesCache.concat(
+        payload.data.filter((entry) => {
+          if (existingIds.has(entry.id)) return false;
+          existingIds.add(entry.id);
+          return true;
+        }),
+      );
+    } else {
+      entriesCache = payload.data;
+    }
+    entriesHasMore = payload.page.hasMore;
+    nextEntryCursor = payload.page.nextCursor;
     renderEntries(entriesCache);
+    setEntriesState("ready", "");
   } catch (error) {
-    entryPanel.innerHTML = '<p class="empty">Failed to load entries.</p>';
+    if (requestVersion !== entriesRequestVersion || feedId !== activeFeedId) return;
+    setEntriesState("error", append ? "Failed to load more entries." : "Failed to load entries.");
     console.error("[remote-shell] failed to load entries", error);
-  }
-};
-
-const loadUnread = async () => {
-  try {
-    const response = await fetch("/api/unread");
-    if (!response.ok) {
-      throw new Error("HTTP " + response.status);
+  } finally {
+    if (requestVersion === entriesRequestVersion && feedId === activeFeedId) {
+      entriesPending = false;
+      setEntriesState(
+        entriesState && entriesState.hidden ? "ready" : entriesRetryButton && !entriesRetryButton.hidden ? "error" : "loading",
+        entriesStateMessage ? entriesStateMessage.textContent || "" : "",
+      );
+      syncEntryActions();
     }
-    const payload = await response.json();
-    unreadCache = Object.fromEntries((payload.data || []).map((item) => [item.id, item.count]));
-    renderSubscriptions(subscriptionsCache);
-  } catch (error) {
-    console.error("[remote-shell] failed to load unread metadata", error);
   }
 };
 
-const loadSubscriptions = async () => {
+const loadBootstrapPass = async (reloadEntries) => {
+  bootstrapPending = true;
   setStatus("Loading subscriptions...");
+  setBootstrapState("loading", "Loading subscriptions...");
   try {
-    const [subscriptionsResponse, unreadResponse] = await Promise.all([
-      fetch("/api/subscriptions"),
-      fetch("/api/unread"),
-    ]);
-    if (!subscriptionsResponse.ok) {
-      throw new Error("HTTP " + subscriptionsResponse.status);
+    const response = await fetch("/api/bootstrap");
+    if (!response.ok) throw new Error("HTTP " + response.status);
+    const payload = await response.json();
+    const bootstrap = payload && payload.data;
+    if (
+      !bootstrap ||
+      !Array.isArray(bootstrap.subscriptions) ||
+      !Array.isArray(bootstrap.feeds) ||
+      !Array.isArray(bootstrap.unread) ||
+      !Array.isArray(bootstrap.collections) ||
+      !isRecord(bootstrap.settings) ||
+      !isRecord(bootstrap.capabilities)
+    ) {
+      throw new Error("Invalid bootstrap response");
     }
-    if (!unreadResponse.ok) {
-      throw new Error("HTTP " + unreadResponse.status);
-    }
-    const payload = await subscriptionsResponse.json();
-    const unreadPayload = await unreadResponse.json();
-    subscriptionsCache = payload.data || [];
-    unreadCache = Object.fromEntries((unreadPayload.data || []).map((item) => [item.id, item.count]));
-    activeFeedId = subscriptionsCache.find((item) => item.feedId)?.feedId || null;
+
+    const nextSubscriptions = bootstrap.subscriptions.map(normalizeSubscription);
+    const nextUnread = bootstrap.unread.map(normalizeUnread);
+    const nextUnreadCache = Object.fromEntries(nextUnread.map((item) => [item.id, item.count]));
+    const previousFeedId = activeFeedId;
+    const currentFeedStillExists = nextSubscriptions.some((item) => item.feedId === activeFeedId);
+    const nextActiveFeedId = currentFeedStillExists
+      ? activeFeedId
+      : nextSubscriptions.find((item) => item.feedId)?.feedId || null;
+
+    subscriptionsCache = nextSubscriptions;
+    unreadCache = nextUnreadCache;
+    activeFeedId = nextActiveFeedId;
     renderSubscriptions(subscriptionsCache);
     syncRefreshButton();
-    if (activeFeedId) {
-      await loadEntries(activeFeedId);
+    setBootstrapState("ready", "");
+    setStatus("Connected · Metadata ready");
+
+    if (activeFeedId && (reloadEntries || activeFeedId !== previousFeedId)) {
+      if (activeFeedId !== previousFeedId) {
+        entriesCache = [];
+        renderEntries(entriesCache);
+      }
+      return activeFeedId;
     } else {
-      entryPanel.innerHTML = '<p class="empty">Choose a subscription.</p>';
+      if (!activeFeedId) {
+        entriesRequestVersion += 1;
+        entriesCache = [];
+        nextEntryCursor = null;
+        entriesHasMore = false;
+        entryPanel.innerHTML = '<p class="empty">Choose a subscription.</p>';
+        syncEntryActions();
+        setEntriesState("ready", "");
+      }
     }
-    setStatus("Connected · Initial sync complete");
+    return null;
   } catch (error) {
-    subscriptionPanel.innerHTML = '<p class="empty">Failed to load subscriptions.</p>';
-    entryPanel.innerHTML = '<p class="empty">Entries unavailable.</p>';
-    setStatus("Disconnected");
-    console.error("[remote-shell] failed to load subscriptions", error);
+    setBootstrapState("error", "Failed to load subscriptions.");
+    setStatus("Metadata unavailable");
+    console.error("[remote-shell] failed to load bootstrap", error);
+    return null;
+  } finally {
+    bootstrapPending = false;
+    if (bootstrapRetryButton) bootstrapRetryButton.toggleAttribute("disabled", false);
+  }
+};
+
+const loadBootstrap = async ({ reloadEntries = false } = {}) => {
+  if (bootstrapOwnerPending) {
+    trailingBootstrapRequested = true;
+    trailingBootstrapReloadEntries = trailingBootstrapReloadEntries || reloadEntries;
+    return;
+  }
+
+  bootstrapOwnerPending = true;
+  let requestedReloadEntries = reloadEntries;
+  try {
+    while (true) {
+      trailingBootstrapRequested = false;
+      trailingBootstrapReloadEntries = false;
+      const feedIdToReload = await loadBootstrapPass(requestedReloadEntries);
+      if (feedIdToReload && !(trailingBootstrapRequested && trailingBootstrapReloadEntries)) {
+        await loadEntries(feedIdToReload, { append: false });
+      }
+      if (!trailingBootstrapRequested) break;
+      requestedReloadEntries = trailingBootstrapReloadEntries;
+    }
+  } finally {
+    bootstrapOwnerPending = false;
   }
 };
 
@@ -590,8 +770,28 @@ if (refreshAllButton) {
   });
 }
 
+if (bootstrapRetryButton) {
+  bootstrapRetryButton.addEventListener("click", () => {
+    void loadBootstrap({ reloadEntries: entriesCache.length === 0 });
+  });
+}
+
+if (entriesRetryButton) {
+  entriesRetryButton.addEventListener("click", () => {
+    if (!activeFeedId) return;
+    void loadEntries(activeFeedId, { append: false });
+  });
+}
+
+if (loadMoreButton) {
+  loadMoreButton.addEventListener("click", () => {
+    if (!activeFeedId) return;
+    void loadEntries(activeFeedId, { append: true });
+  });
+}
+
 connectEvents();
-void loadSubscriptions();
+void loadBootstrap({ reloadEntries: true });
 `
 
 export const getRemoteShellHtml = () => remoteShellHtml
