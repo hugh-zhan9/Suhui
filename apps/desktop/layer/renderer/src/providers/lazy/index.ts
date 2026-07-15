@@ -1,5 +1,9 @@
 import { createElement, lazy, Suspense, useState } from "react"
 
+import { FollowCommandManager } from "~/modules/command/command-manager"
+
+const LazyFollowCommandManager = FollowCommandManager
+
 const LazyContextMenuProvider = lazy(() =>
   import("./../context-menu-provider").then((res) => ({
     default: res.ContextMenuProvider,
@@ -46,6 +50,7 @@ const LazyPWAPrompt = () => {
 export {
   LazyContextMenuProvider,
   LazyExtensionExposeProvider,
+  LazyFollowCommandManager,
   LazyPopoverProvider,
   LazyPWAPrompt,
   LazyReloadPrompt,

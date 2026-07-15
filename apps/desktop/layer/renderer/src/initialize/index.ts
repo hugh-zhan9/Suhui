@@ -24,6 +24,7 @@ import {
   markSnapshotRestoreSettled,
 } from "./readiness"
 import { initializeSettings } from "./settings"
+import { debugStartupReadTrace } from "./startup-read-trace"
 import {
   forceStartupSnapshotRefresh,
   initializeStartupSnapshot,
@@ -38,9 +39,7 @@ declare global {
 
 export const initializeApp = () => {
   const startupReadTraceFlags = window.__startupReadTraceFlags
-  if (startupReadTraceFlags?.enabled) {
-    appLog("[startup-read-trace] flags", startupReadTraceFlags)
-  }
+  debugStartupReadTrace("[startup-read-trace] flags", () => startupReadTraceFlags)
 
   appLog(`${APP_NAME}: 溯源而读，回归纯粹`, repository.url)
 

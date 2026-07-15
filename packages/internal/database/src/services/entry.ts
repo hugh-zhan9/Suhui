@@ -3,6 +3,7 @@ import { and, between, eq, inArray, isNull, lt, or } from "drizzle-orm"
 import { db } from "../db"
 import { entriesTable } from "../schemas"
 import type { EntrySchema } from "../schemas/types"
+import { debugStartupReadTrace } from "../startup-read-trace"
 import type { Resetable } from "./internal/base"
 import { conflictUpdateAllExcept } from "./internal/utils"
 
@@ -95,14 +96,14 @@ class EntryServiceStatic implements Resetable {
   }) {
     if (!entryIds && !feedIds) return
     if (entry.read !== undefined) {
-      console.info("[startup-read-trace] EntryService.patchMany(read)", {
+      debugStartupReadTrace("[startup-read-trace] EntryService.patchMany(read)", () => ({
         read: entry.read,
         entryIds: entryIds?.slice(0, 20) ?? [],
         entryIdsCount: entryIds?.length ?? 0,
         feedIds: feedIds?.slice(0, 20) ?? [],
         feedIdsCount: feedIds?.length ?? 0,
         time: time ?? null,
-      })
+      }))
     }
     await db
       .update(entriesTable)

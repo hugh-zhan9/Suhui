@@ -6,8 +6,8 @@ import { useMemo } from "react"
 import { useEventCallback } from "usehooks-ts"
 
 import { useGeneralSettingKey } from "~/atoms/settings/general"
-import { appLog } from "~/lib/log"
 import { useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
+import { debugStartupReadTrace } from "~/initialize/startup-read-trace"
 
 export const useEntryMarkReadHandler = (entriesIds: string[]) => {
   const renderAsRead = useGeneralSettingKey("renderMarkUnread")
@@ -45,29 +45,25 @@ export const useEntryMarkReadHandler = (entriesIds: string[]) => {
     }
 
     if (treatAsWideMode && renderAsRead) {
-      if (traceFlags?.enabled) {
-        appLog("[startup-read-trace] useEntryMarkReadHandler:render-enabled", {
-          label: traceFlags.label,
-          feedView,
-          viewWideMode: !!viewDef?.wideMode,
-          forcedWideMode: !!traceFlags.forceWideRenderMarkRead,
-          renderAsRead,
-          scrollMarkUnread,
-          entriesCount: entriesIds.length,
-        })
-      }
+      debugStartupReadTrace("[startup-read-trace] useEntryMarkReadHandler:render-enabled", () => ({
+        label: traceFlags?.label,
+        feedView,
+        viewWideMode: !!viewDef?.wideMode,
+        forcedWideMode: !!traceFlags?.forceWideRenderMarkRead,
+        renderAsRead,
+        scrollMarkUnread,
+        entriesCount: entriesIds.length,
+      }))
       return handleRenderAsRead
     }
 
     if (scrollMarkUnread) {
-      if (traceFlags?.enabled) {
-        appLog("[startup-read-trace] useEntryMarkReadHandler:scroll-enabled", {
-          label: traceFlags.label,
-          feedView,
-          scrollMarkUnread,
-          entriesCount: entriesIds.length,
-        })
-      }
+      debugStartupReadTrace("[startup-read-trace] useEntryMarkReadHandler:scroll-enabled", () => ({
+        label: traceFlags?.label,
+        feedView,
+        scrollMarkUnread,
+        entriesCount: entriesIds.length,
+      }))
       return handleRenderAsRead
     }
     return
@@ -92,14 +88,12 @@ export function batchMarkRead(ids: string[]) {
   }
 
   if (batchLikeIds.length > 0) {
-    if (window.__startupReadTraceFlags?.enabled) {
-      appLog("[startup-read-trace] batchMarkRead", {
-        label: window.__startupReadTraceFlags.label,
-        inputCount: ids.length,
-        markedCount: batchLikeIds.length,
-        firstIds: batchLikeIds.slice(0, 10),
-      })
-    }
+    debugStartupReadTrace("[startup-read-trace] batchMarkRead", () => ({
+      label: window.__startupReadTraceFlags?.label,
+      inputCount: ids.length,
+      markedCount: batchLikeIds.length,
+      firstIds: batchLikeIds.slice(0, 10),
+    }))
     for (const id of batchLikeIds) {
       unreadSyncService.markRead(id)
     }

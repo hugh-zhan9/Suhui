@@ -323,30 +323,83 @@ export const useFolderFeedsByFeedId = ({
 }
 
 export const useFeedsGroupedData = (view: FeedViewType, autoGroup: boolean) => {
-  const data = useFeedSubscriptionByView(view)
+  return useSidebarSubscriptionSelection(view, autoGroup).groups
+}
 
-  return useMemo(() => {
-    if (!data || data.length === 0) return {}
+export type SidebarSubscriptionSelection = {
+  subscriptionIds: readonly string[]
+  categoryBySubscriptionId: Readonly<Record<string, string>>
+  explicitCategoryBySubscriptionId: Readonly<Record<string, string>>
+  titleOverrideBySubscriptionId: Readonly<Record<string, string>>
+  groups: Readonly<Record<string, string[]>>
+}
 
-    const groupFolder = {} as Record<string, string[]>
+const createSidebarRecord = <T>() => Object.create(null) as Record<string, T>
 
-    for (const subscription of data.filter((s) => !!s)) {
+const emptySidebarSubscriptionSelection: SidebarSubscriptionSelection = {
+  subscriptionIds: [],
+  categoryBySubscriptionId: createSidebarRecord(),
+  explicitCategoryBySubscriptionId: createSidebarRecord(),
+  titleOverrideBySubscriptionId: createSidebarRecord(),
+  groups: createSidebarRecord(),
+}
+
+export const createSidebarSubscriptionSelector = (view: FeedViewType, autoGroup: boolean) => {
+  let previous = emptySidebarSubscriptionSelection
+
+  return (state: SubscriptionState): SidebarSubscriptionSelection => {
+    const subscriptionIds: string[] = []
+    const categoryBySubscriptionId = createSidebarRecord<string>()
+    const explicitCategoryBySubscriptionId = createSidebarRecord<string>()
+    const titleOverrideBySubscriptionId = createSidebarRecord<string>()
+    const groups = createSidebarRecord<string[]>()
+
+    for (const feedId of state.feedIdByView[view]) {
+      const subscription = state.data[feedId]
+      if (!subscription?.feedId) continue
       const category =
         subscription.category ||
         (autoGroup ? getDefaultCategory(subscription) : subscription.feedId)
+      if (!category) continue
 
-      if (category) {
-        if (!groupFolder[category]) {
-          groupFolder[category] = []
-        }
-        if (subscription.feedId) {
-          groupFolder[category].push(subscription.feedId)
-        }
+      subscriptionIds.push(subscription.feedId)
+      categoryBySubscriptionId[subscription.feedId] = category
+      if (subscription.category) {
+        explicitCategoryBySubscriptionId[subscription.feedId] = subscription.category
       }
+      if (subscription.title)
+        titleOverrideBySubscriptionId[subscription.feedId] = subscription.title
+      ;(groups[category] ??= []).push(subscription.feedId)
     }
 
-    return groupFolder
-  }, [autoGroup, data])
+    const unchanged =
+      subscriptionIds.length === previous.subscriptionIds.length &&
+      subscriptionIds.every(
+        (id, index) =>
+          id === previous.subscriptionIds[index] &&
+          categoryBySubscriptionId[id] === previous.categoryBySubscriptionId[id] &&
+          explicitCategoryBySubscriptionId[id] === previous.explicitCategoryBySubscriptionId[id] &&
+          titleOverrideBySubscriptionId[id] === previous.titleOverrideBySubscriptionId[id],
+      )
+    if (unchanged) return previous
+
+    previous = {
+      subscriptionIds,
+      categoryBySubscriptionId,
+      explicitCategoryBySubscriptionId,
+      titleOverrideBySubscriptionId,
+      groups,
+    }
+    return previous
+  }
+}
+
+export const useSidebarSubscriptionSelection = (view: FeedViewType, autoGroup: boolean) => {
+  const selector = useMemo(
+    () => createSidebarSubscriptionSelector(view, autoGroup),
+    [autoGroup, view],
+  )
+  return useSubscriptionStore(selector)
 }
 
 export const useSubscriptionListIds = (view: FeedViewType) => {

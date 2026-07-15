@@ -7,13 +7,16 @@ import {
 import { ScrollArea } from "@suhui/components/ui/scroll-area/index.js"
 import { Skeleton } from "@suhui/components/ui/skeleton/index.jsx"
 import { FeedViewType } from "@suhui/constants"
+import { isOnboardingFeedUrl } from "@suhui/store/constants/onboarding"
+import { useFeedStore } from "@suhui/store/feed/store"
 import { useInboxList } from "@suhui/store/inbox/hooks"
 import { useListById } from "@suhui/store/list/hooks"
 import {
   useCategoryOpenStateByView,
-  useFeedsGroupedData,
+  useSidebarSubscriptionSelection,
   useSubscriptionListIds,
 } from "@suhui/store/subscription/hooks"
+import { useUnreadStore } from "@suhui/store/unread/store"
 import { nextFrame } from "@suhui/utils/dom"
 import { EventBus } from "@suhui/utils/event-bus"
 import { cn, combineCleanupFunctions, isKeyForMultiSelectPressed } from "@suhui/utils/utils"
@@ -21,6 +24,7 @@ import { memo, useCallback, useEffect, useImperativeHandle, useMemo, useRef, use
 import { useTranslation } from "react-i18next"
 import Selecto from "react-selecto"
 import { useEventCallback, useEventListener } from "usehooks-ts"
+import { projectOwnerModel } from "virtual:sidebar-owner-hooks"
 
 import { useGeneralSettingKey } from "~/atoms/settings/general"
 import { FocusablePresets } from "~/components/common/Focusable"
@@ -39,16 +43,46 @@ import {
 } from "../atom"
 import { DraggableContext } from "../context"
 import { FeedItem, ListItemAutoHideUnread } from "../FeedItem"
+import { FeedCategoryAutoHideUnread } from "../FeedCategory"
 import { useShouldFreeUpSpace } from "../hook"
-import { SortableFeedList, SortByAlphabeticalInbox, SortByAlphabeticalList } from "../sort-by"
+import { SortByAlphabeticalInbox, SortByAlphabeticalList } from "../sort-by"
+import { useFeedListSortSelector } from "../atom"
+import {
+  createSidebarModelDeriver,
+  createSidebarTitleSortKey,
+  type SidebarDerivedCategory,
+} from "../sidebar-derived-model"
 import { EmptyFeedList } from "./EmptyFeedList"
 import { ListHeader } from "./ListHeader"
 import { StarredItem } from "./StarredItem"
 import type { SubscriptionProps } from "./SubscriptionListGuard"
 
+const emptyCategoryOpenStateData: Record<string, boolean> = {}
+
 const SubscriptionImpl = ({ ref, className, view, isSubscriptionLoading }: SubscriptionProps) => {
   const autoGroup = useGeneralSettingKey("autoGroup")
-  const feedsData = useFeedsGroupedData(view, autoGroup)
+  const sidebarSelection = useSidebarSubscriptionSelection(view, autoGroup)
+  const feedsData = sidebarSelection.groups
+  const sidebarIdsKey = sidebarSelection.subscriptionIds.join("\u0000")
+  const feedSortValues = useFeedStore(
+    useCallback(
+      (state) =>
+        sidebarSelection.subscriptionIds.map((id) => {
+          const feed = state.feeds[id]
+          return `${feed?.title ?? ""}\u0000${isOnboardingFeedUrl(feed?.url) ? "1" : "0"}`
+        }),
+      // The selector's primitive array stays shallow-equal across unrelated feed writes.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      [sidebarIdsKey],
+    ),
+  )
+  const unreadValues = useUnreadStore(
+    useCallback(
+      (state) => sidebarSelection.subscriptionIds.map((id) => state.data[id] ?? 0),
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      [sidebarIdsKey],
+    ),
+  )
 
   const listSubIds = useSubscriptionListIds(view)
   const inboxSubIds = useInboxList(
@@ -59,7 +93,46 @@ const SubscriptionImpl = ({ ref, className, view, isSubscriptionLoading }: Subsc
   )
 
   const categoryOpenStateData = useCategoryOpenStateByView(view)
+  const sortBy = useFeedListSortSelector((state) => state.by)
+  const sortDirection = useFeedListSortSelector((state) => state.order)
+  const deriveSidebarModel = useMemo(createSidebarModelDeriver, [])
+  const sidebarModel = useMemo(() => {
+    const titleBySubscriptionId = Object.create(null) as Record<string, string>
+    const unreadBySubscriptionId = Object.create(null) as Record<string, number>
+    for (const [index, id] of sidebarSelection.subscriptionIds.entries()) {
+      const [feedTitle = "", onboarding = "0"] = (feedSortValues[index] ?? "").split("\u0000")
+      const category = sidebarSelection.categoryBySubscriptionId[id]
+      const categoryIds = category ? feedsData[category] : undefined
+      const sortTitle =
+        categoryIds?.length === 1 && sidebarSelection.explicitCategoryBySubscriptionId[id]
+          ? sidebarSelection.explicitCategoryBySubscriptionId[id]!
+          : (sidebarSelection.titleOverrideBySubscriptionId[id] ?? feedTitle)
+      titleBySubscriptionId[id] = createSidebarTitleSortKey(sortTitle, onboarding === "1")
+      unreadBySubscriptionId[id] = unreadValues[index] ?? 0
+    }
+    const collapsedCategories = new Set(
+      Object.keys(feedsData).filter((category) => categoryOpenStateData[category] !== true),
+    )
+    return deriveSidebarModel({
+      subscriptionIds: sidebarSelection.subscriptionIds,
+      categoryBySubscriptionId: sidebarSelection.categoryBySubscriptionId,
+      titleBySubscriptionId,
+      unreadBySubscriptionId,
+      collapsedCategories,
+      sortMode: sortBy === "count" ? "unread" : "alphabetical",
+      sortDirection,
+    })
+  }, [
+    categoryOpenStateData,
+    feedSortValues,
+    feedsData,
+    sidebarSelection,
+    sortBy,
+    sortDirection,
+    unreadValues,
+  ])
 
+  const projectedSidebarModel = projectOwnerModel(sidebarModel)
   const hasData =
     Object.keys(feedsData).length > 0 || listSubIds.length > 0 || inboxSubIds.length > 0
 
@@ -287,11 +360,7 @@ const SubscriptionImpl = ({ ref, className, view, isSubscriptionLoading }: Subsc
         <DraggableContext value={draggableContextValue}>
           <div className="space-y-px" id="feeds-area" ref={setNodeRef}>
             {hasData ? (
-              <SortableFeedList
-                view={view}
-                data={feedsData}
-                categoryOpenStateData={categoryOpenStateData}
-              />
+              <SortableFeedList view={view} model={projectedSidebarModel} />
             ) : isSubscriptionLoading ? (
               <SubscriptionListSkeleton />
             ) : (
@@ -307,6 +376,24 @@ const SubscriptionImpl = ({ ref, className, view, isSubscriptionLoading }: Subsc
 SubscriptionImpl.displayName = "FeedListImpl"
 
 export const SubscriptionList = memo(SubscriptionImpl)
+
+const SortableFeedList = memo(function SortableFeedList({
+  view,
+  model,
+}: {
+  view: FeedViewType
+  model: readonly SidebarDerivedCategory[]
+}) {
+  return model.map((category) => (
+    <FeedCategoryAutoHideUnread
+      key={category.category}
+      data={category.subscriptionIds}
+      view={view}
+      categoryOpenStateData={emptyCategoryOpenStateData}
+      derivedCategory={category}
+    />
+  ))
+})
 
 const FeedCategoryPrefix = "feed-category-"
 

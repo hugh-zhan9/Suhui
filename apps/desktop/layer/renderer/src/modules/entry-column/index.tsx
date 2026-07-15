@@ -16,7 +16,7 @@ import { FeedNotFound } from "~/components/errors/FeedNotFound"
 import { FEED_COLLECTION_LIST, HotkeyScope, ROUTE_FEED_PENDING } from "~/constants"
 import { useNavigateEntry } from "~/hooks/biz/useNavigateEntry"
 import { useRouteParams, useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
-import { appLog } from "~/lib/log"
+import { debugStartupReadTrace } from "~/initialize/startup-read-trace"
 import { useFeedQuery } from "~/queries/feed"
 import { useFeedHeaderTitle } from "~/store/feed/hooks"
 
@@ -77,15 +77,13 @@ function EntryColumnContent() {
 
     if (isCollection || isPendingEntry) return
 
-    if (window.__startupReadTraceFlags?.enabled) {
-      appLog("[startup-read-trace] activeEntry-markRead-effect", {
-        label: window.__startupReadTraceFlags.label,
-        activeEntryId,
-        isCollection,
-        isPendingEntry,
-        view,
-      })
-    }
+    debugStartupReadTrace("[startup-read-trace] activeEntry-markRead-effect", () => ({
+      label: window.__startupReadTraceFlags?.label,
+      activeEntryId,
+      isCollection,
+      isPendingEntry,
+      view,
+    }))
     // Mark as read for both local and remote feeds
     unreadSyncService.markRead(activeEntryId)
   }, [activeEntryId, isCollection, isPendingEntry])
@@ -146,17 +144,15 @@ function EntryColumnContent() {
       if (!getView(view)?.wideMode && !forcedWideMode) {
         return
       }
-      if (traceFlags?.enabled) {
-        appLog("[startup-read-trace] handleRangeChange-renderMark", {
-          label: traceFlags.label,
-          view,
-          range: { startIndex: e.startIndex, endIndex: e.endIndex },
-          isInteracted: isInteracted.current,
-          viewWideMode: !!getView(view)?.wideMode,
-          forcedWideMode,
-          renderAsRead,
-        })
-      }
+      debugStartupReadTrace("[startup-read-trace] handleRangeChange-renderMark", () => ({
+        label: traceFlags?.label,
+        view,
+        range: { startIndex: e.startIndex, endIndex: e.endIndex },
+        isInteracted: isInteracted.current,
+        viewWideMode: !!getView(view)?.wideMode,
+        forcedWideMode,
+        renderAsRead,
+      }))
       // For gird, render as mark read logic
       handleMarkReadInRange?.(e, isInteracted.current)
     },

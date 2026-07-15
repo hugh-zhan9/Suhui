@@ -20,6 +20,7 @@ import { cn, isKeyForMultiSelectPressed } from "@suhui/utils/utils"
 import { createElement, memo, use, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useEventCallback } from "usehooks-ts"
+import { recordOwnerRender } from "virtual:sidebar-owner-hooks"
 
 import { MenuItemSeparator, MenuItemText, useShowContextMenu } from "~/atoms/context-menu"
 import { useHideAllReadSubscriptions } from "~/atoms/settings/general"
@@ -72,6 +73,7 @@ const DraggableItemWrapper: Component<
   )
 }
 const FeedItemImpl = ({ view, feedId, className, isPreview }: FeedItemProps) => {
+  recordOwnerRender("row")
   const { t } = useTranslation()
   const subscription = useSubscriptionByFeedId(feedId)
   const navigate = useNavigateEntry()

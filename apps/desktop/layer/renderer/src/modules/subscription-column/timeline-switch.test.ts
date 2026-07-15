@@ -10,5 +10,15 @@ describe("timeline switch navigation", () => {
       entryId: null,
     })
   })
-})
 
+  it.each([400, 800])(
+    "clears stale selection for every switch in a deterministic %i-subscription fixture",
+    (count) => {
+      const timelineIds = Array.from({ length: count }, (_, index) => `timeline/${index}`)
+
+      expect(timelineIds.map(buildTimelineSwitchNavigation)).toEqual(
+        timelineIds.map((timelineId) => ({ timelineId, feedId: null, entryId: null })),
+      )
+    },
+  )
+})

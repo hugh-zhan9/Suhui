@@ -8,6 +8,7 @@ import { createCommand } from "./command"
 
 export const CommandRegistry = new (class {
   readonly atom = atom<Record<string, Command>>({})
+  readonly deferredCommands = new WeakSet<Command>()
 
   get commands() {
     return {
@@ -25,16 +26,18 @@ export const CommandRegistry = new (class {
     }
   }
 
-  register(options: CommandOptions) {
-    if (this.commands.has(options.id)) {
+  register(options: CommandOptions, deferred = false) {
+    const existing = this.commands.get(options.id)
+    if (existing && !this.deferredCommands.has(existing)) {
       console.warn(`Command ${options.id} already registered.`)
       return () => {}
     }
     const command = createCommand(options)
+    if (deferred) this.deferredCommands.add(command)
     this.commands.set(command.id, command)
 
     return () => {
-      this.commands.delete(command.id)
+      if (this.commands.get(command.id) === command) this.commands.delete(command.id)
     }
   }
 
@@ -64,4 +67,8 @@ export const CommandRegistry = new (class {
 
 export function registerCommand(options: CommandOptions) {
   return CommandRegistry.register(options)
+}
+
+export function registerDeferredCommand(options: CommandOptions) {
+  return CommandRegistry.register(options, true)
 }

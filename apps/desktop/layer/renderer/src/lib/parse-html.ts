@@ -4,16 +4,35 @@ import { LazyKateX } from "@suhui/components/ui/katex/lazy.js"
 import { parseHtml as parseHtmlGeneral } from "@suhui/utils/html"
 import type { Element } from "hast"
 import type { Components } from "hast-util-to-jsx-runtime"
-import { createElement } from "react"
+import { createElement, lazy, Suspense } from "react"
 import { renderToString } from "react-dom/server"
 
 import { ShadowDOM } from "~/components/common/ShadowDOM"
-import { ShikiHighLighter } from "~/components/ui/code-highlighter"
 import { MarkdownBlockImage, MarkdownLink, MarkdownP } from "~/components/ui/markdown/renderers"
 import { useIsInParagraphContext } from "~/components/ui/markdown/renderers/ctx"
 import { createHeadingRenderer } from "~/components/ui/markdown/renderers/Heading"
 import { MarkdownInlineImage } from "~/components/ui/markdown/renderers/InlineImage"
 import { Media } from "~/components/ui/media/Media"
+
+type ParsedCodeBlockProps = {
+  className?: string
+  code: string
+  language?: string
+  showCopy?: boolean
+}
+
+const PlainCodeBlock = ({ className, code, language }: ParsedCodeBlockProps) =>
+  createElement(
+    "pre",
+    { className },
+    createElement("code", { className: language ? `language-${language}` : undefined }, code),
+  )
+
+const LazyCodeHighlighter = lazy(() =>
+  import("~/components/ui/code-highlighter/lazy-code-highlighter")
+    .then((module) => ({ default: module.LazyCodeHighlighter }))
+    .catch(() => ({ default: PlainCodeBlock })),
+)
 
 function markInlineImage(node?: Element) {
   for (const item of node?.children ?? []) {
@@ -188,11 +207,19 @@ export const parseHtml = (
         // Code line number in Hugo will render inside <pre> tag
         const isLineNumberInHugo = codeString.slice(0, 15).split(" ").join("").startsWith("1\n2\n3")
 
-        return createElement(ShikiHighLighter, {
-          code: codeString.trimEnd(),
-          language: language.toLowerCase(),
-          showCopy: !isLineNumberInHugo,
-        })
+        const code = codeString.trimEnd()
+        const normalizedLanguage = language.toLowerCase()
+        return createElement(
+          Suspense,
+          {
+            fallback: createElement(PlainCodeBlock, { code, language: normalizedLanguage }),
+          },
+          createElement(LazyCodeHighlighter, {
+            code,
+            language: normalizedLanguage,
+            showCopy: !isLineNumberInHugo,
+          }),
+        )
       },
       figure: ({ node, ...props }) =>
         createElement(

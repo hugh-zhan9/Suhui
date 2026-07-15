@@ -20,6 +20,10 @@ export default defineProject({
       "@pkg": resolve(__dirname, "./package.json"),
       "@locales": resolve(__dirname, "../../../../locales"),
       "~": resolve(__dirname, "./src"),
+      "virtual:sidebar-owner-hooks": resolve(
+        __dirname,
+        "./src/modules/subscription-column/sidebar-owner-profile.instrumentation.ts",
+      ),
     },
   },
 

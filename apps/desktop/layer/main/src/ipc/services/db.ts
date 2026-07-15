@@ -17,6 +17,7 @@ import { subscriptionApplicationService } from "~/application/subscription/servi
 import { DBManager } from "~/manager/db"
 import { drainPendingOps } from "~/manager/sync-applier"
 import { logger } from "~/logger"
+import { debugStartupReadTrace } from "~/startup-read-trace"
 import { appendRefreshAuditTrace } from "~/manager/refresh-audit-log"
 import { broadcastLocalFeedRefreshCompleted } from "~/manager/local-feed-refresh-events"
 
@@ -377,12 +378,16 @@ export class DbService extends IpcService {
     await this.waitForDatabase()
     const { entryIds, read } = payload
     if (!entryIds || entryIds.length === 0) return
-    logger.info("[startup-read-trace] db.updateReadStatus", {
-      count: entryIds.length,
-      read,
-      firstIds: entryIds.slice(0, 10),
-      stack: new Error().stack,
-    })
+    debugStartupReadTrace(
+      "[startup-read-trace] db.updateReadStatus",
+      () => ({
+        count: entryIds.length,
+        read,
+        firstIds: entryIds.slice(0, 10),
+        stack: new Error().stack,
+      }),
+      (message, data) => logger.info(message, data),
+    )
     await entryApplicationService.updateReadStatus(payload)
     console.info(`[DbService] Updated read=${read} for ${entryIds.length} entries`)
   }

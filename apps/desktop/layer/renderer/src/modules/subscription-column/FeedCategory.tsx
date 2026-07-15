@@ -21,6 +21,7 @@ import { AnimatePresence, m } from "motion/react"
 import { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useEventCallback } from "usehooks-ts"
+import { recordOwnerRender } from "virtual:sidebar-owner-hooks"
 
 import type { MenuItemInput } from "~/atoms/context-menu"
 import { MenuItemSeparator, MenuItemText, useShowContextMenu } from "~/atoms/context-menu"
@@ -32,7 +33,7 @@ import { useNavigateEntry } from "~/hooks/biz/useNavigateEntry"
 import { getRouteParams, useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
 import { useContextMenu } from "~/hooks/common/useContextMenu"
 import { getLocalSupportedViewList } from "~/lib/local-views"
-import { countUnreadBySourceIds, sortSourceIdsByUnread } from "~/lib/unread-by-source"
+import { countUnreadBySourceIds } from "~/lib/unread-by-source"
 
 import { useModalStack } from "../../components/ui/modal/stacked/hooks"
 import { ListCreationModalContent } from "../settings/tabs/lists/modals"
@@ -40,26 +41,26 @@ import { CategoryRemoveDialogContent } from "./CategoryRemoveDialogContent"
 import { CategoryUnsubscribeDialogContent } from "./CategoryUnsubscribeDialogContent"
 import { RenameCategoryForm } from "./RenameCategoryForm"
 import { SortedFeedItems } from "./SortedFeedItems"
+import type { SidebarDerivedCategory } from "./sidebar-derived-model"
 import { feedColumnStyles } from "./styles"
 import { UnreadNumber } from "./UnreadNumber"
 
 type FeedId = string
 interface FeedCategoryProps {
-  data: FeedId[]
+  data: readonly FeedId[]
   view: FeedViewType
   categoryOpenStateData: Record<string, boolean>
+  derivedCategory?: SidebarDerivedCategory
 }
 
 function FeedCategoryImpl({
   data: ids,
   view: viewOnRoute,
   categoryOpenStateData,
+  derivedCategory,
 }: FeedCategoryProps) {
+  recordOwnerRender("category")
   const { t } = useTranslation()
-
-  const sortByUnreadFeedList = useEntryStore((state) =>
-    sortSourceIdsByUnread(state as any, ids),
-  )
 
   const navigate = useNavigateEntry()
 
@@ -68,17 +69,19 @@ function FeedCategoryImpl({
   const { view } = subscription
   const autoGroup = useGeneralSettingSelector((state) => state.autoGroup)
   const folderName =
-    subscription?.category || (autoGroup ? getDefaultCategory(subscription) : subscription.feedId)
+    derivedCategory?.category ??
+    (subscription?.category || (autoGroup ? getDefaultCategory(subscription) : subscription.feedId))
 
-  const isCategory = sortByUnreadFeedList.length > 1 || !!subscription?.category
+  const isCategory = ids.length > 1 || !!subscription?.category
 
   const open = useMemo(() => {
     if (!isCategory) return true
+    if (derivedCategory) return !derivedCategory.collapsed
     if (folderName && typeof categoryOpenStateData[folderName] === "boolean") {
       return categoryOpenStateData[folderName]
     }
     return false
-  }, [categoryOpenStateData, folderName, isCategory])
+  }, [categoryOpenStateData, derivedCategory, folderName, isCategory])
 
   const setOpen = useCallback(
     (next: boolean) => {
@@ -150,7 +153,7 @@ function FeedCategoryImpl({
     }
   }
 
-  const unread = useEntryStore((state) => countUnreadBySourceIds(state as any, ids))
+  const unread = useEntryStore((state) => countUnreadBySourceIds(state as any, ids.concat()))
   const markAllToggle = resolveMarkAllToggleAction(unread)
 
   const isActive = useRouteParamsSelector(
@@ -201,9 +204,9 @@ function FeedCategoryImpl({
             label: t(markAllToggle.labelKey),
             click: () => {
               if (markAllToggle.shouldMarkAsRead) {
-                unreadSyncService.markFeedAsRead(ids)
+                unreadSyncService.markFeedAsRead(ids.concat())
               } else {
-                unreadSyncService.markFeedAsUnread(ids)
+                unreadSyncService.markFeedAsUnread(ids.concat())
               }
             },
             requiresLogin: true,
@@ -219,7 +222,7 @@ function FeedCategoryImpl({
                     label: list.title || "",
                     click() {
                       return addMutation.mutate({
-                        feedIds: ids,
+                        feedIds: ids.concat(),
                         listId: list.id,
                       })
                     },
@@ -390,6 +393,7 @@ function FeedCategoryImpl({
           >
             <SortedFeedItems
               ids={ids}
+              ordered={!!derivedCategory}
               showCollapse={isCategory as boolean}
               view={view as FeedViewType}
             />
@@ -401,7 +405,7 @@ function FeedCategoryImpl({
 }
 
 function FilterReadFeedCategory(props: FeedCategoryProps) {
-  const unread = useEntryStore((state) => countUnreadBySourceIds(state as any, props.data))
+  const unread = useEntryStore((state) => countUnreadBySourceIds(state as any, props.data.concat()))
   if (!unread) return null
   return <FeedCategoryImpl {...props} />
 }

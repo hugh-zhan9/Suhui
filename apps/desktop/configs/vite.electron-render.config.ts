@@ -18,6 +18,17 @@ const isStaging = mode === "staging"
 export default {
   ...viteRenderBaseConfig,
 
+  resolve: {
+    ...viteRenderBaseConfig.resolve,
+    alias: {
+      ...viteRenderBaseConfig.resolve?.alias,
+      "virtual:sidebar-owner-hooks": resolve(
+        VITE_ROOT,
+        "src/modules/subscription-column/sidebar-owner-hooks.production.ts",
+      ),
+    },
+  },
+
   plugins: [
     ...viteRenderBaseConfig.plugins,
     createPlatformSpecificImportPlugin("electron"),

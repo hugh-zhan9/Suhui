@@ -11,14 +11,20 @@ import { useFeedListSortSelector } from "./atom"
 import { FeedItemAutoHideUnread } from "./FeedItem"
 
 type SortListProps = {
-  ids: string[]
+  ids: readonly string[]
   view: FeedViewType
   showCollapse: boolean
+  ordered?: boolean
 }
 
 export const preserveUnreadSortedFeedIds = (ids: string[]) => ids.concat()
 
 export const SortedFeedItems = memo((props: SortListProps) => {
+  if (props.ordered) return <FeedRows {...props} />
+  return <SortedFeedItemsLegacy {...props} />
+})
+
+const SortedFeedItemsLegacy = (props: SortListProps) => {
   const by = useFeedListSortSelector((s) => s.by)
   switch (by) {
     case "count": {
@@ -32,7 +38,20 @@ export const SortedFeedItems = memo((props: SortListProps) => {
       return <SortByUnreadList {...props} />
     }
   }
-})
+}
+
+const FeedRows = ({ ids, showCollapse, view }: SortListProps) => (
+  <Fragment>
+    {ids.map((feedId) => (
+      <FeedItemAutoHideUnread
+        key={feedId}
+        feedId={feedId}
+        view={view}
+        className={showCollapse ? "pl-6" : "pl-2.5"}
+      />
+    ))}
+  </Fragment>
+)
 
 const SortByAlphabeticalList = (props: SortListProps) => {
   const { ids, showCollapse, view } = props
@@ -85,7 +104,7 @@ const SortByAlphabeticalList = (props: SortListProps) => {
 
 const SortByUnreadList = ({ ids, showCollapse, view }: SortListProps) => {
   const isDesc = useFeedListSortSelector((s) => s.order === "desc")
-  const sortByUnreadFeedList = useSortedIdsByUnread(ids, isDesc)
+  const sortByUnreadFeedList = useSortedIdsByUnread(ids.concat(), isDesc)
   const sortedList = preserveUnreadSortedFeedIds(sortByUnreadFeedList)
 
   return (
