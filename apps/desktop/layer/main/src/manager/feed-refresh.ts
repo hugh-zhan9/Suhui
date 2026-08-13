@@ -5,6 +5,7 @@ import { getActiveVisibilityState } from "@suhui/database/services/internal/acti
 import { session } from "electron"
 
 import { store } from "~/lib/store"
+import { localReadingPipeline } from "~/application/local-reading/pipeline"
 import { DBManager } from "~/manager/db"
 import { drainPendingOps } from "~/manager/sync-applier"
 
@@ -185,6 +186,10 @@ export class FeedRefreshService {
           }
         })
         await EntryService.upsertMany(entriesToSave as any)
+        const newEntryIds = entriesToSave
+          .filter((entry) => !existingReuseIndex.readById.has(entry.id))
+          .map((entry) => entry.id)
+        await localReadingPipeline.processNewEntries(newEntryIds)
       }
 
       // 尝试重试由于前置依赖缺失而 pending 的同步操作（后台执行）

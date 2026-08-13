@@ -9,6 +9,7 @@ import type { IpcContext } from "electron-ipc-decorator"
 import { IpcMethod, IpcService } from "electron-ipc-decorator"
 
 import { store } from "~/lib/store"
+import { localReadingPipeline } from "~/application/local-reading/pipeline"
 import { entryApplicationService } from "~/application/entry/service"
 import { entryQueryService } from "~/application/entry/query-service"
 import type { EntryListQuery } from "~/application/entry/query-types"
@@ -548,6 +549,10 @@ export class DbService extends IpcService {
           newEntryCount: Math.max(entriesToSave.length - reusedEntryCount, 0),
         })
         await EntryService.upsertMany(entriesToSave as any)
+        const newEntryIds = entriesToSave
+          .filter((entry) => !existingReuseIndex.readById.has(entry.id))
+          .map((entry) => entry.id)
+        await localReadingPipeline.processNewEntries(newEntryIds)
       }
 
       refreshLog("info", trace, "refresh.schedule_pending_ops_drain")

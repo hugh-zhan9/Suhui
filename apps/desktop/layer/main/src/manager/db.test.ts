@@ -63,6 +63,9 @@ describe("db manager", () => {
     ;(DBManager as any).backgroundMode = false
     ;(DBManager as any).activeConfig = null
     ;(DBManager as any).cutoverParticipants = new Map()
+    ;(DBManager as any).maintenancePromise = null
+    ;(DBManager as any).activeOperations = 0
+    ;(DBManager as any).activeOperationWaiters = new Set()
   })
 
   it("defaults to postgres dialect", () => {
@@ -167,11 +170,11 @@ describe("db manager", () => {
 
     const storeSetMock = store.set as unknown as ReturnType<typeof vi.fn>
 
-    expect(quiesce.mock.invocationCallOrder[0]).toBeLessThan(
-      storeSetMock.mock.invocationCallOrder[0],
+    expect(quiesce.mock.invocationCallOrder[0]!).toBeLessThan(
+      storeSetMock.mock.invocationCallOrder[0]!,
     )
-    expect(storeSetMock.mock.invocationCallOrder[0]).toBeLessThan(
-      vi.mocked(activateMainDB).mock.invocationCallOrder[0],
+    expect(storeSetMock.mock.invocationCallOrder[0]!).toBeLessThan(
+      vi.mocked(activateMainDB).mock.invocationCallOrder[0]!,
     )
   })
 
@@ -188,5 +191,50 @@ describe("db manager", () => {
 
     expect(() => DBManager.getDB()).toThrow("Database switch in progress")
     expect(() => DBManager.getPgPool()).toThrow("Database switch in progress")
+  })
+
+  it("quiesces participants and blocks direct DB access during maintenance", async () => {
+    const quiesce = vi.fn()
+    const resume = vi.fn()
+    ;(DBManager as any).ready = true
+    DBManager.registerCutoverParticipant("background-jobs", { quiesce, resume })
+
+    const finish = await DBManager.beginMaintenance()
+
+    expect(quiesce).toHaveBeenCalledTimes(1)
+    expect(() => DBManager.getDB()).toThrow("Database maintenance in progress")
+    expect(() => DBManager.getPgPool()).toThrow("Database maintenance in progress")
+
+    await finish()
+
+    expect(resume).toHaveBeenCalledTimes(1)
+    expect((DBManager as any).maintenancePromise).toBeNull()
+  })
+
+  it("blocks new tracked writes and waits for an active write before maintenance", async () => {
+    ;(DBManager as any).ready = true
+    let releaseOperation!: () => void
+    const operationGate = new Promise<void>((resolve) => {
+      releaseOperation = resolve
+    })
+    const operation = DBManager.runTrackedOperation(async () => operationGate)
+
+    let maintenanceStarted = false
+    const maintenance = DBManager.beginMaintenance().then((finish) => {
+      maintenanceStarted = true
+      return finish
+    })
+    await Promise.resolve()
+
+    expect(maintenanceStarted).toBe(false)
+    await expect(DBManager.runTrackedOperation(async () => undefined)).rejects.toThrow(
+      "Database maintenance in progress",
+    )
+
+    releaseOperation()
+    await operation
+    const finish = await maintenance
+    expect(maintenanceStarted).toBe(true)
+    await finish()
   })
 })

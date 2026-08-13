@@ -149,6 +149,8 @@ export const buildEntryListQueryConfig = (input: {
   visibility: ActiveVisibilityState
   subscriptions: EntryQuerySubscription[]
   limit: number
+  includeHidden?: boolean
+  candidateIds?: string[]
 }) => ({
   where: (entries: {
     id: AnyColumn
@@ -162,6 +164,10 @@ export const buildEntryListQueryConfig = (input: {
   }) =>
     and(
       isNull(entries.deletedAt),
+      input.candidateIds ? inArray(entries.id, input.candidateIds) : undefined,
+      input.includeHidden
+        ? undefined
+        : sql`not exists (select 1 from ${sql.identifier("entry_user_state")} ${sql.identifier("entry_visibility_state")} where ${sql.identifier("entry_visibility_state")}.${sql.identifier("entry_id")} = ${entries.id} and ${sql.identifier("entry_visibility_state")}.${sql.identifier("hidden")} = true)`,
       createEntryVisibilityWhere(entries, input.visibility),
       createScopeWhere(entries, input.scope, input.subscriptions),
       input.read === false

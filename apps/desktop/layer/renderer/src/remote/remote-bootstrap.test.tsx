@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 const mocks = vi.hoisted(() => ({
   applyBootstrap: vi.fn(),
+  annotationsList: vi.fn(),
   beginBootstrap: vi.fn(),
   bootstrapGet: vi.fn(),
   connectSSE: vi.fn(),
@@ -50,6 +51,7 @@ vi.mock("@suhui/store/remote", () => ({
 vi.mock("@suhui/store/runtime", () => ({
   runtimeClient: {
     bootstrap: { get: (...args: unknown[]) => mocks.bootstrapGet(...args) },
+    annotations: { list: (...args: unknown[]) => mocks.annotationsList(...args) },
     collections: { updateEntryStar: vi.fn() },
     entries: {},
     feeds: { preview: vi.fn(), refresh: vi.fn() },
@@ -292,5 +294,25 @@ describe("remote progressive bootstrap", () => {
     expect(container.querySelector(".remote-desktop-sidebar.remote-pane-hidden")).not.toBeNull()
     expect(container.querySelector(".remote-desktop-timeline.remote-pane-hidden")).toBeNull()
     expect(container.querySelector(".remote-desktop-reader-pane.remote-pane-hidden")).not.toBeNull()
+  })
+
+  it("does not expose or request private reading controls without the peer capability", async () => {
+    mocks.bootstrapGet.mockResolvedValue(validPayload)
+    mocks.entriesQuery.mockReturnValue({
+      entriesIds: [],
+      fetchNextPage: vi.fn(),
+      hasNextPage: false,
+      isError: false,
+      isFetchingNextPage: false,
+      isLoading: false,
+      isSuccess: true,
+      refetch: mocks.refetchEntries,
+    })
+
+    await act(async () => root.render(<RemoteApp />))
+
+    expect(container.textContent).not.toContain("Read later")
+    expect(container.textContent).not.toContain("Notes & Highlights")
+    expect(mocks.annotationsList).not.toHaveBeenCalled()
   })
 })

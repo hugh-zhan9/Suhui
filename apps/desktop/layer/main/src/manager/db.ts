@@ -1,3 +1,5 @@
+import { AsyncLocalStorage } from "node:async_hooks"
+
 import {
   activateMainDB,
   closeMainDBHandles,
@@ -42,6 +44,10 @@ export class DBManager {
   private static maxAttempts = dbInitMaxAttempts
   private static activeConfig: EffectiveDbConfig | null = null
   private static cutoverParticipants = new Map<string, DbCutoverParticipant>()
+  private static maintenancePromise: Promise<void> | null = null
+  private static activeOperations = 0
+  private static activeOperationWaiters = new Set<() => void>()
+  private static activeOperationContext = new AsyncLocalStorage<boolean>()
 
   private static readPersistedOverride() {
     return normalizeDbConfigOverride(
@@ -180,6 +186,9 @@ export class DBManager {
     if (this.switchPromise) {
       await this.switchPromise
     }
+    if (this.maintenancePromise) {
+      await this.maintenancePromise
+    }
   }
 
   public static getLastError() {
@@ -191,6 +200,7 @@ export class DBManager {
       ready: this.ready,
       initializing: !!this.initPromise,
       switching: !!this.switchPromise,
+      maintenance: !!this.maintenancePromise,
       backgroundMode: this.backgroundMode,
       lastError: this.lastError instanceof Error ? this.lastError.message : this.lastError || null,
       lastAttempt: this.lastAttempt,
@@ -223,6 +233,32 @@ export class DBManager {
     this.cutoverParticipants.delete(name)
   }
 
+  public static async runTrackedOperation<T>(operation: () => Promise<T>): Promise<T> {
+    if (this.activeOperationContext.getStore()) return operation()
+    if (this.switchPromise || this.maintenancePromise) {
+      throw new Error(
+        this.maintenancePromise
+          ? "Database maintenance in progress"
+          : "Database switch in progress",
+      )
+    }
+    this.activeOperations += 1
+    try {
+      return await this.activeOperationContext.run(true, operation)
+    } finally {
+      this.activeOperations -= 1
+      if (this.activeOperations === 0) {
+        for (const resolve of this.activeOperationWaiters) resolve()
+        this.activeOperationWaiters.clear()
+      }
+    }
+  }
+
+  private static waitForTrackedOperations() {
+    if (this.activeOperations === 0) return Promise.resolve()
+    return new Promise<void>((resolve) => this.activeOperationWaiters.add(resolve))
+  }
+
   private static async quiesceForCutover() {
     const quiesced: DbCutoverParticipant[] = []
 
@@ -231,6 +267,7 @@ export class DBManager {
         await participant.quiesce?.()
         quiesced.push(participant)
       }
+      await this.waitForTrackedOperations()
     } catch (error) {
       await Promise.allSettled(
         quiesced.reverse().map(async (participant) => {
@@ -249,16 +286,54 @@ export class DBManager {
     }
   }
 
+  public static async beginMaintenance() {
+    if (this.maintenancePromise) throw new Error("Database maintenance in progress")
+    let release!: () => void
+    const gate = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    this.maintenancePromise = gate
+    let resume: () => Promise<void>
+    try {
+      await this.waitUntilReady()
+      if (this.switchPromise) await this.switchPromise
+      resume = await this.quiesceForCutover()
+    } catch (error) {
+      if (this.maintenancePromise === gate) this.maintenancePromise = null
+      release()
+      throw error
+    }
+    let finished = false
+    return async () => {
+      if (finished) return
+      finished = true
+      try {
+        await resume()
+      } finally {
+        if (this.maintenancePromise === gate) this.maintenancePromise = null
+        release()
+      }
+    }
+  }
+
   public static getDB() {
-    if (this.switchPromise) {
-      throw new Error("Database switch in progress")
+    if (this.switchPromise || this.maintenancePromise) {
+      throw new Error(
+        this.maintenancePromise
+          ? "Database maintenance in progress"
+          : "Database switch in progress",
+      )
     }
     return getMainDB()
   }
 
   public static getPgPool() {
-    if (this.switchPromise) {
-      throw new Error("Database switch in progress")
+    if (this.switchPromise || this.maintenancePromise) {
+      throw new Error(
+        this.maintenancePromise
+          ? "Database maintenance in progress"
+          : "Database switch in progress",
+      )
     }
     return getMainPgPool()
   }
@@ -268,6 +343,7 @@ export class DBManager {
   }
 
   public static async switchDatabase(override: DbConfigOverride | null) {
+    if (this.maintenancePromise) throw new Error("Database maintenance in progress")
     if (this.initPromise) {
       try {
         await this.initPromise

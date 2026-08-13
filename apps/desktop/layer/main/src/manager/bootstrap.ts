@@ -27,6 +27,7 @@ import { logger } from "../logger"
 import { initializeRemoteAccess, shutdownRemoteAccess } from "../remote/lifecycle"
 import { cleanupOldRender } from "../updater/hot-updater"
 import { DbService } from "../ipc/services/db"
+import { backupApplicationService } from "../application/backup/service"
 import { AppManager } from "./app"
 import { logNetworkRequestError } from "./network-error-log"
 
@@ -147,6 +148,13 @@ export class BootstrapManager {
       .then(async () => {
         logger.info("[Startup] DBManager.init:done")
         appendBootLog(bootLogPath, "manager:db-ready")
+        try {
+          await backupApplicationService.recoverPendingMainSettings()
+        } catch (error) {
+          // Keep the durable journal for the next startup; settings projection
+          // must not turn an otherwise usable database into a startup failure.
+          logger.error("[Startup] pending restored settings could not be applied", error)
+        }
         logger.info("[Startup] SyncManager.init:start")
         await SyncManager.init()
         logger.info("[Startup] SyncManager.init:done")

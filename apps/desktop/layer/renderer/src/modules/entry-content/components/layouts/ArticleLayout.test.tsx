@@ -27,6 +27,10 @@ vi.mock("~/atoms/settings/ui", () => ({
   useUISettingKey: () => "",
 }))
 
+vi.mock("~/atoms/readability", () => ({
+  useEntryIsInReadability: () => false,
+}))
+
 vi.mock("../../hooks", () => ({
   useEntryContent: () => ({ content: "<p>ok</p>" }),
   useEntryMediaInfo: () => null,
@@ -54,6 +58,10 @@ vi.mock("../entry-content/ReadabilityNotice", () => ({
 
 vi.mock("../EntryAttachments", () => ({
   EntryAttachments: () => null,
+}))
+
+vi.mock("../EntryAnnotationsPanel", () => ({
+  EntryAnnotationsPanel: () => null,
 }))
 
 vi.mock("~/modules/renderer/html", () => ({

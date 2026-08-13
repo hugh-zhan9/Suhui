@@ -13,6 +13,8 @@ export type EntryListScope =
 export type EntryListQuery = {
   scope: EntryListScope
   read?: boolean
+  includeHidden?: boolean
+  deduplicate?: boolean
   limit?: number
   cursor?: string
 }
@@ -40,6 +42,14 @@ export type EntrySummary = Pick<
 > & {
   recordKind: "summary"
   read: boolean
+  hidden?: boolean
+  tags?: string[]
+  cluster?: {
+    id: string
+    representativeEntryId: string
+    sourceCount: number
+    entryIds: string[]
+  }
 }
 
 export type EntrySummaryPage = {

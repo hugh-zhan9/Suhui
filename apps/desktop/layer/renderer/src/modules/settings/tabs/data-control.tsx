@@ -1,31 +1,16 @@
 import { CarbonInfinitySymbol } from "@suhui/components/icons/infinify.jsx"
 import { Button, MotionButtonBase } from "@suhui/components/ui/button/index.js"
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@suhui/components/ui/form/index.js"
 import { Input } from "@suhui/components/ui/input/Input.js"
 import { Label } from "@suhui/components/ui/label/index.jsx"
-import { RadioGroup, RadioGroupItem } from "@suhui/components/ui/radio-group/motion.js"
 import { Slider } from "@suhui/components/ui/slider/index.js"
-import { exportDB } from "@suhui/database/db"
 import { ELECTRON_BUILD } from "@suhui/shared/constants"
-import { env } from "@suhui/shared/env.desktop"
-import { zodResolver } from "@hookform/resolvers/zod"
 import { useQuery } from "@tanstack/react-query"
 import { useEffect, useState } from "react"
-import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
-import { z } from "zod"
 
 import { setGeneralSetting, useGeneralSettingValue } from "~/atoms/settings/general"
-import { useDialog, useModalStack } from "~/components/ui/modal/stacked/hooks"
+import { useDialog } from "~/components/ui/modal/stacked/hooks"
 import { ipcServices } from "~/lib/client"
 import { queryClient } from "~/lib/query-client"
 import { clearLocalPersistStoreData } from "~/store/utils/clear"
@@ -35,6 +20,38 @@ import { createSetting } from "../helper/builder"
 import { SettingItemGroup } from "../section"
 
 const { SettingBuilder } = createSetting("general", useGeneralSettingValue, setGeneralSetting)
+type LocalReadingIpc = {
+  exportBackup(path: string, rendererSettings?: Record<string, string>): Promise<unknown>
+  prepareReplaceBackup(path: string): Promise<{ token: string }>
+  restoreBackup(input: {
+    path: string
+    mode: "merge" | "replace"
+    confirmationToken?: string
+    rendererSettings?: Record<string, string>
+  }): Promise<{ rendererSettings?: Record<string, string> }>
+  acknowledgeRendererSettings(): Promise<void>
+  exportOpmlFile(path: string): Promise<unknown>
+  previewOpmlFile(path: string): Promise<OpmlPreviewItem[]>
+  importOpmlFile(input: { path: string; selectedIndexes?: number[] }): Promise<unknown>
+}
+
+type OpmlPreviewItem = {
+  index: number
+  url: string
+  title: string | null
+  category: string | null
+  duplicate: boolean
+}
+
+type FileDialogIpc = {
+  showOpenFileDialog(input?: {
+    filters?: Array<{ name: string; extensions: string[] }>
+  }): Promise<string | null>
+  showSaveFileDialog(input: {
+    defaultPath: string
+    filters?: Array<{ name: string; extensions: string[] }>
+  }): Promise<string | null>
+}
 type ExternalRsshubIpc = {
   getRsshubCustomUrl?: () => Promise<string>
   setRsshubCustomUrl?: (url: string) => Promise<void> | void
@@ -42,7 +59,6 @@ type ExternalRsshubIpc = {
 
 export const SettingDataControl = () => {
   const { t } = useTranslation("settings")
-  const { present } = useModalStack()
   const { ask } = useDialog()
 
   return (
@@ -58,27 +74,6 @@ export const SettingDataControl = () => {
           {
             type: "title",
             value: t("general.export_data.title"),
-          },
-
-          {
-            label: t("general.export.label"),
-            description: t("general.export.description"),
-            buttonText: t("general.export.button"),
-            action: () => {
-              present({
-                title: t("general.export.label"),
-                clickOutsideToDismiss: true,
-                content: () => <ExportFeedsForm />,
-              })
-            },
-          },
-          {
-            label: t("general.export_database.label"),
-            description: t("general.export_database.description"),
-            buttonText: t("general.export_database.button"),
-            action: () => {
-              exportDB()
-            },
           },
 
           {
@@ -115,7 +110,166 @@ export const SettingDataControl = () => {
           },
         ]}
       />
+      {ELECTRON_BUILD && <LocalReadingDataTools />}
     </div>
+  )
+}
+
+const LocalReadingDataTools = () => {
+  const localReading = (ipcServices as unknown as { localReading?: LocalReadingIpc })?.localReading
+  const app = ipcServices?.app as unknown as FileDialogIpc | undefined
+  const [opmlImportPath, setOpmlImportPath] = useState<string | null>(null)
+  const [opmlPreview, setOpmlPreview] = useState<OpmlPreviewItem[]>([])
+  const [selectedOpmlIndexes, setSelectedOpmlIndexes] = useState<number[]>([])
+
+  // AI/integration settings may contain secrets. The complete local-data backup
+  // includes behavior and presentation settings but deliberately excludes those
+  // credential-bearing namespaces.
+  const captureRendererSettings = () =>
+    Object.fromEntries(
+      ["follow:general", "follow:ui"].flatMap((key) => {
+        const value = window.localStorage.getItem(key)
+        return value === null ? [] : [[key, value]]
+      }),
+    )
+
+  const applyRendererSettings = async (settings?: Record<string, string>) => {
+    if (!settings) return
+    for (const [key, value] of Object.entries(settings)) {
+      if (key === "follow:general" || key === "follow:ui") window.localStorage.setItem(key, value)
+    }
+    await localReading?.acknowledgeRendererSettings()
+  }
+
+  const exportBackup = async () => {
+    const path = await app?.showSaveFileDialog({
+      defaultPath: `suhui-${new Date().toISOString().slice(0, 10)}.suhui-backup`,
+      filters: [{ name: "Suhui Backup", extensions: ["suhui-backup"] }],
+    })
+    if (!path) return
+    await localReading?.exportBackup(path, captureRendererSettings())
+    toast.success("完整备份已导出")
+  }
+
+  const restoreBackup = async (mode: "merge" | "replace") => {
+    const path = await app?.showOpenFileDialog({
+      filters: [{ name: "Suhui Backup", extensions: ["suhui-backup"] }],
+    })
+    if (!path) return
+    if (mode === "replace") {
+      const confirmed = window.confirm(
+        "完整替换会先自动创建安全快照，再用备份内容替换当前数据。确认继续？",
+      )
+      if (!confirmed) return
+      const prepared = await localReading?.prepareReplaceBackup(path)
+      if (!prepared) return
+      const secondConfirmed = window.confirm("请再次确认完整替换。失败时数据库事务会回滚。")
+      if (!secondConfirmed) return
+      const result = await localReading?.restoreBackup({
+        path,
+        mode,
+        confirmationToken: prepared.token,
+        rendererSettings: captureRendererSettings(),
+      })
+      await applyRendererSettings(result?.rendererSettings)
+    } else {
+      const result = await localReading?.restoreBackup({
+        path,
+        mode,
+        rendererSettings: captureRendererSettings(),
+      })
+      await applyRendererSettings(result?.rendererSettings)
+    }
+    toast.success(mode === "merge" ? "备份已合并恢复" : "备份已完整恢复")
+    window.location.reload()
+  }
+
+  const exportOpml = async () => {
+    const path = await app?.showSaveFileDialog({
+      defaultPath: "suhui.opml",
+      filters: [{ name: "OPML", extensions: ["opml", "xml"] }],
+    })
+    if (!path) return
+    await localReading?.exportOpmlFile(path)
+    toast.success("OPML 已导出")
+  }
+
+  const importOpml = async () => {
+    if (!opmlImportPath) return
+    await localReading?.importOpmlFile({
+      path: opmlImportPath,
+      selectedIndexes: selectedOpmlIndexes,
+    })
+    toast.success("OPML 导入完成；重复订阅已跳过")
+    window.location.reload()
+  }
+
+  const previewOpml = async () => {
+    const path = await app?.showOpenFileDialog({
+      filters: [{ name: "OPML", extensions: ["opml", "xml"] }],
+    })
+    if (!path) return
+    const preview = (await localReading?.previewOpmlFile(path)) ?? []
+    setOpmlImportPath(path)
+    setOpmlPreview(preview)
+    setSelectedOpmlIndexes(preview.filter((item) => !item.duplicate).map((item) => item.index))
+  }
+
+  return (
+    <SettingItemGroup>
+      <div className="mb-2 mt-4 text-sm font-medium">本地备份与 OPML</div>
+      <SettingDescription>
+        完整备份包含文章正文、状态、规则、标签、笔记、高亮和阅读队列；OPML 只交换订阅与分类。
+      </SettingDescription>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <Button variant="outline" onClick={() => void exportBackup()}>
+          导出完整备份
+        </Button>
+        <Button variant="outline" onClick={() => void restoreBackup("merge")}>
+          合并恢复
+        </Button>
+        <Button variant="outline" onClick={() => void restoreBackup("replace")}>
+          完整替换恢复
+        </Button>
+        <Button variant="outline" onClick={() => void exportOpml()}>
+          导出 OPML
+        </Button>
+        <Button variant="outline" onClick={() => void previewOpml()}>
+          导入 OPML
+        </Button>
+      </div>
+      {opmlPreview.length > 0 ? (
+        <div className="mt-4 space-y-2 rounded-lg border border-border p-3">
+          <div className="text-sm font-medium">选择要导入的订阅</div>
+          <div className="max-h-64 space-y-2 overflow-auto">
+            {opmlPreview.map((item) => (
+              <label className="flex items-center gap-2 text-sm" key={`${item.index}:${item.url}`}>
+                <input
+                  type="checkbox"
+                  checked={selectedOpmlIndexes.includes(item.index)}
+                  disabled={item.duplicate}
+                  onChange={(event) =>
+                    setSelectedOpmlIndexes((current) =>
+                      event.target.checked
+                        ? Array.from(new Set([...current, item.index]))
+                        : current.filter((index) => index !== item.index),
+                    )
+                  }
+                />
+                <span className="min-w-0 truncate">
+                  {item.title || item.url}
+                  {item.category ? ` · ${item.category}` : ""}
+                  {item.duplicate ? " · 已订阅" : ""}
+                </span>
+              </label>
+            ))}
+          </div>
+          <Button disabled={selectedOpmlIndexes.length === 0} onClick={() => void importOpml()}>
+            导入选中项
+          </Button>
+        </div>
+      ) : null}
+    </SettingItemGroup>
   )
 }
 
@@ -160,88 +314,6 @@ const ExternalRsshubSection = () => {
         </Button>
       </div>
     </SettingItemGroup>
-  )
-}
-
-const exportFeedFormSchema = z.object({
-  rsshubUrl: z.string().url().optional(),
-  folderMode: z.enum(["view", "category"]),
-})
-
-const ExportFeedsForm = () => {
-  const { t } = useTranslation("settings")
-
-  const form = useForm<z.infer<typeof exportFeedFormSchema>>({
-    resolver: zodResolver(exportFeedFormSchema),
-    defaultValues: {
-      folderMode: "view",
-    },
-  })
-
-  function onSubmit(values: z.infer<typeof exportFeedFormSchema>) {
-    const link = document.createElement("a")
-    const exportUrl = new URL(`${env.VITE_API_URL}/subscriptions/export`)
-    exportUrl.searchParams.append("folderMode", values.folderMode)
-    if (values.rsshubUrl) {
-      exportUrl.searchParams.append("RSSHubURL", values.rsshubUrl)
-    }
-    link.href = exportUrl.toString()
-    link.download = "suhui.opml"
-    link.click()
-  }
-
-  return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 text-sm">
-        <FormField
-          control={form.control}
-          name="rsshubUrl"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t("general.export.rsshub_url.label")}</FormLabel>
-              <FormControl>
-                <Input type="url" placeholder="https://rsshub.app" {...field} />
-              </FormControl>
-              <FormDescription>{t("general.export.rsshub_url.description")}</FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="folderMode"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t("general.export.folder_mode.label")}</FormLabel>
-              <FormControl>
-                <RadioGroup
-                  value={field.value}
-                  onValueChange={(value) => {
-                    field.onChange(value)
-                  }}
-                >
-                  <div className="flex gap-4">
-                    <RadioGroupItem
-                      label={t("general.export.folder_mode.option.view")}
-                      value="view"
-                    />
-                    <RadioGroupItem
-                      label={t("general.export.folder_mode.option.category")}
-                      value="category"
-                    />
-                  </div>
-                </RadioGroup>
-              </FormControl>
-              <FormDescription>{t("general.export.folder_mode.description")}</FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <div className="flex justify-end">
-          <Button type="submit">{t("ok", { ns: "common" })}</Button>
-        </div>
-      </form>
-    </Form>
   )
 }
 

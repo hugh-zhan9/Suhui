@@ -211,6 +211,7 @@ export function RemoteApp() {
         entryId={activeEntryId}
         hidden={isMobile && mobilePane !== "content"}
         onBackToList={() => setMobilePane("entries")}
+        privateLocalReading={bootstrap.privateLocalReading}
       />
 
       {overlay === "subscriptions" && (
@@ -722,20 +723,65 @@ function RemoteDesktopReaderPane({
   entryId,
   hidden,
   onBackToList,
+  privateLocalReading,
 }: {
   activeView: FeedViewType
   entryId: string | null
   hidden: boolean
   onBackToList: () => void
+  privateLocalReading: boolean
 }) {
   const entry = useEntry(entryId ?? "", (state) => state)
   const feed = useFeedById(entry?.feedId ?? "")
   const [pdfBusy, setPdfBusy] = useState(false)
+  const [queueBusy, setQueueBusy] = useState(false)
+  const [noteText, setNoteText] = useState("")
+  const [annotations, setAnnotations] = useState<{
+    notes: Array<{ id: string; content: string; updatedAt: number }>
+    highlights: Array<{ id: string; quote: string; status: "active" | "orphaned" }>
+  }>({ notes: [], highlights: [] })
   const [actionError, setActionError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (entryId) void entrySyncServices.fetchEntryDetail(entryId)
-  }, [entryId])
+    if (entryId) {
+      void entrySyncServices.fetchEntryDetail(entryId)
+      if (privateLocalReading) {
+        void runtimeClient.annotations
+          .list(entryId)
+          .then((value) => setAnnotations(value ?? { notes: [], highlights: [] }))
+          .catch(() => setAnnotations({ notes: [], highlights: [] }))
+      } else {
+        setAnnotations({ notes: [], highlights: [] })
+      }
+    } else {
+      setAnnotations({ notes: [], highlights: [] })
+    }
+  }, [entryId, privateLocalReading])
+
+  const addToQueue = async () => {
+    if (!entryId) return
+    setQueueBusy(true)
+    setActionError(null)
+    try {
+      await runtimeClient.readingQueue.add(entryId)
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "Unable to update reading queue")
+    } finally {
+      setQueueBusy(false)
+    }
+  }
+
+  const addNote = async () => {
+    if (!entryId || !noteText.trim()) return
+    setActionError(null)
+    try {
+      await runtimeClient.annotations.createNote(entryId, noteText)
+      setNoteText("")
+      setAnnotations(await runtimeClient.annotations.list(entryId))
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "Unable to save note")
+    }
+  }
 
   const toggleRead = async () => {
     if (!entryId || !entry) return
@@ -796,6 +842,15 @@ function RemoteDesktopReaderPane({
             label={entry?.read ? "Mark unread" : "Mark read"}
             onClick={toggleRead}
           />
+          {privateLocalReading && (
+            <IconButton
+              busy={queueBusy}
+              disabled={!entryId}
+              icon="i-mgc-time-cute-re"
+              label="Read later"
+              onClick={addToQueue}
+            />
+          )}
           <IconButton
             busy={pdfBusy}
             disabled={!entryId}
@@ -832,6 +887,53 @@ function RemoteDesktopReaderPane({
                   "<p>No content available.</p>",
               }}
             />
+            {privateLocalReading && (
+              <section className="remote-annotations">
+                <h2>Notes & Highlights</h2>
+                <div className="remote-inline-form">
+                  <RemoteInput
+                    value={noteText}
+                    onChange={setNoteText}
+                    placeholder="Add a local note"
+                  />
+                  <button
+                    className="remote-secondary-button"
+                    disabled={!noteText.trim()}
+                    onClick={() => void addNote()}
+                  >
+                    Add note
+                  </button>
+                </div>
+                {annotations.notes.map((note) => (
+                  <div className="remote-annotation-item" key={note.id}>
+                    <span>{note.content}</span>
+                    <button
+                      className="remote-icon-button"
+                      title="Delete note"
+                      onClick={() =>
+                        void runtimeClient.annotations.deleteNote(note.id).then(async () => {
+                          if (entryId) setAnnotations(await runtimeClient.annotations.list(entryId))
+                        })
+                      }
+                    >
+                      <i className="i-mgc-delete-2-cute-re" />
+                    </button>
+                  </div>
+                ))}
+                {annotations.highlights.map((highlight) => (
+                  <blockquote
+                    className={cn(
+                      "remote-annotation-item",
+                      highlight.status === "orphaned" && "is-orphaned",
+                    )}
+                    key={highlight.id}
+                  >
+                    {highlight.quote}
+                    {highlight.status === "orphaned" && <small>Needs relocation</small>}
+                  </blockquote>
+                ))}
+              </section>
+            )}
           </div>
         </div>
       )}
@@ -1081,6 +1183,17 @@ function RemoteSettingsOverlay({ onClose }: { onClose: () => void }) {
   const [rsshubCustomUrl, setRsshubCustomUrl] = useState("")
   const [exportText, setExportText] = useState("")
   const [importText, setImportText] = useState("")
+  const [opmlText, setOpmlText] = useState("")
+  const [opmlPreview, setOpmlPreview] = useState<
+    Array<{
+      index: number
+      title: string | null
+      url: string
+      category: string | null
+      duplicate: boolean
+    }>
+  >([])
+  const [selectedOpmlIndexes, setSelectedOpmlIndexes] = useState<number[]>([])
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
 
@@ -1153,6 +1266,91 @@ function RemoteSettingsOverlay({ onClose }: { onClose: () => void }) {
 
           <section>
             <SectionTitle title="Import / Export" />
+            <div className="remote-form-stack">
+              <div className="remote-inline-form">
+                <button
+                  className="remote-secondary-button"
+                  disabled={busy}
+                  onClick={() =>
+                    run(async () => {
+                      const xml = await runtimeClient.opml.export()
+                      const blob = new Blob([xml], { type: "text/x-opml" })
+                      const url = URL.createObjectURL(blob)
+                      const link = document.createElement("a")
+                      link.href = url
+                      link.download = "suhui.opml"
+                      link.click()
+                      URL.revokeObjectURL(url)
+                    }, "OPML export prepared")
+                  }
+                >
+                  Export OPML
+                </button>
+                <button
+                  className="remote-secondary-button"
+                  disabled={busy || !opmlText.trim()}
+                  onClick={() =>
+                    run(async () => {
+                      const preview = (await runtimeClient.opml.preview(
+                        opmlText,
+                      )) as typeof opmlPreview
+                      setOpmlPreview(preview)
+                      setSelectedOpmlIndexes(
+                        preview.filter((item) => !item.duplicate).map((item) => item.index),
+                      )
+                    }, "OPML preview ready")
+                  }
+                >
+                  Preview OPML
+                </button>
+                <button
+                  className="remote-primary-button"
+                  disabled={busy || selectedOpmlIndexes.length === 0}
+                  onClick={() =>
+                    run(async () => {
+                      await runtimeClient.opml.import(opmlText, selectedOpmlIndexes)
+                    }, "OPML import completed")
+                  }
+                >
+                  Import selected
+                </button>
+              </div>
+              <textarea
+                className="remote-textarea"
+                value={opmlText}
+                onChange={(event) => {
+                  setOpmlText(event.target.value)
+                  setOpmlPreview([])
+                  setSelectedOpmlIndexes([])
+                }}
+                placeholder="Paste OPML here for a local preview"
+              />
+              {opmlPreview.length > 0 ? (
+                <div className="remote-form-stack">
+                  {opmlPreview.map((item) => (
+                    <label className="remote-annotation-item" key={`${item.index}:${item.url}`}>
+                      <input
+                        type="checkbox"
+                        checked={selectedOpmlIndexes.includes(item.index)}
+                        disabled={item.duplicate}
+                        onChange={(event) =>
+                          setSelectedOpmlIndexes((current) =>
+                            event.target.checked
+                              ? Array.from(new Set([...current, item.index]))
+                              : current.filter((index) => index !== item.index),
+                          )
+                        }
+                      />
+                      <span>
+                        {item.title || item.url}
+                        {item.category ? ` · ${item.category}` : ""}
+                        {item.duplicate ? " · already subscribed" : ""}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              ) : null}
+            </div>
             <div className="remote-data-grid">
               <div className="remote-form-stack">
                 <button

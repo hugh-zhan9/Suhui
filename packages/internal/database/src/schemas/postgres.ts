@@ -9,6 +9,7 @@ import {
   integer,
   jsonb,
   pgTable,
+  primaryKey,
   text,
   uniqueIndex,
 } from "drizzle-orm/pg-core"
@@ -140,7 +141,7 @@ export const summariesTable = pgTable(
     summary: text("summary").notNull(),
     readabilitySummary: text("readability_summary"),
     createdAt: text("created_at").$defaultFn(() => new Date().toISOString()),
-    language: text("language").$type<SupportedActionLanguage>(),
+    language: text("language").notNull().default("").$type<SupportedActionLanguage | "">(),
   },
   (t) => [uniqueIndex("unq").on(t.entryId, t.language)],
 )
@@ -240,5 +241,143 @@ export const pendingSyncOpsTable = pgTable("pending_sync_ops", {
   updatedAt: bigint("updated_at", { mode: "number" }),
   appliedAt: bigint("applied_at", { mode: "number" }),
 })
+
+export type EntryRuleActions = {
+  markRead?: boolean
+  star?: boolean
+  addToReadingQueue?: boolean
+  tags?: string[]
+  hide?: boolean
+}
+
+export const contentClustersTable = pgTable("content_clusters", {
+  id: text("id").primaryKey(),
+  manualRepresentativeEntryId: text("manual_representative_entry_id"),
+  createdAt: bigint("created_at", { mode: "number" }).notNull(),
+  updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
+})
+
+export const contentClusterMembersTable = pgTable(
+  "content_cluster_members",
+  {
+    entryId: text("entry_id").primaryKey(),
+    clusterId: text("cluster_id").notNull(),
+    fingerprint: text("fingerprint").notNull(),
+    basis: text("basis").notNull().$type<"canonical_url" | "title_content">(),
+    algorithmVersion: integer("algorithm_version").notNull(),
+    createdAt: bigint("created_at", { mode: "number" }).notNull(),
+  },
+  (table) => [
+    index("idx_content_cluster_members_cluster").on(table.clusterId),
+    index("idx_content_cluster_members_fingerprint").on(table.fingerprint),
+  ],
+)
+
+export const contentClusterExclusionsTable = pgTable(
+  "content_cluster_exclusions",
+  {
+    entryId: text("entry_id").primaryKey(),
+    fingerprint: text("fingerprint").notNull(),
+    createdAt: bigint("created_at", { mode: "number" }).notNull(),
+  },
+  (table) => [index("idx_content_cluster_exclusions_fingerprint").on(table.fingerprint)],
+)
+
+export const entryRulesTable = pgTable(
+  "entry_rules",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    enabled: boolean("enabled").notNull().default(true),
+    feedIds: jsonb("feed_ids").$type<string[]>().notNull().default([]),
+    titleKeywords: jsonb("title_keywords").$type<string[]>().notNull().default([]),
+    actions: jsonb("actions").$type<EntryRuleActions>().notNull(),
+    version: integer("version").notNull().default(1),
+    createdAt: bigint("created_at", { mode: "number" }).notNull(),
+    updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
+    deletedAt: bigint("deleted_at", { mode: "number" }),
+  },
+  (table) => [index("idx_entry_rules_enabled_updated").on(table.enabled, table.updatedAt)],
+)
+
+export const entryRuleApplicationsTable = pgTable(
+  "entry_rule_applications",
+  {
+    ruleId: text("rule_id").notNull(),
+    entryId: text("entry_id").notNull(),
+    ruleVersion: integer("rule_version").notNull(),
+    appliedAt: bigint("applied_at", { mode: "number" }).notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.ruleId, table.entryId, table.ruleVersion] }),
+    index("idx_entry_rule_applications_entry").on(table.entryId),
+  ],
+)
+
+export const entryUserStateTable = pgTable("entry_user_state", {
+  entryId: text("entry_id").primaryKey(),
+  hidden: boolean("hidden").notNull().default(false),
+  updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
+})
+
+export const entryTagsTable = pgTable(
+  "entry_tags",
+  {
+    entryId: text("entry_id").notNull(),
+    tag: text("tag").notNull(),
+    createdAt: bigint("created_at", { mode: "number" }).notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.entryId, table.tag] }),
+    index("idx_entry_tags_tag").on(table.tag),
+  ],
+)
+
+export const entryNotesTable = pgTable(
+  "entry_notes",
+  {
+    id: text("id").primaryKey(),
+    entryId: text("entry_id").notNull(),
+    content: text("content").notNull(),
+    createdAt: bigint("created_at", { mode: "number" }).notNull(),
+    updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
+    deletedAt: bigint("deleted_at", { mode: "number" }),
+  },
+  (table) => [index("idx_entry_notes_entry_updated").on(table.entryId, table.updatedAt)],
+)
+
+export const entryHighlightsTable = pgTable(
+  "entry_highlights",
+  {
+    id: text("id").primaryKey(),
+    entryId: text("entry_id").notNull(),
+    source: text("source").notNull().$type<"rss" | "readability">(),
+    quote: text("quote").notNull(),
+    prefix: text("prefix").notNull().default(""),
+    suffix: text("suffix").notNull().default(""),
+    startOffset: integer("start_offset"),
+    endOffset: integer("end_offset"),
+    status: text("status").notNull().$type<"active" | "orphaned">().default("active"),
+    createdAt: bigint("created_at", { mode: "number" }).notNull(),
+    updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
+    deletedAt: bigint("deleted_at", { mode: "number" }),
+  },
+  (table) => [index("idx_entry_highlights_entry_status").on(table.entryId, table.status)],
+)
+
+export const readingQueueTable = pgTable(
+  "reading_queue",
+  {
+    entryId: text("entry_id").primaryKey(),
+    status: text("status").notNull().$type<"pending" | "completed">(),
+    addedAt: bigint("added_at", { mode: "number" }).notNull(),
+    completedAt: bigint("completed_at", { mode: "number" }),
+    updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
+  },
+  (table) => [
+    index("idx_reading_queue_status_added").on(table.status, table.addedAt),
+    index("idx_reading_queue_completed").on(table.completedAt),
+  ],
+)
 
 export type AiChatMessagesModel = typeof aiChatMessagesTable.$inferSelect

@@ -25,7 +25,7 @@ export function createMainDBHandles(config: {
   nextPool.on("error", (error: Error, client: PoolClient) => {
     console.warn("[DB] Postgres pool idle client error", {
       error: error.message,
-      processID: client.processID,
+      processID: (client as PoolClient & { processID?: number }).processID,
     })
   })
   const nextDb = drizzlePg(nextPool, { schema })
@@ -172,6 +172,10 @@ export async function migrateMainDB(handles = activeHandles) {
       `language text\n` +
       `);`,
     `CREATE UNIQUE INDEX IF NOT EXISTS unq ON summaries(entry_id, language);`,
+    `DELETE FROM summaries a USING summaries b WHERE a.ctid < b.ctid AND a.entry_id = b.entry_id AND COALESCE(a.language, '') = COALESCE(b.language, '');`,
+    `UPDATE summaries SET language = '' WHERE language IS NULL;`,
+    `ALTER TABLE summaries ALTER COLUMN language SET DEFAULT '';`,
+    `ALTER TABLE summaries ALTER COLUMN language SET NOT NULL;`,
     `CREATE TABLE IF NOT EXISTS translations (\n` +
       `entry_id text not null,\n` +
       `language text not null,\n` +
@@ -218,6 +222,112 @@ export async function migrateMainDB(handles = activeHandles) {
       `updated_at bigint,\n` +
       `applied_at bigint\n` +
       `);`,
+    `CREATE TABLE IF NOT EXISTS content_clusters (\n` +
+      `id text primary key,\n` +
+      `manual_representative_entry_id text,\n` +
+      `created_at bigint not null,\n` +
+      `updated_at bigint not null\n` +
+      `);`,
+    `CREATE TABLE IF NOT EXISTS content_cluster_members (\n` +
+      `entry_id text primary key,\n` +
+      `cluster_id text not null,\n` +
+      `fingerprint text not null,\n` +
+      `basis text not null,\n` +
+      `algorithm_version integer not null,\n` +
+      `created_at bigint not null\n` +
+      `);`,
+    `CREATE INDEX IF NOT EXISTS idx_content_cluster_members_cluster ON content_cluster_members(cluster_id);`,
+    `CREATE INDEX IF NOT EXISTS idx_content_cluster_members_fingerprint ON content_cluster_members(fingerprint);`,
+    `CREATE TABLE IF NOT EXISTS content_cluster_exclusions (\n` +
+      `entry_id text primary key,\n` +
+      `fingerprint text not null,\n` +
+      `created_at bigint not null\n` +
+      `);`,
+    `CREATE INDEX IF NOT EXISTS idx_content_cluster_exclusions_fingerprint ON content_cluster_exclusions(fingerprint);`,
+    `CREATE TABLE IF NOT EXISTS entry_rules (\n` +
+      `id text primary key,\n` +
+      `name text not null,\n` +
+      `enabled boolean not null default true,\n` +
+      `feed_ids jsonb not null default '[]'::jsonb,\n` +
+      `title_keywords jsonb not null default '[]'::jsonb,\n` +
+      `actions jsonb not null,\n` +
+      `version integer not null default 1,\n` +
+      `created_at bigint not null,\n` +
+      `updated_at bigint not null,\n` +
+      `deleted_at bigint\n` +
+      `);`,
+    `CREATE INDEX IF NOT EXISTS idx_entry_rules_enabled_updated ON entry_rules(enabled, updated_at);`,
+    `CREATE TABLE IF NOT EXISTS entry_rule_applications (\n` +
+      `rule_id text not null,\n` +
+      `entry_id text not null,\n` +
+      `rule_version integer not null,\n` +
+      `applied_at bigint not null,\n` +
+      `primary key (rule_id, entry_id, rule_version)\n` +
+      `);`,
+    `CREATE INDEX IF NOT EXISTS idx_entry_rule_applications_entry ON entry_rule_applications(entry_id);`,
+    `CREATE TABLE IF NOT EXISTS entry_user_state (\n` +
+      `entry_id text primary key,\n` +
+      `hidden boolean not null default false,\n` +
+      `updated_at bigint not null\n` +
+      `);`,
+    `CREATE TABLE IF NOT EXISTS entry_tags (\n` +
+      `entry_id text not null,\n` +
+      `tag text not null,\n` +
+      `created_at bigint not null,\n` +
+      `primary key (entry_id, tag)\n` +
+      `);`,
+    `CREATE INDEX IF NOT EXISTS idx_entry_tags_tag ON entry_tags(tag);`,
+    `CREATE TABLE IF NOT EXISTS entry_notes (\n` +
+      `id text primary key,\n` +
+      `entry_id text not null,\n` +
+      `content text not null,\n` +
+      `created_at bigint not null,\n` +
+      `updated_at bigint not null,\n` +
+      `deleted_at bigint\n` +
+      `);`,
+    `CREATE INDEX IF NOT EXISTS idx_entry_notes_entry_updated ON entry_notes(entry_id, updated_at);`,
+    `CREATE TABLE IF NOT EXISTS entry_highlights (\n` +
+      `id text primary key,\n` +
+      `entry_id text not null,\n` +
+      `source text not null,\n` +
+      `quote text not null,\n` +
+      `prefix text not null default '',\n` +
+      `suffix text not null default '',\n` +
+      `start_offset integer,\n` +
+      `end_offset integer,\n` +
+      `status text not null default 'active',\n` +
+      `created_at bigint not null,\n` +
+      `updated_at bigint not null,\n` +
+      `deleted_at bigint\n` +
+      `);`,
+    `CREATE INDEX IF NOT EXISTS idx_entry_highlights_entry_status ON entry_highlights(entry_id, status);`,
+    `CREATE TABLE IF NOT EXISTS reading_queue (\n` +
+      `entry_id text primary key,\n` +
+      `status text not null,\n` +
+      `added_at bigint not null,\n` +
+      `completed_at bigint,\n` +
+      `updated_at bigint not null\n` +
+      `);`,
+    `CREATE INDEX IF NOT EXISTS idx_reading_queue_status_added ON reading_queue(status, added_at);`,
+    `CREATE INDEX IF NOT EXISTS idx_reading_queue_completed ON reading_queue(completed_at);`,
+    `CREATE TABLE IF NOT EXISTS backup_restore_settings (\n` +
+      `id integer primary key check (id = 1),\n` +
+      `settings jsonb not null,\n` +
+      `main_applied boolean not null default false,\n` +
+      `renderer_applied boolean not null default false,\n` +
+      `created_at bigint not null\n` +
+      `);`,
+    `CREATE TABLE IF NOT EXISTS content_cluster_rebuild_state (\n` +
+      `id integer primary key check (id = 1),\n` +
+      `after_entry_id text,\n` +
+      `batch_entry_ids jsonb not null default '[]'::jsonb,\n` +
+      `manual_entry_ids jsonb not null default '[]'::jsonb,\n` +
+      `processed integer not null default 0,\n` +
+      `clustered integer not null default 0,\n` +
+      `updated_at bigint not null\n` +
+      `);`,
+    `ALTER TABLE content_cluster_rebuild_state ADD COLUMN IF NOT EXISTS batch_entry_ids jsonb NOT NULL DEFAULT '[]'::jsonb;`,
+    `ALTER TABLE content_cluster_rebuild_state ADD COLUMN IF NOT EXISTS manual_entry_ids jsonb NOT NULL DEFAULT '[]'::jsonb;`,
     `ALTER TABLE feeds ADD COLUMN IF NOT EXISTS deleted_at bigint;`,
     `ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS deleted_at bigint;`,
     `ALTER TABLE inboxes ADD COLUMN IF NOT EXISTS deleted_at bigint;`,

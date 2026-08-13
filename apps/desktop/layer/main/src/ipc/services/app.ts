@@ -335,6 +335,34 @@ export class AppService extends IpcService {
     return result.canceled ? null : (result.filePaths[0] ?? null)
   }
 
+  @IpcMethod()
+  async showOpenFileDialog(
+    context: IpcContext,
+    input?: { filters?: Array<{ name: string; extensions: string[] }> },
+  ): Promise<string | null> {
+    const senderWindow = (context.sender as Sender).getOwnerBrowserWindow()
+    if (!senderWindow) return null
+    const result = await dialog.showOpenDialog(senderWindow, {
+      properties: ["openFile"],
+      filters: input?.filters,
+    })
+    return result.canceled ? null : (result.filePaths[0] ?? null)
+  }
+
+  @IpcMethod()
+  async showSaveFileDialog(
+    context: IpcContext,
+    input: {
+      defaultPath: string
+      filters?: Array<{ name: string; extensions: string[] }>
+    },
+  ): Promise<string | null> {
+    const senderWindow = (context.sender as Sender).getOwnerBrowserWindow()
+    if (!senderWindow) return null
+    const result = await dialog.showSaveDialog(senderWindow, input)
+    return result.canceled ? null : (result.filePath ?? null)
+  }
+
   private escapeHtml(value?: string): string {
     if (!value) return ""
     return value

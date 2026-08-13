@@ -10,6 +10,16 @@ import type {
   translationsTable,
   unreadTable,
   usersTable,
+  contentClustersTable,
+  contentClusterMembersTable,
+  contentClusterExclusionsTable,
+  entryRulesTable,
+  entryRuleApplicationsTable,
+  entryUserStateTable,
+  entryTagsTable,
+  entryNotesTable,
+  entryHighlightsTable,
+  readingQueueTable,
 } from "."
 
 export type SubscriptionSchema = typeof subscriptionsTable.$inferInsert
@@ -33,6 +43,16 @@ export type SummarySchema = typeof summariesTable.$inferInsert
 export type TranslationSchema = typeof translationsTable.$inferInsert
 
 export type ImageSchema = typeof imagesTable.$inferInsert
+export type ContentClusterSchema = typeof contentClustersTable.$inferInsert
+export type ContentClusterMemberSchema = typeof contentClusterMembersTable.$inferInsert
+export type ContentClusterExclusionSchema = typeof contentClusterExclusionsTable.$inferInsert
+export type EntryRuleSchema = typeof entryRulesTable.$inferInsert
+export type EntryRuleApplicationSchema = typeof entryRuleApplicationsTable.$inferInsert
+export type EntryUserStateSchema = typeof entryUserStateTable.$inferInsert
+export type EntryTagSchema = typeof entryTagsTable.$inferInsert
+export type EntryNoteSchema = typeof entryNotesTable.$inferInsert
+export type EntryHighlightSchema = typeof entryHighlightsTable.$inferInsert
+export type ReadingQueueSchema = typeof readingQueueTable.$inferInsert
 
 export type MediaModel = {
   url: string

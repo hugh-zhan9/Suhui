@@ -11,6 +11,8 @@ import { DBManager } from "~/manager/db"
 import { FeedRefreshService } from "~/manager/feed-refresh"
 import { syncLogger } from "~/manager/sync-logger"
 
+import { localReadingPipeline } from "../local-reading/pipeline"
+
 type CreateSubscriptionPayload = {
   url: string
   view: number
@@ -147,6 +149,7 @@ export class SubscriptionApplicationService {
       readabilityUpdatedAt: toTimestampMs(entry.readabilityUpdatedAt),
     }))
     await EntryService.upsertMany(entries as any)
+    await localReadingPipeline.processNewEntries(entries.map((entry) => entry.id))
 
     return {
       feed: { ...feed, type: "feed" as const },

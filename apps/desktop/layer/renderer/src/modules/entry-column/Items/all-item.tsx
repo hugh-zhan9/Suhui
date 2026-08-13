@@ -38,7 +38,8 @@ const ViewTag = IN_ELECTRON ? "webview" : "iframe"
 
 const entrySelector = (state: EntryModel) => {
   /// keep-sorted
-  const { authorAvatar, authorUrl, description, feedId, inboxHandle, publishedAt, title } = state
+  const { authorAvatar, authorUrl, cluster, description, feedId, inboxHandle, publishedAt, title } =
+    state
 
   const audios = state.attachments?.filter((a) => a.mime_type?.startsWith("audio") && a.url)
   const video = transformVideoUrl({
@@ -56,6 +57,7 @@ const entrySelector = (state: EntryModel) => {
   return {
     authorAvatar,
     authorUrl,
+    cluster,
     description,
     feedId,
     firstAudio,
@@ -184,6 +186,11 @@ export function AllItem({ entryId, translation, currentFeedTitle }: UniversalIte
             entryId={entryId}
             className="absolute right-0 top-1/2 -translate-y-1/2"
           />
+          {entry.cluster && entry.cluster.sourceCount > 1 ? (
+            <span className="ml-1 shrink-0 rounded bg-material-medium px-1.5 py-0.5 text-[10px] font-normal text-text-secondary">
+              {entry.cluster.sourceCount} 个来源
+            </span>
+          ) : null}
         </div>
       </div>
 

@@ -48,6 +48,14 @@ export type EntryRecord = {
   sources?: string[] | null
   settings?: any
   recordKind?: "summary" | "detail"
+  hidden?: boolean
+  tags?: string[]
+  cluster?: {
+    id: string
+    representativeEntryId: string
+    sourceCount: number
+    entryIds: string[]
+  }
 }
 
 /** API 返回的未读记录格式 */
@@ -239,6 +247,9 @@ export function transformEntryFromApi(record: EntryRecord): EntryModel {
     sources: record.sources ?? null,
     settings: record.settings ?? null,
     recordKind: record.recordKind,
+    ...(record.hidden === undefined ? {} : { hidden: record.hidden }),
+    ...(record.tags === undefined ? {} : { tags: record.tags }),
+    ...(record.cluster === undefined ? {} : { cluster: record.cluster }),
   }
 }
 

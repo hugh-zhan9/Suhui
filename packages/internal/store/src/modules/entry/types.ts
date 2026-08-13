@@ -9,6 +9,14 @@ export type EntryModel = Omit<
   publishedAt: number
   readabilityUpdatedAt: number | null
   recordKind?: "summary" | "detail"
+  hidden?: boolean
+  tags?: string[]
+  cluster?: {
+    id: string
+    representativeEntryId: string
+    sourceCount: number
+    entryIds: string[]
+  }
 }
 
 export type RuntimeEntryListScope =
@@ -21,6 +29,8 @@ export type RuntimeEntryListScope =
 export type RuntimeEntryListQuery = {
   scope: RuntimeEntryListScope
   read?: boolean
+  includeHidden?: boolean
+  deduplicate?: boolean
   limit?: number
   cursor?: string
 }
@@ -49,6 +59,8 @@ export type FetchEntriesProps = {
   isCollection?: boolean
   excludePrivate?: boolean
   aiSort?: boolean
+  includeHidden?: boolean
+  deduplicate?: boolean
 }
 
 export type FetchEntriesPropsSettings = {

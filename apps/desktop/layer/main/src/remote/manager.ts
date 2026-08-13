@@ -10,6 +10,8 @@ import {
 } from "@suhui/shared/entry-change"
 
 import { agentApplicationService } from "~/application/agent/service"
+import { annotationApplicationService } from "~/application/annotations/service"
+import { dedupApplicationService } from "~/application/dedup/service"
 import { AgentApplicationError, agentReadStatusMaxEntryIds } from "~/application/agent/types"
 import { entryQueryService } from "~/application/entry/query-service"
 import {
@@ -29,12 +31,16 @@ import { collectionApplicationService } from "~/application/collection/service"
 import { discoverApplicationService } from "~/application/discover/service"
 import { feedApplicationService } from "~/application/feed/service"
 import { importExportApplicationService } from "~/application/import-export/service"
+import { opmlApplicationService } from "~/application/opml/service"
 import { pdfApplicationService } from "~/application/pdf/service"
 import type { EntryPdfInput } from "~/application/pdf/service"
 import { rsshubApplicationService } from "~/application/rsshub/service"
 import { settingsApplicationService, type RemoteSettings } from "~/application/settings/service"
 import { subscriptionApplicationService } from "~/application/subscription/service"
+import { readingQueueApplicationService } from "~/application/reading-queue/service"
+import { ruleApplicationService } from "~/application/rules/service"
 import { broadcastLocalFeedRefreshCompleted } from "~/manager/local-feed-refresh-events"
+import { DBManager } from "~/manager/db"
 
 import { getRemoteClientAsset, getRemoteClientHtml } from "./client"
 import { REMOTE_SERVER_DEFAULT_HOST, REMOTE_SERVER_DEFAULT_PORT } from "./config"
@@ -116,6 +122,43 @@ type RemoteServerDependencies = {
   discover: (path: string, payload: Record<string, unknown>) => Promise<unknown>
   exportData: () => Promise<unknown>
   importData: (payload: unknown) => Promise<unknown>
+  exportOpml: () => Promise<string>
+  previewOpml: (xml: string) => Promise<unknown>
+  importOpml: (xml: string, selectedIndexes?: number[]) => Promise<unknown>
+  listRules: () => Promise<unknown>
+  createRule: (payload: any) => Promise<unknown>
+  updateRule: (id: string, payload: any) => Promise<unknown>
+  deleteRule: (id: string) => Promise<unknown>
+  previewRuleHistory: (id: string) => Promise<unknown>
+  executeRuleHistory: (token: string) => Promise<unknown>
+  getEntryTags: (entryId: string) => Promise<unknown>
+  updateEntryTags: (payload: {
+    entryId: string
+    add?: string[]
+    remove?: string[]
+  }) => Promise<unknown>
+  setEntryHidden: (payload: { entryId: string; hidden: boolean }) => Promise<unknown>
+  setClusterRepresentative: (payload: {
+    clusterId: string
+    entryId: string | null
+  }) => Promise<unknown>
+  splitClusterMember: (payload: { clusterId: string; entryId: string }) => Promise<unknown>
+  listAnnotations: (entryId: string) => Promise<unknown>
+  createNote: (payload: { entryId: string; content: string }) => Promise<unknown>
+  updateNote: (payload: {
+    id: string
+    content: string
+    expectedUpdatedAt: number
+  }) => Promise<unknown>
+  deleteNote: (id: string) => Promise<unknown>
+  createHighlight: (payload: any) => Promise<unknown>
+  deleteHighlight: (id: string) => Promise<unknown>
+  relocateHighlights: (entryId: string) => Promise<unknown>
+  listReadingQueue: (status: "pending" | "completed", limit?: number) => Promise<unknown>
+  addToReadingQueue: (entryId: string) => Promise<unknown>
+  completeReadingQueue: (entryId: string) => Promise<unknown>
+  removeFromReadingQueue: (entryId: string) => Promise<unknown>
+  getReadingQueueStats: () => Promise<unknown>
   renderEntryPdf: (payload: EntryPdfInput) => Promise<Buffer>
   getRemoteIndexHtml: () => Promise<string | null>
   getRemoteAsset: (
@@ -276,10 +319,23 @@ const binary = (
 }
 
 const getBaseUrl = (host: string, port: number) => `http://${host}:${port}`
-const readJsonBody = async <T>(request: IncomingMessage): Promise<T> => {
+const readJsonBody = async <T>(
+  request: IncomingMessage,
+  maxBytes = 2 * 1024 * 1024,
+): Promise<T> => {
   const chunks: Buffer[] = []
+  let receivedBytes = 0
   for await (const chunk of request) {
-    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
+    const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)
+    receivedBytes += buffer.byteLength
+    if (receivedBytes > maxBytes) {
+      throw new AgentApplicationError(
+        "SUHUI_REQUEST_TOO_LARGE",
+        "request body exceeds the size limit",
+        413,
+      )
+    }
+    chunks.push(buffer)
   }
 
   const raw = Buffer.concat(chunks).toString("utf8")
@@ -375,6 +431,16 @@ export const parseRemoteEntryListQuery = (searchParams: URLSearchParams): EntryL
     searchParams.get("unreadOnly"),
     "SUHUI_INVALID_READ_FILTER",
   )
+  const includeHidden = parseEntryBoolean(
+    "includeHidden",
+    searchParams.get("includeHidden"),
+    "SUHUI_INVALID_ENTRY_SCOPE",
+  )
+  const deduplicate = parseEntryBoolean(
+    "deduplicate",
+    searchParams.get("deduplicate"),
+    "SUHUI_INVALID_ENTRY_SCOPE",
+  )
   if (unreadOnly === true && read === true) {
     throw new EntryQueryError(
       "SUHUI_INVALID_READ_FILTER",
@@ -394,6 +460,8 @@ export const parseRemoteEntryListQuery = (searchParams: URLSearchParams): EntryL
     ...(unreadOnly === true ? { read: false } : read === undefined ? {} : { read }),
     ...(limit === undefined ? {} : { limit }),
     ...(cursorValue === null ? {} : { cursor: cursorValue }),
+    ...(includeHidden === undefined ? {} : { includeHidden }),
+    ...(deduplicate === undefined ? {} : { deduplicate }),
   }
 }
 
@@ -511,8 +579,20 @@ const writeSseEvent = (
   response.write(`event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`)
 }
 
-const isLoopbackPeer = (address: string | undefined) =>
+export const isLoopbackPeer = (address: string | undefined) =>
   address === "127.0.0.1" || address === "::1" || address === "::ffff:127.0.0.1"
+
+export const isPrivateLocalReadingRoute = (pathname: string) =>
+  pathname === "/api/rules" ||
+  pathname.startsWith("/api/rules/") ||
+  pathname === "/api/notes" ||
+  pathname.startsWith("/api/notes/") ||
+  pathname === "/api/highlights" ||
+  pathname.startsWith("/api/highlights/") ||
+  pathname === "/api/reading-queue" ||
+  pathname.startsWith("/api/reading-queue/") ||
+  /^\/api\/entries\/[^/]+\/(annotations|tags|hidden|highlights\/relocate)$/.test(pathname) ||
+  /^\/api\/clusters\/[^/]+\/(representative|split)$/.test(pathname)
 
 const isAuthorizedPerformanceHarnessRequest = (request: IncomingMessage) => {
   const expected = process.env.SUHUI_PERFORMANCE_CAPABILITY
@@ -548,6 +628,14 @@ const createRequestHandler =
 
     if (method === "GET" && url.pathname === "/health") {
       json(response, 200, { ok: true })
+      return
+    }
+
+    // Remote currently has no authentication. Notes, highlights and all local
+    // reading mutations therefore stay loopback-only; binding the general
+    // reader to 0.0.0.0 must not expose private data to LAN/VPN peers.
+    if (isPrivateLocalReadingRoute(url.pathname) && !isLoopbackPeer(request.socket.remoteAddress)) {
+      json(response, 403, { error: "REMOTE_LOCAL_READING_LOOPBACK_ONLY" })
       return
     }
 
@@ -623,9 +711,26 @@ const createRequestHandler =
       return
     }
 
+    if (url.pathname.startsWith("/api/")) {
+      await DBManager.waitUntilUsable()
+    }
+
     if (method === "GET" && url.pathname === "/api/bootstrap") {
       try {
-        json(response, 200, { data: await deps.getBootstrap() })
+        const bootstrap = await deps.getBootstrap()
+        const baseCapabilities =
+          bootstrap.capabilities && typeof bootstrap.capabilities === "object"
+            ? bootstrap.capabilities
+            : {}
+        json(response, 200, {
+          data: {
+            ...bootstrap,
+            capabilities: {
+              ...baseCapabilities,
+              privateLocalReading: isLoopbackPeer(request.socket.remoteAddress),
+            },
+          },
+        })
       } catch {
         console.error("[RemoteServerManager] bootstrap failed")
         json(response, 500, { error: "REMOTE_BOOTSTRAP_FAILED" })
@@ -749,10 +854,43 @@ const createRequestHandler =
       return
     }
 
-    if (method === "GET" && url.pathname.startsWith("/api/entries/")) {
+    if (method === "GET" && url.pathname.match(/^\/api\/entries\/[^/]+\/(annotations|tags)$/)) {
+      const entryId = decodeURIComponent(url.pathname.split("/")[3]!)
+      const data = url.pathname.endsWith("/annotations")
+        ? await deps.listAnnotations(entryId)
+        : await deps.getEntryTags(entryId)
+      json(response, 200, { data })
+      return
+    }
+
+    if (method === "GET" && url.pathname.match(/^\/api\/entries\/[^/]+$/)) {
       const entryId = decodeURIComponent(url.pathname.replace("/api/entries/", ""))
       const entry = await deps.getEntry(entryId)
       json(response, 200, { data: entry })
+      return
+    }
+
+    if (method === "PATCH" && url.pathname.match(/^\/api\/clusters\/[^/]+\/representative$/)) {
+      const clusterId = decodeURIComponent(url.pathname.split("/")[3]!)
+      const payload = await readJsonBody<{ entryId: string | null }>(request)
+      if (payload.entryId !== null && typeof payload.entryId !== "string") {
+        json(response, 400, { error: "INVALID_CLUSTER_REPRESENTATIVE" })
+        return
+      }
+      await deps.setClusterRepresentative({ clusterId, entryId: payload.entryId })
+      json(response, 200, { ok: true })
+      return
+    }
+
+    if (method === "POST" && url.pathname.match(/^\/api\/clusters\/[^/]+\/split$/)) {
+      const clusterId = decodeURIComponent(url.pathname.split("/")[3]!)
+      const payload = await readJsonBody<{ entryId: string }>(request)
+      if (typeof payload.entryId !== "string" || !payload.entryId.trim()) {
+        json(response, 400, { error: "INVALID_CLUSTER_MEMBER" })
+        return
+      }
+      await deps.splitClusterMember({ clusterId, entryId: payload.entryId })
+      json(response, 200, { ok: true })
       return
     }
 
@@ -1009,6 +1147,159 @@ const createRequestHandler =
       return
     }
 
+    if (method === "GET" && url.pathname === "/api/opml") {
+      text(response, 200, await deps.exportOpml(), "text/x-opml; charset=utf-8")
+      return
+    }
+
+    if (method === "POST" && url.pathname === "/api/opml/preview") {
+      const payload = await readJsonBody<{ xml: string }>(request, 10 * 1024 * 1024)
+      if (typeof payload.xml !== "string") {
+        json(response, 400, { error: "INVALID_OPML" })
+        return
+      }
+      json(response, 200, { data: await deps.previewOpml(payload.xml) })
+      return
+    }
+
+    if (method === "POST" && url.pathname === "/api/opml/import") {
+      const payload = await readJsonBody<{ xml: string; selectedIndexes?: number[] }>(
+        request,
+        10 * 1024 * 1024,
+      )
+      if (
+        typeof payload.xml !== "string" ||
+        (payload.selectedIndexes !== undefined &&
+          (!Array.isArray(payload.selectedIndexes) ||
+            payload.selectedIndexes.some((index) => !Number.isInteger(index) || index < 0)))
+      ) {
+        json(response, 400, { error: "INVALID_OPML_IMPORT" })
+        return
+      }
+      json(response, 200, {
+        data: await deps.importOpml(payload.xml, payload.selectedIndexes),
+      })
+      return
+    }
+
+    if (method === "GET" && url.pathname === "/api/rules") {
+      json(response, 200, { data: await deps.listRules() })
+      return
+    }
+
+    if (method === "POST" && url.pathname === "/api/rules") {
+      json(response, 200, { data: await deps.createRule(await readJsonBody(request)) })
+      return
+    }
+
+    if (method === "PATCH" && url.pathname.startsWith("/api/rules/")) {
+      const id = decodeURIComponent(url.pathname.replace("/api/rules/", ""))
+      json(response, 200, { data: await deps.updateRule(id, await readJsonBody(request)) })
+      return
+    }
+
+    if (method === "DELETE" && url.pathname.startsWith("/api/rules/")) {
+      const id = decodeURIComponent(url.pathname.replace("/api/rules/", ""))
+      await deps.deleteRule(id)
+      json(response, 200, { ok: true })
+      return
+    }
+
+    if (method === "POST" && url.pathname.match(/^\/api\/rules\/[^/]+\/preview$/)) {
+      const id = decodeURIComponent(url.pathname.split("/")[3]!)
+      json(response, 200, { data: await deps.previewRuleHistory(id) })
+      return
+    }
+
+    if (method === "POST" && url.pathname === "/api/rules/history/execute") {
+      const payload = await readJsonBody<{ token: string }>(request)
+      json(response, 200, { data: await deps.executeRuleHistory(payload.token) })
+      return
+    }
+
+    if (method === "PATCH" && url.pathname.match(/^\/api\/entries\/[^/]+\/tags$/)) {
+      const entryId = decodeURIComponent(url.pathname.split("/")[3]!)
+      const payload = await readJsonBody<{ add?: string[]; remove?: string[] }>(request)
+      json(response, 200, { data: await deps.updateEntryTags({ entryId, ...payload }) })
+      return
+    }
+
+    if (method === "PATCH" && url.pathname.match(/^\/api\/entries\/[^/]+\/hidden$/)) {
+      const entryId = decodeURIComponent(url.pathname.split("/")[3]!)
+      const payload = await readJsonBody<{ hidden: boolean }>(request)
+      await deps.setEntryHidden({ entryId, hidden: payload.hidden })
+      json(response, 200, { ok: true })
+      return
+    }
+
+    if (method === "POST" && url.pathname === "/api/notes") {
+      json(response, 200, { data: await deps.createNote(await readJsonBody(request)) })
+      return
+    }
+
+    if (method === "PATCH" && url.pathname.startsWith("/api/notes/")) {
+      const id = decodeURIComponent(url.pathname.replace("/api/notes/", ""))
+      const payload = await readJsonBody<{ content: string; expectedUpdatedAt: number }>(request)
+      json(response, 200, { data: await deps.updateNote({ id, ...payload }) })
+      return
+    }
+
+    if (method === "DELETE" && url.pathname.startsWith("/api/notes/")) {
+      await deps.deleteNote(decodeURIComponent(url.pathname.replace("/api/notes/", "")))
+      json(response, 200, { ok: true })
+      return
+    }
+
+    if (method === "POST" && url.pathname === "/api/highlights") {
+      json(response, 200, { data: await deps.createHighlight(await readJsonBody(request)) })
+      return
+    }
+
+    if (method === "DELETE" && url.pathname.startsWith("/api/highlights/")) {
+      await deps.deleteHighlight(decodeURIComponent(url.pathname.replace("/api/highlights/", "")))
+      json(response, 200, { ok: true })
+      return
+    }
+
+    if (method === "POST" && url.pathname.match(/^\/api\/entries\/[^/]+\/highlights\/relocate$/)) {
+      const entryId = decodeURIComponent(url.pathname.split("/")[3]!)
+      json(response, 200, { data: await deps.relocateHighlights(entryId) })
+      return
+    }
+
+    if (method === "GET" && url.pathname === "/api/reading-queue") {
+      const status = url.searchParams.get("status") === "completed" ? "completed" : "pending"
+      const limit = url.searchParams.has("limit")
+        ? Number(url.searchParams.get("limit"))
+        : undefined
+      json(response, 200, { data: await deps.listReadingQueue(status, limit) })
+      return
+    }
+
+    if (method === "GET" && url.pathname === "/api/reading-queue/stats") {
+      json(response, 200, { data: await deps.getReadingQueueStats() })
+      return
+    }
+
+    if (method === "PUT" && url.pathname.match(/^\/api\/reading-queue\/[^/]+$/)) {
+      const entryId = decodeURIComponent(url.pathname.replace("/api/reading-queue/", ""))
+      json(response, 200, { data: await deps.addToReadingQueue(entryId) })
+      return
+    }
+
+    if (method === "POST" && url.pathname.match(/^\/api\/reading-queue\/[^/]+\/complete$/)) {
+      const entryId = decodeURIComponent(url.pathname.split("/")[3]!)
+      json(response, 200, { data: await deps.completeReadingQueue(entryId) })
+      return
+    }
+
+    if (method === "DELETE" && url.pathname.startsWith("/api/reading-queue/")) {
+      const entryId = decodeURIComponent(url.pathname.replace("/api/reading-queue/", ""))
+      await deps.removeFromReadingQueue(entryId)
+      json(response, 200, { ok: true })
+      return
+    }
+
     json(response, 404, { error: "REMOTE_ROUTE_NOT_FOUND" })
   }
 
@@ -1099,6 +1390,49 @@ class RemoteServerManagerStatic {
       importData: async (payload) => {
         return importExportApplicationService.importData(payload)
       },
+      exportOpml: () => opmlApplicationService.export(),
+      previewOpml: (xml) => opmlApplicationService.preview(xml),
+      importOpml: (xml, selectedIndexes) => opmlApplicationService.import(xml, selectedIndexes),
+      listRules: () => ruleApplicationService.listRules(),
+      createRule: (payload) => ruleApplicationService.createRule(payload),
+      updateRule: (id, payload) => ruleApplicationService.updateRule(id, payload),
+      deleteRule: (id) => ruleApplicationService.deleteRule(id),
+      previewRuleHistory: (id) => ruleApplicationService.previewHistory(id),
+      executeRuleHistory: (token) => ruleApplicationService.executeHistory(token),
+      getEntryTags: (entryId) => ruleApplicationService.getTags(entryId),
+      updateEntryTags: async (payload) => {
+        if (payload.remove?.length) {
+          await ruleApplicationService.removeTags(payload.entryId, payload.remove)
+        }
+        if (payload.add?.length) {
+          return ruleApplicationService.addTags(payload.entryId, payload.add)
+        }
+        return ruleApplicationService.getTags(payload.entryId)
+      },
+      setEntryHidden: (payload) =>
+        ruleApplicationService.setHidden(payload.entryId, payload.hidden),
+      setClusterRepresentative: (payload) =>
+        dedupApplicationService.setRepresentative(payload.clusterId, payload.entryId),
+      splitClusterMember: (payload) =>
+        dedupApplicationService.splitMember(payload.clusterId, payload.entryId),
+      listAnnotations: (entryId) => annotationApplicationService.list(entryId),
+      createNote: (payload) =>
+        annotationApplicationService.createNote(payload.entryId, payload.content),
+      updateNote: (payload) =>
+        annotationApplicationService.updateNote(
+          payload.id,
+          payload.content,
+          payload.expectedUpdatedAt,
+        ),
+      deleteNote: (id) => annotationApplicationService.deleteNote(id),
+      createHighlight: (payload) => annotationApplicationService.createHighlight(payload),
+      deleteHighlight: (id) => annotationApplicationService.deleteHighlight(id),
+      relocateHighlights: (entryId) => annotationApplicationService.relocate(entryId),
+      listReadingQueue: (status, limit) => readingQueueApplicationService.list(status, limit),
+      addToReadingQueue: (entryId) => readingQueueApplicationService.add(entryId),
+      completeReadingQueue: (entryId) => readingQueueApplicationService.complete(entryId),
+      removeFromReadingQueue: (entryId) => readingQueueApplicationService.remove(entryId),
+      getReadingQueueStats: () => readingQueueApplicationService.stats(),
       renderEntryPdf: (payload) => pdfApplicationService.renderEntryPdf(payload),
       getRemoteIndexHtml: () => getRemoteClientHtml(),
       getRemoteAsset: (pathname) => getRemoteClientAsset(pathname),
@@ -1151,6 +1485,40 @@ class RemoteServerManagerStatic {
       ...(options?.discover ? { discover: options.discover } : {}),
       ...(options?.exportData ? { exportData: options.exportData } : {}),
       ...(options?.importData ? { importData: options.importData } : {}),
+      ...(options?.exportOpml ? { exportOpml: options.exportOpml } : {}),
+      ...(options?.previewOpml ? { previewOpml: options.previewOpml } : {}),
+      ...(options?.importOpml ? { importOpml: options.importOpml } : {}),
+      ...(options?.listRules ? { listRules: options.listRules } : {}),
+      ...(options?.createRule ? { createRule: options.createRule } : {}),
+      ...(options?.updateRule ? { updateRule: options.updateRule } : {}),
+      ...(options?.deleteRule ? { deleteRule: options.deleteRule } : {}),
+      ...(options?.previewRuleHistory ? { previewRuleHistory: options.previewRuleHistory } : {}),
+      ...(options?.executeRuleHistory ? { executeRuleHistory: options.executeRuleHistory } : {}),
+      ...(options?.getEntryTags ? { getEntryTags: options.getEntryTags } : {}),
+      ...(options?.updateEntryTags ? { updateEntryTags: options.updateEntryTags } : {}),
+      ...(options?.setEntryHidden ? { setEntryHidden: options.setEntryHidden } : {}),
+      ...(options?.setClusterRepresentative
+        ? { setClusterRepresentative: options.setClusterRepresentative }
+        : {}),
+      ...(options?.splitClusterMember ? { splitClusterMember: options.splitClusterMember } : {}),
+      ...(options?.listAnnotations ? { listAnnotations: options.listAnnotations } : {}),
+      ...(options?.createNote ? { createNote: options.createNote } : {}),
+      ...(options?.updateNote ? { updateNote: options.updateNote } : {}),
+      ...(options?.deleteNote ? { deleteNote: options.deleteNote } : {}),
+      ...(options?.createHighlight ? { createHighlight: options.createHighlight } : {}),
+      ...(options?.deleteHighlight ? { deleteHighlight: options.deleteHighlight } : {}),
+      ...(options?.relocateHighlights ? { relocateHighlights: options.relocateHighlights } : {}),
+      ...(options?.listReadingQueue ? { listReadingQueue: options.listReadingQueue } : {}),
+      ...(options?.addToReadingQueue ? { addToReadingQueue: options.addToReadingQueue } : {}),
+      ...(options?.completeReadingQueue
+        ? { completeReadingQueue: options.completeReadingQueue }
+        : {}),
+      ...(options?.removeFromReadingQueue
+        ? { removeFromReadingQueue: options.removeFromReadingQueue }
+        : {}),
+      ...(options?.getReadingQueueStats
+        ? { getReadingQueueStats: options.getReadingQueueStats }
+        : {}),
       ...(options?.renderEntryPdf ? { renderEntryPdf: options.renderEntryPdf } : {}),
       ...(options?.getRemoteIndexHtml ? { getRemoteIndexHtml: options.getRemoteIndexHtml } : {}),
       ...(options?.getRemoteAsset ? { getRemoteAsset: options.getRemoteAsset } : {}),
@@ -1162,7 +1530,20 @@ class RemoteServerManagerStatic {
         () => this.getStatus(),
         (incomingRequest, sseResponse) => this.handleSseConnect(incomingRequest, sseResponse),
         (event, changeSet) => this.broadcast(event, changeSet),
-      )(request, response)
+      )(request, response).catch((error) => {
+        if (response.headersSent) {
+          response.end()
+          return
+        }
+        if (error instanceof AgentApplicationError) {
+          json(response, error.statusCode, {
+            error: { code: error.code, message: error.message },
+          })
+          return
+        }
+        console.error("[RemoteServerManager] request failed")
+        json(response, 500, { error: "REMOTE_REQUEST_FAILED" })
+      })
     })
 
     await new Promise<void>((resolve, reject) => {

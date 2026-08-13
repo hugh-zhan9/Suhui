@@ -1,6 +1,8 @@
 import { EntryService } from "@suhui/database/services/entry"
 import { FeedService } from "@suhui/database/services/feed"
 import { SubscriptionService } from "@suhui/database/services/subscription"
+import { EntryAnnotationService } from "@suhui/database/services/entry-annotation"
+import { EntryRuleService } from "@suhui/database/services/entry-rule"
 import type { EntryModel } from "@suhui/store/entry/types"
 import type { FeedModel } from "@suhui/store/feed/types"
 import { dbStoreMorph } from "@suhui/store/morph/db-store"
@@ -55,6 +57,36 @@ class SearchActions {
     ])
 
     const entries = rawEntries.map((entry) => dbStoreMorph.toEntryModel(entry))
+    const entryIds = entries.map((entry) => entry.id)
+    const [notes, highlights, tags] = await Promise.all([
+      EntryAnnotationService.getNotes(entryIds),
+      EntryAnnotationService.getHighlights(entryIds),
+      EntryRuleService.getTags(entryIds),
+    ])
+    const notesByEntry = new Map<string, string[]>()
+    for (const note of notes) {
+      const values = notesByEntry.get(note.entryId) ?? []
+      values.push(note.content)
+      notesByEntry.set(note.entryId, values)
+    }
+    const highlightsByEntry = new Map<string, string[]>()
+    for (const highlight of highlights) {
+      const values = highlightsByEntry.get(highlight.entryId) ?? []
+      values.push(highlight.quote)
+      highlightsByEntry.set(highlight.entryId, values)
+    }
+    const tagsByEntry = new Map<string, string[]>()
+    for (const tag of tags) {
+      const values = tagsByEntry.get(tag.entryId) ?? []
+      values.push(tag.tag)
+      tagsByEntry.set(tag.entryId, values)
+    }
+    const searchableEntries = entries.map((entry) => ({
+      ...entry,
+      localNotes: notesByEntry.get(entry.id) ?? [],
+      localHighlights: highlightsByEntry.get(entry.id) ?? [],
+      localTags: tagsByEntry.get(entry.id) ?? [],
+    }))
     const feeds = rawFeeds.map((feed) => {
       const { updatedAt } = feed as { updatedAt?: number | Date | null }
       const normalizedUpdatedAt =
@@ -73,7 +105,15 @@ class SearchActions {
 
     const feedsMap = new Map(feeds.map((feed) => [feed.id, feed]))
 
-    const entriesFuse = this.createFuse(entries, ["title", "content", "description", "id"])
+    const entriesFuse = this.createFuse(searchableEntries, [
+      "title",
+      "content",
+      "description",
+      "id",
+      "localNotes",
+      "localHighlights",
+      "localTags",
+    ])
     const feedsFuse = this.createFuse(feeds, ["title", "description", "id", "siteUrl", "url"])
     const subscriptionsFuse = this.createFuse(subscriptions, ["title", "category"])
 

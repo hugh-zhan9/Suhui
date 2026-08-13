@@ -5,6 +5,7 @@ import { useFeedById } from "@suhui/store/feed/hooks"
 import { useInboxById } from "@suhui/store/inbox/hooks"
 import { useSubscriptionByFeedId } from "@suhui/store/subscription/hooks"
 import { useEntryTranslation } from "@suhui/store/translation/hooks"
+import { runtimeClient } from "@suhui/store/runtime"
 import { cn, formatEstimatedMins, formatTimeToSeconds } from "@suhui/utils"
 import { useMemo } from "react"
 import { toast } from "sonner"
@@ -251,6 +252,12 @@ export const EntryTitle = ({
               active={isStarred}
               onClick={toggleStar}
               id={`${entryId}/${COMMAND_ID.entry.star}/detail-title`}
+            />
+            <ActionButton
+              tooltip="稍后读"
+              icon={<i className="i-mgc-time-cute-re" />}
+              onClick={() => void runtimeClient.readingQueue.add(entryId)}
+              id={`${entryId}/reading-queue/detail-title`}
             />
           </div>
         </div>

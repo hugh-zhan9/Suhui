@@ -13,6 +13,10 @@ export interface SelectionRect {
 
 export interface TextSelectionEvent {
   selectedText: string
+  startOffset?: number
+  endOffset?: number
+  prefix?: string
+  suffix?: string
   timestamp: number
   rect: SelectionRect
 }
@@ -42,8 +46,10 @@ export function addTextSelectionListener(
         if (!selection.isCollapsed) {
           const selectedText = selection.toString().trim()
           if (selectedText) {
+            const offsets = getArticleTextOffsets(shadowRoot, range, selectedText)
             onTextSelect({
               selectedText,
+              ...offsets,
               timestamp: Date.now(),
               rect: normalizeRect(range.getBoundingClientRect()),
             })
@@ -63,6 +69,37 @@ export function addTextSelectionListener(
   return () => {
     if (debounceTimer) clearTimeout(debounceTimer)
     document.removeEventListener("selectionchange", handleSelectionChange)
+  }
+}
+
+function getArticleTextOffsets(shadowRoot: ShadowRoot, range: Range, selectedText: string) {
+  const article = shadowRoot.querySelector("article")
+  if (
+    !article ||
+    !article.contains(range.startContainer) ||
+    !article.contains(range.endContainer)
+  ) {
+    return {}
+  }
+  try {
+    const prefixRange = range.cloneRange()
+    prefixRange.selectNodeContents(article)
+    prefixRange.setEnd(range.startContainer, range.startOffset)
+    const rawSelection = range.toString()
+    const rawStart = prefixRange.toString().length + rawSelection.indexOf(selectedText)
+    const suffixRange = range.cloneRange()
+    suffixRange.selectNodeContents(article)
+    suffixRange.setStart(range.endContainer, range.endOffset)
+    return rawStart < 0
+      ? {}
+      : {
+          startOffset: rawStart,
+          endOffset: rawStart + selectedText.length,
+          prefix: prefixRange.toString().slice(-64),
+          suffix: suffixRange.toString().slice(0, 64),
+        }
+  } catch {
+    return {}
   }
 }
 

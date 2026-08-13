@@ -28,7 +28,8 @@ import type { UniversalItemProps } from "../types"
 
 const entrySelector = (state: EntryModel) => {
   /// keep-sorted
-  const { authorAvatar, authorUrl, description, feedId, inboxHandle, publishedAt, title } = state
+  const { authorAvatar, authorUrl, cluster, description, feedId, inboxHandle, publishedAt, title } =
+    state
 
   const audios = state.attachments?.filter((a) => a.mime_type?.startsWith("audio") && a.url)
   const firstAudio = audios?.[0]
@@ -41,6 +42,7 @@ const entrySelector = (state: EntryModel) => {
   return {
     authorAvatar,
     authorUrl,
+    cluster,
     description,
     feedId,
     firstAudio,
@@ -216,6 +218,11 @@ export function ListItem({
               target={translation?.description}
             />
           )}
+          {entry.cluster && entry.cluster.sourceCount > 1 ? (
+            <span className="ml-2 inline-block rounded bg-material-medium px-1.5 py-0.5 text-[10px] font-normal text-text-secondary">
+              {entry.cluster.sourceCount} 个来源
+            </span>
+          ) : null}
         </div>
         {!simple && (
           <div

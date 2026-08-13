@@ -16,6 +16,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 const databaseManager = vi.hoisted(() => ({
   getDB: vi.fn(),
   waitUntilUsable: vi.fn().mockResolvedValue(undefined),
+  beginMaintenance: vi.fn(),
 }))
 
 vi.mock("electron", () => ({
@@ -80,6 +81,46 @@ vi.mock("~/application/feed/service", () => ({
 }))
 vi.mock("~/application/import-export/service", () => ({
   importExportApplicationService: { exportData: vi.fn(), importData: vi.fn() },
+}))
+vi.mock("~/application/annotations/service", () => ({
+  annotationApplicationService: {
+    list: vi.fn(),
+    createNote: vi.fn(),
+    updateNote: vi.fn(),
+    deleteNote: vi.fn(),
+    createHighlight: vi.fn(),
+    deleteHighlight: vi.fn(),
+    relocate: vi.fn(),
+  },
+}))
+vi.mock("~/application/dedup/service", () => ({
+  dedupApplicationService: { setRepresentative: vi.fn() },
+}))
+vi.mock("~/application/opml/service", () => ({
+  opmlApplicationService: { export: vi.fn(), preview: vi.fn(), import: vi.fn() },
+}))
+vi.mock("~/application/reading-queue/service", () => ({
+  readingQueueApplicationService: {
+    list: vi.fn(),
+    add: vi.fn(),
+    complete: vi.fn(),
+    remove: vi.fn(),
+    stats: vi.fn(),
+  },
+}))
+vi.mock("~/application/rules/service", () => ({
+  ruleApplicationService: {
+    listRules: vi.fn(),
+    createRule: vi.fn(),
+    updateRule: vi.fn(),
+    deleteRule: vi.fn(),
+    previewHistory: vi.fn(),
+    executeHistory: vi.fn(),
+    getTags: vi.fn(),
+    addTags: vi.fn(),
+    removeTags: vi.fn(),
+    setHidden: vi.fn(),
+  },
 }))
 vi.mock("~/application/pdf/service", () => ({
   pdfApplicationService: { renderEntryPdf: vi.fn() },

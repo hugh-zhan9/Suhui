@@ -78,6 +78,7 @@ export type AgentErrorCode =
   | "SUHUI_INVALID_JSON"
   | "SUHUI_ENTRY_NOT_FOUND"
   | "SUHUI_INVALID_ENTRY_IDS"
+  | "SUHUI_REQUEST_TOO_LARGE"
   | "SUHUI_AGENT_INTERNAL_ERROR"
 
 export class AgentApplicationError extends Error {

@@ -8,13 +8,19 @@ export class MigrationService extends IpcService {
   static override readonly groupName = "migration"
 
   @IpcMethod()
-  async migrateFromRenderer(_context: IpcContext, data: { 
-    feeds: any[], 
-    subscriptions: any[], 
-    entries: any[] 
-  }) {
-    console.log(`[Migration] Receiving data from renderer: ${data.feeds.length} feeds, ${data.subscriptions.length} subs, ${data.entries.length} entries`)
-    
+  async migrateFromRenderer(
+    _context: IpcContext,
+    data: {
+      feeds: any[]
+      subscriptions: any[]
+      entries: any[]
+    },
+  ) {
+    await DBManager.waitUntilUsable()
+    console.log(
+      `[Migration] Receiving data from renderer: ${data.feeds.length} feeds, ${data.subscriptions.length} subs, ${data.entries.length} entries`,
+    )
+
     try {
       if (data.feeds.length > 0) {
         await FeedService.upsertMany(data.feeds)
@@ -25,7 +31,7 @@ export class MigrationService extends IpcService {
       if (data.entries.length > 0) {
         await EntryService.upsertMany(data.entries)
       }
-      
+
       return { success: true }
     } catch (error: any) {
       console.error("[Migration] Error during migration:", error)

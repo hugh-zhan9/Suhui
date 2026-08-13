@@ -7,6 +7,7 @@ import { DebugService } from "./services/debug"
 import { DiscoverService } from "./services/discover"
 import { DockService } from "./services/dock"
 import { IntegrationService } from "./services/integration"
+import { LocalReadingService } from "./services/local-reading"
 import { MenuService } from "./services/menu"
 import { ReaderService } from "./services/reader"
 import { SettingService } from "./services/setting"
@@ -25,6 +26,7 @@ const services = createServices([
   ReaderService,
   SettingService,
   IntegrationService,
+  LocalReadingService,
   DbService,
   MigrationService,
   SyncService,

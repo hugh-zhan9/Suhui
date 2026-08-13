@@ -30,6 +30,7 @@ type TextSelectionToolbarProps = {
   selection: TextSelectionEvent | null
   onRequestClose: () => void
   onAskAI?: (selection: TextSelectionEvent) => void
+  onHighlight?: (selection: TextSelectionEvent) => Promise<void> | void
   entryId?: string
 }
 
@@ -44,6 +45,7 @@ export function TextSelectionToolbar({
   selection,
   onRequestClose,
   onAskAI,
+  onHighlight,
   entryId,
 }: TextSelectionToolbarProps) {
   const { t } = useTranslation()
@@ -163,6 +165,16 @@ export function TextSelectionToolbar({
               iconClassName="i-mgc-share-forward-cute-re"
               label={t("entry_content.selection_toolbar.share")}
               onClick={handleShare}
+            />
+          ) : null}
+          {onHighlight ? (
+            <ToolbarButton
+              iconClassName="i-mgc-highlighter-cute-re"
+              label="Highlight"
+              onClick={() => {
+                void onHighlight(selection)
+                onRequestClose()
+              }}
             />
           ) : null}
           {onAskAI ? (

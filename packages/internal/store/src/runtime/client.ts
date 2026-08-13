@@ -107,6 +107,8 @@ export const toEntryListQuery = (props: FetchEntriesProps): RuntimeEntryListQuer
   return {
     scope,
     ...(props.read === undefined ? {} : { read: props.read }),
+    ...(props.includeHidden === undefined ? {} : { includeHidden: props.includeHidden }),
+    ...(props.deduplicate === undefined ? {} : { deduplicate: props.deduplicate }),
     ...(props.limit === undefined ? {} : { limit: props.limit }),
     ...(props.pageParam === undefined ? {} : { cursor: props.pageParam }),
   }
@@ -135,6 +137,8 @@ const appendRemoteEntryQuery = (params: URLSearchParams, query: RuntimeEntryList
       break
   }
   if (query.read !== undefined) params.set("read", String(query.read))
+  if (query.includeHidden !== undefined) params.set("includeHidden", String(query.includeHidden))
+  if (query.deduplicate !== undefined) params.set("deduplicate", String(query.deduplicate))
   if (query.limit !== undefined) params.set("limit", String(query.limit))
   if (query.cursor !== undefined) params.set("cursor", query.cursor)
 }
@@ -316,6 +320,20 @@ const parseFeedViaProxy = async (subscription: SubscriptionForm) => {
 }
 
 export const runtimeClient = {
+  backup: {
+    async getPendingRendererSettings(): Promise<Record<string, string> | null> {
+      if (getRuntimeEnv().isRemote) return null
+      return (await getIpc()?.invoke("localReading.getPendingRendererSettings")) as Record<
+        string,
+        string
+      > | null
+    },
+    async acknowledgeRendererSettings(): Promise<void> {
+      if (getRuntimeEnv().isRemote) return
+      await getIpc()?.invoke("localReading.acknowledgeRendererSettings")
+    },
+  },
+
   bootstrap: {
     async get(): Promise<RemoteBootstrapPayload> {
       const response = await jsonRequest<unknown>("/api/bootstrap")
@@ -673,6 +691,278 @@ export const runtimeClient = {
         body: typeof payload === "string" ? payload : JSON.stringify(payload),
       })
       return handleRemoteMutationResponse(response)
+    },
+  },
+
+  opml: {
+    async export(): Promise<string> {
+      if (getRuntimeEnv().isRemote) {
+        const response = await fetch("/api/opml")
+        if (!response.ok) throw new Error(`HTTP ${response.status}`)
+        return response.text()
+      }
+      return (await getIpc()?.invoke("localReading.exportOpml")) as string
+    },
+    async preview(xml: string) {
+      if (getRuntimeEnv().isRemote) {
+        const { data } = await jsonRequest<{ data: unknown[] }>("/api/opml/preview", {
+          method: "POST",
+          body: JSON.stringify({ xml }),
+        })
+        return data
+      }
+      return getIpc()?.invoke("localReading.previewOpml", xml)
+    },
+    async import(xml: string, selectedIndexes?: number[]) {
+      if (getRuntimeEnv().isRemote) {
+        const { data } = await jsonRequest<{ data: unknown }>("/api/opml/import", {
+          method: "POST",
+          body: JSON.stringify({ xml, selectedIndexes }),
+        })
+        return data
+      }
+      return getIpc()?.invoke("localReading.importOpml", { xml, selectedIndexes })
+    },
+  },
+
+  rules: {
+    async list() {
+      if (getRuntimeEnv().isRemote) {
+        const { data } = await jsonRequest<{ data: unknown[] }>("/api/rules")
+        return data
+      }
+      const ipc = getIpc()
+      if (!ipc) return []
+      return ipc.invoke("localReading.listRules")
+    },
+    async create(payload: unknown) {
+      if (getRuntimeEnv().isRemote) {
+        const { data } = await jsonRequest<{ data: unknown }>("/api/rules", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        })
+        return data
+      }
+      return getIpc()?.invoke("localReading.createRule", payload)
+    },
+    async update(id: string, payload: unknown) {
+      if (getRuntimeEnv().isRemote) {
+        const { data } = await jsonRequest<{ data: unknown }>(
+          `/api/rules/${encodeURIComponent(id)}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify(payload),
+          },
+        )
+        return data
+      }
+      return getIpc()?.invoke("localReading.updateRule", id, payload)
+    },
+    async delete(id: string) {
+      if (getRuntimeEnv().isRemote) {
+        await jsonRequest(`/api/rules/${encodeURIComponent(id)}`, { method: "DELETE" })
+        return
+      }
+      await getIpc()?.invoke("localReading.deleteRule", id)
+    },
+    async previewHistory(id: string) {
+      if (getRuntimeEnv().isRemote) {
+        const { data } = await jsonRequest<{ data: unknown }>(
+          `/api/rules/${encodeURIComponent(id)}/preview`,
+          { method: "POST" },
+        )
+        return data
+      }
+      return getIpc()?.invoke("localReading.previewRuleHistory", id)
+    },
+    async executeHistory(token: string) {
+      if (getRuntimeEnv().isRemote) {
+        const { data } = await jsonRequest<{ data: unknown }>("/api/rules/history/execute", {
+          method: "POST",
+          body: JSON.stringify({ token }),
+        })
+        return data
+      }
+      return getIpc()?.invoke("localReading.executeRuleHistory", token)
+    },
+  },
+
+  annotations: {
+    async list(entryId: string): Promise<any> {
+      if (getRuntimeEnv().isRemote) {
+        const { data } = await jsonRequest<{ data: unknown }>(
+          `/api/entries/${encodeURIComponent(entryId)}/annotations`,
+        )
+        return data
+      }
+      return getIpc()?.invoke("localReading.listAnnotations", entryId)
+    },
+    async createNote(entryId: string, content: string) {
+      if (getRuntimeEnv().isRemote) {
+        const { data } = await jsonRequest<{ data: unknown }>("/api/notes", {
+          method: "POST",
+          body: JSON.stringify({ entryId, content }),
+        })
+        return data
+      }
+      return getIpc()?.invoke("localReading.createNote", { entryId, content })
+    },
+    async updateNote(id: string, content: string, expectedUpdatedAt: number) {
+      if (getRuntimeEnv().isRemote) {
+        const { data } = await jsonRequest<{ data: unknown }>(
+          `/api/notes/${encodeURIComponent(id)}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify({ content, expectedUpdatedAt }),
+          },
+        )
+        return data
+      }
+      return getIpc()?.invoke("localReading.updateNote", { id, content, expectedUpdatedAt })
+    },
+    async deleteNote(id: string) {
+      if (getRuntimeEnv().isRemote) {
+        await jsonRequest(`/api/notes/${encodeURIComponent(id)}`, { method: "DELETE" })
+        return
+      }
+      await getIpc()?.invoke("localReading.deleteNote", id)
+    },
+    async createHighlight(payload: unknown) {
+      if (getRuntimeEnv().isRemote) {
+        const { data } = await jsonRequest<{ data: unknown }>("/api/highlights", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        })
+        return data
+      }
+      return getIpc()?.invoke("localReading.createHighlight", payload)
+    },
+    async deleteHighlight(id: string) {
+      if (getRuntimeEnv().isRemote) {
+        await jsonRequest(`/api/highlights/${encodeURIComponent(id)}`, { method: "DELETE" })
+        return
+      }
+      await getIpc()?.invoke("localReading.deleteHighlight", id)
+    },
+    async relocate(entryId: string) {
+      if (getRuntimeEnv().isRemote) {
+        const { data } = await jsonRequest<{ data: unknown }>(
+          `/api/entries/${encodeURIComponent(entryId)}/highlights/relocate`,
+          { method: "POST" },
+        )
+        return data
+      }
+      return getIpc()?.invoke("localReading.relocateHighlights", entryId)
+    },
+  },
+
+  entryOrganization: {
+    async tags(entryId: string) {
+      if (getRuntimeEnv().isRemote) {
+        const { data } = await jsonRequest<{ data: unknown[] }>(
+          `/api/entries/${encodeURIComponent(entryId)}/tags`,
+        )
+        return data
+      }
+      return getIpc()?.invoke("localReading.getEntryTags", entryId)
+    },
+    async updateTags(entryId: string, payload: { add?: string[]; remove?: string[] }) {
+      if (getRuntimeEnv().isRemote) {
+        const { data } = await jsonRequest<{ data: unknown[] }>(
+          `/api/entries/${encodeURIComponent(entryId)}/tags`,
+          { method: "PATCH", body: JSON.stringify(payload) },
+        )
+        return data
+      }
+      return getIpc()?.invoke("localReading.setEntryTags", { entryId, ...payload })
+    },
+    async setHidden(entryId: string, hidden: boolean) {
+      if (getRuntimeEnv().isRemote) {
+        await jsonRequest(`/api/entries/${encodeURIComponent(entryId)}/hidden`, {
+          method: "PATCH",
+          body: JSON.stringify({ hidden }),
+        })
+        return
+      }
+      await getIpc()?.invoke("localReading.setEntryHidden", { entryId, hidden })
+    },
+  },
+
+  clusters: {
+    async rebuild(): Promise<{ processed: number; clustered: number } | undefined> {
+      if (getRuntimeEnv().isRemote) return undefined
+      return getIpc()?.invoke("localReading.rebuildClusters") as
+        | Promise<{
+            processed: number
+            clustered: number
+          }>
+        | undefined
+    },
+    async setRepresentative(clusterId: string, entryId: string | null) {
+      if (getRuntimeEnv().isRemote) {
+        await jsonRequest(`/api/clusters/${encodeURIComponent(clusterId)}/representative`, {
+          method: "PATCH",
+          body: JSON.stringify({ entryId }),
+        })
+        return
+      }
+      await getIpc()?.invoke("localReading.setClusterRepresentative", { clusterId, entryId })
+    },
+    async splitMember(clusterId: string, entryId: string) {
+      if (getRuntimeEnv().isRemote) {
+        await jsonRequest(`/api/clusters/${encodeURIComponent(clusterId)}/split`, {
+          method: "POST",
+          body: JSON.stringify({ entryId }),
+        })
+        return
+      }
+      await getIpc()?.invoke("localReading.splitClusterMember", { clusterId, entryId })
+    },
+  },
+
+  readingQueue: {
+    async list(status: "pending" | "completed" = "pending", limit = 100) {
+      if (getRuntimeEnv().isRemote) {
+        const { data } = await jsonRequest<{ data: unknown[] }>(
+          `/api/reading-queue?status=${status}&limit=${limit}`,
+        )
+        return data
+      }
+      return getIpc()?.invoke("localReading.listReadingQueue", { status, limit })
+    },
+    async add(entryId: string) {
+      if (getRuntimeEnv().isRemote) {
+        const { data } = await jsonRequest<{ data: unknown }>(
+          `/api/reading-queue/${encodeURIComponent(entryId)}`,
+          { method: "PUT" },
+        )
+        return data
+      }
+      return getIpc()?.invoke("localReading.addToReadingQueue", entryId)
+    },
+    async complete(entryId: string) {
+      if (getRuntimeEnv().isRemote) {
+        const { data } = await jsonRequest<{ data: unknown }>(
+          `/api/reading-queue/${encodeURIComponent(entryId)}/complete`,
+          { method: "POST" },
+        )
+        return data
+      }
+      return getIpc()?.invoke("localReading.completeReadingQueue", entryId)
+    },
+    async remove(entryId: string) {
+      if (getRuntimeEnv().isRemote) {
+        await jsonRequest(`/api/reading-queue/${encodeURIComponent(entryId)}`, { method: "DELETE" })
+        return
+      }
+      await getIpc()?.invoke("localReading.removeFromReadingQueue", entryId)
+    },
+    async stats() {
+      if (getRuntimeEnv().isRemote) {
+        const { data } = await jsonRequest<{ data: unknown }>("/api/reading-queue/stats")
+        return data
+      }
+      return getIpc()?.invoke("localReading.getReadingQueueStats")
     },
   },
 

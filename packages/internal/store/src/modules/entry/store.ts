@@ -51,6 +51,9 @@ const summaryFields = [
   "inboxHandle",
   "read",
   "sources",
+  "hidden",
+  "tags",
+  "cluster",
 ] as const satisfies ReadonlyArray<keyof EntryModel>
 
 const startupSnapshotEntryLimit = 100

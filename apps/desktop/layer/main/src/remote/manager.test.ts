@@ -1,5 +1,24 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 
+import { isLoopbackPeer, isPrivateLocalReadingRoute } from "./manager"
+
+describe("remote local-reading boundary", () => {
+  it("recognizes loopback peers including IPv4-mapped IPv6", () => {
+    expect(isLoopbackPeer("127.0.0.1")).toBe(true)
+    expect(isLoopbackPeer("::1")).toBe(true)
+    expect(isLoopbackPeer("::ffff:127.0.0.1")).toBe(true)
+    expect(isLoopbackPeer("192.168.1.50")).toBe(false)
+  })
+
+  it("classifies private local-reading routes without blocking OPML", () => {
+    expect(isPrivateLocalReadingRoute("/api/rules")).toBe(true)
+    expect(isPrivateLocalReadingRoute("/api/entries/e1/annotations")).toBe(true)
+    expect(isPrivateLocalReadingRoute("/api/reading-queue/e1")).toBe(true)
+    expect(isPrivateLocalReadingRoute("/api/opml")).toBe(false)
+    expect(isPrivateLocalReadingRoute("/api/entries")).toBe(false)
+  })
+})
+
 const bootstrapProviders = vi.hoisted(() => ({
   getCapabilities: vi.fn().mockReturnValue({ auth: "none" }),
   getSettings: vi.fn().mockReturnValue({ appearance: "system", rsshubCustomUrl: "" }),
@@ -51,6 +70,7 @@ vi.mock("~/logger", () => ({
 vi.mock("~/manager/db", () => ({
   DBManager: {
     waitUntilUsable: vi.fn().mockResolvedValue(undefined),
+    beginMaintenance: vi.fn(),
     getDB: vi.fn(),
     getDialect: vi.fn(),
   },
@@ -163,6 +183,58 @@ vi.mock("~/application/unread/service", () => ({
   },
 }))
 
+vi.mock("~/application/annotations/service", () => ({
+  annotationApplicationService: {
+    list: vi.fn().mockResolvedValue({ notes: [], highlights: [] }),
+    createNote: vi.fn().mockResolvedValue({}),
+    updateNote: vi.fn().mockResolvedValue({}),
+    deleteNote: vi.fn().mockResolvedValue(undefined),
+    createHighlight: vi.fn().mockResolvedValue({}),
+    deleteHighlight: vi.fn().mockResolvedValue(undefined),
+    relocate: vi.fn().mockResolvedValue([]),
+  },
+}))
+
+vi.mock("~/application/dedup/service", () => ({
+  dedupApplicationService: {
+    splitMember: vi.fn().mockResolvedValue(undefined),
+    setRepresentative: vi.fn().mockResolvedValue(undefined),
+  },
+}))
+
+vi.mock("~/application/reading-queue/service", () => ({
+  readingQueueApplicationService: {
+    list: vi.fn().mockResolvedValue([]),
+    add: vi.fn().mockResolvedValue({ status: "pending" }),
+    complete: vi.fn().mockResolvedValue({ status: "completed" }),
+    remove: vi.fn().mockResolvedValue(undefined),
+    stats: vi.fn().mockResolvedValue({ pending: 0, completed7Days: 0, completed30Days: 0 }),
+  },
+}))
+
+vi.mock("~/application/rules/service", () => ({
+  ruleApplicationService: {
+    listRules: vi.fn().mockResolvedValue([]),
+    createRule: vi.fn().mockResolvedValue({}),
+    updateRule: vi.fn().mockResolvedValue({}),
+    deleteRule: vi.fn().mockResolvedValue(undefined),
+    previewHistory: vi.fn().mockResolvedValue({ token: "token", matchCount: 0 }),
+    executeHistory: vi.fn().mockResolvedValue({ applied: 0 }),
+    getTags: vi.fn().mockResolvedValue([]),
+    addTags: vi.fn().mockResolvedValue([]),
+    removeTags: vi.fn().mockResolvedValue([]),
+    setHidden: vi.fn().mockResolvedValue(undefined),
+  },
+}))
+
+vi.mock("~/application/opml/service", () => ({
+  opmlApplicationService: {
+    export: vi.fn().mockResolvedValue('<opml version="2.0"/>'),
+    preview: vi.fn().mockResolvedValue([]),
+    import: vi.fn().mockResolvedValue({ imported: 0, skipped: 0, total: 0 }),
+  },
+}))
+
 import { RemoteServerManager } from "./manager"
 import { agentReadStatusMaxEntryIds } from "~/application/agent/types"
 import { encodeEntryCursor } from "~/application/entry/query-cursor"
@@ -211,6 +283,74 @@ describe("RemoteServerManager", () => {
       port: server.port,
       baseUrl: server.baseUrl,
     })
+  })
+
+  it("exposes shared annotation, cluster, and reading queue services over HTTP", async () => {
+    const listAnnotations = vi.fn().mockResolvedValue({ notes: [{ id: "note-1" }], highlights: [] })
+    const addToReadingQueue = vi.fn().mockResolvedValue({ entryId: "entry-1", status: "pending" })
+    const setClusterRepresentative = vi.fn().mockResolvedValue(undefined)
+    const server = await RemoteServerManager.start({
+      host: "127.0.0.1",
+      port: 0,
+      listAnnotations,
+      addToReadingQueue,
+      setClusterRepresentative,
+    })
+
+    const annotations = await fetch(`${server.baseUrl}/api/entries/entry-1/annotations`)
+    expect(annotations.status).toBe(200)
+    await expect(annotations.json()).resolves.toEqual({
+      data: { notes: [{ id: "note-1" }], highlights: [] },
+    })
+
+    const queued = await fetch(`${server.baseUrl}/api/reading-queue/entry-1`, { method: "PUT" })
+    expect(queued.status).toBe(200)
+    expect(listAnnotations).toHaveBeenCalledWith("entry-1")
+    expect(addToReadingQueue).toHaveBeenCalledWith("entry-1")
+
+    const representative = await fetch(`${server.baseUrl}/api/clusters/cluster-1/representative`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ entryId: "entry-1" }),
+    })
+    expect(representative.status).toBe(200)
+    expect(setClusterRepresentative).toHaveBeenCalledWith({
+      clusterId: "cluster-1",
+      entryId: "entry-1",
+    })
+  })
+
+  it("exports, previews, and selectively imports OPML through the shared service", async () => {
+    const exportOpml = vi.fn().mockResolvedValue('<opml version="2.0"/>')
+    const previewOpml = vi.fn().mockResolvedValue([{ index: 0, url: "https://example.com/feed" }])
+    const importOpml = vi.fn().mockResolvedValue({ imported: 1, skipped: 0, total: 1 })
+    const server = await RemoteServerManager.start({
+      host: "127.0.0.1",
+      port: 0,
+      exportOpml,
+      previewOpml,
+      importOpml,
+    })
+
+    const exported = await fetch(`${server.baseUrl}/api/opml`)
+    expect(exported.status).toBe(200)
+    await expect(exported.text()).resolves.toContain("<opml")
+
+    const preview = await fetch(`${server.baseUrl}/api/opml/preview`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ xml: "<opml/>" }),
+    })
+    expect(preview.status).toBe(200)
+    expect(previewOpml).toHaveBeenCalledWith("<opml/>")
+
+    const imported = await fetch(`${server.baseUrl}/api/opml/import`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ xml: "<opml/>", selectedIndexes: [0] }),
+    })
+    expect(imported.status).toBe(200)
+    expect(importOpml).toHaveBeenCalledWith("<opml/>", [0])
   })
 
   it("keeps the performance refresh route disabled outside a marked harness launch", async () => {
@@ -1458,7 +1598,10 @@ describe("RemoteServerManager", () => {
     await expect(
       fetch(`${server.baseUrl}/api/bootstrap`).then((res) => res.json()),
     ).resolves.toEqual({
-      data: bootstrap,
+      data: {
+        ...bootstrap,
+        capabilities: { ...bootstrap.capabilities, privateLocalReading: true },
+      },
     })
     expect(getBootstrap).toHaveBeenCalledTimes(1)
     await expect(
@@ -1521,7 +1664,7 @@ describe("RemoteServerManager", () => {
         unread: [{ id: "feed_1", count: 3 }],
         collections: [{ entryId: "entry_1", feedId: "feed_1", view: 1 }],
         settings: { appearance: "system", rsshubCustomUrl: "" },
-        capabilities: { auth: "none", pdfExport: true },
+        capabilities: { auth: "none", pdfExport: true, privateLocalReading: true },
       },
     })
   })

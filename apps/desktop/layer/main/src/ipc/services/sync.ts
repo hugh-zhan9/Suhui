@@ -9,6 +9,7 @@ import { importState } from "~/manager/sync-import"
 import { compactSnapshot, importFromSnapshot } from "~/manager/sync-snapshot"
 import { dbSyncApplier } from "~/manager/sync-applier"
 import { syncLogger } from "~/manager/sync-logger"
+import { DBManager } from "~/manager/db"
 
 export class SyncService extends IpcService {
   static override readonly groupName = "sync"
@@ -24,7 +25,13 @@ export class SyncService extends IpcService {
   }
 
   @IpcMethod()
-  async recordOp(_ctx: IpcContext, opType: string, entityType: string, entityId: string, payload?: any): Promise<void> {
+  async recordOp(
+    _ctx: IpcContext,
+    opType: string,
+    entityType: string,
+    entityId: string,
+    payload?: any,
+  ): Promise<void> {
     syncLogger.record({
       type: opType as any,
       entityType: entityType as any,
@@ -40,21 +47,25 @@ export class SyncService extends IpcService {
 
   @IpcMethod()
   async importState(_ctx: IpcContext): Promise<void> {
+    await DBManager.waitUntilUsable()
     await importState(SyncManager, dbSyncApplier)
   }
 
   @IpcMethod()
   async compactSnapshot(_ctx: IpcContext): Promise<void> {
+    await DBManager.waitUntilUsable()
     await compactSnapshot(SyncManager)
   }
 
   @IpcMethod()
   async importFromSnapshot(_ctx: IpcContext): Promise<void> {
+    await DBManager.waitUntilUsable()
     await importFromSnapshot(SyncManager)
   }
 
   @IpcMethod()
   async gitSync(_ctx: IpcContext): Promise<void> {
+    await DBManager.waitUntilUsable()
     await SyncManager.gitSync()
   }
 }

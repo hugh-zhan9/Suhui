@@ -14,6 +14,8 @@
   - macOS 本地构建和安装
 - [local-refresh-observability.md](/Users/zhangyukun/project/Suhui/docs/local-refresh-observability.md)
   - 本地刷新链路的校验方法、日志位置与排查步骤
+- [iteration-direction.md](/Users/zhangyukun/project/Suhui/docs/iteration-direction.md)
+  - 性能重构完成后的后续产品迭代方向（现行）
 - [README.repair-published-at.md](/Users/zhangyukun/project/Suhui/apps/desktop/scripts/README.repair-published-at.md)
   - 历史 `publishedAt` 脏数据诊断与修复脚本说明
 - [AI_CHANGELOG.md](/Users/zhangyukun/project/Suhui/docs/AI_CHANGELOG.md)
@@ -21,12 +23,14 @@
 
 ## 当前代码结论
 
-截至 2026-04-01，仓库真实状态是：
+截至 2026-08-12，仓库真实状态是：
 
 - `desktop-only`
 - 主数据面为本地 Postgres
 - RSSHub 为外部实例模式，不再以内嵌运行时作为当前实现基线
 - 运行中的桌面应用内含远程浏览器访问入口
+- 本地完整备份、OPML、内容聚类、规则、文章标签/隐藏、笔记/高亮和独立稍后读已进入当前能力基线
+- 完整备份仅在 Desktop 暴露；Remote 在最小鉴权落地前只开放不含阅读私密数据的 OPML 导入导出
 
 ## 历史设计文档
 

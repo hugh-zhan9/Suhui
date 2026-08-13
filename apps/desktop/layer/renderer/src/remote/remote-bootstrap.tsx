@@ -13,6 +13,7 @@ import { markRemoteMetric } from "./remote-performance"
 export type RemoteBootstrapViewState = {
   phase: RemoteBootstrapPhase
   error: string | null
+  privateLocalReading: boolean
   retry(): void
 }
 
@@ -26,28 +27,37 @@ export const useRemoteBootstrap = (): RemoteBootstrapViewState => {
   const [viewState, setViewState] = useState<Omit<RemoteBootstrapViewState, "retry">>({
     phase: "loading",
     error: null,
+    privateLocalReading: false,
   })
 
   useEffect(() => {
     let active = true
     beginRemoteBootstrapLoading()
-    setViewState({ phase: "loading", error: null })
+    setViewState({ phase: "loading", error: null, privateLocalReading: false })
 
     runtimeClient.bootstrap.get().then(
       (payload) => {
         if (!active) return
         try {
           applyRemoteBootstrapInSession(payload)
-          setViewState({ phase: "ready", error: null })
+          setViewState({
+            phase: "ready",
+            error: null,
+            privateLocalReading:
+              typeof payload.capabilities === "object" &&
+              payload.capabilities !== null &&
+              !Array.isArray(payload.capabilities) &&
+              (payload.capabilities as Record<string, unknown>).privateLocalReading === true,
+          })
         } catch (error) {
           failRemoteBootstrapLoading(error)
-          setViewState({ phase: "error", error: toErrorMessage(error) })
+          setViewState({ phase: "error", error: toErrorMessage(error), privateLocalReading: false })
         }
       },
       (error) => {
         if (!active) return
         failRemoteBootstrapLoading(error)
-        setViewState({ phase: "error", error: toErrorMessage(error) })
+        setViewState({ phase: "error", error: toErrorMessage(error), privateLocalReading: false })
       },
     )
 

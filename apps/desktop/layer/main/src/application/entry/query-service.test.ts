@@ -3,15 +3,35 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { entriesTable } from "@suhui/database/schemas/index"
 
-const { findMany, findFirst, getDB, getActiveVisibilityState, getSubscriptionAll } = vi.hoisted(
-  () => ({
-    findMany: vi.fn(),
-    findFirst: vi.fn(),
-    getDB: vi.fn(),
-    getActiveVisibilityState: vi.fn(),
-    getSubscriptionAll: vi.fn(),
-  }),
-)
+const {
+  findMany,
+  findFirst,
+  stateFindMany,
+  tagFindMany,
+  memberFindMany,
+  clusterFindMany,
+  collectionFindMany,
+  queueFindMany,
+  noteFindMany,
+  highlightFindMany,
+  getDB,
+  getActiveVisibilityState,
+  getSubscriptionAll,
+} = vi.hoisted(() => ({
+  findMany: vi.fn(),
+  findFirst: vi.fn(),
+  stateFindMany: vi.fn(),
+  tagFindMany: vi.fn(),
+  memberFindMany: vi.fn(),
+  clusterFindMany: vi.fn(),
+  collectionFindMany: vi.fn(),
+  queueFindMany: vi.fn(),
+  noteFindMany: vi.fn(),
+  highlightFindMany: vi.fn(),
+  getDB: vi.fn(),
+  getActiveVisibilityState: vi.fn(),
+  getSubscriptionAll: vi.fn(),
+}))
 
 vi.mock("~/manager/db", () => ({
   DBManager: { getDB },
@@ -100,7 +120,19 @@ describe("EntryQueryService", () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    getDB.mockReturnValue({ query: { entriesTable: { findMany, findFirst } } })
+    getDB.mockReturnValue({
+      query: {
+        entriesTable: { findMany, findFirst },
+        entryUserStateTable: { findMany: stateFindMany },
+        entryTagsTable: { findMany: tagFindMany },
+        contentClusterMembersTable: { findMany: memberFindMany },
+        contentClustersTable: { findMany: clusterFindMany },
+        collectionsTable: { findMany: collectionFindMany },
+        readingQueueTable: { findMany: queueFindMany },
+        entryNotesTable: { findMany: noteFindMany },
+        entryHighlightsTable: { findMany: highlightFindMany },
+      },
+    })
     getActiveVisibilityState.mockResolvedValue({
       activeFeedIds: new Set(["feed-1", "feed-2"]),
       activeListIds: new Set(["list-1"]),
@@ -143,6 +175,14 @@ describe("EntryQueryService", () => {
     ])
     findMany.mockResolvedValue([])
     findFirst.mockResolvedValue(undefined)
+    stateFindMany.mockResolvedValue([])
+    tagFindMany.mockResolvedValue([])
+    memberFindMany.mockResolvedValue([])
+    clusterFindMany.mockResolvedValue([])
+    collectionFindMany.mockResolvedValue([])
+    queueFindMany.mockResolvedValue([])
+    noteFindMany.mockResolvedValue([])
+    highlightFindMany.mockResolvedValue([])
   })
 
   it.each([0, 101, 1.5, "abc", Number.NaN])("rejects invalid limit %p", async (limit) => {
@@ -229,6 +269,217 @@ describe("EntryQueryService", () => {
       readabilityUpdatedAt: false,
     })
     expect(renderWhere(options.where)).toContain('"entries"."read" IS NOT TRUE')
+  })
+
+  it("hides rule-hidden entries by default and exposes an explicit management escape hatch", async () => {
+    await service.list({ scope: { kind: "timeline" } })
+    expect(renderWhere(findMany.mock.calls[0]![0].where)).toContain("entry_user_state")
+
+    await service.list({ scope: { kind: "timeline" }, includeHidden: true })
+    expect(renderWhere(findMany.mock.calls[1]![0].where)).not.toContain("entry_user_state")
+  })
+
+  it("folds duplicate cluster rows while retaining member ids and source count", async () => {
+    findMany.mockResolvedValue([
+      summaryRow({ id: "entry-a" }),
+      summaryRow({ id: "entry-b", feedId: "feed-2" }),
+    ])
+    memberFindMany
+      .mockResolvedValueOnce([
+        { entryId: "entry-a", clusterId: "cluster-1" },
+        { entryId: "entry-b", clusterId: "cluster-1" },
+      ])
+      .mockResolvedValueOnce([
+        { entryId: "entry-a", clusterId: "cluster-1" },
+        { entryId: "entry-b", clusterId: "cluster-1" },
+      ])
+    clusterFindMany.mockResolvedValue([{ id: "cluster-1", manualRepresentativeEntryId: "entry-b" }])
+
+    const page = await service.list({ scope: { kind: "timeline" } })
+
+    expect(page.items).toHaveLength(1)
+    expect(page.items[0]).toMatchObject({
+      id: "entry-b",
+      cluster: {
+        id: "cluster-1",
+        sourceCount: 2,
+        entryIds: ["entry-a", "entry-b"],
+      },
+    })
+  })
+
+  it.each([
+    {
+      name: "unread",
+      query: { scope: { kind: "timeline" as const }, read: false },
+      candidate: detailRow({ id: "entry-b", read: true, feedId: "feed-2" }),
+      sql: '"entries"."read" IS NOT TRUE',
+    },
+    {
+      name: "feed scope",
+      query: { scope: { kind: "feeds" as const, feedIds: ["feed-1"] } },
+      candidate: detailRow({ id: "entry-b", feedId: "feed-2" }),
+      sql: '"entries"."feed_id" in',
+    },
+  ])("keeps $name filters on representative candidates", async ({ query, candidate, sql }) => {
+    findMany
+      .mockResolvedValueOnce([summaryRow({ id: "entry-a" })])
+      .mockResolvedValueOnce([detailRow({ id: "entry-a" }), candidate])
+    memberFindMany
+      .mockResolvedValueOnce([{ entryId: "entry-a", clusterId: "cluster-1" }])
+      .mockResolvedValueOnce([
+        { entryId: "entry-a", clusterId: "cluster-1" },
+        { entryId: "entry-b", clusterId: "cluster-1" },
+      ])
+    clusterFindMany.mockResolvedValue([{ id: "cluster-1", manualRepresentativeEntryId: null }])
+
+    await service.list(query)
+
+    expect(renderWhere(findMany.mock.calls[1]![0].where)).toContain(sql)
+    expect(renderWhere(findMany.mock.calls[1]![0].where)).toContain("entry_user_state")
+  })
+
+  it("keeps active visibility on representative candidates", async () => {
+    findMany
+      .mockResolvedValueOnce([summaryRow({ id: "entry-a" })])
+      .mockResolvedValueOnce([detailRow({ id: "entry-a" })])
+    memberFindMany
+      .mockResolvedValueOnce([{ entryId: "entry-a", clusterId: "cluster-1" }])
+      .mockResolvedValueOnce([
+        { entryId: "entry-a", clusterId: "cluster-1" },
+        { entryId: "entry-b", clusterId: "cluster-1" },
+      ])
+    clusterFindMany.mockResolvedValue([{ id: "cluster-1", manualRepresentativeEntryId: null }])
+
+    await service.list({ scope: { kind: "timeline" } })
+
+    const sql = renderWhere(findMany.mock.calls[1]![0].where)
+    expect(sql).toContain('"entries"."feed_id" in')
+    expect(sql).toContain('"entries"."id" in')
+  })
+
+  it("does not expose singleton derived memberships as duplicate clusters", async () => {
+    findMany.mockResolvedValue([summaryRow({ id: "entry-a" })])
+    memberFindMany
+      .mockResolvedValueOnce([{ entryId: "entry-a", clusterId: "cluster-1" }])
+      .mockResolvedValueOnce([{ entryId: "entry-a", clusterId: "cluster-1" }])
+
+    const page = await service.list({ scope: { kind: "timeline" } })
+
+    expect(page.items).toHaveLength(1)
+    expect(page.items[0]?.cluster).toBeUndefined()
+  })
+
+  it("fills a page by scanning past folded rows", async () => {
+    const rawPages = [
+      [
+        summaryRow({ id: "entry-a", publishedAt: 300, insertedAt: 300 }),
+        summaryRow({ id: "entry-b", feedId: "feed-2", publishedAt: 200, insertedAt: 200 }),
+        summaryRow({ id: "entry-c", publishedAt: 100, insertedAt: 100 }),
+      ],
+      [summaryRow({ id: "entry-c", publishedAt: 100, insertedAt: 100 })],
+    ]
+    let rawPage = 0
+    findMany.mockImplementation(async (options) =>
+      options.columns?.content === true
+        ? [
+            detailRow({ id: "entry-a", publishedAt: 300, insertedAt: 300 }),
+            detailRow({ id: "entry-b", feedId: "feed-2", publishedAt: 200, insertedAt: 200 }),
+          ]
+        : (rawPages[rawPage++] ?? []),
+    )
+    memberFindMany
+      .mockResolvedValueOnce([
+        { entryId: "entry-a", clusterId: "cluster-1" },
+        { entryId: "entry-b", clusterId: "cluster-1" },
+      ])
+      .mockResolvedValueOnce([
+        { entryId: "entry-a", clusterId: "cluster-1" },
+        { entryId: "entry-b", clusterId: "cluster-1" },
+      ])
+      .mockResolvedValueOnce([])
+    clusterFindMany.mockResolvedValue([{ id: "cluster-1", manualRepresentativeEntryId: null }])
+
+    const page = await service.list({ scope: { kind: "timeline" }, limit: 2 })
+
+    expect(page.items.map((item) => item.id)).toEqual(["entry-b", "entry-c"])
+    expect(page.page).toEqual({ limit: 2, hasMore: false, nextCursor: null })
+  })
+
+  it("returns the later representative instead of an empty intermediary page", async () => {
+    const rawPages = [
+      [
+        summaryRow({ id: "entry-a", publishedAt: 300, insertedAt: 300 }),
+        summaryRow({ id: "entry-b", feedId: "feed-2", publishedAt: 200, insertedAt: 200 }),
+      ],
+      [
+        summaryRow({ id: "entry-b", feedId: "feed-2", publishedAt: 200, insertedAt: 200 }),
+        summaryRow({ id: "entry-c", publishedAt: 100, insertedAt: 100 }),
+      ],
+    ]
+    let rawPage = 0
+    findMany.mockImplementation(async (options) =>
+      options.columns?.content === true
+        ? [
+            detailRow({ id: "entry-a", publishedAt: 300, insertedAt: 300 }),
+            detailRow({ id: "entry-b", feedId: "feed-2", publishedAt: 200, insertedAt: 200 }),
+          ]
+        : (rawPages[rawPage++] ?? []),
+    )
+    memberFindMany
+      .mockResolvedValueOnce([{ entryId: "entry-a", clusterId: "cluster-1" }])
+      .mockResolvedValueOnce([
+        { entryId: "entry-a", clusterId: "cluster-1" },
+        { entryId: "entry-b", clusterId: "cluster-1" },
+      ])
+      .mockResolvedValueOnce([{ entryId: "entry-b", clusterId: "cluster-1" }])
+      .mockResolvedValueOnce([
+        { entryId: "entry-a", clusterId: "cluster-1" },
+        { entryId: "entry-b", clusterId: "cluster-1" },
+      ])
+    clusterFindMany.mockResolvedValue([{ id: "cluster-1", manualRepresentativeEntryId: null }])
+
+    const page = await service.list({ scope: { kind: "timeline" }, limit: 1 })
+
+    expect(page.items.map((item) => item.id)).toEqual(["entry-b"])
+    expect(page.page.hasMore).toBe(true)
+    expect(decodeEntryCursor(page.page.nextCursor!)).toEqual({
+      v: 1,
+      publishedAt: 200,
+      insertedAt: 200,
+      id: "entry-b",
+    })
+  })
+
+  it("chooses an invested automatic representative before a fuller uninvested copy", async () => {
+    findMany
+      .mockResolvedValueOnce([
+        summaryRow({ id: "entry-a" }),
+        summaryRow({ id: "entry-b", feedId: "feed-2" }),
+      ])
+      .mockResolvedValueOnce([
+        detailRow({ id: "entry-a", content: "short" }),
+        detailRow({ id: "entry-b", feedId: "feed-2", content: "a much fuller article body" }),
+      ])
+    memberFindMany
+      .mockResolvedValueOnce([
+        { entryId: "entry-a", clusterId: "cluster-1" },
+        { entryId: "entry-b", clusterId: "cluster-1" },
+      ])
+      .mockResolvedValueOnce([
+        { entryId: "entry-a", clusterId: "cluster-1" },
+        { entryId: "entry-b", clusterId: "cluster-1" },
+      ])
+    clusterFindMany.mockResolvedValue([{ id: "cluster-1", manualRepresentativeEntryId: null }])
+    noteFindMany.mockResolvedValue([{ id: "note-1", entryId: "entry-a" }])
+
+    const page = await service.list({ scope: { kind: "timeline" } })
+
+    expect(page.items).toHaveLength(1)
+    expect(page.items[0]).toMatchObject({
+      id: "entry-a",
+      cluster: { representativeEntryId: "entry-a", sourceCount: 2 },
+    })
   })
 
   it.each([

@@ -5,15 +5,18 @@ import { useEntry } from "@suhui/store/entry/hooks"
 import { useFeedById } from "@suhui/store/feed/hooks"
 import { useIsInbox } from "@suhui/store/inbox/hooks"
 import { cn } from "@suhui/utils"
+import { runtimeClient } from "@suhui/store/runtime"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { useUISettingKey } from "~/atoms/settings/ui"
+import { useEntryIsInReadability } from "~/atoms/readability"
 import { ErrorBoundary } from "~/components/common/ErrorBoundary"
 import { ShadowDOM } from "~/components/common/ShadowDOM"
 import type { TocRef } from "~/components/ui/markdown/components/Toc"
 import { useInPeekModal } from "~/components/ui/modal/inspire/InPeekModal"
 import { readableContentMaxWidthClassName } from "~/constants/ui"
 import { useRenderStyle } from "~/hooks/biz/useRenderStyle"
+import type { TextSelectionEvent } from "~/lib/simple-text-selection"
 import { normalizeRssContentForRender } from "~/lib/rss-content-normalize"
 import { EntryContentHTMLRenderer } from "~/modules/renderer/html"
 import { EntryContentMarkdownRenderer } from "~/modules/renderer/markdown"
@@ -24,7 +27,9 @@ import { ContainerToc } from "../entry-content/accessories/ContainerToc"
 import { EntryRenderError } from "../entry-content/EntryRenderError"
 import { ReadabilityNotice } from "../entry-content/ReadabilityNotice"
 import { EntryAttachments } from "../EntryAttachments"
+import { EntryAnnotationsPanel } from "../EntryAnnotationsPanel"
 import { EntryTitle } from "../EntryTitle"
+import { TextSelectionToolbar } from "../selection/TextSelectionToolbar"
 import type { EntryLayoutProps } from "./types"
 
 export const ArticleLayout: React.FC<EntryLayoutProps> = ({
@@ -41,7 +46,9 @@ export const ArticleLayout: React.FC<EntryLayoutProps> = ({
   const isInbox = useIsInbox(entry?.inboxId)
 
   const { content } = useEntryContent(entryId)
+  const isInReadability = useEntryIsInReadability(entryId)
   const customCSS = useUISettingKey("customCSS")
+  const [selection, setSelection] = useState<TextSelectionEvent | null>(null)
 
   if (!entry) return null
 
@@ -58,7 +65,12 @@ export const ArticleLayout: React.FC<EntryLayoutProps> = ({
         <div className="mx-auto mb-32 mt-6 max-w-full cursor-auto text-[0.94rem]">
           <ErrorBoundary fallback={EntryRenderError}>
             <ReadabilityNotice entryId={entryId} />
-            <ShadowDOM injectHostStyles={!isInbox}>
+            <ShadowDOM
+              injectHostStyles={!isInbox}
+              textSelectionEnabled
+              onTextSelect={setSelection}
+              onSelectionClear={() => setSelection(null)}
+            >
               {!!customCSS && <MemoedDangerousHTMLStyle>{customCSS}</MemoedDangerousHTMLStyle>}
 
               <Renderer
@@ -70,9 +82,27 @@ export const ArticleLayout: React.FC<EntryLayoutProps> = ({
                 translation={translation}
               />
             </ShadowDOM>
+            <TextSelectionToolbar
+              entryId={entryId}
+              selection={selection}
+              onRequestClose={() => setSelection(null)}
+              onHighlight={async (selected) => {
+                await runtimeClient.annotations.createHighlight({
+                  entryId,
+                  source: isInReadability ? "readability" : "rss",
+                  quote: selected.selectedText,
+                  startOffset: selected.startOffset,
+                  endOffset: selected.endOffset,
+                  prefix: selected.prefix,
+                  suffix: selected.suffix,
+                })
+              }}
+            />
           </ErrorBoundary>
         </div>
       </WrappedElementProvider>
+
+      <EntryAnnotationsPanel entryId={entryId} />
 
       <EntryAttachments entryId={entryId} />
     </div>

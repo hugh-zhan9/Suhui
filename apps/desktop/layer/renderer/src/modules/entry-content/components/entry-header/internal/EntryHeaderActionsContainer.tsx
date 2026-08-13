@@ -2,6 +2,7 @@ import { ActionButton } from "@suhui/components/ui/button/action-button.js"
 import { useIsEntryStarred } from "@suhui/store/collection/hooks"
 import { useEntry } from "@suhui/store/entry/hooks"
 import { useSubscriptionByFeedId } from "@suhui/store/subscription/hooks"
+import { runtimeClient } from "@suhui/store/runtime"
 import clsx from "clsx"
 import { memo } from "react"
 
@@ -32,6 +33,12 @@ function EntryHeaderActionsContainerImpl({ isSmallWidth }: { isSmallWidth?: bool
         active={isStarred}
         onClick={runCmdFn(COMMAND_ID.entry.star, [{ entryId, view }])}
         id={`${entryId}/${COMMAND_ID.entry.star}/quick`}
+      />
+      <ActionButton
+        tooltip="稍后读"
+        icon={<i className="i-mgc-time-cute-re" />}
+        onClick={() => void runtimeClient.readingQueue.add(entryId)}
+        id={`${entryId}/reading-queue/quick`}
       />
       {canShowExportAsPDF && (
         <ActionButton

@@ -28,6 +28,11 @@ export function ArticleItemStateLess({ entry, feed }: EntryItemStatelessProps) {
         </div>
         <div className="relative my-0.5 truncate break-words font-medium text-text">
           {entry.title}
+          {entry.cluster && entry.cluster.sourceCount > 1 ? (
+            <span className="ml-2 rounded bg-material-medium px-1.5 py-0.5 text-[10px] font-normal text-text-secondary">
+              {entry.cluster.sourceCount} 个来源
+            </span>
+          ) : null}
         </div>
         <div className="truncate text-[13px] text-text-secondary">{entry.description}</div>
       </div>
