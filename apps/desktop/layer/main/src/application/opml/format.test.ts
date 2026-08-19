@@ -1,8 +1,17 @@
+import { readFileSync } from "node:fs"
+
 import { describe, expect, it } from "vitest"
 
 import { generateOpml, parseOpml } from "./format"
 
 describe("local OPML format", () => {
+  it("uses the canvas-free linkedom worker entry in the Electron main process", () => {
+    const source = readFileSync(new URL("./format.ts", import.meta.url), "utf8")
+
+    expect(source).toContain('from "linkedom/worker"')
+    expect(source).not.toContain('from "linkedom"')
+  })
+
   it("parses nested categories and RSS/Atom outlines offline", () => {
     const result = parseOpml(`<?xml version="1.0"?><opml version="2.0"><body>
       <outline text="Tech"><outline type="rss" text="A" xmlUrl="https://a.test/feed.xml"/></outline>

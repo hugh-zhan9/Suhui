@@ -1,4 +1,4 @@
-import { DOMParser } from "linkedom"
+import { DOMParser } from "linkedom/worker"
 
 export type OpmlSubscription = {
   url: string
