@@ -1,5 +1,5 @@
-import { cn } from "@suhui/utils/utils"
 import { FollowAPIError } from "@follow-app/client-sdk"
+import { cn } from "@suhui/utils/utils"
 import { t } from "i18next"
 import { FetchError } from "ofetch"
 import { createElement } from "react"
@@ -10,6 +10,7 @@ import { CopyButton } from "~/components/ui/button/CopyButton"
 import { Markdown } from "~/components/ui/markdown/Markdown"
 import { DebugRegistry } from "~/modules/debug/registry"
 
+import { getFeedPreviewFriendlyMessage } from "./feed-preview-error"
 import {
   getRsshubFriendlyMessage,
   getRsshubLocalErrorTitle,
@@ -57,7 +58,7 @@ export const getFetchErrorInfo = (
 
 export const getFetchErrorMessage = (error: Error) => {
   const { message } = getFetchErrorInfo(error)
-  return getRsshubFriendlyMessage(message)
+  return getFeedPreviewFriendlyMessage(getRsshubFriendlyMessage(message))
 }
 
 /**

@@ -1,3 +1,5 @@
+import type { FeedAnalyticsModel, ParsedEntry } from "@follow-app/client-sdk"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { Button } from "@suhui/components/ui/button/index.js"
 import {
   Form,
@@ -21,8 +23,6 @@ import { subscriptionActions, subscriptionSyncService } from "@suhui/store/subsc
 import { whoami } from "@suhui/store/user/getters"
 import { tracker } from "@suhui/tracker"
 import { cn } from "@suhui/utils/utils"
-import type { FeedAnalyticsModel, ParsedEntry } from "@follow-app/client-sdk"
-import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation } from "@tanstack/react-query"
 import { useCallback, useEffect, useMemo, useRef } from "react"
 import { useForm } from "react-hook-form"
@@ -34,7 +34,8 @@ import { Autocomplete } from "~/components/ui/auto-completion"
 import { useCurrentModal, useIsInModal } from "~/components/ui/modal/stacked/hooks"
 import { getRouteParams } from "~/hooks/biz/useRouteParams"
 import { useI18n } from "~/hooks/common"
-import { getFetchErrorMessage, toastFetchError } from "~/lib/error-parser"
+import { getFetchErrorInfo, getFetchErrorMessage, toastFetchError } from "~/lib/error-parser"
+import { parseFeedPreviewError } from "~/lib/feed-preview-error"
 import { feed as feedQuery, useFeedQuery } from "~/queries/feed"
 
 import { ViewSelectorRadioGroup } from "../shared/ViewSelectorRadioGroup"
@@ -83,6 +84,9 @@ export const FeedForm: Component<{
 
   const { t } = useTranslation()
   const errorMessage = feedQuery.error ? getFetchErrorMessage(feedQuery.error) : ""
+  const previewError = feedQuery.error
+    ? parseFeedPreviewError(getFetchErrorInfo(feedQuery.error).message)
+    : null
   const handleRsshubRecovered = useCallback(async () => {
     await feedQuery.refetch()
   }, [feedQuery])
@@ -154,10 +158,17 @@ export const FeedForm: Component<{
             return (
               <div className="center grow flex-col gap-3">
                 <i className="i-mgc-close-cute-re size-7 text-red" />
-                <p>{t("feed_form.error_fetching_feed")}</p>
+                <p>{previewError ? previewError.title : t("feed_form.error_fetching_feed")}</p>
                 <p className="max-w-[460px] text-center text-sm text-text-secondary">
-                  {errorMessage}
+                  {previewError ? previewError.hint : errorMessage}
                 </p>
+                {previewError && (
+                  <p className="max-w-[460px] cursor-text select-text break-all text-center text-xs text-text-tertiary">
+                    {previewError.url
+                      ? `${previewError.url} · ${previewError.detail}`
+                      : previewError.detail}
+                  </p>
+                )}
                 <RsshubRecoveryAction
                   errorMessage={errorMessage}
                   onRecovered={handleRsshubRecovered}
@@ -183,6 +194,7 @@ export const FeedForm: Component<{
         feedQuery.error,
         feedQuery.isLoading,
         errorMessage,
+        previewError,
         handleRsshubRecovered,
         id,
         isInModal,

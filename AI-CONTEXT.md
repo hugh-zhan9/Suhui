@@ -1,7 +1,7 @@
 # AI-CONTEXT.md
 
 > 单一事实源（Single Source of Truth）
-> 最后更新时间：2026-08-12（本地阅读工作流、完整备份/OPML、聚类、规则、注释与阅读队列）
+> 最后更新时间：2026-08-19（订阅预览失败提示口径）
 
 ## 上下文委派策略
 
@@ -176,6 +176,14 @@
   - 当前记录 `batch.start`、`batch.no_subscriptions`、`batch.feed_failed`、`batch.completed`、`runner.skipped`、`runner.failed`
 - 已补充排查文档：
   - `docs/local-refresh-observability.md`
+
+## 最近补充修复（2026-08-19）
+
+- 添加订阅预览失败提示已改为用户可读口径：
+  - 新增 `apps/desktop/layer/renderer/src/lib/feed-preview-error.ts`，识别 `本地预览订阅失败 -> db.previewFeed -> HTTP/网络/解析` 这条错误链并翻译成原因 + 下一步动作
+  - 覆盖 404/410、401/403、429、5xx、其他 4xx、DNS、连接、超时、证书、跳转异常、非订阅源内容
+  - `FeedForm` 错误态改为「原因标题 + 处理建议 + 弱化的原始技术细节（含实际请求地址）」，不再把 IPC 方法名当作主要提示
+  - 未命中该链路的错误保持原样透传，RSSHub 专用提示仍优先生效
 
 ## 已知边界与残留在线能力
 
