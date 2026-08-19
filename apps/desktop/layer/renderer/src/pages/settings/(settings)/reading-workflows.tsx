@@ -3,7 +3,7 @@ import { SettingsTitle } from "~/modules/settings/title"
 import { defineSettingPageData } from "~/modules/settings/utils"
 
 export const loader = defineSettingPageData({
-  icon: "i-mgc-task-2-cute-re",
+  icon: "i-mgc-list-check-3-cute-re",
   name: "阅读工作流" as any,
   priority: (1000 << 1) + 35,
 })

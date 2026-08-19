@@ -3,6 +3,7 @@ import { RSSHubLogo } from "@suhui/components/ui/platform-icon/icons.js"
 import { RootPortal } from "@suhui/components/ui/portal/index.js"
 import { EllipsisHorizontalTextWithTooltip } from "@suhui/components/ui/typography/EllipsisWithTooltip.js"
 import { useMeasure } from "@suhui/hooks"
+import { useWhoami } from "@suhui/store/user/hooks"
 import { cn } from "@suhui/utils/utils"
 import { repository } from "@pkg"
 import type { FC } from "react"
@@ -31,8 +32,8 @@ export type ProfileButtonProps = LoginProps & {
 }
 
 export const ProfileButton: FC<ProfileButtonProps> = memo((props) => {
-  const { status, session } = useSession()
-  const { user } = session || {}
+  const { status } = useSession()
+  const user = useWhoami()
   const settingModalPresent = useSettingModal()
   const { t } = useTranslation()
 
