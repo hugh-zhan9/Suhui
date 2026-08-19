@@ -1,4 +1,3 @@
-import { Spring } from "@suhui/components/constants/spring.js"
 import { RootPortal } from "@suhui/components/ui/portal/index.js"
 import { ScrollArea } from "@suhui/components/ui/scroll-area/index.js"
 import { FeedViewType } from "@suhui/constants"
@@ -14,7 +13,6 @@ import { stopPropagation } from "@suhui/utils/dom"
 import { EventBus } from "@suhui/utils/event-bus"
 import { cn } from "@suhui/utils/utils"
 import type { JSAnimation } from "motion/react"
-import { useAnimationControls } from "motion/react"
 import * as React from "react"
 import { memo, useEffect, useRef, useState } from "react"
 
@@ -23,7 +21,6 @@ import { useEntryIsInReadability } from "~/atoms/readability"
 import { useActionLanguage } from "~/atoms/settings/general"
 import { AppErrorBoundary } from "~/components/common/AppErrorBoundary"
 import { Focusable } from "~/components/common/Focusable"
-import { m } from "~/components/common/Motion"
 import { ErrorComponentType } from "~/components/errors/enum"
 import { GlassButton } from "~/components/ui/button/GlassButton"
 import { HotkeyScope } from "~/constants"
@@ -46,11 +43,6 @@ import { SourceContentPanel } from "./components/SourceContentView"
 import { normalizeSourceContentPanelSrc } from "./components/source-content-state"
 import { useEntryContent } from "./hooks"
 
-const contentVariants = {
-  initial: { opacity: 0, y: 30 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: 30 },
-}
 const EntryContentImpl: Component<EntryContentProps> = ({
   entryId,
   noMedia,
@@ -98,22 +90,14 @@ const EntryContentImpl: Component<EntryContentProps> = ({
     FeedViewType.Videos,
   ].includes(view)
 
-  const animationController = useAnimationControls()
-
   const focusableRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
-    animationController.set(contentVariants.exit)
-    animationController.start(contentVariants.animate)
-
     // Scroll to top
     if (scrollerRef) {
       scrollerRef.scrollTop = 0
     }
     focusableRef.current?.focus()
-    return () => {
-      animationController.stop()
-    }
-  }, [animationController, entryId, scrollerRef])
+  }, [entryId, scrollerRef])
 
   useEffect(() => {
     setEntryContentScrollToTop(true)
@@ -195,13 +179,7 @@ const EntryContentImpl: Component<EntryContentProps> = ({
               </div>
             </>
           )}
-          <m.div
-            lcpOptimization
-            className="select-text"
-            initial={{ opacity: 0, y: 30 }}
-            animate={animationController}
-            transition={Spring.presets.smooth}
-          >
+          <div className="select-text">
             <article
               data-testid="entry-render"
               onContextMenu={stopPropagation}
@@ -237,7 +215,7 @@ const EntryContentImpl: Component<EntryContentProps> = ({
                 />
               )}
             </article>
-          </m.div>
+          </div>
         </EntryScrollArea>
         <SourceContentPanel entryId={entryId} src={normalizeSourceContentPanelSrc(safeUrl)} />
       </Focusable>

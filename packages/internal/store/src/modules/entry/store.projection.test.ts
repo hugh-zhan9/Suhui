@@ -80,6 +80,23 @@ describe("entry projection merges", () => {
     expect(getDetail).not.toHaveBeenCalled()
   })
 
+  it("deduplicates concurrent detail requests triggered by prefetch and navigation", async () => {
+    let resolveDetail: (value: ReturnType<typeof entry>) => void = () => undefined
+    const pendingDetail = new Promise<ReturnType<typeof entry>>((resolve) => {
+      resolveDetail = resolve
+    })
+    const getDetail = vi
+      .spyOn((await import("../../runtime")).runtimeClient.entries, "getDetail")
+      .mockReturnValue(pendingDetail)
+
+    const prefetched = entrySyncServices.fetchEntryDetail("e1")
+    const navigated = entrySyncServices.fetchEntryDetail("e1")
+    resolveDetail(entry({ recordKind: "detail", content: "body" }))
+
+    await expect(Promise.all([prefetched, navigated])).resolves.toHaveLength(2)
+    expect(getDetail).toHaveBeenCalledTimes(1)
+  })
+
   it("preserves the current optimistic read state when a stale summary arrives", () => {
     expect(entryActions).toHaveProperty("upsertSummaries")
     ;(entryActions as any).upsertSummaries([entry({ recordKind: "summary", read: false })])

@@ -4,7 +4,7 @@ import { TextArea } from "@suhui/components/ui/input/TextArea.js"
 import { useEntry } from "@suhui/store/entry/hooks"
 import type { EntryModel } from "@suhui/store/entry/types"
 import { runtimeClient } from "@suhui/store/runtime"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
 
 type Note = { id: string; content: string; updatedAt: number }
@@ -21,6 +21,8 @@ const parseTags = (value: string) =>
   )
 
 export function EntryAnnotationsPanel({ entryId }: { entryId: string }) {
+  const currentEntryIdRef = useRef(entryId)
+  currentEntryIdRef.current = entryId
   const entryState = useEntry(entryId, (entry) => ({
     cluster: entry.cluster,
     hidden: entry.hidden ?? false,
@@ -38,6 +40,7 @@ export function EntryAnnotationsPanel({ entryId }: { entryId: string }) {
       runtimeClient.annotations.list(entryId),
       runtimeClient.entryOrganization.tags(entryId),
     ])
+    if (currentEntryIdRef.current !== entryId) return
     setNotes((annotations?.notes ?? []) as Note[])
     setHighlights((annotations?.highlights ?? []) as Highlight[])
     setTags((nextTags ?? []) as string[])
@@ -45,6 +48,10 @@ export function EntryAnnotationsPanel({ entryId }: { entryId: string }) {
   }, [entryId])
 
   useEffect(() => {
+    setNotes([])
+    setHighlights([])
+    setTags([])
+    setTagDraft("")
     setHidden(entryState?.hidden ?? false)
     setClusterEntries(null)
     void runtimeClient.annotations

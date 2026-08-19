@@ -4,14 +4,16 @@ import { getMousePosition } from "@suhui/components/hooks/useMouse.js"
 import { ActionButton } from "@suhui/components/ui/button/action-button.js"
 import { FeedViewType } from "@suhui/constants"
 import { useEntry } from "@suhui/store/entry/hooks"
+import { entryActions, entrySyncServices } from "@suhui/store/entry/store"
 import { unreadSyncService } from "@suhui/store/unread/store"
 import { cn } from "@suhui/utils/utils"
 import type { FC, MouseEvent, PropsWithChildren, TouchEvent } from "react"
-import { memo, useCallback, useMemo } from "react"
+import { memo, useCallback, useEffect, useMemo } from "react"
 import { NavLink } from "react-router"
 import { useDebounceCallback } from "usehooks-ts"
 
 import { useGeneralSettingKey } from "~/atoms/settings/general"
+import { useUISettingKey } from "~/atoms/settings/ui"
 import { FocusablePresets } from "~/components/common/Focusable"
 import { useEntryIsRead } from "~/hooks/biz/useAsRead"
 import { useContextMenuActionShortCutTrigger } from "~/hooks/biz/useContextMenuActionShortCutTrigger"
@@ -21,7 +23,10 @@ import { getNavigateEntryPath, useNavigateEntry } from "~/hooks/biz/useNavigateE
 import { getRouteParams, useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
 import { useShowEntryDetailsColumn } from "~/hooks/biz/useShowEntryDetailsColumn"
 import { useFeedSafeUrl } from "~/hooks/common/useFeedSafeUrl"
+import { htmlParserClient } from "~/lib/html-parser-client"
+import { normalizeRssContentForRender } from "~/lib/rss-content-normalize"
 import { setPendingActiveEntryId } from "../hooks/query-selection"
+import { createEntryDetailPrefetch } from "./entry-detail-prefetch"
 
 export const EntryItemWrapper: FC<
   {
@@ -48,6 +53,30 @@ export const EntryItemWrapper: FC<
 
   const asRead = useEntryIsRead(entryId)
   const hoverMarkUnread = useGeneralSettingKey("hoverMarkUnread")
+  const readerRenderInlineStyle = useUISettingKey("readerRenderInlineStyle")
+  const detailPrefetch = useMemo(
+    () =>
+      entry?.id
+        ? createEntryDetailPrefetch({
+            entryId: entry.id,
+            isDetailLoaded: (id) => entryActions.isDetailLoaded(id),
+            fetchDetail: async (id) => {
+              const detail = await entrySyncServices.fetchEntryDetail(id)
+              if (detail?.content) {
+                void htmlParserClient
+                  .parse(normalizeRssContentForRender(detail.content), {
+                    renderInlineStyle: readerRenderInlineStyle,
+                    noMedia: false,
+                  })
+                  .catch(() => undefined)
+              }
+              return detail
+            },
+          })
+        : null,
+    [entry?.id, readerRenderInlineStyle],
+  )
+  useEffect(() => () => detailPrefetch?.dispose(), [detailPrefetch])
 
   const handleMouseEnterMarkRead = useDebounceCallback(
     () => {
@@ -67,13 +96,15 @@ export const EntryItemWrapper: FC<
   const handleMouseEnter = useMemo(() => {
     return () => {
       handleMouseEnterMarkRead()
+      detailPrefetch?.schedule("pointer")
     }
-  }, [handleMouseEnterMarkRead])
+  }, [detailPrefetch, handleMouseEnterMarkRead])
   const handleMouseLeave = useMemo(() => {
     return () => {
       handleMouseEnterMarkRead.cancel()
+      detailPrefetch?.cancel("pointer")
     }
-  }, [handleMouseEnterMarkRead])
+  }, [detailPrefetch, handleMouseEnterMarkRead])
 
   const navigate = useNavigateEntry()
   const navigationPath = useMemo(() => {
@@ -145,6 +176,8 @@ export const EntryItemWrapper: FC<
         onDoubleClick={handleDoubleClick}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
+        onFocus={() => detailPrefetch?.schedule("focus")}
+        onBlur={() => detailPrefetch?.cancel("focus")}
         {...contextMenuProps}
         {...(!isMobile ? { onTouchStart: handleClick } : {})}
       >

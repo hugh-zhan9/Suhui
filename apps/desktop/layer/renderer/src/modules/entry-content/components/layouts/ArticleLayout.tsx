@@ -27,7 +27,7 @@ import { ContainerToc } from "../entry-content/accessories/ContainerToc"
 import { EntryRenderError } from "../entry-content/EntryRenderError"
 import { ReadabilityNotice } from "../entry-content/ReadabilityNotice"
 import { EntryAttachments } from "../EntryAttachments"
-import { EntryAnnotationsPanel } from "../EntryAnnotationsPanel"
+import { DeferredEntryAnnotationsPanel } from "../DeferredEntryAnnotationsPanel"
 import { EntryTitle } from "../EntryTitle"
 import { TextSelectionToolbar } from "../selection/TextSelectionToolbar"
 import type { EntryLayoutProps } from "./types"
@@ -102,7 +102,7 @@ export const ArticleLayout: React.FC<EntryLayoutProps> = ({
         </div>
       </WrappedElementProvider>
 
-      <EntryAnnotationsPanel entryId={entryId} />
+      <DeferredEntryAnnotationsPanel entryId={entryId} key={entryId} />
 
       <EntryAttachments entryId={entryId} />
     </div>

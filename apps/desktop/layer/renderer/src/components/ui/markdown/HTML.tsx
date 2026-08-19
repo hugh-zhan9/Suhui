@@ -1,4 +1,5 @@
 import { MemoedDangerousHTMLStyle } from "@suhui/components/common/MemoedDangerousHTMLStyle.js"
+import type { Root } from "hast"
 import katexStyle from "katex/dist/katex.min.css?raw"
 import {
   createElement,
@@ -7,12 +8,14 @@ import {
   useEffect,
   useImperativeHandle,
   useMemo,
+  useRef,
   useState,
 } from "react"
 import type { JSX } from "react/jsx-runtime"
 
 import { ENTRY_CONTENT_RENDER_CONTAINER_ID } from "~/constants/dom"
-import { parseHtml } from "~/lib/parse-html"
+import { htmlParserClient } from "~/lib/html-parser-client"
+import { renderHtmlTree } from "~/lib/parse-html"
 import { useWrappedElementSize } from "~/providers/wrapped-element-provider"
 
 import { MediaContainerWidthProvider } from "../media/MediaContainerWidthProvider"
@@ -42,37 +45,69 @@ const HTMLImpl = <A extends keyof JSX.IntrinsicElements = "div">(props: HTMLProp
     ref,
     ...rest
   } = props
-  const [remarkOptions, setRemarkOptions] = useState({
-    renderInlineStyle,
-    noMedia,
-  })
   const [shouldForceReMountKey, setShouldForceReMountKey] = useState(0)
+  const previousOptionsRef = useRef({ renderInlineStyle, noMedia })
 
   useEffect(() => {
-    setRemarkOptions((options) => {
-      if (JSON.stringify(options) === JSON.stringify({ renderInlineStyle, noMedia })) {
-        return options
-      }
-
-      setShouldForceReMountKey((key) => key + 1)
-      return { ...options, renderInlineStyle, noMedia }
-    })
+    const previous = previousOptionsRef.current
+    if (previous.renderInlineStyle === renderInlineStyle && previous.noMedia === noMedia) return
+    previousOptionsRef.current = { renderInlineStyle, noMedia }
+    setShouldForceReMountKey((key) => key + 1)
   }, [renderInlineStyle, noMedia])
 
   const [refElement, setRefElement] = useState<HTMLElement | null>(null)
   useImperativeHandle(ref as any, () => refElement)
 
-  const markdownElement = useMemo(
-    () =>
-      children &&
-      parseHtml(children, {
-        ...remarkOptions,
-      }).toContent(),
-    [children, remarkOptions],
+  const parserOptions = useMemo(
+    () => ({ renderInlineStyle, noMedia }),
+    [renderInlineStyle, noMedia],
   )
+  const [parsed, setParsed] = useState<{
+    content: string
+    options: typeof parserOptions
+    tree: Root
+  } | null>(null)
+  const [parseError, setParseError] = useState<Error | null>(null)
+
+  useEffect(() => {
+    if (!children) {
+      setParsed(null)
+      setParseError(null)
+      return
+    }
+
+    let cancelled = false
+    setParseError(null)
+    void htmlParserClient.parse(children, parserOptions).then(
+      (tree) => {
+        if (!cancelled) setParsed({ content: children, options: parserOptions, tree })
+      },
+      (error) => {
+        if (!cancelled) {
+          setParseError(error instanceof Error ? error : new Error(String(error)))
+        }
+      },
+    )
+    return () => {
+      cancelled = true
+    }
+  }, [children, parserOptions])
+
+  const parsedMatchesCurrentContent =
+    !!children &&
+    parsed?.content === children &&
+    parsed.options.renderInlineStyle === parserOptions.renderInlineStyle &&
+    parsed.options.noMedia === parserOptions.noMedia
+  const hastTree = children
+    ? parsedMatchesCurrentContent
+      ? parsed.tree
+      : htmlParserClient.getCached(children, parserOptions)
+    : undefined
+  const markdownElement = useMemo(() => hastTree && renderHtmlTree(hastTree), [hastTree])
 
   const { w: containerWidth } = useWrappedElementSize()
 
+  if (parseError) throw parseError
   if (!markdownElement) return null
   return (
     <MarkdownRenderContainerRefContext value={refElement}>

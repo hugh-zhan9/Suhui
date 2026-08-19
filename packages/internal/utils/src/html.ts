@@ -1,4 +1,4 @@
-import type { Element, Parent, Text } from "hast"
+import type { Element, Parent, Root, Text } from "hast"
 import type { Schema } from "hast-util-sanitize"
 import type { Components } from "hast-util-to-jsx-runtime"
 import { toJsxRuntime } from "hast-util-to-jsx-runtime"
@@ -13,12 +13,14 @@ import type { Node } from "unist"
 import { visit } from "unist-util-visit"
 import { visitParents } from "unist-util-visit-parents"
 
-type ParseHtmlOptions = {
+export type ParseHtmlOptions = {
   renderInlineStyle?: boolean
   noMedia?: boolean
   components?: Components
   scrollEnabled?: boolean
 }
+
+export type ParseHtmlTreeOptions = Omit<ParseHtmlOptions, "components" | "scrollEnabled">
 
 /**
  * Remove the last <br> element in the tree
@@ -45,8 +47,8 @@ function rehypeTrimEndBrElement() {
   return trim
 }
 
-export const parseHtml = (content: string, options?: ParseHtmlOptions) => {
-  const { renderInlineStyle = false, noMedia = false, components } = options || {}
+export const parseHtmlToHast = (content: string, options?: ParseHtmlTreeOptions): Root => {
+  const { renderInlineStyle = false, noMedia = false } = options || {}
 
   const rehypeSchema: Schema = { ...defaultSchema }
   rehypeSchema.tagNames = [...rehypeSchema.tagNames!, "math"]
@@ -144,11 +146,26 @@ export const parseHtml = (content: string, options?: ParseHtmlOptions) => {
 
   // console.log("tree", tree)
 
-  const hastTree = pipeline.runSync(tree, content)
+  return pipeline.runSync(tree, content) as Root
+}
+
+export const hastToContent = (hastTree: Root, components?: Components) =>
+  toJsxRuntime(hastTree, {
+    Fragment,
+    ignoreInvalidStyle: true,
+    jsx: (type, props, key) => jsx(type as any, props, key),
+    jsxs: (type, props, key) => jsxs(type as any, props, key),
+    passNode: true,
+    components,
+  })
+
+export const parseHtml = (content: string, options?: ParseHtmlOptions) => {
+  const { components, ...treeOptions } = options || {}
+  const hastTree = parseHtmlToHast(content, treeOptions)
 
   const images = [] as string[]
 
-  visit(tree, "element", (node) => {
+  visit(hastTree, "element", (node) => {
     if (node.tagName === "img" && node.properties.src) {
       images.push(node.properties.src as string)
     }
@@ -157,15 +174,7 @@ export const parseHtml = (content: string, options?: ParseHtmlOptions) => {
   return {
     hastTree,
     images,
-    toContent: () =>
-      toJsxRuntime(hastTree, {
-        Fragment,
-        ignoreInvalidStyle: true,
-        jsx: (type, props, key) => jsx(type as any, props, key),
-        jsxs: (type, props, key) => jsxs(type as any, props, key),
-        passNode: true,
-        components,
-      }),
+    toContent: () => hastToContent(hastTree, components),
     toText: () => toText(hastTree),
   }
 }

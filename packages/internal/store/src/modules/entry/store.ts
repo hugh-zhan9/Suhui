@@ -629,6 +629,8 @@ class EntryActions implements Resetable {
 }
 
 class EntrySyncServices {
+  private readonly detailRequests = new Map<EntryId, Promise<EntryModel | null>>()
+
   async fetchEntries(props: FetchEntriesProps) {
     const startedAt = performance.now()
     const result = await runtimeClient.entries.list({
@@ -667,13 +669,26 @@ class EntrySyncServices {
     const cached = getEntry(entryId)
     if (cached && entryActions.isDetailLoaded(entryId)) return cached
 
-    const entry = await runtimeClient.entries.getDetail(entryId)
-    if (entry) {
-      entryActions.upsertDetails([entry])
-      return entry
-    }
+    const pending = this.detailRequests.get(entryId)
+    if (pending) return pending
 
-    return null
+    const request = runtimeClient.entries.getDetail(entryId).then((entry) => {
+      if (entry) {
+        entryActions.upsertDetails([entry])
+        return entry
+      }
+
+      return null
+    })
+
+    this.detailRequests.set(entryId, request)
+    try {
+      return await request
+    } finally {
+      if (this.detailRequests.get(entryId) === request) {
+        this.detailRequests.delete(entryId)
+      }
+    }
   }
 
   async fetchEntryReadabilityContent(
