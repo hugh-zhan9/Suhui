@@ -12,6 +12,7 @@ export default {
   ...viteRenderBaseConfig,
   resolve: {
     ...viteRenderBaseConfig.resolve,
+    dedupe: ["react", "react-dom"],
     alias: {
       ...viteRenderBaseConfig.resolve?.alias,
       "virtual:sidebar-owner-hooks": resolve(

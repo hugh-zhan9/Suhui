@@ -9,4 +9,10 @@ describe("electron-vite main config", () => {
     expect(external).toContain("pg")
     expect(external).toContain("pg-native")
   })
+
+  it("应在 renderer 构建中去重 React，避免生产包出现多个 hook dispatcher", () => {
+    const dedupe = config.renderer?.resolve?.dedupe
+
+    expect(dedupe).toEqual(expect.arrayContaining(["react", "react-dom"]))
+  })
 })
