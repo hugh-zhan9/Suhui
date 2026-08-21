@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs"
 
+import prettier from "prettier"
 import { describe, expect, it } from "vitest"
 
 import {
@@ -16,8 +17,16 @@ describe("sqlite schema 与 postgres 的对齐", () => {
   const postgresSource = readFileSync(POSTGRES_SCHEMA_PATH, "utf8")
   const sqliteSource = readFileSync(SQLITE_SCHEMA_PATH, "utf8")
 
-  it("sqlite.ts 与由 postgres.ts 生成的结果完全一致", () => {
-    expect(sqliteSource).toBe(generateSqliteSchema(postgresSource))
+  // 落盘的 sqlite.ts 会被提交钩子里的 prettier 再格式化一遍（长行会被折行），
+  // 所以比对前两侧都过一遍仓库的 prettier 配置，只校验语义没漂移。
+  const format = async (source: string) =>
+    prettier.format(source, {
+      ...(await prettier.resolveConfig(SQLITE_SCHEMA_PATH)),
+      filepath: SQLITE_SCHEMA_PATH,
+    })
+
+  it("sqlite.ts 与由 postgres.ts 生成的结果一致（按仓库 prettier 归一后）", async () => {
+    expect(await format(sqliteSource)).toBe(await format(generateSqliteSchema(postgresSource)))
   })
 
   // 表名可能与 pgTable( 同行，也可能换行写，正则需兼容两种
