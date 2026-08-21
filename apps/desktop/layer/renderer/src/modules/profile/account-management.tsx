@@ -4,9 +4,9 @@ import { IN_ELECTRON } from "@suhui/shared/constants"
 import { cn } from "@suhui/utils/utils"
 import { useMutation } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { toast } from "sonner"
 
 import { linkSocial, unlinkAccount } from "~/lib/auth"
+import { toast } from "~/lib/toast"
 import { auth, useSocialAccounts } from "~/queries/auth"
 import { useAuthProviders } from "~/queries/users"
 

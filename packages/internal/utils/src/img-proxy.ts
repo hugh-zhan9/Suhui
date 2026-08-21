@@ -1,5 +1,3 @@
-export const IMAGE_PROXY_URL = "https://img.folo.is"
-
 export const imageRefererMatches = [
   {
     url: /^https:\/\/\w+\.sinaimg\.cn/,
@@ -28,52 +26,24 @@ export const imageRefererMatches = [
   },
 ]
 
-const webpCloudPublicServicesMatches = [
-  // https://docs.webp.se/public-services/github-avatar/
-  {
-    url: /^https:\/\/avatars\.githubusercontent\.com\/u\//,
-    target: "https://avatars-githubusercontent-webp.webp.se/u/",
-  },
-]
-
+/**
+ * Images are requested straight from their origin. The main process rewrites
+ * Referer/Origin per `imageRefererMatches` in `onBeforeSendHeaders`, so hotlink
+ * protected hosts load without a third-party proxy.
+ */
 export const getImageProxyUrl = ({
   url,
-  width,
-  height,
-  canUseProxy,
 }: {
   url: string
   width?: number
   height?: number
   canUseProxy?: boolean
-}) => {
-  if (!canUseProxy) {
-    return url
-  }
-  return `${IMAGE_PROXY_URL}?url=${encodeURIComponent(url)}&width=${width ? Math.round(width) : ""}&height=${height ? Math.round(height) : ""}`
-}
+}) => url
 
 export const replaceImgUrlIfNeed = ({
   url,
-  inBrowser,
-  canUseProxy,
 }: {
   url?: string
   inBrowser?: boolean
   canUseProxy?: boolean
-}) => {
-  if (!url) return url
-
-  for (const rule of webpCloudPublicServicesMatches) {
-    if (rule.url.test(url)) {
-      return url.replace(rule.url, rule.target)
-    }
-  }
-
-  for (const rule of imageRefererMatches) {
-    if ((inBrowser || rule.force) && rule.url.test(url)) {
-      return getImageProxyUrl({ url, width: 0, height: 0, canUseProxy })
-    }
-  }
-  return url
-}
+}) => url

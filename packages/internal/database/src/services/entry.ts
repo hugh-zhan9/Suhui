@@ -2,6 +2,7 @@ import { and, between, eq, inArray, isNull, lt, or } from "drizzle-orm"
 
 import { db } from "../db"
 import { entriesTable } from "../schemas"
+import { getRuntimeDbType } from "../schemas/runtime"
 import type { EntrySchema } from "../schemas/types"
 import { debugStartupReadTrace } from "../startup-read-trace"
 import type { Resetable } from "./internal/base"
@@ -18,8 +19,25 @@ const entryJsonColumns = [
 
 type EntryJsonColumn = (typeof entryJsonColumns)[number]
 
-const toPgJsonbValue = (value: unknown) => {
+/**
+ * 两个方言对 JSON 列的期望不同：
+ *  - postgres `jsonb` 接受 JSON **字符串**，故这里预先 stringify
+ *  - sqlite `text({mode:"json"})` 由 drizzle 自己 stringify，若这里再 stringify
+ *    就会双重编码，读回来是一个 JSON 字符串而不是对象
+ */
+const toJsonColumnValue = (value: unknown) => {
   if (value === null || value === undefined) return null
+
+  if (getRuntimeDbType() === "sqlite") {
+    if (typeof value !== "string") return value
+    if (!value) return null
+    try {
+      return JSON.parse(value)
+    } catch {
+      return null
+    }
+  }
+
   if (typeof value === "string") {
     if (!value) return null
     try {
@@ -42,7 +60,7 @@ export const sanitizeEntryJsonFields = <T extends Partial<EntrySchema>>(entry: T
     if (!(column in sanitized)) continue
     const value = sanitized[column as EntryJsonColumn]
     if (value === undefined) continue
-    ;(sanitized as Record<EntryJsonColumn, unknown>)[column] = toPgJsonbValue(value)
+    ;(sanitized as Record<EntryJsonColumn, unknown>)[column] = toJsonColumnValue(value)
   }
   return sanitized
 }

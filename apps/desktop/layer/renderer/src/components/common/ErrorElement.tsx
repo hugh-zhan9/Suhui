@@ -2,12 +2,12 @@ import { Button } from "@suhui/components/ui/button/index.js"
 import { tracker } from "@suhui/tracker"
 import { useEffect, useRef } from "react"
 import { isRouteErrorResponse, useNavigate, useRouteError } from "react-router"
-import { toast } from "sonner"
 
 import { removeAppSkeleton } from "~/lib/app"
 import { attachOpenInEditor } from "~/lib/dev"
 import { shouldAutoReloadDynamicImportError } from "~/lib/error-auto-reload"
 import { getNewIssueUrl } from "~/lib/issues"
+import { toast } from "~/lib/toast"
 import { clearLocalPersistStoreData } from "~/store/utils/clear"
 
 import { PoweredByFooter } from "./PoweredByFooter"

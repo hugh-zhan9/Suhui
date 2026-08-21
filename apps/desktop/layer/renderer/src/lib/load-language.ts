@@ -3,12 +3,12 @@ import { EventBus } from "@suhui/utils/event-bus"
 import { isEmptyObject } from "@suhui/utils/utils"
 import dayjs from "dayjs"
 import i18next from "i18next"
-import { toast } from "sonner"
 
 import { currentSupportedLanguages, dayjsLocaleImportMap } from "~/@types/constants"
 import { defaultResources } from "~/@types/default-resource"
 import { i18nAtom, langChain, LocaleCache } from "~/i18n"
 import { jotaiStore } from "~/lib/jotai"
+import { toast } from "~/lib/toast"
 
 import { ipcServices } from "./client"
 import { appLog } from "./log"

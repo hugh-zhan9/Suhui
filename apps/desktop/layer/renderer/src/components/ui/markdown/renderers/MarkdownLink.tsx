@@ -13,10 +13,10 @@ import { cn, parseSafeUrl, stopPropagation } from "@suhui/utils"
 import type { MouseEvent } from "react"
 import { use, useCallback } from "react"
 import { useTranslation } from "react-i18next"
-import { toast } from "sonner"
 
 import { navigateEntry } from "~/hooks/biz/useNavigateEntry"
 import { copyToClipboard } from "~/lib/clipboard"
+import { toast } from "~/lib/toast"
 
 import { MarkdownRenderActionContext } from "../context"
 

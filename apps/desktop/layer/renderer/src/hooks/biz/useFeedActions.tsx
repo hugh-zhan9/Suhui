@@ -1,12 +1,12 @@
 import type { FeedViewType } from "@suhui/constants"
 import { IN_ELECTRON } from "@suhui/shared/constants"
 import { env } from "@suhui/shared/env.desktop"
+import { useEntryStore } from "@suhui/store/entry/store"
 import { getFeedById } from "@suhui/store/feed/getter"
 import { useFeedById } from "@suhui/store/feed/hooks"
 import { useInboxById, useIsInbox } from "@suhui/store/inbox/hooks"
 import { useListById, useOwnedListByView } from "@suhui/store/list/hooks"
 import { listSyncServices } from "@suhui/store/list/store"
-import { useEntryStore } from "@suhui/store/entry/store"
 import {
   useCategoriesByView,
   useSubscriptionByFeedId,
@@ -14,18 +14,17 @@ import {
 } from "@suhui/store/subscription/hooks"
 import { unreadSyncService } from "@suhui/store/unread/store"
 import { whoami } from "@suhui/store/user/getters"
-import { isBizId } from "@suhui/utils/utils"
 import { useMutation } from "@tanstack/react-query"
 import { useMemo } from "react"
 import { useTranslation } from "react-i18next"
-import { toast } from "sonner"
 
 import type { FollowMenuItem, MenuItemInput } from "~/atoms/context-menu"
 import { MenuItemSeparator, MenuItemText } from "~/atoms/context-menu"
 import { useModalStack } from "~/components/ui/modal/stacked/hooks"
 import { copyToClipboard } from "~/lib/clipboard"
+import { toast } from "~/lib/toast"
+import { countUnreadBySourceIds } from "~/lib/unread-by-source"
 import { UrlBuilder } from "~/lib/url-builder"
-import { useFeedClaimModal } from "~/modules/claim"
 import { COMMAND_ID } from "~/modules/command/commands/id"
 import { useCommandShortcuts } from "~/modules/command/hooks/use-command-binding"
 import { FeedForm } from "~/modules/discover/FeedForm"
@@ -34,11 +33,9 @@ import { ListForm } from "~/modules/discover/ListForm"
 import { useConfirmUnsubscribeSubscriptionModal } from "~/modules/modal/hooks/useConfirmUnsubscribeSubscriptionModal"
 import { useCategoryCreationModal } from "~/modules/settings/tabs/lists/hooks"
 import { ListCreationModalContent } from "~/modules/settings/tabs/lists/modals"
-import { useResetFeed } from "~/queries/feed"
-import { countUnreadBySourceIds } from "~/lib/unread-by-source"
 
-import { useBatchUpdateSubscription, useDeleteSubscription } from "./useSubscriptionActions"
 import { resolveMarkAllToggleAction } from "./mark-all-toggle"
+import { useBatchUpdateSubscription, useDeleteSubscription } from "./useSubscriptionActions"
 
 export const useFeedActions = ({
   feedId,
@@ -72,13 +69,11 @@ export const useFeedActions = ({
   const { present } = useModalStack()
   const presentDeleteSubscription = useConfirmUnsubscribeSubscriptionModal()
   const deleteSubscription = useDeleteSubscription({})
-  const claimFeed = useFeedClaimModal()
 
   const isEntryList = type === "entryList"
 
   const { mutateAsync: addFeedToListMutation } = useAddFeedToFeedList()
   const { mutateAsync: removeFeedFromListMutation } = useRemoveFeedFromFeedList()
-  const { mutateAsync: resetFeed } = useResetFeed()
   const { mutate: addFeedsToCategoryMutation } = useBatchUpdateSubscription()
   const presentCategoryCreationModal = useCategoryCreationModal()
 
@@ -88,7 +83,10 @@ export const useFeedActions = ({
   const isMultipleSelection = feedIds && feedIds.length > 1 && feedIds.includes(feedId)
 
   const shortcuts = useCommandShortcuts()
-  const selectedSourceIds = useMemo(() => (isMultipleSelection ? feedIds || [] : [feedId]), [feedId, feedIds, isMultipleSelection])
+  const selectedSourceIds = useMemo(
+    () => (isMultipleSelection ? feedIds || [] : [feedId]),
+    [feedId, feedIds, isMultipleSelection],
+  )
   const selectedUnreadCount = useEntryStore((state) =>
     countUnreadBySourceIds(state as any, selectedSourceIds),
   )
@@ -97,8 +95,6 @@ export const useFeedActions = ({
   const items = useMemo(() => {
     const related = feed || inbox
     if (!related) return []
-
-    const isFeedOwner = related.ownerUserId === whoami()?.id
 
     const items: MenuItemInput[] = [
       new MenuItemText({
@@ -228,37 +224,6 @@ export const useFeedActions = ({
           }),
         ],
       }),
-      !related.ownerUserId &&
-        !!isBizId(related.id) &&
-        related.type === "feed" &&
-        new MenuItemText({
-          label: isEntryList
-            ? t("sidebar.feed_actions.claim_feed")
-            : t("sidebar.feed_actions.claim"),
-          shortcut: "C",
-          click: () => {
-            claimFeed({ feedId })
-          },
-          disabled: isEntryList,
-          requiresLogin: true,
-        }),
-      ...(isFeedOwner
-        ? [
-            MenuItemSeparator.default,
-            new MenuItemText({
-              label: t("sidebar.feed_actions.feed_owned_by_you"),
-              disabled: true,
-            }),
-            new MenuItemText({
-              label: t("sidebar.feed_actions.reset_feed"),
-              click: () => {
-                resetFeed(feedId)
-              },
-              requiresLogin: true,
-            }),
-            MenuItemSeparator.default,
-          ]
-        : []),
       new MenuItemSeparator(isEntryList),
       new MenuItemText({
         label: t("sidebar.feed_actions.open_feed_in_browser", {
@@ -269,7 +234,7 @@ export const useFeedActions = ({
         click: () => {
           // [Local Mode] Open feed's original URL instead of remote share link
           const f = getFeedById(feedId)
-          const targetUrl = f && ("siteUrl" in f ? f.siteUrl : null) || f?.url
+          const targetUrl = (f && ("siteUrl" in f ? f.siteUrl : null)) || f?.url
           if (targetUrl) window.open(targetUrl, "_blank")
         },
       }),
@@ -308,7 +273,6 @@ export const useFeedActions = ({
     addFeedToListMutation,
     addFeedsToCategoryMutation,
     categories,
-    claimFeed,
     deleteSubscription,
     feed,
     feedId,
@@ -324,7 +288,6 @@ export const useFeedActions = ({
     presentCategoryCreationModal,
     presentDeleteSubscription,
     removeFeedFromListMutation,
-    resetFeed,
     shortcuts,
     subscription,
     subscriptions,

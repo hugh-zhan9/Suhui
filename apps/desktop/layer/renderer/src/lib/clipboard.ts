@@ -1,4 +1,4 @@
-import { toast } from "sonner"
+import { toast } from "~/lib/toast"
 
 export const copyToClipboard = async (content: string): Promise<void> => {
   try {

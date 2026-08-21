@@ -18,7 +18,6 @@ import type { FetchError } from "ofetch"
 import { ofetch } from "ofetch"
 import { useMemo } from "react"
 import { useTranslation } from "react-i18next"
-import { toast } from "sonner"
 
 import { getReadabilityStatus, ReadabilityStatus } from "~/atoms/readability"
 import { getActionLanguage } from "~/atoms/settings/general"
@@ -26,6 +25,7 @@ import { getIntegrationSettings, useIntegrationSettingKey } from "~/atoms/settin
 import { useRouteParams } from "~/hooks/biz/useRouteParams"
 import { ipcServices } from "~/lib/client"
 import { parseHtml } from "~/lib/parse-html"
+import { toast } from "~/lib/toast"
 import { CustomIntegrationManager } from "~/modules/integration/custom-integration-manager"
 
 import { useRegisterCommandEffect } from "../hooks/use-register-command"

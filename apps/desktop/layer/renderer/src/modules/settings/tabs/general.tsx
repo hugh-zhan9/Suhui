@@ -10,7 +10,6 @@ import dayjs from "dayjs"
 import { useAtom } from "jotai"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { toast } from "sonner"
 
 import { currentSupportedLanguages } from "~/@types/constants"
 import { defaultResources } from "~/@types/default-resource"
@@ -29,11 +28,11 @@ import {
   canSwitchRendererDbConfig,
   getRendererDbConfig,
   ipcServices,
-  resetRendererDbConfigOverride,
   resetRendererAfterDatabaseSwitch,
+  resetRendererDbConfigOverride,
   switchRendererDbConfig,
-  type RendererDbConfigView,
 } from "~/lib/client"
+import { toast } from "~/lib/toast"
 import { setTranslationCache } from "~/modules/entry-content/atoms"
 import { formatDisplayList, formatDisplayValue } from "~/modules/settings/utils/db-config-display"
 

@@ -7,12 +7,16 @@ import { ELECTRON_BUILD } from "@suhui/shared/constants"
 import { useQuery } from "@tanstack/react-query"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { toast } from "sonner"
 
 import { setGeneralSetting, useGeneralSettingValue } from "~/atoms/settings/general"
 import { useDialog } from "~/components/ui/modal/stacked/hooks"
 import { ipcServices } from "~/lib/client"
+import type { DbDialect } from "~/lib/db-conversion-request"
+import { buildDbConversionRequest, conversionTargetOf } from "~/lib/db-conversion-request"
+import { localReadingIpc } from "~/lib/local-reading-ipc"
 import { queryClient } from "~/lib/query-client"
+import { toast } from "~/lib/toast"
+import type { ParsedOpmlItem } from "~/modules/discover/types"
 import { clearLocalPersistStoreData } from "~/store/utils/clear"
 
 import { SettingActionItem, SettingDescription } from "../control"
@@ -20,37 +24,14 @@ import { createSetting } from "../helper/builder"
 import { SettingItemGroup } from "../section"
 
 const { SettingBuilder } = createSetting("general", useGeneralSettingValue, setGeneralSetting)
-type LocalReadingIpc = {
-  exportBackup(path: string, rendererSettings?: Record<string, string>): Promise<unknown>
-  prepareReplaceBackup(path: string): Promise<{ token: string }>
-  restoreBackup(input: {
-    path: string
-    mode: "merge" | "replace"
-    confirmationToken?: string
-    rendererSettings?: Record<string, string>
-  }): Promise<{ rendererSettings?: Record<string, string> }>
-  acknowledgeRendererSettings(): Promise<void>
-  exportOpmlFile(path: string): Promise<unknown>
-  previewOpmlFile(path: string): Promise<OpmlPreviewItem[]>
-  importOpmlFile(input: { path: string; selectedIndexes?: number[] }): Promise<unknown>
-}
-
-type OpmlPreviewItem = {
-  index: number
-  url: string
-  title: string | null
-  category: string | null
-  duplicate: boolean
-}
-
 type FileDialogIpc = {
-  showOpenFileDialog(input?: {
+  showOpenFileDialog: (input?: {
     filters?: Array<{ name: string; extensions: string[] }>
-  }): Promise<string | null>
-  showSaveFileDialog(input: {
+  }) => Promise<string | null>
+  showSaveFileDialog: (input: {
     defaultPath: string
     filters?: Array<{ name: string; extensions: string[] }>
-  }): Promise<string | null>
+  }) => Promise<string | null>
 }
 type ExternalRsshubIpc = {
   getRsshubCustomUrl?: () => Promise<string>
@@ -116,11 +97,22 @@ export const SettingDataControl = () => {
 }
 
 const LocalReadingDataTools = () => {
-  const localReading = (ipcServices as unknown as { localReading?: LocalReadingIpc })?.localReading
+  const localReading = localReadingIpc()
   const app = ipcServices?.app as unknown as FileDialogIpc | undefined
   const [opmlImportPath, setOpmlImportPath] = useState<string | null>(null)
-  const [opmlPreview, setOpmlPreview] = useState<OpmlPreviewItem[]>([])
+  const [opmlPreview, setOpmlPreview] = useState<ParsedOpmlItem[]>([])
   const [selectedOpmlIndexes, setSelectedOpmlIndexes] = useState<number[]>([])
+  const [dialect, setDialect] = useState<DbDialect | null>(null)
+  const [converting, setConverting] = useState(false)
+  // 转到 postgres 必须显式给出目标库；转到 sqlite 用应用目录下的默认库文件。
+  const [pgTarget, setPgTarget] = useState({ dbConn: "", dbUser: "", dbPassword: "" })
+
+  useEffect(() => {
+    void ipcServices?.db
+      .getDialect()
+      .then((value: string) => setDialect(value === "sqlite" ? "sqlite" : "postgres"))
+      .catch(() => setDialect(null))
+  }, [])
 
   // AI/integration settings may contain secrets. The complete local-data backup
   // includes behavior and presentation settings but deliberately excludes those
@@ -139,6 +131,42 @@ const LocalReadingDataTools = () => {
       if (key === "follow:general" || key === "follow:ui") window.localStorage.setItem(key, value)
     }
     await localReading?.acknowledgeRendererSettings()
+  }
+
+  // 转换是阻塞式的：开始后到成功/失败之前不接受其他操作（见 plan 的 D4）。
+  // 非破坏性——源库保留，失败会自动切回原方言。
+  const convertDatabase = async (to: DbDialect) => {
+    if (converting) return
+    const label = to === "sqlite" ? "SQLite" : "Postgres"
+    const built = buildDbConversionRequest(to, pgTarget)
+    if (!built.ok) {
+      toast.error("请先填写目标 Postgres 地址（host:port/dbname 或完整 DSN）")
+      return
+    }
+    if (
+      !window.confirm(
+        `将把全部本地数据转换到 ${label}。\n\n` +
+          `转换期间请勿关闭应用。原数据库会保留，确认无误后可自行删除。\n\n继续？`,
+      )
+    ) {
+      return
+    }
+
+    setConverting(true)
+    try {
+      const result = await localReading?.convertDatabase(built.request)
+      toast.success(
+        `已转换到 ${label}：${result?.recordCount ?? 0} 条记录。原数据库保留在 ${result?.sourceDbConn ?? "原位置"}`,
+      )
+      window.location.reload()
+    } catch (error) {
+      // 报错原文放进 description：标题给结论，正文给可复制的原因
+      toast.error("转换失败，已保持原数据库不变", {
+        description: error instanceof Error ? error.message : String(error),
+      })
+    } finally {
+      setConverting(false)
+    }
   }
 
   const exportBackup = async () => {
@@ -222,20 +250,78 @@ const LocalReadingDataTools = () => {
         完整备份包含文章正文、状态、规则、标签、笔记、高亮和阅读队列；OPML 只交换订阅与分类。
       </SettingDescription>
       <div className="mt-3 flex flex-wrap gap-2">
-        <Button variant="outline" onClick={() => void exportBackup()}>
+        <Button variant="outline" disabled={converting} onClick={() => void exportBackup()}>
           导出完整备份
         </Button>
-        <Button variant="outline" onClick={() => void restoreBackup("merge")}>
+        <Button variant="outline" disabled={converting} onClick={() => void restoreBackup("merge")}>
           合并恢复
         </Button>
-        <Button variant="outline" onClick={() => void restoreBackup("replace")}>
+        <Button
+          variant="outline"
+          disabled={converting}
+          onClick={() => void restoreBackup("replace")}
+        >
           完整替换恢复
         </Button>
-        <Button variant="outline" onClick={() => void exportOpml()}>
+        <Button variant="outline" disabled={converting} onClick={() => void exportOpml()}>
           导出 OPML
         </Button>
-        <Button variant="outline" onClick={() => void previewOpml()}>
+        <Button variant="outline" disabled={converting} onClick={() => void previewOpml()}>
           导入 OPML
+        </Button>
+      </div>
+
+      <div className="mb-2 mt-6 text-sm font-medium">数据库</div>
+      <SettingDescription>
+        <span>
+          当前使用
+          {dialect === null ? "读取中…" : dialect === "sqlite" ? "SQLite（本机文件）" : "Postgres"}
+          。 转换会把全部数据搬到另一种数据库；期间界面不可操作，原数据库始终保留。
+          <span>
+            {dialect === "sqlite"
+              ? "转到 Postgres 需要填写目标库地址。"
+              : "转到 SQLite 会写入应用数据目录下的默认库文件。"}
+          </span>
+        </span>
+      </SettingDescription>
+      {dialect === "sqlite" ? (
+        <div className="mt-3 space-y-2">
+          <Input
+            placeholder="目标 Postgres 地址，例如 127.0.0.1:5432/suhui"
+            value={pgTarget.dbConn}
+            disabled={converting}
+            onChange={(event) => setPgTarget((prev) => ({ ...prev, dbConn: event.target.value }))}
+          />
+          <div className="flex gap-2">
+            <Input
+              placeholder="用户名"
+              value={pgTarget.dbUser}
+              disabled={converting}
+              onChange={(event) => setPgTarget((prev) => ({ ...prev, dbUser: event.target.value }))}
+            />
+            <Input
+              type="password"
+              placeholder="密码"
+              value={pgTarget.dbPassword}
+              disabled={converting}
+              onChange={(event) =>
+                setPgTarget((prev) => ({ ...prev, dbPassword: event.target.value }))
+              }
+            />
+          </div>
+        </div>
+      ) : null}
+      <div className="mt-3 flex flex-wrap gap-2">
+        <Button
+          variant="outline"
+          disabled={converting || dialect === null}
+          onClick={() => dialect && void convertDatabase(conversionTargetOf(dialect))}
+        >
+          {converting
+            ? "正在转换，请勿关闭…"
+            : dialect === "sqlite"
+              ? "转换到 Postgres"
+              : "转换到 SQLite"}
         </Button>
       </div>
       {opmlPreview.length > 0 ? (

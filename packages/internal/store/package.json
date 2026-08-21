@@ -11,11 +11,6 @@
   },
   "sideEffects": false,
   "exports": {
-    "./action/*": {
-      "types": "./src/modules/action/*.ts",
-      "require": "./src/modules/action/*.ts",
-      "import": "./src/modules/action/*.ts"
-    },
     "./collection/*": {
       "types": "./src/modules/collection/*.ts",
       "require": "./src/modules/collection/*.ts",

@@ -10,6 +10,7 @@ export type FeedPreviewErrorType =
   | "tls"
   | "redirect"
   | "invalid_feed"
+  | "no_feed_discovered"
 
 export type FeedPreviewErrorInfo = {
   type: FeedPreviewErrorType
@@ -30,7 +31,13 @@ export type FeedPreviewErrorInfo = {
  *   renderer:   本地预览订阅失败: <inner>
  * 这里只负责识别这条链路，并把最内层原因翻译成用户能理解的文案。
  */
-const PREVIEW_ERROR_MARKERS = ["本地预览订阅失败", "db.previewFeed"]
+const PREVIEW_ERROR_MARKERS = [
+  "本地预览订阅失败",
+  "db.previewFeed",
+  // 订阅提交走的是另一条链路，报错口径必须和预览一致
+  "db.addFeed",
+  "Failed to add feed",
+]
 
 const isPreviewErrorMessage = (message: string) =>
   PREVIEW_ERROR_MARKERS.some((marker) => message.includes(marker))
@@ -43,6 +50,7 @@ const WRAPPER_PATTERNS = [
   /^Error invoking remote method '[^']+':\s*/,
   /^Error:\s*/,
   /^\[db\.previewFeed\] failed for \S+:\s+/,
+  /^Failed to add feed:\s*/,
 ]
 
 const stripPreviewWrappers = (message: string) =>
@@ -131,6 +139,15 @@ const resolveReason = (
       type: "redirect",
       title: "订阅源跳转异常",
       hint: "该地址存在过多跳转或跳转循环，请直接填写最终的订阅地址。",
+    }
+  }
+
+  // 已经尝试过自动发现与页面抓取，这里不能再提示"请填写订阅地址"
+  if (reason.includes("FEED_DISCOVERY_FAILED")) {
+    return {
+      type: "no_feed_discovered",
+      title: "该网页没有可用的订阅源",
+      hint: "已尝试自动发现订阅源并从页面生成，均未成功。可改填站点的订阅地址，或改用外部 RSSHub 规则订阅。",
     }
   }
 

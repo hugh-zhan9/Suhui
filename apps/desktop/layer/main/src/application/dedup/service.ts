@@ -1,8 +1,9 @@
 import { createHash } from "node:crypto"
 
+import { contentClusterRebuildStateTable } from "@suhui/database/schemas/index"
 import { ContentClusterService } from "@suhui/database/services/content-cluster"
 import { EntryService } from "@suhui/database/services/entry"
-import { and, asc, between, gt, isNull, ne } from "drizzle-orm"
+import { and, asc, between, eq, gt, isNull, ne } from "drizzle-orm"
 
 import { DBManager } from "~/manager/db"
 
@@ -159,27 +160,30 @@ export class DedupApplicationService {
       }
     } else {
       const db = DBManager.getDB()
-      const pool = DBManager.getPgPool()
-      await pool.query(
-        `INSERT INTO content_cluster_rebuild_state (id, after_entry_id, processed, clustered, updated_at)
-         VALUES (1, NULL, 0, 0, $1) ON CONFLICT (id) DO NOTHING`,
-        [Date.now()],
-      )
-      const state = await pool.query<{
-        after_entry_id: string | null
-        batch_entry_ids: string[]
-        manual_entry_ids: string[]
-        processed: string | number
-        clustered: string | number
-      }>(
-        `SELECT after_entry_id, batch_entry_ids, manual_entry_ids, processed, clustered
-         FROM content_cluster_rebuild_state WHERE id = 1`,
-      )
-      let afterId = state.rows[0]?.after_entry_id ?? undefined
-      processed = Number(state.rows[0]?.processed ?? 0)
-      clustered = Number(state.rows[0]?.clustered ?? 0)
+      // 这张表原先只有裸 DDL、访问也是裸 pg SQL（含 $n 占位符与 ::jsonb 转换）。
+      // 现在它有 drizzle 定义，改走 ORM 后自动跨方言。
+      const rebuildState = contentClusterRebuildStateTable
+      await db
+        .insert(rebuildState)
+        .values({
+          id: 1,
+          afterEntryId: null,
+          batchEntryIds: [],
+          manualEntryIds: [],
+          processed: 0,
+          clustered: 0,
+          updatedAt: Date.now(),
+        })
+        .onConflictDoNothing()
+
+      const [initialState] = await db.select().from(rebuildState).where(eq(rebuildState.id, 1))
+      let afterId = initialState?.afterEntryId ?? undefined
+      let carriedBatchIds = initialState?.batchEntryIds ?? []
+      let carriedManualIds = initialState?.manualEntryIds ?? []
+      processed = Number(initialState?.processed ?? 0)
+      clustered = Number(initialState?.clustered ?? 0)
       while (true) {
-        const pendingIds = state.rows[0]?.batch_entry_ids ?? []
+        const pendingIds = carriedBatchIds
         const page = pendingIds.length
           ? pendingIds.map((id) => ({ id }))
           : await db.query.entriesTable.findMany({
@@ -191,35 +195,35 @@ export class DedupApplicationService {
             })
         const pageIds = page.map((entry) => entry.id)
         if (pageIds.length === 0) {
-          await pool.query("DELETE FROM content_cluster_rebuild_state WHERE id = 1")
+          await db.delete(rebuildState).where(eq(rebuildState.id, 1))
           break
         }
         const manualIds = pendingIds.length
-          ? (state.rows[0]?.manual_entry_ids ?? [])
+          ? carriedManualIds
           : await this.findManualEntryIds(pageIds)
         if (!pendingIds.length) {
-          await pool.query(
-            `UPDATE content_cluster_rebuild_state
-             SET batch_entry_ids = $1::jsonb, manual_entry_ids = $2::jsonb, updated_at = $3
-             WHERE id = 1`,
-            [JSON.stringify(pageIds), JSON.stringify(manualIds), Date.now()],
-          )
+          await db
+            .update(rebuildState)
+            .set({ batchEntryIds: pageIds, manualEntryIds: manualIds, updatedAt: Date.now() })
+            .where(eq(rebuildState.id, 1))
         }
         const result = await this.rebuildBatch(pageIds, manualIds)
         processed += result.processed
         clustered += result.clustered
         afterId = pageIds.at(-1)!
-        await pool.query(
-          `UPDATE content_cluster_rebuild_state
-           SET after_entry_id = $1, batch_entry_ids = '[]'::jsonb,
-             manual_entry_ids = '[]'::jsonb, processed = $2, clustered = $3, updated_at = $4
-           WHERE id = 1`,
-          [afterId, processed, clustered, Date.now()],
-        )
-        if (state.rows[0]) {
-          state.rows[0].batch_entry_ids = []
-          state.rows[0].manual_entry_ids = []
-        }
+        await db
+          .update(rebuildState)
+          .set({
+            afterEntryId: afterId,
+            batchEntryIds: [],
+            manualEntryIds: [],
+            processed,
+            clustered,
+            updatedAt: Date.now(),
+          })
+          .where(eq(rebuildState.id, 1))
+        carriedBatchIds = []
+        carriedManualIds = []
       }
     }
     return { processed, clustered }

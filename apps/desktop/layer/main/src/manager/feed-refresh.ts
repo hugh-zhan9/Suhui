@@ -11,9 +11,15 @@ import { drainPendingOps } from "~/manager/sync-applier"
 
 import { buildPreviewDiagnostics } from "../ipc/services/preview-feed-diagnostics"
 import { fetchFeedUrl } from "../ipc/services/feed-fetch"
-import { localFeedRefreshRequestTimeoutMs } from "../ipc/services/local-feed-refresh"
+import { resolveFeedDocument } from "../ipc/services/feed-source-resolver"
+import { hydrateScrapedArticleContent } from "../ipc/services/scraped-article-content"
+import {
+  defaultPreviewFeedView,
+  feedDiscoveryCandidateMaxRedirects,
+  feedDiscoveryCandidateTimeoutMs,
+  localFeedRefreshRequestTimeoutMs,
+} from "../ipc/services/local-feed-refresh"
 import { buildEntryMediaPayload } from "../ipc/services/rss-entry-media"
-import { parseRssFeed } from "../ipc/services/rss-parser"
 import {
   buildExistingEntryReuseIndex,
   buildFailedFeed,
@@ -23,6 +29,7 @@ import {
 } from "../ipc/services/rss-refresh"
 import { toTimestampMs } from "../ipc/services/rss-time"
 import { resolvePreviewFeedUrl } from "../ipc/services/rsshub-external"
+import { resolveFeedSourceTarget } from "../ipc/services/site-scrape-url"
 
 export class FeedRefreshService {
   public static async buildPreviewData(
@@ -30,9 +37,11 @@ export class FeedRefreshService {
     preferredFeedId?: string,
     allowPublicFallback = false,
     diagnosticsEnabled = false,
+    { allowDiscovery = true }: { allowDiscovery?: boolean } = {},
   ) {
     const customBaseUrl = (store.get("rsshubCustomUrl") as string) ?? ""
-    const resolvedUrl = resolvePreviewFeedUrl(feedUrl, {
+    const sourceTarget = resolveFeedSourceTarget(feedUrl)
+    const resolvedUrl = resolvePreviewFeedUrl(sourceTarget.requestUrl, {
       customBaseUrl,
       allowPublicFallback,
     })
@@ -65,7 +74,29 @@ export class FeedRefreshService {
       console.info("[FeedRefreshService.buildPreviewData] diagnostics", afterDiagnostics)
     }
 
-    const parsed = parseRssFeed(fetchResult.body)
+    const resolvedDocument = await resolveFeedDocument({
+      mode: sourceTarget.mode,
+      // relative hrefs and the scrape target must resolve against the document
+      // we actually received, not the url we asked for
+      requestUrl: fetchResult.finalUrl || resolvedUrl,
+      body: fetchResult.body,
+      contentType: fetchResult.contentType,
+      // an indirect url (rsshub://) resolves to an instance address, which must
+      // never be persisted as the feed's own url
+      allowDiscovery: allowDiscovery && resolvedUrl === sourceTarget.requestUrl,
+      fetchCandidate: async (candidateUrl) => {
+        const candidateResult = await fetchFeedUrl(candidateUrl, {
+          timeoutMs: feedDiscoveryCandidateTimeoutMs,
+          maxRedirects: feedDiscoveryCandidateMaxRedirects,
+        })
+        return { body: candidateResult.body, contentType: candidateResult.contentType }
+      },
+    })
+    const { parsed } = resolvedDocument
+    // Only a feed found by discovery or scraping replaces the stored url; a
+    // direct hit keeps the user-entered url so rsshub:// stays instance-agnostic.
+    const persistedFeedUrl =
+      resolvedDocument.source === "direct" ? feedUrl : resolvedDocument.feedUrl
 
     const feedId =
       preferredFeedId || `local_feed_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
@@ -74,7 +105,7 @@ export class FeedRefreshService {
     const feed = {
       type: "feed" as const,
       id: feedId,
-      url: feedUrl,
+      url: persistedFeedUrl,
       title: parsed.title || "Untitled Feed",
       description: parsed.description || null,
       image: parsed.image || null,
@@ -89,24 +120,39 @@ export class FeedRefreshService {
       updatedAt: now,
     }
 
+    // A scraped listing carries only an excerpt, so pull the full article text
+    // for entries that have none stored yet. Entries we already have are
+    // skipped, which keeps a refresh to the newly discovered articles.
+    const scrapedContentByEntryId =
+      resolvedDocument.source === "scraped"
+        ? await hydrateScrapedArticleContent({
+            feedId,
+            items: parsed.items,
+            onError: ({ url, reason }) =>
+              console.warn("[scraped article content] skipped", { url, reason }),
+          })
+        : new Map<string, string>()
+
     const entries = parsed.items.slice(0, 50).map((item) => {
+      const entryId = buildStableLocalEntryId({
+        feedId,
+        guid: item.guid,
+        url: item.url,
+        title: item.title,
+        publishedAt: item.publishedAt,
+      })
+      const content = scrapedContentByEntryId.get(entryId) ?? item.content
       const mediaPayload = buildEntryMediaPayload({
-        content: item.content,
+        content,
         url: item.url,
       })
 
       return {
-        id: buildStableLocalEntryId({
-          feedId,
-          guid: item.guid,
-          url: item.url,
-          title: item.title,
-          publishedAt: item.publishedAt,
-        }),
+        id: entryId,
         feedId,
         title: item.title || "Untitled",
         url: item.url || null,
-        content: item.content || null,
+        content: content || null,
         description: item.description || null,
         guid: item.guid,
         author: item.author || null,
@@ -132,11 +178,12 @@ export class FeedRefreshService {
       feed,
       entries,
       subscription: undefined,
+      sourceOptions: resolvedDocument.sourceOptions,
       analytics: {
         updatesPerWeek: null,
         subscriptionCount: null,
         latestEntryPublishedAt: entries[0]?.publishedAt || null,
-        view: 1,
+        view: defaultPreviewFeedView,
       },
     }
   }
@@ -151,7 +198,9 @@ export class FeedRefreshService {
     }
 
     try {
-      const preview = await this.buildPreviewData(existingFeed.url, feedId)
+      const preview = await this.buildPreviewData(existingFeed.url, feedId, false, false, {
+        allowDiscovery: false,
+      })
       const refreshedFeed = buildRefreshedFeed(existingFeed as any, preview.feed as any)
 
       await FeedService.upsertMany([refreshedFeed] as any)

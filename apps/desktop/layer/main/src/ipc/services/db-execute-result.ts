@@ -1,23 +1,17 @@
+import type { RawSqlResult } from "@suhui/database/db.main"
+
 export type ExecuteMethod = "run" | "all" | "get" | "values"
 
-export const mapExecuteResult = (method: ExecuteMethod | undefined, result: any) => {
-  const fields = result?.fields
-  let rows = result?.rows ?? []
-  if (fields && Array.isArray(rows) && rows.length > 0 && !Array.isArray(rows[0])) {
-    const fieldNames = fields.map((field: { name: string }) => field.name)
-    rows = rows.map((row: Record<string, unknown>) =>
-      fieldNames.map((name) => row[name]),
-    )
-  }
+/**
+ * 把方言无关的执行结果整形为 drizzle proxy 期望的形状。
+ * 方言差异（pg 的 fields/rowCount、sqlite 的 changes）已在 executeMainRawSql 内收敛。
+ */
+export const mapExecuteResult = (method: ExecuteMethod | undefined, result: RawSqlResult) => {
   if (method === "run") {
-    return { rowsAffected: result?.rowCount ?? 0 }
+    return { rowsAffected: result.rowsAffected }
   }
   if (method === "get") {
-    const payload: { rows: unknown; fields?: unknown } = { rows: rows?.[0] ?? null }
-    if (fields) payload.fields = fields
-    return payload
+    return { rows: result.rows[0] ?? null }
   }
-  const payload: { rows: unknown[]; fields?: unknown } = { rows }
-  if (fields) payload.fields = fields
-  return payload
+  return { rows: result.rows }
 }

@@ -4,10 +4,10 @@ import { t } from "i18next"
 import { FetchError } from "ofetch"
 import { createElement } from "react"
 import type { ExternalToast } from "sonner"
-import { toast } from "sonner"
 
 import { CopyButton } from "~/components/ui/button/CopyButton"
 import { Markdown } from "~/components/ui/markdown/Markdown"
+import { toast } from "~/lib/toast"
 import { DebugRegistry } from "~/modules/debug/registry"
 
 import { getFeedPreviewFriendlyMessage } from "./feed-preview-error"

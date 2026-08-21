@@ -2,188 +2,108 @@ import { Button } from "@suhui/components/ui/button/index.js"
 import { Checkbox } from "@suhui/components/ui/checkbox/index.jsx"
 import { Input } from "@suhui/components/ui/input/index.js"
 import { ScrollArea } from "@suhui/components/ui/scroll-area/index.js"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@suhui/components/ui/tooltip/index.jsx"
 import { subscriptionSyncService } from "@suhui/store/subscription/store"
 import { cn } from "@suhui/utils/utils"
-import type { ExtractResponseData, SubscriptionParseOpmlResponse } from "@follow-app/client-sdk"
 import { useMutation } from "@tanstack/react-query"
 import Fuse from "fuse.js"
 import { useCallback, useMemo, useState } from "react"
-import { Trans, useTranslation } from "react-i18next"
-import { toast } from "sonner"
+import { useTranslation } from "react-i18next"
 
 import { useCurrentModal } from "~/components/ui/modal/stacked/hooks"
-import { followClient } from "~/lib/api-client"
 import { toastFetchError } from "~/lib/error-parser"
+import { localReadingIpc } from "~/lib/local-reading-ipc"
+import { toast } from "~/lib/toast"
 
-import type { ParsedFeedItem } from "./types"
+import type { ParsedOpmlItem } from "./types"
 
-export const OpmlSelectionModal = ({
-  parsedData,
-
-  file,
-}: {
-  parsedData: ExtractResponseData<SubscriptionParseOpmlResponse>
-
-  file: File
-}) => {
+/**
+ * OPML 导入的选择界面。
+ *
+ * 解析与导入都走主进程（`localReading.previewOpml` / `importOpml`）：没有远端配额，
+ * 取而代之的是本地预览给出的 `duplicate` 标记——已订阅的源默认不勾选，导入时也会被跳过。
+ */
+export const OpmlSelectionModal = ({ items, xml }: { items: ParsedOpmlItem[]; xml: string }) => {
   const { dismiss } = useCurrentModal()
+  const { t } = useTranslation()
+  const [searchQuery, setSearchQuery] = useState("")
+  const [selectedIndexes, setSelectedIndexes] = useState<Set<number>>(
+    () => new Set(items.filter((item) => !item.duplicate).map((item) => item.index)),
+  )
+
+  const duplicateCount = useMemo(() => items.filter((item) => item.duplicate).length, [items])
 
   const importMutation = useMutation({
-    mutationFn: async (selectedItems: ParsedFeedItem[]) => {
-      const formData = new FormData()
-
-      formData.append("file", file)
-      formData.append("items", JSON.stringify(selectedItems.map((i) => i.url)))
-
-      const { data } = await followClient.api.subscriptions.import(formData)
-
-      return data
+    mutationFn: async (indexes: number[]) => {
+      const result = await localReadingIpc()?.importOpml({
+        xml,
+        selectedIndexes: indexes,
+      })
+      return result ?? { imported: 0, skipped: 0, total: items.length }
     },
-    onSuccess: (data) => {
-      subscriptionSyncService.fetch()
-
-      const { successfulItems, conflictItems, parsedErrorItems } = data
-
-      if (parsedErrorItems.length > 0) {
-        toast.warning(t("discover.import.import_completed_with_issues"), {
-          description: (
-            <Trans
-              ns="app"
-              i18nKey="discover.import.result"
-              components={{
-                SuccessfulNum: <NumberDisplay value={successfulItems.length} />,
-                ConflictNum: <NumberDisplay value={conflictItems.length} />,
-                ErrorNum: <NumberDisplay value={parsedErrorItems.length} />,
-                br: <br />,
-              }}
-            />
-          ),
-          duration: 5000,
-        })
-      } else {
-        dismiss()
-        // Show success if everything went well
-        toast.success(t("discover.import.import_successful"), {
-          description: (
-            <Trans
-              ns="app"
-              i18nKey="discover.import.result"
-              components={{
-                SuccessfulNum: <NumberDisplay value={successfulItems.length} />,
-                ConflictNum: <NumberDisplay value={conflictItems.length} />,
-                ErrorNum: <NumberDisplay value={parsedErrorItems.length} />,
-                br: <br />,
-              }}
-            />
-          ),
-          duration: 5000,
-        })
-      }
+    onSuccess: (result) => {
+      void subscriptionSyncService.fetch()
+      dismiss()
+      toast.success(
+        `已导入 ${result.imported} 个订阅${
+          result.skipped > 0 ? `，跳过 ${result.skipped} 个（重复或未选中）` : ""
+        }`,
+      )
     },
     async onError(err) {
       toastFetchError(err)
     },
   })
 
-  const { t } = useTranslation()
-  const [searchQuery, setSearchQuery] = useState("")
-  const [selectedItems, setSelectedItems] = useState<Set<string>>(
-    () => new Set(parsedData.subscriptions.map((_, index) => index.toString())),
+  const fuse = useMemo(
+    () =>
+      new Fuse(items, {
+        keys: [
+          { name: "title", weight: 0.7 },
+          { name: "url", weight: 0.2 },
+          { name: "category", weight: 0.1 },
+        ],
+        threshold: 0.3,
+        includeMatches: true,
+        minMatchCharLength: 2,
+      }),
+    [items],
   )
 
-  const fuse = useMemo(() => {
-    return new Fuse(parsedData.subscriptions, {
-      keys: [
-        { name: "title", weight: 0.7 },
-        { name: "url", weight: 0.2 },
-        { name: "category", weight: 0.1 },
-      ],
-      threshold: 0.3,
-      includeMatches: true,
-      minMatchCharLength: 2,
-    })
-  }, [parsedData.subscriptions])
+  const filteredItems = useMemo(() => {
+    if (!searchQuery.trim()) return items
+    return fuse.search(searchQuery).map((result) => result.item)
+  }, [fuse, searchQuery, items])
 
-  const filteredSubscriptions = useMemo(() => {
-    if (!searchQuery.trim()) {
-      return parsedData.subscriptions.map((item, index) => ({ item, refIndex: index }))
-    }
-
-    return fuse.search(searchQuery).map((result) => ({
-      item: result.item,
-      refIndex: result.refIndex,
-    }))
-  }, [fuse, searchQuery, parsedData.subscriptions])
-
-  const selectedCount = selectedItems.size
-  const isQuotaExceeded = selectedCount > parsedData.remaining
-  const quotaWarningThreshold = Math.max(1, Math.floor(parsedData.remaining * 0.8)) // 80% of quota
-
-  const toggleItem = useCallback((index: string) => {
-    setSelectedItems((prev) => {
-      const newSet = new Set(prev)
-      if (newSet.has(index)) {
-        newSet.delete(index)
-      } else {
-        newSet.add(index)
-      }
-      return newSet
+  const toggleItem = useCallback((index: number) => {
+    setSelectedIndexes((prev) => {
+      const next = new Set(prev)
+      if (next.has(index)) next.delete(index)
+      else next.add(index)
+      return next
     })
   }, [])
 
   const toggleAll = useCallback(
     (checked: boolean) => {
-      if (checked) {
-        // Select all filtered items, but respect quota
-        const filteredIndices = filteredSubscriptions.map(({ refIndex }) => refIndex.toString())
-        setSelectedItems((prev) => {
-          const newSet = new Set(prev)
-
-          // If we would exceed quota, only select up to the remaining limit
-          let addedCount = 0
-          for (const index of filteredIndices) {
-            if (newSet.size + addedCount >= parsedData.remaining) {
-              break
-            }
-            if (!newSet.has(index)) {
-              addedCount++
-            }
-            newSet.add(index)
-          }
-          return newSet
-        })
-      } else {
-        // Deselect all filtered items - no quota restrictions for deselection
-        const filteredIndices = new Set(
-          filteredSubscriptions.map(({ refIndex }) => refIndex.toString()),
-        )
-        setSelectedItems((prev) => {
-          const newSet = new Set(prev)
-          filteredIndices.forEach((index) => newSet.delete(index))
-          return newSet
-        })
-      }
+      setSelectedIndexes((prev) => {
+        const next = new Set(prev)
+        for (const item of filteredItems) {
+          if (checked) next.add(item.index)
+          else next.delete(item.index)
+        }
+        return next
+      })
     },
-    [filteredSubscriptions, parsedData.remaining],
+    [filteredItems],
   )
 
-  const handleImport = useCallback(() => {
-    const selected = parsedData.subscriptions.filter((_, index) =>
-      selectedItems.has(index.toString()),
-    )
-    importMutation.mutate(selected)
-  }, [parsedData.subscriptions, selectedItems, importMutation])
-
-  // Calculate selection states for filtered items
-  const filteredSelectedCount = filteredSubscriptions.filter(({ refIndex }) =>
-    selectedItems.has(refIndex.toString()),
+  const filteredSelectedCount = filteredItems.filter((item) =>
+    selectedIndexes.has(item.index),
   ).length
-
   const allFilteredSelected =
-    filteredSelectedCount === filteredSubscriptions.length && filteredSubscriptions.length > 0
+    filteredSelectedCount === filteredItems.length && filteredItems.length > 0
   const someFilteredSelected =
-    filteredSelectedCount > 0 && filteredSelectedCount < filteredSubscriptions.length
+    filteredSelectedCount > 0 && filteredSelectedCount < filteredItems.length
 
   return (
     <div className="flex h-full max-w-full flex-col">
@@ -196,66 +116,13 @@ export const OpmlSelectionModal = ({
         </p>
       </div>
 
-      {/* Quota Status */}
-      <div
-        className={cn(
-          "mb-4 flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2",
-          isQuotaExceeded
-            ? "border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950"
-            : selectedCount >= quotaWarningThreshold
-              ? "border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950"
-              : "border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950",
-        )}
-      >
-        <div className="flex items-center gap-2">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div
-                className={cn(
-                  "flex size-4 items-center justify-center rounded-full",
-                  isQuotaExceeded
-                    ? "text-red"
-                    : selectedCount >= quotaWarningThreshold
-                      ? "text-yellow"
-                      : "text-green",
-                )}
-              >
-                <i
-                  className={cn(
-                    isQuotaExceeded
-                      ? "i-mgc-close-cute-re"
-                      : selectedCount >= quotaWarningThreshold
-                        ? "i-mgc-warning-cute-re"
-                        : "i-mgc-check-circle-cute-re",
-                  )}
-                />
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              {isQuotaExceeded ? (
-                <p>{t("discover.import.quota_exceeded_warning")}</p>
-              ) : selectedCount >= quotaWarningThreshold ? (
-                <p>
-                  {t("discover.import.quota_warning", {
-                    remaining: parsedData.remaining - selectedCount,
-                  })}
-                </p>
-              ) : (
-                <p>
-                  {t("discover.import.remaining_quota", {
-                    remaining: parsedData.remaining - selectedCount,
-                  })}
-                </p>
-              )}
-            </TooltipContent>
-          </Tooltip>
-          <span className="text-sm font-medium">
-            {t("discover.import.quota_status")} {selectedCount}/{parsedData.remaining}
-          </span>
-        </div>
+      <div className="mb-4 flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2">
+        <span className="text-sm font-medium">
+          共 {items.length} 个，已选 {selectedIndexes.size} 个
+          {duplicateCount > 0 ? `，其中 ${duplicateCount} 个已订阅（默认不选）` : ""}
+        </span>
       </div>
 
-      {/* Search Input */}
       <div className="mb-4">
         <Input
           placeholder={t("discover.import.search_feeds_placeholder", "Search feeds...")}
@@ -276,56 +143,45 @@ export const OpmlSelectionModal = ({
           indeterminate={someFilteredSelected}
         />
         <span className="font-medium">
-          {searchQuery.trim() ? (
-            <>
-              {t("discover.import.select_all_filtered", "Select all filtered")} (
-              {filteredSelectedCount}/{filteredSubscriptions.length})
-              {filteredSubscriptions.length < parsedData.subscriptions.length && (
-                <span className="ml-1 text-text-secondary">
-                  of {parsedData.subscriptions.length} total
-                </span>
-              )}
-            </>
-          ) : (
-            <>
-              {t("discover.import.select_all_feeds")} ({selectedItems.size}/
-              {parsedData.subscriptions.length})
-            </>
-          )}
+          {searchQuery.trim()
+            ? `${t("discover.import.select_all_filtered", "Select all filtered")} (${filteredSelectedCount}/${filteredItems.length})`
+            : `${t("discover.import.select_all_feeds")} (${selectedIndexes.size}/${items.length})`}
         </span>
       </label>
 
       <ScrollArea.ScrollArea rootClassName="-mx-4 flex-1 px-2">
         <div className="space-y-2">
-          {filteredSubscriptions.length === 0 && searchQuery.trim() ? (
+          {filteredItems.length === 0 && searchQuery.trim() ? (
             <div className="py-8 text-center text-text-secondary">
               {t("discover.import.no_feeds_found", "No feeds found matching your search.")}
             </div>
           ) : (
-            filteredSubscriptions.map(({ item, refIndex }) => {
-              const isSelected = selectedItems.has(refIndex.toString())
-
-              const wouldExceedQuota = !isSelected && selectedCount >= parsedData.remaining
+            filteredItems.map((item) => {
+              const isSelected = selectedIndexes.has(item.index)
 
               return (
                 <div
-                  key={`${item.url}-${refIndex}`}
+                  key={`${item.url}-${item.index}`}
                   className={cn(
                     "flex cursor-button items-center gap-3 rounded-lg border p-3 transition-colors hover:bg-material-medium",
                     isSelected ? "border-material-thick bg-material-thick" : "border-background",
-                    wouldExceedQuota && "cursor-not-allowed opacity-50",
                   )}
-                  onClick={() => !wouldExceedQuota && toggleItem(refIndex.toString())}
+                  onClick={() => toggleItem(item.index)}
                 >
-                  <Checkbox checked={isSelected} disabled={wouldExceedQuota} />
+                  <Checkbox checked={isSelected} />
                   <div className="min-w-0 flex-1 shrink">
-                    <div className="truncate font-medium">{item.title || "Untitled Feed"}</div>
+                    <div className="truncate font-medium">
+                      {item.title || "Untitled Feed"}
+                      {item.duplicate ? (
+                        <span className="ml-2 text-xs text-text-secondary">已订阅</span>
+                      ) : null}
+                    </div>
                     <div className="truncate text-sm text-text-secondary">{item.url}</div>
-                    {item.category && (
+                    {item.category ? (
                       <div className="mt-1 text-xs text-text-secondary opacity-80">
                         {item.category}
                       </div>
-                    )}
+                    ) : null}
                   </div>
                 </div>
               )
@@ -339,18 +195,13 @@ export const OpmlSelectionModal = ({
           Cancel
         </Button>
         <Button
-          onClick={handleImport}
-          disabled={selectedItems.size === 0 || isQuotaExceeded || importMutation.isPending}
+          onClick={() => importMutation.mutate([...selectedIndexes])}
+          disabled={selectedIndexes.size === 0 || importMutation.isPending}
           isLoading={importMutation.isPending}
         >
-          {t("words.import")} ({selectedItems.size})
-          {isQuotaExceeded && (
-            <span className="ml-1 text-xs">- {t("discover.import.quota_exceeded")}</span>
-          )}
+          {t("words.import")} ({selectedIndexes.size})
         </Button>
       </div>
     </div>
   )
 }
-
-const NumberDisplay = ({ value }) => <span className="font-bold text-text">{value ?? 0}</span>

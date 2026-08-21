@@ -1,6 +1,7 @@
 export const toastStyles = {
   toast: tw`
     group relative flex w-full items-center justify-between gap-3 rounded-2xl p-4
+    select-text
     backdrop-blur-2xl duration-300 ease-out
     max-w-md min-w-[320px]
     z-[9999999999]
@@ -22,11 +23,11 @@ export const toastStyles = {
     [&_.sonner-loader]:relative
   `,
   title: tw`
-    text-sm font-medium text-text
+    select-text text-sm font-medium text-text
     leading-tight
   `,
   description: tw`
-    text-xs text-text-secondary
+    select-text text-xs text-text-secondary
     leading-relaxed mt-1
   `,
   content: tw`

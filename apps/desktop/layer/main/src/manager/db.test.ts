@@ -12,6 +12,9 @@ vi.mock("@suhui/database/db.main", () => ({
 }))
 
 vi.mock("electron", () => ({
+  app: {
+    getPath: vi.fn(() => "/tmp/suhui-userdata"),
+  },
   dialog: {
     showErrorBox: vi.fn(),
   },
@@ -115,6 +118,7 @@ describe("db manager", () => {
     ).rejects.toThrow("candidate migrate failed")
 
     expect(ensurePostgresDatabaseExists).toHaveBeenCalledWith({
+      DB_TYPE: "postgres",
       DB_CONN: "127.0.0.1:5432/candidate_db",
       DB_PASSWORD: "candidate_pass",
       DB_USER: "candidate_user",
@@ -160,6 +164,7 @@ describe("db manager", () => {
     expect(result.active.dbConn).toBe("127.0.0.1:5432/candidate_db")
     expect(quiesce).toHaveBeenCalledTimes(1)
     expect(store.set).toHaveBeenCalledWith(StoreKey.DbConfigOverride, {
+      dbType: "postgres",
       dbConn: "127.0.0.1:5432/candidate_db",
       dbPassword: "candidate_pass",
       dbUser: "candidate_user",

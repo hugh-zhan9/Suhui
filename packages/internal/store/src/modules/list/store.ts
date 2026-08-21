@@ -1,12 +1,9 @@
 import { ListService } from "@suhui/database/services/list"
-import { clone } from "es-toolkit"
 
-import { api } from "../../context"
 import type { Hydratable, Resetable } from "../../lib/base"
-import { createImmerSetter, createTransaction, createZustandStore } from "../../lib/helper"
-import { apiMorph } from "../../morph/api"
+import { createTransaction, createZustandStore } from "../../lib/helper"
 import { storeDbMorph } from "../../morph/store-db"
-import { feedActions } from "../feed/store"
+import { whoami } from "../user/getters"
 import type { CreateListModel, ListModel } from "./types"
 
 type ListId = string
@@ -24,7 +21,6 @@ export const useListStore = createZustandStore<ListState>("list")(() => defaultS
 
 const get = useListStore.getState
 const set = useListStore.setState
-const immerSet = createImmerSetter(useListStore)
 class ListActions implements Hydratable, Resetable {
   async hydrate() {
     const lists = await ListService.getListAll()
@@ -81,44 +77,51 @@ class ListActions implements Hydratable, Resetable {
 export const listActions = new ListActions()
 
 class ListSyncServices {
-  async fetchListById(params: { id: string | undefined }) {
-    if (!params.id) return null
-    const list = await api().lists.get({ listId: params.id })
-
-    await listActions.upsertMany([apiMorph.toList(list.data.list)])
-
-    return list.data
+  /**
+   * Lists are read from the hydrated store; there is no remote list service and
+   * nothing local creates lists. Callers already tolerate a miss.
+   */
+  async fetchListById(_params: { id: string | undefined }) {
+    return null
   }
 
-  async fetchOwnedLists() {
-    const res = await api().lists.list({})
-    await listActions.upsertMany(res.data.map((list) => apiMorph.toList(list)))
-
-    return res.data.map((list) => apiMorph.toList(list))
-  }
-
+  /**
+   * 列表在本地就是一组订阅的分组：id 本地生成，直接落本地表。
+   * 原实现走远端的 lists.create，而远端服务已不存在。
+   */
   async createList(params: { list: CreateListModel }) {
-    const res = await api().lists.create({
+    const userId = whoami()?.id || ""
+    const list: ListModel = {
+      id: crypto.randomUUID(),
       title: params.list.title,
       description: params.list.description,
       image: params.list.image,
       view: params.list.view,
+      feedIds: [],
       fee: 0,
-    })
-    await listActions.upsertMany([apiMorph.toList(res.data)])
+      userId,
+      ownerUserId: userId || null,
+      subscriptionCount: null,
+      purchaseAmount: null,
+      deletedAt: null,
+      type: "list",
+    }
+
+    await listActions.upsertMany([list])
+
     const { subscriptionActions } = await import("../subscription/store")
     await subscriptionActions.upsertMany([
       {
         isPrivate: false,
-        listId: res.data.id,
+        listId: list.id,
         type: "list",
-        userId: res.data.ownerUserId || "",
-        view: res.data.view,
+        userId,
+        view: list.view,
         createdAt: new Date().toISOString(),
       },
     ])
 
-    return res.data
+    return list
   }
 
   async updateList(params: { listId: string; list: CreateListModel }) {
@@ -143,10 +146,6 @@ class ListSyncServices {
       ])
     })
 
-    tx.request(async () => {
-      await api().lists.update(nextModel)
-    })
-
     tx.persist(async () => {
       if (params.list.view === snapshot.view) return
       const { subscriptionSyncService } = await import("../subscription/store")
@@ -163,56 +162,24 @@ class ListSyncServices {
     await tx.run()
   }
 
-  async deleteList(listId: string) {
-    const list = get().lists[listId]
-    if (!list) return
-    const listToDelete = clone(list)
-
-    const tx = createTransaction()
-    tx.store(() => {
-      immerSet((draft) => {
-        delete draft.lists[listId]
-        draft.listIds = draft.listIds.filter((id) => id !== listId)
-      })
-    })
-
-    tx.request(async () => {
-      const { subscriptionSyncService } = await import("../subscription/store")
-      await subscriptionSyncService.unsubscribe([listId])
-      await api().lists.delete({ listId })
-    })
-
-    tx.rollback(() => {
-      immerSet((draft) => {
-        draft.lists[listId] = listToDelete
-        draft.listIds.push(listId)
-      })
-    })
-
-    tx.persist(() => {
-      return ListService.deleteList(listId)
-    })
-
-    await tx.run()
-  }
-
+  /**
+   * 加入列表的订阅源本来就已经在本地库里（都是从已订阅的源上操作的），
+   * 所以只需要维护列表自己的 feedIds，不需要远端把 feed 再回传一遍。
+   */
   async addFeedsToFeedList(
     params: { listId: string; feedIds: string[] } | { listId: string; feedId: string },
   ) {
-    const feeds = await api().lists.addFeeds(params)
     const list = get().lists[params.listId]
     if (!list) return
 
-    feeds.data.forEach((feed) => {
-      feedActions.upsertMany([apiMorph.toFeedFromAddFeeds(feed)])
-    })
-    await listActions.upsertMany([
-      { ...list, feedIds: [...list.feedIds, ...feeds.data.map((feed) => feed.id)] },
-    ])
+    const incoming = "feedIds" in params ? params.feedIds : [params.feedId]
+    const feedIds = [...new Set([...list.feedIds, ...incoming])]
+    if (feedIds.length === list.feedIds.length) return
+
+    await listActions.upsertMany([{ ...list, feedIds }])
   }
 
   async removeFeedFromFeedList(params: { listId: string; feedId: string }) {
-    await api().lists.removeFeed(params)
     const list = get().lists[params.listId]
     if (!list) return
 

@@ -6,7 +6,6 @@ import { getEntry } from "@suhui/store/entry/getter"
 import { getSubscriptionByFeedId } from "@suhui/store/subscription/getter"
 import { tracker } from "@suhui/tracker"
 import { useCallback } from "react"
-import { toast } from "sonner"
 
 import { disableShowAISummaryOnce } from "~/atoms/ai-summary"
 import { disableShowAITranslationOnce } from "~/atoms/ai-translation"
@@ -19,6 +18,7 @@ import {
   ROUTE_FEED_IN_LIST,
   ROUTE_FEED_PENDING,
 } from "~/constants"
+import { toast } from "~/lib/toast"
 
 import { getTimelineIdByView, useRouteParamsSelector } from "./useRouteParams"
 

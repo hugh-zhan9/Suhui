@@ -1,3 +1,4 @@
+import { zodResolver } from "@hookform/resolvers/zod"
 import { Button } from "@suhui/components/ui/button/index.js"
 import {
   Form,
@@ -18,14 +19,13 @@ import type {
   URLSchemeTemplate,
 } from "@suhui/shared/settings/interface"
 import { nextFrame } from "@suhui/utils"
-import { zodResolver } from "@hookform/resolvers/zod"
 import { memo, useCallback, useEffect, useMemo } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
-import { toast } from "sonner"
 import { z } from "zod"
 
 import { useCurrentModal } from "~/components/ui/modal/stacked/hooks"
+import { toast } from "~/lib/toast"
 import { CustomIntegrationPreview } from "~/modules/integration/CustomIntegrationPreview"
 import { PlaceholderHelp } from "~/modules/integration/PlaceholderHelp"
 import { URLSchemePreview } from "~/modules/integration/URLSchemePreview"

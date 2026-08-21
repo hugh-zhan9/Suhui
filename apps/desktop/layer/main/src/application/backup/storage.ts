@@ -1,18 +1,17 @@
-import type { PoolClient } from "pg"
-
 import { getMainPgPool } from "@suhui/database/db.main"
+import type { PoolClient } from "pg"
 
 import type { BackupEntity, BackupRecord } from "./format"
 
 export type RestoreMode = "merge" | "replace"
 
-type TableDefinition = {
+export type TableDefinition = {
   entity: Exclude<BackupEntity, "settings">
   table: string
   keyColumns: string[]
 }
 
-const tables: TableDefinition[] = [
+export const backupTables: TableDefinition[] = [
   { entity: "feeds", table: "feeds", keyColumns: ["id"] },
   { entity: "subscriptions", table: "subscriptions", keyColumns: ["id"] },
   { entity: "inboxes", table: "inboxes", keyColumns: ["id"] },
@@ -50,26 +49,26 @@ const tables: TableDefinition[] = [
   { entity: "reading_queue", table: "reading_queue", keyColumns: ["entry_id"] },
 ]
 
-const definitionsByEntity = new Map<BackupEntity, TableDefinition>(
-  tables.map((definition) => [definition.entity, definition]),
+export const definitionsByEntity = new Map<BackupEntity, TableDefinition>(
+  backupTables.map((definition) => [definition.entity, definition]),
 )
 
 export type BackupRestoreTransaction = {
-  clear(): Promise<void>
-  upsert(records: BackupRecord[]): Promise<void>
-  stageSettings(settings: Record<string, unknown>): Promise<void>
-  commit(): Promise<void>
-  rollback(): Promise<void>
+  clear: () => Promise<void>
+  upsert: (records: BackupRecord[]) => Promise<void>
+  stageSettings: (settings: Record<string, unknown>) => Promise<void>
+  commit: () => Promise<void>
+  rollback: () => Promise<void>
 }
 
 export interface BackupStorage {
-  streamRecords(): AsyncIterable<BackupRecord>
-  beginRestore(mode?: RestoreMode): Promise<BackupRestoreTransaction>
-  readPendingSettings(target: "main" | "renderer"): Promise<Record<string, unknown> | null>
-  markSettingsApplied(target: "main" | "renderer"): Promise<void>
+  streamRecords: () => AsyncIterable<BackupRecord>
+  beginRestore: (mode?: RestoreMode) => Promise<BackupRestoreTransaction>
+  readPendingSettings: (target: "main" | "renderer") => Promise<Record<string, unknown> | null>
+  markSettingsApplied: (target: "main" | "renderer") => Promise<void>
 }
 
-const quoteIdentifier = (identifier: string) => `"${identifier.replaceAll('"', '""')}"`
+export const quoteIdentifier = (identifier: string) => `"${identifier.replaceAll('"', '""')}"`
 
 const keyFor = (value: Record<string, unknown>, columns: string[]) =>
   JSON.stringify(columns.map((column) => value[column]))
@@ -80,7 +79,7 @@ export class PostgresBackupStorage implements BackupStorage {
     try {
       await client.query("BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY")
       let cursorIndex = 0
-      for (const definition of tables) {
+      for (const definition of backupTables) {
         const cursor = `suhui_backup_${cursorIndex++}`
         const order = definition.keyColumns.map(quoteIdentifier).join(", ")
         await client.query(
@@ -104,7 +103,7 @@ export class PostgresBackupStorage implements BackupStorage {
       }
       await client.query("COMMIT")
     } catch (error) {
-      await client.query("ROLLBACK").catch(() => undefined)
+      await client.query("ROLLBACK").catch(() => {})
       throw error
     } finally {
       client.release()
@@ -117,7 +116,7 @@ export class PostgresBackupStorage implements BackupStorage {
       await client.query("BEGIN")
       // Lock parents before dependants to avoid conflicting lock order with normal writes.
       const lockedTables = [
-        ...tables.map((definition) => definition.table),
+        ...backupTables.map((definition) => definition.table),
         "pending_sync_ops",
         "backup_restore_settings",
         "content_cluster_rebuild_state",
@@ -131,7 +130,7 @@ export class PostgresBackupStorage implements BackupStorage {
       await client.query("DELETE FROM backup_restore_settings WHERE id = 1")
       return new PostgresRestoreTransaction(client, mode)
     } catch (error) {
-      await client.query("ROLLBACK").catch(() => undefined)
+      await client.query("ROLLBACK").catch(() => {})
       client.release()
       throw error
     }
@@ -167,7 +166,7 @@ class PostgresRestoreTransaction implements BackupRestoreTransaction {
     // sync operations remain idempotent.
     await this.client.query('DELETE FROM "pending_sync_ops"')
     await this.client.query('DELETE FROM "content_cluster_rebuild_state"')
-    for (const definition of [...tables].reverse()) {
+    for (const definition of [...backupTables].reverse()) {
       await this.client.query(`DELETE FROM ${quoteIdentifier(definition.table)}`)
     }
   }
@@ -230,7 +229,7 @@ class PostgresRestoreTransaction implements BackupRestoreTransaction {
       await this.client.query("COMMIT")
       this.finished = true
     } catch (error) {
-      await this.client.query("ROLLBACK").catch(() => undefined)
+      await this.client.query("ROLLBACK").catch(() => {})
       this.finished = true
       throw error
     } finally {

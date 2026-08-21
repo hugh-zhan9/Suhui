@@ -8,11 +8,11 @@ import { nextFrame } from "@suhui/utils/dom"
 import { EventBus } from "@suhui/utils/event-bus"
 import type { FC } from "react"
 import { memo, useEffect } from "react"
-import { toast } from "sonner"
 
 import { FocusablePresets } from "~/components/common/Focusable"
 import { useNavigateEntry } from "~/hooks/biz/useNavigateEntry"
 import { getRouteParams, useRouteEntryId } from "~/hooks/biz/useRouteParams"
+import { toast } from "~/lib/toast"
 
 import { COMMAND_ID } from "../command/commands/id"
 import { useCommandBinding } from "../command/hooks/use-command-binding"

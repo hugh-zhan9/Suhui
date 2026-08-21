@@ -1,14 +1,9 @@
 import { feedSyncServices } from "@suhui/store/feed/store"
-import { tracker } from "@suhui/tracker"
-import { formatXml } from "@suhui/utils/utils"
 import { useMutation } from "@tanstack/react-query"
-import { useRef } from "react"
-import { useTranslation } from "react-i18next"
-import { toast } from "sonner"
 
 import { ROUTE_FEED_IN_FOLDER, ROUTE_FEED_PENDING } from "~/constants"
 import { useAuthQuery } from "~/hooks/common"
-import { followClient } from "~/lib/api-client"
+import { ipcServices } from "~/lib/client"
 import { defineQuery } from "~/lib/defineQuery"
 import { toastFetchError } from "~/lib/error-parser"
 
@@ -27,20 +22,6 @@ export const feed = {
         rootKey: ["feed"],
       },
     ),
-  claimMessage: ({ feedId }: { feedId: string }) =>
-    defineQuery(["feed", "claimMessage", feedId], async () =>
-      followClient.api.feeds.claim.message({ feedId }).then((res) => {
-        res.data.json = JSON.stringify(JSON.parse(res.data.json), null, 2)
-        const $document = new DOMParser().parseFromString(res.data.xml, "text/xml")
-        res.data.xml = formatXml(new XMLSerializer().serializeToString($document))
-        return res
-      }),
-    ),
-  claimedList: () =>
-    defineQuery(["feed", "claimedList"], async () => {
-      const res = await followClient.api.feeds.claim.list()
-      return res.data
-    }),
 }
 
 export const useFeedQuery = ({ id, url }: FeedQueryParams) =>
@@ -55,50 +36,15 @@ export const useFeedQuery = ({ id, url }: FeedQueryParams) =>
     },
   )
 
-export const useClaimFeedMutation = (feedId: string) =>
-  useMutation({
-    mutationKey: ["claimFeed", feedId],
-    mutationFn: () => feedSyncServices.claimFeed(feedId),
-
-    async onError(err) {
-      toastFetchError(err)
-    },
-    onSuccess() {
-      tracker.feedClaimed({
-        feedId,
-      })
-    },
-  })
-
+/** 刷新走主进程的本地抓取，不再打远端。 */
 export const useRefreshFeedMutation = (feedId?: string) =>
   useMutation({
     mutationKey: ["refreshFeed", feedId],
-    mutationFn: () => followClient.api.feeds.refresh({ id: feedId! }),
+    mutationFn: async () => {
+      if (!feedId) return
+      await ipcServices?.db.refreshFeed(feedId, { source: "manual-single" })
+    },
     async onError(err) {
       toastFetchError(err)
     },
   })
-
-export const useResetFeed = () => {
-  const { t } = useTranslation()
-  const toastIDRef = useRef<string | number | null>(null)
-
-  return useMutation({
-    mutationFn: async (feedId: string) => {
-      toastIDRef.current = toast.loading(t("sidebar.feed_actions.resetting_feed"))
-      await followClient.api.feeds.reset({ id: feedId })
-    },
-    onSuccess: () => {
-      toast.success(
-        t("sidebar.feed_actions.reset_feed_success"),
-        toastIDRef.current ? { id: toastIDRef.current } : undefined,
-      )
-    },
-    onError: () => {
-      toast.error(
-        t("sidebar.feed_actions.reset_feed_error"),
-        toastIDRef.current ? { id: toastIDRef.current } : undefined,
-      )
-    },
-  })
-}

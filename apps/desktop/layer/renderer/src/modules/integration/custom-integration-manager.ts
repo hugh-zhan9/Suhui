@@ -6,11 +6,11 @@ import type {
 import type { EntryModel } from "@suhui/store/entry/types"
 import { getSummary } from "@suhui/store/summary/getters"
 import { tracker } from "@suhui/tracker"
-import { toast } from "sonner"
 
 import { getActionLanguage } from "~/atoms/settings/general"
 import { getIntegrationSettings } from "~/atoms/settings/integration"
 import { parseHtml } from "~/lib/parse-html"
+import { toast } from "~/lib/toast"
 
 import { getFetchAdapter } from "./fetch-adapter"
 import { URLSchemeHandler } from "./url-scheme-handler"

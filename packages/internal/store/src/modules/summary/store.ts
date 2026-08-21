@@ -1,15 +1,11 @@
 import type { SummarySchema } from "@suhui/database/schemas/types"
 import { summaryService } from "@suhui/database/services/summary"
 import type { SupportedActionLanguage } from "@suhui/shared"
-import { toApiSupportedActionLanguage } from "@suhui/shared"
 
-import { api } from "../../context"
 import type { Hydratable, Resetable } from "../../lib/base"
 import { createImmerSetter, createTransaction, createZustandStore } from "../../lib/helper"
-import { getEntry } from "../entry/getter"
-import { SummaryGeneratingStatus } from "./enum"
+import type { SummaryGeneratingStatus } from "./enum"
 import type { StatusID } from "./utils"
-import { getGenerateSummaryStatusId } from "./utils"
 
 type SummaryModel = Omit<SummarySchema, "createdAt">
 
@@ -140,90 +136,16 @@ export const summaryActions = new SummaryActions()
 class SummarySyncService {
   private pendingPromises: Record<StatusID, Promise<string>> = {}
 
-  async generateSummary({
-    entryId,
-    target,
-    actionLanguage,
-  }: {
+  /**
+   * No local summarizer exists and there is no remote service, so this is a
+   * no-op. Rows already cached in summariesTable still render.
+   */
+  async generateSummary(_params: {
     entryId: string
     target: "content" | "readabilityContent"
     actionLanguage: SupportedActionLanguage
   }): Promise<string | null> {
-    const entry = getEntry(entryId)
-    if (!entry) return null
-
-    const state = get()
-    const existing =
-      state.data[entryId]?.[actionLanguage]?.[
-        target === "content" ? "summary" : "readabilitySummary"
-      ]
-    if (existing) {
-      return existing
-    }
-
-    const statusID = getGenerateSummaryStatusId(entryId, actionLanguage, target)
-    if (state.generatingStatus[statusID] === SummaryGeneratingStatus.Pending)
-      return this.pendingPromises[statusID] || null
-
-    immerSet((state) => {
-      state.generatingStatus[statusID] = SummaryGeneratingStatus.Pending
-    })
-
-    // Use Our AI to generate summary
-    const pendingPromise = api()
-      .ai.summary({
-        id: entryId,
-        language: toApiSupportedActionLanguage(actionLanguage),
-        target,
-      })
-      .then((summary) => {
-        immerSet((state) => {
-          if (!state.data[entryId]) {
-            state.data[entryId] = {}
-          }
-
-          state.data[entryId][actionLanguage] = {
-            summary:
-              target === "content"
-                ? summary.data || ""
-                : state.data[entryId]?.[actionLanguage]?.summary || "",
-            readabilitySummary:
-              target === "readabilityContent"
-                ? summary.data || ""
-                : state.data[entryId]?.[actionLanguage]?.readabilitySummary || null,
-            lastAccessed: Date.now(),
-          }
-          state.generatingStatus[statusID] = SummaryGeneratingStatus.Success
-        })
-
-        return summary.data || ""
-      })
-      .catch((error) => {
-        immerSet((state) => {
-          state.generatingStatus[statusID] = SummaryGeneratingStatus.Error
-        })
-
-        throw error
-      })
-      .finally(() => {
-        delete this.pendingPromises[statusID]
-      })
-
-    this.pendingPromises[statusID] = pendingPromise
-    const summary = await pendingPromise
-
-    if (summary) {
-      summaryActions.upsertMany([
-        {
-          entryId,
-          summary: target === "content" ? summary : "",
-          language: actionLanguage ?? null,
-          readabilitySummary: target === "readabilityContent" ? summary : null,
-        },
-      ])
-    }
-
-    return summary
+    return null
   }
 }
 

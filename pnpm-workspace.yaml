@@ -17,6 +17,7 @@ ignorePatchFailures: false
 onlyBuiltDependencies:
   - "@tsslint/core"
   - "@tsslint/eslint"
+  - better-sqlite3
   - bufferutil
   - core-js
   - dtrace-provider

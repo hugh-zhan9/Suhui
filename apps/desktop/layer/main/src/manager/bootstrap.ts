@@ -5,20 +5,21 @@ import { callWindowExpose } from "@suhui/shared/bridge"
 import { DEV, LEGACY_APP_PROTOCOL } from "@suhui/shared/constants"
 import { env } from "@suhui/shared/env.desktop"
 import { createBuildSafeHeaders } from "@suhui/utils/headers"
-import { IMAGE_PROXY_URL } from "@suhui/utils/img-proxy"
 import { parse } from "cookie-es"
 import { app, BrowserWindow, net, protocol, session } from "electron"
 import { join } from "pathe"
 
 import { appendBootLog } from "~/manager/boot-log"
 import { DBManager } from "~/manager/db"
-import { shouldForwardRendererConsoleError } from "~/manager/renderer-console-filter"
 import { appendRefreshAuditLog } from "~/manager/refresh-audit-log"
+import { shouldForwardRendererConsoleError } from "~/manager/renderer-console-filter"
 import { SyncManager } from "~/manager/sync"
 import { configureSyncLogger } from "~/manager/sync-logger"
-import { snapshotBrowserWindow } from "~/manager/window-diagnostics"
 import { WindowManager } from "~/manager/window"
+import { snapshotBrowserWindow } from "~/manager/window-diagnostics"
 
+import { backupApplicationService } from "../application/backup/service"
+import { DbService } from "../ipc/services/db"
 import { migrateAuthCookiesToNewApiDomain } from "../lib/auth-cookie-migration"
 import { handleUrlRouting } from "../lib/router"
 import { store } from "../lib/store"
@@ -26,8 +27,6 @@ import { updateNotificationsToken } from "../lib/user"
 import { logger } from "../logger"
 import { initializeRemoteAccess, shutdownRemoteAccess } from "../remote/lifecycle"
 import { cleanupOldRender } from "../updater/hot-updater"
-import { DbService } from "../ipc/services/db"
-import { backupApplicationService } from "../application/backup/service"
 import { AppManager } from "./app"
 import { logNetworkRequestError } from "./network-error-log"
 
@@ -35,7 +34,6 @@ const apiURL = process.env["VITE_API_URL"] || import.meta.env.VITE_API_URL
 const bootLogPath = join(app.getPath("logs"), "boot.log")
 const buildSafeHeaders = createBuildSafeHeaders(env.VITE_WEB_URL, [
   env.VITE_OPENPANEL_API_URL || "",
-  IMAGE_PROXY_URL,
   env.VITE_API_URL,
   "https://readwise.io",
 ])
@@ -147,7 +145,11 @@ export class BootstrapManager {
     DBManager.init({ background: true })
       .then(async () => {
         logger.info("[Startup] DBManager.init:done")
-        appendBootLog(bootLogPath, "manager:db-ready")
+        const effective = DBManager.getEffectiveConfig()
+        appendBootLog(bootLogPath, "manager:db-ready", {
+          dbType: effective.dbType,
+          source: effective.source,
+        })
         try {
           await backupApplicationService.recoverPendingMainSettings()
         } catch (error) {

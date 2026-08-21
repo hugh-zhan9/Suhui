@@ -1,3 +1,4 @@
+import { zodResolver } from "@hookform/resolvers/zod"
 import { Button } from "@suhui/components/ui/button/index.js"
 import {
   Form,
@@ -11,19 +12,18 @@ import { Input, InputOTP, InputOTPGroup, InputOTPSlot } from "@suhui/components/
 import { Label } from "@suhui/components/ui/label/index.js"
 import { useWhoami } from "@suhui/store/user/hooks"
 import { userActions } from "@suhui/store/user/store"
-import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation } from "@tanstack/react-query"
 import { m, useAnimation } from "motion/react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import QRCode from "react-qr-code"
-import { toast } from "sonner"
 import { z } from "zod"
 
 import { useCurrentModal, useModalStack } from "~/components/ui/modal/stacked/hooks"
 import { twoFactor } from "~/lib/auth"
 import { getFetchErrorInfo } from "~/lib/error-parser"
+import { toast } from "~/lib/toast"
 import { useHasPassword } from "~/queries/auth"
 
 import { NoPasswordHint } from "./update-password-form"

@@ -1,16 +1,16 @@
+import type { ListWithStats } from "@follow-app/client-sdk"
 import { Spring } from "@suhui/components/constants/spring.js"
 import { Avatar, AvatarFallback, AvatarImage } from "@suhui/components/ui/avatar/index.jsx"
 import { ActionButton, Button } from "@suhui/components/ui/button/index.js"
 import { LoadingCircle } from "@suhui/components/ui/loading/index.jsx"
 import { ScrollArea } from "@suhui/components/ui/scroll-area/index.js"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@suhui/components/ui/tooltip/index.js"
+import { useListStore } from "@suhui/store/list/store"
 import { usePrefetchUser, useUserById, useWhoami } from "@suhui/store/user/hooks"
 import { getAvatarUrl } from "@suhui/utils"
 import { nextFrame, stopPropagation } from "@suhui/utils/dom"
 import { getStorageNS } from "@suhui/utils/ns"
 import { cn } from "@suhui/utils/utils"
-import type { ListWithStats } from "@follow-app/client-sdk"
-import { useQuery } from "@tanstack/react-query"
 import { useAtom } from "jotai"
 import { atomWithStorage } from "jotai/utils"
 import { useAnimationControls } from "motion/react"
@@ -21,7 +21,6 @@ import { useTranslation } from "react-i18next"
 import { m } from "~/components/common/Motion"
 import { useCurrentModal } from "~/components/ui/modal/stacked/hooks"
 import { useFollow } from "~/hooks/biz/useFollow"
-import { followClient } from "~/lib/api-client"
 import { UrlBuilder } from "~/lib/url-builder"
 import { FeedIcon } from "~/modules/feed/feed-icon"
 
@@ -353,14 +352,17 @@ const Subscriptions = ({ userId }: { userId: string }) => {
   )
 }
 
+/** 列表取自本地 store：本地版只有一个用户，没有「别人的列表」。 */
 const useUserListsQuery = (userId: string) => {
-  return useQuery({
-    queryKey: ["lists", userId],
-    queryFn: async () => {
-      const res = await followClient.api.lists.list({ userId })
-      return res.data
-    },
-  })
+  const me = useWhoami()
+  const lists = useListStore((state) => state.lists)
+
+  const data = useMemo(() => {
+    if (!me?.id || userId !== me.id) return [] as ListWithStats[]
+    return Object.values(lists) as unknown as ListWithStats[]
+  }, [lists, me?.id, userId])
+
+  return { data, isLoading: false } as const
 }
 
 const Lists = ({ lists }: { lists: ListWithStats[] }) => {

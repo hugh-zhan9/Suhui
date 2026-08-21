@@ -47,7 +47,7 @@ import { useSubViewRightView, useSubViewTitleValue } from "./hooks"
  *
  * @component
  * @example
- * // Used for routes like /discover, /power, /action, /rsshub
+ * // Used for routes like /discover, /power, /rsshub
  * // Provides full-screen modal-like experience
  */
 export function SubviewLayout() {

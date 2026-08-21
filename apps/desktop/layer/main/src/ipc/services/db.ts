@@ -1,36 +1,42 @@
-import { and, eq, inArray, isNotNull, isNull } from "drizzle-orm"
 import { randomUUID } from "node:crypto"
 
+import { executeMainRawSql } from "@suhui/database/db.main"
 import { EntryService } from "@suhui/database/services/entry"
 import { FeedService } from "@suhui/database/services/feed"
 import { createEntryChangeEventV1 } from "@suhui/shared/entry-change"
+import { and, eq, inArray, isNotNull, isNull } from "drizzle-orm"
 import { session } from "electron"
 import type { IpcContext } from "electron-ipc-decorator"
 import { IpcMethod, IpcService } from "electron-ipc-decorator"
 
-import { store } from "~/lib/store"
-import { localReadingPipeline } from "~/application/local-reading/pipeline"
-import { entryApplicationService } from "~/application/entry/service"
 import { entryQueryService } from "~/application/entry/query-service"
 import type { EntryListQuery } from "~/application/entry/query-types"
+import { entryApplicationService } from "~/application/entry/service"
 import { feedApplicationService } from "~/application/feed/service"
+import { localReadingPipeline } from "~/application/local-reading/pipeline"
 import { subscriptionApplicationService } from "~/application/subscription/service"
-import { DBManager } from "~/manager/db"
-import { drainPendingOps } from "~/manager/sync-applier"
+import { store } from "~/lib/store"
 import { logger } from "~/logger"
-import { debugStartupReadTrace } from "~/startup-read-trace"
-import { appendRefreshAuditTrace } from "~/manager/refresh-audit-log"
+import { DBManager } from "~/manager/db"
+import type { DbType } from "~/manager/db-config"
 import { broadcastLocalFeedRefreshCompleted } from "~/manager/local-feed-refresh-events"
+import { appendRefreshAuditTrace } from "~/manager/refresh-audit-log"
+import { drainPendingOps } from "~/manager/sync-applier"
+import { debugStartupReadTrace } from "~/startup-read-trace"
 
 import { mapExecuteResult } from "./db-execute-result"
 import { fetchFeedUrl } from "./feed-fetch"
+import { resolveFeedDocument } from "./feed-source-resolver"
 import {
+  defaultPreviewFeedView,
+  feedDiscoveryCandidateMaxRedirects,
+  feedDiscoveryCandidateTimeoutMs,
   isLocalFeedRefreshCandidate,
   localFeedRefreshBatchConcurrency,
   localFeedRefreshRequestTimeoutMs,
 } from "./local-feed-refresh"
+import { buildPreviewDiagnostics } from "./preview-feed-diagnostics"
 import { buildEntryMediaPayload } from "./rss-entry-media"
-import { parseRssFeed } from "./rss-parser"
 import {
   buildExistingEntryReuseIndex,
   buildFailedFeed,
@@ -38,9 +44,10 @@ import {
   buildStableLocalEntryId,
   resolveExistingEntryIdForRefresh,
 } from "./rss-refresh"
-import { resolvePreviewFeedUrl } from "./rsshub-external"
 import { resolvePublishedAtMs, toTimestampMs } from "./rss-time"
-import { buildPreviewDiagnostics } from "./preview-feed-diagnostics"
+import { resolvePreviewFeedUrl } from "./rsshub-external"
+import { hydrateScrapedArticleContent } from "./scraped-article-content"
+import { resolveFeedSourceTarget } from "./site-scrape-url"
 
 type RefreshSource =
   | "manual-single"
@@ -146,9 +153,11 @@ export class DbService extends IpcService {
     allowPublicFallback = false,
     diagnosticsEnabled = false,
     trace?: RefreshTrace,
+    { allowDiscovery = true }: { allowDiscovery?: boolean } = {},
   ) {
     const customBaseUrl = store.get("rsshubCustomUrl") ?? ""
-    const resolvedUrl = resolvePreviewFeedUrl(feedUrl, {
+    const sourceTarget = resolveFeedSourceTarget(feedUrl)
+    const resolvedUrl = resolvePreviewFeedUrl(sourceTarget.requestUrl, {
       customBaseUrl,
       allowPublicFallback,
     })
@@ -222,7 +231,29 @@ export class DbService extends IpcService {
       console.info("[db.previewFeed] diagnostics", afterDiagnostics)
     }
 
-    const parsed = parseRssFeed(fetchResult.body)
+    const resolvedDocument = await resolveFeedDocument({
+      mode: sourceTarget.mode,
+      // relative hrefs and the scrape target must resolve against the document
+      // we actually received, not the url we asked for
+      requestUrl: fetchResult.finalUrl || resolvedUrl,
+      body: fetchResult.body,
+      contentType: fetchResult.contentType,
+      // an indirect url (rsshub://) resolves to an instance address, which must
+      // never be persisted as the feed's own url
+      allowDiscovery: allowDiscovery && resolvedUrl === sourceTarget.requestUrl,
+      fetchCandidate: async (candidateUrl) => {
+        const candidateResult = await fetchFeedUrl(candidateUrl, {
+          timeoutMs: feedDiscoveryCandidateTimeoutMs,
+          maxRedirects: feedDiscoveryCandidateMaxRedirects,
+        })
+        return { body: candidateResult.body, contentType: candidateResult.contentType }
+      },
+    })
+    const { parsed } = resolvedDocument
+    // Only a feed found by discovery or scraping replaces the stored url; a
+    // direct hit keeps the user-entered url so rsshub:// stays instance-agnostic.
+    const persistedFeedUrl =
+      resolvedDocument.source === "direct" ? feedUrl : resolvedDocument.feedUrl
 
     if (trace) {
       refreshLog("info", trace, "parse.completed", {
@@ -230,6 +261,9 @@ export class DbService extends IpcService {
         parsedSiteUrl: parsed.siteUrl || null,
         itemCount: parsed.items.length,
         newestPublishedAt: parsed.items[0]?.publishedAt || null,
+        documentSource: resolvedDocument.source,
+        discoveredVia: resolvedDocument.discoveredVia ?? null,
+        persistedFeedUrl,
       })
     }
 
@@ -240,7 +274,7 @@ export class DbService extends IpcService {
     const feed = {
       type: "feed" as const,
       id: feedId,
-      url: feedUrl,
+      url: persistedFeedUrl,
       title: parsed.title || "Untitled Feed",
       description: parsed.description || null,
       image: parsed.image || null,
@@ -255,24 +289,39 @@ export class DbService extends IpcService {
       updatedAt: now,
     }
 
+    // A scraped listing carries only an excerpt, so pull the full article text
+    // for entries that have none stored yet. Entries we already have are
+    // skipped, which keeps a refresh to the newly discovered articles.
+    const scrapedContentByEntryId =
+      resolvedDocument.source === "scraped"
+        ? await hydrateScrapedArticleContent({
+            feedId,
+            items: parsed.items,
+            onError: ({ url, reason }) =>
+              console.warn("[scraped article content] skipped", { url, reason }),
+          })
+        : new Map<string, string>()
+
     const entries = parsed.items.slice(0, 50).map((item) => {
+      const entryId = buildStableLocalEntryId({
+        feedId,
+        guid: item.guid,
+        url: item.url,
+        title: item.title,
+        publishedAt: item.publishedAt,
+      })
+      const content = scrapedContentByEntryId.get(entryId) ?? item.content
       const mediaPayload = buildEntryMediaPayload({
-        content: item.content,
+        content,
         url: item.url,
       })
 
       return {
-        id: buildStableLocalEntryId({
-          feedId,
-          guid: item.guid,
-          url: item.url,
-          title: item.title,
-          publishedAt: item.publishedAt,
-        }),
+        id: entryId,
         feedId,
         title: item.title || "Untitled",
         url: item.url || null,
-        content: item.content || null,
+        content: content || null,
         description: item.description || null,
         guid: item.guid,
         author: item.author || null,
@@ -305,17 +354,18 @@ export class DbService extends IpcService {
       feed,
       entries,
       subscription: undefined,
+      sourceOptions: resolvedDocument.sourceOptions,
       analytics: {
         updatesPerWeek: null,
         subscriptionCount: null,
         latestEntryPublishedAt: entries[0]?.publishedAt || null,
-        view: 1,
+        view: defaultPreviewFeedView,
       },
     }
   }
 
   @IpcMethod()
-  async getDialect() {
+  async getDialect(): Promise<DbType> {
     return DBManager.getDialect()
   }
 
@@ -328,8 +378,7 @@ export class DbService extends IpcService {
   ) {
     try {
       await this.waitForDatabase()
-      const pgPool = DBManager.getPgPool()
-      const result = await pgPool.query(sql, (params as any[]) ?? [])
+      const result = await executeMainRawSql(sql, params ?? [], method ?? "all")
       return mapExecuteResult(method, result)
     } catch (error: any) {
       console.error(`[DbService] Error executing SQL: ${sql} with params:`, params, error)
@@ -497,7 +546,9 @@ export class DbService extends IpcService {
         ownerUserId: existingFeed.ownerUserId || null,
       })
 
-      const preview = await this.buildPreviewData(existingFeed.url, feedId, false, false, trace)
+      const preview = await this.buildPreviewData(existingFeed.url, feedId, false, false, trace, {
+        allowDiscovery: false,
+      })
       const refreshedFeed = buildRefreshedFeed(existingFeed as any, preview.feed as any)
 
       refreshLog("info", trace, "refresh.persist_feed", {

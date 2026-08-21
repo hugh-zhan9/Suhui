@@ -1,3 +1,5 @@
+import type { ListAnalyticsSchema } from "@follow-app/client-sdk"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { Button } from "@suhui/components/ui/button/index.js"
 import {
   Form,
@@ -19,19 +21,17 @@ import { subscriptionSyncService } from "@suhui/store/subscription/store"
 import { whoami } from "@suhui/store/user/getters"
 import { tracker } from "@suhui/tracker"
 import { cn } from "@suhui/utils/utils"
-import type { ListAnalyticsSchema } from "@follow-app/client-sdk"
-import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation } from "@tanstack/react-query"
 import { useCallback, useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
-import { toast } from "sonner"
 import { z } from "zod"
 
 import { useCurrentModal } from "~/components/ui/modal/stacked/hooks"
 import { useI18n } from "~/hooks/common"
 import { getFetchErrorMessage, toastFetchError } from "~/lib/error-parser"
 import { getNewIssueUrl } from "~/lib/issues"
+import { toast } from "~/lib/toast"
 
 import { useTOTPModalWrapper } from "../profile/hooks"
 import { ViewSelectorRadioGroup } from "../shared/ViewSelectorRadioGroup"
@@ -58,7 +58,9 @@ export const ListForm: Component<{
 }> = ({ id: _id, defaultValues = defaultValue, onSuccess }) => {
   const feedQuery = usePrefetchListById(_id)
 
-  const id = feedQuery.data?.list.id || _id
+  // 列表详情不再有远端来源（fetchListById 现在只会返回 null），
+  // 列表本体与订阅信息一律取自本地 store。
+  const id = _id
   const list = useListById(id)
 
   const { t } = useTranslation()
@@ -90,8 +92,6 @@ export const ListForm: Component<{
             id,
 
             onSuccess,
-            subscriptionData: feedQuery.data?.subscription,
-            analytics: feedQuery.data?.analytics,
             list,
             isLoading: feedQuery.isLoading,
           }}

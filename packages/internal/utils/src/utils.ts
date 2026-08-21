@@ -227,27 +227,35 @@ export const resolveUrlWithBase = (url: string, baseUrl: string) => {
   }
 }
 
+/** Inline letter avatar, so a missing favicon needs no third-party service. */
+const letterAvatarDataUrl = (label?: string) => {
+  const initials = (label || "?").slice(0, 2).toUpperCase()
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">` +
+    `<rect width="64" height="64" rx="12" fill="#d4d4d8"/>` +
+    `<text x="32" y="42" font-family="system-ui,-apple-system,sans-serif" font-size="26" ` +
+    `font-weight="600" text-anchor="middle" fill="#52525b">${initials}</text></svg>`
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`
+}
+
+/**
+ * Site icons come from the site's own favicon; there is no icon service any
+ * more. The fallback is generated locally, so nothing leaves the machine.
+ */
 export const getUrlIcon = (url: string, _fallback?: boolean | undefined) => {
   let src: string
   let fallbackUrl = ""
 
   try {
-    const { host } = new URL(url)
+    const { host, protocol } = new URL(url)
     const pureDomain = parse(host).domainWithoutSuffix
-    fallbackUrl = `https://avatar.vercel.sh/${pureDomain}.svg?text=${pureDomain
-      ?.slice(0, 2)
-      .toUpperCase()}`
-    src = `https://icons.folo.is/${host}`
+    fallbackUrl = letterAvatarDataUrl(pureDomain ?? host)
+    src = `${protocol}//${host}/favicon.ico`
   } catch {
-    const pureDomain = parse(url).domainWithoutSuffix
-    src = `https://avatar.vercel.sh/${pureDomain}.svg?text=${pureDomain?.slice(0, 2).toUpperCase()}`
-  }
-  const ret = {
-    src,
-    fallbackUrl,
+    src = letterAvatarDataUrl(parse(url).domainWithoutSuffix ?? url)
   }
 
-  return ret
+  return { src, fallbackUrl }
 }
 
 export const getAvatarUrl = (user?: {
@@ -262,12 +270,11 @@ export const getAvatarUrl = (user?: {
         url: user.image,
         inBrowser: WEB_BUILD,
       })
-    } else {
-      const fallbackUrl = `https://avatar.vercel.sh/${user.handle || user.name}.svg?text=${(user.handle || user.name)?.slice(0, 2).toUpperCase()}`
-      return `https://unavatar.webp.se/gravatar/${user.email}?fallback=${encodeURIComponent(fallbackUrl)}`
     }
+    // no gravatar lookup: a user without an image gets a locally drawn avatar
+    return letterAvatarDataUrl(user.handle || user.name || user.email || "?")
   } else {
-    return `https://avatar.vercel.sh/folo`
+    return letterAvatarDataUrl("?")
   }
 }
 

@@ -91,22 +91,6 @@ export const usePrefetchFeed = (id: string | undefined, options?: GeneralQueryOp
   })
 }
 
-export const usePrefetchFeedByUrl = (url: string, options?: GeneralQueryOptions) => {
-  return useQuery({
-    ...options,
-    queryKey: ["feed", url],
-    queryFn: () => feedSyncServices.fetchFeedByUrl({ url }),
-  })
-}
-
-export const usePrefetchFeedAnalytics = (id: string | string[], options?: GeneralQueryOptions) => {
-  return useQuery({
-    ...options,
-    queryKey: ["feed", "analytics", id],
-    queryFn: () => feedSyncServices.fetchAnalytics(id),
-  })
-}
-
 const feedUnreadDirtySetAtom = atom(new Set<string>())
 
 // 1. feedId may be feedId, or `inbox-id` or `feedId, feedId,` or `list-id`, or `all`, or `collections`

@@ -5,12 +5,12 @@ import { useUserRole } from "@suhui/store/user/hooks"
 import { tracker } from "@suhui/tracker"
 import { createElement, useCallback, useMemo } from "react"
 import { useTranslation } from "react-i18next"
-import { toast } from "sonner"
 
 import { useShowAITranslation } from "~/atoms/ai-translation"
 import { useEntryIsInReadability, useEntryIsInReadabilitySuccess } from "~/atoms/readability"
 import { useActionLanguage, useGeneralSettingKey } from "~/atoms/settings/general"
 import { useModalStack } from "~/components/ui/modal/stacked/hooks"
+import { toast } from "~/lib/toast"
 
 import { ImageGalleryContent } from "./components/ImageGalleryContent"
 

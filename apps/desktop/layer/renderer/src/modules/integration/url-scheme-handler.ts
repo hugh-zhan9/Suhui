@@ -1,7 +1,7 @@
 import type { URLSchemeTemplate } from "@suhui/shared/settings/interface"
-import { toast } from "sonner"
 
 import { ipcServices } from "~/lib/client"
+import { toast } from "~/lib/toast"
 
 export class URLSchemeHandler {
   private static instance: URLSchemeHandler

@@ -28,7 +28,7 @@ export const viteRenderBaseConfig = {
     format: "es",
   },
   optimizeDeps: {
-    exclude: ["sqlocal", "@follow-app/client-sdk"],
+    exclude: ["@follow-app/client-sdk"],
   },
   resolve: {
     alias: {

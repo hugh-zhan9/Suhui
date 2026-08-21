@@ -1,12 +1,12 @@
 import { IN_ELECTRON } from "@suhui/shared/constants"
 import { useTranslation } from "react-i18next"
-import { toast } from "sonner"
 
 import { useModalStack } from "~/components/ui/modal/stacked/hooks"
 import { useNavigateEntry } from "~/hooks/biz/useNavigateEntry"
 import { getRouteParams } from "~/hooks/biz/useRouteParams"
 import { useDeleteSubscription } from "~/hooks/biz/useSubscriptionActions"
 import { copyToClipboard } from "~/lib/clipboard"
+import { toast } from "~/lib/toast"
 import { UrlBuilder } from "~/lib/url-builder"
 import { ListForm } from "~/modules/discover/ListForm"
 

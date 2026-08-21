@@ -6,14 +6,10 @@ import { basename, dirname, join, resolve } from "node:path"
 import { store } from "~/lib/store"
 
 import { openUtf8LineSource, readUtf8Lines, writeFileAtomically } from "./file"
-import {
-  type BackupRecord,
-  type BackupValidation,
-  readBackupRecords,
-  validateBackupBundle,
-  writeBackupBundle,
-} from "./format"
-import { type BackupStorage, PostgresBackupStorage, type RestoreMode } from "./storage"
+import type { BackupRecord, BackupValidation } from "./format"
+import { readBackupRecords, validateBackupBundle, writeBackupBundle } from "./format"
+import type { BackupStorage, RestoreMode } from "./storage"
+import { createBackupStorage } from "./storage-factory"
 
 type ReplaceConfirmation = {
   path: string
@@ -33,8 +29,8 @@ type BackupServiceOptions = {
   storage?: BackupStorage
   now?: () => number
   settings?: {
-    read(): BackupSettings
-    write(value: BackupSettings): void
+    read: () => BackupSettings
+    write: (value: BackupSettings) => void
   }
   safetySnapshotDirectory?: string
 }
@@ -68,14 +64,22 @@ const defaultSettings = {
 
 export class BackupApplicationService {
   private operation: Promise<void> = Promise.resolve()
-  private readonly storage: BackupStorage
+  private readonly injectedStorage?: BackupStorage
   private readonly now: () => number
   private readonly settings: NonNullable<BackupServiceOptions["settings"]>
   private readonly safetySnapshotDirectory?: string
   private readonly confirmations = new Map<string, ReplaceConfirmation>()
 
+  /**
+   * 惰性解析：模块级单例在数据库初始化之前就构造出来了，
+   * 此时问方言会抛 "Database not initialized"。
+   */
+  private get storage(): BackupStorage {
+    return this.injectedStorage ?? createBackupStorage()
+  }
+
   constructor(options: BackupServiceOptions = {}) {
-    this.storage = options.storage ?? new PostgresBackupStorage()
+    this.injectedStorage = options.storage
     this.now = options.now ?? Date.now
     this.settings = options.settings ?? defaultSettings
     this.safetySnapshotDirectory = options.safetySnapshotDirectory
@@ -209,8 +213,8 @@ export class BackupApplicationService {
               input.mode === "merge"
                 ? previousSettings.rendererSettings || pendingSettings.rendererSettings
                   ? {
-                      ...(previousSettings.rendererSettings ?? {}),
-                      ...(pendingSettings.rendererSettings ?? {}),
+                      ...previousSettings.rendererSettings,
+                      ...pendingSettings.rendererSettings,
                     }
                   : undefined
                 : pendingSettings.rendererSettings

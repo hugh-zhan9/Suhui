@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto"
 
+import { runInMainTransaction } from "@suhui/database/db.main"
 import type { EntryRuleActions } from "@suhui/database/schemas/postgres"
 import {
   collectionsTable,
@@ -176,8 +177,8 @@ export class RuleApplicationService {
     entries: Awaited<ReturnType<typeof EntryService.getEntryMany>>,
   ) {
     if (!rule || entries.length === 0) return 0
-    const db = DBManager.getDB()
-    return db.transaction(async (transaction) => {
+    // 用方言无关的事务：drizzle 的 sqlite 驱动是同步的，db.transaction 不接受异步回调
+    return runInMainTransaction(async (transaction) => {
       let applied = 0
       for (const entry of entries) {
         const now = Date.now()

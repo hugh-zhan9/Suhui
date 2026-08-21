@@ -1,11 +1,22 @@
+import { parseSiteScrapeUrl, SITE_SCRAPE_PROTOCOL } from "./site-scrape-url"
+
 type FeedLike = {
   id: string
   url: string | null
   siteUrl: string | null
 }
 
-export const normalizeFeedUrlForDedup = (value?: string | null) => {
+export const normalizeFeedUrlForDedup = (value?: string | null): string | null => {
   if (!value) return null
+
+  // sitescrape: carries an opaque target url, so normalize the target and keep
+  // the prefix; a scraped source must never dedup against a real feed url
+  const scrapeTarget = parseSiteScrapeUrl(value)
+  if (scrapeTarget) {
+    const normalizedTarget = normalizeFeedUrlForDedup(scrapeTarget)
+    return normalizedTarget && `${SITE_SCRAPE_PROTOCOL}${normalizedTarget}`
+  }
+
   try {
     const url = new URL(value)
     url.hash = ""

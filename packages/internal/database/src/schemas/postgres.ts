@@ -1,6 +1,6 @@
+import type { EntrySettings } from "@follow-app/client-sdk"
 import type { FeedViewType } from "@suhui/constants"
 import type { SupportedActionLanguage } from "@suhui/shared/language"
-import type { EntrySettings } from "@follow-app/client-sdk"
 import { sql } from "drizzle-orm"
 import {
   bigint,
@@ -379,5 +379,28 @@ export const readingQueueTable = pgTable(
     index("idx_reading_queue_completed").on(table.completedAt),
   ],
 )
+
+/**
+ * 恢复流程自己的日志表。此前只以 db.main.ts 的裸 DDL 存在，
+ * 访问也全走裸 SQL；补上定义以便两个方言共用同一套类型化访问。
+ */
+export const backupRestoreSettingsTable = pgTable("backup_restore_settings", {
+  id: integer("id").primaryKey(),
+  settings: jsonb("settings").$type<Record<string, unknown>>().notNull(),
+  mainApplied: boolean("main_applied").notNull().default(false),
+  rendererApplied: boolean("renderer_applied").notNull().default(false),
+  createdAt: bigint("created_at", { mode: "number" }).notNull(),
+})
+
+/** 聚类重建的中断续跑状态。同样此前只有裸 DDL。 */
+export const contentClusterRebuildStateTable = pgTable("content_cluster_rebuild_state", {
+  id: integer("id").primaryKey(),
+  afterEntryId: text("after_entry_id"),
+  batchEntryIds: jsonb("batch_entry_ids").$type<string[]>().notNull().default([]),
+  manualEntryIds: jsonb("manual_entry_ids").$type<string[]>().notNull().default([]),
+  processed: integer("processed").notNull().default(0),
+  clustered: integer("clustered").notNull().default(0),
+  updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
+})
 
 export type AiChatMessagesModel = typeof aiChatMessagesTable.$inferSelect

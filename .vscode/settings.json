@@ -81,5 +81,6 @@
   "[swift]": {
     "editor.defaultFormatter": "swiftlang.swift-vscode"
   },
-  "npm.exclude": "**/packages/**"
+  "npm.exclude": "**/packages/**",
+  "kiroAgent.configureMCP": "Disabled"
 }

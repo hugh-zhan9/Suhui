@@ -24,10 +24,9 @@ import { whoami } from "@suhui/store/user/getters"
 import { tracker } from "@suhui/tracker"
 import { cn } from "@suhui/utils/utils"
 import { useMutation } from "@tanstack/react-query"
-import { useCallback, useEffect, useMemo, useRef } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
-import { toast } from "sonner"
 import { z } from "zod"
 
 import { Autocomplete } from "~/components/ui/auto-completion"
@@ -36,9 +35,12 @@ import { getRouteParams } from "~/hooks/biz/useRouteParams"
 import { useI18n } from "~/hooks/common"
 import { getFetchErrorInfo, getFetchErrorMessage, toastFetchError } from "~/lib/error-parser"
 import { parseFeedPreviewError } from "~/lib/feed-preview-error"
+import { toast } from "~/lib/toast"
 import { feed as feedQuery, useFeedQuery } from "~/queries/feed"
 
 import { ViewSelectorRadioGroup } from "../shared/ViewSelectorRadioGroup"
+import type { FeedSourceOptionModel } from "./FeedSourcePicker"
+import { FeedSourcePicker } from "./FeedSourcePicker"
 import { FeedSummary } from "./FeedSummary"
 import { RsshubRecoveryAction } from "./rsshub-recovery-action"
 
@@ -72,9 +74,34 @@ export const FeedForm: Component<{
 
   onSuccess?: () => void
 }> = ({ id: _id, defaultValues, url, onSuccess }) => {
-  const queryParams = { id: _id, url }
+  // When a site offers more than one source, switching simply re-previews the
+  // other url; the subscribe payload always follows the previewed feed.
+  const [selectedSourceUrl, setSelectedSourceUrl] = useState<string>()
+  const queryParams = { id: _id, url: selectedSourceUrl ?? url }
 
   const feedQuery = useFeedQuery(queryParams)
+
+  const sourceOptions = feedQuery.data?.sourceOptions as
+    | {
+        active: FeedSourceOptionModel
+        alternatives: FeedSourceOptionModel[]
+        staleLagDays?: number
+      }
+    | undefined
+
+  const [sourceChoice, setSourceChoice] = useState<{
+    options: FeedSourceOptionModel[]
+    staleLagDays?: number
+  } | null>(null)
+
+  useEffect(() => {
+    // Previewing a chosen url reports no alternatives, so the learned set is kept.
+    if (!sourceOptions || sourceOptions.alternatives.length === 0) return
+    setSourceChoice({
+      options: [sourceOptions.active, ...sourceOptions.alternatives],
+      staleLagDays: sourceOptions.staleLagDays,
+    })
+  }, [sourceOptions])
 
   const id = feedQuery.data?.feed.id || _id
   const feed = useFeedByIdOrUrl({
@@ -125,6 +152,15 @@ export const FeedForm: Component<{
                 https://github.com/radix-ui/primitives/issues/926
                 https://github.com/radix-ui/primitives/issues/3129
                 https://github.com/radix-ui/primitives/pull/3225 */}
+                {sourceChoice && (
+                  <FeedSourcePicker
+                    options={sourceChoice.options}
+                    activeUrl={feed.url}
+                    staleLagDays={sourceChoice.staleLagDays}
+                    disabled={feedQuery.isFetching}
+                    onSelect={setSelectedSourceUrl}
+                  />
+                )}
                 <div className="flex">
                   <div className="w-0 grow truncate">
                     <FeedInnerForm
@@ -193,6 +229,8 @@ export const FeedForm: Component<{
         feedQuery.data?.subscription,
         feedQuery.error,
         feedQuery.isLoading,
+        feedQuery.isFetching,
+        sourceChoice,
         errorMessage,
         previewError,
         handleRsshubRecovered,

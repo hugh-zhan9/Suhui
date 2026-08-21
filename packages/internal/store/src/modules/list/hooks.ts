@@ -65,13 +65,6 @@ export const useOwnedLists = () => {
   )
 }
 
-export const usePrefetchLists = () => {
-  return useQuery({
-    queryKey: ["owned", "lists"],
-    queryFn: () => listSyncServices.fetchOwnedLists(),
-  })
-}
-
 export const usePrefetchListById = (id: string | undefined, options?: GeneralQueryOptions) => {
   return useQuery({
     ...options,

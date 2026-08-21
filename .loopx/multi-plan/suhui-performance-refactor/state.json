@@ -1,0 +1,75 @@
+{
+  "schema_version": 2,
+  "feature_slug": "suhui-performance-refactor",
+  "plan_package": "docs/loopx/plans/2026-07-13-suhui-performance-refactor",
+  "source_spec": "docs/loopx/design/2026-07-13-suhui-performance-refactor/需求设计文档.md",
+  "status": "complete",
+  "plans": [
+    {
+      "path": "docs/loopx/plans/2026-07-13-suhui-performance-refactor/01-entry-query-and-transports.md",
+      "status": "complete",
+      "plan_review": {
+        "status": "passed",
+        "reviewed_at": "2026-07-13T17:18:04Z",
+        "summary": "Plan-level final review found no Critical or Important issues; 3/3 child requirements covered. Production fixture/P95/EXPLAIN evidence remains assigned to child plan 06."
+      },
+      "ready_for_spec_review": true
+    },
+    {
+      "path": "docs/loopx/plans/2026-07-13-suhui-performance-refactor/02-desktop-hydration-and-readiness.md",
+      "status": "complete",
+      "plan_review": {
+        "status": "passed",
+        "reviewed_at": "2026-07-14T08:21:28Z",
+        "summary": "Plan-level final review found no Critical or Important issues; bounded hydration, atomic snapshot reconciliation, lazy search indexing, and readiness contracts are ready for spec review. Production P95 remains plan 06."
+      },
+      "ready_for_spec_review": true
+    },
+    {
+      "path": "docs/loopx/plans/2026-07-13-suhui-performance-refactor/03-refresh-changesets.md",
+      "status": "complete",
+      "plan_review": {
+        "status": "passed",
+        "reviewed_at": "2026-07-15T02:59:46Z",
+        "summary": "Plan-level final review verified 6/6 child requirements with no Critical or Important findings after closing fallback shell dedupe, reconnect compensation, and read error recovery gaps. Production P95 remains child plan 06."
+      },
+      "ready_for_spec_review": true
+    },
+    {
+      "path": "docs/loopx/plans/2026-07-13-suhui-performance-refactor/04-remote-progressive-bootstrap.md",
+      "status": "complete",
+      "plan_review": {
+        "status": "passed",
+        "reviewed_at": "2026-07-15T06:45:29Z",
+        "summary": "Plan-level final review verified 8/8 requirements with no unresolved findings after closing bootstrap/SSE/fallback consistency issues and completing the required production-browser functional smoke at desktop and 390px. Production P95 and fixture EXPLAIN remain child plan 06."
+      },
+      "ready_for_spec_review": true
+    },
+    {
+      "path": "docs/loopx/plans/2026-07-13-suhui-performance-refactor/05-renderer-startup-and-sidebar.md",
+      "status": "complete",
+      "plan_review": {
+        "status": "passed",
+        "reviewed_at": "2026-07-15T11:33:53Z",
+        "summary": "Plan-level final review verified 8/8 requirements with no Critical, Important, or Minor findings. Production Electron first-use smoke, component interaction automation, normal/CI bundle elision guards, and plan-06 metric handoff are ready for spec review; production fixture/P95 remains child plan 06."
+      },
+      "ready_for_spec_review": true
+    },
+    {
+      "path": "docs/loopx/plans/2026-07-13-suhui-performance-refactor/06-performance-and-packaging-gates.md",
+      "status": "complete",
+      "plan_review": {
+        "status": "passed",
+        "reviewed_at": "2026-07-15T21:32:51Z",
+        "summary": "Plan-level final review verified 7/7 requirements with no Critical, Important, or Minor findings after closing stable feed timing, complete production-source identity, and session-safe sidebar failure recovery. Current production evidence has 482 retained samples, all mandatory P95 groups passing, ready normal/stress query plans, and a clean real Forge artifact inspection."
+      },
+      "ready_for_spec_review": true
+    }
+  ],
+  "spec_final_review": {
+    "path": ".loopx/final-review/2026-07-13-suhui-performance-refactor.md",
+    "reviewed_at": "2026-07-15T22:26:00Z",
+    "ready_for_finish": "Yes",
+    "summary": "Spec-level final review verified 30/30 source anchors with no Critical, Important, or Minor findings after closing real feed-switch P95 and PostgreSQL IPC/HTTP parity gaps."
+  }
+}

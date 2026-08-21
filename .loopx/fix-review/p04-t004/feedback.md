@@ -1,0 +1,15 @@
+# Child 04 T-004 Review Feedback Ledger
+
+| ID     | Severity  | Source                      | Finding                                                                                      | Basis                    | Decision       | Evidence                                                                                                                                                                                                                                    | Verification                                                                                                                  | Re-review                    | Status |
+| ------ | --------- | --------------------------- | -------------------------------------------------------------------------------------------- | ------------------------ | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------- | ------ |
+| FR-001 | Important | canonical task review F-001 | pending bootstrap drops reconnect/ChangeSet recalibration and holds the lock through entries | AC-5; AC-7; D-008; T-004 | accepted_fixed | one bootstrap owner with a coalescing trailing slot; metadata lock releases before entry wait; strongest reloadEntries wins; delayed ChangeSet and reconnect tests retain final selection/rows and use cursor-free reset pages              | shell+manager 73 tests PASS; Prettier and diff checks PASS; electron-main typecheck baseline-blocked with no shell diagnostic | canonical attempt 2 approved | closed |
+| FR-002 | Important | canonical task review F-002 | shallow envelope checks allow invalid or partially applied subscription/unread cache state   | AC-5; D-008; T-004       | accepted_fixed | local predicates normalize every consumed subscription/unread record and derive next caches/selection entirely in temporaries before one publish; malformed follow-up tests retain prior metadata, unread, selection, rows, and retry state | shell+manager 73 tests PASS; malformed subscription and unread cases PASS; Prettier and diff checks PASS                      | canonical attempt 2 approved | closed |
+
+## Lancet Decisions
+
+- FR-001: keep one fallback bootstrap owner; release metadata serialization before entries work and coalesce one trailing request using the strongest `reloadEntries` requirement. Do not add a queue framework.
+- FR-002: validate and normalize the complete consumed subscription/unread shapes into temporaries, derive selection there, then publish both caches together. Do not duplicate unrelated store bootstrap abstractions into the fallback script.
+
+## Canonical Closure
+
+Attempt 2 returned `SPEC_COMPLIANT / Approved` with no findings. FR-001 and FR-002 are closed; artifact: `.loopx/subagent-exec/reviews/04-T-004/review-artifact.json`.

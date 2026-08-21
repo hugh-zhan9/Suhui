@@ -110,3 +110,52 @@ describe("fetchFeedUrl", () => {
     await expectation
   })
 })
+
+describe("瞬时连接错误重试", () => {
+  const fetchMock = vi.mocked(session.defaultSession.fetch)
+
+  beforeEach(() => {
+    vi.useRealTimers()
+    fetchMock.mockReset()
+  })
+
+  const okResponse = (body: string) =>
+    ({
+      status: 200,
+      headers: new Headers({ "content-type": "application/atom+xml" }),
+      text: vi.fn().mockResolvedValue(body),
+      url: "https://example.com/atom.xml",
+    }) as any
+
+  it("连接被关闭后重试一次并成功", async () => {
+    fetchMock
+      .mockRejectedValueOnce(new Error("net::ERR_CONNECTION_CLOSED"))
+      .mockResolvedValueOnce(okResponse("<feed />"))
+
+    const result = await fetchFeedUrl("https://example.com/atom.xml", { timeoutMs: 1000 })
+
+    expect(result.body).toBe("<feed />")
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it("重试后仍失败则抛出原错误", async () => {
+    fetchMock.mockRejectedValue(new Error("net::ERR_CONNECTION_RESET"))
+
+    await expect(fetchFeedUrl("https://example.com/atom.xml", { timeoutMs: 1000 })).rejects.toThrow(
+      "ERR_CONNECTION_RESET",
+    )
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it.each(["HTTP 404", "net::ERR_NAME_NOT_RESOLVED", "Feed request timed out after 1000ms"])(
+    "不重试非瞬时错误：%s",
+    async (message) => {
+      fetchMock.mockRejectedValue(new Error(message))
+
+      await expect(
+        fetchFeedUrl("https://example.com/atom.xml", { timeoutMs: 1000 }),
+      ).rejects.toThrow()
+      expect(fetchMock).toHaveBeenCalledTimes(1)
+    },
+  )
+})

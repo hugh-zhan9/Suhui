@@ -79,6 +79,7 @@ export class AppService extends IpcService {
       envInfo: getDesktopEnvInfo(),
       override:
         (store.get(StoreKey.DbConfigOverride) as DbConfigOverride | null | undefined) ?? null,
+      defaultSqlitePath: DBManager.getDefaultSqlitePath(),
     })
   }
 
@@ -91,6 +92,7 @@ export class AppService extends IpcService {
   async switchDbConfig(_context: IpcContext, input: SwitchDbConfigInput): Promise<DbConfigView> {
     const currentConfig = DBManager.getEffectiveConfig()
     const normalizedInput = {
+      dbType: currentConfig.dbType,
       dbConn: input.dbConn?.trim() ?? "",
       dbUser: input.dbUser?.trim() ?? currentConfig.dbUser,
       dbPassword: input.dbPassword ?? currentConfig.dbPassword,

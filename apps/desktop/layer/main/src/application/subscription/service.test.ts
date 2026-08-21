@@ -140,6 +140,15 @@ describe("SubscriptionApplicationService", () => {
       },
       entries: [],
       subscription: undefined,
+      sourceOptions: {
+        active: {
+          url: "https://www.gugegt.com/feed/",
+          kind: "feed" as const,
+          itemCount: 1,
+          newestPublishedAt: null,
+        },
+        alternatives: [],
+      },
       analytics: {
         updatesPerWeek: null,
         subscriptionCount: null,
@@ -223,6 +232,15 @@ describe("SubscriptionApplicationService", () => {
         },
         entries: [],
         subscription: undefined,
+        sourceOptions: {
+          active: {
+            url: "https://blog.yasking.org/rss.xml",
+            kind: "feed" as const,
+            itemCount: 1,
+            newestPublishedAt: null,
+          },
+          alternatives: [],
+        },
         analytics: {
           updatesPerWeek: null,
           subscriptionCount: null,

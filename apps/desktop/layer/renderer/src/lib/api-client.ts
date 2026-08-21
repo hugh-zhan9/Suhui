@@ -7,10 +7,6 @@ import { NetworkStatus, setApiStatus } from "~/atoms/network"
 
 import { getClientId, getSessionId } from "./client-session"
 
-export const DISCOVER_API_BASE_URL = "https://api.folo.is"
-
-export const getDiscoverApiBaseURL = () => DISCOVER_API_BASE_URL
-
 const createClient = (
   baseURL: string,
   options?: {
@@ -81,8 +77,6 @@ const registerClientInterceptors = (client: FollowClient) => {
 }
 
 export const followClient = createClient(env.VITE_API_URL)
-export const discoverClient = createClient(getDiscoverApiBaseURL(), { credentials: "omit" })
 registerClientInterceptors(followClient)
-registerClientInterceptors(discoverClient)
 
 export const followApi = followClient.api

@@ -1,3 +1,4 @@
+import { zodResolver } from "@hookform/resolvers/zod"
 import { Avatar, AvatarFallback, AvatarImage } from "@suhui/components/ui/avatar/index.jsx"
 import { Button } from "@suhui/components/ui/button/index.js"
 import {
@@ -13,17 +14,16 @@ import { Input, TextArea } from "@suhui/components/ui/input/index.js"
 import { useWhoami } from "@suhui/store/user/hooks"
 import { userSyncService } from "@suhui/store/user/store"
 import { cn } from "@suhui/utils/utils"
-import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation } from "@tanstack/react-query"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
-import { toast } from "sonner"
 import { z } from "zod"
 
 import { AvatarUploadModal } from "~/components/ui/crop/AvatarUploadModal"
 import { useModalStack } from "~/components/ui/modal/stacked/hooks"
 import { uploadAvatarBlob } from "~/lib/avatar-upload"
 import { toLocalProfileUpdatePayload } from "~/lib/profile-payload"
+import { toast } from "~/lib/toast"
 
 const socialLinksSchema = z.object({
   twitter: z.string().max(32).optional(),

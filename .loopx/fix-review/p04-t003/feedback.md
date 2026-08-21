@@ -1,0 +1,21 @@
+# Child 04 T-003 Review Feedback Ledger
+
+| ID     | Severity  | Source                      | Finding                                                                                     | Basis                                                | Decision                | Evidence                                                                                                                                                                                                                      | Verification                                                                                                                                                                                                        | Re-review                    | Status |
+| ------ | --------- | --------------------------- | ------------------------------------------------------------------------------------------- | ---------------------------------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- | ------ |
+| FR-001 | Important | canonical task review F-001 | an SSE failure before the first ready event leaves the UI indefinitely labeled `connecting` | AC-5; D-008; TC-5; T-003 explicit connection phases  | accepted_fixed          | `sse-handler.ts` forces an error notification even when stored state is already false; coordinator and renderer regressions cover failure-before-ready then ready recovery                                                    | renderer 4 files/26 tests PASS; store 4 files/59 tests PASS; store typecheck PASS; renderer typecheck baseline-blocked only by unchanged `useEntryContextMenu.ts:41`; removal assertion and `git diff --check` PASS | canonical attempt 2 approved | closed |
+| FR-002 | Minor     | canonical task review F-002 | mobile/desktop bounds claim is unsupported by class-only happy-dom tests                    | AC-7; D-008; TC-5; T-003 expected execution evidence | accepted_no_code_change | repository search found no browser/viewport geometry harness; report and test name now limit evidence to pane presence/visibility classes and defer computed bounds to the required child-plan production browser smoke check | infrastructure search found no Playwright/Puppeteer/WebDriver viewport suite; required renderer class/state suite PASS                                                                                              | canonical attempt 2 approved | closed |
+
+## Lancet Decisions
+
+- FR-001: preserve the existing SSE coordinator and add the smallest explicit first-failure notification/phase path; do not introduce a second connection owner or new state library.
+- FR-002: reuse existing browser or viewport geometry infrastructure if available. If no proportionate infrastructure exists, remove the unsupported claim and explicitly record the remaining browser-layout evidence gap; do not add a bespoke browser harness solely for this task.
+
+## Verification Notes
+
+- FR-001 smallest remedy: the existing private `setConnected` helper accepts an explicit notify-when-unchanged flag only for real connection errors. Initial handler registration remains the same, reconnect scheduling remains owned by `RemoteSSEHandler`, and the renderer still suppresses only the synchronous initial-state callback.
+- FR-002 basis result: this repository has happy-dom component tests but no CSS-loading browser automation or computed-geometry assertions. The plan already requires a production Remote smoke check at 390px and desktop width, so that remains the proportionate evidence gate.
+- Re-review is required before FR-001 can close because the originating canonical task review marked it Important.
+
+## Canonical Closure
+
+Attempt 2 returned `SPEC_COMPLIANT / Approved` with no findings. FR-001 and FR-002 are closed; artifact: `.loopx/subagent-exec/reviews/04-T-003/review-artifact.json`.

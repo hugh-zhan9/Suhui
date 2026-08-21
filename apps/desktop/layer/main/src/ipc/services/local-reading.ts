@@ -3,8 +3,9 @@ import { readFile, writeFile } from "node:fs/promises"
 import type { IpcContext } from "electron-ipc-decorator"
 import { IpcMethod, IpcService } from "electron-ipc-decorator"
 
-import { backupApplicationService } from "~/application/backup/service"
 import { annotationApplicationService } from "~/application/annotations/service"
+import { backupApplicationService } from "~/application/backup/service"
+import { dbConversionApplicationService } from "~/application/db-conversion/service"
 import { dedupApplicationService } from "~/application/dedup/service"
 import { opmlApplicationService } from "~/application/opml/service"
 import { readingQueueApplicationService } from "~/application/reading-queue/service"
@@ -53,6 +54,20 @@ export class LocalReadingService extends IpcService {
     } finally {
       await finishMaintenance()
     }
+  }
+
+  @IpcMethod()
+  async convertDatabase(
+    _context: IpcContext,
+    input: {
+      to: "postgres" | "sqlite"
+      targetDbConn?: string
+      targetDbUser?: string
+      targetDbPassword?: string
+    },
+  ) {
+    await DBManager.waitUntilUsable()
+    return dbConversionApplicationService.convert(input)
   }
 
   @IpcMethod()

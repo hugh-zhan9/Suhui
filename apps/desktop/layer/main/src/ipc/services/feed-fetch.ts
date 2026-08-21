@@ -7,6 +7,7 @@ export type FeedFetchResult = {
   finalUrl: string
   redirectChain: string[]
   statusCode?: number
+  contentType?: string
 }
 
 type FeedFetchOptions = {
@@ -18,6 +19,20 @@ type FeedFetchOptions = {
 }
 
 const DEFAULT_MAX_REDIRECTS = 12
+/** One extra attempt for connection-level flakiness. */
+const TRANSIENT_RETRY_DELAY_MS = 500
+
+/**
+ * Connection-level failures that a second attempt usually clears. HTTP statuses,
+ * timeouts and name-resolution failures are deliberately excluded: retrying them
+ * only doubles the wait or repeats a permanent error.
+ */
+const TRANSIENT_NETWORK_ERROR =
+  /ERR_CONNECTION_CLOSED|ERR_CONNECTION_RESET|ERR_EMPTY_RESPONSE|ERR_SOCKET_NOT_CONNECTED|ERR_CONNECTION_ABORTED/
+
+const isTransientNetworkError = (error: Error) => TRANSIENT_NETWORK_ERROR.test(error.message)
+
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 const isRedirectCancelledError = (error: Error) => {
   return error.message.toLowerCase().includes("redirect was cancelled")
@@ -112,6 +127,7 @@ export async function fetchFeedUrl(
         finalUrl: response.url || requestUrl,
         redirectChain,
         statusCode: response.status,
+        contentType: response.headers.get("content-type") ?? undefined,
       }
     } catch (error) {
       const normalizedError =
@@ -145,6 +161,7 @@ export async function fetchFeedUrl(
             finalUrl,
             redirectChain: finalUrl !== requestUrl ? [finalUrl] : [],
             statusCode: response.status,
+            contentType: response.headers.get("content-type") ?? undefined,
           }
         } catch (fallbackError) {
           const normalizedFallbackError =
@@ -160,5 +177,13 @@ export async function fetchFeedUrl(
     }
   }
 
-  return visit(url, [], new Set<string>())
+  try {
+    return await visit(url, [], new Set<string>())
+  } catch (error) {
+    const normalizedError = error instanceof Error ? error : new Error(String(error))
+    if (!isTransientNetworkError(normalizedError)) throw normalizedError
+
+    await delay(TRANSIENT_RETRY_DELAY_MS)
+    return visit(url, [], new Set<string>())
+  }
 }

@@ -3,9 +3,9 @@ import type { FeedViewType } from "@suhui/constants"
 import { subscriptionSyncService } from "@suhui/store/subscription/store"
 import { useMutation } from "@tanstack/react-query"
 import { Trans, useTranslation } from "react-i18next"
-import { toast } from "sonner"
 
 import { createErrorToaster } from "~/lib/error-parser"
+import { toast } from "~/lib/toast"
 
 import { useCurrentModal } from "../../components/ui/modal/stacked/hooks"
 

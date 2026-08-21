@@ -28,7 +28,7 @@ export default defineConfig({
         entry: "./layer/main/src/index.ts",
       },
       rollupOptions: {
-        external: ["bufferutil", "utf-8-validate", "pg", "pg-native"],
+        external: ["better-sqlite3", "bufferutil", "utf-8-validate", "pg", "pg-native"],
       },
     },
     resolve: {

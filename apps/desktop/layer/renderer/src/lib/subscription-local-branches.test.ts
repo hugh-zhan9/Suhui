@@ -2,11 +2,13 @@ import { FeedViewType } from "@suhui/constants"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 const {
+  ipcInvokeMock,
   remoteBatchUpdateMock,
   remoteCategoryDeleteMock,
   remoteCategoryUpdateMock,
   invalidateQueriesMock,
 } = vi.hoisted(() => ({
+  ipcInvokeMock: vi.fn(),
   remoteBatchUpdateMock: vi.fn(),
   remoteCategoryDeleteMock: vi.fn(),
   remoteCategoryUpdateMock: vi.fn(),
@@ -40,7 +42,11 @@ vi.mock("@suhui/database/services/subscription", () => ({
   },
 }))
 
-import { subscriptionActions, subscriptionSyncService, useSubscriptionStore } from "@suhui/store/subscription/store"
+import {
+  subscriptionActions,
+  subscriptionSyncService,
+  useSubscriptionStore,
+} from "@suhui/store/subscription/store"
 import { useEntryStore } from "@suhui/store/entry/store"
 
 const makeEmptySetMap = () => ({
@@ -103,10 +109,20 @@ describe("subscription local branches", () => {
     invalidateQueriesMock.mockClear()
 
     remoteBatchUpdateMock.mockRejectedValue(new Error("should not call remote batchUpdate"))
-    remoteCategoryDeleteMock.mockRejectedValue(new Error("should not call remote categories.delete"))
-    remoteCategoryUpdateMock.mockRejectedValue(new Error("should not call remote categories.update"))
+    remoteCategoryDeleteMock.mockRejectedValue(
+      new Error("should not call remote categories.delete"),
+    )
+    remoteCategoryUpdateMock.mockRejectedValue(
+      new Error("should not call remote categories.update"),
+    )
 
-    ;(globalThis as any).window = { electron: { ipcRenderer: {} } }
+    // runtimeClient 在桌面端一律走主进程 IPC；这里只需存在 invoke，
+    // 断言的是「不碰远端 api()」而不是 IPC 的返回值。
+    ipcInvokeMock.mockReset()
+    ipcInvokeMock.mockResolvedValue(undefined)
+    ;(globalThis as any).window = {
+      electron: { ipcRenderer: { invoke: ipcInvokeMock } },
+    }
 
     await subscriptionActions.upsertManyInSession([
       {

@@ -3,10 +3,10 @@ import type { CustomIntegration } from "@suhui/shared/settings/interface"
 import { nanoid } from "nanoid"
 import { memo, useCallback, useMemo } from "react"
 import { useTranslation } from "react-i18next"
-import { toast } from "sonner"
 
 import { setIntegrationSetting, useIntegrationSettingValue } from "~/atoms/settings/integration"
 import { useModalStack } from "~/components/ui/modal/stacked/hooks"
+import { toast } from "~/lib/toast"
 
 import { createSetting } from "../../helper/builder"
 import { SettingSectionTitle } from "../../section"

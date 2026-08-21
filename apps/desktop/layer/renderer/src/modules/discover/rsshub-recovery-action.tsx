@@ -1,8 +1,8 @@
 import { Button } from "@suhui/components/ui/button/index.js"
-import { toast } from "sonner"
 
 import { useModalStack } from "~/components/ui/modal/stacked/hooks"
 import { ipcServices } from "~/lib/client"
+import { toast } from "~/lib/toast"
 
 import { ExternalRsshubConfigModal } from "../rsshub/external-config-modal"
 import { canRecoverRsshubByError } from "./rsshub-recovery"

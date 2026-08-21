@@ -1,16 +1,16 @@
+import { repository } from "@pkg"
 import { useOnce } from "@suhui/hooks"
 import { nextFrame } from "@suhui/utils/dom"
 import { getStorageNS } from "@suhui/utils/ns"
-import { repository } from "@pkg"
 import type { FC } from "react"
 import { Suspense, use, useEffect, useRef } from "react"
-import { toast } from "sonner"
 
 import { useServerConfigs } from "~/atoms/server-configs"
 import { Markdown } from "~/components/ui/markdown/Markdown"
 import { PeekModal } from "~/components/ui/modal/inspire/PeekModal"
 import { useModalStack } from "~/components/ui/modal/stacked/hooks"
 import { Paper } from "~/components/ui/paper"
+import { toast } from "~/lib/toast"
 import { DebugRegistry } from "~/modules/debug/registry"
 
 import { linkifyChangelog } from "./utils"

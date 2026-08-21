@@ -1,3 +1,4 @@
+import { zodResolver } from "@hookform/resolvers/zod"
 import { Button } from "@suhui/components/ui/button/index.js"
 import { Divider } from "@suhui/components/ui/divider/index.js"
 import {
@@ -12,15 +13,14 @@ import { Input } from "@suhui/components/ui/input/Input.js"
 import type { LoginRuntime } from "@suhui/shared/auth"
 import { IN_ELECTRON } from "@suhui/shared/constants"
 import { env } from "@suhui/shared/env.desktop"
-import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
-import { toast } from "sonner"
 import { z } from "zod"
 
 import { useModalStack } from "~/components/ui/modal/stacked/hooks"
 import { useRecaptchaToken } from "~/hooks/common"
 import { loginHandler, signUp, twoFactor } from "~/lib/auth"
+import { toast } from "~/lib/toast"
 import { handleSessionChanges } from "~/queries/auth"
 
 import { TOTPForm } from "../profile/two-factor"

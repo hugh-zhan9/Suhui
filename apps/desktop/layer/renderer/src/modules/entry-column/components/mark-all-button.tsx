@@ -9,12 +9,12 @@ import type { FC, ReactNode } from "react"
 import { useCallback, useEffect, useState } from "react"
 import { useHotkeys } from "react-hotkeys-hook"
 import { Trans, useTranslation } from "react-i18next"
-import { toast } from "sonner"
 
 import { HotkeyScope } from "~/constants"
 import { getRouteParams } from "~/hooks/biz/useRouteParams"
 import { useI18n } from "~/hooks/common"
 import { useRequireLogin } from "~/hooks/common/useRequireLogin"
+import { toast } from "~/lib/toast"
 import { COMMAND_ID } from "~/modules/command/commands/id"
 import { useCommandBinding, useCommandShortcuts } from "~/modules/command/hooks/use-command-binding"
 

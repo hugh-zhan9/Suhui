@@ -7,12 +7,12 @@ import { nextFrame } from "@suhui/utils/dom"
 import { useMutation } from "@tanstack/react-query"
 import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { toast } from "sonner"
 import { useOnClickOutside } from "usehooks-ts"
 
 import { useNavigateEntry } from "~/hooks/biz/useNavigateEntry"
 import { getRouteParams } from "~/hooks/biz/useRouteParams"
 import { createErrorToaster } from "~/lib/error-parser"
+import { toast } from "~/lib/toast"
 
 export const RenameCategoryForm = ({
   currentCategory,

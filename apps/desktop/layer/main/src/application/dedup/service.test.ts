@@ -55,6 +55,65 @@ vi.mock("@suhui/database/services/content-cluster", () => ({
 
 vi.mock("~/manager/db", () => ({ DBManager: { getDB, getPgPool, runTrackedOperation } }))
 
+type RebuildStateRow = {
+  id: number
+  afterEntryId: string | null
+  batchEntryIds: string[]
+  manualEntryIds: string[]
+  processed: number
+  clustered: number
+  updatedAt: number
+}
+
+/**
+ * 支撑 drizzle 链式调用的最小 fake。重建状态原先走裸 pg SQL，测试是靠拦截 SQL
+ * 字符串来断言检查点；改走 ORM 后，这里维护同一行状态供断言读取。
+ */
+const makeDbMock = (findMany: unknown, initialState?: Partial<RebuildStateRow> | null) => {
+  let row: RebuildStateRow | null = initialState
+    ? {
+        id: 1,
+        afterEntryId: null,
+        batchEntryIds: [],
+        manualEntryIds: [],
+        processed: 0,
+        clustered: 0,
+        updatedAt: 0,
+        ...initialState,
+      }
+    : null
+
+  const db = {
+    query: { entriesTable: { findMany } },
+    insert: () => ({
+      values: (values: RebuildStateRow) => ({
+        onConflictDoNothing: async () => {
+          row ??= { ...values }
+        },
+      }),
+    }),
+    select: () => ({
+      from: () => ({
+        where: async () => (row ? [row] : []),
+      }),
+    }),
+    update: () => ({
+      set: (patch: Partial<RebuildStateRow>) => ({
+        where: async () => {
+          if (row) row = { ...row, ...patch }
+        },
+      }),
+    }),
+    delete: () => ({
+      where: async () => {
+        row = null
+      },
+    }),
+  }
+
+  return { db, state: () => row }
+}
+
 import { DedupApplicationService } from "./service"
 
 describe("DedupApplicationService", () => {
@@ -115,7 +174,7 @@ describe("DedupApplicationService", () => {
       .fn()
       .mockResolvedValueOnce([{ id: "entry-b" }, { id: "entry-a" }])
       .mockResolvedValueOnce([])
-    getDB.mockReturnValue({ query: { entriesTable: { findMany: rebuildFindMany } } })
+    getDB.mockReturnValue(makeDbMock(rebuildFindMany).db as never)
     getEntryMany.mockImplementation(async (ids: string[]) =>
       ids.length === 2 ? [second, first] : ids[0] === "entry-a" ? [first] : [second],
     )
@@ -183,38 +242,13 @@ describe("DedupApplicationService", () => {
       url: "https://example.com/a",
       publishedAt: 100,
     }
-    let checkpointIds: string[] = []
-    let checkpointManualIds: string[] = []
-    const poolQuery = vi.fn(async (statement: string, parameters?: unknown[]) => {
-      if (statement.includes("SELECT after_entry_id")) {
-        return {
-          rows: [
-            {
-              after_entry_id: null,
-              batch_entry_ids: checkpointIds,
-              manual_entry_ids: checkpointManualIds,
-              processed: 0,
-              clustered: 0,
-            },
-          ],
-        }
-      }
-      if (statement.includes("SET batch_entry_ids = $1")) {
-        checkpointIds = JSON.parse(parameters?.[0] as string)
-        checkpointManualIds = JSON.parse(parameters?.[1] as string)
-      }
-      if (statement.includes("SET after_entry_id = $1")) {
-        checkpointIds = []
-        checkpointManualIds = []
-      }
-      return { rows: [] }
-    })
-    getPgPool.mockReturnValue({ query: poolQuery })
     const findMany = vi
       .fn()
       .mockResolvedValueOnce([{ id: entry.id }])
       .mockResolvedValueOnce([])
-    getDB.mockReturnValue({ query: { entriesTable: { findMany } } })
+    // 检查点改由 ORM 持久化，因此断言直接读 fake 维护的那一行状态
+    const dbMock = makeDbMock(findMany)
+    getDB.mockReturnValue(dbMock.db as never)
     getMembersByEntryIds
       .mockResolvedValueOnce([{ entryId: entry.id, clusterId: "legacy" }])
       .mockResolvedValueOnce([{ entryId: entry.id, clusterId: "rebuilt" }])
@@ -225,12 +259,13 @@ describe("DedupApplicationService", () => {
 
     const service = new DedupApplicationService()
     await expect(service.rebuild()).rejects.toThrow("injected batch failure")
-    expect(checkpointIds).toEqual([entry.id])
-    expect(checkpointManualIds).toEqual([entry.id])
+    expect(dbMock.state()?.batchEntryIds).toEqual([entry.id])
+    expect(dbMock.state()?.manualEntryIds).toEqual([entry.id])
 
     await expect(service.rebuild()).resolves.toMatchObject({ processed: 1 })
     expect(setManualRepresentative).toHaveBeenCalledWith("rebuilt", entry.id, expect.any(Number))
-    expect(checkpointIds).toEqual([])
+    // 跑完后状态行已被删除，检查点自然清空
+    expect(dbMock.state()?.batchEntryIds ?? []).toEqual([])
   })
 
   it("serializes a representative change behind an in-progress rebuild", async () => {
@@ -242,7 +277,7 @@ describe("DedupApplicationService", () => {
       await entriesGate
       return []
     })
-    getDB.mockReturnValue({ query: { entriesTable: { findMany } } })
+    getDB.mockReturnValue(makeDbMock(findMany).db as never)
     getCluster.mockResolvedValue({ id: "cluster-1", manualRepresentativeEntryId: null })
     getMembersByEntryIds.mockResolvedValue([{ entryId: "entry-b", clusterId: "cluster-1" }])
 
@@ -272,7 +307,7 @@ describe("DedupApplicationService", () => {
       await entriesGate
       return []
     })
-    getDB.mockReturnValue({ query: { entriesTable: { findMany } } })
+    getDB.mockReturnValue(makeDbMock(findMany).db as never)
     getMembersByEntryIds.mockResolvedValue([
       { entryId: "entry-a", clusterId: "cluster-1", fingerprint: "fingerprint-1" },
     ])

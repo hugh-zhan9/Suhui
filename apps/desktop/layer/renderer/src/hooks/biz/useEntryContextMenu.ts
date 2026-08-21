@@ -6,9 +6,9 @@ import {
   MENU_ITEM_SEPARATOR,
   MenuItemSeparator,
   MenuItemText,
-  type MenuItemInput,
   useShowContextMenu,
 } from "~/atoms/context-menu"
+import type { EntryActionItem } from "~/hooks/biz/useEntryActions"
 import { HIDE_ACTIONS_IN_ENTRY_CONTEXT_MENU } from "~/hooks/biz/useEntryActions"
 import { useFeedActions } from "~/hooks/biz/useFeedActions"
 import { useContextMenu } from "~/hooks/common/useContextMenu"
@@ -23,7 +23,7 @@ export function useEntryContextMenu({
   entryId: string
   view: FeedViewType
   feedId: string
-  actionConfigs?: MenuItemInput[]
+  actionConfigs?: Array<EntryActionItem | false | null | undefined>
 }) {
   const { t } = useTranslation("common")
   const showContextMenu = useShowContextMenu()
@@ -36,6 +36,8 @@ export function useEntryContextMenu({
   const buildMenuItems = useCallback(() => {
     return [
       ...actionConfigs.filter((item) => {
+        // 条目动作允许按条件拼装（cond && new EntryActionMenuItem()），先滤掉假值
+        if (!item) return false
         if (item instanceof MenuItemSeparator) return true
 
         return !HIDE_ACTIONS_IN_ENTRY_CONTEXT_MENU.includes(item.id)

@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "slug": "suhui-performance-refactor",
+  "created_at": "2026-07-13T07:35:40.207Z",
+  "worktree": "/Users/zhangyukun/project/Suhui",
+  "branch": "main",
+  "head": "01f18d72b6a946b8d2ca2501741c12255ac6e174",
+  "head_short": "01f18d7",
+  "source": "docs/loopx/plans/2026-07-13-suhui-performance-refactor/00-overview.md"
+}

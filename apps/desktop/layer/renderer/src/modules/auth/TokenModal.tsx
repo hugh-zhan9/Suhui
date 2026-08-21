@@ -1,3 +1,4 @@
+import { zodResolver } from "@hookform/resolvers/zod"
 import { Button } from "@suhui/components/ui/button/index.js"
 import {
   Form,
@@ -7,14 +8,13 @@ import {
   FormMessage,
 } from "@suhui/components/ui/form/index.jsx"
 import { Input } from "@suhui/components/ui/input/index.js"
-import { zodResolver } from "@hookform/resolvers/zod"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
-import { toast } from "sonner"
 import { z } from "zod"
 
 import { oneTimeToken } from "~/lib/auth"
+import { toast } from "~/lib/toast"
 import { handleSessionChanges } from "~/queries/auth"
 
 const formSchema = z.object({

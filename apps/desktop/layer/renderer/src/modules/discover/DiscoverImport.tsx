@@ -1,8 +1,8 @@
+import { zodResolver } from "@hookform/resolvers/zod"
 import { Button } from "@suhui/components/ui/button/index.js"
 import { CollapseCss, CollapseCssGroup } from "@suhui/components/ui/collapse/index.js"
 import { DropZone } from "@suhui/components/ui/drop-zone/index.js"
 import { Form, FormControl, FormField, FormItem } from "@suhui/components/ui/form/index.jsx"
-import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation } from "@tanstack/react-query"
 import { Fragment } from "react"
 import { useForm } from "react-hook-form"
@@ -11,15 +11,16 @@ import { z } from "zod"
 
 import { Media } from "~/components/ui/media/Media"
 import { useModalStack } from "~/components/ui/modal/stacked/hooks"
-import { followClient } from "~/lib/api-client"
 import { toastFetchError } from "~/lib/error-parser"
+import { localReadingIpc } from "~/lib/local-reading-ipc"
 
 import { OpmlSelectionModal } from "./OpmlSelectionModal"
 
+/** 解析交给主进程：本地预览会顺带标出哪些源已经订阅过。 */
 const parseOpmlFile = async (file: File) => {
-  const data = await followClient.api.subscriptions.parseOpml(await file.arrayBuffer())
-
-  return data.data
+  const xml = await file.text()
+  const items = (await localReadingIpc()?.previewOpml(xml)) ?? []
+  return { xml, items }
 }
 
 const formSchema = z.object({
@@ -52,7 +53,7 @@ export function DiscoverImport() {
       onSuccess: (parsedData) => {
         present({
           title: t("discover.import.preview_opml_content"),
-          content: () => <OpmlSelectionModal file={values.file} parsedData={parsedData} />,
+          content: () => <OpmlSelectionModal items={parsedData.items} xml={parsedData.xml} />,
           clickOutsideToDismiss: false,
           modalClassName: "max-w-2xl w-full h-[80vh]",
           modalContentClassName: "flex flex-col h-full",

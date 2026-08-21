@@ -3,10 +3,10 @@ import { getEntry } from "@suhui/store/entry/getter"
 import { cn } from "@suhui/utils/utils"
 import { useCallback } from "react"
 import { useTranslation } from "react-i18next"
-import { toast } from "sonner"
 
 import { ipcServices } from "~/lib/client"
 import { copyToClipboard } from "~/lib/clipboard"
+import { toast } from "~/lib/toast"
 
 interface SharePanelProps {
   entryId: string

@@ -1,38 +1,83 @@
+import { createRequire } from "node:module"
+
+import { drizzle as drizzleSqlite } from "drizzle-orm/better-sqlite3"
 import type { NodePgDatabase } from "drizzle-orm/node-postgres"
 import { drizzle as drizzlePg } from "drizzle-orm/node-postgres"
 import type { PoolClient, PoolConfig } from "pg"
 import { Pool } from "pg"
 
+import { sqliteMigrations } from "./drizzle/sqlite-baseline"
 import * as schema from "./schemas"
+import * as sqliteSchema from "./schemas/sqlite"
 
 export type MainDb = NodePgDatabase<typeof schema>
-export type MainDbHandles = {
-  config: PoolConfig
-  db: MainDb
-  pgPool: Pool
-  type: "postgres"
+
+export type SqliteFileConfig = { filePath: string }
+
+/** better-sqlite3 的最小接口，避免在类型层引入原生模块 */
+type SqliteDatabase = {
+  exec: (sql: string) => void
+  prepare: (sql: string) => {
+    all: (...params: unknown[]) => unknown[]
+    run: (...params: unknown[]) => { changes: number; lastInsertRowid: number | bigint }
+  }
+  close: () => void
+  pragma: (source: string) => unknown
 }
 
+export type MainDbHandles =
+  | { type: "postgres"; config: PoolConfig; db: MainDb; pgPool: Pool }
+  | { type: "sqlite"; config: SqliteFileConfig; db: MainDb; sqlite: SqliteDatabase }
+
 export let db: MainDb
-let pgPool: Pool
 let activeHandles: MainDbHandles | null = null
 
-export function createMainDBHandles(config: {
-  type: "postgres"
-  config: PoolConfig
-}): MainDbHandles {
-  const nextPool = new Pool(config.config)
+const nodeRequire = createRequire(import.meta.url)
+
+/**
+ * 原生模块惰性加载：better-sqlite3 的二进制按 Electron ABI 编译，只在主进程可用。
+ *
+ * 注意只有**原生模块本身**需要惰性 require。drizzle 的 sqlite 驱动是纯 JS，必须静态
+ * 导入让打包器把它打进 bundle——打包后的 app.asar 里没有 node_modules/drizzle-orm，
+ * 运行期 `require("drizzle-orm/better-sqlite3")` 会以
+ * `Cannot find module` 失败（转换到 SQLite 时踩过）。驱动内部对 better-sqlite3 的
+ * import 由 electron.vite.config 的 `external` 保留成运行期 require。
+ */
+const openSqlite = (filePath: string): SqliteDatabase => {
+  const Database = nodeRequire("better-sqlite3") as new (path: string) => SqliteDatabase
+  const sqlite = new Database(filePath)
+  // 外键级联在 SQLite 需要按连接开启，否则 onDelete: "cascade" 静默失效
+  sqlite.pragma("foreign_keys = ON")
+  sqlite.pragma("journal_mode = WAL")
+  return sqlite
+}
+
+export function createMainDBHandles(
+  input: { type: "postgres"; config: PoolConfig } | { type: "sqlite"; config: SqliteFileConfig },
+): MainDbHandles {
+  if (input.type === "sqlite") {
+    const sqlite = openSqlite(input.config.filePath)
+    return {
+      type: "sqlite",
+      config: input.config,
+      // 两个方言的 schema 逐列产出相同的 JS 类型（见 plan 的 D6 与
+      // dialect-type-parity.test-d.ts），故此处的收窄是安全的。
+      db: drizzleSqlite(sqlite as never, { schema: sqliteSchema }) as unknown as MainDb,
+      sqlite,
+    }
+  }
+
+  const nextPool = new Pool(input.config)
   nextPool.on("error", (error: Error, client: PoolClient) => {
     console.warn("[DB] Postgres pool idle client error", {
       error: error.message,
       processID: (client as PoolClient & { processID?: number }).processID,
     })
   })
-  const nextDb = drizzlePg(nextPool, { schema })
   return {
     type: "postgres",
-    config: config.config,
-    db: nextDb,
+    config: input.config,
+    db: drizzlePg(nextPool, { schema }),
     pgPool: nextPool,
   }
 }
@@ -40,7 +85,6 @@ export function createMainDBHandles(config: {
 export function activateMainDB(handles: MainDbHandles) {
   activeHandles = handles
   db = handles.db
-  pgPool = handles.pgPool
   return handles
 }
 
@@ -49,10 +93,16 @@ export function getActiveMainDBHandles() {
 }
 
 export async function closeMainDBHandles(handles: MainDbHandles) {
+  if (handles.type === "sqlite") {
+    handles.sqlite.close()
+    return
+  }
   await handles.pgPool.end()
 }
 
-export function initializeMainDB(config: { type: "postgres"; config: PoolConfig }) {
+export function initializeMainDB(
+  config: { type: "postgres"; config: PoolConfig } | { type: "sqlite"; config: SqliteFileConfig },
+) {
   if (activeHandles) return activeHandles
   return activateMainDB(createMainDBHandles(config))
 }
@@ -62,13 +112,119 @@ export function getMainDB() {
   return db
 }
 
+export type RawSqlMethod = "run" | "all" | "get" | "values"
+export type RawSqlResult = { rows: unknown[][]; rowsAffected: number }
+
+/**
+ * 方言无关的裸 SQL 执行。统一返回**数组行**，把 pg 的 `fields`/`rowCount` 与
+ * better-sqlite3 的 `{changes,lastInsertRowid}` 差异收敛在这里，调用方不再感知方言。
+ */
+export async function executeMainRawSql(
+  sql: string,
+  params: unknown[] = [],
+  method: RawSqlMethod = "all",
+): Promise<RawSqlResult> {
+  if (!activeHandles) throw new Error("Database not initialized")
+
+  if (activeHandles.type === "sqlite") {
+    const statement = activeHandles.sqlite.prepare(sql)
+    if (method === "run") {
+      const info = statement.run(...params)
+      return { rows: [], rowsAffected: Number(info.changes ?? 0) }
+    }
+    const rows = statement.all(...params) as Record<string, unknown>[]
+    return { rows: rows.map((row) => Object.values(row)), rowsAffected: rows.length }
+  }
+
+  const result = await activeHandles.pgPool.query(sql, params as unknown[])
+  const fieldNames = (result.fields ?? []).map((field) => field.name)
+  const rows = (result.rows ?? []).map((row: Record<string, unknown>) =>
+    fieldNames.length > 0 ? fieldNames.map((name) => row[name]) : Object.values(row),
+  )
+  return { rows, rowsAffected: result.rowCount ?? 0 }
+}
+
+/**
+ * 方言无关的事务。drizzle 的 better-sqlite3 驱动是同步的，`db.transaction`
+ * 只接受同步回调，因此 sqlite 侧改用显式 BEGIN/COMMIT 以容纳异步业务代码。
+ */
+export async function runInMainTransaction<T>(fn: (tx: MainDb) => Promise<T> | T): Promise<T> {
+  if (!activeHandles) throw new Error("Database not initialized")
+
+  if (activeHandles.type === "sqlite") {
+    const { sqlite } = activeHandles
+    sqlite.exec("BEGIN")
+    try {
+      const result = await fn(activeHandles.db)
+      sqlite.exec("COMMIT")
+      return result
+    } catch (error) {
+      try {
+        sqlite.exec("ROLLBACK")
+      } catch (rollbackError) {
+        console.warn("[DB] sqlite rollback failed", {
+          error: rollbackError instanceof Error ? rollbackError.message : String(rollbackError),
+        })
+      }
+      throw error
+    }
+  }
+
+  return activeHandles.db.transaction(async (tx) => fn(tx as unknown as MainDb))
+}
+
+export function getMainDialect() {
+  if (!activeHandles) throw new Error("Database not initialized")
+  return activeHandles.type
+}
+
 export function getMainPgPool() {
-  if (!pgPool) throw new Error("Postgres not initialized")
-  return pgPool
+  if (!activeHandles) throw new Error("Database not initialized")
+  if (activeHandles.type !== "postgres") {
+    throw new Error(`getMainPgPool is postgres-only, active dialect is ${activeHandles.type}`)
+  }
+  return activeHandles.pgPool
+}
+
+export function getMainSqlite() {
+  if (!activeHandles) throw new Error("Database not initialized")
+  if (activeHandles.type !== "sqlite") {
+    throw new Error(`getMainSqlite is sqlite-only, active dialect is ${activeHandles.type}`)
+  }
+  return activeHandles.sqlite
+}
+
+/** SQLite 侧的迁移账本。drizzle-kit 生成的是裸 CREATE TABLE，需要账本保证幂等。 */
+const sqliteMigrationLedger = "__suhui_migrations"
+
+const migrateMainSqliteDB = (sqlite: SqliteDatabase) => {
+  sqlite.exec(
+    `CREATE TABLE IF NOT EXISTS ${sqliteMigrationLedger} (tag text primary key, applied_at integer not null)`,
+  )
+
+  const applied = new Set(
+    (sqlite.prepare(`select tag from ${sqliteMigrationLedger}`).all() as { tag: string }[]).map(
+      (row) => row.tag,
+    ),
+  )
+
+  for (const migration of sqliteMigrations) {
+    if (applied.has(migration.tag)) continue
+    for (const statement of migration.statements) {
+      sqlite.exec(statement)
+    }
+    sqlite
+      .prepare(`insert into ${sqliteMigrationLedger} (tag, applied_at) values (?, ?)`)
+      .run(migration.tag, Date.now())
+  }
 }
 
 export async function migrateMainDB(handles = activeHandles) {
   if (!handles) throw new Error("Database not initialized")
+  if (handles.type === "sqlite") {
+    migrateMainSqliteDB(handles.sqlite)
+    return
+  }
   const pool = handles.pgPool
   const statements = [
     `CREATE TABLE IF NOT EXISTS feeds (\n` +

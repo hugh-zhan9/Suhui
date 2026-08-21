@@ -2,7 +2,8 @@ import { Button } from "@suhui/components/ui/button/index.js"
 import { Input } from "@suhui/components/ui/input/Input.js"
 import { runtimeClient } from "@suhui/store/runtime"
 import { useEffect, useState } from "react"
-import { toast } from "sonner"
+
+import { toast } from "~/lib/toast"
 
 type Rule = {
   id: string
@@ -107,7 +108,7 @@ export function SettingReadingWorkflows() {
           分批扫描既有文章并恢复重复来源折叠；中断后再次执行会从上次进度继续。
         </p>
         <Button
-          className="mt-3"
+          buttonClassName="mt-3"
           disabled={rebuildingClusters}
           onClick={() => void rebuildClusters()}
         >

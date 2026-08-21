@@ -8,10 +8,7 @@ describe("entries ids stability", () => {
       data: {
         pages: [
           {
-            data: [
-              { entries: { id: "e1" } },
-              { entries: { id: "e2" } },
-            ],
+            data: [{ id: "e1" }, { id: "e2" }],
           },
         ],
       },

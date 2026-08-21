@@ -1,3 +1,5 @@
+import type { RSSHubRouteMetadata } from "@follow-app/client-sdk"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { Spring } from "@suhui/components/constants/spring.js"
 import { Button } from "@suhui/components/ui/button/index.js"
 import { Form, FormField, FormItem, FormLabel } from "@suhui/components/ui/form/index.jsx"
@@ -19,15 +21,12 @@ import {
   regexpPathToPath,
 } from "@suhui/utils/path-parser"
 import { cn } from "@suhui/utils/utils"
-import type { RSSHubRouteMetadata } from "@follow-app/client-sdk"
-import { zodResolver } from "@hookform/resolvers/zod"
 import { m } from "motion/react"
 import type { FC } from "react"
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react"
 import type { UseFormReturn } from "react-hook-form"
 import { useForm } from "react-hook-form"
 import { Trans, useTranslation } from "react-i18next"
-import { toast } from "sonner"
 import { z } from "zod"
 
 import { CopyButton } from "~/components/ui/button/CopyButton"
@@ -38,6 +37,7 @@ import {
   useIsTopModal,
   useModalStack,
 } from "~/components/ui/modal/stacked/hooks"
+import { toast } from "~/lib/toast"
 
 import { FeedForm } from "./FeedForm"
 import { normalizeRSSHubParameters } from "./utils"

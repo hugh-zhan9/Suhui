@@ -1,3 +1,4 @@
+import { getRuntimeDbType } from "@suhui/database/schemas/runtime"
 import type { ActiveVisibilityState } from "@suhui/database/services/internal/active-visibility"
 import type { AnyColumn, SQL } from "drizzle-orm"
 import { and, eq, inArray, isNull, or, sql } from "drizzle-orm"
@@ -49,12 +50,25 @@ export const entrySummaryColumns = {
   deletedAt: false,
 } as const
 
+/**
+ * 「sources 这个 JSON 数组是否与给定 id 集合有交集」。
+ *
+ * postgres 用原生 jsonb 运算符 `?|`（可走 GIN 索引）；SQLite 没有对应物，
+ * 展开成 json_each 子查询。这是全条目列表查询的热路径。
+ */
 const sourcePredicate = (sources: AnyColumn, ids: string[]): SQL => {
   if (ids.length === 0) return sql`false`
-  return sql`${sources} ?| array[${sql.join(
+
+  const idList = sql.join(
     ids.map((id) => sql`${id}`),
     sql`, `,
-  )}]`
+  )
+
+  if (getRuntimeDbType() === "sqlite") {
+    return sql`exists (select 1 from json_each(${sources}) where json_each.value in (${idList}))`
+  }
+
+  return sql`${sources} ?| array[${idList}]`
 }
 
 export const createEntryVisibilityWhere = (

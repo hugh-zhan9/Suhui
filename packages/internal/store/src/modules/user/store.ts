@@ -1,10 +1,9 @@
+import type { AuthUser } from "@follow-app/client-sdk"
 import { UserRole } from "@suhui/constants"
 import type { UserSchema } from "@suhui/database/schemas/types"
 import { UserService } from "@suhui/database/services/user"
-import type { AuthUser } from "@follow-app/client-sdk"
-import { create, indexedResolver, windowScheduler } from "@yornaath/batshit"
 
-import { api, authClient } from "../../context"
+import { authClient } from "../../context"
 import type { Hydratable, Resetable } from "../../lib/base"
 import { createImmerSetter, createTransaction, createZustandStore } from "../../lib/helper"
 import { apiMorph } from "../../morph/api"
@@ -54,37 +53,24 @@ const set = useUserStore.setState
 const immerSet = createImmerSetter(useUserStore)
 
 class UserSyncService {
-  private userBatcher = create({
-    fetcher: async (userIds: string[]) => {
-      const res = await api().profiles.getBatch({ ids: userIds })
-
-      if (res.code === 0) {
-        const { whoami } = get()
-        const usersObject = res.data
-        const usersArray = Object.values(usersObject)
-
-        immerSet((state) => {
-          for (const user of usersArray) {
-            state.users[user.id] = {
-              email: null,
-              isMe: whoami?.id === user.id,
-              ...user,
-            }
-          }
-        })
-        return usersObject
-      }
-      return {}
-    },
-    resolver: indexedResolver(),
-    scheduler: windowScheduler(100),
-  })
+  /**
+   * Reads the saved local profile straight from the database. `whoami()` can run
+   * before critical hydration finishes, so the session store is not a reliable
+   * source — and the result is upserted below, which would otherwise write the
+   * fallback name back over whatever the user saved.
+   */
+  private async readPersistedLocalUser(): Promise<Partial<AuthUser> | undefined> {
+    const users = await UserService.getUserAll()
+    const local = users.find((user) => user.id === LOCAL_USER_ID)
+    return (local as unknown as Partial<AuthUser> | undefined) || undefined
+  }
 
   async whoami() {
-    const persisted =
+    const inSession =
       (get().users[LOCAL_USER_ID] as unknown as Partial<AuthUser> | undefined) ||
       (get().whoami as Partial<AuthUser> | null) ||
       undefined
+    const persisted = inSession || (await this.readPersistedLocalUser())
     const defaultUser = buildLocalWhoamiUser(persisted)
 
     const res = {
@@ -202,31 +188,13 @@ class UserSyncService {
     await tx.run()
   }
 
-  async applyInvitationCode(code: string) {
-    const res = await api().invitations.use({ code })
-    if (res.code === 0) {
-      immerSet((state) => {
-        state.role = UserRole.Pro
-      })
-    }
-
-    return res
-  }
-
+  /**
+   * Reads a profile from the locally hydrated store. There is no remote profile
+   * service, and locally the only user is `LOCAL_USER_ID`.
+   */
   async fetchUser(userId: string | undefined) {
     if (!userId) return null
-
-    const user = await this.userBatcher.fetch(userId)
-
-    return user || null
-  }
-
-  async fetchUsers(userIds: string[]) {
-    const validUserIds = userIds.filter(Boolean)
-    if (validUserIds.length === 0) return []
-
-    const users = await Promise.all(validUserIds.map((id) => this.userBatcher.fetch(id)))
-    return users.filter(Boolean)
+    return get().users[userId] || null
   }
 }
 

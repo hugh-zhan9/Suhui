@@ -2,7 +2,6 @@ import type { FeedViewType } from "@suhui/constants"
 import type { CollectionSchema } from "@suhui/database/schemas/types"
 import { CollectionService } from "@suhui/database/services/collection"
 
-import { api } from "../../context"
 import type { Hydratable, Resetable } from "../../lib/base"
 import { createTransaction, createZustandStore } from "../../lib/helper"
 
@@ -20,10 +19,6 @@ export const useCollectionStore = createZustandStore<CollectionState>("collectio
 
 const get = useCollectionStore.getState
 const set = useCollectionStore.setState
-
-export const shouldUseLocalCollectionMutation = (win: any = globalThis.window) => {
-  return !!win?.electron?.ipcRenderer
-}
 
 class CollectionSyncService {
   async starEntry({
@@ -51,13 +46,6 @@ class CollectionSyncService {
         },
       ])
     })
-    tx.request(async () => {
-      if (shouldUseLocalCollectionMutation()) return
-      await api().collections.post({
-        entryId,
-        view,
-      })
-    })
     tx.rollback(() => {
       collectionActions.delete(entryId)
     })
@@ -77,13 +65,6 @@ class CollectionSyncService {
     tx.store(() => {
       collectionActions.delete(entryId)
     })
-    tx.request(async () => {
-      if (shouldUseLocalCollectionMutation()) return
-      await api().collections.delete({
-        entryId,
-      })
-    })
-
     tx.rollback(() => {
       if (!snapshot) return
       collectionActions.upsertMany([snapshot])

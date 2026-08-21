@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "slug": "suhui-performance-refactor",
+  "worktree": "/Users/zhangyukun/project/Suhui",
+  "source_artifact": "docs/loopx/plans/2026-07-13-suhui-performance-refactor/00-overview.md",
+  "design_artifact": "docs/loopx/design/2026-07-13-suhui-performance-refactor/需求设计文档.md",
+  "started_at": "2026-07-13T07:35:40.071Z",
+  "branch": "main",
+  "start_commit": "01f18d72b6a946b8d2ca2501741c12255ac6e174",
+  "start_commit_short": "01f18d7",
+  "canonical_final_review_report": ".loopx/final-review/2026-07-13-suhui-performance-refactor.md"
+}

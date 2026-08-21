@@ -1,7 +1,6 @@
 import type { InboxSchema } from "@suhui/database/schemas/types"
 import { InboxService } from "@suhui/database/services/inbox"
 
-import { api } from "../../context"
 import type { Hydratable, Resetable } from "../../lib/base"
 import { createImmerSetter, createTransaction, createZustandStore } from "../../lib/helper"
 import type { InboxModel } from "./types"
@@ -73,28 +72,10 @@ class InboxActions implements Hydratable, Resetable {
 }
 
 class InboxSyncService {
-  async createInbox({ handle, title }: { handle: string; title: string }) {
-    const newInbox = {
-      id: handle,
-      title,
-      secret: "",
-    }
-    const tx = createTransaction()
-    tx.store(async () => {
-      await inboxActions.upsertManyInSession([newInbox])
-    })
-    tx.request(async () => {
-      await api().inboxes.post({
-        handle,
-        title,
-      })
-    })
-
-    tx.persist(() => InboxService.upsertMany([newInbox]))
-    tx.rollback(() => inboxActions.deleteById(handle))
-    await tx.run()
-  }
-
+  /**
+   * 收件箱的邮件地址由云端服务分配，本地无法新建，UI 也已没有入口
+   * （InboxForm 只会以既有 inboxId 打开），因此这里只保留改名。
+   */
   async updateInbox({ handle, title }: { handle: string; title: string }) {
     const existingInbox = get().inboxes[handle]
     if (!existingInbox) return
@@ -107,32 +88,8 @@ class InboxSyncService {
     tx.store(async () => {
       await inboxActions.upsertManyInSession([newInbox])
     })
-    tx.request(async () => {
-      await api().inboxes.put({
-        handle,
-        title,
-      })
-    })
-
     tx.persist(() => InboxService.upsertMany([newInbox]))
     tx.rollback(() => inboxActions.upsertMany([existingInbox]))
-    await tx.run()
-  }
-
-  async deleteInbox(inboxId: string) {
-    const inbox = get().inboxes[inboxId]
-    if (!inbox) return
-
-    const tx = createTransaction(inbox)
-    tx.store(async () => inboxActions.deleteById(inboxId))
-    tx.request(async () => {
-      await api().inboxes.delete({
-        handle: inboxId,
-      })
-    })
-
-    tx.persist(() => InboxService.deleteById(inboxId))
-    tx.rollback(async (inbox) => inboxActions.upsertMany([inbox]))
     await tx.run()
   }
 }

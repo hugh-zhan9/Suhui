@@ -3,16 +3,15 @@ import { EntryService } from "@suhui/database/services/entry"
 import { cloneDeep } from "es-toolkit"
 import { debounce } from "es-toolkit/compat"
 
-import { api } from "../../context"
 import {
   markEntryReadHydrateDirty,
   reconcileHydratedEntry,
   runWithHydrateSource,
 } from "../../hydrate-phases"
-import { runtimeClient } from "../../runtime"
 import type { Resetable } from "../../lib/base"
 import { createImmerSetter, createTransaction } from "../../lib/helper"
 import { storeDbMorph } from "../../morph/store-db"
+import { runtimeClient } from "../../runtime"
 import { getSubscriptionById } from "../subscription/getter"
 import { getDefaultCategory } from "../subscription/utils"
 import type {
@@ -691,9 +690,14 @@ class EntrySyncServices {
     }
   }
 
+  /**
+   * Extracts an entry's full text locally. There is no remote service any more,
+   * so `resolveContent` is the only path — an absent resolver is a programming
+   * error rather than a reason to fall back to anything.
+   */
   async fetchEntryReadabilityContent(
     entryId: EntryId,
-    fallBack?: () => Promise<string | null | undefined>,
+    resolveContent: () => Promise<string | null | undefined>,
   ) {
     const entry = getEntry(entryId)
     if (!entry?.url) return entry
@@ -705,20 +709,7 @@ class EntrySyncServices {
       return entry
     }
 
-    let readabilityContent: string | null | undefined
-
-    try {
-      const { data: contentByFetch } = await api().entries.readability({
-        id: entryId,
-      })
-      readabilityContent = contentByFetch?.content || null
-    } catch (error) {
-      if (fallBack) {
-        readabilityContent = await fallBack()
-      } else {
-        throw error
-      }
-    }
+    const readabilityContent = await resolveContent()
     if (readabilityContent) {
       await entryActions.updateEntryContent({
         entryId,
@@ -753,9 +744,6 @@ class EntrySyncServices {
 
     tx.store(() => {
       entryActions.deleteInboxEntryById(entryId)
-    })
-    tx.request(async () => {
-      await api().entries.inbox.delete({ entryId })
     })
     tx.rollback(() => {
       entryActions.upsertManyInSession([currentEntry])

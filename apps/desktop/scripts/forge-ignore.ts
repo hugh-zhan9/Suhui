@@ -1,6 +1,7 @@
 export const unsignedForgeOutputRoot = "/tmp/suhui-forge-out"
 
 export const retainedPackagedModules = [
+  "better-sqlite3",
   "font-list",
   "vscode-languagedetection",
   "bindings",

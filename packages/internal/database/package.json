@@ -33,6 +33,7 @@
     }
   },
   "scripts": {
+    "test": "vitest",
     "generate": "drizzle-kit generate",
     "typecheck": "tsc --noEmit"
   },
@@ -42,10 +43,9 @@
     "@suhui/models": "workspace:*",
     "@suhui/shared": "workspace:*",
     "ai": "6.0.85",
+    "better-sqlite3": "12.6.2",
     "drizzle-orm": "0.45.1",
-    "expo-sqlite": "16.0.10",
     "pg": "8.13.3",
-    "sqlocal": "npm:@hyoban/sqlocal@0.14.1-fork.4",
     "wa-sqlite": "git+https://github.com/rhashimoto/wa-sqlite.git#v1.0.8"
   },
   "devDependencies": {

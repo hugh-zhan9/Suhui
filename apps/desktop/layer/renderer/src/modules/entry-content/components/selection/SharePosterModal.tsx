@@ -5,10 +5,10 @@ import { cn } from "@suhui/utils"
 import { m } from "motion/react"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { toast } from "sonner"
 
 import { useCurrentModal } from "~/components/ui/modal/stacked/hooks"
 import { copyImageToClipboard } from "~/lib/clipboard"
+import { toast } from "~/lib/toast"
 import { UrlBuilder } from "~/lib/url-builder"
 
 import { GlassButton } from "./GlassButton"

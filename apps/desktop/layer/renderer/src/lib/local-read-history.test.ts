@@ -5,6 +5,7 @@ const { readHistoriesMock } = vi.hoisted(() => ({
 }))
 
 vi.mock("@suhui/store/context", () => ({
+  queryClient: () => ({ invalidateQueries: vi.fn(), setQueryData: vi.fn() }),
   api: () => ({
     entries: {
       readHistories: readHistoriesMock,

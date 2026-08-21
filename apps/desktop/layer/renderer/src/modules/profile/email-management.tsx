@@ -1,3 +1,4 @@
+import { zodResolver } from "@hookform/resolvers/zod"
 import { useMobile } from "@suhui/components/hooks/useMobile.js"
 import { Button } from "@suhui/components/ui/button/index.js"
 import {
@@ -12,18 +13,17 @@ import { Label } from "@suhui/components/ui/label/index.js"
 import { useWhoami } from "@suhui/store/user/hooks"
 import { userActions } from "@suhui/store/user/store"
 import { cn } from "@suhui/utils/utils"
-import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation } from "@tanstack/react-query"
 import { m } from "motion/react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
-import { toast } from "sonner"
 import { z } from "zod"
 
 import { AnimatedCommandButton } from "~/components/ui/button/AnimatedCommandButton"
 import { CopyButton } from "~/components/ui/button/CopyButton"
 import { useModalStack } from "~/components/ui/modal/stacked/hooks"
 import { changeEmail, sendVerificationEmail } from "~/lib/auth"
+import { toast } from "~/lib/toast"
 
 const formSchema = z.object({
   email: z.string().email(),

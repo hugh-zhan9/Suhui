@@ -1,3 +1,4 @@
+import { zodResolver } from "@hookform/resolvers/zod"
 import { Button } from "@suhui/components/ui/button/index.js"
 import {
   Form,
@@ -9,15 +10,14 @@ import {
 import { Input } from "@suhui/components/ui/input/index.js"
 import { Label } from "@suhui/components/ui/label/index.js"
 import { env } from "@suhui/shared/env.desktop"
-import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation } from "@tanstack/react-query"
 import { useForm } from "react-hook-form"
 import { Trans, useTranslation } from "react-i18next"
-import { toast } from "sonner"
 import { z } from "zod"
 
 import { useModalStack } from "~/components/ui/modal/stacked/hooks"
 import { changePassword } from "~/lib/auth"
+import { toast } from "~/lib/toast"
 import { useHasPassword } from "~/queries/auth"
 
 const passwordSchema = z.string().min(8).max(128)

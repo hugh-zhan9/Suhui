@@ -1,10 +1,12 @@
-import { describe, expect, it, vi } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 vi.mock("../db", () => ({
   db: {
     delete: vi.fn(),
   },
 }))
+
+import { resetRuntimeDbType, setRuntimeDbType } from "../schemas/runtime"
 
 import { sanitizeEntryJsonFields } from "./entry"
 import { EntryService } from "./entry"
@@ -47,5 +49,47 @@ describe("sanitizeEntryJsonFields", () => {
   it("does not expose an unbounded startup hydration API", () => {
     const removedMethod = ["getEntries", "ToHydrate"].join("")
     expect(removedMethod in EntryService).toBe(false)
+  })
+})
+
+describe("sanitizeEntryJsonFields 的方言差异", () => {
+  afterEach(() => resetRuntimeDbType())
+
+  it("sqlite 下保持对象形态，不预先 stringify（否则 drizzle 再 stringify 会双重编码）", () => {
+    setRuntimeDbType("sqlite")
+
+    const result = sanitizeEntryJsonFields({
+      id: "entry_sqlite",
+      categories: ["dev", "rss"] as any,
+      extra: { key: "value" } as any,
+    })
+
+    expect(result.categories).toEqual(["dev", "rss"])
+    expect(result.extra).toEqual({ key: "value" })
+  })
+
+  it("sqlite 下把已被上游 stringify 的值解回对象", () => {
+    setRuntimeDbType("sqlite")
+
+    const result = sanitizeEntryJsonFields({
+      id: "entry_sqlite_2",
+      categories: '["dev","rss"]' as any,
+    })
+
+    expect(result.categories).toEqual(["dev", "rss"])
+  })
+
+  it("sqlite 下非法 JSON 字符串仍归零", () => {
+    setRuntimeDbType("sqlite")
+
+    expect(
+      sanitizeEntryJsonFields({ id: "e", categories: "not json" as any }).categories,
+    ).toBeNull()
+  })
+
+  it("postgres 下仍然预先 stringify", () => {
+    setRuntimeDbType("postgres")
+
+    expect(sanitizeEntryJsonFields({ id: "e", categories: ["a"] as any }).categories).toBe('["a"]')
   })
 })

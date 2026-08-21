@@ -14,7 +14,6 @@ import {
 } from "@suhui/components/ui/platform-icon/icons.js"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { toast } from "sonner"
 
 import {
   getIntegrationSettings,
@@ -22,6 +21,7 @@ import {
   useIntegrationSettingValue,
 } from "~/atoms/settings/integration"
 import { downloadJsonFile, selectJsonFile } from "~/lib/export"
+import { toast } from "~/lib/toast"
 
 import { createSetting } from "../../helper/builder"
 import { useSetSettingCanSync } from "../../modal/hooks"

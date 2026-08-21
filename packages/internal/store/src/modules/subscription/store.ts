@@ -4,29 +4,25 @@ import { SubscriptionService } from "@suhui/database/services/subscription"
 import { tracker } from "@suhui/tracker"
 import { omit } from "es-toolkit"
 
-import { api, queryClient } from "../../context"
+import { queryClient } from "../../context"
 import {
   markSubscriptionHydrateDirty,
   reconcileHydratedSubscription,
   runWithHydrateSource,
 } from "../../hydrate-phases"
-import { runtimeClient } from "../../runtime"
 import type { Hydratable, Resetable } from "../../lib/base"
 import { createImmerSetter, createTransaction, createZustandStore } from "../../lib/helper"
-import { apiMorph } from "../../morph/api"
-
+import { dbStoreMorph } from "../../morph/db-store"
 import { buildSubscriptionDbId, storeDbMorph } from "../../morph/store-db"
+import { runtimeClient } from "../../runtime"
 import { collectionActions, useCollectionStore } from "../collection/store"
 import { invalidateEntriesQuery } from "../entry/hooks"
 import { entryActions } from "../entry/store"
-import { dbStoreMorph } from "../../morph/db-store"
 import { getFeedById } from "../feed/getter"
 import { feedActions } from "../feed/store"
-import { inboxActions } from "../inbox/store"
 import { getListById } from "../list/getters"
 import { listActions } from "../list/store"
 import { unreadActions } from "../unread/store"
-import { whoami } from "../user/getters"
 import { getCategoryFeedIds } from "./getter"
 import type { SubscriptionForm, SubscriptionModel } from "./types"
 import { getDefaultCategory, getSubscriptionDBId, getSubscriptionStoreId } from "./utils"
@@ -121,10 +117,6 @@ export const useSubscriptionStore = createZustandStore<SubscriptionState>("subsc
 const get = useSubscriptionStore.getState
 
 const immerSet = createImmerSetter(useSubscriptionStore)
-
-export const shouldUseLocalSubscriptionMutation = (win: any = globalThis.window) => {
-  return !!win?.electron?.ipcRenderer
-}
 
 class SubscriptionActions implements Hydratable, Resetable {
   async hydrate() {
@@ -587,14 +579,6 @@ class SubscriptionSyncService {
           draft.listIdByView[currentView].delete(listId)
           draft.listIdByView[newView].add(listId)
         })
-      })
-    })
-
-    tx.request(async () => {
-      if (shouldUseLocalSubscriptionMutation()) return
-      await api().subscriptions.update({
-        view,
-        listId,
       })
     })
 

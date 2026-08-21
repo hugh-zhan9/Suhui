@@ -59,10 +59,22 @@ describe("buildDbConfigView", () => {
     })
   })
 
-  it("defaults to postgres when missing DB_TYPE", () => {
+  it("全新安装默认 sqlite", () => {
     const result = buildDbConfigView({
       env: {},
       envInfo: { candidates: [], active: undefined },
+      defaultSqlitePath: "/tmp/userdata/suhui.db",
+    })
+
+    expect(result.dbType).toBe("sqlite")
+    expect(result.dbConn).toBe("/tmp/userdata/suhui.db")
+  })
+
+  it("既有 postgres 安装保持 postgres", () => {
+    const result = buildDbConfigView({
+      env: { DB_CONN: "127.0.0.1:5432/suhui" },
+      envInfo: { candidates: [], active: undefined },
+      defaultSqlitePath: "/tmp/userdata/suhui.db",
     })
 
     expect(result.dbType).toBe("postgres")

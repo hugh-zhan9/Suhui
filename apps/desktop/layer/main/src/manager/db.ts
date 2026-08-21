@@ -9,20 +9,27 @@ import {
   getMainPgPool,
   migrateMainDB,
 } from "@suhui/database/db.main"
-import { dialog } from "electron"
+import { setRuntimeDbType } from "@suhui/database/schemas/runtime"
+import { app, dialog } from "electron"
+import { join } from "pathe"
 
 import { store, StoreKey } from "../lib/store"
 import { sleep } from "../lib/utils"
 import { logger } from "../logger"
-
 import type { DbConfigOverride, DbType, EffectiveDbConfig } from "./db-config"
 import {
   buildPgConfigFromResolved,
+  buildSqliteConfigFromResolved,
   normalizeDbConfigOverride,
   resolveEffectiveDbConfig,
   toDbEnv,
 } from "./db-config"
 import { ensurePostgresDatabaseExists } from "./postgres-bootstrap"
+import { ensureSqliteDatabaseDirectory } from "./sqlite-bootstrap"
+
+/** SQLite 默认落在 userData 下，与 .env / db.json 同一目录（见 plan 的 D2）。 */
+const defaultSqliteFileName = "suhui.db"
+const resolveDefaultSqlitePath = () => join(app.getPath("userData"), defaultSqliteFileName)
 
 const dbInitRetryDelayMs = 2000
 const dbInitMaxAttempts = 30
@@ -74,16 +81,12 @@ export class DBManager {
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       this.lastAttempt = attempt
       try {
-        await ensurePostgresDatabaseExists(toDbEnv(config))
-        const handles = createMainDBHandles({
-          type: "postgres",
-          config: buildPgConfigFromResolved(config),
-        })
+        const handles = await this.createCandidateHandles(config)
 
         try {
-          console.info("[DBManager] Running DB migrations...")
+          console.info("[DBManager] Running DB migrations...", { dialect: config.dbType })
           await migrateMainDB(handles)
-          await handles.pgPool.query("SELECT 1")
+          await this.probeHandles(handles)
           return handles
         } catch (error) {
           try {
@@ -113,12 +116,40 @@ export class DBManager {
     throw lastError
   }
 
+  /** 按方言创建候选连接。sqlite 只需确保父目录存在，postgres 需要先建库。 */
+  private static async createCandidateHandles(config: EffectiveDbConfig) {
+    if (config.dbType === "sqlite") {
+      const sqliteConfig = buildSqliteConfigFromResolved(config)
+      ensureSqliteDatabaseDirectory(sqliteConfig.filePath)
+      return createMainDBHandles({ type: "sqlite", config: sqliteConfig })
+    }
+
+    await ensurePostgresDatabaseExists(toDbEnv(config))
+    return createMainDBHandles({
+      type: "postgres",
+      config: buildPgConfigFromResolved(config),
+    })
+  }
+
+  /** 连通性探针：postgres 走 SELECT 1，sqlite 读一次账本表。 */
+  private static async probeHandles(
+    handles: Awaited<ReturnType<typeof this.createCandidateHandles>>,
+  ) {
+    if (handles.type === "sqlite") {
+      handles.sqlite.prepare("select 1").all()
+      return
+    }
+    await handles.pgPool.query("SELECT 1")
+  }
+
   private static async runInit() {
     const effectiveConfig = resolveEffectiveDbConfig({
       env: process.env,
       override: this.readPersistedOverride(),
+      defaultSqlitePath: resolveDefaultSqlitePath(),
     })
     this.dialect = effectiveConfig.dbType
+    setRuntimeDbType(effectiveConfig.dbType)
     let initError: unknown
 
     try {
@@ -211,8 +242,14 @@ export class DBManager {
         resolveEffectiveDbConfig({
           env: process.env,
           override: this.readPersistedOverride(),
+          defaultSqlitePath: resolveDefaultSqlitePath(),
         }).source,
     }
+  }
+
+  /** SQLite 的默认库文件路径（应用数据目录），转换到 sqlite 时作为目标地址。 */
+  public static getDefaultSqlitePath() {
+    return resolveDefaultSqlitePath()
   }
 
   public static getEffectiveConfig() {
@@ -221,6 +258,7 @@ export class DBManager {
       resolveEffectiveDbConfig({
         env: process.env,
         override: this.readPersistedOverride(),
+        defaultSqlitePath: resolveDefaultSqlitePath(),
       })
     )
   }
@@ -360,12 +398,14 @@ export class DBManager {
     const nextConfig = resolveEffectiveDbConfig({
       env: process.env,
       override: normalizedOverride,
+      defaultSqlitePath: resolveDefaultSqlitePath(),
     })
     const previousConfig =
       this.activeConfig ??
       resolveEffectiveDbConfig({
         env: process.env,
         override: this.readPersistedOverride(),
+        defaultSqlitePath: resolveDefaultSqlitePath(),
       })
 
     if (this.ready && this.configsEqual(previousConfig, nextConfig)) {
@@ -373,7 +413,7 @@ export class DBManager {
       const sameOverride =
         JSON.stringify(currentOverride ?? null) === JSON.stringify(normalizedOverride ?? null)
       if (sameOverride) {
-        return Promise.resolve({ active: nextConfig })
+        return { active: nextConfig }
       }
     }
 
@@ -391,6 +431,9 @@ export class DBManager {
     const previousOverride = this.readPersistedOverride()
     const previousReady = this.ready
     const previousConfig = this.activeConfig
+    // dialect 此前只在成功路径赋值、失败路径不恢复；DbType 有两个取值后这会
+    // 让失败的切换留下与真实库不符的方言上报。
+    const previousDialect = this.dialect
     const candidateHandles = await this.prepareDatabaseTarget(nextConfig, dbSwitchMaxAttempts)
     const resume = await this.quiesceForCutover()
 
@@ -405,6 +448,7 @@ export class DBManager {
       this.ready = true
       this.activeConfig = nextConfig
       this.dialect = nextConfig.dbType
+      setRuntimeDbType(nextConfig.dbType)
       this.lastError = null
       await resume()
     } catch (error) {
@@ -420,6 +464,8 @@ export class DBManager {
 
       this.ready = previousReady
       this.activeConfig = previousConfig ?? null
+      this.dialect = previousDialect
+      setRuntimeDbType(previousDialect)
       this.lastError = error
 
       try {

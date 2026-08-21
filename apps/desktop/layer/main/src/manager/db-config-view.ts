@@ -1,9 +1,9 @@
-import type { DbConfigOverride, DbConfigSource } from "./db-config"
+import type { DbConfigOverride, DbConfigSource, DbType } from "./db-config"
 import { resolveEffectiveDbConfig } from "./db-config"
 import type { EnvLoadInfo } from "./env-loader"
 
 export type DbConfigView = {
-  dbType: "postgres"
+  dbType: DbType
   dbConn: string
   dbUser: string
   dbPasswordMasked: string
@@ -17,12 +17,14 @@ export const buildDbConfigView = ({
   env,
   envInfo,
   override,
+  defaultSqlitePath,
 }: {
   env: Record<string, string | undefined>
   envInfo: EnvLoadInfo
   override?: DbConfigOverride | null
+  defaultSqlitePath?: string
 }): DbConfigView => {
-  const effectiveConfig = resolveEffectiveDbConfig({ env, override })
+  const effectiveConfig = resolveEffectiveDbConfig({ env, override, defaultSqlitePath })
 
   return {
     dbType: effectiveConfig.dbType,

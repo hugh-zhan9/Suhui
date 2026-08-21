@@ -1,4 +1,4 @@
-import { toast } from "sonner"
+import { toast } from "~/lib/toast"
 
 import { followApi } from "./api-client"
 import { getFetchErrorMessage } from "./error-parser"

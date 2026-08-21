@@ -1,15 +1,13 @@
 import type { FeedSchema } from "@suhui/database/schemas/types"
 import { FEED_EXTRA_DATA_KEYS, FeedService } from "@suhui/database/services/feed"
-import { getDateISOString, isBizId } from "@suhui/utils"
+import { isBizId } from "@suhui/utils"
 
-import { api } from "../../context"
 import { markFeedHydrateDirty, reconcileHydratedFeed } from "../../hydrate-phases"
 import type { Hydratable, Resetable } from "../../lib/base"
 import { createImmerSetter, createTransaction, createZustandStore } from "../../lib/helper"
 import { runtimeClient } from "../../runtime"
 import { useEntryStore } from "../entry/base"
 import { shouldTreatFeedAsRemoteBiz } from "./local-feed"
-import { whoami } from "../user/getters"
 import type { FeedModel } from "./types"
 
 interface FeedState {
@@ -239,85 +237,6 @@ class FeedSyncServices {
       })
       throw new Error(`本地预览订阅失败: ${reason}`)
     }
-  }
-
-  async fetchFeedByUrl({ url }: FeedQueryParams) {
-    const res = await api().feeds.get({
-      url,
-    })
-
-    const nonce = Math.random().toString(36).slice(2, 15)
-
-    const finalData = {
-      ...res.data.feed,
-      updatesPerWeek: res.data.analytics?.updatesPerWeek,
-      subscriptionCount: res.data.analytics?.subscriptionCount,
-      latestEntryPublishedAt: res.data.analytics?.latestEntryPublishedAt,
-    } as FeedModel
-    if (!finalData.id) {
-      finalData["nonce"] = nonce
-      finalData["id"] = nonce
-    }
-    feedActions.upsertMany([finalData])
-
-    return {
-      responseData: res.data,
-      feed: finalData,
-    }
-  }
-
-  async claimFeed(feedId: string) {
-    const curFeed = get().feeds[feedId]
-    if (!curFeed) return
-
-    const tx = createTransaction()
-    tx.store(() => {
-      feedActions.patchInSession(feedId, {
-        ownerUserId: whoami()?.id || null,
-      })
-    })
-
-    tx.request(async () => {
-      await api().feeds.claim.challenge({
-        feedId,
-      })
-    })
-
-    tx.persist(() => {
-      const newFeed = get().feeds[feedId]
-      if (!newFeed) return
-      return FeedService.upsertMany([newFeed])
-    })
-
-    tx.rollback(() => {
-      feedActions.patchInSession(feedId, {
-        ownerUserId: curFeed.ownerUserId,
-      })
-    })
-
-    await tx.run()
-  }
-
-  async fetchAnalytics(feedId: string | string[]) {
-    const feedIds = Array.isArray(feedId) ? feedId : [feedId]
-    const res = await api().feeds.analytics({
-      id: feedIds,
-    })
-
-    const { analytics } = res.data
-
-    for (const id of feedIds) {
-      const feedAnalytics = analytics[id]
-      if (feedAnalytics) {
-        await feedActions.patch(id, {
-          subscriptionCount: feedAnalytics.subscriptionCount,
-          updatesPerWeek: feedAnalytics.updatesPerWeek,
-          latestEntryPublishedAt: getDateISOString(feedAnalytics.latestEntryPublishedAt),
-        })
-      }
-    }
-
-    return analytics
   }
 }
 export const feedSyncServices = new FeedSyncServices()

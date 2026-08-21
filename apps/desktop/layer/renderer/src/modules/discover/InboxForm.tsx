@@ -1,3 +1,4 @@
+import { zodResolver } from "@hookform/resolvers/zod"
 import { Logo } from "@suhui/components/icons/logo.jsx"
 import { Button } from "@suhui/components/ui/button/index.js"
 import { Card, CardHeader } from "@suhui/components/ui/card/index.jsx"
@@ -10,20 +11,18 @@ import {
   FormMessage,
 } from "@suhui/components/ui/form/index.jsx"
 import { Input } from "@suhui/components/ui/input/index.js"
-import { env } from "@suhui/shared/env.desktop"
 import { useInboxById } from "@suhui/store/inbox/hooks"
 import { inboxSyncService } from "@suhui/store/inbox/store"
 import type { InboxModel } from "@suhui/store/inbox/types"
 import { cn } from "@suhui/utils/utils"
-import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation } from "@tanstack/react-query"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
-import { toast } from "sonner"
 import { z } from "zod"
 
 import { useCurrentModal } from "~/components/ui/modal/stacked/hooks"
 import { createErrorToaster } from "~/lib/error-parser"
+import { toast } from "~/lib/toast"
 import { FollowSummary } from "~/modules/feed/feed-summary"
 
 export const InboxForm: Component<{
@@ -81,19 +80,6 @@ const InboxInnerForm = ({ inbox }: { inbox?: Nullable<InboxModel> }) => {
     },
   })
 
-  const mutationCreate = useMutation({
-    mutationFn: async ({ handle, title }: { handle: string; title: string }) => {
-      await inboxSyncService.createInbox({
-        handle,
-        title,
-      })
-    },
-    onSuccess: (_) => {
-      toast.success(t("discover.inbox_create_success"))
-    },
-    onError: createErrorToaster(t("discover.inbox_create_error")),
-  })
-
   const mutationChange = useMutation({
     mutationFn: async ({ handle, title }: { handle: string; title: string }) => {
       await inboxSyncService.updateInbox({
@@ -108,11 +94,9 @@ const InboxInnerForm = ({ inbox }: { inbox?: Nullable<InboxModel> }) => {
   })
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    if (inbox) {
-      mutationChange.mutate({ handle: values.handle, title: values.title })
-    } else {
-      mutationCreate.mutate({ handle: values.handle, title: values.title })
-    }
+    // 收件箱由云端服务分配地址，本地只能改名，因此这里没有新建分支。
+    if (!inbox) return
+    mutationChange.mutate({ handle: values.handle, title: values.title })
     currentModal.dismiss?.()
   }
 
@@ -131,24 +115,6 @@ const InboxInnerForm = ({ inbox }: { inbox?: Nullable<InboxModel> }) => {
           className={cn("space-y-4")}
           data-testid="discover-form"
         >
-          {!inbox && (
-            <FormField
-              control={form.control}
-              name="handle"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("discover.inbox_handle")}</FormLabel>
-                  <FormControl>
-                    <div className={cn("flex w-64 items-center gap-2")}>
-                      <Input autoFocus {...field} />
-                      <span className="text-zinc-500">{env.VITE_INBOXES_EMAIL}</span>
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
           <FormField
             control={form.control}
             name="title"
@@ -163,8 +129,8 @@ const InboxInnerForm = ({ inbox }: { inbox?: Nullable<InboxModel> }) => {
             )}
           />
           <div className={cn("center flex justify-end gap-4")} data-testid="discover-form-actions">
-            <Button type="submit" isLoading={mutationCreate.isPending}>
-              {t(inbox ? "discover.inbox_update" : "discover.inbox_create")}
+            <Button type="submit" isLoading={mutationChange.isPending}>
+              {t("discover.inbox_update")}
             </Button>
           </div>
         </form>

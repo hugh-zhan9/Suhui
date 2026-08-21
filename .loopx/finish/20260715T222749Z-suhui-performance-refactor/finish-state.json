@@ -1,0 +1,788 @@
+{
+  "schema_version": 1,
+  "audit_id": "20260715T222749Z-suhui-performance-refactor",
+  "slug": "suhui-performance-refactor",
+  "status": "choice-recorded",
+  "updated_at": "2026-07-15T22:28:29.227Z",
+  "inputs": {
+    "scanned": [
+      "slug=suhui-performance-refactor",
+      "worktree=/Users/zhangyukun/project/Suhui",
+      "branch=main",
+      "base_branch=main",
+      "head=c3064c255",
+      "change_window_source=baseline",
+      "change_range=01f18d7..HEAD",
+      "committed_change_count=7",
+      "changed_files_count=170",
+      "uncommitted_change_count=5",
+      "cwd=/Users/zhangyukun/project/Suhui",
+      "env.LOOPX_DEVELOPER=unknown"
+    ]
+  },
+  "audit": {
+    "branch": "main",
+    "base_branch": "main",
+    "worktree": "/Users/zhangyukun/project/Suhui",
+    "head": "c3064c255",
+    "accepted_candidates": [],
+    "rejected_candidates": [],
+    "extraction_candidates": [],
+    "no_candidates_reason": "No accepted or rejected candidates were recorded at audit start.",
+    "change_window": {
+      "source": "baseline",
+      "baseline_ref": "01f18d72b6a946b8d2ca2501741c12255ac6e174",
+      "baseline_ref_short": "01f18d7",
+      "range": "01f18d7..HEAD",
+      "commit_count": 7,
+      "commits": [
+        {
+          "sha": "c3064c2550bc56b6ae1020e10b79ad2b1e5d0321",
+          "subject": "test: close performance review evidence gaps"
+        },
+        {
+          "sha": "08c90df32ae76e095c960c9de854464c9974552c",
+          "subject": "perf: enforce production performance gates"
+        },
+        {
+          "sha": "95a5e62b691ad44e652061a90841e07bacb2d50b",
+          "subject": "perf: lazy-load renderer and stabilize sidebar"
+        },
+        {
+          "sha": "52195684da1769f0728454761914a2cbc4a4c8ab",
+          "subject": "perf: progressively bootstrap remote readers"
+        },
+        {
+          "sha": "375aca3f4917d00a01c80d3da55f41b946640e48",
+          "subject": "perf: dedupe refresh changesets"
+        },
+        {
+          "sha": "a857b487b616f9a279de643c5ba903e8539ee3b3",
+          "subject": "perf: bound desktop startup hydration"
+        },
+        {
+          "sha": "b89c7121b8720d150e73aacbb2c8efc59068d550",
+          "subject": "refactor: bound entry queries and renderer pages"
+        }
+      ],
+      "changed_files": [
+        {
+          "status": "M",
+          "path": "apps/desktop/configs/vite.electron-render.config.d.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/configs/vite.electron-render.config.js"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/configs/vite.electron-render.config.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/forge.config.cts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/main/src/application/agent/service.test.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/main/src/application/agent/service.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/main/src/application/agent/types.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/layer/main/src/application/entry/entry-query-transport.pg.test.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/layer/main/src/application/entry/query-builder.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/layer/main/src/application/entry/query-cursor.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/layer/main/src/application/entry/query-service.test.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/layer/main/src/application/entry/query-service.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/layer/main/src/application/entry/query-types.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/main/src/application/entry/service.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/main/src/application/unread/service.test.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/main/src/application/unread/service.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/main/src/ipc/services/db.test.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/main/src/ipc/services/db.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/main/src/manager/feed-refresh.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/main/src/manager/local-feed-refresh-events.test.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/main/src/manager/local-feed-refresh-events.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/main/src/manager/refresh-audit-log.test.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/main/src/manager/refresh-audit-log.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/main/src/remote/manager.test.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/main/src/remote/manager.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/layer/main/src/remote/shell.test.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/main/src/remote/shell.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/layer/main/src/startup-read-trace.test.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/layer/main/src/startup-read-trace.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/layer/renderer/src/@types/sidebar-owner-hooks.d.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/App.tsx"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/layer/renderer/src/atoms/app.test.tsx"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/atoms/app.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/components/ui/code-highlighter/index.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/layer/renderer/src/components/ui/code-highlighter/lazy-code-highlighter.test.tsx"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/layer/renderer/src/components/ui/code-highlighter/lazy-code-highlighter.tsx"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/layer/renderer/src/generated-routes.test.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/initialize/index.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/layer/renderer/src/initialize/initial-entries-prefetch.test.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/layer/renderer/src/initialize/initial-entries-prefetch.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/initialize/readiness.test.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/initialize/readiness.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/layer/renderer/src/initialize/startup-metrics.test.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/initialize/startup-metrics.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/layer/renderer/src/initialize/startup-read-trace.test.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/layer/renderer/src/initialize/startup-read-trace.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/initialize/startup-snapshot.test.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/initialize/startup-snapshot.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/lib/local-feed-refresh-sync.test.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/lib/local-feed-refresh-sync.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/lib/parse-html.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/layer/renderer/src/lib/query-client.test.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/lib/query-client.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/layer/renderer/src/modules/command/command-manager.test.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/modules/command/command-manager.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/modules/command/hooks/use-command.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/modules/command/registry/registry.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/modules/entry-column/Items/video-item.tsx"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/layer/renderer/src/modules/entry-column/PersistentEntryListBody.test.tsx"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/layer/renderer/src/modules/entry-column/PersistentEntryListBody.tsx"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/modules/entry-column/context/EntriesContext.tsx"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/layer/renderer/src/modules/entry-column/hooks/entries-query-props.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/layer/renderer/src/modules/entry-column/hooks/useEntriesByView.test.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/modules/entry-column/hooks/useEntriesByView.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/modules/entry-column/hooks/useEntryMarkReadHandler.tsx"
+        },
+        {
+          "status": "D",
+          "path": "apps/desktop/layer/renderer/src/modules/entry-column/hooks/useLocalEntries.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/layer/renderer/src/modules/entry-column/hooks/visible-detail-prefetch.test.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/layer/renderer/src/modules/entry-column/hooks/visible-detail-prefetch.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/modules/entry-column/index.tsx"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/modules/entry-column/layouts/EntryListHeader.tsx"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/modules/entry-column/layouts/entry-refresh.test.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/modules/entry-column/layouts/entry-refresh.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/layer/renderer/src/modules/panel/cmdk.test.tsx"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/modules/panel/cmdk.tsx"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/modules/subscription-column/FeedCategory.tsx"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/modules/subscription-column/FeedItem.tsx"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/modules/subscription-column/SortedFeedItems.test.tsx"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/modules/subscription-column/SortedFeedItems.tsx"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/modules/subscription-column/SubscriptionTabButton.tsx"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/modules/subscription-column/index.tsx"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/layer/renderer/src/modules/subscription-column/sidebar-derived-model.profile.test.tsx"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/layer/renderer/src/modules/subscription-column/sidebar-derived-model.test.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/layer/renderer/src/modules/subscription-column/sidebar-derived-model.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/layer/renderer/src/modules/subscription-column/sidebar-owner-hooks.production.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/layer/renderer/src/modules/subscription-column/sidebar-owner-profile.instrumentation.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/modules/subscription-column/subscription-list/SubscriptionList.tsx"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/layer/renderer/src/modules/subscription-column/subscription-list/interaction-regression.test.tsx"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/modules/subscription-column/subscription-list/unread-count.test.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/modules/subscription-column/timeline-switch.test.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/layer/renderer/src/modules/subscription-column/useStartupFrameDeferredMount.test.tsx"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/layer/renderer/src/modules/subscription-column/useStartupFrameDeferredMount.ts"
+        },
+        {
+          "status": "R100",
+          "path": "apps/desktop/layer/renderer/src/pages/(main)/(layer)/timeline/[timelineId]/[feedId]/index.sync.tsx"
+        },
+        {
+          "status": "R100",
+          "path": "apps/desktop/layer/renderer/src/pages/(main)/(layer)/timeline/[timelineId]/[feedId]/layout.sync.tsx"
+        },
+        {
+          "status": "R090",
+          "path": "apps/desktop/layer/renderer/src/pages/(main)/(layer)/timeline/[timelineId]/layout.sync.tsx"
+        },
+        {
+          "status": "R100",
+          "path": "apps/desktop/layer/renderer/src/pages/(main)/layout.sync.tsx"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/providers/lazy/index.electron.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/providers/lazy/index.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/providers/local-feed-refresh-sync-provider.tsx"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/layer/renderer/src/providers/renderer-boundaries.test.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/providers/root-providers.tsx"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/remote/entry-navigation.test.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/remote/main.tsx"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/remote/remote-app.tsx"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/layer/renderer/src/remote/remote-bootstrap.test.tsx"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/layer/renderer/src/remote/remote-bootstrap.tsx"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/layer/renderer/src/remote/remote-performance.test.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/layer/renderer/src/remote/remote-performance.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/src/remote/remote.css"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/layer/renderer/vitest.config.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/package.json"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/scripts/assert-sidebar-profile-elided.mjs"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/scripts/assert-sidebar-profile-elided.test.mjs"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/scripts/forge-ignore.test.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/scripts/forge-ignore.ts"
+        },
+        {
+          "status": "M",
+          "path": "apps/desktop/scripts/packaging/rsshub-removed.test.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/scripts/performance/artifact.test.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/scripts/performance/build-identity.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/scripts/performance/collect-evidence.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/scripts/performance/contracts.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/scripts/performance/evidence.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/scripts/performance/fixture.test.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/scripts/performance/fixture.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/scripts/performance/package-artifact.test.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/scripts/performance/package-artifact.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/scripts/performance/prior-evidence.v1.json"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/scripts/performance/query-plan-test-fixtures.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/scripts/performance/query-plan.test.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/scripts/performance/query-plan.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/scripts/performance/report.test.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/scripts/performance/report.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/scripts/performance/run-desktop.test.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/scripts/performance/run-desktop.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/scripts/performance/run-remote.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/scripts/performance/stats.test.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/scripts/performance/stats.ts"
+        },
+        {
+          "status": "A",
+          "path": "apps/desktop/scripts/performance/verify-artifacts.ts"
+        },
+        {
+          "status": "M",
+          "path": "packages/internal/database/src/services/entry.test.ts"
+        },
+        {
+          "status": "M",
+          "path": "packages/internal/database/src/services/entry.ts"
+        },
+        {
+          "status": "A",
+          "path": "packages/internal/database/src/startup-read-trace.test.ts"
+        },
+        {
+          "status": "A",
+          "path": "packages/internal/database/src/startup-read-trace.ts"
+        },
+        {
+          "status": "A",
+          "path": "packages/internal/shared/src/entry-change.ts"
+        },
+        {
+          "status": "M",
+          "path": "packages/internal/store/src/hydrate.test.ts"
+        },
+        {
+          "status": "M",
+          "path": "packages/internal/store/src/hydrate.ts"
+        },
+        {
+          "status": "M",
+          "path": "packages/internal/store/src/modules/entry/base.ts"
+        },
+        {
+          "status": "A",
+          "path": "packages/internal/store/src/modules/entry/change-invalidation.test.ts"
+        },
+        {
+          "status": "A",
+          "path": "packages/internal/store/src/modules/entry/change-invalidation.ts"
+        },
+        {
+          "status": "A",
+          "path": "packages/internal/store/src/modules/entry/hooks.prefetch.test.tsx"
+        },
+        {
+          "status": "M",
+          "path": "packages/internal/store/src/modules/entry/hooks.test.ts"
+        },
+        {
+          "status": "M",
+          "path": "packages/internal/store/src/modules/entry/hooks.ts"
+        },
+        {
+          "status": "A",
+          "path": "packages/internal/store/src/modules/entry/store.projection.test.ts"
+        },
+        {
+          "status": "M",
+          "path": "packages/internal/store/src/modules/entry/store.ts"
+        },
+        {
+          "status": "M",
+          "path": "packages/internal/store/src/modules/entry/types.ts"
+        },
+        {
+          "status": "A",
+          "path": "packages/internal/store/src/modules/feed/store.restore.test.ts"
+        },
+        {
+          "status": "M",
+          "path": "packages/internal/store/src/modules/subscription/hooks.ts"
+        },
+        {
+          "status": "M",
+          "path": "packages/internal/store/src/modules/subscription/store.ts"
+        },
+        {
+          "status": "M",
+          "path": "packages/internal/store/src/modules/unread/invalidate-entries.test.ts"
+        },
+        {
+          "status": "M",
+          "path": "packages/internal/store/src/modules/unread/invalidate-entries.ts"
+        },
+        {
+          "status": "M",
+          "path": "packages/internal/store/src/modules/unread/store.ts"
+        },
+        {
+          "status": "A",
+          "path": "packages/internal/store/src/remote/bootstrap.test.ts"
+        },
+        {
+          "status": "A",
+          "path": "packages/internal/store/src/remote/bootstrap.ts"
+        },
+        {
+          "status": "D",
+          "path": "packages/internal/store/src/remote/hydrate.ts"
+        },
+        {
+          "status": "M",
+          "path": "packages/internal/store/src/remote/index.ts"
+        },
+        {
+          "status": "A",
+          "path": "packages/internal/store/src/remote/sse-handler.test.ts"
+        },
+        {
+          "status": "M",
+          "path": "packages/internal/store/src/remote/sse-handler.ts"
+        },
+        {
+          "status": "M",
+          "path": "packages/internal/store/src/remote/transforms.test.ts"
+        },
+        {
+          "status": "M",
+          "path": "packages/internal/store/src/remote/transforms.ts"
+        },
+        {
+          "status": "M",
+          "path": "packages/internal/store/src/runtime/client.test.ts"
+        },
+        {
+          "status": "M",
+          "path": "packages/internal/store/src/runtime/client.ts"
+        },
+        {
+          "status": "M",
+          "path": "packages/internal/store/src/runtime/index.ts"
+        },
+        {
+          "status": "M",
+          "path": "packages/internal/utils/src/jotai.ts"
+        }
+      ],
+      "diff_stat": ".../configs/vite.electron-render.config.d.ts       |  17 +-\n .../desktop/configs/vite.electron-render.config.js |  10 +\n .../desktop/configs/vite.electron-render.config.ts |  11 +\n apps/desktop/forge.config.cts                      |  29 +-\n .../main/src/application/agent/service.test.ts     | 221 ++---\n .../layer/main/src/application/agent/service.ts    | 188 +----\n .../layer/main/src/application/agent/types.ts      |  19 +-\n .../entry/entry-query-transport.pg.test.ts         | 478 +++++++++++\n .../main/src/application/entry/query-builder.ts    | 180 +++++\n .../main/src/application/entry/query-cursor.ts     |  57 ++\n .../src/application/entry/query-service.test.ts    | 329 ++++++++\n .../main/src/application/entry/query-service.ts    | 164 ++++\n .../main/src/application/entry/query-types.ts      |  88 ++\n .../layer/main/src/application/entry/service.ts    |  46 +-\n .../main/src/application/unread/service.test.ts    | 179 ++++-\n .../layer/main/src/application/unread/service.ts   | 131 +--\n .../desktop/layer/main/src/ipc/services/db.test.ts | 360 ++++++++-\n apps/desktop/layer/main/src/ipc/services/db.ts     | 176 ++--\n .../desktop/layer/main/src/manager/feed-refresh.ts |   8 +-\n .../src/manager/local-feed-refresh-events.test.ts  | 149 +++-\n .../main/src/manager/local-feed-refresh-events.ts  |  49 +-\n .../main/src/manager/refresh-audit-log.test.ts     |  73 +-\n .../layer/main/src/manager/refresh-audit-log.ts    | 156 +++-\n apps/desktop/layer/main/src/remote/manager.test.ts | 735 +++++++++++++++--\n apps/desktop/layer/main/src/remote/manager.ts      | 547 +++++++++++--\n apps/desktop/layer/main/src/remote/shell.test.ts   | 886 +++++++++++++++++++++\n apps/desktop/layer/main/src/remote/shell.ts        | 447 +++++++++--\n .../layer/main/src/startup-read-trace.test.ts      |  23 +\n apps/desktop/layer/main/src/startup-read-trace.ts  |  17 +\n .../renderer/src/@types/sidebar-owner-hooks.d.ts   |  16 +\n apps/desktop/layer/renderer/src/App.tsx            |   8 +-\n apps/desktop/layer/renderer/src/atoms/app.test.tsx | 105 +++\n apps/desktop/layer/renderer/src/atoms/app.ts       |  17 +-\n .../src/components/ui/code-highlighter/index.ts    |   1 +\n .../lazy-code-highlighter.test.tsx                 |  72 ++\n .../ui/code-highlighter/lazy-code-highlighter.tsx  |  44 +\n .../layer/renderer/src/generated-routes.test.ts    |  30 +\n .../desktop/layer/renderer/src/initialize/index.ts |  11 +-\n .../initialize/initial-entries-prefetch.test.ts    | 116 +++\n .../src/initialize/initial-entries-prefetch.ts     |  62 ++\n .../renderer/src/initialize/readiness.test.ts      |  62 ++\n .../layer/renderer/src/initialize/readiness.ts     |  46 +-\n .../src/initialize/startup-metrics.test.ts         |  65 ++\n .../renderer/src/initialize/startup-metrics.ts     |  25 +-\n .../src/initialize/startup-read-trace.test.ts      |  29 +\n .../renderer/src/initialize/startup-read-trace.ts  |  10 +\n .../src/initialize/startup-snapshot.test.ts        | 173 +++-\n .../renderer/src/initialize/startup-snapshot.ts    |  91 ++-\n .../src/lib/local-feed-refresh-sync.test.ts        |  86 +-\n .../renderer/src/lib/local-feed-refresh-sync.ts    |  35 +-\n apps/desktop/layer/renderer/src/lib/parse-html.ts  |  41 +-\n .../layer/renderer/src/lib/query-client.test.ts    |  79 ++\n .../desktop/layer/renderer/src/lib/query-client.ts |   3 +\n .../src/modules/command/command-manager.test.ts    | 185 +++++\n .../src/modules/command/command-manager.ts         | 199 ++++-\n .../src/modules/command/hooks/use-command.ts       |  17 +-\n .../src/modules/command/registry/registry.ts       |  13 +-\n .../src/modules/entry-column/Items/video-item.tsx  |  26 +-\n .../entry-column/PersistentEntryListBody.test.tsx  |  70 ++\n .../entry-column/PersistentEntryListBody.tsx       |  24 +\n .../entry-column/context/EntriesContext.tsx        |   8 +-\n .../entry-column/hooks/entries-query-props.ts      |  58 ++\n .../entry-column/hooks/useEntriesByView.test.ts    | 491 ++++++++++++\n .../modules/entry-column/hooks/useEntriesByView.ts | 334 ++++----\n .../entry-column/hooks/useEntryMarkReadHandler.tsx |  50 +-\n .../modules/entry-column/hooks/useLocalEntries.ts  | 159 ----\n .../hooks/visible-detail-prefetch.test.ts          | 115 +++\n .../entry-column/hooks/visible-detail-prefetch.ts  | 113 +++\n .../renderer/src/modules/entry-column/index.tsx    |  72 +-\n .../entry-column/layouts/EntryListHeader.tsx       |   6 +-\n .../entry-column/layouts/entry-refresh.test.ts     | 348 ++++++--\n .../modules/entry-column/layouts/entry-refresh.ts  |  67 +-\n .../layer/renderer/src/modules/panel/cmdk.test.tsx | 163 ++++\n .../layer/renderer/src/modules/panel/cmdk.tsx      |  11 +-\n .../modules/subscription-column/FeedCategory.tsx   |  32 +-\n .../src/modules/subscription-column/FeedItem.tsx   |   2 +\n .../subscription-column/SortedFeedItems.test.tsx   |  88 +-\n .../subscription-column/SortedFeedItems.tsx        |  25 +-\n .../subscription-column/SubscriptionTabButton.tsx  |   4 +\n .../src/modules/subscription-column/index.tsx      |  29 +-\n .../sidebar-derived-model.profile.test.tsx         | 142 ++++\n .../sidebar-derived-model.test.ts                  | 250 ++++++\n .../subscription-column/sidebar-derived-model.ts   | 162 ++++\n .../sidebar-owner-hooks.production.ts              |   3 +\n .../sidebar-owner-profile.instrumentation.ts       |  43 +\n .../subscription-list/SubscriptionList.tsx         | 105 ++-\n .../interaction-regression.test.tsx                | 714 +++++++++++++++++\n .../subscription-list/unread-count.test.ts         |  42 +-\n .../subscription-column/timeline-switch.test.ts    |  12 +-\n .../useStartupFrameDeferredMount.test.tsx          | 184 +++++\n .../useStartupFrameDeferredMount.ts                |  59 ++\n .../[feedId]/{index.tsx => index.sync.tsx}         |   0\n .../[feedId]/{layout.tsx => layout.sync.tsx}       |   0\n .../[timelineId]/{layout.tsx => layout.sync.tsx}   |   6 +-\n .../pages/(main)/{layout.tsx => layout.sync.tsx}   |   0\n .../renderer/src/providers/lazy/index.electron.ts  |   1 +\n .../layer/renderer/src/providers/lazy/index.ts     |   5 +\n .../providers/local-feed-refresh-sync-provider.tsx |  30 +-\n .../src/providers/renderer-boundaries.test.ts      |  58 ++\n .../renderer/src/providers/root-providers.tsx      |   5 +-\n .../renderer/src/remote/entry-navigation.test.ts   |  25 +\n apps/desktop/layer/renderer/src/remote/main.tsx    |  39 +-\n .../layer/renderer/src/remote/remote-app.tsx       | 209 +++--\n .../renderer/src/remote/remote-bootstrap.test.tsx  | 296 +++++++\n .../layer/renderer/src/remote/remote-bootstrap.tsx |  89 +++\n .../renderer/src/remote/remote-performance.test.ts |  49 ++\n .../renderer/src/remote/remote-performance.ts      |  53 ++\n apps/desktop/layer/renderer/src/remote/remote.css  |  64 +-\n apps/desktop/layer/renderer/vitest.config.ts       |   4 +\n apps/desktop/package.json                          |  14 +\n .../scripts/assert-sidebar-profile-elided.mjs      | 103 +++\n .../scripts/assert-sidebar-profile-elided.test.mjs |  38 +\n apps/desktop/scripts/forge-ignore.test.ts          |  30 +-\n apps/desktop/scripts/forge-ignore.ts               |  39 +-\n .../scripts/packaging/rsshub-removed.test.ts       |   8 +\n apps/desktop/scripts/performance/artifact.test.ts  | 491 ++++++++++++\n apps/desktop/scripts/performance/build-identity.ts | 201 +++++\n .../scripts/performance/collect-evidence.ts        |  77 ++\n apps/desktop/scripts/performance/contracts.ts      | 104 +++\n apps/desktop/scripts/performance/evidence.ts       | 540 +++++++++++++\n apps/desktop/scripts/performance/fixture.test.ts   | 237 ++++++\n apps/desktop/scripts/performance/fixture.ts        | 474 +++++++++++\n .../scripts/performance/package-artifact.test.ts   | 136 ++++\n .../scripts/performance/package-artifact.ts        | 185 +++++\n .../scripts/performance/prior-evidence.v1.json     |  29 +\n .../performance/query-plan-test-fixtures.ts        |   5 +\n .../desktop/scripts/performance/query-plan.test.ts | 310 +++++++\n apps/desktop/scripts/performance/query-plan.ts     | 663 +++++++++++++++\n apps/desktop/scripts/performance/report.test.ts    | 224 ++++++\n apps/desktop/scripts/performance/report.ts         | 555 +++++++++++++\n .../scripts/performance/run-desktop.test.ts        | 100 +++\n apps/desktop/scripts/performance/run-desktop.ts    | 619 ++++++++++++++\n apps/desktop/scripts/performance/run-remote.ts     | 350 ++++++++\n apps/desktop/scripts/performance/stats.test.ts     |  76 ++\n apps/desktop/scripts/performance/stats.ts          |  60 ++\n .../scripts/performance/verify-artifacts.ts        | 166 ++++\n .../internal/database/src/services/entry.test.ts   |  60 +-\n packages/internal/database/src/services/entry.ts   |  18 +-\n .../database/src/startup-read-trace.test.ts        |  31 +\n .../internal/database/src/startup-read-trace.ts    |  20 +\n packages/internal/shared/src/entry-change.ts       | 126 +++\n packages/internal/store/src/hydrate.test.ts        |  47 +-\n packages/internal/store/src/hydrate.ts             |   2 -\n packages/internal/store/src/modules/entry/base.ts  |   6 +\n .../src/modules/entry/change-invalidation.test.ts  | 701 ++++++++++++++++\n .../store/src/modules/entry/change-invalidation.ts | 337 ++++++++\n .../src/modules/entry/hooks.prefetch.test.tsx      | 149 ++++\n .../internal/store/src/modules/entry/hooks.test.ts |  26 +-\n packages/internal/store/src/modules/entry/hooks.ts | 281 ++++---\n .../src/modules/entry/store.projection.test.ts     | 151 ++++\n packages/internal/store/src/modules/entry/store.ts | 171 +++-\n packages/internal/store/src/modules/entry/types.ts |  31 +-\n .../store/src/modules/feed/store.restore.test.ts   |  46 ++\n .../store/src/modules/subscription/hooks.ts        |  81 +-\n .../store/src/modules/subscription/store.ts        |   5 +-\n .../src/modules/unread/invalidate-entries.test.ts  |  39 +-\n .../store/src/modules/unread/invalidate-entries.ts |  27 +-\n .../internal/store/src/modules/unread/store.ts     |   6 +-\n .../internal/store/src/remote/bootstrap.test.ts    | 276 +++++++\n packages/internal/store/src/remote/bootstrap.ts    | 104 +++\n packages/internal/store/src/remote/hydrate.ts      | 124 ---\n packages/internal/store/src/remote/index.ts        |  14 +-\n .../internal/store/src/remote/sse-handler.test.ts  | 515 ++++++++++++\n packages/internal/store/src/remote/sse-handler.ts  | 153 ++--\n .../internal/store/src/remote/transforms.test.ts   | 149 +++-\n packages/internal/store/src/remote/transforms.ts   | 170 +++-\n packages/internal/store/src/runtime/client.test.ts | 111 ++-\n packages/internal/store/src/runtime/client.ts      | 412 ++++++----\n packages/internal/store/src/runtime/index.ts       |   2 +-\n packages/internal/utils/src/jotai.ts               |   1 +\n 170 files changed, 20269 insertions(+), 2315 deletions(-)",
+      "requirement_start_commit": "01f18d72b6a946b8d2ca2501741c12255ac6e174",
+      "requirement_start_commit_short": "01f18d7",
+      "requirement_start_source": "execution-range",
+      "final_head": "c3064c2",
+      "tracked_status": ["M .gitignore", " M .idea/Suhui.iml", " M .vscode/settings.json"],
+      "untracked_status": [
+        "?? docs/loopx/design/2026-07-13-suhui-performance-refactor/",
+        "?? docs/loopx/plans/2026-07-13-suhui-performance-refactor/"
+      ],
+      "uncommitted_status": [
+        "M .gitignore",
+        " M .idea/Suhui.iml",
+        " M .vscode/settings.json",
+        "?? docs/loopx/design/2026-07-13-suhui-performance-refactor/",
+        "?? docs/loopx/plans/2026-07-13-suhui-performance-refactor/"
+      ],
+      "source_artifacts": ["docs/loopx/plans/2026-07-13-suhui-performance-refactor/00-overview.md"]
+    },
+    "report_candidates": {
+      "accepted": [
+        {
+          "id": "audit-evidence",
+          "summary": "Finish audit evidence collected from the current worktree."
+        }
+      ],
+      "rejected": []
+    }
+  },
+  "choice": {
+    "action": "keep",
+    "status": "pending",
+    "summary": "Implementation is committed on main and spec final review passed 30/30. No memory or spec delta candidates. Done recording is pending only because pre-existing tracked user changes in .gitignore, .vscode/settings.json, and .idea/Suhui.iml must remain untouched.",
+    "url": null,
+    "recorded_at": "2026-07-15T22:28:29.227Z",
+    "updated_at": "2026-07-15T22:28:29.227Z"
+  },
+  "choice_history": []
+}

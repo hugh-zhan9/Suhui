@@ -2,10 +2,10 @@ import { Button } from "@suhui/components/ui/button/index.js"
 import { Input } from "@suhui/components/ui/input/Input.js"
 import { useQuery } from "@tanstack/react-query"
 import { useEffect, useState } from "react"
-import { toast } from "sonner"
 
 import { ipcServices } from "~/lib/client"
 import { queryClient } from "~/lib/query-client"
+import { toast } from "~/lib/toast"
 import { SettingDescription } from "~/modules/settings/control"
 import { SettingItemGroup } from "~/modules/settings/section"
 

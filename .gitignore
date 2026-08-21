@@ -33,6 +33,9 @@ apps/desktop/build/appxmanifest.xml
 
 .claude/settings.local.json
 .serena
+.idea/
+.omx/
+.vscode/settings.json
 
 # Web 构建产物（根目录 index.html 由 build:web 生成，不应提交）
 /index.html

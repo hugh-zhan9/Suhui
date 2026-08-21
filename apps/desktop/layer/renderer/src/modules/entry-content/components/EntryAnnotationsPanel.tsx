@@ -5,7 +5,8 @@ import { useEntry } from "@suhui/store/entry/hooks"
 import type { EntryModel } from "@suhui/store/entry/types"
 import { runtimeClient } from "@suhui/store/runtime"
 import { useCallback, useEffect, useRef, useState } from "react"
-import { toast } from "sonner"
+
+import { toast } from "~/lib/toast"
 
 type Note = { id: string; content: string; updatedAt: number }
 type Highlight = { id: string; quote: string; source: string; status: "active" | "orphaned" }
@@ -56,7 +57,7 @@ export function EntryAnnotationsPanel({ entryId }: { entryId: string }) {
     setClusterEntries(null)
     void runtimeClient.annotations
       .relocate(entryId)
-      .catch(() => undefined)
+      .catch(() => {})
       .then(refresh)
   }, [entryId, entryState?.hidden, refresh])
 

@@ -1,3 +1,5 @@
+import type { DiscoveryItem } from "@follow-app/client-sdk"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { Button, MotionButtonBase } from "@suhui/components/ui/button/index.js"
 import {
   Form,
@@ -10,8 +12,6 @@ import {
 import { Input } from "@suhui/components/ui/input/index.js"
 import { FeedViewType } from "@suhui/constants"
 import { cn } from "@suhui/utils/utils"
-import type { DiscoveryItem } from "@follow-app/client-sdk"
-import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation } from "@tanstack/react-query"
 import { produce } from "immer"
 import type { ChangeEvent, CompositionEvent } from "react"
@@ -23,7 +23,6 @@ import { z } from "zod"
 
 import { useModalStack } from "~/components/ui/modal/stacked/hooks"
 import { useRequireLogin } from "~/hooks/common/useRequireLogin"
-import { followClient } from "~/lib/api-client"
 import { ipcServices } from "~/lib/client"
 import { toastFetchError } from "~/lib/error-parser"
 import { parseRsshubLocalError } from "~/lib/rsshub-local-error"
@@ -238,18 +237,11 @@ export function UnifiedDiscoverForm() {
         return []
       }
 
-      // For search, perform discovery
-      const { data } = await followClient.api.discover.discover({
-        keyword: keyword.trim(),
-        target: "feeds",
-      })
-
-      setDiscoverSearchData((prev) => ({
-        ...prev,
-        [atomKey.current]: data,
-      }))
-
-      return data
+      // 本地版没有全网搜索索引：能处理的是「网页/订阅源地址」与 rsshub:// 路由。
+      // 给地址时上面的分支已经走本地发现＋抓取，这里只需说清楚要输入什么。
+      throw new Error(
+        "本地版没有全网搜索索引。请直接粘贴网页地址或订阅源地址（http/https），或使用 rsshub:// 路由。",
+      )
     },
     onError: (error) => {
       toastFetchError(error as Error)

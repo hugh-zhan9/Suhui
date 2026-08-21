@@ -4,7 +4,8 @@ import type { SubscriptionModel } from "@suhui/store/subscription/types"
 import { useMutation } from "@tanstack/react-query"
 import { useHotkeys } from "react-hotkeys-hook"
 import { Trans, useTranslation } from "react-i18next"
-import { toast } from "sonner"
+
+import { toast } from "~/lib/toast"
 
 import { navigateEntry } from "./useNavigateEntry"
 import { getRouteParams } from "./useRouteParams"

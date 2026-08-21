@@ -41,6 +41,7 @@ vi.mock("~/manager/db", () => ({
       dbPassword: "current-password",
       source: "env",
     })),
+    getDefaultSqlitePath: vi.fn(() => "/tmp/suhui.db"),
     getStatus: vi.fn(() => ({})),
     switchDatabase: vi.fn().mockResolvedValue(undefined),
   },
@@ -122,11 +123,31 @@ describe("AppService database switch", () => {
       dbUser: "next-user",
     })
 
+    // 这个表单只改连接参数，不改方言：缺省 dbType 会被
+    // normalizeDbConfigOverride 一律当成 postgres，sqlite 用户会被静默切库。
     expect(DBManager.switchDatabase).toHaveBeenCalledWith({
+      dbType: "postgres",
       dbConn: "127.0.0.1:5432/next",
       dbUser: "next-user",
       dbPassword: "current-password",
     })
+  })
+
+  it("保留当前方言，不因表单缺少 dbType 而切库", async () => {
+    vi.mocked(DBManager.getEffectiveConfig).mockReturnValueOnce({
+      dbType: "sqlite",
+      dbConn: "/tmp/suhui.db",
+      dbUser: "",
+      dbPassword: "",
+      source: "store-override",
+    })
+    const service = new AppService()
+
+    await service.switchDbConfig({} as any, { dbConn: "/tmp/moved.db" })
+
+    expect(DBManager.switchDatabase).toHaveBeenCalledWith(
+      expect.objectContaining({ dbType: "sqlite", dbConn: "/tmp/moved.db" }),
+    )
   })
 
   it("allows clearing runtime override back to env defaults", async () => {

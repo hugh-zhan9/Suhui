@@ -125,7 +125,7 @@ const errorTypes = [
  * - `/timeline/*` → TimelineEntryTwoColumnLayout (two-column feed reader)
  * - `/discover` → SubviewLayout (full-screen discovery)
  * - `/ai` → AIChatLayout (AI chat interface)
- * - `/power`, `/action`, `/rsshub` → SubviewLayout (utility pages)
+ * - `/power`, `/rsshub` → SubviewLayout (utility pages)
  *
  * @component
  * @example
@@ -231,4 +231,3 @@ const RootContainer = ({
     </div>
   )
 }
-

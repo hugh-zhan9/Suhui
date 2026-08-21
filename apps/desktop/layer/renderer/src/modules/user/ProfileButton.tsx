@@ -87,15 +87,6 @@ export const ProfileButton: FC<ProfileButtonProps> = memo((props) => {
 
         <DropdownMenuSeparator />
 
-        <DropdownMenuItem
-          className="pl-3"
-          onClick={() => {
-            navigate("/action")
-          }}
-          icon={<i className="i-mgc-magic-2-cute-re" />}
-        >
-          {t("words.actions")}
-        </DropdownMenuItem>
         {!isInMASReview && (
           <DropdownMenuItem
             className="pl-3"

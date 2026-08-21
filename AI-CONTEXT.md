@@ -1,7 +1,7 @@
 # AI-CONTEXT.md
 
 > 单一事实源（Single Source of Truth）
-> 最后更新时间：2026-08-19（订阅预览失败提示口径）
+> 最后更新时间：2026-08-21（SQLite 支持与 Postgres ↔ SQLite 双向转换；渲染层远端接口清零；错误 toast 可复制）
 
 ## 上下文委派策略
 
@@ -24,12 +24,32 @@
 
 ### 3) 本地数据面
 
-- 主数据面：主进程 Postgres（`pg` / Drizzle）
+- 主数据面：主进程**双方言** Postgres / SQLite（`pg` / `better-sqlite3` + Drizzle）
   - 入口：`apps/desktop/layer/main/src/manager/db.ts`
   - 初始化：`apps/desktop/layer/main/src/manager/bootstrap.ts`
+  - 方言解析：`manager/db-config.ts` 的 `resolveDbType`——`DB_TYPE` 显式优先，
+    否则**只要存在 `DB_CONN` 就按 Postgres**（既有安装不被静默切库），全新安装默认 SQLite
+  - SQLite 默认库文件：`app.getPath("userData")/suhui.db`
+- **表对象随方言重绑**（关键约束）：`packages/internal/database/src/schemas/index.ts`
+  用 `export let` + `onRuntimeDbTypeChange` 实时绑定切换 27 张表。
+  drizzle 的值编解码（boolean ↔ 0/1、JSON ↔ 文本）挂在**列对象**上，
+  拿 Postgres 的表去查 SQLite 会报
+  `SQLite3 can only bind numbers, strings, bigints, buffers, and null`。
+  唯一切换点是 `setRuntimeDbType`；主进程在 `runInit` 首个 await 前设定，渲染层在
+  `db.desktop.ts` 解析方言后设定。**不要用 Proxy 转发**——drizzle 的 `is()` 判定会失败并无限递归
+- 迁移：Postgres 用 `db.main.ts` 内硬编码 DDL 数组；SQLite 用
+  `src/drizzle/sqlite-baseline.ts`（由 `scripts/generate-sqlite-baseline.mjs` 从单一基线编译，
+  打包后 `.sql` 不可读）＋ `__suhui_migrations` 账本保证幂等
+- `schemas/sqlite.ts` 由 `scripts/generate-sqlite-schema.mjs` 从 `postgres.ts` 机械生成，
+  不要手改；两套 schema 逐列产出相同 JS 类型（`dialect-type-parity.test-d.ts` 钉住）
+- 双向转换：`application/db-conversion/service.ts`，走 `.suhui-backup` 格式
+  （导出 → 切库 → replace 恢复），非破坏性，源库始终保留；
+  UI 在 设置 → 数据 → 数据库，转换期间该区块阻塞
+- 原生模块：只有 `better-sqlite3` 惰性 `createRequire`；**drizzle 的 sqlite 驱动必须静态导入**
+  （打包后 asar 里没有 `node_modules/drizzle-orm`）
 - 渲染层 DB：`packages/internal/database/src/db.desktop.ts`
-  - 已改为 IPC SQL 代理（`db.executeRawSql`）
-- 兼容迁移：保留 `migrateFromIndexedDB()`，用于历史 IndexedDB -> Postgres
+  - IPC SQL 代理（`db.executeRawSql`），按 `db.getDialect()` 选 `sqlite-proxy` 或 `pg-proxy`
+- 兼容迁移：保留 `migrateFromIndexedDB()`，用于历史 IndexedDB -> 主库
 
 ### 4) 启动与构建（当前可用）
 
@@ -37,7 +57,28 @@
 - 预览启动：`pnpm --filter suhui start`
 - 打包：`pnpm --filter suhui build:electron`  
   无签名打包：`pnpm --filter suhui build:electron:unsigned`
-- 无签名打包产物目录：`/tmp/folo-forge-out/make`（常见产物：`溯洄-<version>-macos-arm64.dmg`）
+- 无签名产物根目录：`/tmp/suhui-forge-out`  
+  定义在 `apps/desktop/scripts/forge-ignore.ts` 的 `unsignedForgeOutputRoot`，仅在 `FOLO_NO_SIGN=1` 时作为 forge `outDir` 生效
+  - `make` 流程产物：`/tmp/suhui-forge-out/make`（darwin makers 为 `MakerZIP` + `MakerDMG`）
+  - `package` 流程产物：`/tmp/suhui-forge-out/溯洄-darwin-<arch>/溯洄.app`
+
+#### 本机安装（macOS，日常验证用这个）
+
+- 一条命令：`pnpm install:macos-local`（等价于 `bash scripts/install-macos-local.sh`）
+- 脚本按序执行，任一步失败会打印 `step:` 与产物诊断：
+  1. 退出正在运行的 `溯洄`（AppleScript quit -> TERM -> 15s 后 `kill -9`）
+  2. `pnpm --filter suhui build:electron-vite`
+  3. `FOLO_NO_SIGN=1` 下跑 forge `package`（只 package，不出 DMG）
+  4. `ditto` 到临时路径 -> `codesign --force --deep --sign -` -> `xattr -dr com.apple.quarantine`
+  5. 原子替换 `/Applications/溯洄.app`；替换失败会把旧 bundle 移回原位
+  6. 构建 `@suhui/cli` 并把 `suhui` 软链到 `~/.local/bin`
+  7. `open` 新安装的 app
+- 可用环境变量：
+  - `SUHUI_INSTALL_ARCH`：`arm64` / `x64`，默认取 `uname -m`
+  - `SUHUI_CLI_BIN_DIR`：CLI 软链目录，默认 `~/.local/bin`
+- macOS 上的 Ad-hoc 签名已自动化，不需要手动补签：
+  - forge `postPackage` 钩子在 `platform === "darwin" && FOLO_NO_SIGN=1` 时签名产物（`apps/desktop/scripts/packaging/adhoc-sign.ts`）
+  - `install-macos-local.sh` 在 `ditto` 之后再签一次，确保安装到 `/Applications` 的 bundle 自身有效
 
 ### 5) 远程浏览器访问（当前已落地）
 
@@ -74,7 +115,9 @@
 ### 6) Release 规则（Desktop）
 
 - 当前仓库已移除 GitHub Actions 自动构建/发布 workflow（`.github/workflows` 为空）
-- 发布与安装验证以本地构建流程为准：`pnpm --filter suhui build:electron:unsigned`
+- 发布与安装验证以本地构建流程为准：
+  - 出安装包：`pnpm --filter suhui build:electron:unsigned`
+  - 装到本机验证：`pnpm install:macos-local`
 - 历史 CI 发布规则与 release 编排保留在 `docs/AI_CHANGELOG.md` 作为演进记录，不再作为当前执行基线
 
 ## 本地 RSS 主链路（已落地）
@@ -82,10 +125,42 @@
 ### 1) 订阅
 
 - 新增订阅优先走 IPC：`db.addFeed`
-- 主进程抓取：Node `http/https`（支持重定向）
-- 解析：本地 XML 解析（不依赖 `linkedom/canvas`）
+- 主进程抓取：Electron `session.defaultSession.fetch`（`ipc/services/feed-fetch.ts`，手动跟随重定向）
+- 解析：本地 XML 解析（`rss-parser.ts` 保持零依赖，不引入 `linkedom`）
 - 去重：feed URL + 站点 host 双重判定
 - 入库：`feeds/subscriptions/entries`（本地）
+
+#### 网页地址订阅（自动发现 + 页面生成）
+
+- 入口不变：仍是 `db.previewFeed` / `db.addFeed`，用户可直接填网页地址
+- 判定顺序在 `ipc/services/feed-source-resolver.ts`：
+  1. 先按订阅源文档解析；成功即 `source=direct`，存库地址保持用户输入（`rsshub://` 因此不会被写成实例地址）
+  2. 解析失败且响应是 HTML 时做自动发现（`feed-discovery.ts`）：`link rel=alternate` -> 平台硬规则 -> 页面内订阅链接 -> generator 默认路径 -> 通用路径兜底；候选必须真实抓取并解析出条目才算命中，命中后存库地址改为发现到的订阅源地址
+  3. 仍无订阅源时按文章列表抓取页面（`site-scrape.ts`），存库地址为 `sitescrape:<页面地址>`
+  4. 以上都不成立时抛 `FEED_DISCOVERY_FAILED`，renderer 映射为「该网页没有可用的订阅源」
+
+#### 陈旧订阅源与订阅前选择
+
+- 发现到订阅源后会用同一份已抓取的 HTML 做一次陈旧判定（`feed-staleness.ts`，不额外发请求）
+- 判定为陈旧需同时满足：页面最新文章比订阅源最新条目新 30 天以上，且页面最近 3 篇都不在订阅源里（按路径比对，忽略 host 与 query，兼容换域名与 `?utm_source=rss`）
+- 陈旧且页面可抓取时，默认来源改为页面抓取，并把停更的订阅源作为备选项放进 `sourceOptions`
+- `previewFeed` 返回 `sourceOptions = { active, alternatives, staleLagDays? }`；`alternatives` 非空时 `FeedSourcePicker` 才出现，用户可在订阅前切换
+- 切换的实现是重新预览另一个地址；`followMutation` 始终提交 `feed.url`，因此预览与落库不会不一致
+
+#### 边界与约束
+
+- 候选探测有上限：最多 8 个候选、每个 8s 超时、最多 3 次跳转，整个探测阶段另有 20s 总预算（`DISCOVERY_BUDGET_MS`）
+- 候选地址必须是公网地址，或与页面同 host；页面不得把主进程请求指向 loopback / 内网 / 链路本地地址（`isPrivateNetworkHost`）
+- 发现与抓取只用于订阅流程。刷新既有订阅时 `allowDiscovery: false`，订阅源地址开始返回网页时必须继续报错，不得改用网页内容
+- 输入被改写过的地址（`rsshub://` 解析成实例地址）不做发现，避免把实例地址或 `sitescrape:` 落库
+- 发现与抓取以 `fetchResult.finalUrl` 为基准，相对链接和抓取目标都按跳转后的地址解析
+- HTML 解析统一用 canvas-free 的 `linkedom/worker`（与 OPML、readability 一致），由 `feed-discovery-no-canvas.test.ts` 约束
+- 页面抓取是全自动的，但设有置信度门槛（条目数、日期覆盖率、路径一致性、标题质量）；不达标时明确失败，不把导航链接当文章入库
+- 被同一组多个链接共用的容器不提供日期与摘要：列表容器上的单个日期不得分给整组链接
+- 日期只接受明确到某一天的写法；`2026`、`2026-05`、`1.2.2026` 一律拒绝。纯日期统一归一到 UTC 零点，带时间的时间戳保留原始偏移
+- 抓取不给缺失发布时间兜底，`publishedAt` 缺失即为 0，与「不使用 `Date.now()` 伪装最新发布」口径一致
+- `sitescrape:` 源刷新时重新抓取页面；去重键按抓取目标归一（`rss-dedup.ts`），不与站点真实订阅源冲突
+- `sitescrape:` 源只有本应用能消费，导出 OPML 后其他阅读器无法订阅
 
 ### 2) 条目读取与刷新
 
@@ -133,7 +208,7 @@
 - 批量改读状态后 `unreadOnly` 列表自动刷新
 - All 未读虚高修复（按有效来源聚合）
 - 移除设置中无关的“列表”菜单及其相关模块（发行前精简）
-- 无签名构建后增加 Ad-hoc 自签名步骤，修复 macOS 26（M5）上 `SIGKILL (Code Signature Invalid)` 崩溃
+- 无签名构建后增加 Ad-hoc 自签名步骤，修复 macOS 26（M5）上 `SIGKILL (Code Signature Invalid)` 崩溃（现已自动化，见「本机安装」）
 - 主进程已加入 renderer console 防回声过滤（忽略 `electron-log.js` 与重复 `[Renderer Error]` 消息），缓解日志风暴
 - 内置 RSSHub 健康检查已改为短时轮询探测（默认 20 次 \* 250ms），避免子进程冷启动瞬时 `ECONNREFUSED` 造成误判启动失败
 
@@ -185,13 +260,38 @@
   - `FeedForm` 错误态改为「原因标题 + 处理建议 + 弱化的原始技术细节（含实际请求地址）」，不再把 IPC 方法名当作主要提示
   - 未命中该链路的错误保持原样透传，RSSHub 专用提示仍优先生效
 
-## 已知边界与残留在线能力
+## 远端接口：已清零（2026-08-21）
 
-- 当前主阅读链路已本地化，但仓库仍存在部分在线接口分支（非主链路）：
-  - `api().entries.readability`
-  - `api().entries.inbox.delete`
-  - 其他模块（如 translation/summary/discover 等）仍可能含远端调用
+`api()` 与 `followClient.api` 都指向 `https://api.suhui.io`，没有服务在跑，
+所以任何残留调用都是必然失败的死路。现已全部清除，并由
+`apps/desktop/layer/renderer/src/lib/no-remote-api.test.ts` 三条零容忍约束守住：
+
+1. 任何 store 模块不得出现 `api().`
+2. 渲染层除 `lib/api-client.ts` 自身外不得出现 `followClient.api`
+3. 渲染层只能通过 `~/lib/toast` 使用 toast（否则错误 toast 丢掉复制按钮）
+
+处理原则：本地能忠实实现的就本地化，本质是云服务的就连 UI 一起删。
+
+- 本地化：订阅源刷新（`db.refreshFeed`）、OPML 解析与导入
+  （`localReading.previewOpml`/`importOpml`）、列表增删改（本地 `lists` 表）、
+  收件箱改名、用户订阅与列表（本地 store，本地只有一个用户）
+- 明确报错：discover 关键词搜索——本地没有全网索引，提示改为「粘贴网页/订阅源地址或 rsshub:// 路由」
+- 已删除：Power 钱包经济与 `/power` 页面、云端 action 自动化与 `/action` 页面
+  （本地规则引擎在 设置 → 阅读工作流，提供 markRead/star/队列/tags/hide）、
+  认领订阅源、云端 RSSHub 实例市场、`useResetFeed`
+- 保留：`lib/api-client.ts`（登录会话仍需其类型与拦截器）、
+  `modules/rsshub/LocalRsshubConsole` 与 `external-config-modal`（外部 RSSHub 配置）
 - 第 22 条（TTS 本地化）目前仍为“评估完成、暂不实现”状态
+
+## 错误提示可复制（2026-08-21）
+
+`styles/base.css` 的 `body, #root { select-none }` 会让所有报错都选不中。
+
+- toast 的 title/description/容器单独放开 `select-text`
+- `apps/desktop/layer/renderer/src/lib/toast.ts` 是唯一 toast 入口：
+  错误 toast 自动挂「复制」按钮、停留 10 秒；调用方自带 `action` 时不抢占，
+  message 是 React 节点（拿不到纯文本）时不硬加
+- 报错文案约定：标题给结论，`description` 放可复制的原文
 
 ## 远程访问当前边界
 
