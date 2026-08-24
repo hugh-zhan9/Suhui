@@ -1,10 +1,11 @@
 import type { TranslationSchema } from "@suhui/database/schemas/types"
 import { TranslationService } from "@suhui/database/services/translation"
 import type { SupportedActionLanguage } from "@suhui/shared"
+import type { GeneratedEntryTranslation } from "@suhui/shared/translation"
 
 import type { Hydratable, Resetable } from "../../lib/base"
 import { createImmerSetter, createTransaction, createZustandStore } from "../../lib/helper"
-import type { EntryTranslation, TranslationMode } from "./types"
+import type { EntryTranslation } from "./types"
 import { translationFields } from "./types"
 
 type TranslationModel = Omit<TranslationSchema, "createdAt">
@@ -25,8 +26,9 @@ const immerSet = createImmerSetter(useTranslationStore)
 
 class TranslationActions implements Hydratable, Resetable {
   async hydrate() {
-    const translations = await TranslationService.getTranslationToHydrate()
-    translationActions.upsertManyInSession(translations)
+    // Persisted rows are validated against provider and source fingerprints in main
+    // before they are exposed to this session.
+    translationActions.clearInSession()
   }
 
   async reset() {
@@ -37,6 +39,19 @@ class TranslationActions implements Hydratable, Resetable {
     tx.persist(() => TranslationService.purgeAllForMaintenance())
 
     await tx.run()
+  }
+
+  clearInSession() {
+    set(defaultState)
+  }
+
+  removeInSession(entryId: string, language: SupportedActionLanguage) {
+    immerSet((state) => {
+      const translations = state.data[entryId]
+      if (!translations) return
+      delete translations[language]
+      if (Object.keys(translations).length === 0) delete state.data[entryId]
+    })
   }
 
   upsertManyInSession(translations: TranslationModel[]) {
@@ -80,32 +95,21 @@ class TranslationActions implements Hydratable, Resetable {
 export const translationActions = new TranslationActions()
 
 class TranslationSyncService {
-  private currentMode?: TranslationMode
-
-  private async ensureMode(mode: TranslationMode) {
-    if (!this.currentMode) {
-      this.currentMode = mode
-      return
-    }
-
-    if (this.currentMode === mode) return
-
-    this.currentMode = mode
-    await translationActions.reset()
-  }
-
-  /**
-   * No local translation engine exists and there is no remote service, so this
-   * is a no-op. Rows already cached in translationsTable still render.
-   */
-  async generateTranslation(_params: {
+  async generateTranslation(params: {
     entryId: string
     language: SupportedActionLanguage
     withContent?: boolean
     target: "content" | "readabilityContent"
-    mode?: TranslationMode
-  }): Promise<null> {
-    return null
+  }): Promise<GeneratedEntryTranslation> {
+    if (typeof window === "undefined" || !(window as any).electron?.ipcRenderer) {
+      throw new Error("翻译功能仅在桌面应用中可用")
+    }
+    const result = (await (window as any).electron.ipcRenderer.invoke(
+      "translation.generate",
+      params,
+    )) as GeneratedEntryTranslation
+    translationActions.upsertManyInSession([result])
+    return result
   }
 }
 

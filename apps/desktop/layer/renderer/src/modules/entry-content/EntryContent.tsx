@@ -26,6 +26,7 @@ import { GlassButton } from "~/components/ui/button/GlassButton"
 import { HotkeyScope } from "~/constants"
 import { useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
 import { useFeedSafeUrl } from "~/hooks/common/useFeedSafeUrl"
+import { toast } from "~/lib/toast"
 import { COMMAND_ID } from "~/modules/command/commands/id"
 
 import { setEntryContentScrollToTop } from "./atoms"
@@ -65,7 +66,7 @@ const EntryContentImpl: Component<EntryContentProps> = ({
   const isInbox = useIsInbox(entry.inboxId)
   const isInReadabilityMode = useEntryIsInReadability(entryId)
 
-  const { error, content, isPending } = useEntryContent(entryId)
+  const { error, content, isPending, translationError } = useEntryContent(entryId)
   const enableTranslation = useShowAITranslation()
   const actionLanguage = useActionLanguage()
   const entryTranslation = useEntryTranslation({
@@ -83,6 +84,16 @@ const EntryContentImpl: Component<EntryContentProps> = ({
   const [panelPortalElement, setPanelPortalElement] = useState<HTMLDivElement | null>(null)
 
   const scrollAnimationRef = useRef<JSAnimation<any> | null>(null)
+  const lastTranslationErrorRef = useRef<unknown>(null)
+
+  useEffect(() => {
+    if (!translationError || lastTranslationErrorRef.current === translationError) return
+    lastTranslationErrorRef.current = translationError
+    toast.error("翻译失败", {
+      description:
+        translationError instanceof Error ? translationError.message : String(translationError),
+    })
+  }, [translationError])
 
   const isInHasTimelineView = ![
     FeedViewType.Pictures,
@@ -125,11 +136,19 @@ const EntryContentImpl: Component<EntryContentProps> = ({
     () =>
       entryTranslation
         ? {
-            content: entryTranslation.content ?? undefined,
+            content:
+              (isInReadabilityMode
+                ? entryTranslation.readabilityContent
+                : entryTranslation.content) ?? undefined,
             title: entryTranslation.title ?? undefined,
           }
         : undefined,
-    [entryTranslation?.content, entryTranslation?.title],
+    [
+      entryTranslation?.content,
+      entryTranslation?.readabilityContent,
+      entryTranslation?.title,
+      isInReadabilityMode,
+    ],
   )
   return (
     <div className={cn(className, "flex flex-col @container")}>

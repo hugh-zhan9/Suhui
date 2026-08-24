@@ -1,5 +1,5 @@
 import { isMobile } from "@suhui/components/hooks/useMobile.js"
-import { FeedViewType, getView, UserRole } from "@suhui/constants"
+import { FeedViewType, getView } from "@suhui/constants"
 import { IN_ELECTRON } from "@suhui/shared/constants"
 import { useIsEntryStarred } from "@suhui/store/collection/hooks"
 import { isOnboardingEntryUrl } from "@suhui/store/constants/onboarding"
@@ -9,7 +9,6 @@ import type { EntryModel } from "@suhui/store/entry/types"
 import { useFeedById } from "@suhui/store/feed/hooks"
 import { useIsInbox } from "@suhui/store/inbox/hooks"
 import { useSubscriptionByFeedId } from "@suhui/store/subscription/hooks"
-import { useUserRole } from "@suhui/store/user/hooks"
 import { doesTextContainHTML } from "@suhui/utils/utils"
 import { useMemo } from "react"
 
@@ -225,7 +224,6 @@ export const HIDE_ACTIONS_IN_ENTRY_CONTEXT_MENU: FollowCommandId[] = [
   COMMAND_ID.entry.copyLink,
   COMMAND_ID.entry.exportAsPDF,
   COMMAND_ID.entry.imageGallery,
-  COMMAND_ID.entry.toggleAITranslation,
   COMMAND_ID.entry.share,
 
   COMMAND_ID.settings.customizeToolbar,
@@ -262,7 +260,6 @@ export const useEntryActions = ({ entryId, view }: { entryId: string; view: Feed
   const runCmdFn = useRunCommandFn()
   const hasEntry = !!entry
 
-  const userRole = useUserRole()
   const integrationSettings = useIntegrationSettingValue()
 
   const shortcuts = useCommandShortcuts()
@@ -383,7 +380,7 @@ export const useEntryActions = ({ entryId, view }: { entryId: string; view: Feed
             view,
           ),
         active: isShowAITranslationOnce,
-        disabled: userRole === UserRole.Free || userRole === UserRole.Trial,
+        requiresLogin: false,
         entryId,
       }),
       new EntryActionMenuItem({
@@ -474,7 +471,6 @@ export const useEntryActions = ({ entryId, view }: { entryId: string; view: Feed
     isInCollection,
     isCurrentVisitEntry,
     isShowSourceContent,
-    userRole,
     isShowAITranslationAuto,
     isShowAITranslationOnce,
     isCollection,

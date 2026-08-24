@@ -1,14 +1,12 @@
-import { isFreeRole } from "@suhui/constants"
 import { useEntry, usePrefetchEntryDetail } from "@suhui/store/entry/hooks"
-import { useEntryTranslation, usePrefetchEntryTranslation } from "@suhui/store/translation/hooks"
-import { useUserRole } from "@suhui/store/user/hooks"
+import { usePrefetchEntryTranslation } from "@suhui/store/translation/hooks"
 import { tracker } from "@suhui/tracker"
 import { createElement, useCallback, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 
 import { useShowAITranslation } from "~/atoms/ai-translation"
 import { useEntryIsInReadability, useEntryIsInReadabilitySuccess } from "~/atoms/readability"
-import { useActionLanguage, useGeneralSettingKey } from "~/atoms/settings/general"
+import { useActionLanguage } from "~/atoms/settings/general"
 import { useModalStack } from "~/components/ui/modal/stacked/hooks"
 import { toast } from "~/lib/toast"
 
@@ -49,40 +47,27 @@ export const useEntryContent = (entryId: string) => {
   const isReadabilitySuccess = useEntryIsInReadabilitySuccess(entryId)
 
   const enableTranslation = useShowAITranslation()
-  const userRole = useUserRole()
-  const shouldPrefetchTranslation = enableTranslation && !isFreeRole(userRole)
   const actionLanguage = useActionLanguage()
-  const translationMode = useGeneralSettingKey("translationMode")
-  const contentTranslated = useEntryTranslation({
-    entryId,
-    language: actionLanguage,
-    enabled: enableTranslation,
-  })
-  usePrefetchEntryTranslation({
+  const translationQueries = usePrefetchEntryTranslation({
     entryIds: [entryId],
-    enabled: shouldPrefetchTranslation,
+    enabled: enableTranslation,
     language: actionLanguage,
     withContent: true,
     target: isReadabilitySuccess ? "readabilityContent" : "content",
-    mode: translationMode,
   })
 
+  const translationError = translationQueries[0]?.error ?? null
   return useMemo(() => {
     const entryContent = isInReadabilityMode
       ? entry?.readabilityContent
       : (entry?.content ?? data?.content)
-    const translatedContent = isInReadabilityMode
-      ? contentTranslated?.readabilityContent
-      : contentTranslated?.content
-    const content = translatedContent || entryContent
     return {
-      content,
+      content: entryContent,
       error,
-      isPending: isPending || (isFetching && !content),
+      isPending: isPending || (isFetching && !entryContent),
+      translationError,
     }
   }, [
-    contentTranslated?.content,
-    contentTranslated?.readabilityContent,
     data?.content,
     entry?.content,
     error,
@@ -90,6 +75,7 @@ export const useEntryContent = (entryId: string) => {
     isInReadabilityMode,
     isPending,
     entry?.readabilityContent,
+    translationError,
   ])
 }
 

@@ -12,6 +12,7 @@ export const EntryTranslation: Component<{
   bilingual?: boolean
 }> = ({ source, target, className, isHTML, inline = true, bilingual }) => {
   const bilingualFinal = useGeneralSettingKey("translationMode") === "bilingual" || bilingual
+  const actionLanguage = useGeneralSettingKey("actionLanguage")
 
   const nextTarget = useMemo(() => {
     if (!target || source === target) {
@@ -26,7 +27,7 @@ export const EntryTranslation: Component<{
 
   if (!bilingualFinal) {
     return (
-      <div>
+      <div lang={nextTarget ? actionLanguage : undefined}>
         {isHTML ? (
           <HTML as="div" className={cn("prose dark:prose-invert", className)} noMedia>
             {nextTarget || source}
@@ -43,19 +44,33 @@ export const EntryTranslation: Component<{
   return (
     <>
       {isHTML ? (
-        <HTML as="div" className={cn("prose dark:prose-invert", className)} noMedia>
-          {nextTarget || source}
-        </HTML>
+        <div>
+          <HTML as="div" className={cn("prose dark:prose-invert", className)} noMedia>
+            {source}
+          </HTML>
+          {nextTarget && (
+            <HTML
+              as="div"
+              lang={actionLanguage}
+              className={cn("suhui-bilingual-translation prose dark:prose-invert", className)}
+              noMedia
+            >
+              {nextTarget}
+            </HTML>
+          )}
+        </div>
       ) : (
         <div className={cn(inline && "inline align-middle", className)}>
+          <SourceTag className={cn(inline && "align-middle")}>{source}</SourceTag>
           {nextTarget && inline && (
             <>
-              <span className="align-middle">{nextTarget}</span>
               <i className="i-mgc-translate-2-ai-cute-re mx-2 align-middle" />
+              <span className="align-middle" lang={actionLanguage}>
+                {nextTarget}
+              </span>
             </>
           )}
-          <SourceTag className={cn(inline && "align-middle")}>{source}</SourceTag>
-          {nextTarget && !inline && <p>{nextTarget}</p>}
+          {nextTarget && !inline && <p lang={actionLanguage}>{nextTarget}</p>}
         </div>
       )}
     </>

@@ -1,4 +1,10 @@
 import { scheduleSkipNextIndexedDbMigration } from "@suhui/database/db.desktop"
+import type {
+  GeneratedEntryTranslation,
+  GenerateEntryTranslationInput,
+  TranslationProviderConfigInput,
+  TranslationProviderConfigView,
+} from "@suhui/shared/translation"
 import type { IpcRenderer } from "electron"
 import { createIpcProxy } from "electron-ipc-decorator/client"
 
@@ -17,6 +23,13 @@ type DiscoverIpc = {
   }) => Promise<any>
   rsshubAnalytics: (input: { lang?: string }) => Promise<any>
   rsshubRoute: (input: { route: string }) => Promise<any>
+}
+
+type TranslationIpc = {
+  getConfig: () => Promise<TranslationProviderConfigView>
+  setConfig: (input: TranslationProviderConfigInput) => Promise<TranslationProviderConfigView>
+  testConfig: () => Promise<{ translatedText: string }>
+  generate: (input: GenerateEntryTranslationInput) => Promise<GeneratedEntryTranslation>
 }
 
 export type RendererDbConfigView = {
@@ -44,9 +57,9 @@ type AppDbConfigIpc = {
   switchDbConfig?: (input: RendererDbSwitchInput) => Promise<unknown> | unknown
 }
 
-export const ipcServices = createIpcProxy<IpcServices & { discover: DiscoverIpc }>(
-  window.electron?.ipcRenderer as unknown as IpcRenderer,
-)
+export const ipcServices = createIpcProxy<
+  IpcServices & { discover: DiscoverIpc; translation: TranslationIpc }
+>(window.electron?.ipcRenderer as unknown as IpcRenderer)
 
 const getDbConfigIpc = () => (ipcServices?.app ?? undefined) as AppDbConfigIpc | undefined
 

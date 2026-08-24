@@ -1,7 +1,6 @@
-import { FeedViewType, isFreeRole } from "@suhui/constants"
+import { FeedViewType } from "@suhui/constants"
 import { useHasEntry } from "@suhui/store/entry/hooks"
 import { useEntryTranslation, usePrefetchEntryTranslation } from "@suhui/store/translation/hooks"
-import { useUserRole } from "@suhui/store/user/hooks"
 import type { FC } from "react"
 import { memo } from "react"
 
@@ -24,10 +23,7 @@ const EntryItemImpl = memo(function EntryItemImpl({
   isFirstItem,
 }: EntryItemProps) {
   const enableTranslation = useGeneralSettingKey("translation")
-  const translationMode = useGeneralSettingKey("translationMode")
   const actionLanguage = useActionLanguage()
-  const userRole = useUserRole()
-  const shouldPrefetchTranslation = enableTranslation && !isFreeRole(userRole)
   const translation = useEntryTranslation({
     entryId,
     language: actionLanguage,
@@ -35,10 +31,9 @@ const EntryItemImpl = memo(function EntryItemImpl({
   })
   usePrefetchEntryTranslation({
     entryIds: [entryId],
-    enabled: shouldPrefetchTranslation,
+    enabled: enableTranslation,
     language: actionLanguage,
     withContent: view === FeedViewType.SocialMedia,
-    mode: translationMode,
   })
 
   const Item: EntryListItemFC = getItemComponentByView(view)

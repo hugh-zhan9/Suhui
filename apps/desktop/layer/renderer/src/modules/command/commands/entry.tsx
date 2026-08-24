@@ -11,6 +11,7 @@ import { useMutation } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 
 import { showPopover } from "~/atoms/popover"
+import { toggleShowAITranslationOnce } from "~/atoms/ai-translation"
 import { getGeneralSettings } from "~/atoms/settings/general"
 import {
   getShowSourceContent,
@@ -267,6 +268,13 @@ export const useRegisterEntryCommands = () => {
           }
           toggleShowSourceContent()
         },
+      },
+      {
+        id: COMMAND_ID.entry.toggleAITranslation,
+        label: t("entry_actions.toggle_ai_translation"),
+        icon: <i className="i-mgc-translate-2-cute-re" />,
+        category,
+        run: toggleShowAITranslationOnce,
       },
       {
         id: COMMAND_ID.entry.share,

@@ -1,15 +1,30 @@
 import type { SupportedActionLanguage } from "@suhui/shared"
 import type { SupportedLanguages } from "@follow-app/client-sdk"
-import { useQueries, useQueryClient } from "@tanstack/react-query"
-import { useCallback, useEffect } from "react"
+import { useQueries } from "@tanstack/react-query"
+import { useCallback } from "react"
 
 import { useEntry, useEntryList } from "../entry/hooks"
 import type { EntryModel } from "../entry/types"
-import { useIsLoggedIn } from "../user/hooks"
-import { translationSyncService, useTranslationStore } from "./store"
-import type { TranslationMode } from "./types"
+import { translationActions, translationSyncService, useTranslationStore } from "./store"
 
-let lastTranslationMode: TranslationMode | null = null
+type TranslationSource = Pick<
+  EntryModel,
+  "title" | "description" | "content" | "readabilityContent"
+>
+
+export const getTranslationSourceRevision = (entry: TranslationSource) => {
+  const source = JSON.stringify([
+    entry.title ?? null,
+    entry.description ?? null,
+    entry.content ?? null,
+    entry.readabilityContent ?? null,
+  ])
+  let revision = 0x811c9dc5
+  for (let index = 0; index < source.length; index += 1) {
+    revision = Math.imul(revision ^ source.charCodeAt(index), 0x01000193)
+  }
+  return (revision >>> 0).toString(16)
+}
 
 export const usePrefetchEntryTranslation = ({
   entryIds,
@@ -17,57 +32,39 @@ export const usePrefetchEntryTranslation = ({
   target = "content",
   enabled,
   language,
-  mode,
 }: {
   entryIds: string[]
   withContent?: boolean
   target?: "content" | "readabilityContent"
   enabled: boolean
   language: SupportedActionLanguage
-  mode?: TranslationMode
 }) => {
-  const translationMode = mode ?? "bilingual"
-  const queryClient = useQueryClient()
   const entryList = (useEntryList(entryIds)?.filter(
     (entry) => entry !== null && (enabled || !!entry?.settings?.translation),
   ) || []) as EntryModel[]
 
-  useEffect(() => {
-    if (lastTranslationMode === null) {
-      lastTranslationMode = translationMode
-      return
-    }
-
-    if (lastTranslationMode === translationMode) return
-
-    lastTranslationMode = translationMode
-    void queryClient.invalidateQueries({
-      predicate: (query) => Array.isArray(query.queryKey) && query.queryKey[0] === "translation",
-    })
-  }, [queryClient, translationMode])
-
-  const isLoggedIn = useIsLoggedIn()
   return useQueries({
-    queries: isLoggedIn
-      ? entryList.map((entry) => {
-          const entryId = entry.id
-          const targetContent =
-            target === "readabilityContent" ? entry.readabilityContent : entry.content
-          const finalWithContent = withContent && !!targetContent
+    queries: entryList.map((entry) => {
+      const entryId = entry.id
+      const targetContent =
+        target === "readabilityContent" ? entry.readabilityContent : entry.content
+      const finalWithContent = withContent && !!targetContent
+      const sourceRevision = getTranslationSourceRevision(entry)
 
-          return {
-            queryKey: ["translation", entryId, language, finalWithContent, target, translationMode],
-            queryFn: () =>
-              translationSyncService.generateTranslation({
-                entryId,
-                language,
-                withContent: finalWithContent,
-                target,
-                mode: translationMode,
-              }),
-          }
-        })
-      : [],
+      return {
+        queryKey: ["translation", entryId, language, finalWithContent, target, sourceRevision],
+        queryFn: async () => {
+          translationActions.removeInSession(entryId, language)
+          return translationSyncService.generateTranslation({
+            entryId,
+            language,
+            withContent: finalWithContent,
+            target,
+          })
+        },
+        retry: false,
+      }
+    }),
   })
 }
 

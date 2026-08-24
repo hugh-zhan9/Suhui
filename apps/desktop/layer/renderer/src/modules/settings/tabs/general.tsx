@@ -3,9 +3,15 @@ import { Input } from "@suhui/components/ui/input/index.js"
 import { ResponsiveSelect } from "@suhui/components/ui/select/responsive.js"
 import { useTypeScriptHappyCallback } from "@suhui/hooks"
 import { ACTION_LANGUAGE_MAP } from "@suhui/shared"
+import type {
+  TranslationProviderConfigInput,
+  TranslationProviderConfigView,
+  TranslationProviderKind,
+} from "@suhui/shared/translation"
 import { IN_ELECTRON } from "@suhui/shared/constants"
+import { translationActions } from "@suhui/store/translation/store"
 import { cn } from "@suhui/utils/utils"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import dayjs from "dayjs"
 import { useAtom } from "jotai"
 import { useEffect, useState } from "react"
@@ -36,9 +42,8 @@ import { toast } from "~/lib/toast"
 import { setTranslationCache } from "~/modules/entry-content/atoms"
 import { formatDisplayList, formatDisplayValue } from "~/modules/settings/utils/db-config-display"
 
-import { PaidBadge, SettingDescription, SettingSwitch } from "../control"
+import { SettingDescription, SettingSwitch } from "../control"
 import { createSetting } from "../helper/builder"
-import { SettingPaidLevels } from "../helper/setting-builder"
 import {
   useWrapEnhancedSettingItem,
   WrapEnhancedSettingTab,
@@ -119,6 +124,7 @@ export const SettingGeneral = () => {
           }),
           TranslationModeSelector,
           ActionLanguageSelector,
+          IN_ELECTRON && TranslationProviderSection,
 
           {
             type: "title",
@@ -427,7 +433,6 @@ const TranslationModeSelector = () => {
       <div className="mt-4 flex items-center justify-between">
         <span className="flex shrink-0 items-center gap-1 text-sm font-medium">
           <span>{t("general.translation_mode.label")}</span>
-          <PaidBadge paidLevel={SettingPaidLevels.Basic} />
         </span>
         <ResponsiveSelect
           size="sm"
@@ -477,6 +482,235 @@ const ActionLanguageSelector = () => {
         ]}
       />
     </div>
+  )
+}
+
+type TranslationProviderDraft = {
+  provider: TranslationProviderKind
+  deeplBaseUrl: string
+  deeplApiKey: string
+  aiBaseUrl: string
+  aiApiKey: string
+  aiModel: string
+}
+
+const translationConfigToDraft = (
+  config: TranslationProviderConfigView,
+): TranslationProviderDraft => ({
+  provider: config.provider,
+  deeplBaseUrl: config.deepl.baseUrl,
+  deeplApiKey: "",
+  aiBaseUrl: config.openAICompatible.baseUrl,
+  aiApiKey: "",
+  aiModel: config.openAICompatible.model,
+})
+
+const getTranslationIpc = () => {
+  if (!ipcServices) throw new Error("翻译设置仅在桌面应用中可用")
+  return ipcServices.translation
+}
+
+const TranslationProviderSection = () => {
+  const { t } = useTranslation("settings")
+  const queryClient = useQueryClient()
+  const [draft, setDraft] = useState<TranslationProviderDraft>({
+    provider: "deepl",
+    deeplBaseUrl: "https://api-free.deepl.com",
+    deeplApiKey: "",
+    aiBaseUrl: "https://api.openai.com/v1",
+    aiApiKey: "",
+    aiModel: "",
+  })
+  const [isSaving, setIsSaving] = useState(false)
+  const query = useQuery({
+    queryKey: ["translation", "provider-config"],
+    queryFn: () => getTranslationIpc().getConfig(),
+    enabled: !!ipcServices,
+    refetchOnMount: "always",
+  })
+  const config = query.data
+
+  useEffect(() => {
+    if (config) setDraft(translationConfigToDraft(config))
+  }, [config])
+
+  const toInput = (): TranslationProviderConfigInput => ({
+    provider: draft.provider,
+    deepl: {
+      baseUrl: draft.deeplBaseUrl.trim(),
+      ...(draft.deeplApiKey.trim() ? { apiKey: draft.deeplApiKey.trim() } : {}),
+    },
+    openAICompatible: {
+      baseUrl: draft.aiBaseUrl.trim(),
+      model: draft.aiModel.trim(),
+      ...(draft.aiApiKey.trim() ? { apiKey: draft.aiApiKey.trim() } : {}),
+    },
+  })
+
+  const persist = async () => {
+    const next = await getTranslationIpc().setConfig(toInput())
+    translationActions.clearInSession()
+    setTranslationCache({})
+    queryClient.removeQueries({ queryKey: ["translation"] })
+    queryClient.setQueryData(["translation", "provider-config"], next)
+    setDraft(translationConfigToDraft(next))
+    return next
+  }
+
+  const handleSave = async () => {
+    if (isSaving) return
+    setIsSaving(true)
+    try {
+      await persist()
+      toast.success(t("general.translation_provider.saved"))
+    } catch (error) {
+      toast.error(t("general.translation_provider.save_failed"), {
+        description: error instanceof Error ? error.message : String(error),
+      })
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleTest = async () => {
+    if (isSaving) return
+    setIsSaving(true)
+    try {
+      await persist()
+      const result = await getTranslationIpc().testConfig()
+      toast.success(t("general.translation_provider.test_succeeded"), {
+        description: result.translatedText,
+      })
+    } catch (error) {
+      toast.error(t("general.translation_provider.test_failed"), {
+        description: error instanceof Error ? error.message : String(error),
+      })
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const activeBaseUrl = draft.provider === "deepl" ? draft.deeplBaseUrl : draft.aiBaseUrl
+  const activeModelValid = draft.provider === "deepl" || !!draft.aiModel.trim()
+  const canSubmit = !!activeBaseUrl.trim() && activeModelValid && !isSaving
+  const hasActiveKey =
+    draft.provider === "deepl" ? config?.deepl.hasApiKey : config?.openAICompatible.hasApiKey
+
+  return (
+    <SettingItemGroup>
+      <div className="mt-5 space-y-3">
+        <div className="flex items-center justify-between gap-4">
+          <label className="text-sm font-medium text-text">
+            {t("general.translation_provider.label")}
+          </label>
+          <ResponsiveSelect
+            size="sm"
+            triggerClassName="w-48"
+            value={draft.provider}
+            onValueChange={(provider) =>
+              setDraft((current) => ({
+                ...current,
+                provider: provider as TranslationProviderKind,
+              }))
+            }
+            items={[
+              { label: t("general.translation_provider.deepl"), value: "deepl" },
+              {
+                label: t("general.translation_provider.openai_compatible"),
+                value: "openai-compatible",
+              },
+            ]}
+          />
+        </div>
+        {draft.provider === "deepl" ? (
+          <>
+            <label className="block text-sm font-medium text-text">
+              {t("general.translation_provider.base_url")}
+              <Input
+                className="mt-2"
+                value={draft.deeplBaseUrl}
+                onChange={(event) =>
+                  setDraft((current) => ({ ...current, deeplBaseUrl: event.target.value }))
+                }
+              />
+            </label>
+            <label className="block text-sm font-medium text-text">
+              {t("general.translation_provider.api_key")}
+              <Input
+                className="mt-2"
+                type="password"
+                value={draft.deeplApiKey}
+                onChange={(event) =>
+                  setDraft((current) => ({ ...current, deeplApiKey: event.target.value }))
+                }
+                placeholder={
+                  config?.deepl.hasApiKey
+                    ? t("general.translation_provider.key_saved")
+                    : t("general.translation_provider.key_required")
+                }
+              />
+            </label>
+          </>
+        ) : (
+          <>
+            <label className="block text-sm font-medium text-text">
+              {t("general.translation_provider.base_url")}
+              <Input
+                className="mt-2"
+                value={draft.aiBaseUrl}
+                onChange={(event) =>
+                  setDraft((current) => ({ ...current, aiBaseUrl: event.target.value }))
+                }
+                placeholder="https://api.openai.com/v1"
+              />
+            </label>
+            <label className="block text-sm font-medium text-text">
+              {t("general.translation_provider.api_key")}
+              <Input
+                className="mt-2"
+                type="password"
+                value={draft.aiApiKey}
+                onChange={(event) =>
+                  setDraft((current) => ({ ...current, aiApiKey: event.target.value }))
+                }
+                placeholder={
+                  config?.openAICompatible.hasApiKey
+                    ? t("general.translation_provider.key_saved")
+                    : t("general.translation_provider.key_required")
+                }
+              />
+            </label>
+            <label className="block text-sm font-medium text-text">
+              {t("general.translation_provider.model")}
+              <Input
+                className="mt-2"
+                value={draft.aiModel}
+                onChange={(event) =>
+                  setDraft((current) => ({ ...current, aiModel: event.target.value }))
+                }
+                placeholder="gpt-4.1-mini"
+              />
+            </label>
+          </>
+        )}
+      </div>
+      <SettingDescription className="mt-3 w-full">
+        {t("general.translation_provider.description")}
+      </SettingDescription>
+      <div className="mt-4 flex items-center gap-3">
+        <Button size="sm" variant="outline" disabled={!canSubmit} onClick={() => void handleSave()}>
+          {isSaving ? `${t("actions.save")}...` : t("actions.save")}
+        </Button>
+        <Button size="sm" variant="ghost" disabled={!canSubmit} onClick={() => void handleTest()}>
+          {t("general.translation_provider.save_and_test")}
+        </Button>
+        {hasActiveKey && (
+          <span className="text-xs text-text-secondary">
+            {t("general.translation_provider.configured")}
+          </span>
+        )}
+      </div>
+    </SettingItemGroup>
   )
 }
 

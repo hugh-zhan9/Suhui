@@ -52,6 +52,12 @@ button {
   @apply cursor-pointer;
 }
 
+.suhui-bilingual-translation {
+  @apply text-text-secondary;
+  margin-block-start: 0.35em;
+  opacity: 0.82;
+}
+
 [data-theme="dark"] {
   color-scheme: dark;
 }

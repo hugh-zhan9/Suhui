@@ -3,7 +3,10 @@ import { cn } from "@suhui/utils/utils"
 
 import { HTML } from "~/components/ui/markdown/HTML"
 import { readableContentMaxWidthClassName } from "~/constants/ui"
+import { useEntryIsInReadability } from "~/atoms/readability"
 import { useRenderStyle } from "~/hooks/biz/useRenderStyle"
+import { useGeneralSettingKey } from "~/atoms/settings/general"
+import { resolveTranslationHtml } from "~/lib/bilingual-html"
 import { normalizeRssContentForRender } from "~/lib/rss-content-normalize"
 
 interface ContentBodyProps {
@@ -27,17 +30,29 @@ export const ContentBody: React.FC<ContentBodyProps> = ({
   const entry = useEntry(entryId, (state) => ({
     content: state.content,
     description: state.description,
+    readabilityContent: state.readabilityContent,
   }))
 
   const renderStyle = useRenderStyle({
     baseFontSize: compact ? 14 : 16,
     baseLineHeight: compact ? 1.625 : 1.7,
   })
+  const translationMode = useGeneralSettingKey("translationMode")
+  const actionLanguage = useGeneralSettingKey("actionLanguage")
+  const isInReadabilityMode = useEntryIsInReadability(entryId)
 
   if (!entry) return null
 
+  const sourceContent =
+    (isInReadabilityMode ? entry.readabilityContent : entry.content) || entry.description || ""
+
   const content = normalizeRssContentForRender(
-    translation?.content || entry.content || entry.description,
+    resolveTranslationHtml({
+      sourceHtml: sourceContent,
+      translatedHtml: translation?.content,
+      mode: translationMode,
+      language: actionLanguage,
+    }),
   )
 
   if (!content) return null

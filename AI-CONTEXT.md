@@ -1,7 +1,7 @@
 # AI-CONTEXT.md
 
 > 单一事实源（Single Source of Truth）
-> 最后更新时间：2026-08-21（SQLite 支持与 Postgres ↔ SQLite 双向转换；渲染层远端接口清零；错误 toast 可复制）
+> 最后更新时间：2026-08-24（可选在线翻译服务；SQLite 支持与 Postgres ↔ SQLite 双向转换；渲染层远端接口清零）
 
 ## 上下文委派策略
 
@@ -292,6 +292,14 @@
   错误 toast 自动挂「复制」按钮、停留 10 秒；调用方自带 `action` 时不抢占，
   message 是 React 节点（拿不到纯文本）时不硬加
 - 报错文案约定：标题给结论，`description` 放可复制的原文
+
+## 可选在线翻译（2026-08-24）
+
+- Desktop 可在设置中选择 DeepL 官方接口或 OpenAI-compatible Chat Completions；后者由用户配置 Base URL、API Key 与模型，不属于启动、阅读或刷新主链路依赖
+- API Key 只在 Electron main 使用 `safeStorage` 加密后持久化；renderer 只能读取 `hasApiKey`，不得取得明文或密文
+- 只有用户启用翻译时才发送标题、摘要或正文；翻译缓存同时校验源内容与服务配置指纹，更换服务配置时与在途任务串行清空缓存，避免混用旧结果
+- 展示模式为“双语对照”（原文段落下紧跟译文）或“仅译文”；正文只发送可翻译文本节点，标签、属性、URL、媒体与代码保留在本地，代码块不发送翻译
+- 翻译 IPC 仅供 Desktop renderer 使用；Remote 尚无鉴权时不增加可消耗用户额度或泄露服务配置的 HTTP 路由
 
 ## 远程访问当前边界
 

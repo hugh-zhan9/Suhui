@@ -9,6 +9,7 @@ import { runtimeClient } from "@suhui/store/runtime"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { useUISettingKey } from "~/atoms/settings/ui"
+import { useGeneralSettingKey } from "~/atoms/settings/general"
 import { useEntryIsInReadability } from "~/atoms/readability"
 import { ErrorBoundary } from "~/components/common/ErrorBoundary"
 import { ShadowDOM } from "~/components/common/ShadowDOM"
@@ -18,6 +19,7 @@ import { readableContentMaxWidthClassName } from "~/constants/ui"
 import { useRenderStyle } from "~/hooks/biz/useRenderStyle"
 import type { TextSelectionEvent } from "~/lib/simple-text-selection"
 import { normalizeRssContentForRender } from "~/lib/rss-content-normalize"
+import { resolveTranslationHtml } from "~/lib/bilingual-html"
 import { EntryContentHTMLRenderer } from "~/modules/renderer/html"
 import { EntryContentMarkdownRenderer } from "~/modules/renderer/markdown"
 import { WrappedElementProvider } from "~/providers/wrapped-element-provider"
@@ -127,6 +129,8 @@ const Renderer: React.FC<{
   const readerRenderInlineStyle = useUISettingKey("readerRenderInlineStyle")
   const stableRenderStyle = useRenderStyle()
   const isInPeekModal = useInPeekModal()
+  const translationMode = useGeneralSettingKey("translationMode")
+  const actionLanguage = useGeneralSettingKey("actionLanguage")
 
   const tocRef = useRef<TocRef | null>(null)
   const contentAccessories = useMemo(
@@ -156,7 +160,14 @@ const Renderer: React.FC<{
       style={stableRenderStyle}
       renderInlineStyle={readerRenderInlineStyle}
     >
-      {normalizeRssContentForRender(translation?.content || content)}
+      {normalizeRssContentForRender(
+        resolveTranslationHtml({
+          sourceHtml: content ?? "",
+          translatedHtml: translation?.content,
+          mode: translationMode,
+          language: actionLanguage,
+        }),
+      )}
     </ContentRenderer>
   )
 }

@@ -7,6 +7,19 @@ type DbConfigOverride = {
   dbUser?: string | null
 }
 
+export type StoredTranslationProviderConfig = {
+  provider: "deepl" | "openai-compatible"
+  deepl: {
+    baseUrl: string
+    encryptedApiKey?: string | null
+  }
+  openAICompatible: {
+    baseUrl: string
+    encryptedApiKey?: string | null
+    model: string
+  }
+}
+
 // @keep-sorted
 type StoreData = {
   dbConfigOverride?: DbConfigOverride | null
@@ -21,6 +34,7 @@ type StoreData = {
   rsshubCustomUrl?: string | null
   rsshubRuntimeMode?: "lite" | "official" | null
   rsshubTwitterCookie?: string | null
+  translationProviderConfig?: StoredTranslationProviderConfig | null
   user?: string | null
   windowState?: {
     height: number

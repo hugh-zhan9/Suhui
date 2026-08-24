@@ -54,4 +54,11 @@ export const sqliteMigrations: readonly SqliteMigration[] = [
       "CREATE TABLE `users` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`email` text,\n\t`handle` text,\n\t`name` text,\n\t`image` text,\n\t`is_me` integer,\n\t`email_verified` integer,\n\t`bio` text,\n\t`website` text,\n\t`social_links` text\n);",
     ],
   },
+  {
+    tag: "0001_special_electro",
+    statements: [
+      "ALTER TABLE `translations` ADD `source_hash` text;",
+      "ALTER TABLE `translations` ADD `config_hash` text;",
+    ],
+  },
 ]

@@ -210,12 +210,19 @@ const migrateMainSqliteDB = (sqlite: SqliteDatabase) => {
 
   for (const migration of sqliteMigrations) {
     if (applied.has(migration.tag)) continue
-    for (const statement of migration.statements) {
-      sqlite.exec(statement)
+    sqlite.exec("BEGIN IMMEDIATE")
+    try {
+      for (const statement of migration.statements) {
+        sqlite.exec(statement)
+      }
+      sqlite
+        .prepare(`insert into ${sqliteMigrationLedger} (tag, applied_at) values (?, ?)`)
+        .run(migration.tag, Date.now())
+      sqlite.exec("COMMIT")
+    } catch (error) {
+      sqlite.exec("ROLLBACK")
+      throw error
     }
-    sqlite
-      .prepare(`insert into ${sqliteMigrationLedger} (tag, applied_at) values (?, ?)`)
-      .run(migration.tag, Date.now())
   }
 }
 
@@ -339,8 +346,12 @@ export async function migrateMainDB(handles = activeHandles) {
       `description text,\n` +
       `content text,\n` +
       `readability_content text,\n` +
+      `source_hash text,\n` +
+      `config_hash text,\n` +
       `created_at text not null\n` +
       `);`,
+    `ALTER TABLE translations ADD COLUMN IF NOT EXISTS source_hash text;`,
+    `ALTER TABLE translations ADD COLUMN IF NOT EXISTS config_hash text;`,
     `CREATE UNIQUE INDEX IF NOT EXISTS "translation-unique-index" ON translations(entry_id, language);`,
     `CREATE TABLE IF NOT EXISTS images (\n` +
       `url text primary key,\n` +

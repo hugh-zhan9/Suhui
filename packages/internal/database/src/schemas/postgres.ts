@@ -155,6 +155,8 @@ export const translationsTable = pgTable(
     description: t.text("description"),
     content: t.text("content"),
     readabilityContent: t.text("readability_content"),
+    sourceHash: t.text("source_hash"),
+    configHash: t.text("config_hash"),
     createdAt: t
       .text("created_at")
       .notNull()

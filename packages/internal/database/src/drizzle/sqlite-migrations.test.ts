@@ -158,7 +158,10 @@ describe("sqlite 迁移账本", () => {
   const ledger = "__suhui_migrations"
 
   /** 复刻 db.main.ts 的 migrateMainSqliteDB 逻辑，验证幂等语义 */
-  const migrate = (db: DatabaseSync) => {
+  const migrate = (
+    db: DatabaseSync,
+    beforeStatement?: (migrationTag: string, statementIndex: number) => void,
+  ) => {
     db.exec(
       `CREATE TABLE IF NOT EXISTS ${ledger} (tag text primary key, applied_at integer not null)`,
     )
@@ -169,14 +172,24 @@ describe("sqlite 迁移账本", () => {
     for (const migration of readJournal().entries.sort((a, b) => a.idx - b.idx)) {
       if (applied.has(migration.tag)) continue
       const sql = readFileSync(path.join(drizzleDir, `${migration.tag}.sql`), "utf8")
-      for (const chunk of sql.split("--> statement-breakpoint")) {
-        const trimmed = chunk.trim()
-        if (trimmed) db.exec(trimmed)
+      db.exec("BEGIN IMMEDIATE")
+      try {
+        let statementIndex = 0
+        for (const chunk of sql.split("--> statement-breakpoint")) {
+          const trimmed = chunk.trim()
+          if (!trimmed) continue
+          beforeStatement?.(migration.tag, statementIndex++)
+          db.exec(trimmed)
+        }
+        db.prepare(`insert into ${ledger} (tag, applied_at) values (?, ?)`).run(
+          migration.tag,
+          Date.now(),
+        )
+        db.exec("COMMIT")
+      } catch (error) {
+        db.exec("ROLLBACK")
+        throw error
       }
-      db.prepare(`insert into ${ledger} (tag, applied_at) values (?, ?)`).run(
-        migration.tag,
-        Date.now(),
-      )
       count += 1
     }
     return count
@@ -197,6 +210,37 @@ describe("sqlite 迁移账本", () => {
     const tables = listTables(db)
     expect(tables).toContain(ledger)
     expect(tables.filter((t) => t !== ledger).length).toBeGreaterThanOrEqual(27)
+    db.close()
+  })
+
+  it("单个迁移中途失败会整体回滚，随后可以安全重跑", () => {
+    const db = new DatabaseSync(":memory:")
+    const secondMigration = readJournal().entries.sort((a, b) => a.idx - b.idx)[1]
+    expect(secondMigration).toBeDefined()
+
+    expect(() =>
+      migrate(db, (tag, statementIndex) => {
+        if (tag === secondMigration!.tag && statementIndex === 1) {
+          throw new Error("simulated interruption")
+        }
+      }),
+    ).toThrow("simulated interruption")
+
+    const columnsAfterFailure = db.prepare("pragma table_info(translations)").all() as Array<{
+      name: string
+    }>
+    expect(columnsAfterFailure.map((column) => column.name)).not.toContain("source_hash")
+    expect(db.prepare(`select tag from ${ledger} where tag = ?`).all(secondMigration!.tag)).toEqual(
+      [],
+    )
+
+    expect(migrate(db)).toBe(1)
+    const columnsAfterRetry = db.prepare("pragma table_info(translations)").all() as Array<{
+      name: string
+    }>
+    expect(columnsAfterRetry.map((column) => column.name)).toEqual(
+      expect.arrayContaining(["source_hash", "config_hash"]),
+    )
     db.close()
   })
 })
