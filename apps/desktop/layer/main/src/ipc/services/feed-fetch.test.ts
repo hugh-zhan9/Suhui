@@ -3,11 +3,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { fetchFeedUrl } from "./feed-fetch"
 
+const directFetch = vi.fn()
+const directSetProxy = vi.fn(async () => {})
+
 vi.mock("electron", () => ({
   session: {
     defaultSession: {
       fetch: vi.fn(),
+      resolveProxy: vi.fn(),
     },
+    // The direct session is created once and cached, so every test shares this stub.
+    fromPartition: vi.fn(() => ({ fetch: directFetch, setProxy: directSetProxy })),
   },
 }))
 
@@ -17,6 +23,8 @@ describe("fetchFeedUrl", () => {
   beforeEach(() => {
     vi.useRealTimers()
     fetchMock.mockReset()
+    vi.mocked(session.defaultSession.resolveProxy).mockResolvedValue("DIRECT")
+    directFetch.mockReset()
   })
 
   afterEach(() => {
@@ -117,6 +125,8 @@ describe("瞬时连接错误重试", () => {
   beforeEach(() => {
     vi.useRealTimers()
     fetchMock.mockReset()
+    vi.mocked(session.defaultSession.resolveProxy).mockResolvedValue("DIRECT")
+    directFetch.mockReset()
   })
 
   const okResponse = (body: string) =>
@@ -158,4 +168,77 @@ describe("瞬时连接错误重试", () => {
       expect(fetchMock).toHaveBeenCalledTimes(1)
     },
   )
+})
+
+describe("代理失效后的直连兜底", () => {
+  const fetchMock = vi.mocked(session.defaultSession.fetch)
+  const resolveProxyMock = vi.mocked(session.defaultSession.resolveProxy)
+
+  beforeEach(() => {
+    vi.useRealTimers()
+    fetchMock.mockReset()
+    directFetch.mockReset()
+    resolveProxyMock.mockResolvedValue("PROXY 127.0.0.1:7890")
+  })
+
+  const okResponse = (body: string) =>
+    ({
+      status: 200,
+      headers: new Headers({ "content-type": "application/atom+xml" }),
+      text: vi.fn().mockResolvedValue(body),
+      url: "https://example.com/atom.xml",
+    }) as any
+
+  it("代理两次都被切断后走一次直连并成功", async () => {
+    fetchMock.mockRejectedValue(new Error("net::ERR_CONNECTION_CLOSED"))
+    directFetch.mockResolvedValue(okResponse("<feed />"))
+
+    const result = await fetchFeedUrl("https://example.com/atom.xml", { timeoutMs: 1000 })
+
+    expect(result.body).toBe("<feed />")
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(directFetch).toHaveBeenCalledTimes(1)
+    expect(directSetProxy).toHaveBeenCalledWith({ mode: "direct" })
+  })
+
+  it("代理层错误不重试，直接走一次直连", async () => {
+    fetchMock.mockRejectedValue(new Error("net::ERR_TUNNEL_CONNECTION_FAILED"))
+    directFetch.mockResolvedValue(okResponse("<feed />"))
+
+    await fetchFeedUrl("https://example.com/atom.xml", { timeoutMs: 1000 })
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(directFetch).toHaveBeenCalledTimes(1)
+  })
+
+  it("直连也失败时抛出原本的代理错误", async () => {
+    fetchMock.mockRejectedValue(new Error("net::ERR_CONNECTION_CLOSED"))
+    directFetch.mockRejectedValue(new Error("net::ERR_CONNECTION_TIMED_OUT"))
+
+    await expect(fetchFeedUrl("https://example.com/atom.xml", { timeoutMs: 1000 })).rejects.toThrow(
+      "net::ERR_CONNECTION_CLOSED",
+    )
+    expect(directFetch).toHaveBeenCalledTimes(1)
+  })
+
+  it("该 url 本来就直连时不再多发一次请求", async () => {
+    resolveProxyMock.mockResolvedValue("DIRECT")
+    fetchMock.mockRejectedValue(new Error("net::ERR_CONNECTION_CLOSED"))
+
+    await expect(fetchFeedUrl("https://example.com/atom.xml", { timeoutMs: 1000 })).rejects.toThrow(
+      "net::ERR_CONNECTION_CLOSED",
+    )
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(directFetch).not.toHaveBeenCalled()
+  })
+
+  it("超时不触发直连", async () => {
+    fetchMock.mockRejectedValue(new Error("Feed request timed out after 1000ms"))
+
+    await expect(fetchFeedUrl("https://example.com/atom.xml", { timeoutMs: 1000 })).rejects.toThrow(
+      "timed out",
+    )
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(directFetch).not.toHaveBeenCalled()
+  })
 })
