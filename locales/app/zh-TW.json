@@ -192,6 +192,8 @@
   "entry_content.selection_toolbar.copy_image": "複製圖片",
   "entry_content.selection_toolbar.copying": "複製中...",
   "entry_content.selection_toolbar.generating": "生成中...",
+  "entry_content.selection_toolbar.highlight": "高亮",
+  "entry_content.selection_toolbar.highlight_failed": "高亮失敗",
   "entry_content.selection_toolbar.poster_copied": "海報已複製到剪貼簿",
   "entry_content.selection_toolbar.poster_copy_failed": "複製海報失敗",
   "entry_content.selection_toolbar.share": "分享",

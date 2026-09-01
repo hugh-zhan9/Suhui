@@ -4,32 +4,36 @@ import { isOnboardingEntry } from "@suhui/store/constants/onboarding"
 import { useEntry } from "@suhui/store/entry/hooks"
 import { useFeedById } from "@suhui/store/feed/hooks"
 import { useIsInbox } from "@suhui/store/inbox/hooks"
-import { cn } from "@suhui/utils"
 import { runtimeClient } from "@suhui/store/runtime"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { cn } from "@suhui/utils"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
 
-import { useUISettingKey } from "~/atoms/settings/ui"
-import { useGeneralSettingKey } from "~/atoms/settings/general"
 import { useEntryIsInReadability } from "~/atoms/readability"
+import { useGeneralSettingKey } from "~/atoms/settings/general"
+import { useUISettingKey } from "~/atoms/settings/ui"
 import { ErrorBoundary } from "~/components/common/ErrorBoundary"
 import { ShadowDOM } from "~/components/common/ShadowDOM"
 import type { TocRef } from "~/components/ui/markdown/components/Toc"
 import { useInPeekModal } from "~/components/ui/modal/inspire/InPeekModal"
 import { readableContentMaxWidthClassName } from "~/constants/ui"
 import { useRenderStyle } from "~/hooks/biz/useRenderStyle"
-import type { TextSelectionEvent } from "~/lib/simple-text-selection"
-import { normalizeRssContentForRender } from "~/lib/rss-content-normalize"
 import { resolveTranslationHtml } from "~/lib/bilingual-html"
+import { normalizeRssContentForRender } from "~/lib/rss-content-normalize"
+import type { TextSelectionEvent } from "~/lib/simple-text-selection"
+import { toast } from "~/lib/toast"
 import { EntryContentHTMLRenderer } from "~/modules/renderer/html"
 import { EntryContentMarkdownRenderer } from "~/modules/renderer/markdown"
 import { WrappedElementProvider } from "~/providers/wrapped-element-provider"
 
 import { useEntryContent, useEntryMediaInfo } from "../../hooks"
+import { refreshEntryAnnotations, useEntryAnnotations } from "../../hooks/useEntryAnnotations"
+import { DeferredEntryAnnotationsPanel } from "../DeferredEntryAnnotationsPanel"
 import { ContainerToc } from "../entry-content/accessories/ContainerToc"
 import { EntryRenderError } from "../entry-content/EntryRenderError"
 import { ReadabilityNotice } from "../entry-content/ReadabilityNotice"
 import { EntryAttachments } from "../EntryAttachments"
-import { DeferredEntryAnnotationsPanel } from "../DeferredEntryAnnotationsPanel"
+import { EntryHighlightLayer } from "../EntryHighlightLayer"
 import { EntryTitle } from "../EntryTitle"
 import { TextSelectionToolbar } from "../selection/TextSelectionToolbar"
 import type { EntryLayoutProps } from "./types"
@@ -47,10 +51,26 @@ export const ArticleLayout: React.FC<EntryLayoutProps> = ({
   const feed = useFeedById(entry?.feedId)
   const isInbox = useIsInbox(entry?.inboxId)
 
+  const { t } = useTranslation()
   const { content } = useEntryContent(entryId)
   const isInReadability = useEntryIsInReadability(entryId)
   const customCSS = useUISettingKey("customCSS")
   const [selection, setSelection] = useState<TextSelectionEvent | null>(null)
+  const { highlights } = useEntryAnnotations(entryId)
+  const source = isInReadability ? "readability" : "rss"
+
+  useEffect(() => {
+    void runtimeClient.annotations
+      .relocate(entryId)
+      .catch(() => {})
+      .then(() => refreshEntryAnnotations(entryId))
+      .catch(() => {})
+  }, [entryId])
+
+  const paintedHighlights = useMemo(
+    () => highlights.filter((item) => item.status === "active" && item.source === source),
+    [highlights, source],
+  )
 
   if (!entry) return null
 
@@ -83,21 +103,28 @@ export const ArticleLayout: React.FC<EntryLayoutProps> = ({
                 content={content}
                 translation={translation}
               />
+              <EntryHighlightLayer highlights={paintedHighlights} />
             </ShadowDOM>
             <TextSelectionToolbar
               entryId={entryId}
               selection={selection}
               onRequestClose={() => setSelection(null)}
               onHighlight={async (selected) => {
-                await runtimeClient.annotations.createHighlight({
-                  entryId,
-                  source: isInReadability ? "readability" : "rss",
-                  quote: selected.selectedText,
-                  startOffset: selected.startOffset,
-                  endOffset: selected.endOffset,
-                  prefix: selected.prefix,
-                  suffix: selected.suffix,
-                })
+                try {
+                  await runtimeClient.annotations.createHighlight({
+                    entryId,
+                    source,
+                    quote: selected.selectedText,
+                    startOffset: selected.startOffset,
+                    endOffset: selected.endOffset,
+                    prefix: selected.prefix,
+                    suffix: selected.suffix,
+                  })
+                  await refreshEntryAnnotations(entryId)
+                } catch (error) {
+                  console.error("Failed to create highlight:", error)
+                  toast.error(t("entry_content.selection_toolbar.highlight_failed"))
+                }
               }}
             />
           </ErrorBoundary>

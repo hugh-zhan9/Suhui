@@ -9,7 +9,6 @@ import { useTranslation } from "react-i18next"
 import { useCurrentModal } from "~/components/ui/modal/stacked/hooks"
 import { copyImageToClipboard } from "~/lib/clipboard"
 import { toast } from "~/lib/toast"
-import { UrlBuilder } from "~/lib/url-builder"
 
 import { GlassButton } from "./GlassButton"
 
@@ -20,12 +19,16 @@ type SharePosterModalProps = {
 
 type Mode = "light" | "dark"
 
+const APP_ICON_SRC = "icon.png?v=20260403"
+const APP_BRAND_NAME = "溯洄"
+
 export function SharePosterModal({ selectedText, entryId }: SharePosterModalProps) {
   const { t } = useTranslation()
   const { dismiss } = useCurrentModal()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isCopying, setIsCopying] = useState(false)
   const [authorAvatarImg, setAuthorAvatarImg] = useState<HTMLImageElement | null>(null)
+  const [appIconImg, setAppIconImg] = useState<HTMLImageElement | null>(null)
   const [mode, setMode] = useState<Mode>(
     document.documentElement.classList.contains("dark") ? "dark" : "light",
   )
@@ -40,6 +43,11 @@ export function SharePosterModal({ selectedText, entryId }: SharePosterModalProp
   }))
 
   const feed = useFeedById(entry?.feedId)
+
+  // Load the app icon used by the poster footer mark
+  useEffect(() => {
+    loadImage(APP_ICON_SRC).then(setAppIconImg)
+  }, [])
 
   // Load author avatar image
   useEffect(() => {
@@ -75,7 +83,6 @@ export function SharePosterModal({ selectedText, entryId }: SharePosterModalProp
       textSecondary: mode === "dark" ? "#a3a3a3" : "#525252",
       accent: mode === "dark" ? "#737373" : "#737373",
       quoteColor: mode === "dark" ? "#404040" : "#e5e5e5",
-      logoColor: mode === "dark" ? "#ff5c00" : "#ff5c00",
       fontFamilyTitle: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif",
       fontFamilyBody: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif",
       fontFamilyMeta: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif",
@@ -186,7 +193,7 @@ export function SharePosterModal({ selectedText, entryId }: SharePosterModalProp
         })
       : new Date().toLocaleDateString()
 
-    const headerText = `${feed?.title || "Folo"}  •  ${dateStr}`
+    const headerText = `${feed?.title || APP_BRAND_NAME}  •  ${dateStr}`
     ctx.fillText(headerText, padding, currentY)
 
     currentY += headerHeight
@@ -281,57 +288,30 @@ export function SharePosterModal({ selectedText, entryId }: SharePosterModalProp
       ctx.globalAlpha = 1
     }
 
-    // 5. Footer / Branding - Draw Folo logo and text
+    // 5. Footer / Branding - 溯洄 app mark
     const footerY = h - padding - 24
-    const logoSize = 36
-    const gap = 16
-    const svgScale = logoSize / 24
-
-    // Calculate positions for [Logo] [Folo] aligned to right
-    // Total width = logoSize + gap + logoSize (assuming folo text is also 24x24 scaled)
-    const totalWidth = logoSize + gap + logoSize
-    const startX = w - padding - totalWidth
-
-    const logoX = startX
-    const foloX = startX + logoSize + gap
-    const drawY = footerY - logoSize / 2
+    const iconSize = 36
+    const gap = 12
 
     ctx.save()
+    ctx.textAlign = "left"
+    ctx.textBaseline = "middle"
+    ctx.font = `600 20px ${baseConfig.fontFamilyTitle}`
 
-    // Draw Logo
-    ctx.translate(logoX, drawY)
-    ctx.scale(svgScale, svgScale)
+    const brandWidth = ctx.measureText(APP_BRAND_NAME).width
+    const markWidth = appIconImg ? iconSize + gap + brandWidth : brandWidth
+    const markX = w - padding - markWidth
 
-    // Logo Background
-    ctx.fillStyle = config.logoColor
-    const logoBgPath = new Path2D(
-      "M5.382 0h13.236A5.37 5.37 0 0 1 24 5.383v13.235A5.37 5.37 0 0 1 18.618 24H5.382A5.37 5.37 0 0 1 0 18.618V5.383A5.37 5.37 0 0 1 5.382.001Z",
-    )
-    ctx.fill(logoBgPath)
-
-    // Logo F
-    ctx.fillStyle = "#ffffff"
-    const logoFPath = new Path2D(
-      "M13.269 17.31a1.813 1.813 0 1 0-3.626.002 1.813 1.813 0 0 0 3.626-.002m-.535-6.527H7.213a1.813 1.813 0 1 0 0 3.624h5.521a1.813 1.813 0 1 0 0-3.624m4.417-4.712H8.87a1.813 1.813 0 1 0 0 3.625h8.283a1.813 1.813 0 1 0 0-3.624z",
-    )
-    ctx.fill(logoFPath)
-
-    ctx.restore()
-
-    // Draw Folo Text
-    ctx.save()
-    ctx.translate(foloX, drawY)
-    ctx.scale(svgScale, svgScale)
+    if (appIconImg) {
+      ctx.drawImage(appIconImg, markX, footerY - iconSize / 2, iconSize, iconSize)
+    }
 
     ctx.fillStyle = config.textSecondary
-    ctx.globalAlpha = 0.6
-    const foloPath = new Path2D(
-      "M.899 16.997c-.567 0-.899-.358-.899-.994v-7.77c0-.637.36-.996 1.01-.996h4.34c.595 0 .927.29.927.788 0 .497-.332.774-.926.774H1.797v2.336H5.06c.595 0 .927.263.927.76 0 .512-.332.775-.927.775H1.797v3.332c0 .636-.318.996-.898.996m9.035.125c-2.101 0-3.553-1.52-3.553-3.664 0-2.17 1.438-3.705 3.553-3.705 2.13 0 3.567 1.534 3.567 3.705 0 2.143-1.452 3.664-3.567 3.664m0-1.493c1.134 0 1.825-.899 1.825-2.185 0-1.3-.691-2.198-1.825-2.198s-1.797.899-1.797 2.198c0 1.286.663 2.185 1.797 2.185m5.266 1.367c-.553 0-.857-.359-.857-.967V7.845c0-.608.304-.968.857-.968s.857.36.857.968v8.185c0 .608-.29.967-.857.967m5.234.125c-2.102 0-3.553-1.52-3.553-3.664 0-2.17 1.438-3.705 3.553-3.705 2.129 0 3.566 1.534 3.566 3.704 0 2.143-1.452 3.664-3.567 3.664m0-1.493c1.134 0 1.825-.899 1.825-2.185 0-1.3-.691-2.198-1.825-2.198s-1.797.899-1.797 2.198c0 1.286.663 2.185 1.797 2.185",
-    )
-    ctx.fill(foloPath)
+    ctx.globalAlpha = 0.75
+    ctx.fillText(APP_BRAND_NAME, appIconImg ? markX + iconSize + gap : markX, footerY)
 
     ctx.restore()
-  }, [entry, feed, mode, selectedText, authorAvatarImg])
+  }, [entry, feed, mode, selectedText, authorAvatarImg, appIconImg])
 
   useEffect(() => {
     draw()
@@ -352,14 +332,6 @@ export function SharePosterModal({ selectedText, entryId }: SharePosterModalProp
       setIsCopying(false)
     }
   }, [isCopying, t, dismiss])
-
-  const handleShareToX = useCallback(() => {
-    if (!entry) return
-    const text = selectedText.length > 200 ? `${selectedText.slice(0, 200)}...` : selectedText
-    const shareUrl = UrlBuilder.shareEntry(entryId)
-    const intentUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`
-    window.open(intentUrl, "_blank")
-  }, [entry, selectedText, entryId])
 
   return (
     <div className="container center size-full" onClick={(e) => e.stopPropagation()}>
@@ -426,21 +398,6 @@ export function SharePosterModal({ selectedText, entryId }: SharePosterModalProp
                     : "i-mingcute-moon-line text-base"
                 }
               />
-            </m.button>
-
-            {/* Share to X */}
-            <m.button
-              type="button"
-              onClick={handleShareToX}
-              className={cn(
-                "relative flex size-8 items-center justify-center rounded-full",
-                "text-text-secondary transition-all duration-300",
-                "hover:bg-fill/20 hover:text-text",
-              )}
-              whileTap={{ scale: 0.95 }}
-              title="Share to X"
-            >
-              <span className="i-mgc-social-x-cute-li text-base" />
             </m.button>
 
             {/* Divider */}

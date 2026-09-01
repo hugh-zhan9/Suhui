@@ -170,7 +170,7 @@ export function TextSelectionToolbar({
           {onHighlight ? (
             <ToolbarButton
               iconClassName="i-mgc-highlighter-cute-re"
-              label="Highlight"
+              label={t("entry_content.selection_toolbar.highlight")}
               onClick={() => {
                 void onHighlight(selection)
                 onRequestClose()

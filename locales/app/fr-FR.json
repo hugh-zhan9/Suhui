@@ -192,6 +192,8 @@
   "entry_content.selection_toolbar.copy_image": "Copier l'image",
   "entry_content.selection_toolbar.copying": "Copie...",
   "entry_content.selection_toolbar.generating": "Génération...",
+  "entry_content.selection_toolbar.highlight": "Surligner",
+  "entry_content.selection_toolbar.highlight_failed": "Échec du surlignage",
   "entry_content.selection_toolbar.poster_copied": "Affiche copiée dans le presse-papier",
   "entry_content.selection_toolbar.poster_copy_failed": "Échec de la copie de l'affiche",
   "entry_content.selection_toolbar.share": "Partager",

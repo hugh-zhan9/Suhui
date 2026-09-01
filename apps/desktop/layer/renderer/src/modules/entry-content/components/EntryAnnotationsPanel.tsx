@@ -8,8 +8,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 
 import { toast } from "~/lib/toast"
 
-type Note = { id: string; content: string; updatedAt: number }
-type Highlight = { id: string; quote: string; source: string; status: "active" | "orphaned" }
+import { refreshEntryAnnotations, useEntryAnnotations } from "../hooks/useEntryAnnotations"
 
 const parseTags = (value: string) =>
   Array.from(
@@ -28,8 +27,7 @@ export function EntryAnnotationsPanel({ entryId }: { entryId: string }) {
     cluster: entry.cluster,
     hidden: entry.hidden ?? false,
   }))
-  const [notes, setNotes] = useState<Note[]>([])
-  const [highlights, setHighlights] = useState<Highlight[]>([])
+  const { notes, highlights } = useEntryAnnotations(entryId)
   const [noteDraft, setNoteDraft] = useState("")
   const [tags, setTags] = useState<string[]>([])
   const [tagDraft, setTagDraft] = useState("")
@@ -37,28 +35,21 @@ export function EntryAnnotationsPanel({ entryId }: { entryId: string }) {
   const [clusterEntries, setClusterEntries] = useState<EntryModel[] | null>(null)
 
   const refresh = useCallback(async () => {
-    const [annotations, nextTags] = await Promise.all([
-      runtimeClient.annotations.list(entryId),
+    const [, nextTags] = await Promise.all([
+      refreshEntryAnnotations(entryId),
       runtimeClient.entryOrganization.tags(entryId),
     ])
     if (currentEntryIdRef.current !== entryId) return
-    setNotes((annotations?.notes ?? []) as Note[])
-    setHighlights((annotations?.highlights ?? []) as Highlight[])
     setTags((nextTags ?? []) as string[])
     setTagDraft(((nextTags ?? []) as string[]).join(", "))
   }, [entryId])
 
   useEffect(() => {
-    setNotes([])
-    setHighlights([])
     setTags([])
     setTagDraft("")
     setHidden(entryState?.hidden ?? false)
     setClusterEntries(null)
-    void runtimeClient.annotations
-      .relocate(entryId)
-      .catch(() => {})
-      .then(refresh)
+    void refresh()
   }, [entryId, entryState?.hidden, refresh])
 
   const addNote = async () => {

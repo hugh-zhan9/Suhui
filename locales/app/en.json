@@ -193,6 +193,8 @@
   "entry_content.selection_toolbar.copy_image": "Copy Image",
   "entry_content.selection_toolbar.copying": "Copying...",
   "entry_content.selection_toolbar.generating": "Generating...",
+  "entry_content.selection_toolbar.highlight": "Highlight",
+  "entry_content.selection_toolbar.highlight_failed": "Failed to highlight selection",
   "entry_content.selection_toolbar.poster_copied": "Poster copied to clipboard",
   "entry_content.selection_toolbar.poster_copy_failed": "Failed to copy poster",
   "entry_content.selection_toolbar.share": "Share",

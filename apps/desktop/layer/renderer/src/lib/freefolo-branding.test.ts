@@ -70,6 +70,20 @@ describe("SuHui branding", () => {
     expect(modalLayoutContent).not.toContain("@suhui/components/icons/logo.jsx")
   })
 
+  it("分享海报应使用溯洄图标与名称，且不提供 X 分享", () => {
+    const posterPath = path.join(
+      rendererRoot,
+      "src/modules/entry-content/components/selection/SharePosterModal.tsx",
+    )
+    const content = readFileSync(posterPath, "utf-8")
+
+    expect(content).toContain('const APP_ICON_SRC = "icon.png?v=20260403"')
+    expect(content).toContain('const APP_BRAND_NAME = "溯洄"')
+    expect(content).not.toContain("Folo")
+    expect(content).not.toContain("x.com/intent/tweet")
+    expect(content).not.toContain("i-mgc-social-x-cute-li")
+  })
+
   it("EntryNotFound 占位文案应为两行且不显示图标", () => {
     const placeholderPath = path.join(rendererRoot, "src/components/errors/EntryNotFound.tsx")
     const content = readFileSync(placeholderPath, "utf-8")

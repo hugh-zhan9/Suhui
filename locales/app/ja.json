@@ -192,6 +192,8 @@
   "entry_content.selection_toolbar.copy_image": "画像をコピー",
   "entry_content.selection_toolbar.copying": "コピー中...",
   "entry_content.selection_toolbar.generating": "生成中...",
+  "entry_content.selection_toolbar.highlight": "ハイライト",
+  "entry_content.selection_toolbar.highlight_failed": "ハイライトに失敗しました",
   "entry_content.selection_toolbar.poster_copied": "ポスターをクリップボードにコピーしました",
   "entry_content.selection_toolbar.poster_copy_failed": "ポスターのコピーに失敗しました",
   "entry_content.selection_toolbar.share": "共有",
