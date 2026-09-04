@@ -17,6 +17,7 @@ export type StoredTranslationProviderConfig = {
     baseUrl: string
     encryptedApiKey?: string | null
     model: string
+    apiProtocol?: "chat-completions" | "responses"
   }
 }
 

@@ -39,14 +39,19 @@ export const useGalleryModal = () => {
 export const useEntryContent = (entryId: string) => {
   const entry = useEntry(entryId, (state) => {
     const { inboxHandle, content, readabilityContent } = state
-    return { inboxId: inboxHandle, content, readabilityContent }
+    return {
+      inboxId: inboxHandle,
+      content,
+      readabilityContent,
+      translation: state.settings?.translation,
+    }
   })
   const { error, data, isPending, isFetching } = usePrefetchEntryDetail(entryId)
 
   const isInReadabilityMode = useEntryIsInReadability(entryId)
   const isReadabilitySuccess = useEntryIsInReadabilitySuccess(entryId)
 
-  const enableTranslation = useShowAITranslation()
+  const enableTranslation = useShowAITranslation(entryId, !!entry?.translation)
   const actionLanguage = useActionLanguage()
   const translationQueries = usePrefetchEntryTranslation({
     entryIds: [entryId],
@@ -54,6 +59,7 @@ export const useEntryContent = (entryId: string) => {
     language: actionLanguage,
     withContent: true,
     target: isReadabilitySuccess ? "readabilityContent" : "content",
+    respectEntrySetting: false,
   })
 
   const translationError = translationQueries[0]?.error ?? null

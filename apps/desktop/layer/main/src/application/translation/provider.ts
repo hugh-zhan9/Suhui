@@ -1,10 +1,15 @@
-import type { SupportedActionLanguage, TranslationProviderKind } from "@suhui/shared"
+import type {
+  SupportedActionLanguage,
+  TranslationApiProtocol,
+  TranslationProviderKind,
+} from "@suhui/shared"
 
 export type TranslationProviderRuntimeConfig = {
   provider: TranslationProviderKind
   baseUrl: string
   apiKey: string
   model?: string
+  apiProtocol?: TranslationApiProtocol
 }
 
 type Fetch = typeof globalThis.fetch
@@ -23,8 +28,33 @@ const endpoint = (baseUrl: string, suffix: string) => {
   return normalized.endsWith(suffix) ? normalized : `${normalized}${suffix}`
 }
 
-const providerError = (provider: string, response: Response) =>
-  new Error(`${provider} 翻译请求失败（HTTP ${response.status}）`)
+const redactProviderError = (value: string, apiKey: string) => {
+  let sanitized = value.replace(/\s+/g, " ").trim()
+  if (apiKey) sanitized = sanitized.split(apiKey).join("[REDACTED]")
+  return sanitized.replace(/\b(?:sk|key)-[A-Za-z0-9._~+/-]{8,}\b/gi, "[REDACTED]").slice(0, 500)
+}
+
+const providerError = async (provider: string, response: Response, apiKey: string) => {
+  let detail = ""
+  try {
+    const body = (await response.clone().json()) as {
+      code?: unknown
+      message?: unknown
+      error?: { code?: unknown; message?: unknown }
+    }
+    const code = body.error?.code ?? body.code
+    const message = body.error?.message ?? body.message
+    detail = [code, message]
+      .filter((item): item is string => typeof item === "string" && !!item.trim())
+      .join(": ")
+  } catch {
+    // Non-JSON error bodies are intentionally not exposed.
+  }
+  const safeDetail = redactProviderError(detail, apiKey)
+  return new Error(
+    `${provider} 翻译请求失败（HTTP ${response.status}）${safeDetail ? `：${safeDetail}` : ""}`,
+  )
+}
 
 export const translateWithDeepL = async (
   config: TranslationProviderRuntimeConfig,
@@ -46,7 +76,7 @@ export const translateWithDeepL = async (
     }),
     signal: AbortSignal.timeout(60_000),
   })
-  if (!response.ok) throw providerError("DeepL", response)
+  if (!response.ok) throw await providerError("DeepL", response, config.apiKey)
   const body = (await response.json()) as { translations?: Array<{ text?: unknown }> }
   const translations = body.translations?.map((item) => item.text)
   if (
@@ -81,34 +111,49 @@ export const translateWithOpenAICompatible = async (
   if (texts.length === 0) return []
   if (!config.model?.trim()) throw new Error("在线 AI 模型不能为空")
 
-  const response = await fetchImpl(endpoint(config.baseUrl, "/chat/completions"), {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${config.apiKey}`,
-      "Content-Type": "application/json",
+  const systemPrompt =
+    'You translate article text faithfully. Do not add commentary or markup. Preserve every array position. Return only JSON with the shape {"translations":["..."]}.'
+  const userPrompt = JSON.stringify({ targetLanguage: LANGUAGE_MAP[language], texts })
+  const useResponses = config.apiProtocol === "responses"
+  const response = await fetchImpl(
+    endpoint(config.baseUrl, useResponses ? "/responses" : "/chat/completions"),
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${config.apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(
+        useResponses
+          ? { model: config.model.trim(), instructions: systemPrompt, input: userPrompt }
+          : {
+              model: config.model.trim(),
+              temperature: 0,
+              messages: [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: userPrompt },
+              ],
+            },
+      ),
+      signal: AbortSignal.timeout(90_000),
     },
-    body: JSON.stringify({
-      model: config.model.trim(),
-      temperature: 0,
-      messages: [
-        {
-          role: "system",
-          content:
-            'You translate article text faithfully. Do not add commentary or markup. Preserve every array position. Return only JSON with the shape {"translations":["..."]}.',
-        },
-        {
-          role: "user",
-          content: JSON.stringify({ targetLanguage: LANGUAGE_MAP[language], texts }),
-        },
-      ],
-    }),
-    signal: AbortSignal.timeout(90_000),
-  })
-  if (!response.ok) throw providerError("在线 AI", response)
+  )
+  if (!response.ok) throw await providerError("在线 AI", response, config.apiKey)
   const body = (await response.json()) as {
     choices?: Array<{ message?: { content?: unknown } }>
+    output_text?: unknown
+    output?: Array<{ content?: Array<{ type?: unknown; text?: unknown }> }>
   }
-  const content = body.choices?.[0]?.message?.content
+  const responseOutput = body.output
+    ?.flatMap((item) => item.content ?? [])
+    .filter((item) => item.type === "output_text" && typeof item.text === "string")
+    .map((item) => item.text)
+    .join("")
+  const content = useResponses
+    ? typeof body.output_text === "string"
+      ? body.output_text
+      : responseOutput
+    : body.choices?.[0]?.message?.content
   if (typeof content !== "string") throw new Error("在线 AI 返回了无效的翻译结果")
   const parsed = extractJsonObject(content) as { translations?: unknown }
   if (

@@ -20,6 +20,27 @@ describe("article HTML translation plan", () => {
     expect(batchTranslationUnits(["1234", "5678", "9"], 8)).toEqual([["1234", "5678"], ["9"]])
   })
 
+  it("uses 4,000 UTF-16 code units as the default batch boundary", () => {
+    expect(batchTranslationUnits(["a".repeat(3_000), "b".repeat(1_001)])).toEqual([
+      ["a".repeat(3_000)],
+      ["b".repeat(1_001)],
+    ])
+  })
+
+  it("keeps an oversized semantic unit intact", () => {
+    expect(batchTranslationUnits(["a".repeat(4_001)])).toEqual([["a".repeat(4_001)]])
+  })
+
+  it("can rebuild a partial result without exposing tags or attributes", () => {
+    const plan = createHtmlTranslationPlan(
+      '<p title="private attribute">First <a href="https://example.com/private">second</a></p>',
+    )
+
+    expect(plan.rebuildPartial(["第一段"])).toContain(
+      '<p title="private attribute">第一段 <a href="https://example.com/private">second</a></p>',
+    )
+  })
+
   it("handles empty input without making a translation unit", () => {
     const plan = createHtmlTranslationPlan("")
     expect(plan.units).toEqual([])

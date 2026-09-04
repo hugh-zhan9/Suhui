@@ -1,10 +1,10 @@
 import type { SupportedActionLanguage } from "@suhui/shared"
-import type { SupportedLanguages } from "@follow-app/client-sdk"
 import { useQueries } from "@tanstack/react-query"
 import { useCallback } from "react"
 
 import { useEntry, useEntryList } from "../entry/hooks"
 import type { EntryModel } from "../entry/types"
+import { resolveEntryTranslationEnabled } from "./policy"
 import { translationActions, translationSyncService, useTranslationStore } from "./store"
 
 type TranslationSource = Pick<
@@ -32,15 +32,19 @@ export const usePrefetchEntryTranslation = ({
   target = "content",
   enabled,
   language,
+  respectEntrySetting = true,
 }: {
   entryIds: string[]
   withContent?: boolean
   target?: "content" | "readabilityContent"
   enabled: boolean
   language: SupportedActionLanguage
+  respectEntrySetting?: boolean
 }) => {
   const entryList = (useEntryList(entryIds)?.filter(
-    (entry) => entry !== null && (enabled || !!entry?.settings?.translation),
+    (entry) =>
+      entry !== null &&
+      resolveEntryTranslationEnabled(enabled, entry?.settings?.translation, respectEntrySetting),
   ) || []) as EntryModel[]
 
   return useQueries({
@@ -72,20 +76,27 @@ export const useEntryTranslation = ({
   entryId,
   language,
   enabled,
+  respectEntrySetting = true,
 }: {
   entryId: string
-  language: SupportedLanguages
+  language: SupportedActionLanguage
   enabled: boolean
+  respectEntrySetting?: boolean
 }) => {
   const actionSetting = useEntry(entryId, (state) => state.settings?.translation)
 
   return useTranslationStore(
     useCallback(
       (state) => {
-        if (!enabled && !actionSetting) return
+        if (!resolveEntryTranslationEnabled(enabled, actionSetting, respectEntrySetting)) return
         return state.data[entryId]?.[language]
       },
-      [actionSetting, entryId, language, enabled],
+      [actionSetting, entryId, language, enabled, respectEntrySetting],
     ),
   )
 }
+
+export const useEntryTranslationProgress = (entryId: string, language: SupportedActionLanguage) =>
+  useTranslationStore(
+    useCallback((state) => state.progress[entryId]?.[language], [entryId, language]),
+  )

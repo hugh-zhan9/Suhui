@@ -274,7 +274,10 @@ export const useRegisterEntryCommands = () => {
         label: t("entry_actions.toggle_ai_translation"),
         icon: <i className="i-mgc-translate-2-cute-re" />,
         category,
-        run: toggleShowAITranslationOnce,
+        run: () => {
+          const entryId = getRouteParams().entryId
+          if (entryId) toggleShowAITranslationOnce(entryId)
+        },
       },
       {
         id: COMMAND_ID.entry.share,

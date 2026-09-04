@@ -42,26 +42,31 @@ const collectTextSlots = (document: ReturnType<typeof parse>) => {
 export type HtmlTranslationPlan = {
   units: string[]
   rebuild: (translations: string[]) => string
+  rebuildPartial: (translations: Array<string | null | undefined>) => string
 }
 
 export const createHtmlTranslationPlan = (html: string): HtmlTranslationPlan => {
   const document = parse(html)
   const slots = collectTextSlots(document)
+  const applyTranslations = (translations: Array<string | null | undefined>) => {
+    slots.forEach((slot, index) => {
+      slot.node.textContent = `${slot.leadingWhitespace}${translations[index] ?? slot.source}${slot.trailingWhitespace}`
+    })
+    return document.body.innerHTML
+  }
   return {
     units: slots.map((slot) => slot.source),
     rebuild: (translations) => {
       if (translations.length !== slots.length) {
         throw new Error("翻译结果与原文文本节点数量不匹配")
       }
-      slots.forEach((slot, index) => {
-        slot.node.textContent = `${slot.leadingWhitespace}${translations[index]!}${slot.trailingWhitespace}`
-      })
-      return document.body.innerHTML
+      return applyTranslations(translations)
     },
+    rebuildPartial: applyTranslations,
   }
 }
 
-export const batchTranslationUnits = (units: string[], maxCharacters = 18_000) => {
+export const batchTranslationUnits = (units: string[], maxCharacters = 4_000) => {
   const batches: string[][] = []
   let current: string[] = []
   let currentLength = 0

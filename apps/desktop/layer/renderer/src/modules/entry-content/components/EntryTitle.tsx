@@ -66,6 +66,7 @@ export const EntryTitle = ({
         publishedAt,
         read,
         readabilityContent,
+        settings,
         title,
       } = state
 
@@ -92,6 +93,7 @@ export const EntryTitle = ({
         publishedAt,
         read,
         readabilityContent,
+        translation: settings?.translation,
         title,
       }
     }),
@@ -103,12 +105,13 @@ export const EntryTitle = ({
   const inbox = useInboxById(entry?.inboxId)
   const subscription = useSubscriptionByFeedId(entry?.feedId)
   const populatedFullHref = useFeedSafeUrl(entryId)
-  const enableTranslation = useShowAITranslation()
+  const enableTranslation = useShowAITranslation(entryId, !!entry?.translation)
   const actionLanguage = useActionLanguage()
   const translation = useEntryTranslation({
     entryId,
     language: actionLanguage,
     enabled: enableTranslation,
+    respectEntrySetting: false,
   })
 
   const dateFormat = useUISettingKey("dateFormat")

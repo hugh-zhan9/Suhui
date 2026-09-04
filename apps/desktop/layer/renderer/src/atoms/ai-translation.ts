@@ -2,6 +2,15 @@ import { atom } from "jotai"
 
 import { createAtomHooks } from "~/lib/jotai"
 
+import type {
+  CurrentTranslationOverride,
+  CurrentTranslationOverrideState,
+} from "./ai-translation-state"
+import {
+  clearOverrideForEntry,
+  overrideForEntry,
+  resolveTranslationVisibility,
+} from "./ai-translation-state"
 import { useGeneralSettingKey } from "./settings/general"
 
 // NOTE: We have three levels of settings can enable AI translation or Summary:
@@ -13,19 +22,49 @@ import { useGeneralSettingKey } from "./settings/general"
 //
 // Different from AI summary, AI translation also can show up in the entry list, which should only be controlled by the General setting or Action setting.
 
-export const [, , useShowAITranslationOnce, , getShowAITranslationOnce, setShowAITranslationOnce] =
-  createAtomHooks(atom<boolean>(false))
+export const [
+  ,
+  ,
+  useCurrentTranslationOverrideState,
+  ,
+  getCurrentTranslationOverrideState,
+  setCurrentTranslationOverrideState,
+] = createAtomHooks(
+  atom<CurrentTranslationOverrideState>({ entryId: null, override: "follow-global" }),
+)
 
-export const toggleShowAITranslationOnce = () => setShowAITranslationOnce((prev) => !prev)
-export const enableShowAITranslationOnce = () => setShowAITranslationOnce(true)
-export const disableShowAITranslationOnce = () => setShowAITranslationOnce(false)
+export const useCurrentTranslationOverride = (entryId: string) =>
+  overrideForEntry(useCurrentTranslationOverrideState(), entryId)
+
+export const getCurrentTranslationOverride = (entryId: string) =>
+  overrideForEntry(getCurrentTranslationOverrideState(), entryId)
+
+export const setCurrentTranslationOverride = (
+  entryId: string,
+  override: CurrentTranslationOverride,
+) => setCurrentTranslationOverrideState({ entryId, override })
+
+export const toggleShowAITranslationOnce = (entryId: string) => {
+  const override = getCurrentTranslationOverride(entryId)
+  setCurrentTranslationOverride(
+    entryId,
+    resolveTranslationVisibility(false, override) ? "force-off" : "force-on",
+  )
+}
+export const enableShowAITranslationOnce = (entryId: string) =>
+  setCurrentTranslationOverride(entryId, "force-on")
+export const disableShowAITranslationOnce = () =>
+  setCurrentTranslationOverrideState({ entryId: null, override: "follow-global" })
+export const clearCurrentTranslationOverrideForEntry = (entryId: string) => {
+  setCurrentTranslationOverrideState((state) => clearOverrideForEntry(state, entryId))
+}
 
 export const useShowAITranslationAuto = (settings?: boolean | null) => {
   return useGeneralSettingKey("translation") || !!settings
 }
 
-export const useShowAITranslation = (settings?: boolean | null) => {
+export const useShowAITranslation = (entryId: string, settings?: boolean | null) => {
   const showAITranslationAuto = useShowAITranslationAuto(settings)
-  const showAITranslationOnce = useShowAITranslationOnce()
-  return showAITranslationAuto || showAITranslationOnce
+  const override = useCurrentTranslationOverride(entryId)
+  return resolveTranslationVisibility(showAITranslationAuto, override)
 }

@@ -1,16 +1,19 @@
 import { MemoedDangerousHTMLStyle } from "@suhui/components/common/MemoedDangerousHTMLStyle.js"
 import { FeedViewType } from "@suhui/constants"
+import { IN_ELECTRON } from "@suhui/shared/constants"
 import { isOnboardingEntry } from "@suhui/store/constants/onboarding"
 import { useEntry } from "@suhui/store/entry/hooks"
 import { useFeedById } from "@suhui/store/feed/hooks"
 import { useIsInbox } from "@suhui/store/inbox/hooks"
 import { runtimeClient } from "@suhui/store/runtime"
+import { translationSyncService } from "@suhui/store/translation/store"
+import type { SupportedActionLanguage } from "@suhui/shared"
 import { cn } from "@suhui/utils"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { useEntryIsInReadability } from "~/atoms/readability"
-import { useGeneralSettingKey } from "~/atoms/settings/general"
+import { useActionLanguage, useGeneralSettingKey } from "~/atoms/settings/general"
 import { useUISettingKey } from "~/atoms/settings/ui"
 import { ErrorBoundary } from "~/components/common/ErrorBoundary"
 import { ShadowDOM } from "~/components/common/ShadowDOM"
@@ -52,6 +55,7 @@ export const ArticleLayout: React.FC<EntryLayoutProps> = ({
   const isInbox = useIsInbox(entry?.inboxId)
 
   const { t } = useTranslation()
+  const actionLanguage = useActionLanguage() as SupportedActionLanguage
   const { content } = useEntryContent(entryId)
   const isInReadability = useEntryIsInReadability(entryId)
   const customCSS = useUISettingKey("customCSS")
@@ -109,6 +113,17 @@ export const ArticleLayout: React.FC<EntryLayoutProps> = ({
               entryId={entryId}
               selection={selection}
               onRequestClose={() => setSelection(null)}
+              onTranslate={
+                IN_ELECTRON
+                  ? async (selected) => {
+                      const result = await translationSyncService.translateText({
+                        text: selected.selectedText,
+                        language: actionLanguage,
+                      })
+                      return result.translatedText
+                    }
+                  : undefined
+              }
               onHighlight={async (selected) => {
                 try {
                   await runtimeClient.annotations.createHighlight({

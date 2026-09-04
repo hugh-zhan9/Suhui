@@ -10,6 +10,7 @@ import { PlainModal } from "~/components/ui/modal/stacked/custom-modal"
 import { useModalStack } from "~/components/ui/modal/stacked/hooks"
 import { copyToClipboard } from "~/lib/clipboard"
 import type { TextSelectionEvent } from "~/lib/simple-text-selection"
+import { toast } from "~/lib/toast"
 
 import { SharePosterModal } from "./SharePosterModal"
 
@@ -31,6 +32,7 @@ type TextSelectionToolbarProps = {
   onRequestClose: () => void
   onAskAI?: (selection: TextSelectionEvent) => void
   onHighlight?: (selection: TextSelectionEvent) => Promise<void> | void
+  onTranslate?: (selection: TextSelectionEvent) => Promise<string>
   entryId?: string
 }
 
@@ -46,6 +48,7 @@ export function TextSelectionToolbar({
   onRequestClose,
   onAskAI,
   onHighlight,
+  onTranslate,
   entryId,
 }: TextSelectionToolbarProps) {
   const { t } = useTranslation()
@@ -53,6 +56,7 @@ export function TextSelectionToolbar({
   const toolbarRef = useRef<HTMLDivElement | null>(null)
   const [toolbarSize, setToolbarSize] = useState(DEFAULT_DIMENSIONS)
   const [copied, setCopied] = useState(false)
+  const [isTranslating, setIsTranslating] = useState(false)
   const [viewport, setViewport] = useState(() => getViewport())
 
   useEffect(() => {
@@ -125,6 +129,32 @@ export function TextSelectionToolbar({
     onRequestClose()
   }, [selection, entryId, present, onRequestClose, t])
 
+  const handleTranslate = useCallback(async () => {
+    if (!selection || !selection.selectedText.trim() || !onTranslate || isTranslating) return
+    setIsTranslating(true)
+    try {
+      const translatedText = await onTranslate(selection)
+      present({
+        CustomModalComponent: PlainModal,
+        title: t("entry_content.selection_toolbar.translation_title"),
+        id: "selection-translation",
+        content: () => (
+          <div className="max-h-[70vh] max-w-2xl select-text overflow-auto whitespace-pre-wrap break-words p-6 text-sm leading-7">
+            {translatedText}
+          </div>
+        ),
+        clickOutsideToDismiss: true,
+      })
+      onRequestClose()
+    } catch (error) {
+      toast.error(t("entry_content.selection_toolbar.translation_failed"), {
+        description: error instanceof Error ? error.message : String(error),
+      })
+    } finally {
+      setIsTranslating(false)
+    }
+  }, [isTranslating, onRequestClose, onTranslate, present, selection, t])
+
   const handleMouseDown: MouseEventHandler<HTMLDivElement> = (event) => {
     event.preventDefault()
   }
@@ -177,6 +207,20 @@ export function TextSelectionToolbar({
               }}
             />
           ) : null}
+          {onTranslate ? (
+            <ToolbarButton
+              iconClassName={
+                isTranslating ? "i-mgc-loading-3-cute-re animate-spin" : "i-mgc-translate-2-cute-re"
+              }
+              label={
+                isTranslating
+                  ? t("entry_content.selection_toolbar.translating")
+                  : t("entry_content.selection_toolbar.translate")
+              }
+              onClick={() => void handleTranslate()}
+              disabled={isTranslating}
+            />
+          ) : null}
           {onAskAI ? (
             <ToolbarButton
               iconClassName="i-mingcute-sparkles-2-line"
@@ -195,15 +239,17 @@ type ToolbarButtonProps = {
   label: string
   onClick?: () => void
   active?: boolean
+  disabled?: boolean
 }
 
-function ToolbarButton({ iconClassName, label, onClick, active }: ToolbarButtonProps) {
+function ToolbarButton({ iconClassName, label, onClick, active, disabled }: ToolbarButtonProps) {
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       className={cn(
-        "flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition-all duration-200",
+        "flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition-all duration-200 disabled:cursor-wait disabled:opacity-60",
         active
           ? "bg-fill/80 text-text shadow-sm"
           : "text-text-secondary hover:bg-fill/60 hover:text-text active:scale-95",

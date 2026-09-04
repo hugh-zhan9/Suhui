@@ -1,4 +1,8 @@
-import type { GenerateEntryTranslationInput, TranslationProviderConfigInput } from "@suhui/shared"
+import type { GenerateEntryTranslationInput, TranslateTextInput } from "@suhui/shared"
+import {
+  TRANSLATION_PROGRESS_CHANNEL,
+  type TranslationProviderConfigInput,
+} from "@suhui/shared/translation"
 import type { IpcContext } from "electron-ipc-decorator"
 import { IpcMethod, IpcService } from "electron-ipc-decorator"
 
@@ -23,7 +27,20 @@ export class TranslationIpcService extends IpcService {
   }
 
   @IpcMethod()
-  generate(_context: IpcContext, input: GenerateEntryTranslationInput) {
-    return entryTranslationApplicationService.generate(input)
+  translateText(_context: IpcContext, input: TranslateTextInput) {
+    return entryTranslationApplicationService.translateText(input)
+  }
+
+  @IpcMethod()
+  generate(context: IpcContext, input: GenerateEntryTranslationInput) {
+    return entryTranslationApplicationService.generate(input, (progress) => {
+      try {
+        if (context.sender.isDestroyed?.() !== true) {
+          context.sender.send(TRANSLATION_PROGRESS_CHANNEL, progress)
+        }
+      } catch {
+        // Progress is best-effort when the invoking renderer is closing. The final cache remains valid.
+      }
+    })
   }
 }

@@ -16,7 +16,10 @@ import type { JSAnimation } from "motion/react"
 import * as React from "react"
 import { memo, useEffect, useRef, useState } from "react"
 
-import { useShowAITranslation } from "~/atoms/ai-translation"
+import {
+  clearCurrentTranslationOverrideForEntry,
+  useShowAITranslation,
+} from "~/atoms/ai-translation"
 import { useEntryIsInReadability } from "~/atoms/readability"
 import { useActionLanguage } from "~/atoms/settings/general"
 import { AppErrorBoundary } from "~/components/common/AppErrorBoundary"
@@ -54,7 +57,13 @@ const EntryContentImpl: Component<EntryContentProps> = ({
     const { feedId, inboxHandle } = state
     const { title, url } = state
 
-    return { feedId, inboxId: inboxHandle, title, url }
+    return {
+      feedId,
+      inboxId: inboxHandle,
+      title,
+      url,
+      translation: state.settings?.translation,
+    }
   })
 
   if (!entry) throw thenable
@@ -67,13 +76,21 @@ const EntryContentImpl: Component<EntryContentProps> = ({
   const isInReadabilityMode = useEntryIsInReadability(entryId)
 
   const { error, content, isPending, translationError } = useEntryContent(entryId)
-  const enableTranslation = useShowAITranslation()
+  const enableTranslation = useShowAITranslation(entryId, !!entry.translation)
   const actionLanguage = useActionLanguage()
   const entryTranslation = useEntryTranslation({
     entryId,
     language: actionLanguage,
     enabled: enableTranslation,
+    respectEntrySetting: false,
   })
+
+  useEffect(
+    () => () => {
+      clearCurrentTranslationOverrideForEntry(entryId)
+    },
+    [entryId],
+  )
 
   const routeView = useRouteParamsSelector((route) => route.view)
   const subscriptionView = subscription?.view

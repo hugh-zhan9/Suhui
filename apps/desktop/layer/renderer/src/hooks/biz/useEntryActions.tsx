@@ -12,7 +12,7 @@ import { useSubscriptionByFeedId } from "@suhui/store/subscription/hooks"
 import { doesTextContainHTML } from "@suhui/utils/utils"
 import { useMemo } from "react"
 
-import { useShowAITranslationAuto, useShowAITranslationOnce } from "~/atoms/ai-translation"
+import { useShowAITranslation, useShowAITranslationAuto } from "~/atoms/ai-translation"
 import { MENU_ITEM_SEPARATOR, MenuItemSeparator, MenuItemText } from "~/atoms/context-menu"
 import {
   getReadabilityStatus,
@@ -255,7 +255,7 @@ export const useEntryActions = ({ entryId, view }: { entryId: string; view: Feed
   const isShowSourceContent = useShowSourceContent()
 
   const isShowAITranslationAuto = useShowAITranslationAuto(!!entry?.translation)
-  const isShowAITranslationOnce = useShowAITranslationOnce()
+  const isShowAITranslation = useShowAITranslation(entryId, !!entry?.translation)
 
   const runCmdFn = useRunCommandFn()
   const hasEntry = !!entry
@@ -379,7 +379,7 @@ export const useEntryActions = ({ entryId, view }: { entryId: string; view: Feed
           ([FeedViewType.SocialMedia, FeedViewType.Videos] as (number | undefined)[]).includes(
             view,
           ),
-        active: isShowAITranslationOnce,
+        active: isShowAITranslation,
         requiresLogin: false,
         entryId,
       }),
@@ -472,7 +472,7 @@ export const useEntryActions = ({ entryId, view }: { entryId: string; view: Feed
     isCurrentVisitEntry,
     isShowSourceContent,
     isShowAITranslationAuto,
-    isShowAITranslationOnce,
+    isShowAITranslation,
     isCollection,
     isEntryInReadability,
     integrationSettings.customIntegration,

@@ -7,6 +7,7 @@ import type {
   TranslationProviderConfigInput,
   TranslationProviderConfigView,
   TranslationProviderKind,
+  TranslationApiProtocol,
 } from "@suhui/shared/translation"
 import { IN_ELECTRON } from "@suhui/shared/constants"
 import { translationActions } from "@suhui/store/translation/store"
@@ -492,6 +493,7 @@ type TranslationProviderDraft = {
   aiBaseUrl: string
   aiApiKey: string
   aiModel: string
+  aiApiProtocol: TranslationApiProtocol
 }
 
 const translationConfigToDraft = (
@@ -503,6 +505,7 @@ const translationConfigToDraft = (
   aiBaseUrl: config.openAICompatible.baseUrl,
   aiApiKey: "",
   aiModel: config.openAICompatible.model,
+  aiApiProtocol: config.openAICompatible.apiProtocol,
 })
 
 const getTranslationIpc = () => {
@@ -520,6 +523,7 @@ const TranslationProviderSection = () => {
     aiBaseUrl: "https://api.openai.com/v1",
     aiApiKey: "",
     aiModel: "",
+    aiApiProtocol: "chat-completions",
   })
   const [isSaving, setIsSaving] = useState(false)
   const query = useQuery({
@@ -543,6 +547,7 @@ const TranslationProviderSection = () => {
     openAICompatible: {
       baseUrl: draft.aiBaseUrl.trim(),
       model: draft.aiModel.trim(),
+      apiProtocol: draft.aiApiProtocol,
       ...(draft.aiApiKey.trim() ? { apiKey: draft.aiApiKey.trim() } : {}),
     },
   })
@@ -691,6 +696,32 @@ const TranslationProviderSection = () => {
                 placeholder="gpt-4.1-mini"
               />
             </label>
+            <div className="flex items-center justify-between gap-4">
+              <label className="text-sm font-medium text-text">
+                {t("general.translation_provider.api_protocol")}
+              </label>
+              <ResponsiveSelect
+                size="sm"
+                triggerClassName="w-48"
+                value={draft.aiApiProtocol}
+                onValueChange={(apiProtocol) =>
+                  setDraft((current) => ({
+                    ...current,
+                    aiApiProtocol: apiProtocol as TranslationApiProtocol,
+                  }))
+                }
+                items={[
+                  {
+                    label: t("general.translation_provider.protocol_chat_completions"),
+                    value: "chat-completions",
+                  },
+                  {
+                    label: t("general.translation_provider.protocol_responses"),
+                    value: "responses",
+                  },
+                ]}
+              />
+            </div>
           </>
         )}
       </div>
