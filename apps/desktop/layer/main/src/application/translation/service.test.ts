@@ -395,6 +395,88 @@ describe("translation provider configuration", () => {
     expect(replaceTranslation).toHaveBeenCalledOnce()
   })
 
+  it("starts body translation while the title is still pending, within two request slots", async () => {
+    stored.set("translationProviderConfig", {
+      provider: "deepl",
+      deepl: {
+        baseUrl: "https://api-free.deepl.com",
+        encryptedApiKey: Buffer.from("encrypted:secret").toString("base64"),
+      },
+      openAICompatible: { baseUrl: "https://api.openai.com/v1", model: "" },
+    })
+    getEntryMany.mockResolvedValue([
+      {
+        id: "entry-concurrent-title",
+        title: "Title",
+        content: `<p>${"A".repeat(4_000)}</p><p>B</p>`,
+      },
+    ])
+    let releaseTitle!: () => void
+    const titleGate = new Promise<void>((resolve) => {
+      releaseTitle = resolve
+    })
+    let active = 0
+    let maximumActive = 0
+    translationSessionFetch.mockImplementation(async (_url, init) => {
+      const { text } = JSON.parse(String(init.body)) as { text: string[] }
+      active += 1
+      maximumActive = Math.max(maximumActive, active)
+      if (text[0] === "Title") await titleGate
+      active -= 1
+      return new Response(
+        JSON.stringify({ translations: text.map((item) => ({ text: `译${item[0]}` })) }),
+      )
+    })
+    const progress = vi.fn()
+    const job = entryTranslationApplicationService.generate(
+      {
+        requestId: "concurrent-title",
+        entryId: "entry-concurrent-title",
+        language: "zh-CN",
+        target: "content",
+        withContent: true,
+      },
+      progress,
+    )
+    try {
+      await vi.waitFor(() => expect(progress).toHaveBeenCalledTimes(2))
+      expect(progress.mock.calls[0]![0].translation.title).toBeNull()
+      expect(progress.mock.calls[0]![0].translation.content).toContain("译A")
+      expect(replaceTranslation).not.toHaveBeenCalled()
+      expect(maximumActive).toBe(2)
+    } finally {
+      releaseTitle()
+    }
+    await expect(job).resolves.toMatchObject({ title: "译T", content: "<p>译A</p><p>译B</p>" })
+    expect(replaceTranslation).toHaveBeenCalledOnce()
+  })
+
+  it("translates the title when the body has no translatable text", async () => {
+    stored.set("translationProviderConfig", {
+      provider: "deepl",
+      deepl: {
+        baseUrl: "https://api-free.deepl.com",
+        encryptedApiKey: Buffer.from("encrypted:secret").toString("base64"),
+      },
+      openAICompatible: { baseUrl: "https://api.openai.com/v1", model: "" },
+    })
+    getEntryMany.mockResolvedValue([
+      { id: "code-only", title: "Title", content: "<pre>Code</pre>" },
+    ])
+    translationSessionFetch.mockResolvedValue(
+      new Response(JSON.stringify({ translations: [{ text: "标题" }] })),
+    )
+    await expect(
+      entryTranslationApplicationService.generate({
+        entryId: "code-only",
+        language: "zh-CN",
+        target: "content",
+        withContent: true,
+      }),
+    ).resolves.toMatchObject({ title: "标题", content: "<pre>Code</pre>" })
+    expect(translationSessionFetch).toHaveBeenCalledOnce()
+  })
+
   it("waits for active workers and never persists a partially failed article", async () => {
     stored.set("translationProviderConfig", {
       provider: "deepl",

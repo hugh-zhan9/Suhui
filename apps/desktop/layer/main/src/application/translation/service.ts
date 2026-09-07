@@ -195,6 +195,7 @@ const translateHtml = async (
   language: GenerateEntryTranslationInput["language"],
   fetchImpl: Fetch,
   onProgress?: (html: string, completedBatches: number, totalBatches: number) => void,
+  translateFields?: () => Promise<void>,
 ) => {
   const plan = createHtmlTranslationPlan(html)
   const batches = batchTranslationUnits(plan.units)
@@ -205,16 +206,21 @@ const translateHtml = async (
     offsets.push(offset)
     offset += batch.length
   }
-  let nextBatch = 0
+  // Title/description share the same two request slots as the body. A slow title
+  // must not prevent the first body batch from starting.
+  let nextBatch = translateFields ? -1 : 0
   let completedBatches = 0
   let failure: unknown
   const worker = async () => {
     while (nextBatch < batches.length && !failure) {
       const batchIndex = nextBatch
       nextBatch += 1
-      const batch = batches[batchIndex]!
       try {
-        const result = await translateTexts(config, batch, language, fetchImpl)
+        if (batchIndex === -1) {
+          await translateFields!()
+          continue
+        }
+        const result = await translateTexts(config, batches[batchIndex]!, language, fetchImpl)
         result.forEach((value, index) => {
           translated[offsets[batchIndex]! + index] = value
         })
@@ -227,7 +233,7 @@ const translateHtml = async (
     }
   }
   const workerResults = await Promise.allSettled(
-    Array.from({ length: Math.min(2, batches.length) }, () => worker()),
+    Array.from({ length: Math.min(2, batches.length + (translateFields ? 1 : 0)) }, () => worker()),
   )
   const rejectedWorker = workerResults.find((result) => result.status === "rejected")
   if (rejectedWorker?.status === "rejected") throw rejectedWorker.reason
@@ -398,7 +404,8 @@ class EntryTranslationApplicationService {
 
     const config = runtimeConfig(storedConfig)
     const missingTextFields = fields.filter((field) => !result[field] && !!entry[field]?.trim())
-    if (missingTextFields.length > 0) {
+    const translateFields = async () => {
+      if (missingTextFields.length === 0) return
       const translatedFields = await translateTexts(
         config,
         missingTextFields.map((field) => entry[field]!),
@@ -428,8 +435,11 @@ class EntryTranslationApplicationService {
               translation: { ...result, [input.target]: html },
             })
           },
+          missingTextFields.length > 0 ? translateFields : undefined,
         )
       }
+    } else {
+      await translateFields()
     }
     await TranslationService.replaceTranslation({
       ...result,

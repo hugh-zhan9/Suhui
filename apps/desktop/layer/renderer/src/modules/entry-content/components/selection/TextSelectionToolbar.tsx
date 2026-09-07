@@ -57,7 +57,18 @@ export function TextSelectionToolbar({
   const [toolbarSize, setToolbarSize] = useState(DEFAULT_DIMENSIONS)
   const [copied, setCopied] = useState(false)
   const [isTranslating, setIsTranslating] = useState(false)
+  const [translatedText, setTranslatedText] = useState<string | null>(null)
+  const translationRequest = useRef(0)
+  const translationRef = useRef<HTMLDivElement | null>(null)
   const [viewport, setViewport] = useState(() => getViewport())
+
+  useLayoutEffect(() => {
+    setTranslatedText(null)
+    setIsTranslating(false)
+    return () => {
+      translationRequest.current += 1
+    }
+  }, [selection, entryId])
 
   useEffect(() => {
     const handleResize = () => setViewport(getViewport())
@@ -70,10 +81,18 @@ export function TextSelectionToolbar({
   useEffect(() => {
     if (!selection) return
 
-    const handleScroll = () => onRequestClose()
+    const handleScroll = (event: Event) => {
+      if (event.target instanceof Node && translationRef.current?.contains(event.target)) return
+      onRequestClose()
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onRequestClose()
+    }
     window.addEventListener("scroll", handleScroll, true)
+    window.addEventListener("keydown", handleKeyDown)
     return () => {
       window.removeEventListener("scroll", handleScroll, true)
+      window.removeEventListener("keydown", handleKeyDown)
     }
   }, [selection, onRequestClose])
 
@@ -131,35 +150,43 @@ export function TextSelectionToolbar({
 
   const handleTranslate = useCallback(async () => {
     if (!selection || !selection.selectedText.trim() || !onTranslate || isTranslating) return
+    if (translatedText !== null) return
+    const request = ++translationRequest.current
     setIsTranslating(true)
     try {
-      const translatedText = await onTranslate(selection)
-      present({
-        CustomModalComponent: PlainModal,
-        title: t("entry_content.selection_toolbar.translation_title"),
-        id: "selection-translation",
-        content: () => (
-          <div className="max-h-[70vh] max-w-2xl select-text overflow-auto whitespace-pre-wrap break-words p-6 text-sm leading-7">
-            {translatedText}
-          </div>
-        ),
-        clickOutsideToDismiss: true,
-      })
-      onRequestClose()
+      const result = await onTranslate(selection)
+      if (request === translationRequest.current) setTranslatedText(result)
     } catch (error) {
+      if (request !== translationRequest.current) return
       toast.error(t("entry_content.selection_toolbar.translation_failed"), {
         description: error instanceof Error ? error.message : String(error),
       })
     } finally {
-      setIsTranslating(false)
+      if (request === translationRequest.current) setIsTranslating(false)
     }
-  }, [isTranslating, onRequestClose, onTranslate, present, selection, t])
+  }, [isTranslating, onTranslate, selection, t, translatedText])
 
   const handleMouseDown: MouseEventHandler<HTMLDivElement> = (event) => {
     event.preventDefault()
   }
 
   if (!selection || !position) return null
+
+  const belowSelection = Math.max(
+    selection.rect.bottom + VIEWPORT_PADDING,
+    position.top >= selection.rect.bottom ? position.top + toolbarSize.height + 8 : 0,
+  )
+  const translationWidth = Math.max(0, Math.min(360, viewport.width - VIEWPORT_PADDING * 2))
+  // Keep the result anchored to the selection, including at the bottom edge
+  // where there is no room for a readable result below it.
+  const availableBelow = viewport.height - belowSelection - VIEWPORT_PADDING
+  const aboveSelection = Math.min(selection.rect.top - VIEWPORT_PADDING, position.top - 8)
+  const translationTop =
+    availableBelow >= 96 ? belowSelection : Math.max(VIEWPORT_PADDING, aboveSelection - 320)
+  const translationMaxHeight = Math.max(
+    0,
+    Math.min(320, availableBelow >= 96 ? availableBelow : aboveSelection - translationTop),
+  )
 
   return (
     <RootPortal>
@@ -218,7 +245,7 @@ export function TextSelectionToolbar({
                   : t("entry_content.selection_toolbar.translate")
               }
               onClick={() => void handleTranslate()}
-              disabled={isTranslating}
+              disabled={isTranslating || translatedText !== null}
             />
           ) : null}
           {onAskAI ? (
@@ -230,6 +257,39 @@ export function TextSelectionToolbar({
           ) : null}
         </div>
       </m.div>
+      {(isTranslating || translatedText !== null) && (
+        <div
+          ref={translationRef}
+          role="region"
+          aria-label={t("entry_content.selection_toolbar.translation_title")}
+          aria-live="polite"
+          aria-busy={isTranslating}
+          className="pointer-events-auto fixed z-[70] select-text overflow-auto overscroll-contain rounded-lg border border-border/50 bg-material-opaque px-4 py-3 text-sm leading-7 text-text shadow-sm"
+          style={{
+            top: translationTop,
+            left: clamp(
+              selection.rect.left,
+              VIEWPORT_PADDING,
+              viewport.width - translationWidth - VIEWPORT_PADDING,
+            ),
+            width: translationWidth,
+            maxHeight: translationMaxHeight,
+          }}
+        >
+          <button
+            type="button"
+            aria-label={t("words.close", { ns: "common" })}
+            className="float-right ml-2 rounded p-1 text-text-secondary hover:bg-fill"
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={onRequestClose}
+          >
+            <i className="i-mgc-close-cute-re block" />
+          </button>
+          <div className="whitespace-pre-wrap break-words">
+            {isTranslating ? t("entry_content.selection_toolbar.translating") : translatedText}
+          </div>
+        </div>
+      )}
     </RootPortal>
   )
 }
