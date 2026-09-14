@@ -1,14 +1,35 @@
 import { randomUUID } from "node:crypto"
 
-import { EntryAnnotationService } from "@suhui/database/services/entry-annotation"
-import { EntryService } from "@suhui/database/services/entry"
 import type { EntryHighlightSchema } from "@suhui/database/schemas/types"
+import { EntryService } from "@suhui/database/services/entry"
+import { EntryAnnotationService } from "@suhui/database/services/entry-annotation"
+import type { AnnotationLibraryQuery } from "@suhui/shared/annotations"
 
 import { DBManager } from "~/manager/db"
 
 import { articleText, createHighlightAnchor, relocateHighlightAnchor } from "./anchor"
 
 export class AnnotationApplicationService {
+  listLibrary(input: AnnotationLibraryQuery = {}) {
+    const { kind, cursor, limit = 50 } = input
+    if (kind !== undefined && kind !== "note" && kind !== "highlight") {
+      throw new Error("Invalid annotation kind")
+    }
+    if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
+      throw new Error("Annotation page size must be between 1 and 100")
+    }
+    if (
+      cursor &&
+      (!Number.isSafeInteger(cursor.updatedAt) ||
+        typeof cursor.id !== "string" ||
+        !cursor.id ||
+        (cursor.kind !== "note" && cursor.kind !== "highlight"))
+    ) {
+      throw new Error("Invalid annotation cursor")
+    }
+    return EntryAnnotationService.listLibrary({ kind, cursor, limit })
+  }
+
   async list(entryId: string) {
     const [notes, highlights] = await Promise.all([
       EntryAnnotationService.getNotes([entryId]),

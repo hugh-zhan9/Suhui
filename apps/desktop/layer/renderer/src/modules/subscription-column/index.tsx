@@ -13,7 +13,7 @@ import { useWheel } from "@use-gesture/react"
 import { Lethargy } from "lethargy"
 import { AnimatePresence, m } from "motion/react"
 import type { FC, PropsWithChildren } from "react"
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
+import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
 
 import { useStartupReadinessSelector } from "~/atoms/app"
 import { useRootContainerElement } from "~/atoms/dom"
@@ -27,6 +27,7 @@ import { parseView, useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
 import { useTimelineList } from "~/hooks/biz/useTimelineList"
 
 import { WindowUnderBlur } from "../../components/ui/background"
+import { AnnotationLibraryLink } from "../annotations/AnnotationLibraryLink"
 import { COMMAND_ID } from "../command/commands/id"
 import { useCommandBinding } from "../command/hooks/use-command-binding"
 import { getSelectedFeedIds, resetSelectedFeedIds, setSelectedFeedIds } from "./atom"
@@ -161,6 +162,7 @@ export function SubscriptionColumn({
       <div className="relative mb-2 mt-3">
         <TabsRow />
       </div>
+      <AnnotationLibraryLink />
       <div
         className={cn("relative mt-1 flex size-full", !shouldFreeUpSpace && "overflow-hidden")}
         ref={carouselRef}

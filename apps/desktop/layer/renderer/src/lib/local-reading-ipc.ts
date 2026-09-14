@@ -1,3 +1,5 @@
+import type { AnnotationLibraryPage, AnnotationLibraryQuery } from "@suhui/shared/annotations"
+
 import { ipcServices } from "~/lib/client"
 import type { ParsedOpmlItem } from "~/modules/discover/types"
 
@@ -9,6 +11,7 @@ import type { ParsedOpmlItem } from "~/modules/discover/types"
  * 于是这一整组在 `IpcServices` 里拿不到。各调用点原来各自 cast 一份，这里收拢成一处。
  */
 export type LocalReadingIpc = {
+  listAnnotationLibrary: (input?: AnnotationLibraryQuery) => Promise<AnnotationLibraryPage>
   exportBackup: (path: string, rendererSettings?: Record<string, string>) => Promise<unknown>
   prepareReplaceBackup: (path: string) => Promise<{ token: string }>
   restoreBackup: (input: {

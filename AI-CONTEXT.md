@@ -1,7 +1,7 @@
 # AI-CONTEXT.md
 
 > 单一事实源（Single Source of Truth）
-> 最后更新时间：2026-08-24（可选在线翻译服务；SQLite 支持与 Postgres ↔ SQLite 双向转换；渲染层远端接口清零）
+> 最后更新时间：2026-09-14（笔记与高亮汇总页；渐进式文章与选区翻译；SQLite 支持与 Postgres ↔ SQLite 双向转换；渲染层远端接口清零）
 
 ## 上下文委派策略
 
@@ -337,6 +337,15 @@
 - 完整备份包含已应用同步操作的幂等账本；完整替换清除 pending 队列并恢复该账本，避免旧 pending 或历史操作在恢复后重复改写数据
 
 ## 模块定位（Desktop）
+
+### 笔记与高亮汇总（2026-09-14）
+
+- Desktop 左侧栏常驻「笔记与高亮」入口，打开 `/annotations`；汇总所有文章的有效笔记和高亮，支持全部 / 笔记 / 高亮筛选与打开所属文章。
+- 按记录最近更新时间倒序展示，每页 50 条，通过更新时间、记录 ID 和类型组成的游标继续加载；已删除的记录不展示，原文不可用或锚点失效的记录仍保留内容并标示状态。
+- 沿用 `EntryAnnotationService` → `AnnotationApplicationService` → `localReading.listAnnotationLibrary`，单条查询合并笔记、高亮及文章来源信息，兼容 SQLite / Postgres；不新增表、持久化副本或 Remote HTTP 路由。
+- 页面位于 `apps/desktop/layer/renderer/src/modules/annotations`，既有文章底部编辑入口保持不变；返回汇总页时重新查询，页面也提供手动刷新。
+
+### 代码入口
 
 - 订阅流：`apps/desktop/layer/renderer/src/modules/subscription-column`
 - 阅读列表：`apps/desktop/layer/renderer/src/modules/entry-column`

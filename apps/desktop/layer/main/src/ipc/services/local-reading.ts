@@ -207,6 +207,15 @@ export class LocalReadingService extends IpcService {
   }
 
   @IpcMethod()
+  async listAnnotationLibrary(
+    _context: IpcContext,
+    input?: Parameters<typeof annotationApplicationService.listLibrary>[0],
+  ) {
+    await DBManager.waitUntilUsable()
+    return annotationApplicationService.listLibrary(input)
+  }
+
+  @IpcMethod()
   async listAnnotations(_context: IpcContext, entryId: string) {
     await DBManager.waitUntilUsable()
     return annotationApplicationService.list(entryId)
