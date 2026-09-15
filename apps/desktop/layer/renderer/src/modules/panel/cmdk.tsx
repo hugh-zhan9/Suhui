@@ -449,7 +449,7 @@ const SearchOptions: Component = memo(({ children }) => {
         }}
         value={`${searchType}`}
       >
-        <SelectTrigger size="sm">
+        <SelectTrigger size="sm" className="w-auto shrink-0">
           <SelectValue />
         </SelectTrigger>
         <SelectContent position="item-aligned">
@@ -486,7 +486,7 @@ const SearchOptions: Component = memo(({ children }) => {
             await instance?.search(searchActions.getCurrentKeyword())
           }}
         >
-          <SelectTrigger size="sm" aria-label="文章搜索范围">
+          <SelectTrigger size="sm" className="w-auto shrink-0" aria-label="文章搜索范围">
             <SelectValue />
           </SelectTrigger>
           <SelectContent position="item-aligned">

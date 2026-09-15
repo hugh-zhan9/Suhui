@@ -1,5 +1,3 @@
-import Fuse from "fuse.js"
-
 import { normalizeRssTitleForRender } from "../../lib/rss-content-normalize"
 import { SEARCH_RESULT_LIMIT } from "./constants"
 
@@ -61,11 +59,6 @@ export class EntrySearchIndex {
     titleLower: string
     fields: { field: SearchField; text: string; lower: string }[]
   }[] = []
-  private readonly fuse = new Fuse<EntrySearchItem>([], {
-    keys: ["title"],
-    includeMatches: true,
-    ignoreLocation: true,
-  })
 
   add(documents: SearchDocument[]) {
     for (const document of documents) {
@@ -88,7 +81,6 @@ export class EntrySearchIndex {
           .filter(({ text }) => !!text)
           .map((field) => ({ ...field, lower: field.text.toLowerCase() })),
       })
-      this.fuse.add(item)
     }
   }
 
@@ -111,18 +103,6 @@ export class EntrySearchIndex {
           ...(field ? { snippet: snippetFor(field.field, field.text, keyword.trim()) } : {}),
         })
       if (result.length === SEARCH_RESULT_LIMIT) return result
-    }
-    // Keep typo tolerance for titles, without fuzzy-scanning every body.
-    const matched = new Set(result.map((item) => item.id))
-    for (const { item, matches } of this.fuse.search(query)) {
-      if (visible(item) && !matched.has(item.id))
-        result.push({
-          ...item,
-          titleMatches: matches?.flatMap((match) =>
-            match.indices.map(([start, end]) => [start, end + 1] as const),
-          ),
-        })
-      if (result.length === SEARCH_RESULT_LIMIT) break
     }
     return result
   }
