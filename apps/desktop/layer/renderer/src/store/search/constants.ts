@@ -4,6 +4,8 @@ const SearchTypeBase = {
   Subscription: 1 << 2,
 }
 
+export const SEARCH_RESULT_LIMIT = 100
+
 export const SearchType = {
   ...SearchTypeBase,
   All: Object.values(SearchTypeBase).reduce((acc, cur) => acc | cur, 0),

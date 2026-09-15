@@ -9,13 +9,14 @@ import {
   TooltipTrigger,
 } from "@suhui/components/ui/tooltip/index.jsx"
 import { EllipsisHorizontalTextWithTooltip } from "@suhui/components/ui/typography/index.js"
+import { IN_ELECTRON } from "@suhui/shared/constants"
 import { FeedViewType } from "@suhui/constants"
 import { isOnboardingFeedUrl } from "@suhui/store/constants/onboarding"
 import { useFeedById } from "@suhui/store/feed/hooks"
 import { useInboxById } from "@suhui/store/inbox/hooks"
 import { useListById } from "@suhui/store/list/hooks"
 import { useSubscriptionByFeedId } from "@suhui/store/subscription/hooks"
-import { useEntryStore } from "@suhui/store/entry/store"
+import { useUnreadStore } from "@suhui/store/unread/store"
 import { cn, isKeyForMultiSelectPressed } from "@suhui/utils/utils"
 import { createElement, memo, use, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -28,6 +29,7 @@ import { ErrorTooltip } from "~/components/common/ErrorTooltip"
 import { FocusablePresets } from "~/components/common/Focusable"
 import { useContextMenuActionShortCutTrigger } from "~/hooks/biz/useContextMenuActionShortCutTrigger"
 import { useFeedActions, useInboxActions, useListActions } from "~/hooks/biz/useFeedActions"
+import { useRepairFeed } from "~/hooks/biz/useRepairFeed"
 import { useFollow } from "~/hooks/biz/useFollow"
 import { useNavigateEntry } from "~/hooks/biz/useNavigateEntry"
 import { useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
@@ -75,6 +77,7 @@ const DraggableItemWrapper: Component<
 const FeedItemImpl = ({ view, feedId, className, isPreview }: FeedItemProps) => {
   recordOwnerRender("row")
   const { t } = useTranslation()
+  const { repair, pending: repairPending } = useRepairFeed(feedId)
   const subscription = useSubscriptionByFeedId(feedId)
   const navigate = useNavigateEntry()
 
@@ -121,7 +124,7 @@ const FeedItemImpl = ({ view, feedId, className, isPreview }: FeedItemProps) => 
     [feedId, navigate, setSelectedFeedIds, navigationView],
   )
 
-  const feedUnread = useEntryStore((state) => countUnreadBySourceId(state as any, feedId))
+  const feedUnread = useUnreadStore((state) => countUnreadBySourceId(state as any, feedId))
 
   const isActive = useRouteParamsSelector((routerParams) => routerParams.feedId === feedId)
 
@@ -245,7 +248,30 @@ const FeedItemImpl = ({ view, feedId, className, isPreview }: FeedItemProps) => 
         <FeedTitle feed={feed} />
         {isFeed && !isOnboardingFeed && (
           <ErrorTooltip errorAt={feed.errorAt} errorMessage={feed.errorMessage}>
-            <i className="i-mingcute-close-circle-fill ml-1 shrink-0 text-base" />
+            {IN_ELECTRON && !isPreview ? (
+              <button
+                type="button"
+                className="ml-1 flex shrink-0"
+                disabled={repairPending}
+                aria-label={repairPending ? "正在重新查找订阅源" : "重新查找订阅源"}
+                title="从网站重新查找订阅源"
+                onDoubleClick={(event) => event.stopPropagation()}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  repair()
+                }}
+              >
+                <i
+                  className={
+                    repairPending
+                      ? "i-mgc-loading-3-cute-re animate-spin text-base"
+                      : "i-mingcute-close-circle-fill text-base"
+                  }
+                />
+              </button>
+            ) : (
+              <i className="i-mingcute-close-circle-fill ml-1 shrink-0 text-base" />
+            )}
           </ErrorTooltip>
         )}
         {subscription?.isPrivate && !isOnboardingFeed && (
@@ -296,7 +322,7 @@ const FeedItemImpl = ({ view, feedId, className, isPreview }: FeedItemProps) => 
 }
 
 const FilterReadFeedItem: Component<FeedItemProps> = (props) => {
-  const feedUnread = useEntryStore((state) => countUnreadBySourceId(state as any, props.feedId))
+  const feedUnread = useUnreadStore((state) => countUnreadBySourceId(state as any, props.feedId))
 
   if (!feedUnread) return null
   return createElement(FeedItemImpl, props)
@@ -332,7 +358,7 @@ const ListItemImpl: Component<ListItemProps> = ({
   const when = useGlobalFocusableScopeSelector(FocusablePresets.isSubscriptionList)
   useContextMenuActionShortCutTrigger(items, when && isActive)
 
-  const listUnread = useEntryStore((state) => countUnreadBySourceId(state as any, listId))
+  const listUnread = useUnreadStore((state) => countUnreadBySourceId(state as any, listId))
 
   const [isContextMenuOpen, setIsContextMenuOpen] = useState(false)
   const subscription = useSubscriptionByFeedId(listId)!
@@ -421,7 +447,7 @@ const ListItemImpl: Component<ListItemProps> = ({
 export const ListItem = memo(ListItemImpl)
 
 const FilterReadListItem: Component<ListItemProps> = (props) => {
-  const listUnread = useEntryStore((state) => countUnreadBySourceId(state as any, props.listId))
+  const listUnread = useUnreadStore((state) => countUnreadBySourceId(state as any, props.listId))
 
   if (!listUnread) return null
   return createElement(ListItem, props)
@@ -448,7 +474,7 @@ const InboxItemImpl: Component<InboxItemProps> = ({ view, inboxId, className, ic
   const when = useGlobalFocusableScopeSelector(FocusablePresets.isSubscriptionList)
   useContextMenuActionShortCutTrigger(items, when && isActive)
 
-  const inboxUnread = useEntryStore((state) => countUnreadBySourceId(state as any, inboxId))
+  const inboxUnread = useUnreadStore((state) => countUnreadBySourceId(state as any, inboxId))
 
   const [isContextMenuOpen, setIsContextMenuOpen] = useState(false)
   const navigate = useNavigateEntry()

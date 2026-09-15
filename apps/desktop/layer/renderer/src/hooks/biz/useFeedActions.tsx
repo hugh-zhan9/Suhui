@@ -1,7 +1,7 @@
 import type { FeedViewType } from "@suhui/constants"
 import { IN_ELECTRON } from "@suhui/shared/constants"
 import { env } from "@suhui/shared/env.desktop"
-import { useEntryStore } from "@suhui/store/entry/store"
+import { useUnreadStore } from "@suhui/store/unread/store"
 import { getFeedById } from "@suhui/store/feed/getter"
 import { useFeedById } from "@suhui/store/feed/hooks"
 import { useInboxById, useIsInbox } from "@suhui/store/inbox/hooks"
@@ -34,6 +34,7 @@ import { useConfirmUnsubscribeSubscriptionModal } from "~/modules/modal/hooks/us
 import { useCategoryCreationModal } from "~/modules/settings/tabs/lists/hooks"
 import { ListCreationModalContent } from "~/modules/settings/tabs/lists/modals"
 
+import { useRepairFeed } from "./useRepairFeed"
 import { resolveMarkAllToggleAction } from "./mark-all-toggle"
 import { useBatchUpdateSubscription, useDeleteSubscription } from "./useSubscriptionActions"
 
@@ -56,8 +57,11 @@ export const useFeedActions = ({
       id: feed.id,
       url: feed.url,
       siteUrl: feed.siteUrl,
+      errorAt: feed.errorAt,
     }
   })
+
+  const { repair, pending: repairPending } = useRepairFeed(feedId)
 
   const inbox = useInboxById(feedId)
   const isInbox = !!inbox
@@ -87,7 +91,7 @@ export const useFeedActions = ({
     () => (isMultipleSelection ? feedIds || [] : [feedId]),
     [feedId, feedIds, isMultipleSelection],
   )
-  const selectedUnreadCount = useEntryStore((state) =>
+  const selectedUnreadCount = useUnreadStore((state) =>
     countUnreadBySourceIds(state as any, selectedSourceIds),
   )
   const markAllToggle = resolveMarkAllToggleAction(selectedUnreadCount)
@@ -97,6 +101,13 @@ export const useFeedActions = ({
     if (!related) return []
 
     const items: MenuItemInput[] = [
+      IN_ELECTRON &&
+        !!feed?.errorAt &&
+        new MenuItemText({
+          label: repairPending ? "正在重新查找订阅源…" : "重新查找订阅源",
+          disabled: repairPending,
+          click: repair,
+        }),
       new MenuItemText({
         label: t(markAllToggle.labelKey),
         shortcut: shortcuts[COMMAND_ID.subscription.markAllAsRead],
@@ -270,6 +281,8 @@ export const useFeedActions = ({
           item.supportMultipleSelection),
     )
   }, [
+    repair,
+    repairPending,
     addFeedToListMutation,
     addFeedsToCategoryMutation,
     categories,
@@ -307,7 +320,7 @@ export const useListActions = ({ listId, view }: { listId: string; view?: FeedVi
   const { mutateAsync: deleteSubscription } = useDeleteSubscription({})
 
   const shortcuts = useCommandShortcuts()
-  const listUnreadCount = useEntryStore((state) =>
+  const listUnreadCount = useUnreadStore((state) =>
     countUnreadBySourceIds(state as any, list?.feedIds || []),
   )
   const markAllToggle = resolveMarkAllToggleAction(listUnreadCount)

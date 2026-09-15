@@ -1,8 +1,9 @@
 import { EntryService } from "@suhui/database/services/entry"
 import { FeedService } from "@suhui/database/services/feed"
 import { SubscriptionService } from "@suhui/database/services/subscription"
-import type { EntryModel } from "@suhui/store/entry/types"
 import Fuse from "fuse.js"
+import { Provider } from "jotai"
+import { jotaiStore } from "~/lib/jotai"
 import type * as React from "react"
 import { act } from "react"
 import type { Root } from "react-dom/client"
@@ -13,6 +14,7 @@ import { setAppSearchOpen } from "~/atoms/app"
 import { searchActions, useSearchStore } from "~/store/search"
 
 import { SearchCmdK } from "./cmdk"
+import { SearchType } from "~/store/search/constants"
 
 const { appSearchState, commandInputState, navigateEntry } = vi.hoisted(() => ({
   appSearchState: { open: false },
@@ -37,10 +39,20 @@ vi.mock("@suhui/components/ui/scroll-area/index.js", async () => {
   }
 })
 vi.mock("@suhui/components/ui/select/index.jsx", () => ({
-  Select: ({ children }: React.PropsWithChildren) => children,
+  Select: ({
+    children,
+    value,
+    onValueChange,
+  }: React.PropsWithChildren<{ value: string; onValueChange: (value: string) => void }>) => (
+    <select value={value} onChange={(event) => onValueChange(event.target.value)}>
+      {children}
+    </select>
+  ),
   SelectContent: ({ children }: React.PropsWithChildren) => children,
-  SelectItem: ({ children }: React.PropsWithChildren) => children,
-  SelectTrigger: ({ children }: React.PropsWithChildren) => children,
+  SelectItem: ({ children, value }: React.PropsWithChildren<{ value: string }>) => (
+    <option value={value}>{children}</option>
+  ),
+  SelectTrigger: () => null,
   SelectValue: () => null,
 }))
 vi.mock("@suhui/components/ui/tooltip/index.jsx", () => ({
@@ -126,9 +138,12 @@ describe("SearchCmdK local search initialization", () => {
     appSearchState.open = false
     commandInputState.onValueChange = null
     searchActions.reset()
+    searchActions.setSearchType(SearchType.Feed)
+    searchActions.setSearchScope("all")
     vi.clearAllMocks()
 
     vi.spyOn(EntryService, "getEntryAll").mockResolvedValue([])
+    vi.spyOn(EntryService, "getSearchCount").mockResolvedValue(0)
     vi.spyOn(FeedService, "getFeedAll").mockResolvedValue([])
     vi.spyOn(SubscriptionService, "getSubscriptionAll").mockResolvedValue([])
     vi.spyOn(Fuse, "createIndex")
@@ -146,18 +161,30 @@ describe("SearchCmdK local search initialization", () => {
   })
 
   it("does not index on mount and reuses the first open search instance for repeated queries", async () => {
-    await act(async () => root.render(<SearchCmdK />))
+    await act(async () =>
+      root.render(
+        <Provider store={jotaiStore}>
+          <SearchCmdK />
+        </Provider>,
+      ),
+    )
 
     expect(searchActions.createLocalDbSearch).not.toHaveBeenCalled()
     expect(EntryService.getEntryAll).not.toHaveBeenCalled()
     expect(Fuse.createIndex).not.toHaveBeenCalled()
 
     appSearchState.open = true
-    await act(async () => root.render(<SearchCmdK />))
+    await act(async () =>
+      root.render(
+        <Provider store={jotaiStore}>
+          <SearchCmdK />
+        </Provider>,
+      ),
+    )
 
     expect(searchActions.createLocalDbSearch).toHaveBeenCalledTimes(1)
-    expect(EntryService.getEntryAll).toHaveBeenCalledTimes(1)
-    expect(Fuse.createIndex).toHaveBeenCalledTimes(3)
+    expect(EntryService.getEntryAll).not.toHaveBeenCalled()
+    expect(Fuse.createIndex).toHaveBeenCalledTimes(2)
 
     await act(async () => {
       await commandInputState.onValueChange?.("first")
@@ -165,27 +192,45 @@ describe("SearchCmdK local search initialization", () => {
     })
 
     expect(searchActions.createLocalDbSearch).toHaveBeenCalledTimes(1)
-    expect(EntryService.getEntryAll).toHaveBeenCalledTimes(1)
-    expect(Fuse.createIndex).toHaveBeenCalledTimes(3)
+    expect(EntryService.getEntryAll).not.toHaveBeenCalled()
+    expect(Fuse.createIndex).toHaveBeenCalledTimes(2)
 
     appSearchState.open = false
-    await act(async () => root.render(<SearchCmdK />))
+    await act(async () =>
+      root.render(
+        <Provider store={jotaiStore}>
+          <SearchCmdK />
+        </Provider>,
+      ),
+    )
     appSearchState.open = true
-    await act(async () => root.render(<SearchCmdK />))
+    await act(async () =>
+      root.render(
+        <Provider store={jotaiStore}>
+          <SearchCmdK />
+        </Provider>,
+      ),
+    )
 
     expect(searchActions.createLocalDbSearch).toHaveBeenCalledTimes(2)
-    expect(EntryService.getEntryAll).toHaveBeenCalledTimes(2)
-    expect(Fuse.createIndex).toHaveBeenCalledTimes(6)
+    expect(EntryService.getEntryAll).not.toHaveBeenCalled()
+    expect(Fuse.createIndex).toHaveBeenCalledTimes(4)
   })
 
   it("loads a partial second page, closes on selection and clears stale results on reopen", async () => {
     appSearchState.open = true
-    await act(async () => root.render(<SearchCmdK />))
+    await act(async () =>
+      root.render(
+        <Provider store={jotaiStore}>
+          <SearchCmdK />
+        </Provider>,
+      ),
+    )
     await act(async () => {
       useSearchStore.setState({
         keyword: "article",
         entries: Array.from({ length: 17 }, (_, index) => ({
-          item: { id: `entry-${index}`, title: "Lynan&#39;s Page" } as EntryModel,
+          item: { id: `entry-${index}`, title: "Lynan&#39;s Page", feedId: "feed-1" },
           feedId: "feed-1",
         })),
       })
@@ -206,10 +251,77 @@ describe("SearchCmdK local search initialization", () => {
     })
 
     appSearchState.open = false
-    await act(async () => root.render(<SearchCmdK />))
+    await act(async () =>
+      root.render(
+        <Provider store={jotaiStore}>
+          <SearchCmdK />
+        </Provider>,
+      ),
+    )
     appSearchState.open = true
-    await act(async () => root.render(<SearchCmdK />))
+    await act(async () =>
+      root.render(
+        <Provider store={jotaiStore}>
+          <SearchCmdK />
+        </Provider>,
+      ),
+    )
     expect(container.querySelectorAll("[data-search-result]")).toHaveLength(0)
     expect(searchActions.getCurrentKeyword()).toBe("")
+  })
+  it("renders title and context matches as safe text and reruns the query when scope changes", async () => {
+    const search = vi.fn(async () => useSearchStore.getState())
+    vi.mocked(searchActions.createLocalDbSearch).mockResolvedValue({
+      search,
+      dispose: vi.fn(),
+      counts: { entries: 1, feeds: 1, subscriptions: 1 },
+    })
+    appSearchState.open = true
+    await act(async () =>
+      root.render(
+        <Provider store={jotaiStore}>
+          <SearchCmdK />
+        </Provider>,
+      ),
+    )
+    await act(async () => {
+      searchActions.setSearchType(SearchType.Entry)
+      useSearchStore.setState({
+        keyword: "Cursor",
+        entries: [
+          {
+            feedId: "feed-1",
+            item: {
+              id: "e1",
+              feedId: "feed-1",
+              title: "Cursor &amp; AI",
+              titleMatches: [[0, 6]],
+              snippet: {
+                field: "content",
+                text: "Before Cursor <img src=x> after",
+                matches: [[7, 13]],
+              },
+            },
+          },
+        ],
+      })
+    })
+    expect([...container.querySelectorAll("mark")].map((mark) => mark.textContent)).toEqual([
+      "Cursor",
+      "Cursor",
+    ])
+    expect(container.querySelector("[data-search-snippet]")?.textContent).toContain(
+      "正文：Before Cursor <img src=x> after",
+    )
+    expect(container.querySelector("img")).toBeNull()
+    const scope = [...container.querySelectorAll("select")].find((select) =>
+      select.querySelector('option[value="title"]'),
+    )!
+    await act(async () => {
+      scope.value = "title"
+      scope.dispatchEvent(new Event("change", { bubbles: true }))
+    })
+    expect(search).toHaveBeenCalledWith("Cursor")
+    expect(scope.value).toBe("title")
   })
 })

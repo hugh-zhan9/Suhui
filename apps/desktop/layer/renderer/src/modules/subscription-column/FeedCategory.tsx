@@ -5,7 +5,7 @@ import { LoadingCircle } from "@suhui/components/ui/loading/index.jsx"
 import { useScrollViewElement } from "@suhui/components/ui/scroll-area/hooks.js"
 import type { FeedViewType } from "@suhui/constants"
 import { useRefValue } from "@suhui/hooks"
-import { useEntryStore } from "@suhui/store/entry/store"
+import { useUnreadStore } from "@suhui/store/unread/store"
 import { useOwnedListByView } from "@suhui/store/list/hooks"
 import {
   useSubscriptionByFeedId,
@@ -153,7 +153,7 @@ function FeedCategoryImpl({
     }
   }
 
-  const unread = useEntryStore((state) => countUnreadBySourceIds(state as any, ids.concat()))
+  const unread = useUnreadStore((state) => countUnreadBySourceIds(state as any, ids.concat()))
   const markAllToggle = resolveMarkAllToggleAction(unread)
 
   const isActive = useRouteParamsSelector(
@@ -405,7 +405,9 @@ function FeedCategoryImpl({
 }
 
 function FilterReadFeedCategory(props: FeedCategoryProps) {
-  const unread = useEntryStore((state) => countUnreadBySourceIds(state as any, props.data.concat()))
+  const unread = useUnreadStore((state) =>
+    countUnreadBySourceIds(state as any, props.data.concat()),
+  )
   if (!unread) return null
   return <FeedCategoryImpl {...props} />
 }

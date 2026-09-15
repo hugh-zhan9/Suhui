@@ -10,48 +10,11 @@ vi.mock("@suhui/store/subscription/getter", () => ({
 }))
 
 describe("countUnreadByView", () => {
-  it("按当前订阅来源统计指定视图未读数", () => {
-    const count = countUnreadByView(
-      {
-        data: {
-          e1: { id: "e1", read: false, feedId: "feed-a" },
-          e2: { id: "e2", read: true, feedId: "feed-a" },
-          e3: { id: "e3", read: false, feedId: "feed-b" },
-          e4: { id: "e4", read: false, feedId: "feed-stale" },
-        },
-        entryIdByFeed: {
-          "feed-a": new Set(["e1", "e2"]),
-          "feed-b": new Set(["e3"]),
-          "feed-stale": new Set(["e4"]),
-        },
-        entryIdByInbox: {
-          inbox_1: new Set<string>(),
-        },
-      } as any,
-      FeedViewType.Articles,
-    )
-
-    expect(count).toBe(1)
+  const state = { data: { "feed-a": 120, "feed-b": 30, "feed-stale": 999 } }
+  it("counts the database summary before any article has been loaded", () => {
+    expect(countUnreadByView(state, FeedViewType.Articles)).toBe(120)
   })
-
-  it("All 只统计当前订阅来源，不统计陈旧来源", () => {
-    const count = countUnreadByView(
-      {
-        data: {
-          e1: { id: "e1", read: false, feedId: "feed-a" },
-          e3: { id: "e3", read: false, feedId: "feed-b" },
-          e4: { id: "e4", read: false, feedId: "feed-stale" },
-        },
-        entryIdByFeed: {
-          "feed-a": new Set(["e1"]),
-          "feed-b": new Set(["e3"]),
-          "feed-stale": new Set(["e4"]),
-        },
-        entryIdByInbox: {},
-      } as any,
-      FeedViewType.All,
-    )
-
-    expect(count).toBe(2)
+  it("includes only currently subscribed sources in All", () => {
+    expect(countUnreadByView(state, FeedViewType.All)).toBe(150)
   })
 })

@@ -1,6 +1,6 @@
 import type { FeedViewType } from "@suhui/constants"
 import { getView } from "@suhui/constants"
-import { useEntryStore } from "@suhui/store/entry/store"
+import { useUnreadStore } from "@suhui/store/unread/store"
 import { stopPropagation } from "@suhui/utils"
 import { useTranslation } from "react-i18next"
 
@@ -13,7 +13,7 @@ import { selectTimelineUnreadByView } from "./unread-count"
 export const ListHeader = ({ view }: { view: FeedViewType }) => {
   const { t } = useTranslation()
 
-  const totalUnread = useEntryStore((state) => selectTimelineUnreadByView(state as any, view))
+  const totalUnread = useUnreadStore((state) => selectTimelineUnreadByView(state as any, view))
 
   const navigateEntry = useNavigateEntry()
 

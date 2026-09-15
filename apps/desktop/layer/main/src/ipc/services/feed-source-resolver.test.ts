@@ -382,3 +382,17 @@ describe("探测阶段的总时长上限", () => {
     expect(fetchCandidate).toHaveBeenCalledTimes(4)
   })
 })
+
+describe("explicit source repair", () => {
+  it("rejects a scrapeable article page if it has no RSS/Atom source", async () => {
+    await expect(
+      resolveFeedDocument({
+        mode: "feed",
+        requestUrl: "https://blog.example.com/",
+        body: listingPage,
+        fetchCandidate: vi.fn().mockRejectedValue(new Error("404")),
+        allowScraping: false,
+      }),
+    ).rejects.toThrow(FEED_DISCOVERY_FAILED)
+  })
+})

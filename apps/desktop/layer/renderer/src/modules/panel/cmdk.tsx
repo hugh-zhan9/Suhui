@@ -30,8 +30,10 @@ import { useNavigateEntry } from "~/hooks/biz/useNavigateEntry"
 import { useI18n } from "~/hooks/common"
 import { normalizeRssTitleForRender } from "~/lib/rss-content-normalize"
 import { FeedIcon } from "~/modules/feed/feed-icon"
-import { searchActions, useSearchStore, useSearchType } from "~/store/search"
-import { SearchType } from "~/store/search/constants"
+import { searchActions, useSearchStore, useSearchType, useSearchScope } from "~/store/search"
+import { findMatches } from "~/store/search/entry-index"
+import type { EntrySearchItem, MatchRange, SearchScope } from "~/store/search/entry-index"
+import { SEARCH_RESULT_LIMIT, SearchType } from "~/store/search/constants"
 import type { SearchInstance } from "~/store/search/types"
 
 import styles from "./cmdk.module.css"
@@ -41,10 +43,12 @@ export const SearchCmdK: React.FC = () => {
   const { t } = useTranslation()
   const open = useAppSearchOpen()
   const searchType = useSearchType()
+  const searchScope = useSearchScope()
 
   const [searchInstance, setSearchInstance] = React.useState<Promise<SearchInstance> | null>(null)
   React.useEffect(() => {
     if (!open) {
+      searchActions.reset()
       setSearchInstance(null)
       return
     }
@@ -54,7 +58,21 @@ export const SearchCmdK: React.FC = () => {
     // Refresh data
     searchActions.reset()
     setPage(0)
-    setSearchInstance(() => searchActions.createLocalDbSearch())
+    let active = true
+    const instance = searchActions.createLocalDbSearch()
+    void instance.catch((error) => {
+      if (!active) return
+      useSearchStore.setState({
+        pending: false,
+        error: error instanceof Error ? error.message : String(error),
+      })
+    })
+    setSearchInstance(instance)
+    return () => {
+      active = false
+      searchActions.reset()
+      void instance.then((value) => value.dispose()).catch(() => undefined)
+    }
   }, [open])
 
   const entries = useSearchStore((s) => s.entries)
@@ -92,20 +110,18 @@ export const SearchCmdK: React.FC = () => {
     },
     [getTopModalStack, isCompositionRef],
   )
-  const [isPending, startTransition] = React.useTransition()
+  const isPending = useSearchStore((s) => s.pending)
   const handleSearch = React.useCallback(
     async (value: string) => {
       if (!searchInstance) return
 
-      const { search } = await searchInstance
+      const instance = await searchInstance.catch(() => null)
+      if (!instance) return
+      const { search } = instance
       setPage(0)
-      startTransition(() => {
-        search(value)
-        const $scrollView = scrollViewRef.current
-        if ($scrollView) {
-          $scrollView.scrollTop = 0
-        }
-      })
+      await search(value)
+      const $scrollView = scrollViewRef.current
+      if ($scrollView) $scrollView.scrollTop = 0
     },
     [searchInstance],
   )
@@ -115,15 +131,8 @@ export const SearchCmdK: React.FC = () => {
   const renderedEntries = useMemo(() => entries.slice(0, (page + 1) * pageSize), [entries, page])
 
   const renderedFeeds = useMemo(() => {
-    const delta = entries.length - renderedEntries.length
-
-    if (delta > pageSize) return []
-
-    const entriesTotalPage = Math.ceil(entries.length / pageSize)
-    const right = entriesTotalPage === page + 1 ? delta : pageSize * page + 1 - entries.length
-
-    return feeds.slice(0, right)
-  }, [entries.length, feeds, page, renderedEntries.length])
+    return feeds.slice(0, Math.max(0, (page + 1) * pageSize - entries.length))
+  }, [entries.length, feeds, page])
   const totalCount = entries.length + feeds.length
   const renderedTotalCount = renderedEntries.length + renderedFeeds.length
   const loadMore = React.useCallback(() => {
@@ -152,8 +161,10 @@ export const SearchCmdK: React.FC = () => {
           className="w-full shrink-0 border-b border-border bg-transparent p-4 px-5 text-lg leading-4"
           ref={inputRef}
           placeholder={
-            searchType === SearchType.Entry
-              ? "搜索文章标题、正文、笔记或标签…"
+            (searchType & SearchType.Entry) !== 0
+              ? searchScope === "title"
+                ? "仅搜索文章标题…"
+                : "搜索文章标题、正文、笔记或标签…"
               : t("search.placeholder")
           }
           onValueChange={handleSearch}
@@ -194,6 +205,8 @@ export const SearchCmdK: React.FC = () => {
                         id={entry.item.id}
                         icon={feed?.type === "feed" ? feed?.siteUrl : undefined}
                         subtitle={feed?.title}
+                        titleMatches={entry.item.titleMatches}
+                        snippet={entry.item.snippet}
                       />
                     )
                   })}
@@ -227,7 +240,7 @@ export const SearchCmdK: React.FC = () => {
             </Command.List>
           </ScrollArea.ScrollArea>
 
-          <div className="relative flex items-center justify-between px-3 py-2">
+          <div className="relative flex flex-wrap items-center justify-between gap-2 px-3 py-2">
             <SearchOptions />
             <SearchResultCount count={totalCount} />
           </div>
@@ -245,6 +258,42 @@ type SearchListType = {
   icon?: Nullable<string>
   id: string
   view?: FeedViewType
+  titleMatches?: MatchRange[]
+  snippet?: EntrySearchItem["snippet"]
+}
+
+export const SearchMatchText = ({
+  text,
+  matches = [],
+}: {
+  text: string
+  matches?: MatchRange[]
+}) => {
+  const parts: React.ReactNode[] = []
+  let cursor = 0
+  for (const [start, end] of matches) {
+    if (start < cursor || end <= start || end > text.length) continue
+    parts.push(text.slice(cursor, start))
+    parts.push(
+      <mark
+        key={`${start}-${end}`}
+        className="rounded-sm bg-amber-200 text-zinc-950 dark:bg-amber-300 dark:text-zinc-950"
+      >
+        {text.slice(start, end)}
+      </mark>,
+    )
+    cursor = end
+  }
+  parts.push(text.slice(cursor))
+  return <>{parts}</>
+}
+
+const matchFieldLabels = {
+  content: "正文",
+  description: "摘要",
+  note: "笔记",
+  highlight: "高亮",
+  tag: "标签",
 }
 
 const SearchItem = memo(function Item({
@@ -255,8 +304,12 @@ const SearchItem = memo(function Item({
 
   subtitle,
   view,
+  titleMatches,
+  snippet,
 }: {} & SearchListType) {
   const navigateEntry = useNavigateEntry()
+  const keyword = useSearchStore((state) => state.keyword)
+  const displayTitle = normalizeRssTitleForRender(title)
 
   const feed = getFeedById(feedId!)
 
@@ -283,12 +336,28 @@ const SearchItem = memo(function Item({
     >
       <div className="relative flex w-full items-center justify-between px-1 py-2">
         {feed && <FeedIcon className="mr-2 size-5 shrink-0 rounded" target={feed} />}
-        <span className="block min-w-0 flex-1 shrink-0 truncate">
-          {normalizeRssTitleForRender(title)}
-        </span>
-        <span className="block min-w-0 shrink-0 grow-0 text-xs font-medium text-zinc-800 opacity-60 dark:text-slate-200/80">
-          {normalizeRssTitleForRender(subtitle)}
-        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-baseline gap-3">
+            <span className="block min-w-0 flex-1 truncate">
+              <SearchMatchText
+                text={displayTitle}
+                matches={titleMatches ?? findMatches(displayTitle, keyword)}
+              />
+            </span>
+            <span className="block max-w-[35%] truncate text-xs font-medium text-zinc-600 dark:text-zinc-400">
+              {normalizeRssTitleForRender(subtitle)}
+            </span>
+          </div>
+          {snippet && (
+            <div
+              className="mt-1 break-words text-left text-xs leading-relaxed text-zinc-600 dark:text-zinc-300"
+              data-search-snippet
+            >
+              <span className="mr-1 font-medium">{matchFieldLabels[snippet.field]}：</span>
+              <SearchMatchText text={snippet.text} matches={snippet.matches} />
+            </div>
+          )}
+        </div>
       </div>
     </Command.Item>
   )
@@ -308,6 +377,9 @@ const SearchResultCount: FC<{
   const searchInstance = React.use(SearchCmdKContext)
   const hasKeyword = useSearchStore((s) => !!s.keyword)
   const searchType = useSearchType()
+  const limited = useSearchStore(
+    (s) => s.entries.length >= SEARCH_RESULT_LIMIT || s.feeds.length >= SEARCH_RESULT_LIMIT,
+  )
 
   const recordCountPromise = useMemo(async () => {
     let count = 0
@@ -331,7 +403,9 @@ const SearchResultCount: FC<{
         <small className="center shrink-0 gap-1 opacity-80">
           {hasKeyword ? (
             <span>
-              {count} {t.common("words.result", { count })}
+              {count}
+              {limited ? "+" : ""} {t.common("words.result", { count })}
+              {limited && " · 请细化关键词"}
             </span>
           ) : (
             <ExPromise promise={recordCountPromise}>
@@ -356,11 +430,12 @@ const SearchResultCount: FC<{
 const SearchOptions: Component = memo(({ children }) => {
   const { t } = useTranslation()
   const searchType = useSearchType()
+  const searchScope = useSearchScope()
 
   const searchInstance = React.use(SearchCmdKContext)
 
   return (
-    <div className="flex items-center gap-2 text-sm text-text">
+    <div className="flex flex-wrap items-center gap-2 text-sm text-text">
       <span className="shrink-0">{t("search.options.search_type")}</span>
 
       <Select
@@ -369,7 +444,7 @@ const SearchOptions: Component = memo(({ children }) => {
 
           if (searchInstance) {
             const { search } = await searchInstance
-            search(searchActions.getCurrentKeyword())
+            await search(searchActions.getCurrentKeyword())
           }
         }}
         value={`${searchType}`}
@@ -402,6 +477,25 @@ const SearchOptions: Component = memo(({ children }) => {
         </SelectContent>
       </Select>
 
+      {!!(searchType & SearchType.Entry) && (
+        <Select
+          value={searchScope}
+          onValueChange={async (value) => {
+            searchActions.setSearchScope(value as SearchScope)
+            const instance = await searchInstance?.catch(() => null)
+            await instance?.search(searchActions.getCurrentKeyword())
+          }}
+        >
+          <SelectTrigger size="sm" aria-label="文章搜索范围">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent position="item-aligned">
+            <SelectItem value="all">标题与内容</SelectItem>
+            <SelectItem value="title">仅标题</SelectItem>
+          </SelectContent>
+        </Select>
+      )}
+
       {children}
     </div>
   )
@@ -410,9 +504,15 @@ const SearchOptions: Component = memo(({ children }) => {
 const SearchPlaceholder = () => {
   const { t } = useTranslation()
   const hasKeyword = useSearchStore((s) => !!s.keyword)
+  const pending = useSearchStore((s) => s.pending)
+  const error = useSearchStore((s) => s.error)
   return (
     <Command.Empty className="center absolute inset-0">
-      {hasKeyword ? (
+      {error ? (
+        <div className="select-text p-4 text-sm">搜索失败：{error}</div>
+      ) : pending ? (
+        <div className="text-sm opacity-70">正在搜索…</div>
+      ) : hasKeyword ? (
         <div className="flex flex-col items-center justify-center gap-2 opacity-80">
           <EmptyIcon />
           {t("search.empty.no_results")}

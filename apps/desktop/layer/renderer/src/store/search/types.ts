@@ -1,4 +1,4 @@
-import type { EntryModel } from "@suhui/store/entry/types"
+import type { EntrySearchItem } from "./entry-index"
 import type { FeedModel } from "@suhui/store/feed/types"
 import type { SubscriptionModel } from "@suhui/store/subscription/types"
 
@@ -9,13 +9,16 @@ export interface SearchResult<T extends object, A extends object = object> exten
 
 export interface SearchState {
   feeds: SearchResult<FeedModel>[]
-  entries: SearchResult<EntryModel, { feedId: string }>[]
+  entries: SearchResult<EntrySearchItem, { feedId: string }>[]
   subscriptions: SearchResult<SubscriptionModel, { feedId: string }>[]
 
   keyword: string
+  pending: boolean
+  error: string | null
 }
 export interface SearchInstance {
-  search: (keyword: string) => SearchState
+  search: (keyword: string) => Promise<SearchState>
+  dispose: () => void
 
   counts: {
     feeds: number

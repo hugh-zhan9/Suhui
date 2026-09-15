@@ -1,7 +1,7 @@
-import { and, between, eq, inArray, isNull, lt, or } from "drizzle-orm"
+import { and, asc, between, count, eq, exists, gt, inArray, isNull, lt, or } from "drizzle-orm"
 
 import { db } from "../db"
-import { entriesTable } from "../schemas"
+import { entriesTable, feedsTable, subscriptionsTable } from "../schemas"
 import { getRuntimeDbType } from "../schemas/runtime"
 import type { EntrySchema } from "../schemas/types"
 import { debugStartupReadTrace } from "../startup-read-trace"
@@ -73,6 +73,26 @@ interface PublishAtTimeRangeFilter {
 interface InsertedBeforeTimeRangeFilter {
   insertedBefore: number
 }
+
+// Unsubscribing retains articles for recovery, but they are outside local search.
+const activeSearchEntry = () =>
+  and(
+    isNull(entriesTable.deletedAt),
+    exists(
+      db
+        .select({ id: subscriptionsTable.id })
+        .from(subscriptionsTable)
+        .innerJoin(feedsTable, eq(feedsTable.id, subscriptionsTable.feedId))
+        .where(
+          and(
+            eq(subscriptionsTable.feedId, entriesTable.feedId),
+            eq(subscriptionsTable.type, "feed"),
+            isNull(subscriptionsTable.deletedAt),
+            isNull(feedsTable.deletedAt),
+          ),
+        ),
+    ),
+  )
 
 class EntryServiceStatic implements Resetable {
   async purgeAllForMaintenance() {
@@ -150,6 +170,28 @@ class EntryServiceStatic implements Resetable {
     return db.query.entriesTable.findMany({
       where: isNull(entriesTable.deletedAt),
     })
+  }
+
+  async getSearchCount() {
+    const [row] = await db.select({ count: count() }).from(entriesTable).where(activeSearchEntry())
+    return row?.count ?? 0
+  }
+
+  getSearchPage(afterId?: string) {
+    // Keyset pagination bounds IPC payloads and annotation IN lists; never
+    // hydrate media, cached readability bodies or other unused detail fields.
+    return db
+      .select({
+        id: entriesTable.id,
+        feedId: entriesTable.feedId,
+        title: entriesTable.title,
+        content: entriesTable.content,
+        description: entriesTable.description,
+      })
+      .from(entriesTable)
+      .where(and(activeSearchEntry(), afterId ? gt(entriesTable.id, afterId) : undefined))
+      .orderBy(asc(entriesTable.id))
+      .limit(200)
   }
 
   async deleteMany(entryIds: string[]) {

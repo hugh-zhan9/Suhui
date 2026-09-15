@@ -250,7 +250,7 @@ vi.mock("~/atoms/settings/general", () => ({
 vi.mock("~/atoms/settings/ui", () => ({
   getUISettings: () => ({ feedColWidth: 256 }),
   setUISetting: vi.fn(),
-  useUISettingKey: () => false,
+  useUISettingKey: (key: string) => key === "sidebarShowUnreadCount",
 }))
 vi.mock("~/atoms/sidebar", () => ({
   getSubscriptionColumnTempShow: () => false,
@@ -298,11 +298,10 @@ vi.mock("~/hooks/common/useContextMenu", () => ({
 }))
 vi.mock("~/lib/issues", () => ({ getNewIssueUrl: () => "https://example.com/issue" }))
 vi.mock("~/lib/local-views", () => ({ getLocalSupportedViewList: () => [] }))
-vi.mock("~/lib/unread-by-source", () => ({
-  countUnreadBySourceId: () => 0,
-  countUnreadBySourceIds: () => 0,
-  sortSourceIdsByUnread: (_state: unknown, ids: string[]) => ids,
+vi.mock("~/hooks/biz/useRepairFeed", () => ({
+  useRepairFeed: () => ({ repair: vi.fn(), pending: false }),
 }))
+
 vi.mock("~/lib/url-builder", () => ({ UrlBuilder: class UrlBuilder {} }))
 vi.mock("~/modules/app/NetworkStatusIndicator", () => ({ NetworkStatusIndicator: () => null }))
 vi.mock("~/modules/app-grid-layout-container-provider", () => ({}))
@@ -489,6 +488,14 @@ describe("subscription sidebar interaction regression", () => {
       feedId: "feed-c",
       view: FeedViewType.All,
     })
+  })
+
+  it("shows a database unread count before opening a subscription", async () => {
+    harness.unreadData = { "feed-a": 37 }
+    await renderList()
+    const row = container.querySelector('[data-feed-id="feed-a"]')!
+    expect(row.textContent).toContain("37")
+    expect(harness.navigate).not.toHaveBeenCalled()
   })
 
   it("restores focus and collapses then re-expands the real category", async () => {

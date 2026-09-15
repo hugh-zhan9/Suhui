@@ -113,7 +113,7 @@ const defaultRefreshUnread = async () => {
   ])
 
   if (!getRuntimeEnv().isRemote) {
-    await unreadActions.hydrate()
+    await unreadActions.refreshFromDatabase()
     return
   }
 

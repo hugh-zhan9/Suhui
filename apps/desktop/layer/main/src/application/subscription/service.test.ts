@@ -10,6 +10,7 @@ vi.mock("@suhui/database/services/subscription", () => ({
 vi.mock("@suhui/database/services/feed", () => ({
   FeedService: {
     getFeedAll: vi.fn(),
+    patch: vi.fn(),
     upsertMany: vi.fn(),
   },
 }))
@@ -30,6 +31,10 @@ vi.mock("@suhui/database/services/inbox", () => ({
   InboxService: {
     getInboxAll: vi.fn(),
   },
+}))
+
+vi.mock("../local-reading/pipeline", () => ({
+  localReadingPipeline: { processNewEntries: vi.fn() },
 }))
 
 vi.mock("~/manager/db", () => ({
@@ -203,6 +208,12 @@ describe("SubscriptionApplicationService", () => {
       },
     } as any)
 
+    vi.mocked(FeedService.patch).mockImplementation(async (id, patch) => {
+      Object.assign(
+        storedFeeds.find((feed) => feed.id === id),
+        patch,
+      )
+    })
     vi.mocked(FeedService.upsertMany).mockImplementation(async (feeds: any[]) => {
       storedFeeds.push(...feeds)
     })
@@ -261,9 +272,86 @@ describe("SubscriptionApplicationService", () => {
       }),
     ])
 
-    expect(FeedRefreshService.buildPreviewData).toHaveBeenCalledTimes(1)
+    expect(FeedRefreshService.buildPreviewData).toHaveBeenCalledTimes(2)
     expect(FeedService.upsertMany).toHaveBeenCalledTimes(1)
     expect(SubscriptionService.upsertMany).toHaveBeenCalledTimes(1)
     expect(second.subscription.feedId).toBe(first.subscription.feedId)
+  })
+  it.each([
+    ["https://senjianlu.com/atom.xml", "https://senjianlu.com/rss.xml", "https://senjianlu.com"],
+    ["https://www.codesky.me/feed/", "https://www.codesky.me/feed", "https://www.codesky.me"],
+  ])(
+    "reuses %s identity while saving validated %s and missing articles",
+    async (oldUrl, url, siteUrl) => {
+      const feed = { id: "legacy-feed", url: oldUrl, siteUrl, title: "Saved title" }
+      const subscription = { id: "feed/legacy-feed", feedId: feed.id, category: "Saved category" }
+      const saved = [{ id: "read-article", guid: "existing-guid", read: true }]
+      vi.mocked(DBManager.getDB).mockReturnValue({
+        query: {
+          feedsTable: {
+            findMany: vi.fn().mockResolvedValue([feed]),
+            findFirst: vi.fn(async () => feed),
+          },
+          subscriptionsTable: { findFirst: vi.fn().mockResolvedValue(subscription) },
+          entriesTable: { findMany: vi.fn(async () => saved) },
+        },
+      } as any)
+      vi.mocked(FeedService.patch).mockImplementation(async (_id, patch) => {
+        Object.assign(feed, patch)
+      })
+      vi.mocked(EntryService.upsertMany).mockImplementation(async (entries) => {
+        saved.push(...(entries as any))
+      })
+      vi.mocked(FeedRefreshService.buildPreviewData).mockResolvedValue({
+        feed: { id: "temporary-preview", url, siteUrl },
+        entries: [
+          {
+            id: "preview-existing",
+            feedId: "temporary-preview",
+            guid: "existing-guid",
+            read: false,
+          },
+          {
+            id: "preview-new",
+            feedId: "temporary-preview",
+            guid: "new-guid",
+            title: "New article",
+            read: false,
+          },
+        ],
+      } as any)
+      const result = await subscriptionApplicationService.createSubscription({ url, view: 1 })
+      expect(result.feed).toMatchObject({ id: "legacy-feed", url })
+      expect(result.subscription).toBe(subscription)
+      expect(result.entries).toHaveLength(2)
+      expect(saved[0]).toMatchObject({ id: "read-article", read: true })
+      expect(EntryService.upsertMany).toHaveBeenCalledWith([
+        expect.objectContaining({ feedId: "legacy-feed", guid: "new-guid" }),
+      ])
+      expect(saved[1]!.id).not.toBe("preview-new")
+    },
+  )
+  it("does not change an existing source when validating the new URL fails", async () => {
+    vi.mocked(DBManager.getDB).mockReturnValue({
+      query: {
+        feedsTable: {
+          findMany: vi
+            .fn()
+            .mockResolvedValue([
+              { id: "old", url: "https://example.com/old", siteUrl: "https://example.com" },
+            ]),
+        },
+      },
+    } as any)
+    vi.mocked(FeedRefreshService.buildPreviewData).mockRejectedValue(new Error("HTTP 404"))
+    await expect(
+      subscriptionApplicationService.createSubscription({
+        url: "https://example.com/new",
+        view: 1,
+      }),
+    ).rejects.toThrow("HTTP 404")
+    expect(FeedService.patch).not.toHaveBeenCalled()
+    expect(EntryService.upsertMany).not.toHaveBeenCalled()
+    expect(SubscriptionService.upsertMany).not.toHaveBeenCalled()
   })
 })

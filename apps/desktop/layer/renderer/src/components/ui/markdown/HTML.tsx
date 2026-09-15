@@ -1,4 +1,6 @@
 import { MemoedDangerousHTMLStyle } from "@suhui/components/common/MemoedDangerousHTMLStyle.js"
+import { useIsDark } from "@suhui/hooks"
+import { normalizeReaderDarkColors, readerDarkColorStyles } from "~/lib/reader-dark-colors"
 import type { Root } from "hast"
 import katexStyle from "katex/dist/katex.min.css?raw"
 import {
@@ -49,6 +51,7 @@ const HTMLImpl = <A extends keyof JSX.IntrinsicElements = "div">(props: HTMLProp
     ref,
     ...rest
   } = props
+  const isDark = useIsDark()
   const [shouldForceReMountKey, setShouldForceReMountKey] = useState(0)
   const previousOptionsRef = useRef({ renderInlineStyle, noMedia })
 
@@ -114,7 +117,10 @@ const HTMLImpl = <A extends keyof JSX.IntrinsicElements = "div">(props: HTMLProp
       : (htmlParserClient.getCached(children, parserOptions) ??
         (canRetainParsed ? parsed.tree : undefined))
     : undefined
-  const markdownElement = useMemo(() => hastTree && renderHtmlTree(hastTree), [hastTree])
+  const markdownElement = useMemo(
+    () => hastTree && renderHtmlTree(isDark ? normalizeReaderDarkColors(hastTree) : hastTree),
+    [hastTree, isDark],
+  )
 
   const { w: containerWidth } = useWrappedElementSize()
 
@@ -125,6 +131,7 @@ const HTMLImpl = <A extends keyof JSX.IntrinsicElements = "div">(props: HTMLProp
       <MediaContainerWidthProvider width={containerWidth}>
         <MediaInfoRecordProvider mediaInfo={mediaInfo}>
           <MemoedDangerousHTMLStyle>{katexStyle}</MemoedDangerousHTMLStyle>
+          {isDark && <MemoedDangerousHTMLStyle>{readerDarkColorStyles}</MemoedDangerousHTMLStyle>}
           <PreserveReadingPosition
             element={refElement}
             identity={contentIdentity}
@@ -135,6 +142,7 @@ const HTMLImpl = <A extends keyof JSX.IntrinsicElements = "div">(props: HTMLProp
               {
                 ...rest,
                 id: ENTRY_CONTENT_RENDER_CONTAINER_ID,
+                "data-reader-dark": isDark ? "true" : undefined,
                 ref: setRefElement,
               },
               markdownElement,

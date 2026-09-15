@@ -1,12 +1,7 @@
 import type { FeedViewType } from "@suhui/constants"
-import type { EntryModel } from "@suhui/store/entry/types"
 import { getSubscribedFeedIdAndInboxHandlesByView } from "@suhui/store/subscription/getter"
 
-type EntryViewState = {
-  data: Record<string, EntryModel>
-  entryIdByFeed: Record<string, Set<string>>
-  entryIdByInbox: Record<string, Set<string>>
-}
+type EntryViewState = { data: Record<string, number> }
 
 export const countUnreadByView = (state: EntryViewState, view: FeedViewType) => {
   const sourceIds = getSubscribedFeedIdAndInboxHandlesByView({
@@ -14,19 +9,5 @@ export const countUnreadByView = (state: EntryViewState, view: FeedViewType) => 
     excludePrivate: true,
     excludeHidden: true,
   })
-  const seen = new Set<string>()
-  let unread = 0
-
-  for (const sourceId of sourceIds) {
-    const entryIds = state.entryIdByFeed[sourceId] ?? state.entryIdByInbox[sourceId] ?? new Set()
-    for (const id of entryIds) {
-      if (seen.has(id)) continue
-      seen.add(id)
-      if (!state.data[id]?.read) {
-        unread++
-      }
-    }
-  }
-
-  return unread
+  return [...new Set(sourceIds)].reduce((sum, id) => sum + (state.data[id] ?? 0), 0)
 }

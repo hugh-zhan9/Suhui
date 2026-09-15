@@ -12,6 +12,7 @@ import { IpcMethod, IpcService } from "electron-ipc-decorator"
 import { entryQueryService } from "~/application/entry/query-service"
 import type { EntryListQuery } from "~/application/entry/query-types"
 import { entryApplicationService } from "~/application/entry/service"
+import { feedRepairService } from "~/application/feed/repair-service"
 import { feedHistoryService } from "~/application/feed/history-service"
 import { runFeedOperation } from "~/application/feed/operation"
 import { feedApplicationService } from "~/application/feed/service"
@@ -513,6 +514,23 @@ export class DbService extends IpcService {
     return DBManager.runTrackedOperation(() =>
       runFeedOperation(feedId, () => this.refreshFeedUnlocked(feedId, meta)),
     )
+  }
+
+  @IpcMethod()
+  async repairFeed(_context: IpcContext, feedId: string) {
+    await this.waitForDatabase()
+    const result = await feedRepairService.repair(feedId)
+    broadcastLocalFeedRefreshCompleted(
+      createEntryChangeEventV1({
+        batchId: randomUUID(),
+        reason: "refresh",
+        source: "manual-repair",
+        scope: "feeds",
+        feedIds: [feedId],
+        completedAt: Date.now(),
+      }),
+    )
+    return result
   }
 
   @IpcMethod()

@@ -45,7 +45,14 @@ class UnreadSyncService {
   private readonly markReadInFlight = new Set<string>()
 
   async resetFromRemote() {
-    // [Local Mode] No remote reads API, return current local state
+    const { getRuntimeEnv } = await import("../../remote/env")
+    if (getRuntimeEnv().isRemote) {
+      const { transformUnreadsFromApi } = await import("../../remote/transforms")
+      unreadActions.upsertManyInSession(
+        transformUnreadsFromApi(await runtimeClient.unread.list()),
+        { reset: true },
+      )
+    } else await unreadActions.refreshFromDatabase()
     return get().data
   }
 
@@ -159,6 +166,7 @@ class UnreadSyncService {
     await tx.run()
     entryActions.markReadMutationSettled(affectedEntryIds)
 
+    await this.resetFromRemote()
     await invalidateEntriesForUnreadMutation(affectedEntryIds)
   }
 
@@ -328,9 +336,21 @@ class UnreadSyncService {
 class UnreadActions implements Hydratable, Resetable {
   async hydrate() {
     const unreads = await UnreadService.getUnreadAll()
-    runWithHydrateSource("hydrate_critical", () => {
-      this.restoreHydratedSnapshotInSession(unreads)
-    })
+    runWithHydrateSource("hydrate_critical", () => this.restoreHydratedSnapshotInSession(unreads))
+  }
+
+  async refreshFromDatabase() {
+    const before = get().data
+    const unreads = await UnreadService.getUnreadAll()
+    const current = get().data
+    const nextData = Object.fromEntries(unreads.map(({ id, count }) => [id, count]))
+    for (const id of new Set([...Object.keys(before), ...Object.keys(current)])) {
+      if (before[id] !== current[id]) {
+        if (current[id] === undefined) delete nextData[id]
+        else nextData[id] = current[id]!
+      }
+    }
+    set({ data: nextData })
   }
 
   restoreHydratedSnapshotInSession(unreads: UnreadSchema[]) {

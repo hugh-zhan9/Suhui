@@ -138,6 +138,7 @@ export const resolveFeedDocument = async ({
   contentType,
   fetchCandidate,
   allowDiscovery = true,
+  allowScraping = true,
   now,
 }: {
   mode: "feed" | "scrape"
@@ -151,6 +152,8 @@ export const resolveFeedDocument = async ({
    * instead of silently adopting whatever the host now returns.
    */
   allowDiscovery?: boolean
+  /** Explicit source repair only accepts real RSS/Atom, never generated pages. */
+  allowScraping?: boolean
   now?: () => number
 }): Promise<ResolvedFeedDocument> => {
   if (mode === "scrape") {
@@ -182,7 +185,7 @@ export const resolveFeedDocument = async ({
       const feedOption = describeSource(hit.candidate.url, "feed", hit.parsed)
       // the page html is already in hand, so checking whether the advertised
       // feed still tracks the site costs no extra request
-      const scrapeAttempt = scrapePage(body, requestUrl)
+      const scrapeAttempt = allowScraping ? scrapePage(body, requestUrl) : { resolved: null }
       const staleness = assessFeedStaleness({
         feedItems: hit.parsed.items,
         pageArticles: scrapeAttempt.resolved?.parsed.items ?? [],
@@ -210,7 +213,9 @@ export const resolveFeedDocument = async ({
       }
     }
 
-    const { rejectedReason, resolved } = scrapePage(body, requestUrl)
+    const { rejectedReason, resolved } = allowScraping
+      ? scrapePage(body, requestUrl)
+      : { rejectedReason: "scraping disabled", resolved: null }
     if (resolved) return resolved
 
     throw new Error(

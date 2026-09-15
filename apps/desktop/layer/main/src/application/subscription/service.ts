@@ -6,11 +6,17 @@ import { SubscriptionService } from "@suhui/database/services/subscription"
 import { and, eq, inArray, isNull, or } from "drizzle-orm"
 
 import { findDuplicateFeed, normalizeFeedUrlForDedup } from "~/ipc/services/rss-dedup"
+import {
+  buildExistingEntryReuseIndex,
+  buildStableLocalEntryId,
+  resolveExistingEntryIdForRefresh,
+} from "~/ipc/services/rss-refresh"
 import { resolvePublishedAtMs, toTimestampMs } from "~/ipc/services/rss-time"
 import { DBManager } from "~/manager/db"
 import { FeedRefreshService } from "~/manager/feed-refresh"
 import { syncLogger } from "~/manager/sync-logger"
 
+import { runFeedOperation } from "../feed/operation"
 import { localReadingPipeline } from "../local-reading/pipeline"
 
 type CreateSubscriptionPayload = {
@@ -101,16 +107,55 @@ export class SubscriptionApplicationService {
       columns: { id: true, url: true, siteUrl: true },
     })
 
-    const duplicateByInputUrl = findDuplicateFeed(existingFeeds as any, feedUrl)
-    if (duplicateByInputUrl) {
-      return this.resolveDuplicateFeedSubscription(db, duplicateByInputUrl, payload)
-    }
-
     const preview = await FeedRefreshService.buildPreviewData(feedUrl)
-    const duplicateFeed = findDuplicateFeed(existingFeeds as any, feedUrl, preview.feed.siteUrl)
+    const duplicateFeed = findDuplicateFeed(
+      existingFeeds as any,
+      preview.feed.url,
+      preview.feed.siteUrl,
+    )
 
     if (duplicateFeed) {
-      return this.resolveDuplicateFeedSubscription(db, duplicateFeed, payload)
+      return runFeedOperation(duplicateFeed.id, async () => {
+        // Reuse the identity and reading data, but honor the validated source
+        // selected by the user instead of silently returning an old endpoint.
+        const existingEntries = await db.query.entriesTable.findMany({
+          where: (entries) => eq(entries.feedId, duplicateFeed.id),
+          columns: { id: true, guid: true, url: true, title: true, publishedAt: true, read: true },
+        })
+        const reuseIndex = buildExistingEntryReuseIndex(existingEntries as any)
+        const existingIds = new Set(existingEntries.map((entry) => entry.id))
+        const entriesToInsert = preview.entries.flatMap((entry) => {
+          const id =
+            resolveExistingEntryIdForRefresh(reuseIndex, entry as any) ||
+            buildStableLocalEntryId({
+              ...entry,
+              feedId: duplicateFeed.id,
+            })
+          if (existingIds.has(id)) return []
+          existingIds.add(id)
+          return [
+            {
+              ...entry,
+              id,
+              feedId: duplicateFeed.id,
+              publishedAt: resolvePublishedAtMs(entry.publishedAt),
+              insertedAt: toTimestampMs(entry.insertedAt) ?? Date.now(),
+              readabilityUpdatedAt: toTimestampMs(entry.readabilityUpdatedAt),
+            },
+          ]
+        })
+        // Include soft-deleted rows in identity matching, and only insert missing
+        // articles: re-subscribing must not overwrite read state or cached bodies.
+        await EntryService.upsertMany(entriesToInsert as any)
+        await FeedService.patch(duplicateFeed.id, {
+          url: preview.feed.url,
+          updatedAt: Date.now(),
+          errorAt: null,
+          errorMessage: null,
+        })
+        await localReadingPipeline.processNewEntries(entriesToInsert.map((entry) => entry.id))
+        return this.resolveDuplicateFeedSubscription(db, duplicateFeed, payload)
+      })
     }
 
     const feed = {

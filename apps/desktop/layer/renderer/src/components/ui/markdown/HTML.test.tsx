@@ -10,6 +10,12 @@ import { htmlParserClient } from "~/lib/html-parser-client"
 
 import { HTML } from "./HTML"
 
+const testTheme = vi.hoisted(() => ({ dark: false }))
+vi.mock("@suhui/hooks", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@suhui/hooks")>()),
+  useIsDark: () => testTheme.dark,
+}))
+
 vi.mock("~/lib/html-parser-client", () => ({
   htmlParserClient: { parse: vi.fn(), getCached: vi.fn() },
 }))
@@ -32,11 +38,14 @@ const complete = buildBilingualHtml(
 )
 let pending: Map<string, (tree: Root) => void>
 const finish = async (content: string) => {
-  await act(async () => pending.get(content)!(parseHtmlToHast(content)))
+  await act(async () =>
+    pending.get(content)!(parseHtmlToHast(content, { renderInlineStyle: true })),
+  )
 }
 
 describe("progressive article HTML", () => {
   beforeEach(() => {
+    testTheme.dark = false
     pending = new Map()
     vi.mocked(htmlParserClient.getCached).mockReset()
     vi.mocked(htmlParserClient.parse).mockImplementation(
@@ -153,5 +162,30 @@ describe("progressive article HTML", () => {
       </HTML>,
     )
     expect(view.getByText("第二段")).toBe(paragraph)
+  })
+  it("applies dark text colors and restores author styles on switching back to light", async () => {
+    const content = '<p style="color:black;background:white">Theme sample</p>'
+    const view = render(
+      <HTML as="article" renderInlineStyle data-test-theme="light">
+        {content}
+      </HTML>,
+    )
+    await finish(content)
+    expect(view.container.querySelector("p")!.style.color).toBe("black")
+    testTheme.dark = true
+    view.rerender(
+      <HTML as="article" renderInlineStyle data-test-theme="dark">
+        {content}
+      </HTML>,
+    )
+    expect(view.container.querySelector("article")!.dataset.readerDark).toBe("true")
+    expect(view.container.querySelector("p")!.style.color).toBe("")
+    testTheme.dark = false
+    view.rerender(
+      <HTML as="article" renderInlineStyle data-test-theme="light">
+        {content}
+      </HTML>,
+    )
+    expect(view.container.querySelector("p")!.style.color).toBe("black")
   })
 })

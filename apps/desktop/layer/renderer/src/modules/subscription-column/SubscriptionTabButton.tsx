@@ -1,7 +1,7 @@
 import { useDroppable } from "@dnd-kit/core"
 import { ActionButton } from "@suhui/components/ui/button/index.js"
 import { FeedViewType, getView } from "@suhui/constants"
-import { useEntryStore } from "@suhui/store/entry/store"
+import { useUnreadStore } from "@suhui/store/unread/store"
 import { cn } from "@suhui/utils/utils"
 import type { FC } from "react"
 import { startTransition, useCallback } from "react"
@@ -20,7 +20,7 @@ import { resetSelectedFeedIds } from "./atom"
 import { useShowTimelineTabsSettingsModal } from "./TimelineTabsSettingsModal"
 
 const useTimelineUnreadByView = (view: FeedViewType) => {
-  return useEntryStore((state) => countUnreadByView(state, view))
+  return useUnreadStore((state) => countUnreadByView(state, view))
 }
 
 export function SubscriptionTabButton({

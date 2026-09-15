@@ -38,7 +38,10 @@ export class FeedRefreshService {
     preferredFeedId?: string,
     allowPublicFallback = false,
     diagnosticsEnabled = false,
-    { allowDiscovery = true }: { allowDiscovery?: boolean } = {},
+    {
+      allowDiscovery = true,
+      allowScraping = true,
+    }: { allowDiscovery?: boolean; allowScraping?: boolean } = {},
   ) {
     const customBaseUrl = (store.get("rsshubCustomUrl") as string) ?? ""
     const sourceTarget = resolveFeedSourceTarget(feedUrl)
@@ -77,6 +80,7 @@ export class FeedRefreshService {
 
     const resolvedDocument = await resolveFeedDocument({
       mode: sourceTarget.mode,
+      allowScraping,
       // relative hrefs and the scrape target must resolve against the document
       // we actually received, not the url we asked for
       requestUrl: fetchResult.finalUrl || resolvedUrl,
