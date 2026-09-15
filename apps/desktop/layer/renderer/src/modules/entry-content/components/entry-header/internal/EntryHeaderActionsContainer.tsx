@@ -3,9 +3,9 @@ import type { SupportedActionLanguage } from "@suhui/shared"
 import { IN_ELECTRON } from "@suhui/shared/constants"
 import { useIsEntryStarred } from "@suhui/store/collection/hooks"
 import { useEntry } from "@suhui/store/entry/hooks"
-import { useSubscriptionByFeedId } from "@suhui/store/subscription/hooks"
 import { runtimeClient } from "@suhui/store/runtime"
-import { useEntryTranslation, useEntryTranslationProgress } from "@suhui/store/translation/hooks"
+import { useSubscriptionByFeedId } from "@suhui/store/subscription/hooks"
+import { useEntryTranslationProgress } from "@suhui/store/translation/hooks"
 import clsx from "clsx"
 import { memo } from "react"
 import { useTranslation } from "react-i18next"
@@ -20,6 +20,7 @@ import { useRunCommandFn } from "~/modules/command/hooks/use-command"
 
 import { EntryHeaderActions } from "../../../actions/header-actions"
 import { MoreActions } from "../../../actions/more-actions"
+import { useEntryTranslationQuery } from "../../../use-entry-translation-query"
 import { useEntryHeaderContext } from "./context"
 
 function EntryHeaderActionsContainerImpl({ isSmallWidth }: { isSmallWidth?: boolean }) {
@@ -38,24 +39,23 @@ function EntryHeaderActionsContainerImpl({ isSmallWidth }: { isSmallWidth?: bool
   const actionLanguage = useActionLanguage() as SupportedActionLanguage
   const translationEnabled = useShowAITranslation(entryId, !!entry?.translation)
   const translationProgress = useEntryTranslationProgress(entryId, actionLanguage)
-  const translatedEntry = useEntryTranslation({
-    entryId,
-    language: actionLanguage,
-    enabled: true,
-    respectEntrySetting: false,
-  })
-  const isTranslating =
-    translationProgress?.status === "translating" || translationProgress?.status === "partial"
+  const translationQuery = useEntryTranslationQuery(entryId)
+  const translationError = !translationQuery?.isFetching ? translationQuery?.error : null
+  const isComplete =
+    !translationQuery?.isFetching && !translationError && translationQuery?.isSuccess
+  const isTranslating = translationEnabled && !translationError && !isComplete
   const translationTooltip = !translationEnabled
     ? t("entry.translation.enable")
-    : translationProgress?.status === "error"
+    : translationError
       ? t("entry.translation.failed")
-      : isTranslating && translationProgress.totalBatches > 0
+      : isTranslating &&
+          translationProgress?.status === "partial" &&
+          translationProgress.totalBatches > 0
         ? t("entry.translation.progress", {
             completed: translationProgress.completedBatches,
             total: translationProgress.totalBatches,
           })
-        : translatedEntry
+        : isComplete
           ? t("entry.translation.complete")
           : t("entry.translation.translating")
 
@@ -63,17 +63,18 @@ function EntryHeaderActionsContainerImpl({ isSmallWidth }: { isSmallWidth?: bool
     <div className={clsx("relative flex shrink-0 items-center justify-end gap-2")}>
       {IN_ELECTRON && (
         <ActionButton
+          className="w-auto gap-1.5 px-2 text-sm"
+          aria-pressed={translationEnabled}
           tooltip={translationTooltip}
-          tooltipDescription={
-            translationProgress?.status === "error" ? translationProgress.error : undefined
-          }
+          tooltipDescription={translationEnabled ? translationError?.message : undefined}
           active={translationEnabled}
           icon={
             <i
               className={clsx(
-                "i-mgc-translate-2-cute-re",
-                isTranslating && "animate-pulse text-accent",
-                translationProgress?.status === "error" && "text-red",
+                isTranslating
+                  ? "i-mgc-loading-3-cute-re animate-spin text-accent motion-reduce:animate-none"
+                  : "i-mgc-translate-2-cute-re",
+                translationEnabled && translationError && "text-red",
               )}
             />
           }
@@ -81,7 +82,17 @@ function EntryHeaderActionsContainerImpl({ isSmallWidth }: { isSmallWidth?: bool
             setCurrentTranslationOverride(entryId, translationEnabled ? "force-off" : "force-on")
           }
           id={`${entryId}/translation/quick`}
-        />
+        >
+          <span className="whitespace-nowrap">
+            {!translationEnabled
+              ? t("entry.translation.label")
+              : translationError
+                ? t("entry.translation.error")
+                : isComplete
+                  ? t("entry.translation.complete")
+                  : t("entry.translation.translating")}
+          </span>
+        </ActionButton>
       )}
       <CommandActionButton
         commandId={COMMAND_ID.entry.star}

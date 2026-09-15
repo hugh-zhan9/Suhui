@@ -147,6 +147,7 @@ describe("progressive translation IPC", () => {
     await expect(
       translationSyncService.generateTranslation({
         entryId: "entry-error",
+        withContent: true,
         language: "ja",
         target: "content",
       }),
@@ -178,17 +179,20 @@ describe("progressive translation IPC", () => {
 
     const first = translationSyncService.generateTranslation({
       entryId: "entry-race",
+      withContent: true,
       language: "zh-CN",
       target: "content",
     })
     const second = translationSyncService.generateTranslation({
       entryId: "entry-race",
+      withContent: true,
       language: "zh-CN",
       target: "readabilityContent",
     })
     const secondExpectation = expect(second).rejects.toThrow("new request failed")
     resolveFirst({
       entryId: "entry-race",
+      withContent: true,
       language: "zh-CN",
       title: "stale title",
       description: null,
@@ -203,4 +207,133 @@ describe("progressive translation IPC", () => {
     expect(translationActions.getTranslation("entry-race", "zh-CN")).toBeUndefined()
     expect(translationActions.getProgress("entry-race", "zh-CN")?.status).toBe("error")
   })
+
+  it.each([false, true])(
+    "isolates a list result from an active reader (list fails: %s)",
+    async (listFails) => {
+      let listener!: (event: unknown, progress: unknown) => void
+      let readerInput: any
+      let finishReader!: (value: unknown) => void
+      const readerResult = new Promise((resolve) => {
+        finishReader = resolve
+      })
+      const translation = {
+        entryId: "isolated",
+        language: "zh-CN" as const,
+        title: "Title",
+        description: null,
+        content: "partial body",
+        readabilityContent: null,
+      }
+      const on = vi.fn((_channel, callback) => {
+        listener = callback
+        return vi.fn()
+      })
+      ;(window as any).electron = {
+        ipcRenderer: {
+          on,
+          invoke: vi.fn(async (_channel, input) => {
+            if (input.withContent) {
+              readerInput = input
+              return readerResult
+            }
+            if (listFails) throw new Error("summary timed out")
+            return { ...translation, description: "Translated summary", content: "old cached body" }
+          }),
+        },
+      }
+      const reader = translationSyncService.generateTranslation({
+        entryId: "isolated",
+        language: "zh-CN",
+        target: "content",
+        withContent: true,
+      })
+      listener({}, { ...readerInput, completedBatches: 1, totalBatches: 2, translation })
+      const before = translationActions.getProgress("isolated", "zh-CN")
+      const list = translationSyncService.generateTranslation({
+        entryId: "isolated",
+        language: "zh-CN",
+        target: "content",
+      })
+      if (listFails) await expect(list).rejects.toThrow("summary timed out")
+      else await expect(list).resolves.toMatchObject({ description: "Translated summary" })
+      expect(on).toHaveBeenCalledOnce()
+      expect(translationActions.getProgress("isolated", "zh-CN")).toEqual(before)
+      expect(translationActions.getTranslation("isolated", "zh-CN")?.content).toBe("partial body")
+      finishReader({
+        ...translation,
+        content: "complete body",
+        description: "stale cached summary",
+      })
+      await reader
+      expect(translationActions.getProgress("isolated", "zh-CN")?.status).toBe("complete")
+      expect(translationActions.getTranslation("isolated", "zh-CN")).toMatchObject({
+        content: "complete body",
+        description: listFails ? null : "Translated summary",
+      })
+    },
+  )
+
+  it("keeps a completed reader visible when a later list request fails", async () => {
+    translationActions.upsertManyInSession([
+      {
+        entryId: "completed",
+        language: "zh-CN",
+        title: "Title",
+        description: null,
+        content: "complete body",
+        readabilityContent: null,
+      },
+    ])
+    translationActions.setProgress("completed", "zh-CN", {
+      requestId: "reader",
+      status: "complete",
+      completedBatches: 2,
+      totalBatches: 2,
+    })
+    ;(window as any).electron = {
+      ipcRenderer: { invoke: vi.fn().mockRejectedValue(new Error("summary failed")), on: vi.fn() },
+    }
+    await expect(
+      translationSyncService.generateTranslation({
+        entryId: "completed",
+        language: "zh-CN",
+        target: "content",
+      }),
+    ).rejects.toThrow("summary failed")
+    expect(translationActions.getProgress("completed", "zh-CN")?.status).toBe("complete")
+    expect(translationActions.getTranslation("completed", "zh-CN")?.content).toBe("complete body")
+  })
+
+  it.each([true, false])(
+    "ignores late responses after a source change (reader: %s)",
+    async (withContent) => {
+      let resolve!: (value: unknown) => void
+      const pending = new Promise((done) => {
+        resolve = done
+      })
+      ;(window as any).electron = {
+        ipcRenderer: { on: vi.fn(() => vi.fn()), invoke: vi.fn(() => pending) },
+      }
+      translationActions.prepareInSession("changed", "zh-CN", "old")
+      const job = translationSyncService.generateTranslation({
+        entryId: "changed",
+        language: "zh-CN",
+        target: "content",
+        withContent,
+      })
+      translationActions.prepareInSession("changed", "zh-CN", "new")
+      resolve({
+        entryId: "changed",
+        language: "zh-CN",
+        title: "stale",
+        description: "stale",
+        content: "stale",
+        readabilityContent: null,
+      })
+      await job
+      expect(translationActions.getTranslation("changed", "zh-CN")).toBeUndefined()
+      expect(translationActions.getProgress("changed", "zh-CN", withContent)).toBeUndefined()
+    },
+  )
 })

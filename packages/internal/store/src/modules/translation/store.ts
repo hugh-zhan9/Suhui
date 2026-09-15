@@ -10,13 +10,18 @@ import {
 
 import type { Hydratable, Resetable } from "../../lib/base"
 import { createImmerSetter, createTransaction, createZustandStore } from "../../lib/helper"
-import type { EntryTranslation } from "./types"
+import type { EntryTranslation, TranslationField } from "./types"
 import { translationFields } from "./types"
 
 type TranslationModel = Omit<TranslationSchema, "createdAt">
 interface TranslationState {
   data: Record<string, Partial<Record<SupportedActionLanguage, EntryTranslation>>>
   progress: Record<string, Partial<Record<SupportedActionLanguage, TranslationProgressState>>>
+  metadataProgress: Record<
+    string,
+    Partial<Record<SupportedActionLanguage, TranslationProgressState>>
+  >
+  sourceRevisions: Record<string, Partial<Record<SupportedActionLanguage, string>>>
 }
 export interface TranslationProgressState {
   requestId: string
@@ -28,6 +33,8 @@ export interface TranslationProgressState {
 const defaultState: TranslationState = {
   data: {},
   progress: {},
+  metadataProgress: {},
+  sourceRevisions: {},
 }
 
 export const useTranslationStore = createZustandStore<TranslationState>("translation")(
@@ -59,10 +66,28 @@ class TranslationActions implements Hydratable, Resetable {
     set(defaultState)
   }
 
-  removeInSession(entryId: string, language: SupportedActionLanguage) {
+  prepareInSession(entryId: string, language: SupportedActionLanguage, sourceRevision: string) {
+    immerSet((state) => {
+      if (state.sourceRevisions[entryId]?.[language] === sourceRevision) return
+      // A source change invalidates both scopes and their late responses; a
+      // second observer of the same source must leave the other scope intact.
+      if (state.data[entryId]) delete state.data[entryId]![language]
+      if (state.progress[entryId]) delete state.progress[entryId]![language]
+      if (state.metadataProgress[entryId]) delete state.metadataProgress[entryId]![language]
+      state.sourceRevisions[entryId] ??= {}
+      state.sourceRevisions[entryId]![language] = sourceRevision
+    })
+  }
+
+  removeInSession(entryId: string, language: SupportedActionLanguage, fields?: TranslationField[]) {
     immerSet((state) => {
       const translations = state.data[entryId]
       if (!translations) return
+      if (fields) {
+        const translation = translations[language]
+        if (translation) fields.forEach((field) => (translation[field] = null))
+        return
+      }
       delete translations[language]
       if (Object.keys(translations).length === 0) delete state.data[entryId]
     })
@@ -109,15 +134,17 @@ class TranslationActions implements Hydratable, Resetable {
     entryId: string,
     language: SupportedActionLanguage,
     progress: TranslationProgressState,
+    withContent = true,
   ) {
     immerSet((state) => {
-      state.progress[entryId] ??= {}
-      state.progress[entryId]![language] = progress
+      const records = withContent ? state.progress : state.metadataProgress
+      records[entryId] ??= {}
+      records[entryId]![language] = progress
     })
   }
 
-  getProgress(entryId: string, language: SupportedActionLanguage) {
-    return get().progress[entryId]?.[language]
+  getProgress(entryId: string, language: SupportedActionLanguage, withContent = true) {
+    return (withContent ? get().progress : get().metadataProgress)[entryId]?.[language]
   }
 }
 
@@ -149,51 +176,75 @@ class TranslationSyncService {
     }
     const requestId = globalThis.crypto.randomUUID()
     const ipcRenderer = (window as any).electron.ipcRenderer
-    translationActions.setProgress(params.entryId, params.language, {
+    const withContent = params.withContent === true
+    const getProgress = () =>
+      translationActions.getProgress(params.entryId, params.language, withContent)
+    const setProgress = (progress: TranslationProgressState) =>
+      translationActions.setProgress(params.entryId, params.language, progress, withContent)
+    const applyResult = (result: GeneratedEntryTranslation) => {
+      // Cached rows contain both scopes. Only project the fields owned by this
+      // request so a list response cannot replace an in-flight body translation.
+      translationActions.upsertManyInSession([
+        {
+          entryId: params.entryId,
+          language: params.language,
+          title: result.title,
+          description: withContent ? null : result.description,
+          content: withContent && params.target === "content" ? result.content : null,
+          readabilityContent:
+            withContent && params.target === "readabilityContent"
+              ? result.readabilityContent
+              : null,
+        },
+      ])
+    }
+    setProgress({
       requestId,
       status: "translating",
       completedBatches: 0,
       totalBatches: 0,
     })
-    const dispose = ipcRenderer.on(
-      TRANSLATION_PROGRESS_CHANNEL,
-      (_event: unknown, progress: EntryTranslationProgress) => {
-        const current = translationActions.getProgress(params.entryId, params.language)
-        if (
-          !progress ||
-          current?.requestId !== requestId ||
-          progress.requestId !== requestId ||
-          progress.entryId !== params.entryId ||
-          progress.language !== params.language ||
-          !Number.isInteger(progress.completedBatches) ||
-          !Number.isInteger(progress.totalBatches) ||
-          progress.completedBatches < 0 ||
-          progress.completedBatches > progress.totalBatches ||
-          progress.completedBatches < current.completedBatches ||
-          (current.totalBatches > 0 && progress.totalBatches !== current.totalBatches) ||
-          progress.translation?.entryId !== params.entryId ||
-          progress.translation?.language !== params.language
-        ) {
-          return
-        }
-        translationActions.upsertManyInSession([progress.translation])
-        translationActions.setProgress(params.entryId, params.language, {
-          requestId,
-          status: "partial",
-          completedBatches: progress.completedBatches,
-          totalBatches: progress.totalBatches,
-        })
-      },
-    )
+    const dispose = withContent
+      ? ipcRenderer.on(
+          TRANSLATION_PROGRESS_CHANNEL,
+          (_event: unknown, progress: EntryTranslationProgress) => {
+            const current = getProgress()
+            if (
+              !progress ||
+              current?.requestId !== requestId ||
+              progress.requestId !== requestId ||
+              progress.entryId !== params.entryId ||
+              progress.language !== params.language ||
+              !Number.isInteger(progress.completedBatches) ||
+              !Number.isInteger(progress.totalBatches) ||
+              progress.completedBatches < 0 ||
+              progress.completedBatches > progress.totalBatches ||
+              progress.completedBatches < current.completedBatches ||
+              (current.totalBatches > 0 && progress.totalBatches !== current.totalBatches) ||
+              progress.translation?.entryId !== params.entryId ||
+              progress.translation?.language !== params.language
+            ) {
+              return
+            }
+            applyResult(progress.translation)
+            setProgress({
+              requestId,
+              status: "partial",
+              completedBatches: progress.completedBatches,
+              totalBatches: progress.totalBatches,
+            })
+          },
+        )
+      : () => {}
     try {
       const result = (await ipcRenderer.invoke("translation.generate", {
         ...params,
         requestId,
       })) as GeneratedEntryTranslation
-      const current = translationActions.getProgress(params.entryId, params.language)
+      const current = getProgress()
       if (current?.requestId === requestId) {
-        translationActions.upsertManyInSession([result])
-        translationActions.setProgress(params.entryId, params.language, {
+        applyResult(result)
+        setProgress({
           requestId,
           status: "complete",
           completedBatches: current.totalBatches,
@@ -202,9 +253,9 @@ class TranslationSyncService {
       }
       return result
     } catch (error) {
-      const current = translationActions.getProgress(params.entryId, params.language)
+      const current = getProgress()
       if (current?.requestId === requestId) {
-        translationActions.setProgress(params.entryId, params.language, {
+        setProgress({
           requestId,
           status: "error",
           completedBatches: current.completedBatches,

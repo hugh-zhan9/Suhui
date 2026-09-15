@@ -201,6 +201,7 @@ const Renderer: React.FC<{
       className="autospace-normal prose !max-w-full hyphens-auto dark:prose-invert prose-h1:text-[1.6em] prose-h1:font-bold"
       style={stableRenderStyle}
       renderInlineStyle={readerRenderInlineStyle}
+      {...(!isMarkdownEntry ? { contentIdentity: `${entryId}:${content ?? ""}` } : {})}
     >
       {normalizeRssContentForRender(
         resolveTranslationHtml({

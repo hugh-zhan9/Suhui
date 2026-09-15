@@ -22,11 +22,14 @@ import { MediaContainerWidthProvider } from "../media/MediaContainerWidthProvide
 import type { MediaInfoRecord } from "../media/MediaInfoRecord"
 import { MediaInfoRecordProvider } from "../media/MediaInfoRecordProvider"
 import { MarkdownRenderContainerRefContext } from "./context"
+import { PreserveReadingPosition } from "./PreserveReadingPosition"
 
 export type HTMLProps<A extends keyof JSX.IntrinsicElements = "div"> = {
   children: string | null | undefined
   as: A
 
+  /** Same source article across progressive translation updates. */
+  contentIdentity?: string
   accessory?: React.ReactNode
   noMedia?: boolean
   mediaInfo?: Nullable<MediaInfoRecord>
@@ -40,6 +43,7 @@ const HTMLImpl = <A extends keyof JSX.IntrinsicElements = "div">(props: HTMLProp
     renderInlineStyle,
     as = "div",
     accessory,
+    contentIdentity,
     noMedia,
     mediaInfo,
     ref,
@@ -64,6 +68,7 @@ const HTMLImpl = <A extends keyof JSX.IntrinsicElements = "div">(props: HTMLProp
   )
   const [parsed, setParsed] = useState<{
     content: string
+    identity?: string
     options: typeof parserOptions
     tree: Root
   } | null>(null)
@@ -80,7 +85,8 @@ const HTMLImpl = <A extends keyof JSX.IntrinsicElements = "div">(props: HTMLProp
     setParseError(null)
     void htmlParserClient.parse(children, parserOptions).then(
       (tree) => {
-        if (!cancelled) setParsed({ content: children, options: parserOptions, tree })
+        if (!cancelled)
+          setParsed({ content: children, identity: contentIdentity, options: parserOptions, tree })
       },
       (error) => {
         if (!cancelled) {
@@ -91,17 +97,22 @@ const HTMLImpl = <A extends keyof JSX.IntrinsicElements = "div">(props: HTMLProp
     return () => {
       cancelled = true
     }
-  }, [children, parserOptions])
+  }, [children, parserOptions, contentIdentity])
 
   const parsedMatchesCurrentContent =
     !!children &&
     parsed?.content === children &&
     parsed.options.renderInlineStyle === parserOptions.renderInlineStyle &&
     parsed.options.noMedia === parserOptions.noMedia
+  const canRetainParsed =
+    contentIdentity !== undefined &&
+    parsed?.identity === contentIdentity &&
+    parsed.options === parserOptions
   const hastTree = children
     ? parsedMatchesCurrentContent
       ? parsed.tree
-      : htmlParserClient.getCached(children, parserOptions)
+      : (htmlParserClient.getCached(children, parserOptions) ??
+        (canRetainParsed ? parsed.tree : undefined))
     : undefined
   const markdownElement = useMemo(() => hastTree && renderHtmlTree(hastTree), [hastTree])
 
@@ -114,15 +125,21 @@ const HTMLImpl = <A extends keyof JSX.IntrinsicElements = "div">(props: HTMLProp
       <MediaContainerWidthProvider width={containerWidth}>
         <MediaInfoRecordProvider mediaInfo={mediaInfo}>
           <MemoedDangerousHTMLStyle>{katexStyle}</MemoedDangerousHTMLStyle>
-          {createElement(
-            as,
-            {
-              ...rest,
-              id: ENTRY_CONTENT_RENDER_CONTAINER_ID,
-              ref: setRefElement,
-            },
-            markdownElement,
-          )}
+          <PreserveReadingPosition
+            element={refElement}
+            identity={contentIdentity}
+            revision={hastTree}
+          >
+            {createElement(
+              as,
+              {
+                ...rest,
+                id: ENTRY_CONTENT_RENDER_CONTAINER_ID,
+                ref: setRefElement,
+              },
+              markdownElement,
+            )}
+          </PreserveReadingPosition>
         </MediaInfoRecordProvider>
       </MediaContainerWidthProvider>
       {!!accessory && <Fragment key={shouldForceReMountKey}>{accessory}</Fragment>}

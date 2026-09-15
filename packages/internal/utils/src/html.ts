@@ -133,6 +133,12 @@ export const parseHtmlToHast = (content: string, options?: ParseHtmlTreeOptions)
     }
   }
 
+  // Presentation metadata only; URLs, events and other attributes still use the same sanitizer.
+  rehypeSchema.attributes = {
+    ...rehypeSchema.attributes,
+    "*": [...(rehypeSchema.attributes?.["*"] ?? []), ["dataSuhuiTranslation", "true"]],
+  }
+
   const pipeline = unified()
     .use(rehypeParse, { fragment: true })
     .use(rehypeSanitize, rehypeSchema)

@@ -2,6 +2,7 @@ import { RootPortal } from "@suhui/components/ui/portal/index.js"
 import { ScrollArea } from "@suhui/components/ui/scroll-area/index.js"
 import { FeedViewType } from "@suhui/constants"
 import { useTitle } from "@suhui/hooks"
+import { IN_ELECTRON } from "@suhui/shared/constants"
 import { useEntry } from "@suhui/store/entry/hooks"
 import { useFeedById } from "@suhui/store/feed/hooks"
 import type { FeedModel } from "@suhui/store/feed/types"
@@ -40,11 +41,12 @@ import { EntryContentLoading } from "./components/entry-content/EntryContentLoad
 import { EntryNoContent } from "./components/entry-content/EntryNoContent"
 import { EntryScrollingAndNavigationHandler } from "./components/entry-content/EntryScrollingAndNavigationHandler.js"
 import { EntryTitleMetaHandler } from "./components/entry-content/EntryTitleMetaHandler"
+import { EntryTranslationStatus } from "./components/entry-content/EntryTranslationStatus"
 import type { EntryContentProps } from "./components/entry-content/types"
 import { getEntryContentLayout } from "./components/layouts"
 import type { EntryLayoutProps } from "./components/layouts/types"
-import { SourceContentPanel } from "./components/SourceContentView"
 import { normalizeSourceContentPanelSrc } from "./components/source-content-state"
+import { SourceContentPanel } from "./components/SourceContentView"
 import { useEntryContent } from "./hooks"
 
 const EntryContentImpl: Component<EntryContentProps> = ({
@@ -75,7 +77,7 @@ const EntryContentImpl: Component<EntryContentProps> = ({
   const isInbox = useIsInbox(entry.inboxId)
   const isInReadabilityMode = useEntryIsInReadability(entryId)
 
-  const { error, content, isPending, translationError } = useEntryContent(entryId)
+  const { error, content, isPending, translationError, translationQuery } = useEntryContent(entryId)
   const enableTranslation = useShowAITranslation(entryId, !!entry.translation)
   const actionLanguage = useActionLanguage()
   const entryTranslation = useEntryTranslation({
@@ -173,6 +175,14 @@ const EntryContentImpl: Component<EntryContentProps> = ({
       <EntryCommandShortcutRegister entryId={entryId} view={view} />
 
       <div className="w-full" ref={setPanelPortalElement} />
+
+      {IN_ELECTRON && enableTranslation && (
+        <EntryTranslationStatus
+          entryId={entryId}
+          language={actionLanguage}
+          query={translationQuery}
+        />
+      )}
 
       <Focusable
         ref={focusableRef}

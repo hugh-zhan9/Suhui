@@ -50,15 +50,18 @@ export const usePrefetchEntryTranslation = ({
   return useQueries({
     queries: entryList.map((entry) => {
       const entryId = entry.id
-      const targetContent =
-        target === "readabilityContent" ? entry.readabilityContent : entry.content
-      const finalWithContent = withContent && !!targetContent
+      const finalWithContent = withContent === true
       const sourceRevision = getTranslationSourceRevision(entry)
 
       return {
         queryKey: ["translation", entryId, language, finalWithContent, target, sourceRevision],
         queryFn: async () => {
-          translationActions.removeInSession(entryId, language)
+          translationActions.prepareInSession(entryId, language, sourceRevision)
+          translationActions.removeInSession(
+            entryId,
+            language,
+            finalWithContent ? ["title", target] : ["description"],
+          )
           return translationSyncService.generateTranslation({
             entryId,
             language,

@@ -14,6 +14,8 @@ import { createHeadingRenderer } from "~/components/ui/markdown/renderers/Headin
 import { MarkdownInlineImage } from "~/components/ui/markdown/renderers/InlineImage"
 import { Media } from "~/components/ui/media/Media"
 
+import { keyTranslationChildren } from "./translation-render-keys"
+
 type ParsedCodeBlockProps = {
   className?: string
   code: string
@@ -42,7 +44,7 @@ function markInlineImage(node?: Element) {
   }
 }
 
-const getHtmlComponents = (): Components => ({
+const createHtmlComponents = (): Components => ({
   a: ({ node, ...props }) => {
     // markInlineImage(node)
     return createElement(MarkdownLink, { ...props, className: "text-accent" } as any)
@@ -237,7 +239,8 @@ const getHtmlComponents = (): Components => ({
     createElement("td", { ...props, className: tw`p-0` }, props.children),
 })
 
-export const renderHtmlTree = (hastTree: Root) => hastToContent(hastTree, getHtmlComponents())
+export const renderHtmlTree = (hastTree: Root) =>
+  keyTranslationChildren(hastToContent(hastTree, getHtmlComponents()))
 
 export const parseHtml = (
   content: string,
@@ -351,3 +354,7 @@ const Math = ({ node }) => {
     mode: isInParagraph ? "inline" : "display",
   })
 }
+
+// Component types must survive successive parses so React can reuse article DOM/media.
+let htmlComponents: Components | undefined
+const getHtmlComponents = () => (htmlComponents ??= createHtmlComponents())

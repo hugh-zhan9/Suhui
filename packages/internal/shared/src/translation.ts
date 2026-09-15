@@ -36,6 +36,8 @@ export interface GenerateEntryTranslationInput {
   entryId: string
   language: SupportedActionLanguage
   target: "content" | "readabilityContent"
+  // true: reader title + target body; false/omitted: list title + description.
+  // An empty reader body does not switch the request to list metadata.
   withContent?: boolean
 }
 
