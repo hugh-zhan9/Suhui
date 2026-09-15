@@ -29,6 +29,8 @@ export type ScrapeRejection =
 
 export type SiteScrapeResult = {
   articles: ScrapedArticle[]
+  /** Trusted structures used only when following a history listing's tail pages. */
+  signatures?: string[]
   confidence: ScrapeConfidence | null
   /** null when the result cleared the confidence bar. */
   rejectedReason: ScrapeRejection | null
@@ -160,9 +162,16 @@ const TITLE_CLASS_HINT = /(?:^|[\s_-])(?:title|headline|heading)(?:[\s_-]|$)/i
  * and otherwise drop any `<time>` text from the fallback.
  */
 const titleFromAnchor = (anchor: any) => {
+  if (TITLE_CLASS_HINT.test(anchor.getAttribute("class") ?? "")) {
+    return normalizeText(anchor.textContent)
+  }
   const heading = anchor.querySelector?.("h1, h2, h3, h4, h5, h6")
   const headingText = normalizeText(heading?.textContent)
   if (headingText) return headingText
+
+  const titleElement = anchor.querySelector?.(".title, .post-title, .entry-title, .headline")
+  const titleText = normalizeText(titleElement?.textContent)
+  if (titleText) return titleText
 
   for (const node of anchor.querySelectorAll?.("[class]") ?? []) {
     if (!TITLE_CLASS_HINT.test(node.getAttribute("class") ?? "")) continue
@@ -197,7 +206,9 @@ const textWithSeparators = (node: any): string => {
 
 /** The repeating block an anchor belongs to; grouping and dates are scoped to it. */
 const itemContainer = (anchor: any) =>
-  anchor.closest("article, li, .post, .entry, .card, .item") ?? anchor.parentElement ?? anchor
+  anchor.closest("article, li, .post, .post-item, .entry, .card, .item") ??
+  anchor.parentElement ??
+  anchor
 
 const structureSignature = (anchor: any) => {
   const parts: string[] = [`a.${classSignature(anchor)}`]
@@ -310,7 +321,11 @@ const dropSharedContainerFacts = (candidates: Candidate[]): ScrapedArticle[] => 
  * and reads them as an article list. Navigation, headers, footers and sidebars
  * are excluded outright rather than scored down.
  */
-export const extractSiteArticles = (html: string, pageUrl: string): SiteScrapeResult => {
+export const extractSiteArticles = (
+  html: string,
+  pageUrl: string,
+  history?: { knownSignatures: string[] },
+): SiteScrapeResult => {
   const base = new URL(pageUrl)
   const document = new DOMParser().parseFromString(html, "text/html")
   const groups = new Map<string, Map<string, Candidate>>()
@@ -358,11 +373,47 @@ export const extractSiteArticles = (html: string, pageUrl: string): SiteScrapeRe
     })
   }
 
-  const scored = [...groups.values()]
-    .map((bucket) => dropSharedContainerFacts([...bucket.values()]))
-    .filter((articles) => articles.length >= 2)
-    .map((articles) => ({ articles, confidence: scoreGroup(articles) }))
+  const scored = [...groups.entries()]
+    .map(([signature, bucket]) => ({
+      signature,
+      articles: dropSharedContainerFacts([...bucket.values()]),
+    }))
+    .filter(
+      ({ signature, articles }) =>
+        articles.length >= 2 ||
+        (articles.length === 1 && history?.knownSignatures.includes(signature)),
+    )
+    .map(({ signature, articles }) => ({ signature, articles, confidence: scoreGroup(articles) }))
     .sort((left, right) => right.confidence.score - left.confidence.score)
+
+  if (history) {
+    const accepted = scored.filter(
+      ({ signature, confidence }) =>
+        judge(
+          history.knownSignatures.includes(signature)
+            ? {
+                ...confidence,
+                itemCount: Math.max(confidence.itemCount, SCRAPE_CONFIDENCE.minItems),
+              }
+            : confidence,
+        ) === null,
+    )
+    return {
+      articles: [
+        ...new Map(
+          accepted.flatMap(({ articles }) => articles).map((article) => [article.url, article]),
+        ).values(),
+      ].sort((left, right) => right.publishedAt - left.publishedAt),
+      signatures: accepted.map(({ signature }) => signature),
+      confidence: accepted[0]?.confidence ?? scored[0]?.confidence ?? null,
+      rejectedReason:
+        accepted.length > 0
+          ? null
+          : scored[0]
+            ? judge(scored[0].confidence)
+            : "NO_REPEATED_LINK_GROUP",
+    }
+  }
 
   const winner = scored[0]
   if (!winner) return { articles: [], confidence: null, rejectedReason: "NO_REPEATED_LINK_GROUP" }

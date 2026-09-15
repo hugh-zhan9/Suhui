@@ -1,24 +1,24 @@
-import { and, eq, inArray, isNull } from "drizzle-orm"
 import { EntryService } from "@suhui/database/services/entry"
 import { FeedService } from "@suhui/database/services/feed"
 import { getActiveVisibilityState } from "@suhui/database/services/internal/active-visibility"
+import { and, eq, inArray, isNull } from "drizzle-orm"
 import { session } from "electron"
 
-import { store } from "~/lib/store"
+import { runFeedOperation } from "~/application/feed/operation"
 import { localReadingPipeline } from "~/application/local-reading/pipeline"
+import { store } from "~/lib/store"
 import { DBManager } from "~/manager/db"
 import { drainPendingOps } from "~/manager/sync-applier"
 
-import { buildPreviewDiagnostics } from "../ipc/services/preview-feed-diagnostics"
 import { fetchFeedUrl } from "../ipc/services/feed-fetch"
 import { resolveFeedDocument } from "../ipc/services/feed-source-resolver"
-import { hydrateScrapedArticleContent } from "../ipc/services/scraped-article-content"
 import {
   defaultPreviewFeedView,
   feedDiscoveryCandidateMaxRedirects,
   feedDiscoveryCandidateTimeoutMs,
   localFeedRefreshRequestTimeoutMs,
 } from "../ipc/services/local-feed-refresh"
+import { buildPreviewDiagnostics } from "../ipc/services/preview-feed-diagnostics"
 import { buildEntryMediaPayload } from "../ipc/services/rss-entry-media"
 import {
   buildExistingEntryReuseIndex,
@@ -29,6 +29,7 @@ import {
 } from "../ipc/services/rss-refresh"
 import { toTimestampMs } from "../ipc/services/rss-time"
 import { resolvePreviewFeedUrl } from "../ipc/services/rsshub-external"
+import { hydrateScrapedArticleContent } from "../ipc/services/scraped-article-content"
 import { resolveFeedSourceTarget } from "../ipc/services/site-scrape-url"
 
 export class FeedRefreshService {
@@ -189,6 +190,12 @@ export class FeedRefreshService {
   }
 
   static async refreshFeed(feedId: string) {
+    return DBManager.runTrackedOperation(() =>
+      runFeedOperation(feedId, () => this.refreshFeedUnlocked(feedId)),
+    )
+  }
+
+  private static async refreshFeedUnlocked(feedId: string) {
     const db = DBManager.getDB()
     const existingFeed = await db.query.feedsTable.findFirst({
       where: (feeds) => and(eq(feeds.id, feedId), isNull(feeds.deletedAt)),

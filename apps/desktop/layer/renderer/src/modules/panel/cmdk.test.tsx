@@ -1,20 +1,28 @@
 import { EntryService } from "@suhui/database/services/entry"
 import { FeedService } from "@suhui/database/services/feed"
 import { SubscriptionService } from "@suhui/database/services/subscription"
+import type { EntryModel } from "@suhui/store/entry/types"
 import Fuse from "fuse.js"
-import React, { act } from "react"
-import { createRoot, type Root } from "react-dom/client"
+import type * as React from "react"
+import { act } from "react"
+import type { Root } from "react-dom/client"
+import { createRoot } from "react-dom/client"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-const { appSearchState, commandInputState } = vi.hoisted(() => ({
+import { setAppSearchOpen } from "~/atoms/app"
+import { searchActions, useSearchStore } from "~/store/search"
+
+import { SearchCmdK } from "./cmdk"
+
+const { appSearchState, commandInputState, navigateEntry } = vi.hoisted(() => ({
   appSearchState: { open: false },
+  navigateEntry: vi.fn(),
   commandInputState: {
     onValueChange: null as null | ((value: string) => Promise<void>),
   },
 }))
 
 vi.mock("@suhui/components/icons/empty.jsx", () => ({ EmptyIcon: () => null }))
-vi.mock("@suhui/components/icons/logo.jsx", () => ({ Logo: () => null }))
 vi.mock("@suhui/components/ui/scroll-area/index.js", async () => {
   const React = await import("react")
   return {
@@ -69,13 +77,18 @@ vi.mock("cmdk", async () => {
       }),
       Empty: ({ children }: React.PropsWithChildren) => children,
       Group: ({ children }: React.PropsWithChildren) => children,
-      Input: React.forwardRef<HTMLInputElement, { onValueChange(value: string): Promise<void> }>(
-        function MockInput({ onValueChange }, ref) {
-          commandInputState.onValueChange = onValueChange
-          return <input ref={ref} />
-        },
+      Input: React.forwardRef<
+        HTMLInputElement,
+        { onValueChange: (value: string) => Promise<void> }
+      >(function MockInput({ onValueChange }, ref) {
+        commandInputState.onValueChange = onValueChange
+        return <input ref={ref} />
+      }),
+      Item: ({ children, onSelect }: React.PropsWithChildren<{ onSelect: () => void }>) => (
+        <button type="button" data-search-result onClick={onSelect}>
+          {children}
+        </button>
       ),
-      Item: ({ children }: React.PropsWithChildren) => children,
       List: ({ children }: React.PropsWithChildren) => children,
     },
   }
@@ -88,18 +101,21 @@ vi.mock("~/atoms/app", () => ({
   useAppSearchOpen: () => appSearchState.open,
 }))
 vi.mock("~/components/common/ExPromise", () => ({ ExPromise: () => null }))
-vi.mock("~/components/common/LoadMoreIndicator", () => ({ LoadMoreIndicator: () => null }))
+vi.mock("~/components/common/LoadMoreIndicator", () => ({
+  LoadMoreIndicator: ({ onLoading }: { onLoading: () => void }) => (
+    <button type="button" data-load-more onClick={onLoading}>
+      More
+    </button>
+  ),
+}))
 vi.mock("~/components/ui/modal/stacked/hooks", () => ({
   useModalStack: () => ({ getTopModalStack: () => null }),
 }))
-vi.mock("~/hooks/biz/useNavigateEntry", () => ({ useNavigateEntry: () => vi.fn() }))
+vi.mock("~/hooks/biz/useNavigateEntry", () => ({ useNavigateEntry: () => navigateEntry }))
 vi.mock("~/hooks/common", () => ({
   useI18n: () => Object.assign((key: string) => key, { common: (key: string) => key }),
 }))
 vi.mock("~/modules/feed/feed-icon", () => ({ FeedIcon: () => null }))
-
-import { SearchCmdK } from "./cmdk"
-import { searchActions } from "~/store/search"
 
 describe("SearchCmdK local search initialization", () => {
   let container: HTMLDivElement
@@ -110,6 +126,7 @@ describe("SearchCmdK local search initialization", () => {
     appSearchState.open = false
     commandInputState.onValueChange = null
     searchActions.reset()
+    vi.clearAllMocks()
 
     vi.spyOn(EntryService, "getEntryAll").mockResolvedValue([])
     vi.spyOn(FeedService, "getFeedAll").mockResolvedValue([])
@@ -159,5 +176,40 @@ describe("SearchCmdK local search initialization", () => {
     expect(searchActions.createLocalDbSearch).toHaveBeenCalledTimes(2)
     expect(EntryService.getEntryAll).toHaveBeenCalledTimes(2)
     expect(Fuse.createIndex).toHaveBeenCalledTimes(6)
+  })
+
+  it("loads a partial second page, closes on selection and clears stale results on reopen", async () => {
+    appSearchState.open = true
+    await act(async () => root.render(<SearchCmdK />))
+    await act(async () => {
+      useSearchStore.setState({
+        keyword: "article",
+        entries: Array.from({ length: 17 }, (_, index) => ({
+          item: { id: `entry-${index}`, title: "Lynan&#39;s Page" } as EntryModel,
+          feedId: "feed-1",
+        })),
+      })
+    })
+    expect(container.querySelectorAll("[data-search-result]")).toHaveLength(16)
+    expect(container.textContent).toContain("Lynan's Page")
+    await act(async () => container.querySelector<HTMLButtonElement>("[data-load-more]")!.click())
+    expect(container.querySelectorAll("[data-search-result]")).toHaveLength(17)
+    expect(container.querySelector("[data-load-more]")).toBeNull()
+    await act(async () =>
+      container.querySelector<HTMLButtonElement>("[data-search-result]")!.click(),
+    )
+    expect(setAppSearchOpen).toHaveBeenCalledWith(false)
+    expect(navigateEntry).toHaveBeenCalledWith({
+      feedId: "feed-1",
+      entryId: "entry-0",
+      view: undefined,
+    })
+
+    appSearchState.open = false
+    await act(async () => root.render(<SearchCmdK />))
+    appSearchState.open = true
+    await act(async () => root.render(<SearchCmdK />))
+    expect(container.querySelectorAll("[data-search-result]")).toHaveLength(0)
+    expect(searchActions.getCurrentKeyword()).toBe("")
   })
 })

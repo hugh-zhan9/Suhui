@@ -71,6 +71,7 @@ vi.mock("~/logger", () => ({
 
 vi.mock("~/manager/db", () => ({
   DBManager: {
+    runTrackedOperation: <T>(task: () => Promise<T>) => task(),
     waitUntilUsable,
     getDB,
     getDialect: vi.fn(),
@@ -109,6 +110,7 @@ vi.mock("~/application/entry/query-service", () => ({
 }))
 
 import { beforeEach, describe, expect, it } from "vitest"
+
 import { DbService } from "./db"
 
 describe("DbService", () => {

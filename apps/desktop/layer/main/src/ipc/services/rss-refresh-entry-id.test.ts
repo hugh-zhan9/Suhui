@@ -144,3 +144,46 @@ describe("resolveExistingEntryIdForRefresh", () => {
     ).toBe("entry_exact")
   })
 })
+
+describe("history URL identity", () => {
+  it("reuses a historical ID when RSS supplies a different GUID, preserving read state", () => {
+    const index = buildExistingEntryReuseIndex([
+      {
+        id: "local_history_example",
+        url: "https://blog.test/old/",
+        guid: "https://blog.test/old",
+        title: "Old title",
+        publishedAt: 1,
+        read: true,
+      },
+    ])
+    expect(
+      resolveExistingEntryIdForRefresh(index, {
+        guid: "rss-new-guid",
+        url: "https://blog.test/old/#top",
+        title: "Updated title",
+        publishedAt: 2,
+      }),
+    ).toBe("local_history_example")
+    expect(index.readById.get("local_history_example")).toBe(true)
+  })
+  it("does not merge ordinary RSS entries with distinct GUIDs at the same permalink", () => {
+    const index = buildExistingEntryReuseIndex([
+      {
+        id: "local_entry_1",
+        url: "https://blog.test/live/",
+        guid: "rss-guid-1",
+        title: "Update 1",
+        publishedAt: 1,
+      },
+    ])
+    expect(
+      resolveExistingEntryIdForRefresh(index, {
+        guid: "rss-guid-2",
+        url: "https://blog.test/live/",
+        title: "Update 2",
+        publishedAt: 2,
+      }),
+    ).toBeNull()
+  })
+})

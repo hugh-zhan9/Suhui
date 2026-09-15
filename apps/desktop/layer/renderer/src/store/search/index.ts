@@ -1,8 +1,8 @@
 import { EntryService } from "@suhui/database/services/entry"
-import { FeedService } from "@suhui/database/services/feed"
-import { SubscriptionService } from "@suhui/database/services/subscription"
 import { EntryAnnotationService } from "@suhui/database/services/entry-annotation"
 import { EntryRuleService } from "@suhui/database/services/entry-rule"
+import { FeedService } from "@suhui/database/services/feed"
+import { SubscriptionService } from "@suhui/database/services/subscription"
 import type { EntryModel } from "@suhui/store/entry/types"
 import type { FeedModel } from "@suhui/store/feed/types"
 import { dbStoreMorph } from "@suhui/store/morph/db-store"
@@ -14,6 +14,7 @@ import { useAtomValue } from "jotai"
 import { atomWithStorage } from "jotai/utils"
 
 import { jotaiStore } from "~/lib/jotai"
+import { normalizeRssTitleForRender } from "~/lib/rss-content-normalize"
 
 import { createZustandStore } from "../utils/helper"
 import { SearchType } from "./constants"
@@ -41,9 +42,10 @@ class SearchActions {
     set(createState)
   }
 
-  private createFuse<T extends object>(data: T[], keys: (keyof T)[]) {
+  private createFuse<T extends object>(data: T[], keys: (keyof T)[], ignoreLocation = false) {
     const options: IFuseOptions<T> = {
       keys: keys as any,
+      ignoreLocation,
     }
     const index = Fuse.createIndex(options.keys!, data)
     return new Fuse(data, options, index)
@@ -83,6 +85,7 @@ class SearchActions {
     }
     const searchableEntries = entries.map((entry) => ({
       ...entry,
+      title: normalizeRssTitleForRender(entry.title),
       localNotes: notesByEntry.get(entry.id) ?? [],
       localHighlights: highlightsByEntry.get(entry.id) ?? [],
       localTags: tagsByEntry.get(entry.id) ?? [],
@@ -98,6 +101,7 @@ class SearchActions {
 
       return {
         ...feed,
+        title: normalizeRssTitleForRender(feed.title),
         updatedAt: normalizedUpdatedAt,
         type: "feed" as const,
       } satisfies FeedModel
@@ -105,15 +109,11 @@ class SearchActions {
 
     const feedsMap = new Map(feeds.map((feed) => [feed.id, feed]))
 
-    const entriesFuse = this.createFuse(searchableEntries, [
-      "title",
-      "content",
-      "description",
-      "id",
-      "localNotes",
-      "localHighlights",
-      "localTags",
-    ])
+    const entriesFuse = this.createFuse(
+      searchableEntries,
+      ["title", "content", "description", "id", "localNotes", "localHighlights", "localTags"],
+      true,
+    )
     const feedsFuse = this.createFuse(feeds, ["title", "description", "id", "siteUrl", "url"])
     const subscriptionsFuse = this.createFuse(subscriptions, ["title", "category"])
 
@@ -123,7 +123,8 @@ class SearchActions {
         feeds: feeds.length,
         subscriptions: subscriptions.length,
       },
-      search(keyword: string) {
+      search(input: string) {
+        const keyword = input.trim()
         const type = jotaiStore.get(searchTypeAtom)
         const entries = type & SearchType.Entry ? entriesFuse.search(keyword) : []
         const feeds = type & SearchType.Feed ? feedsFuse.search(keyword) : []

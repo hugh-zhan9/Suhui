@@ -2,7 +2,7 @@ import { FeedViewType, getView } from "@suhui/constants"
 import { useEntriesQuery } from "@suhui/store/entry/hooks"
 import { entryActions, useEntryStore } from "@suhui/store/entry/store"
 import { getRuntimeEnv } from "@suhui/store/remote"
-import { useIsSubscribed, useFolderFeedsByFeedId } from "@suhui/store/subscription/hooks"
+import { useFolderFeedsByFeedId, useIsSubscribed } from "@suhui/store/subscription/hooks"
 import { unreadSyncService } from "@suhui/store/unread/store"
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react"
 
@@ -16,8 +16,8 @@ import {
   markDesktopInitialEntriesTerminalError,
 } from "~/initialize/readiness"
 
-import { dedupeEntryIdsPreserveOrder } from "./entry-id-utils"
 import { buildEntriesByViewQueryProps, getEntriesByViewQueryIdentity } from "./entries-query-props"
+import { dedupeEntryIdsPreserveOrder } from "./entry-id-utils"
 import {
   getPendingActiveEntryId,
   normalizeFeedIdForActiveSubscription,
@@ -166,8 +166,9 @@ export const useEntriesByView = ({ onReset }: { onReset?: () => void }) => {
   }, [activeEntryId, pendingActiveEntryId])
 
   const isFetchingFirstPage = query.isFetching && !query.isFetchingNextPage
+  const preserveScrollRef = useRef(false)
   useEffect(() => {
-    if (isFetchingFirstPage) onReset?.()
+    if (isFetchingFirstPage && !preserveScrollRef.current) onReset?.()
   }, [isFetchingFirstPage, onReset, query.queryKey])
 
   const groupByDate = useGeneralSettingKey("groupByDate")
@@ -198,6 +199,15 @@ export const useEntriesByView = ({ onReset }: { onReset?: () => void }) => {
     fetchNextPage: async () => {
       await query.fetchNextPage()
     },
+    refetchPreservingScroll: useCallback(async () => {
+      preserveScrollRef.current = true
+      try {
+        await query.refetch({ throwOnError: true })
+        unreadSyncService.resetFromRemote()
+      } finally {
+        preserveScrollRef.current = false
+      }
+    }, [query]),
     refetch: useCallback(async () => {
       await query.refetch()
       unreadSyncService.resetFromRemote()

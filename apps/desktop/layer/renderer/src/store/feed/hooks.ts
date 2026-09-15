@@ -14,6 +14,7 @@ import {
   ROUTE_FEED_PENDING,
 } from "~/constants"
 import { useRouteParams } from "~/hooks/biz/useRouteParams"
+import { normalizeRssTitleForRender } from "~/lib/rss-content-normalize"
 
 export type PreferredTitleTarget = {
   type: string
@@ -26,7 +27,7 @@ export const getPreferredTitle = (
   entry?: Pick<EntryModel, "authorUrl"> | null,
 ) => {
   if (!target?.id) {
-    return target?.title
+    return target?.type === "feed" ? normalizeRssTitleForRender(target.title) : target?.title
   }
 
   if (target.type === "inbox") {
@@ -35,7 +36,10 @@ export const getPreferredTitle = (
   }
 
   const subscription = getSubscriptionByFeedId(target.id)
-  return subscription?.title || target.title
+  return (
+    subscription?.title ||
+    (target.type === "feed" ? normalizeRssTitleForRender(target.title) : target.title)
+  )
 }
 
 export const useFeedHeaderTitle = () => {

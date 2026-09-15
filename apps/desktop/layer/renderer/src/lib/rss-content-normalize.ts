@@ -2,11 +2,11 @@ const decodeNumericEntities = (value: string) =>
   value
     .replaceAll(/&#(\d+);/g, (_, dec) => {
       const codePoint = Number.parseInt(dec, 10)
-      return Number.isNaN(codePoint) ? _ : String.fromCodePoint(codePoint)
+      return codePoint > 0x10ffff ? _ : String.fromCodePoint(codePoint)
     })
     .replaceAll(/&#x([0-9a-fA-F]+);/g, (_, hex) => {
       const codePoint = Number.parseInt(hex, 16)
-      return Number.isNaN(codePoint) ? _ : String.fromCodePoint(codePoint)
+      return codePoint > 0x10ffff ? _ : String.fromCodePoint(codePoint)
     })
 
 const decodeEntities = (value: string) =>
@@ -44,3 +44,6 @@ export const normalizeRssContentForRender = (content?: string | null) => {
 
   return raw
 }
+
+// Titles are rendered as React text, never interpreted as HTML.
+export const normalizeRssTitleForRender = (title?: string | null) => decodeEntitiesDeep(title || "")

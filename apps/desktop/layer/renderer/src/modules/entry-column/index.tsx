@@ -1,5 +1,6 @@
 import { FeedViewType, getView } from "@suhui/constants"
 import { useTitle } from "@suhui/hooks"
+import { IN_ELECTRON } from "@suhui/shared/constants"
 import { entryActions } from "@suhui/store/entry/store"
 import { useFeedById } from "@suhui/store/feed/hooks"
 import { useSubscriptionByFeedId } from "@suhui/store/subscription/hooks"
@@ -23,6 +24,7 @@ import { useFeedHeaderTitle } from "~/store/feed/hooks"
 import { aiTimelineEnabledAtom } from "./atoms/ai-timeline"
 import { AITimelineLoadingOverlay } from "./components/ai-timeline-loading/AITimelineLoadingOverlay"
 import { EntryColumnWrapper } from "./components/entry-column-wrapper/EntryColumnWrapper"
+import { FeedHistoryFooter } from "./components/FeedHistoryFooter"
 import { FooterMarkItem } from "./components/FooterMarkItem"
 import { useEntriesActions, useEntriesState } from "./context/EntriesContext"
 import { EntryItemSkeleton } from "./EntryItemSkeleton"
@@ -30,6 +32,7 @@ import { EntryColumnGrid } from "./grid"
 import { useAttachScrollBeyond } from "./hooks/useAttachScrollBeyond"
 import { useSnapEntryIdList } from "./hooks/useEntryIdListSnap"
 import { useEntryMarkReadHandler } from "./hooks/useEntryMarkReadHandler"
+import { useFeedHistory } from "./hooks/useFeedHistory"
 import { useNavigateFirstEntry } from "./hooks/useNavigateFirstEntry"
 import { EntryListHeader } from "./layouts/EntryListHeader"
 import { EntryEmptyList, EntryList } from "./list"
@@ -71,6 +74,20 @@ function EntryColumnContent() {
   } = useRouteParams()
 
   const feed = useFeedById(routeFeedId)
+  const subscription = useSubscriptionByFeedId(routeFeedId)
+  const historyFeedId =
+    IN_ELECTRON &&
+    view === FeedViewType.Articles &&
+    feed?.type === "feed" &&
+    subscription &&
+    !isCollection
+      ? routeFeedId
+      : undefined
+  const history = useFeedHistory(historyFeedId, actions.refetchPreservingScroll)
+  const historyInteracted = useRef(false)
+  useEffect(() => {
+    historyInteracted.current = false
+  }, [routeFeedId])
   const title = useFeedHeaderTitle()
   useTitle(title)
   // For local mode, we don't need isLoggedIn check to mark entries as read
@@ -119,6 +136,7 @@ function EntryColumnContent() {
     (e: React.UIEvent<HTMLDivElement>) => {
       handleScrollBeyond(e)
       handleScroll()
+      if (e.currentTarget.scrollTop > 0) historyInteracted.current = true
     },
     [handleScrollBeyond, handleScroll],
   )
@@ -190,6 +208,9 @@ function EntryColumnContent() {
         (!feed || feed?.type === "feed") && <AddFeedHelper />}
 
       <EntryListHeader refetch={actions.refetch} isRefreshing={isRefreshing} />
+      {historyFeedId && history.error && entriesIds.length === 0 && (
+        <FeedHistoryFooter history={history} interacted={historyInteracted} />
+      )}
 
       <EntryColumnWrapper onScroll={handleCombinedScroll} key={`${routeFeedId}-${view}`}>
         <PersistentEntryListBody
@@ -211,7 +232,16 @@ function EntryColumnContent() {
             groupCounts={groupedCounts}
             syncType={state.type}
             Footer={
-              isCollection ? void 0 : <FooterMarkItem view={view} fetchedTime={state.fetchedTime} />
+              isCollection ? (
+                void 0
+              ) : (
+                <>
+                  {historyFeedId && (
+                    <FeedHistoryFooter history={history} interacted={historyInteracted} />
+                  )}
+                  <FooterMarkItem view={view} fetchedTime={state.fetchedTime} />
+                </>
+              )
             }
           />
         </PersistentEntryListBody>

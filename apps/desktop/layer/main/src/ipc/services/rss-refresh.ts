@@ -39,8 +39,21 @@ type ExistingEntryReuseCandidate = EntryIdentityLike & {
 
 export type ExistingEntryReuseIndex = {
   idByIdentityKey: Map<string, string>
+  idByUrl: Map<string, string>
   idByTitlePublishedKey: Map<string, string>
   readById: Map<string, boolean>
+}
+
+export const normalizeEntryUrl = (value?: string | null) => {
+  if (!value) return ""
+  try {
+    const url = new URL(value)
+    url.hash = ""
+    url.pathname = url.pathname.replace(/\/+$/, "") || "/"
+    return url.href
+  } catch {
+    return value.trim()
+  }
 }
 
 export const buildRefreshedFeed = (existing: FeedRow, parsed: ParsedFeed) => {
@@ -158,10 +171,18 @@ export const buildExistingEntryReuseIndex = (
 ): ExistingEntryReuseIndex => {
   const candidateByIdentityKey = new Map<string, ExistingEntryReuseCandidate>()
   const candidateByTitlePublishedKey = new Map<string, ExistingEntryReuseCandidate>()
+  const candidateByUrl = new Map<string, ExistingEntryReuseCandidate>()
   const readById = new Map<string, boolean>()
 
   for (const entry of entries) {
     readById.set(entry.id, normalizeRead(entry.read))
+    const url = normalizeEntryUrl(entry.url)
+    if (
+      url &&
+      entry.id.startsWith("local_history_") &&
+      shouldPreferReuseCandidate(candidateByUrl.get(url), entry)
+    )
+      candidateByUrl.set(url, entry)
 
     const identityKey = buildEntryIdentityKey(entry)
     const existingIdentityCandidate = candidateByIdentityKey.get(identityKey)
@@ -179,6 +200,7 @@ export const buildExistingEntryReuseIndex = (
   }
 
   return {
+    idByUrl: new Map(Array.from(candidateByUrl, ([url, entry]) => [url, entry.id])),
     idByIdentityKey: new Map(
       Array.from(candidateByIdentityKey.entries()).map(([key, entry]) => [key, entry.id]),
     ),
@@ -195,6 +217,9 @@ export const resolveExistingEntryIdForRefresh = (
 ) => {
   const identityMatch = index.idByIdentityKey.get(buildEntryIdentityKey(entry))
   if (identityMatch) return identityMatch
+
+  const urlMatch = index.idByUrl.get(normalizeEntryUrl(entry.url))
+  if (urlMatch) return urlMatch
 
   const titlePublishedKey = buildEntryTitlePublishedKey(entry)
   if (!titlePublishedKey) return null

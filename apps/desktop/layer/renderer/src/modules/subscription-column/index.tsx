@@ -30,6 +30,7 @@ import { WindowUnderBlur } from "../../components/ui/background"
 import { AnnotationLibraryLink } from "../annotations/AnnotationLibraryLink"
 import { COMMAND_ID } from "../command/commands/id"
 import { useCommandBinding } from "../command/hooks/use-command-binding"
+import { ArticleSearchButton } from "../panel/ArticleSearchButton"
 import { getSelectedFeedIds, resetSelectedFeedIds, setSelectedFeedIds } from "./atom"
 import { useShouldFreeUpSpace } from "./hook"
 import { SubscriptionListGuard } from "./subscription-list/SubscriptionListGuard"
@@ -162,6 +163,7 @@ export function SubscriptionColumn({
       <div className="relative mb-2 mt-3">
         <TabsRow />
       </div>
+      <ArticleSearchButton />
       <AnnotationLibraryLink />
       <div
         className={cn("relative mt-1 flex size-full", !shouldFreeUpSpace && "overflow-hidden")}

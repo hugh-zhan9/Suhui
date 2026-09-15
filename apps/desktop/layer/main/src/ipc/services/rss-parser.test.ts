@@ -3,6 +3,15 @@ import { describe, expect, it } from "vitest"
 import { parseRssFeed } from "./rss-parser"
 
 describe("rss parser", () => {
+  it.each([
+    ["rss", "<rss><channel>", "</channel></rss>"],
+    ["atom", "<feed>", "</feed>"],
+  ])("decodes %s feed titles", (_, start, end) => {
+    const parsed = parseRssFeed(`${start}<title><![CDATA[Lynan&amp;#39;s Page]]></title>${end}`)
+    expect(parsed.title).toBe("Lynan's Page")
+    expect(parsed.items).toEqual([])
+  })
+
   it("应去除描述中重复标题与 HTML 噪音", () => {
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
@@ -174,5 +183,41 @@ describe("rss parser", () => {
 
     expect(parsed.items[0]?.publishedAt).toBe(0)
     expect(parsed.items[1]?.publishedAt).toBe(0)
+  })
+})
+
+describe("localized RSS publication dates", () => {
+  const parseDate = (date: string) =>
+    parseRssFeed(
+      `<rss><channel><title>Blog</title><item><title>Article</title><guid>article-1</guid><pubDate>${date}</pubDate></item></channel></rss>`,
+    ).items[0]!.publishedAt
+
+  it.each([
+    ["7 月 15 日，2026", "2026-07-15"],
+    ["6月21日,2026", "2026-06-21"],
+    ["2 月 29 日，2024", "2024-02-29"],
+    ["7&#160;月 15 日，2026", "2026-07-15"],
+  ])("parses %s as a date-only UTC timestamp", (input, expected) => {
+    expect(parseDate(input)).toBe(Date.parse(`${expected}T00:00:00Z`))
+  })
+
+  it.each([
+    "2 月 29 日，2026",
+    "4 月 31 日，2026",
+    "13 月 1 日，2026",
+    "0 月 1 日，2026",
+    "1 月 0 日，2026",
+    "7 月 15 日",
+    "7 月，2026",
+  ])("keeps invalid or incomplete date %s unknown", (input) => {
+    expect(parseDate(input)).toBe(0)
+  })
+
+  it("keeps recent RSS articles ahead of older backfilled articles", () => {
+    const recent = { id: "rss", publishedAt: parseDate("7 月 15 日，2026") }
+    const history = { id: "history", publishedAt: Date.parse("2025-12-27T16:00:00Z") }
+    expect(
+      [history, recent].sort((a, b) => b.publishedAt - a.publishedAt).map((entry) => entry.id),
+    ).toEqual(["rss", "history"])
   })
 })

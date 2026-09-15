@@ -22,11 +22,11 @@ const decodeNumericEntities = (value: string) =>
   value
     .replaceAll(/&#(\d+);/g, (_, dec) => {
       const codePoint = Number.parseInt(dec, 10)
-      return Number.isNaN(codePoint) ? _ : String.fromCodePoint(codePoint)
+      return codePoint > 0x10ffff ? _ : String.fromCodePoint(codePoint)
     })
     .replaceAll(/&#x([0-9a-fA-F]+);/g, (_, hex) => {
       const codePoint = Number.parseInt(hex, 16)
-      return Number.isNaN(codePoint) ? _ : String.fromCodePoint(codePoint)
+      return codePoint > 0x10ffff ? _ : String.fromCodePoint(codePoint)
     })
 
 const decodeEntities = (value: string) =>
@@ -103,6 +103,21 @@ const pickTimestamp = (raw: string) => {
   if (!raw) return 0
   const normalized = normalizeTimestampString(raw)
   if (!normalized) return 0
+  // Some feeds localize pubDate, e.g. Lynan's "7 月 15 日，2026".
+  // Date-only values use UTC midnight; reject calendar overflow rather than inventing a date.
+  const localized = normalized.match(/^(\d{1,2})\s*月\s*(\d{1,2})\s*日\s*[，,]\s*(\d{4})$/)
+  if (localized) {
+    const [, monthText, dayText, yearText] = localized
+    const year = Number(yearText)
+    const month = Number(monthText)
+    const day = Number(dayText)
+    const date = new Date(Date.UTC(year, month - 1, day))
+    return date.getUTCFullYear() === year &&
+      date.getUTCMonth() === month - 1 &&
+      date.getUTCDate() === day
+      ? date.getTime()
+      : 0
+  }
   const timestamp = new Date(normalized).getTime()
   return Number.isNaN(timestamp) ? 0 : timestamp
 }
@@ -166,7 +181,7 @@ const RSS_TIME_TAGS = ["pubDate", "dc:date", "date", "published", "updated", "is
 const ATOM_TIME_TAGS = ["published", "updated", "dc:date", "date"] as const
 
 const parseRss = (channelXml: string): ParsedFeed => {
-  const title = findTagText(channelXml, ["title"])
+  const title = decodeEntitiesDeep(findTagText(channelXml, ["title"]))
   const description = pickDescription(title, findTagText(channelXml, ["description"]))
   const siteUrl = findTagText(channelXml, ["link"])
   const imageBlock = findBlocks(channelXml, "image")[0] || ""
@@ -202,7 +217,7 @@ const parseRss = (channelXml: string): ParsedFeed => {
 }
 
 const parseAtom = (feedXml: string): ParsedFeed => {
-  const title = findTagText(feedXml, ["title"])
+  const title = decodeEntitiesDeep(findTagText(feedXml, ["title"]))
   const description = pickDescription(title, findTagText(feedXml, ["subtitle"]))
   const siteUrl = findLinkHref(feedXml, "alternate") || findTagText(feedXml, ["link"])
   const image = findTagText(feedXml, ["logo"])

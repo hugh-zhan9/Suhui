@@ -50,8 +50,12 @@ export async function readability(baseUrl: string) {
     },
   }).then(decodeResponseBodyChars)
 
+  return readabilityFromHtml(new URL(baseUrl).origin, dirtyDocumentString)
+}
+
+/** Extract without making another network request; callers own URL and response validation. */
+export function readabilityFromHtml(baseUrl: string, dirtyDocumentString: string) {
   const sanitizedDocumentString = sanitizeHTMLString(dirtyDocumentString)
-  const baseOrigin = new URL(baseUrl).origin
 
   // FIXME: linkedom does not handle relative addresses in strings. Refer to
   // @see https://github.com/WebReflection/linkedom/issues/153
@@ -59,11 +63,11 @@ export async function readability(baseUrl: string) {
   const { document } = parseHTML(sanitizedDocumentString)
 
   document.querySelectorAll("a").forEach((a) => {
-    a.href = replaceRelativeAddress(baseOrigin, a.href)
+    a.href = replaceRelativeAddress(baseUrl, a.href)
   })
   ;(["img", "audio", "video"] as const).forEach((tag) => {
     document.querySelectorAll(tag).forEach((img) => {
-      img.src = img.src && replaceRelativeAddress(baseOrigin, img.src)
+      img.src = img.src && replaceRelativeAddress(baseUrl, img.src)
     })
   })
 

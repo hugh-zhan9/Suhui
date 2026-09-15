@@ -12,6 +12,8 @@ import { IpcMethod, IpcService } from "electron-ipc-decorator"
 import { entryQueryService } from "~/application/entry/query-service"
 import type { EntryListQuery } from "~/application/entry/query-types"
 import { entryApplicationService } from "~/application/entry/service"
+import { feedHistoryService } from "~/application/feed/history-service"
+import { runFeedOperation } from "~/application/feed/operation"
 import { feedApplicationService } from "~/application/feed/service"
 import { localReadingPipeline } from "~/application/local-reading/pipeline"
 import { subscriptionApplicationService } from "~/application/subscription/service"
@@ -508,6 +510,18 @@ export class DbService extends IpcService {
   @IpcMethod()
   async refreshFeed(_context: IpcContext, feedId: string, meta?: RefreshInvocationMeta) {
     await this.waitForDatabase()
+    return DBManager.runTrackedOperation(() =>
+      runFeedOperation(feedId, () => this.refreshFeedUnlocked(feedId, meta)),
+    )
+  }
+
+  @IpcMethod()
+  async loadFeedHistory(_context: IpcContext, feedId: string) {
+    await this.waitForDatabase()
+    return feedHistoryService.loadMore(feedId)
+  }
+
+  private async refreshFeedUnlocked(feedId: string, meta?: RefreshInvocationMeta) {
     const trace = buildRefreshTrace("single", {
       source: meta?.source || "manual-single",
       traceId: meta?.traceId,

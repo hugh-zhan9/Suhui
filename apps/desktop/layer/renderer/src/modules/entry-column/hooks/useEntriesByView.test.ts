@@ -76,8 +76,9 @@ vi.mock("~/hooks/biz/useRouteParams", () => ({
   useRouteParams: () => testState.route,
 }))
 
-import * as entriesByView from "./useEntriesByView"
 import { usePrefetchEntryDetail } from "@suhui/store/entry/hooks"
+
+import * as entriesByView from "./useEntriesByView"
 
 const route = (overrides: Record<string, unknown> = {}) =>
   ({
@@ -170,8 +171,9 @@ describe("useEntriesByView startup readiness", () => {
   let queryClient: QueryClient
   let latestResult: ReturnType<typeof entriesByView.useEntriesByView> | undefined
 
+  const onReset = vi.fn()
   const Harness = () => {
-    latestResult = entriesByView.useEntriesByView({})
+    latestResult = entriesByView.useEntriesByView({ onReset })
     return null
   }
 
@@ -213,6 +215,7 @@ describe("useEntriesByView startup readiness", () => {
     testState.queryProps.length = 0
     testState.requests.length = 0
     latestResult = undefined
+    onReset.mockClear()
     queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     })
@@ -226,6 +229,28 @@ describe("useEntriesByView startup readiness", () => {
     queryClient.clear()
     container.remove()
     vi.restoreAllMocks()
+  })
+
+  it("preserves scroll for history reloads while normal refresh still resets", async () => {
+    await render()
+    let finish!: () => void
+    testState.query.refetch.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve
+        }),
+    )
+    const request = latestResult!.refetchPreservingScroll()
+    testState.query.isFetching = true
+    await render()
+    expect(onReset).not.toHaveBeenCalled()
+    finish()
+    await request
+    testState.query.isFetching = false
+    await render()
+    testState.query.isFetching = true
+    await render()
+    expect(onReset).toHaveBeenCalledTimes(1)
   })
 
   it("does not request the Desktop page until metadata makes the route scope reliable", async () => {

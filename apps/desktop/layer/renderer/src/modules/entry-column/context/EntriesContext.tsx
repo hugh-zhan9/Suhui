@@ -21,6 +21,7 @@ type EntriesStateContextValue = {
 type EntriesActionsContextValue = {
   fetchNextPage: () => void | Promise<void>
   refetch: () => void | Promise<void>
+  refetchPreservingScroll: () => void | Promise<void>
   setOnReset: (cb: (() => void) | null) => void
   getNeighbors: (entryId: string) => {
     hasPrev: boolean
@@ -80,13 +81,19 @@ export const EntriesProvider: React.FC<React.PropsWithChildren> = ({ children })
   }, [entries.fetchNextPage])
 
   const refetchRef = useRef(entries.refetch)
+  const refetchPreservingScrollRef = useRef(entries.refetchPreservingScroll)
   useLayoutEffect(() => {
     refetchRef.current = entries.refetch
-  }, [entries.refetch])
+    refetchPreservingScrollRef.current = entries.refetchPreservingScroll
+  }, [entries.refetch, entries.refetchPreservingScroll])
 
   // Stable actions that reference latest refs
   const fetchNextPageStable = useCallback(() => fetchNextPageRef.current?.(), [])
   const refetchStable = useCallback(() => refetchRef.current?.(), [])
+  const refetchPreservingScrollStable = useCallback(
+    () => refetchPreservingScrollRef.current?.(),
+    [],
+  )
   const setOnResetStable = useCallback((cb: (() => void) | null) => {
     onResetRef.current = cb
   }, [])
@@ -128,10 +135,17 @@ export const EntriesProvider: React.FC<React.PropsWithChildren> = ({ children })
     () => ({
       fetchNextPage: fetchNextPageStable,
       refetch: refetchStable,
+      refetchPreservingScroll: refetchPreservingScrollStable,
       setOnReset: setOnResetStable,
       getNeighbors: getNeighborsStable,
     }),
-    [fetchNextPageStable, refetchStable, setOnResetStable, getNeighborsStable],
+    [
+      fetchNextPageStable,
+      refetchStable,
+      refetchPreservingScrollStable,
+      setOnResetStable,
+      getNeighborsStable,
+    ],
   )
 
   return (

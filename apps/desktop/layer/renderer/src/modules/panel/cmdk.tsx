@@ -1,5 +1,4 @@
 import { EmptyIcon } from "@suhui/components/icons/empty.jsx"
-import { Logo } from "@suhui/components/icons/logo.jsx"
 import { ScrollArea } from "@suhui/components/ui/scroll-area/index.js"
 import {
   Select,
@@ -29,6 +28,7 @@ import { useModalStack } from "~/components/ui/modal/stacked/hooks"
 import { ROUTE_ENTRY_PENDING } from "~/constants"
 import { useNavigateEntry } from "~/hooks/biz/useNavigateEntry"
 import { useI18n } from "~/hooks/common"
+import { normalizeRssTitleForRender } from "~/lib/rss-content-normalize"
 import { FeedIcon } from "~/modules/feed/feed-icon"
 import { searchActions, useSearchStore, useSearchType } from "~/store/search"
 import { SearchType } from "~/store/search/constants"
@@ -40,6 +40,7 @@ const SearchCmdKContext = React.createContext<Promise<SearchInstance> | null>(nu
 export const SearchCmdK: React.FC = () => {
   const { t } = useTranslation()
   const open = useAppSearchOpen()
+  const searchType = useSearchType()
 
   const [searchInstance, setSearchInstance] = React.useState<Promise<SearchInstance> | null>(null)
   React.useEffect(() => {
@@ -51,6 +52,7 @@ export const SearchCmdK: React.FC = () => {
     tracker.searchOpen()
 
     // Refresh data
+    searchActions.reset()
     setPage(0)
     setSearchInstance(() => searchActions.createLocalDbSearch())
   }, [open])
@@ -149,7 +151,11 @@ export const SearchCmdK: React.FC = () => {
         <Command.Input
           className="w-full shrink-0 border-b border-border bg-transparent p-4 px-5 text-lg leading-4"
           ref={inputRef}
-          placeholder={searchActions.getCurrentKeyword() || t("search.placeholder")}
+          placeholder={
+            searchType === SearchType.Entry
+              ? "搜索文章标题、正文、笔记或标签…"
+              : t("search.placeholder")
+          }
           onValueChange={handleSearch}
           onCompositionStart={onCompositionStart}
           onCompositionEnd={onCompositionEnd}
@@ -267,6 +273,7 @@ const SearchItem = memo(function Item({
       key={`${id}-${feedId}-${entryId}`}
       value={`${id}-${feedId}-${entryId}`}
       onSelect={() => {
+        setAppSearchOpen(false)
         navigateEntry({
           feedId: feedId!,
           entryId,
@@ -276,9 +283,11 @@ const SearchItem = memo(function Item({
     >
       <div className="relative flex w-full items-center justify-between px-1 py-2">
         {feed && <FeedIcon className="mr-2 size-5 shrink-0 rounded" target={feed} />}
-        <span className="block min-w-0 flex-1 shrink-0 truncate">{title}</span>
+        <span className="block min-w-0 flex-1 shrink-0 truncate">
+          {normalizeRssTitleForRender(title)}
+        </span>
         <span className="block min-w-0 shrink-0 grow-0 text-xs font-medium text-zinc-800 opacity-60 dark:text-slate-200/80">
-          {subtitle}
+          {normalizeRssTitleForRender(subtitle)}
         </span>
       </div>
     </Command.Item>
@@ -409,7 +418,7 @@ const SearchPlaceholder = () => {
           {t("search.empty.no_results")}
         </div>
       ) : (
-        <Logo className="size-12 opacity-80 grayscale" />
+        <i className="i-mgc-search-cute-re size-12 text-text-tertiary" aria-hidden />
       )}
     </Command.Empty>
   )
