@@ -180,6 +180,35 @@ describe("SqliteBackupStorage", () => {
     ).rejects.toThrow("one database entity")
     await tx.rollback()
   })
+  it("backs up partial batches and complete translations without letting an old merge undo a retranslation", async () => {
+    raw = openDatabase()
+    raw.exec(`INSERT INTO entries (id, guid, inserted_at, published_at) VALUES ('entry','entry',0,0);
+      INSERT INTO translations (entry_id, language, content, created_at) VALUES ('entry','zh-CN','old complete','2020-01-01T00:00:00.000Z');
+      INSERT INTO translation_batches (entry_id, language, source_hash, plan_version, target, batch_id, config_hash, "values", updated_at)
+        VALUES ('entry','zh-CN','source',1,'content','content:1','model','["old batch"]','2020-01-01T00:00:00.000Z');`)
+    const storage = new SqliteBackupStorage()
+    const records = await collect(storage)
+    expect(records.find((record) => record.entity === "translation_batches")?.value.values).toEqual(
+      ["old batch"],
+    )
+    raw.exec(`UPDATE translations SET content='new complete', created_at='2026-01-01T00:00:00.000Z';
+      UPDATE translation_batches SET "values"='["new batch"]', updated_at='2026-01-01T00:00:00.000Z';`)
+    const merge = await storage.beginRestore("merge")
+    for (const record of records) await merge.upsert([record])
+    await merge.commit()
+    expect(raw.prepare("SELECT content FROM translations").get()?.content).toBe("new complete")
+    expect(raw.prepare('SELECT "values" FROM translation_batches').get()?.values).toBe(
+      '["new batch"]',
+    )
+    const replace = await storage.beginRestore("replace")
+    await replace.clear()
+    for (const record of records) await replace.upsert([record])
+    await replace.commit()
+    expect(raw.prepare("SELECT content FROM translations").get()?.content).toBe("old complete")
+    expect(raw.prepare('SELECT "values" FROM translation_batches').get()?.values).toBe(
+      '["old batch"]',
+    )
+  })
 })
 
 describe("normalizeSqliteValue", () => {

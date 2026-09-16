@@ -14,7 +14,10 @@ const { entry, useQueries } = vi.hoisted(() => ({
   },
   useQueries: vi.fn((options) => options.queries),
 }))
-vi.mock("@tanstack/react-query", () => ({ useQueries }))
+vi.mock("@tanstack/react-query", () => ({
+  useQueries,
+  useQueryClient: () => ({ setQueryData: vi.fn() }),
+}))
 vi.mock("../entry/hooks", () => ({ useEntryList: () => [entry] }))
 vi.mock("@suhui/database/services/translation", () => ({ TranslationService: {} }))
 
@@ -108,5 +111,24 @@ describe("translation request scopes", () => {
     expect(translationActions.getTranslation("scope", "zh-CN")).toBeUndefined()
     expect(translationActions.getProgress("scope", "zh-CN")).toBeUndefined()
     expect(translationActions.getProgress("scope", "zh-CN", false)).toBeUndefined()
+  })
+  it("only the explicit retranslation action requests force", async () => {
+    const generate = vi
+      .spyOn(translationSyncService, "generateTranslation")
+      .mockResolvedValue({} as any)
+    const [query] = usePrefetchEntryTranslation({
+      entryIds: ["scope"],
+      language: "zh-CN",
+      enabled: true,
+      withContent: true,
+    }) as any
+    await query.queryFn()
+    expect(generate.mock.calls[0]![0].force).toBeUndefined()
+    await query.retranslate()
+    expect(generate.mock.calls[1]![0]).toMatchObject({
+      withContent: true,
+      force: true,
+      target: "content",
+    })
   })
 })

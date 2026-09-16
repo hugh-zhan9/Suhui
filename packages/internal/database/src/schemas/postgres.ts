@@ -165,6 +165,30 @@ export const translationsTable = pgTable(
   (t) => [uniqueIndex("translation-unique-index").on(t.entryId, t.language)],
 )
 
+// Successful paragraph batches are durable records, including partially translated articles.
+export const translationBatchesTable = pgTable(
+  "translation_batches",
+  (t) => ({
+    entryId: t
+      .text("entry_id")
+      .notNull()
+      .references(() => entriesTable.id, { onDelete: "cascade" }),
+    language: t.text("language").$type<SupportedActionLanguage>().notNull(),
+    sourceHash: t.text("source_hash").notNull(),
+    planVersion: t.integer("plan_version").notNull(),
+    target: t.text("target").$type<"title" | "content" | "readabilityContent">().notNull(),
+    batchId: t.text("batch_id").notNull(),
+    configHash: t.text("config_hash").notNull(),
+    values: t.jsonb("values").$type<string[]>().notNull(),
+    updatedAt: t.text("updated_at").notNull(),
+  }),
+  (t) => [
+    primaryKey({
+      columns: [t.entryId, t.language, t.sourceHash, t.planVersion, t.target, t.batchId],
+    }),
+  ],
+)
+
 export const imagesTable = pgTable("images", (t) => ({
   url: t.text("url").notNull().primaryKey(),
   colors: t.jsonb("colors").$type<ImageColorsResult>().notNull(),

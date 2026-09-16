@@ -121,6 +121,8 @@
   "entry.translation.failed": "翻譯失敗，點擊關閉",
   "entry.translation.label": "翻譯",
   "entry.translation.progress": "正在翻譯 {{completed}}/{{total}} 批",
+  "entry.translation.resume": "繼續翻譯",
+  "entry.translation.restart": "重新翻譯全文",
   "entry.translation.translating": "正在翻譯",
   "entry_actions.copied_notify": "{{which}}已複製到剪貼簿",
   "entry_actions.copy_link": "複製連結",

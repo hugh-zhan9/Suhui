@@ -28,7 +28,8 @@ export interface TranslationProgressState {
   requestId: string
   status: "translating" | "partial" | "complete" | "incomplete" | "error"
   batchState?: TranslationBatchState
-  retryingBatchId?: string
+  retryingBatchIds?: string[]
+  generationActive?: boolean
   completedBatches: number
   totalBatches: number
   error?: string
@@ -50,7 +51,7 @@ const immerSet = createImmerSetter(useTranslationStore)
 
 class TranslationActions implements Hydratable, Resetable {
   async hydrate() {
-    // Persisted rows are validated against provider and source fingerprints in main
+    // Persisted rows are validated against source fingerprints in main
     // before they are exposed to this session.
     translationActions.clearInSession()
   }
@@ -157,28 +158,122 @@ class TranslationSyncService {
   private retries = new Map<string, Promise<GeneratedEntryTranslation>>()
 
   retryBatch(entryId: string, language: SupportedActionLanguage, batchId: string) {
-    const key = `${entryId}:${language}`
+    const progress = translationActions.getProgress(entryId, language)
+    const key = `${entryId}:${language}:${progress?.requestId}:${batchId}`
     const pending = this.retries.get(key)
     if (pending) return pending
-    const progress = translationActions.getProgress(entryId, language)
     if (
       !progress?.batchState ||
-      progress.status !== "incomplete" ||
+      progress.generationActive ||
+      !["incomplete", "partial"].includes(progress.status) ||
       !progress.batchState.failedBatches.some((failure) => failure.id === batchId)
     ) {
       return Promise.reject(new Error("当前批次不可重试"))
     }
-    const job = this.generateTranslation({
-      entryId,
-      language,
-      withContent: true,
-      target: progress.batchState.target,
-      retry: { sessionId: progress.batchState.sessionId, batchId },
-    }).finally(() => {
+    const job = this.runRetry(entryId, language, batchId, progress).finally(() => {
       this.retries.delete(key)
     })
     this.retries.set(key, job)
     return job
+  }
+
+  private async runRetry(
+    entryId: string,
+    language: SupportedActionLanguage,
+    batchId: string,
+    root: TranslationProgressState,
+  ): Promise<GeneratedEntryTranslation> {
+    const ipcRenderer =
+      typeof window === "undefined" ? undefined : (window as any).electron?.ipcRenderer
+    if (!ipcRenderer) throw new Error("翻译功能仅在桌面应用中可用")
+    const requestId = globalThis.crypto.randomUUID()
+    const { sessionId } = root.batchState!
+    const current = () => {
+      const value = translationActions.getProgress(entryId, language)
+      return value?.requestId === root.requestId && value.batchState?.sessionId === sessionId
+        ? value
+        : undefined
+    }
+    const write = (value: TranslationProgressState) =>
+      translationActions.setProgress(entryId, language, value)
+    write({
+      ...root,
+      status: "partial",
+      error: undefined,
+      retryingBatchIds: [...(root.retryingBatchIds ?? []), batchId],
+    })
+    const apply = (result: GeneratedEntryTranslation) => {
+      const state = current()
+      const snapshot = result.batchState
+      if (
+        !state ||
+        result.entryId !== entryId ||
+        result.language !== language ||
+        !snapshot ||
+        snapshot.sessionId !== sessionId ||
+        (snapshot.revision ?? 0) < (state.batchState?.revision ?? 0)
+      )
+        return
+      translationActions.upsertManyInSession([
+        {
+          entryId,
+          language,
+          title: result.title,
+          [root.batchState!.target]: result[root.batchState!.target],
+        },
+      ])
+      write({
+        ...state,
+        batchState: snapshot,
+        completedBatches: snapshot.completedBatches,
+        totalBatches: snapshot.totalBatches,
+      })
+    }
+    const dispose = ipcRenderer.on(
+      TRANSLATION_PROGRESS_CHANNEL,
+      (_event: unknown, event: EntryTranslationProgress) => {
+        if (
+          event?.requestId === requestId &&
+          event.entryId === entryId &&
+          event.language === language
+        )
+          apply(event.translation)
+      },
+    )
+    try {
+      const result = (await ipcRenderer.invoke("translation.generate", {
+        entryId,
+        language,
+        requestId,
+        withContent: true,
+        target: root.batchState!.target,
+        retry: { sessionId, batchId },
+      })) as GeneratedEntryTranslation
+      apply(result)
+      return result
+    } catch (error) {
+      const state = current()
+      if (state) write({ ...state, error: error instanceof Error ? error.message : String(error) })
+      throw error
+    } finally {
+      dispose()
+      const state = current()
+      if (state) {
+        const retryingBatchIds = state.retryingBatchIds?.filter((id) => id !== batchId) ?? []
+        write({
+          ...state,
+          retryingBatchIds,
+          status:
+            retryingBatchIds.length > 0
+              ? "partial"
+              : state.batchState?.failedBatches.length
+                ? "incomplete"
+                : state.error
+                  ? "error"
+                  : "complete",
+        })
+      }
+    }
   }
   async translateText(params: {
     text: string
@@ -199,7 +294,7 @@ class TranslationSyncService {
     language: SupportedActionLanguage
     withContent?: boolean
     target: "content" | "readabilityContent"
-    retry?: { sessionId: string; batchId: string }
+    force?: boolean
   }): Promise<GeneratedEntryTranslation> {
     if (typeof window === "undefined" || !(window as any).electron?.ipcRenderer) {
       throw new Error("翻译功能仅在桌面应用中可用")
@@ -228,14 +323,12 @@ class TranslationSyncService {
         },
       ])
     }
-    const previous = params.retry ? getProgress() : undefined
     setProgress({
-      ...previous,
-      retryingBatchId: params.retry?.batchId,
+      generationActive: true,
       requestId,
       status: "translating",
-      completedBatches: previous?.completedBatches ?? 0,
-      totalBatches: previous?.totalBatches ?? 0,
+      completedBatches: 0,
+      totalBatches: 0,
     })
     const dispose = withContent
       ? ipcRenderer.on(
@@ -264,7 +357,7 @@ class TranslationSyncService {
               requestId,
               status: "partial",
               batchState: progress.translation.batchState,
-              retryingBatchId: params.retry?.batchId,
+              generationActive: true,
               completedBatches: progress.completedBatches,
               totalBatches: progress.totalBatches,
             })
@@ -293,7 +386,7 @@ class TranslationSyncService {
       if (current?.requestId === requestId) {
         setProgress({
           requestId,
-          status: params.retry && current.batchState?.failedBatches.length ? "incomplete" : "error",
+          status: "error",
           batchState: current.batchState,
           completedBatches: current.completedBatches,
           totalBatches: current.totalBatches,

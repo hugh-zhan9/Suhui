@@ -1,7 +1,7 @@
-import { eq, inArray } from "drizzle-orm"
+import { and, eq, inArray, sql } from "drizzle-orm"
 
 import { db } from "../db"
-import { translationsTable } from "../schemas"
+import { translationBatchesTable, translationsTable } from "../schemas"
 import type { TranslationSchema } from "../schemas/types"
 import type { Resetable } from "./internal/base"
 
@@ -21,23 +21,62 @@ class TranslationServiceStatic implements Resetable {
     return db.query.translationsTable.findMany()
   }
 
-  async purgeExpiredTranslations() {
-    const translations = await db.query.translationsTable.findMany()
-    const translationsToClean = translations.filter(
-      (translation) =>
-        new Date(translation.createdAt) < new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-    )
-    if (translationsToClean.length === 0) return 0
-    await db.delete(translationsTable).where(
-      inArray(
-        translationsTable.entryId,
-        translationsToClean.map((t) => t.entryId),
-      ),
-    )
-    return translationsToClean.length
+  getBatches(
+    entryId: string,
+    language: TranslationSchema["language"],
+    sourceHash: string,
+    planVersion: number,
+  ) {
+    return db
+      .select()
+      .from(translationBatchesTable)
+      .where(
+        and(
+          eq(translationBatchesTable.entryId, entryId),
+          eq(translationBatchesTable.language, language),
+          eq(translationBatchesTable.sourceHash, sourceHash),
+          eq(translationBatchesTable.planVersion, planVersion),
+        ),
+      )
+  }
+
+  async saveBatch(data: typeof translationBatchesTable.$inferInsert) {
+    await db
+      .insert(translationBatchesTable)
+      .values(data)
+      .onConflictDoUpdate({
+        target: [
+          translationBatchesTable.entryId,
+          translationBatchesTable.language,
+          translationBatchesTable.sourceHash,
+          translationBatchesTable.planVersion,
+          translationBatchesTable.target,
+          translationBatchesTable.batchId,
+        ],
+        set: { values: data.values, configHash: data.configHash, updatedAt: data.updatedAt },
+      })
+  }
+
+  async clearBatches(
+    entryId: string,
+    language: TranslationSchema["language"],
+    sourceHash: string,
+    target: "content" | "readabilityContent",
+  ) {
+    await db
+      .delete(translationBatchesTable)
+      .where(
+        and(
+          eq(translationBatchesTable.entryId, entryId),
+          eq(translationBatchesTable.language, language),
+          eq(translationBatchesTable.sourceHash, sourceHash),
+          inArray(translationBatchesTable.target, ["title", target]),
+        ),
+      )
   }
 
   async purgeAllForMaintenance() {
+    await db.delete(translationBatchesTable).execute()
     await db.delete(translationsTable).execute()
   }
 
@@ -69,8 +108,18 @@ class TranslationServiceStatic implements Resetable {
       })
   }
 
-  async replaceTranslation(data: Omit<TranslationSchema, "createdAt">) {
+  async replaceTranslation(
+    data: Omit<TranslationSchema, "createdAt">,
+    readerTarget?: "content" | "readabilityContent",
+  ) {
     const createdAt = new Date().toISOString()
+    // A different target may finish concurrently. Preserve its current row value,
+    // never the snapshot read before awaiting AI. A different source cannot be mixed.
+    const preserve = (
+      column: (typeof translationsTable)["description" | "content" | "readabilityContent"],
+    ) => sql`
+      CASE WHEN ${translationsTable.sourceHash} = ${data.sourceHash ?? null}
+      THEN ${column} ELSE NULL END`
     await db
       .insert(translationsTable)
       .values({ ...data, createdAt })
@@ -78,9 +127,17 @@ class TranslationServiceStatic implements Resetable {
         target: [translationsTable.entryId, translationsTable.language],
         set: {
           title: data.title ?? null,
-          description: data.description ?? null,
-          content: data.content ?? null,
-          readabilityContent: data.readabilityContent ?? null,
+          description: readerTarget
+            ? preserve(translationsTable.description)
+            : (data.description ?? null),
+          content:
+            readerTarget === "readabilityContent"
+              ? preserve(translationsTable.content)
+              : (data.content ?? null),
+          readabilityContent:
+            readerTarget === "content"
+              ? preserve(translationsTable.readabilityContent)
+              : (data.readabilityContent ?? null),
           sourceHash: data.sourceHash ?? null,
           configHash: data.configHash ?? null,
           createdAt,
@@ -89,6 +146,7 @@ class TranslationServiceStatic implements Resetable {
   }
 
   async purgeByEntryIdForMaintenance(entryId: string) {
+    await db.delete(translationBatchesTable).where(eq(translationBatchesTable.entryId, entryId))
     await db.delete(translationsTable).where(eq(translationsTable.entryId, entryId))
   }
 }

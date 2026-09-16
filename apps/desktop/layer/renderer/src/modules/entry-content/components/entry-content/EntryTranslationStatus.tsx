@@ -16,7 +16,7 @@ export function EntryTranslationStatus({
   entryId: string
   language: SupportedActionLanguage
   query?: Pick<UseQueryResult, "isFetching" | "isSuccess" | "error"> &
-    Partial<Pick<UseQueryResult, "refetch">>
+    Partial<Pick<UseQueryResult, "refetch">> & { retranslate?: () => Promise<unknown> }
 }) {
   const { t } = useTranslation("app")
   const progress = useEntryTranslationProgress(entryId, language)
@@ -24,7 +24,8 @@ export function EntryTranslationStatus({
   const [completionHidden, setCompletionHidden] = useState(false)
   // The current content query owns completion. A title or a partial result in the
   // shared translation store does not mean the displayed article has finished.
-  const busy = query?.isFetching || !!progress?.retryingBatchId
+  const busy =
+    query?.isFetching || !!progress?.retryingBatchIds?.length || !!progress?.generationActive
   const error = useMemo(
     () => (busy ? null : (query?.error ?? (progress?.error ? new Error(progress.error) : null))),
     [busy, query?.error, progress?.error],
@@ -109,7 +110,7 @@ export function EntryTranslationStatus({
             void query.refetch?.()
           }}
         >
-          {t("entry.translation.restart")}
+          {t("entry.translation.resume")}
         </button>
       )}
       {failures.length > 0 && (
@@ -127,7 +128,11 @@ export function EntryTranslationStatus({
               </span>
               <button
                 type="button"
-                disabled={busy}
+                disabled={
+                  query?.isFetching ||
+                  progress?.generationActive ||
+                  progress?.retryingBatchIds?.includes(failure.id)
+                }
                 className="no-drag-region ml-2 text-accent disabled:opacity-60"
                 onClick={() => {
                   setRetryError(null)
@@ -139,7 +144,7 @@ export function EntryTranslationStatus({
                 }}
               >
                 {t(
-                  progress?.retryingBatchId === failure.id
+                  progress?.retryingBatchIds?.includes(failure.id)
                     ? "entry.translation.retrying"
                     : "entry.translation.retry",
                 )}

@@ -15,6 +15,7 @@ import { useActionLanguage } from "~/atoms/settings/general"
 import { CommandActionButton } from "~/components/ui/button/CommandActionButton"
 import { isPDFExportSupportedView } from "~/hooks/biz/export-as-pdf"
 import { useRouteParams } from "~/hooks/biz/useRouteParams"
+import { toast } from "~/lib/toast"
 import { COMMAND_ID } from "~/modules/command/commands/id"
 import { useRunCommandFn } from "~/modules/command/hooks/use-command"
 
@@ -41,7 +42,8 @@ function EntryHeaderActionsContainerImpl({ isSmallWidth }: { isSmallWidth?: bool
   const translationProgress = useEntryTranslationProgress(entryId, actionLanguage)
   const translationQuery = useEntryTranslationQuery(entryId)
   const hasBatchFailures = !!translationProgress?.batchState?.failedBatches.length
-  const retrying = !!translationProgress?.retryingBatchId
+  const retrying =
+    !!translationProgress?.retryingBatchIds?.length || !!translationProgress?.generationActive
   const translationError =
     !translationQuery?.isFetching && !retrying
       ? (translationQuery?.error ??
@@ -109,6 +111,20 @@ function EntryHeaderActionsContainerImpl({ isSmallWidth }: { isSmallWidth?: bool
                     : t("entry.translation.translating")}
           </span>
         </ActionButton>
+      )}
+      {IN_ELECTRON && translationEnabled && !isTranslating && (
+        <ActionButton
+          tooltip={t("entry.translation.restart")}
+          aria-label={t("entry.translation.restart")}
+          icon={<i className="i-mgc-refresh-2-cute-re" />}
+          onClick={() => {
+            void translationQuery?.retranslate().catch((error) =>
+              toast.error("翻译失败", {
+                description: error instanceof Error ? error.message : String(error),
+              }),
+            )
+          }}
+        />
       )}
       <CommandActionButton
         commandId={COMMAND_ID.entry.star}

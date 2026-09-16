@@ -4,6 +4,7 @@ import { tmpdir } from "node:os"
 import path from "pathe"
 
 import { backupApplicationService } from "~/application/backup/service"
+import { entryTranslationApplicationService } from "~/application/translation/service"
 import { logger } from "~/logger"
 import { DBManager } from "~/manager/db"
 import type { DbType } from "~/manager/db-config"
@@ -53,6 +54,7 @@ export class DbConversionApplicationService {
     const stagingDir = mkdtempSync(path.join(tmpdir(), "suhui-db-conversion-"))
     const bundlePath = path.join(stagingDir, "conversion.suhui-backup")
 
+    const resumeTranslations = await entryTranslationApplicationService.pauseForDatabaseChange()
     try {
       // 1. 从源库导出（此时数据库仍正常服务）
       const exported = await backupApplicationService.exportToFile(bundlePath)
@@ -113,6 +115,7 @@ export class DbConversionApplicationService {
         recordCount: exported.footer.recordCount,
       }
     } finally {
+      resumeTranslations()
       rmSync(stagingDir, { recursive: true, force: true })
     }
   }

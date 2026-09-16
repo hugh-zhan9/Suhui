@@ -39,6 +39,7 @@ export interface GenerateEntryTranslationInput {
   // true: reader title + target body; false/omitted: list title + description.
   // An empty reader body does not switch the request to list metadata.
   withContent?: boolean
+  force?: boolean
   retry?: { sessionId: string; batchId: string }
 }
 
@@ -50,6 +51,7 @@ export interface TranslationBatchFailure {
 }
 
 export interface TranslationBatchState {
+  revision?: number
   sessionId: string
   target: "content" | "readabilityContent"
   completedBatches: number

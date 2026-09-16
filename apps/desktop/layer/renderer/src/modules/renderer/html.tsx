@@ -35,8 +35,10 @@ export function EntryContentHTMLRenderer<AS extends keyof JSX.IntrinsicElements 
       progress?.batchState
         ? {
             state: progress.batchState,
-            busy: progress.status !== "incomplete",
-            retryingBatchId: progress.retryingBatchId,
+            busy:
+              !!progress.generationActive ||
+              !["incomplete", "partial", "error"].includes(progress.status),
+            retryingBatchIds: progress.retryingBatchIds,
             retry: (batchId: string) => {
               void translationSyncService.retryBatch(entryId, language, batchId).catch((error) =>
                 toast.error("翻译重试失败", {

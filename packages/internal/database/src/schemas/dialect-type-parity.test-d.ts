@@ -10,6 +10,14 @@ import type * as sqliteSchema from "./sqlite"
  * 这里逐表断言 $inferSelect 与 $inferInsert 双向可赋值（即类型等价）。
  */
 describe("两个方言的推导类型等价", () => {
+  it("translation batches", () => {
+    expectTypeOf<typeof sqliteSchema.translationBatchesTable.$inferSelect>().toEqualTypeOf<
+      typeof pgSchema.translationBatchesTable.$inferSelect
+    >()
+    expectTypeOf<typeof sqliteSchema.translationBatchesTable.$inferInsert>().toEqualTypeOf<
+      typeof pgSchema.translationBatchesTable.$inferInsert
+    >()
+  })
   it("entries", () => {
     expectTypeOf<typeof sqliteSchema.entriesTable.$inferSelect>().toEqualTypeOf<
       typeof pgSchema.entriesTable.$inferSelect

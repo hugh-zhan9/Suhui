@@ -61,4 +61,10 @@ export const sqliteMigrations: readonly SqliteMigration[] = [
       "ALTER TABLE `translations` ADD `config_hash` text;",
     ],
   },
+  {
+    tag: "0002_polite_ozymandias",
+    statements: [
+      "CREATE TABLE `translation_batches` (\n\t`entry_id` text NOT NULL,\n\t`language` text NOT NULL,\n\t`source_hash` text NOT NULL,\n\t`plan_version` integer NOT NULL,\n\t`target` text NOT NULL,\n\t`batch_id` text NOT NULL,\n\t`config_hash` text NOT NULL,\n\t`values` text NOT NULL,\n\t`updated_at` text NOT NULL,\n\tPRIMARY KEY(`entry_id`, `language`, `source_hash`, `plan_version`, `target`, `batch_id`),\n\tFOREIGN KEY (`entry_id`) REFERENCES `entries`(`id`) ON UPDATE no action ON DELETE cascade\n);",
+    ],
+  },
 ]

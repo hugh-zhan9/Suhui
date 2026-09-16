@@ -15,6 +15,13 @@
       "when": 1787569423810,
       "tag": "0001_special_electro",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1789527988453,
+      "tag": "0002_polite_ozymandias",
+      "breakpoints": true
     }
   ]
 }

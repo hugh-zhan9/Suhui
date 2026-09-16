@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto"
 
 export const BACKUP_FORMAT = "suhui-backup"
-export const BACKUP_VERSION = 1
+export const BACKUP_VERSION = 2
 export const BACKUP_MAX_LINE_BYTES = 16 * 1024 * 1024
 
 export const backupEntities = [
@@ -16,6 +16,7 @@ export const backupEntities = [
   "collections",
   "summaries",
   "translations",
+  "translation_batches",
   "ai_chat_sessions",
   "ai_chat_messages",
   "applied_sync_ops",
@@ -36,7 +37,7 @@ export type BackupEntity = (typeof backupEntities)[number]
 export type BackupManifest = {
   type: "manifest"
   format: typeof BACKUP_FORMAT
-  version: typeof BACKUP_VERSION
+  version: 1 | typeof BACKUP_VERSION
   createdAt: number
   appVersion?: string
   excludedSettings?: string[]
@@ -196,7 +197,7 @@ function assertBackupManifest(value: unknown): asserts value is BackupManifest {
     !candidate ||
     candidate.type !== "manifest" ||
     candidate.format !== BACKUP_FORMAT ||
-    candidate.version !== BACKUP_VERSION ||
+    (candidate.version !== 1 && candidate.version !== BACKUP_VERSION) ||
     typeof candidate.createdAt !== "number" ||
     (candidate.excludedSettings !== undefined && !Array.isArray(candidate.excludedSettings))
   ) {

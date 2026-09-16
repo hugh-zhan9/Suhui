@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto"
+
 import { describe, expect, it } from "vitest"
 
 import type { BackupRecord } from "./format"
@@ -22,7 +24,7 @@ describe("Suhui backup bundle format", () => {
 
     expect(result.manifest).toMatchObject({
       format: "suhui-backup",
-      version: 1,
+      version: 2,
       createdAt: 123,
     })
     expect(result.footer.recordCount).toBe(2)
@@ -42,5 +44,15 @@ describe("Suhui backup bundle format", () => {
     )
 
     await expect(validateBackupBundle(lines)).rejects.toThrow("duplicate key")
+  })
+  it("reads legacy v1 bundles and rejects unsupported future formats", async () => {
+    const lines = await collect(writeBackupBundle({ records }))
+    lines[0] = lines[0]!.replace('"version":2', '"version":1')
+    const footer = JSON.parse(lines.at(-1)!)
+    footer.sha256 = createHash("sha256").update(lines.slice(0, -1).join("")).digest("hex")
+    lines[lines.length - 1] = `${JSON.stringify(footer)}\n`
+    expect((await validateBackupBundle(lines)).manifest.version).toBe(1)
+    lines[0] = lines[0]!.replace('"version":1', '"version":999')
+    await expect(validateBackupBundle(lines)).rejects.toThrow()
   })
 })

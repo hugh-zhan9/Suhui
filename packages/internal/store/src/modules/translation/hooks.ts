@@ -1,5 +1,5 @@
 import type { SupportedActionLanguage } from "@suhui/shared"
-import { useQueries } from "@tanstack/react-query"
+import { useQueries, useQueryClient } from "@tanstack/react-query"
 import { useCallback } from "react"
 
 import { useEntry, useEntryList } from "../entry/hooks"
@@ -47,7 +47,8 @@ export const usePrefetchEntryTranslation = ({
       resolveEntryTranslationEnabled(enabled, entry?.settings?.translation, respectEntrySetting),
   ) || []) as EntryModel[]
 
-  return useQueries({
+  const queryClient = useQueryClient()
+  const queries = useQueries({
     queries: entryList.map((entry) => {
       const entryId = entry.id
       const finalWithContent = withContent === true
@@ -75,6 +76,24 @@ export const usePrefetchEntryTranslation = ({
       }
     }),
   })
+  return queries.map((query, index) => ({
+    ...query,
+    retranslate: async () => {
+      const entry = entryList[index]!
+      const result = await translationSyncService.generateTranslation({
+        entryId: entry.id,
+        language,
+        withContent: true,
+        target,
+        force: true,
+      })
+      queryClient.setQueryData(
+        ["translation", entry.id, language, true, target, getTranslationSourceRevision(entry)],
+        result,
+      )
+      return result
+    },
+  }))
 }
 
 export const useEntryTranslation = ({

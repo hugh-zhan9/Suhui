@@ -183,7 +183,7 @@ describe("article translation feedback", () => {
     state.progress.article = {
       ...state.progress.article,
       status: "translating",
-      retryingBatchId: "title:1",
+      retryingBatchIds: ["title:1"],
     }
     await render({ isFetching: false, isSuccess: true, error: null })
     expect(
@@ -214,10 +214,35 @@ describe("article translation feedback", () => {
       expect(container.querySelector('[role="status"]')?.textContent).toBe("翻译失败")
       expect(container.textContent).toContain(error)
       const restart = [...container.querySelectorAll("button")].find(
-        (button) => button.textContent === "重新翻译全文",
+        (button) => button.textContent === "继续翻译",
       )!
       await act(async () => restart.click())
       expect(refetch).toHaveBeenCalledOnce()
     },
   )
+  it("keeps other failed batches clickable while one retry is active", async () => {
+    state.progress.article = {
+      status: "partial",
+      retryingBatchIds: ["content:1"],
+      batchState: {
+        sessionId: "session",
+        target: "content",
+        completedBatches: 0,
+        totalBatches: 2,
+        failedBatches: [1, 2].map((index) => ({
+          id: `content:${index}`,
+          target: "content",
+          batchIndex: index,
+          error: "timeout",
+        })),
+      },
+    }
+    await render({ isFetching: false, isSuccess: true, error: null })
+    const buttons = [...container.querySelectorAll("button")]
+    expect(buttons.find((button) => button.textContent === "正在重试")?.disabled).toBe(true)
+    const retry = buttons.find((button) => button.textContent === "重试")!
+    expect(retry.disabled).toBe(false)
+    await act(async () => retry.click())
+    expect(retryBatch).toHaveBeenCalledWith("article", "zh-CN", "content:2")
+  })
 })

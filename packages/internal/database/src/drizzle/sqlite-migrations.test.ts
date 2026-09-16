@@ -234,7 +234,7 @@ describe("sqlite 迁移账本", () => {
       [],
     )
 
-    expect(migrate(db)).toBe(1)
+    expect(migrate(db)).toBe(readJournal().entries.length - 1)
     const columnsAfterRetry = db.prepare("pragma table_info(translations)").all() as Array<{
       name: string
     }>

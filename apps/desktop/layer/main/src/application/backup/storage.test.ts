@@ -78,4 +78,45 @@ describe("PostgresBackupStorage restore isolation", () => {
     expect(query).toHaveBeenCalledWith('DELETE FROM "content_cluster_rebuild_state"')
     await transaction.rollback()
   })
+  it("guards complete translation and batch timestamps during merge", async () => {
+    const transaction = await new PostgresBackupStorage().beginRestore("merge")
+    await transaction.upsert([
+      {
+        type: "record",
+        entity: "translations",
+        key: "t",
+        value: {
+          entry_id: "e",
+          language: "zh-CN",
+          content: "old",
+          created_at: "2020-01-01T00:00:00.000Z",
+        },
+      },
+    ])
+    expect(query.mock.calls.at(-1)?.[0]).toContain(
+      'WHERE EXCLUDED."created_at" >= "translations"."created_at"',
+    )
+    await transaction.upsert([
+      {
+        type: "record",
+        entity: "translation_batches",
+        key: "b",
+        value: {
+          entry_id: "e",
+          language: "zh-CN",
+          source_hash: "s",
+          plan_version: 1,
+          target: "content",
+          batch_id: "content:1",
+          config_hash: "c",
+          values: ["old"],
+          updated_at: "2020-01-01T00:00:00.000Z",
+        },
+      },
+    ])
+    expect(query.mock.calls.at(-1)?.[0]).toContain(
+      'WHERE EXCLUDED."updated_at" >= "translation_batches"."updated_at"',
+    )
+    await transaction.rollback()
+  })
 })

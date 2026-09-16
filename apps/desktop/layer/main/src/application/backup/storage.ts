@@ -22,6 +22,11 @@ export const backupTables: TableDefinition[] = [
   { entity: "collections", table: "collections", keyColumns: ["entry_id"] },
   { entity: "summaries", table: "summaries", keyColumns: ["entry_id", "language"] },
   { entity: "translations", table: "translations", keyColumns: ["entry_id", "language"] },
+  {
+    entity: "translation_batches",
+    table: "translation_batches",
+    keyColumns: ["entry_id", "language", "source_hash", "plan_version", "target", "batch_id"],
+  },
   { entity: "ai_chat_sessions", table: "ai_chat_sessions", keyColumns: ["id"] },
   { entity: "ai_chat_messages", table: "ai_chat_messages", keyColumns: ["id"] },
   { entity: "applied_sync_ops", table: "applied_sync_ops", keyColumns: ["op_id"] },
@@ -199,10 +204,11 @@ class PostgresRestoreTransaction implements BackupRestoreTransaction {
         return `${quoted} = EXCLUDED.${quoted}`
       })
       .join(", ")
-    const hasUpdatedAt = columns.includes("updated_at")
+    const timestamp = definition.entity === "translations" ? "created_at" : "updated_at"
+    const hasUpdatedAt = columns.includes(timestamp)
     const freshnessGuard =
       this.mode === "merge" && hasUpdatedAt
-        ? ` WHERE EXCLUDED.${quoteIdentifier("updated_at")} >= ${quoteIdentifier(definition.table)}.${quoteIdentifier("updated_at")}`
+        ? ` WHERE EXCLUDED.${quoteIdentifier(timestamp)} >= ${quoteIdentifier(definition.table)}.${quoteIdentifier(timestamp)}`
         : ""
     const conflictAction = updateClause
       ? `DO UPDATE SET ${updateClause}${freshnessGuard}`

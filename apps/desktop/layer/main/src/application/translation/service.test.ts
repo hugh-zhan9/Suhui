@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto"
 
-import { session } from "electron"
+import { safeStorage, session } from "electron"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { logger } from "~/logger"
@@ -11,6 +11,9 @@ const {
   stored,
   purgeAllForMaintenance,
   getTranslation,
+  getBatches,
+  saveBatch,
+  clearBatches,
   replaceTranslation,
   getEntryMany,
   translationSessionFetch,
@@ -19,6 +22,9 @@ const {
   stored: new Map<string, unknown>(),
   purgeAllForMaintenance: vi.fn(),
   getTranslation: vi.fn(),
+  getBatches: vi.fn(),
+  saveBatch: vi.fn(),
+  clearBatches: vi.fn(),
   replaceTranslation: vi.fn(),
   getEntryMany: vi.fn(),
   translationSessionFetch: vi.fn(),
@@ -47,6 +53,9 @@ vi.mock("~/lib/store", () => ({
 vi.mock("@suhui/database/services/translation", () => ({
   TranslationService: {
     getTranslation,
+    getBatches,
+    saveBatch,
+    clearBatches,
     insertTranslation: vi.fn(),
     replaceTranslation,
     purgeAllForMaintenance,
@@ -56,7 +65,7 @@ vi.mock("@suhui/database/services/entry", () => ({
   EntryService: { getEntryMany },
 }))
 
-import { entryTranslationApplicationService } from "./service"
+import { EntryTranslationApplicationService, entryTranslationApplicationService } from "./service"
 
 describe("translation provider configuration", () => {
   beforeEach(() => {
@@ -64,6 +73,9 @@ describe("translation provider configuration", () => {
     vi.mocked(logger.warn).mockClear()
     stored.clear()
     purgeAllForMaintenance.mockReset().mockResolvedValue(undefined)
+    getBatches.mockReset().mockResolvedValue([])
+    saveBatch.mockReset().mockImplementation(async () => {})
+    clearBatches.mockReset().mockImplementation(async () => {})
     getTranslation.mockReset().mockResolvedValue(undefined)
     replaceTranslation.mockReset().mockResolvedValue(undefined)
     getEntryMany.mockReset()
@@ -98,7 +110,7 @@ describe("translation provider configuration", () => {
     expect(persisted.deepl.encryptedApiKey).not.toContain("deepl-secret")
     expect(persisted.openAICompatible.encryptedApiKey).not.toContain("ai-secret")
     expect(JSON.stringify(view)).not.toContain("secret")
-    expect(purgeAllForMaintenance).toHaveBeenCalledOnce()
+    expect(purgeAllForMaintenance).not.toHaveBeenCalled()
   })
 
   it("persists an explicit Responses protocol and returns it to the renderer", async () => {
@@ -197,7 +209,7 @@ describe("translation provider configuration", () => {
     ).resolves.toMatchObject({ openAICompatible: { baseUrl: "http://127.0.0.1:11434/v1" } })
   })
 
-  it("does not persist a new provider config when cache invalidation fails", async () => {
+  it("switches provider without deleting durable translations", async () => {
     purgeAllForMaintenance.mockRejectedValueOnce(new Error("database unavailable"))
 
     await expect(
@@ -206,8 +218,9 @@ describe("translation provider configuration", () => {
         deepl: { baseUrl: "https://api-free.deepl.com", apiKey: "secret" },
         openAICompatible: { baseUrl: "https://api.openai.com/v1", model: "" },
       }),
-    ).rejects.toThrow("database unavailable")
-    expect(stored.has("translationProviderConfig")).toBe(false)
+    ).resolves.toMatchObject({ provider: "deepl" })
+    expect(purgeAllForMaintenance).not.toHaveBeenCalled()
+    expect(stored.has("translationProviderConfig")).toBe(true)
   })
 
   it("tests an OpenAI-compatible provider through an isolated Electron session", async () => {
@@ -352,7 +365,7 @@ describe("translation provider configuration", () => {
     expect(globalFetch).not.toHaveBeenCalled()
   })
 
-  it("translates article batches with two workers and reports partial HTML", async () => {
+  it("translates article batches with five workers and reports partial HTML", async () => {
     stored.set("translationProviderConfig", {
       provider: "deepl",
       deepl: {
@@ -391,12 +404,12 @@ describe("translation provider configuration", () => {
       progress,
     )
 
-    expect(maximumActiveRequests).toBe(2)
-    expect(progress).toHaveBeenCalledTimes(3)
-    expect(progress.mock.calls.map(([event]) => event.completedBatches)).toEqual([1, 2, 3])
+    expect(maximumActiveRequests).toBe(3)
+    expect(progress).toHaveBeenCalledTimes(4)
+    expect(progress.mock.calls.map(([event]) => event.completedBatches)).toEqual([0, 1, 2, 3])
     expect(progress.mock.calls[0]![0]).toMatchObject({ totalBatches: 3 })
-    expect(progress.mock.calls[0]![0].translation.content).toContain("译B")
-    expect(progress.mock.calls[0]![0].translation.content).toContain(paragraphs[0])
+    expect(progress.mock.calls[1]![0].translation.content).toContain("译B")
+    expect(progress.mock.calls[1]![0].translation.content).toContain(paragraphs[0])
     expect(result.content).toBe("<p>译A</p><p>译B</p><p>译C</p>")
     expect(replaceTranslation).toHaveBeenCalledOnce()
     const events = vi.mocked(logger.info).mock.calls.map((call) => JSON.parse(String(call[1])))
@@ -409,7 +422,7 @@ describe("translation provider configuration", () => {
     expect(JSON.stringify(events)).not.toContain("A short paragraph")
   })
 
-  it("starts body translation while the title is still pending, within two request slots", async () => {
+  it("starts body translation while the title is still pending, within five request slots", async () => {
     stored.set("translationProviderConfig", {
       provider: "deepl",
       deepl: {
@@ -453,9 +466,9 @@ describe("translation provider configuration", () => {
       progress,
     )
     try {
-      await vi.waitFor(() => expect(progress).toHaveBeenCalledTimes(2))
+      await vi.waitFor(() => expect(progress).toHaveBeenCalledTimes(3))
       expect(progress.mock.calls[0]![0].translation.title).toBeNull()
-      expect(progress.mock.calls[0]![0].translation.content).toContain("译A")
+      expect(progress.mock.calls[1]![0].translation.content).toContain("译A")
       expect(replaceTranslation).not.toHaveBeenCalled()
       expect(maximumActive).toBe(2)
     } finally {
@@ -590,9 +603,15 @@ describe("translation provider configuration", () => {
       description: null,
       readabilityContent: "<p>译A 译B</p><p>译L</p>",
     })
-    expect(maximumActive).toBe(2)
-    expect(progress).toHaveBeenCalledTimes(4)
-    expect(replaceTranslation).toHaveBeenCalledExactlyOnceWith(expect.objectContaining(result))
+    expect(maximumActive).toBe(4)
+    expect(progress).toHaveBeenCalledTimes(5)
+    expect(replaceTranslation).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({
+        title: result.title,
+        readabilityContent: result.readabilityContent,
+      }),
+      "readabilityContent",
+    )
   })
 
   it("continues scheduling title fragments when the concurrent body request fails", async () => {
@@ -771,6 +790,215 @@ describe("translation provider configuration", () => {
       ])
     })
     const reply = (text: string) => new Response(JSON.stringify({ translations: [{ text }] }))
+    it("runs five distinct retries concurrently, deduplicates a batch and queues the sixth", async () => {
+      getEntryMany.mockResolvedValue([
+        { content: Array.from({ length: 6 }, (_, n) => `<p>${n}</p>`).join("") },
+      ])
+      translationSessionFetch.mockRejectedValue(new Error("offline"))
+      const partial = await entryTranslationApplicationService.generate(input)
+      const releases: Array<() => void> = []
+      const started: string[] = []
+      translationSessionFetch.mockImplementation(async (_url, init) => {
+        const text = JSON.parse(init.body).text[0]
+        started.push(text)
+        await new Promise<void>((resolve) => releases.push(resolve))
+        return reply(`译${text}`)
+      })
+      const retry = (index: number) =>
+        entryTranslationApplicationService.generate({
+          ...input,
+          retry: { sessionId: partial.batchState!.sessionId, batchId: `content:${index + 1}` },
+        })
+      const jobs = Array.from({ length: 6 }, (_, n) => retry(n))
+      const duplicate = retry(0)
+      let configChanged = false
+      const configUpdate = entryTranslationApplicationService
+        .setConfig({
+          provider: "deepl",
+          deepl: { baseUrl: "https://new.example.com", apiKey: "new-key" },
+          openAICompatible: { baseUrl: "https://ai.example.com", model: "next" },
+        })
+        .then(() => {
+          configChanged = true
+        })
+      try {
+        await vi.waitFor(() => expect(started).toHaveLength(5))
+        releases[0]!()
+        await vi.waitFor(() => expect(started).toHaveLength(6))
+        expect(started).toEqual(["0", "1", "2", "3", "4", "5"])
+        expect(configChanged).toBe(false)
+      } finally {
+        releases.forEach((release) => release())
+      }
+      const results = await Promise.all([...jobs, duplicate])
+      expect(results.some((result) => result.batchState?.completedBatches === 6)).toBe(true)
+      expect(saveBatch).toHaveBeenCalledTimes(6)
+      await configUpdate
+      expect(configChanged).toBe(true)
+    })
+
+    it("loads saved successful batches after restart and provider change, sending only missing text", async () => {
+      const saved: any[] = []
+      saveBatch.mockImplementation(async (row) => {
+        saved.push(row)
+      })
+      getBatches.mockImplementation(async () => saved)
+      translationSessionFetch.mockImplementation(async (_url, init) => {
+        const text = JSON.parse(init.body).text[0]
+        if (text === "B") throw new Error("offline")
+        return reply(`旧${text}`)
+      })
+      await entryTranslationApplicationService.generate(input)
+      expect(saved).toHaveLength(3)
+      await entryTranslationApplicationService.setConfig({
+        provider: "deepl",
+        deepl: { baseUrl: "https://new.example.com", apiKey: "new-key" },
+        openAICompatible: { baseUrl: "https://ai.example.com", model: "new-model" },
+      })
+      const restarted = new EntryTranslationApplicationService()
+      translationSessionFetch.mockClear().mockImplementation(async (_url, init) => {
+        expect(JSON.parse(init.body).text).toEqual(["B"])
+        return reply("新B")
+      })
+      const progress = vi.fn()
+      const result = await restarted.generate({ ...input, requestId: "after-restart" }, progress)
+      expect(translationSessionFetch).toHaveBeenCalledOnce()
+      expect(progress.mock.calls[0]![0].translation.content).toBe("<p>旧A</p><p>B</p><p>旧C</p>")
+      expect(result.content).toBe("<p>旧A</p><p>新B</p><p>旧C</p>")
+      expect(result.title).toBe("旧Title")
+      expect(purgeAllForMaintenance).not.toHaveBeenCalled()
+    })
+
+    it("reuses a complete database translation after changing provider without contacting AI", async () => {
+      translationSessionFetch.mockImplementation(async (_url, init) =>
+        reply(`译${JSON.parse(init.body).text[0]}`),
+      )
+      await entryTranslationApplicationService.generate(input)
+      const row = replaceTranslation.mock.calls.at(-1)![0]
+      getTranslation.mockResolvedValue(row)
+      await entryTranslationApplicationService.setConfig({
+        provider: "openai-compatible",
+        deepl: { baseUrl: "https://api-free.deepl.com" },
+        openAICompatible: { baseUrl: "https://ai.example.com", model: "different-model" },
+      })
+      translationSessionFetch.mockClear()
+      const result = await entryTranslationApplicationService.generate(input)
+      expect(result.content).toBe(row.content)
+      expect(result.title).toBe(row.title)
+      expect(translationSessionFetch).not.toHaveBeenCalled()
+      expect(purgeAllForMaintenance).not.toHaveBeenCalled()
+    })
+
+    it("treats a denied key as one job failure without repeatedly requesting it per paragraph", async () => {
+      const decrypt = vi.spyOn(safeStorage, "decryptString").mockImplementation(() => {
+        throw new Error("key denied")
+      })
+      try {
+        await expect(entryTranslationApplicationService.generate(input)).rejects.toThrow(
+          "key denied",
+        )
+        expect(decrypt).toHaveBeenCalledOnce()
+        expect(translationSessionFetch).not.toHaveBeenCalled()
+        expect(saveBatch).not.toHaveBeenCalled()
+      } finally {
+        decrypt.mockRestore()
+      }
+    })
+
+    it("shows saved paragraphs even if credentials for missing paragraphs cannot be read", async () => {
+      getBatches.mockResolvedValue([{ batchId: "content:1", values: ["已存A"] }])
+      const decrypt = vi.spyOn(safeStorage, "decryptString").mockImplementation(() => {
+        throw new Error("key denied")
+      })
+      const progress = vi.fn()
+      try {
+        await expect(
+          entryTranslationApplicationService.generate(
+            { ...input, requestId: "saved-key-denied" },
+            progress,
+          ),
+        ).rejects.toThrow("key denied")
+        expect(progress).toHaveBeenCalledWith(
+          expect.objectContaining({
+            translation: expect.objectContaining({ content: "<p>已存A</p><p>B</p><p>C</p>" }),
+          }),
+        )
+        expect(decrypt).toHaveBeenCalledOnce()
+        expect(translationSessionFetch).not.toHaveBeenCalled()
+      } finally {
+        decrypt.mockRestore()
+      }
+    })
+    it("retries a failed database save using the already generated text", async () => {
+      getEntryMany.mockResolvedValue([{ content: "<p>A</p>" }])
+      translationSessionFetch.mockImplementation(async () => reply("译A"))
+      saveBatch.mockRejectedValueOnce(new Error("disk full"))
+      const partial = await entryTranslationApplicationService.generate(input)
+      expect(partial.batchState?.failedBatches).toHaveLength(1)
+      expect(partial.content).not.toContain("译A")
+      const result = await entryTranslationApplicationService.generate({
+        ...input,
+        retry: { sessionId: partial.batchState!.sessionId, batchId: "content:1" },
+      })
+      expect(result.content).toBe("<p>译A</p>")
+      expect(translationSessionFetch).toHaveBeenCalledOnce()
+      expect(saveBatch).toHaveBeenCalledTimes(2)
+    })
+
+    it("pauses database changes until accepted batches are saved and invalidates old sessions", async () => {
+      const service = new EntryTranslationApplicationService()
+      getEntryMany.mockResolvedValue([{ content: "<p>A</p>" }])
+      let release!: () => void
+      translationSessionFetch.mockImplementation(async () => {
+        await new Promise<void>((resolve) => {
+          release = resolve
+        })
+        return reply("译A")
+      })
+      const running = service.generate(input)
+      await vi.waitFor(() => expect(release).toBeDefined())
+      let paused = false
+      const pausing = service.pauseForDatabaseChange().then((resume) => {
+        paused = true
+        return resume
+      })
+      expect(() => service.generate(input)).toThrow("数据库维护")
+      expect(paused).toBe(false)
+      release()
+      await running
+      const resume = await pausing
+      expect(saveBatch).toHaveBeenCalledOnce()
+      expect(replaceTranslation).toHaveBeenCalledOnce()
+      expect(() => service.generate(input)).toThrow("数据库维护")
+      resume()
+    })
+
+    it("explicit retranslation invalidates old sessions of the other body target", async () => {
+      const service = new EntryTranslationApplicationService()
+      getEntryMany.mockResolvedValue([
+        { title: "Title", content: "<p>A</p>", readabilityContent: "<p>B</p>" },
+      ])
+      translationSessionFetch.mockImplementation(async (_url, init) => {
+        const text = JSON.parse(init.body).text[0]
+        if (text === "B") throw new Error("offline")
+        return reply(`旧${text}`)
+      })
+      const partial = await service.generate({ ...input, target: "readabilityContent" })
+      translationSessionFetch.mockImplementation(async (_url, init) =>
+        reply(`新${JSON.parse(init.body).text[0]}`),
+      )
+      await service.generate({ ...input, force: true })
+      expect(clearBatches).toHaveBeenCalledOnce()
+      translationSessionFetch.mockClear()
+      await expect(
+        service.generate({
+          ...input,
+          target: "readabilityContent",
+          retry: { sessionId: partial.batchState!.sessionId, batchId: "readabilityContent:1" },
+        }),
+      ).rejects.toThrow("会话已过期")
+      expect(translationSessionFetch).not.toHaveBeenCalled()
+    })
     it("keeps successful slots and retries only the selected failure, then writes a clean complete cache", async () => {
       const attempts: string[] = []
       translationSessionFetch.mockImplementation(async (_url, init) => {
@@ -836,7 +1064,7 @@ describe("translation provider configuration", () => {
       expect(translationSessionFetch).toHaveBeenCalledOnce()
       expect(replaceTranslation).not.toHaveBeenCalled()
     })
-    it.each(["source", "config", "entry", "language", "target", "missing"])(
+    it.each(["source", "entry", "language", "target", "missing"])(
       "rejects a %s mismatch before sending retry text",
       async (mismatch) => {
         translationSessionFetch.mockRejectedValue(new Error("temporary failure"))
@@ -849,11 +1077,6 @@ describe("translation provider configuration", () => {
           getEntryMany.mockResolvedValue([
             { id: input.entryId, title: "Changed", content: "<p>Changed</p>" },
           ])
-        if (mismatch === "config")
-          stored.set("translationProviderConfig", {
-            provider: "deepl",
-            deepl: { baseUrl: "https://different.example" },
-          })
         if (mismatch === "entry") retryInput.entryId = "other-entry"
         if (mismatch === "language") Object.assign(retryInput, { language: "ja" })
         if (mismatch === "target") Object.assign(retryInput, { target: "readabilityContent" })
@@ -998,7 +1221,11 @@ describe("translation provider configuration", () => {
           description: "译Summary",
           content: "<p>译Body</p>",
         })
-        expect(cached).toMatchObject(result)
+        expect(cached).toMatchObject({
+          title: result.title,
+          content: result.content,
+          description: result.description,
+        })
       },
     )
 

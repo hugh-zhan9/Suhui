@@ -226,7 +226,7 @@ describe("progressive article HTML", () => {
     act(() => button.click())
     expect(retry).toHaveBeenCalledWith("content:2")
     view.rerender(
-      <TranslationRetryContext value={{ ...context, busy: true, retryingBatchId: "content:2" }}>
+      <TranslationRetryContext value={{ ...context, busy: true, retryingBatchIds: ["content:2"] }}>
         <HTML as="article" contentIdentity="a">
           {failed}
         </HTML>

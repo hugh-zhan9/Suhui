@@ -121,6 +121,7 @@
   "entry.translation.failed": "Translation failed; click to turn off",
   "entry.translation.label": "Translate",
   "entry.translation.progress": "Translating batch {{completed}}/{{total}}",
+  "entry.translation.resume": "Continue translation",
   "entry.translation.translating": "Translating",
   "entry_actions.copied_notify": "{{which}} copied to clipboard.",
   "entry_actions.copy_link": "Copy Link",

@@ -8,6 +8,12 @@ vi.mock("~/logger", () => ({
   },
 }))
 
+const resumeTranslations = vi.fn()
+const pauseTranslations = vi.fn(async (): Promise<() => void> => resumeTranslations)
+vi.mock("~/application/translation/service", () => ({
+  entryTranslationApplicationService: { pauseForDatabaseChange: pauseTranslations },
+}))
+
 const backupMocks = {
   exportToFile: vi.fn(),
   prepareReplace: vi.fn(),
@@ -173,6 +179,16 @@ describe("DbConversionApplicationService", () => {
   it("恢复期间持有维护锁，结束后释放", async () => {
     stageConfigs(postgresConfig, sqliteConfig)
     const order: string[] = []
+    pauseTranslations.mockImplementationOnce(async () => {
+      order.push("pause translations")
+      return () => {
+        order.push("resume translations")
+      }
+    })
+    backupMocks.exportToFile.mockImplementationOnce(async () => {
+      order.push("export")
+      return { footer: { recordCount: 1 } }
+    })
     dbMocks.beginMaintenance.mockImplementation(async () => {
       order.push("acquire")
       return async () => {
@@ -186,6 +202,13 @@ describe("DbConversionApplicationService", () => {
 
     await new DbConversionApplicationService().convert({ to: "sqlite" })
 
-    expect(order).toEqual(["acquire", "restore", "release"])
+    expect(order).toEqual([
+      "pause translations",
+      "export",
+      "acquire",
+      "restore",
+      "release",
+      "resume translations",
+    ])
   })
 })

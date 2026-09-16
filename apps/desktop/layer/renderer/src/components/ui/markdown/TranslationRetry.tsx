@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next"
 export const TranslationRetryContext = createContext<{
   state: TranslationBatchState
   busy: boolean
-  retryingBatchId?: string
+  retryingBatchIds?: string[]
   retry: (batchId: string) => void
 } | null>(null)
 
@@ -27,7 +27,7 @@ export function TranslationRetrySpan(props: ComponentProps<"span"> & { marker?: 
       <span>{t("entry.translation.batch_failed")}</span>
       <button
         type="button"
-        disabled={context.busy}
+        disabled={context.busy || context.retryingBatchIds?.includes(failure.id)}
         title={failure.error}
         className="no-drag-region text-accent hover:underline disabled:cursor-wait disabled:opacity-60"
         onClick={(event) => {
@@ -37,7 +37,7 @@ export function TranslationRetrySpan(props: ComponentProps<"span"> & { marker?: 
         }}
       >
         {t(
-          context.retryingBatchId === failure.id
+          context.retryingBatchIds?.includes(failure.id)
             ? "entry.translation.retrying"
             : "entry.translation.retry",
         )}

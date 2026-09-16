@@ -121,6 +121,8 @@
   "entry.translation.failed": "Échec de la traduction ; cliquez pour désactiver",
   "entry.translation.label": "Traduire",
   "entry.translation.progress": "Traduction du lot {{completed}}/{{total}}",
+  "entry.translation.resume": "Continuer la traduction",
+  "entry.translation.restart": "Retraduire l’article entier",
   "entry.translation.translating": "Traduction en cours",
   "entry_actions.copied_notify": "{{which}} copié dans le presse-papier.",
   "entry_actions.copy_link": "Copier le lien",

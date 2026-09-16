@@ -121,6 +121,8 @@
   "entry.translation.failed": "翻訳に失敗しました。クリックしてオフ",
   "entry.translation.label": "翻訳",
   "entry.translation.progress": "翻訳中 {{completed}}/{{total}} バッチ",
+  "entry.translation.resume": "翻訳を続ける",
+  "entry.translation.restart": "記事全体を再翻訳",
   "entry.translation.translating": "翻訳中",
   "entry_actions.copied_notify": "{{which}} をクリップボードにコピーしました。",
   "entry_actions.copy_link": "リンクをコピー",

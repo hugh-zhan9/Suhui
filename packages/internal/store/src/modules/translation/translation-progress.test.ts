@@ -384,16 +384,20 @@ describe("progressive translation IPC", () => {
     })
     expect(translationActions.getTranslation("retry", "zh-CN")?.content).toBe("partial")
     expect(translationActions.getProgress("retry", "zh-CN")).toMatchObject({
-      retryingBatchId: "content:1",
+      retryingBatchIds: ["content:1"],
       completedBatches: 1,
     })
-    release({ ...translation, content: "complete" })
+    release({
+      ...translation,
+      content: "complete",
+      batchState: { ...batchState, revision: 2, completedBatches: 2, failedBatches: [] },
+    })
     await first
     expect(translationActions.getProgress("retry", "zh-CN")).toMatchObject({
       status: "complete",
       completedBatches: 2,
     })
-    expect(translationActions.getProgress("retry", "zh-CN")?.batchState).toBeUndefined()
+    expect(translationActions.getProgress("retry", "zh-CN")?.batchState?.failedBatches).toEqual([])
     expect(translationActions.getTranslation("retry", "zh-CN")?.content).toBe("complete")
   })
 
@@ -428,7 +432,9 @@ describe("progressive translation IPC", () => {
       batchState,
       error: "会话已过期",
     })
-    expect(translationActions.getProgress("retry-error", "zh-CN")?.retryingBatchId).toBeUndefined()
+    expect(
+      translationActions.getProgress("retry-error", "zh-CN")?.retryingBatchIds?.[0],
+    ).toBeUndefined()
   })
   it("records a cache failure after the final successful progress event as an error", async () => {
     const batchState = {
@@ -485,5 +491,85 @@ describe("progressive translation IPC", () => {
       completedBatches: 2,
     })
     expect(translationActions.getTranslation("cache-error", "zh-CN")?.content).toBe("complete body")
+  })
+
+  it("runs different retries together and ignores an older final snapshot while keeping other retries busy", async () => {
+    const batchState = {
+      sessionId: "session",
+      revision: 1,
+      target: "content" as const,
+      completedBatches: 0,
+      totalBatches: 2,
+      failedBatches: [1, 2].map((index) => ({
+        id: `content:${index}`,
+        target: "content" as const,
+        batchIndex: index,
+        error: "timeout",
+      })),
+    }
+    translationActions.setProgress("parallel", "zh-CN", {
+      requestId: "root",
+      status: "incomplete",
+      completedBatches: 0,
+      totalBatches: 2,
+      batchState,
+    })
+    const listeners: Array<(event: unknown, value: unknown) => void> = []
+    const resolvers: Array<(value: unknown) => void> = []
+    const invoke = vi.fn(() => new Promise((resolve) => resolvers.push(resolve)))
+    ;(window as any).electron = {
+      ipcRenderer: {
+        invoke,
+        on: vi.fn((_channel, listener) => {
+          listeners.push(listener)
+          return vi.fn()
+        }),
+      },
+    }
+    const a = translationSyncService.retryBatch("parallel", "zh-CN", "content:1")
+    const b = translationSyncService.retryBatch("parallel", "zh-CN", "content:2")
+    expect(invoke).toHaveBeenCalledTimes(2)
+    expect(translationActions.getProgress("parallel", "zh-CN")?.retryingBatchIds).toEqual([
+      "content:1",
+      "content:2",
+    ])
+    const result = (revision: number, content: string, completedBatches: number) => ({
+      entryId: "parallel",
+      language: "zh-CN",
+      title: null,
+      description: null,
+      readabilityContent: null,
+      content,
+      batchState: {
+        ...batchState,
+        revision,
+        completedBatches,
+        failedBatches: completedBatches === 2 ? [] : [batchState.failedBatches[1]],
+      },
+    })
+    const newer = result(3, "complete", 2)
+    listeners[1]!(
+      {},
+      {
+        requestId: (invoke.mock.calls[1] as any)[1].requestId,
+        entryId: "parallel",
+        language: "zh-CN",
+        translation: newer,
+      },
+    )
+    resolvers[0]!(result(2, "stale partial", 1))
+    await a
+    expect(translationActions.getTranslation("parallel", "zh-CN")?.content).toBe("complete")
+    expect(translationActions.getProgress("parallel", "zh-CN")).toMatchObject({
+      status: "partial",
+      retryingBatchIds: ["content:2"],
+    })
+    resolvers[1]!(newer)
+    await b
+    expect(translationActions.getProgress("parallel", "zh-CN")).toMatchObject({
+      status: "complete",
+      retryingBatchIds: [],
+      completedBatches: 2,
+    })
   })
 })

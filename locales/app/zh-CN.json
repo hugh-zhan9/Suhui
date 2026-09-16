@@ -121,6 +121,7 @@
   "entry.translation.failed": "翻译失败，点击关闭",
   "entry.translation.label": "翻译",
   "entry.translation.progress": "正在翻译 {{completed}}/{{total}} 批",
+  "entry.translation.resume": "继续翻译",
   "entry.translation.translating": "正在翻译",
   "entry_actions.copied_notify": "{{which}}已复制到剪贴板。",
   "entry_actions.copy_link": "复制链接",

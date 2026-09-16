@@ -188,9 +188,10 @@ class SqliteRestoreTransaction implements BackupRestoreTransaction {
       })
       .join(", ")
 
+    const timestamp = definition.entity === "translations" ? "created_at" : "updated_at"
     const freshnessGuard =
-      this.mode === "merge" && columns.includes("updated_at")
-        ? ` WHERE excluded.${quoteIdentifier("updated_at")} >= ${table}.${quoteIdentifier("updated_at")}`
+      this.mode === "merge" && columns.includes(timestamp)
+        ? ` WHERE excluded.${quoteIdentifier(timestamp)} >= ${table}.${quoteIdentifier(timestamp)}`
         : ""
 
     const conflictAction = updateClause

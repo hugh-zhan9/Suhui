@@ -3,14 +3,13 @@ import { Input } from "@suhui/components/ui/input/index.js"
 import { ResponsiveSelect } from "@suhui/components/ui/select/responsive.js"
 import { useTypeScriptHappyCallback } from "@suhui/hooks"
 import { ACTION_LANGUAGE_MAP } from "@suhui/shared"
+import { IN_ELECTRON } from "@suhui/shared/constants"
 import type {
+  TranslationApiProtocol,
   TranslationProviderConfigInput,
   TranslationProviderConfigView,
   TranslationProviderKind,
-  TranslationApiProtocol,
 } from "@suhui/shared/translation"
-import { IN_ELECTRON } from "@suhui/shared/constants"
-import { translationActions } from "@suhui/store/translation/store"
 import { cn } from "@suhui/utils/utils"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import dayjs from "dayjs"
@@ -554,9 +553,6 @@ const TranslationProviderSection = () => {
 
   const persist = async () => {
     const next = await getTranslationIpc().setConfig(toInput())
-    translationActions.clearInSession()
-    setTranslationCache({})
-    queryClient.removeQueries({ queryKey: ["translation"] })
     queryClient.setQueryData(["translation", "provider-config"], next)
     setDraft(translationConfigToDraft(next))
     return next

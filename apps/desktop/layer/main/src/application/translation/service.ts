@@ -16,13 +16,15 @@ import { safeStorage, session } from "electron"
 
 import type { StoredTranslationProviderConfig } from "~/lib/store"
 import { store } from "~/lib/store"
+import { DBManager } from "~/manager/db"
 
 import type { TranslationTrace } from "./diagnostics"
 import { createTranslationTrace, logTranslation, translationErrorKind } from "./diagnostics"
 import { splitTranslationParagraph } from "./html"
 import type { TranslationProviderRuntimeConfig } from "./provider"
 import { translateTexts } from "./provider"
-import { ReaderTranslationSession } from "./reader-session"
+import { ReaderTranslationSession, TRANSLATION_PLAN_VERSION } from "./reader-session"
+import { TranslationRequestPool } from "./request-pool"
 
 const DEFAULT_CONFIG: StoredTranslationProviderConfig = {
   provider: "deepl",
@@ -196,10 +198,40 @@ const runtimeConfig = (
 
 type TranslationProgressCallback = (progress: EntryTranslationProgress) => void
 
-class EntryTranslationApplicationService {
+export class EntryTranslationApplicationService {
   private queues = new Map<string, Promise<GeneratedEntryTranslation>>()
+  private retryJobs = new Map<string, Set<Promise<GeneratedEntryTranslation>>>()
+  private pools = new Map<string, TranslationRequestPool>()
+  private pauses = 0
   private readerSessions = new Map<string, ReaderTranslationSession>()
   private configurationBarrier: Promise<void> = Promise.resolve()
+
+  constructor() {
+    let release: (() => void) | undefined
+    DBManager.registerCutoverParticipant("translation", {
+      quiesce: async () => {
+        release = await this.pauseForDatabaseChange()
+      },
+      resume: () => {
+        release?.()
+        release = undefined
+      },
+    })
+  }
+
+  async pauseForDatabaseChange() {
+    this.pauses += 1
+    await Promise.allSettled(this.activeJobs())
+    this.readerSessions.clear()
+    this.pools.clear()
+    return () => {
+      this.pauses -= 1
+    }
+  }
+
+  private activeJobs() {
+    return [...this.queues.values(), ...[...this.retryJobs.values()].flatMap((jobs) => [...jobs])]
+  }
 
   getConfig(): TranslationProviderConfigView {
     return toView(getStoredConfig())
@@ -219,7 +251,7 @@ class EntryTranslationApplicationService {
     ) {
       throw new Error("不支持的在线 AI API 协议")
     }
-    const activeJobs = [...this.queues.values()]
+    const activeJobs = this.activeJobs()
     const update = this.configurationBarrier.then(async () => {
       await Promise.allSettled(activeJobs)
       const current = getStoredConfig()
@@ -253,9 +285,7 @@ class EntryTranslationApplicationService {
       if (next.provider === "openai-compatible" && !next.openAICompatible.model) {
         throw new Error("在线 AI 模型不能为空")
       }
-      await TranslationService.purgeAllForMaintenance()
       store.set("translationProviderConfig", next)
-      this.readerSessions.clear()
       return next
     })
     this.configurationBarrier = update.then(
@@ -294,6 +324,12 @@ class EntryTranslationApplicationService {
     input: GenerateEntryTranslationInput,
     onProgress?: TranslationProgressCallback,
   ): Promise<GeneratedEntryTranslation> {
+    if (this.pauses) throw new Error("数据库维护中，请稍后继续翻译")
+    if (
+      input?.force !== undefined &&
+      (typeof input.force !== "boolean" || !input.withContent || input.retry)
+    )
+      throw new Error("重新翻译参数无效")
     if (!input?.entryId?.trim()) throw new Error("待翻译文章 ID 不能为空")
     if (
       input.requestId !== undefined &&
@@ -327,27 +363,27 @@ class EntryTranslationApplicationService {
     logTranslation(trace, "job.queued")
     const key = `${input.entryId}:${input.language}`
     const previous = this.queues.get(key) ?? Promise.resolve(null)
-    const job = previous
-      .catch(() => null)
-      .then(async () => {
-        logTranslation(trace, "job.waiting_configuration", {
-          queueMs: Math.round(performance.now() - queuedAt),
-        })
-        await configurationBarrier
-        logTranslation(trace, "job.started", {
-          queueMs: Math.round(performance.now() - queuedAt),
-          proxyMode: store.get("proxy") ? "custom" : "system",
-        })
-        const result = await this.generateNow(input, onProgress, trace)
-        logTranslation(
-          trace,
-          result.batchState?.failedBatches.length ? "job.partial" : "job.completed",
-          {
-            elapsedMs: Math.round(performance.now() - queuedAt),
-          },
-        )
-        return result
+    const dependencies = [previous, ...(input.retry ? [] : (this.retryJobs.get(key) ?? []))]
+    const job = DBManager.runTrackedOperation(async () => {
+      await Promise.allSettled(dependencies)
+      logTranslation(trace, "job.waiting_configuration", {
+        queueMs: Math.round(performance.now() - queuedAt),
       })
+      await configurationBarrier
+      logTranslation(trace, "job.started", {
+        queueMs: Math.round(performance.now() - queuedAt),
+        proxyMode: store.get("proxy") ? "custom" : "system",
+      })
+      const result = await this.generateNow(input, onProgress, trace)
+      logTranslation(
+        trace,
+        result.batchState?.failedBatches.length ? "job.partial" : "job.completed",
+        {
+          elapsedMs: Math.round(performance.now() - queuedAt),
+        },
+      )
+      return result
+    })
       .catch((error: unknown) => {
         logTranslation(trace, "job.failed", {
           elapsedMs: Math.round(performance.now() - queuedAt),
@@ -360,8 +396,25 @@ class EntryTranslationApplicationService {
       })
       .finally(() => {
         if (this.queues.get(key) === job) this.queues.delete(key)
+        const retries = this.retryJobs.get(key)
+        retries?.delete(job)
+        if (!retries?.size) this.retryJobs.delete(key)
+        for (const poolKey of this.pools.keys()) {
+          if (
+            !this.queues.has(poolKey) &&
+            !this.retryJobs.has(poolKey) &&
+            ![...this.readerSessions.values()].some(
+              (session) => `${session.input.entryId}:${session.input.language}` === poolKey,
+            )
+          )
+            this.pools.delete(poolKey)
+        }
       })
-    this.queues.set(key, job)
+    if (input.retry) {
+      const retries = this.retryJobs.get(key) ?? new Set()
+      retries.add(job)
+      this.retryJobs.set(key, retries)
+    } else this.queues.set(key, job)
     return job
   }
 
@@ -379,8 +432,7 @@ class EntryTranslationApplicationService {
     const currentConfigHash = configHash(storedConfig)
     logTranslation(trace, "cache.reading")
     const cached = await TranslationService.getTranslation(input.entryId, input.language)
-    const cacheIsCurrent =
-      cached?.sourceHash === currentSourceHash && cached.configHash === currentConfigHash
+    const cacheIsCurrent = cached?.sourceHash === currentSourceHash
     const result: GeneratedEntryTranslation = {
       entryId: input.entryId,
       language: input.language,
@@ -388,6 +440,25 @@ class EntryTranslationApplicationService {
       description: cacheIsCurrent ? (cached.description ?? null) : null,
       content: cacheIsCurrent ? (cached.content ?? null) : null,
       readabilityContent: cacheIsCurrent ? (cached.readabilityContent ?? null) : null,
+    }
+    if (input.force) {
+      for (const [id, session] of this.readerSessions) {
+        if (session.input.entryId === input.entryId && session.input.language === input.language)
+          this.readerSessions.delete(id)
+      }
+      await TranslationService.clearBatches(
+        input.entryId,
+        input.language,
+        currentSourceHash,
+        input.target,
+      )
+      result.title = null
+      result[input.target] = null
+      await TranslationService.replaceTranslation({
+        ...result,
+        sourceHash: currentSourceHash,
+        configHash: currentConfigHash,
+      })
     }
     if (
       input.withContent &&
@@ -483,26 +554,61 @@ class EntryTranslationApplicationService {
         checkpoint.input.entryId !== input.entryId ||
         checkpoint.input.language !== input.language ||
         checkpoint.input.target !== input.target ||
-        checkpoint.sourceHash !== currentSourceHash ||
-        checkpoint.configHash !== currentConfigHash)
+        checkpoint.sourceHash !== currentSourceHash)
     ) {
-      throw new Error("翻译会话已过期或原文/配置已变化，请重新翻译文章")
+      throw new Error("翻译会话已过期或原文已变化，请重新打开文章继续翻译")
     }
-    checkpoint ??= new ReaderTranslationSession(
-      trace.traceId,
-      { ...input, retry: undefined },
-      currentSourceHash,
-      currentConfigHash,
-      entry,
-      cachedResult,
-    )
+    const key = `${input.entryId}:${input.language}`
+    let pool = this.pools.get(key)
+    if (!pool) {
+      pool = new TranslationRequestPool()
+      this.pools.set(key, pool)
+    }
+    if (!checkpoint) {
+      for (const [id, previous] of this.readerSessions) {
+        if (
+          previous.input.entryId === input.entryId &&
+          previous.input.language === input.language &&
+          previous.input.target === input.target
+        )
+          this.readerSessions.delete(id)
+      }
+      const saved = await TranslationService.getBatches(
+        input.entryId,
+        input.language,
+        currentSourceHash,
+        TRANSLATION_PLAN_VERSION,
+      )
+      checkpoint = new ReaderTranslationSession(
+        trace.traceId,
+        { ...input, retry: undefined },
+        currentSourceHash,
+        currentConfigHash,
+        entry,
+        cachedResult,
+        saved,
+        async (batch) => {
+          await TranslationService.saveBatch({
+            ...batch,
+            entryId: input.entryId,
+            language: input.language,
+            sourceHash: currentSourceHash,
+            planVersion: TRANSLATION_PLAN_VERSION,
+            target: batch.batchId.split(":")[0] as "title" | "content" | "readabilityContent",
+            configHash: configHash(getStoredConfig()),
+            updatedAt: new Date().toISOString(),
+          })
+        },
+        pool,
+      )
+    }
     // Retain before running so even a cache-write failure cannot lose successful slots.
     this.readerSessions.delete(checkpoint.id)
     this.readerSessions.set(checkpoint.id, checkpoint)
     while (this.readerSessions.size > 16)
       this.readerSessions.delete(this.readerSessions.keys().next().value!)
     const result = await checkpoint.run(
-      runtimeConfig(storedConfig),
+      () => runtimeConfig(storedConfig),
       electronSessionFetch,
       trace,
       (translation) => {
@@ -529,13 +635,16 @@ class EntryTranslationApplicationService {
       [input.target === "content" ? "readabilityContent" : "content"]:
         cachedResult[input.target === "content" ? "readabilityContent" : "content"],
     }
-    await TranslationService.replaceTranslation({
-      ...complete,
-      sourceHash: currentSourceHash,
-      configHash: currentConfigHash,
-    })
+    await TranslationService.replaceTranslation(
+      {
+        ...complete,
+        sourceHash: currentSourceHash,
+        configHash: currentConfigHash,
+      },
+      input.target,
+    )
     this.readerSessions.delete(checkpoint.id)
-    return complete
+    return { ...complete, batchState: result.batchState }
   }
 }
 

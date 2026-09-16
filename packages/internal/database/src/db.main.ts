@@ -350,6 +350,13 @@ export async function migrateMainDB(handles = activeHandles) {
       `config_hash text,\n` +
       `created_at text not null\n` +
       `);`,
+    `CREATE TABLE IF NOT EXISTS translation_batches (
+      entry_id text NOT NULL REFERENCES entries(id) ON DELETE CASCADE,
+      language text NOT NULL, source_hash text NOT NULL, plan_version integer NOT NULL,
+      target text NOT NULL, batch_id text NOT NULL, config_hash text NOT NULL,
+      "values" jsonb NOT NULL, updated_at text NOT NULL,
+      PRIMARY KEY (entry_id, language, source_hash, plan_version, target, batch_id)
+    );`,
     `ALTER TABLE translations ADD COLUMN IF NOT EXISTS source_hash text;`,
     `ALTER TABLE translations ADD COLUMN IF NOT EXISTS config_hash text;`,
     `CREATE UNIQUE INDEX IF NOT EXISTS "translation-unique-index" ON translations(entry_id, language);`,
