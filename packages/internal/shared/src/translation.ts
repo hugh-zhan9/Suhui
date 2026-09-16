@@ -39,6 +39,22 @@ export interface GenerateEntryTranslationInput {
   // true: reader title + target body; false/omitted: list title + description.
   // An empty reader body does not switch the request to list metadata.
   withContent?: boolean
+  retry?: { sessionId: string; batchId: string }
+}
+
+export interface TranslationBatchFailure {
+  id: string
+  target: "title" | "content" | "readabilityContent"
+  batchIndex: number
+  error: string
+}
+
+export interface TranslationBatchState {
+  sessionId: string
+  target: "content" | "readabilityContent"
+  completedBatches: number
+  totalBatches: number
+  failedBatches: TranslationBatchFailure[]
 }
 
 export interface EntryTranslationProgress {
@@ -53,6 +69,7 @@ export interface EntryTranslationProgress {
 export const TRANSLATION_PROGRESS_CHANNEL = "translation.progress"
 
 export interface GeneratedEntryTranslation {
+  batchState?: TranslationBatchState
   entryId: string
   language: SupportedActionLanguage
   title: string | null

@@ -9,6 +9,7 @@ import { buildBilingualHtml } from "~/lib/bilingual-html"
 import { htmlParserClient } from "~/lib/html-parser-client"
 
 import { HTML } from "./HTML"
+import { TranslationRetryContext } from "./TranslationRetry"
 
 const testTheme = vi.hoisted(() => ({ dark: false }))
 vi.mock("@suhui/hooks", async (importOriginal) => ({
@@ -187,5 +188,78 @@ describe("progressive article HTML", () => {
       </HTML>,
     )
     expect(view.container.querySelector("p")!.style.color).toBe("black")
+  })
+  it("shows retry only for the trusted current failure and preserves source/media nodes as it recovers", async () => {
+    const id = "00000000-0000-0000-0000-000000000000"
+    const failed = buildBilingualHtml(
+      source,
+      source
+        .replace("First", "第一")
+        .replace(
+          "Second paragraph",
+          `Second paragraph<span data-suhui-translation-retry="${id}:content:2"></span>`,
+        ),
+    )
+    const state = {
+      sessionId: id,
+      target: "content" as const,
+      completedBatches: 1,
+      totalBatches: 2,
+      failedBatches: [
+        { id: "content:2", target: "content" as const, batchIndex: 2, error: "timeout" },
+      ],
+    }
+    const retry = vi.fn()
+    const context = { state, busy: false, retry }
+    const view = render(
+      <TranslationRetryContext value={context}>
+        <HTML as="article" contentIdentity="a">
+          {failed}
+        </HTML>
+      </TranslationRetryContext>,
+    )
+    await finish(failed)
+    const media = view.container.querySelector("iframe")
+    const second = view.getByText("Second paragraph", { exact: false })
+    const button = view.container.querySelector("button")!
+    expect(button).not.toBeNull()
+    act(() => button.click())
+    expect(retry).toHaveBeenCalledWith("content:2")
+    view.rerender(
+      <TranslationRetryContext value={{ ...context, busy: true, retryingBatchId: "content:2" }}>
+        <HTML as="article" contentIdentity="a">
+          {failed}
+        </HTML>
+      </TranslationRetryContext>,
+    )
+    expect(view.container.querySelector("button")!.disabled).toBe(true)
+    view.rerender(
+      <TranslationRetryContext value={{ ...context, state: { ...state, sessionId: "other" } }}>
+        <HTML as="article" contentIdentity="a">
+          {failed}
+        </HTML>
+      </TranslationRetryContext>,
+    )
+    expect(view.container.querySelector("button")).toBeNull()
+    view.rerender(
+      <TranslationRetryContext value={null}>
+        <HTML as="article" contentIdentity="a">
+          {complete}
+        </HTML>
+      </TranslationRetryContext>,
+    )
+    await finish(complete)
+    expect(view.container.querySelector("iframe")).toBe(media)
+    expect(view.getByText("Second paragraph")).toBe(second)
+    expect(view.container.querySelector("button")).toBeNull()
+    expect(view.container.textContent).toContain("第二段")
+  })
+  it("preserves source text carrying an untrusted retry marker", async () => {
+    const html =
+      '<p><span data-suhui-translation-retry="00000000-0000-0000-0000-000000000000:content:1">Original source</span></p>'
+    const view = render(<HTML as="article">{html}</HTML>)
+    await finish(html)
+    expect(view.container.textContent).toContain("Original source")
+    expect(view.container.querySelector("button")).toBeNull()
   })
 })

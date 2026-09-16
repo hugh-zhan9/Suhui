@@ -99,7 +99,10 @@ export type HtmlTranslationPlan = {
   units: string[]
   batches: string[][]
   rebuild: (translations: string[]) => string
-  rebuildPartial: (translations: Array<string | null | undefined>) => string
+  rebuildPartial: (
+    translations: Array<string | null | undefined>,
+    markers?: Map<number, string>,
+  ) => string
 }
 
 export const createHtmlTranslationPlan = (html: string): HtmlTranslationPlan => {
@@ -146,7 +149,13 @@ export const createHtmlTranslationPlan = (html: string): HtmlTranslationPlan => 
     }
   }
   for (const slot of slots) slot.fragments.sort((a, b) => a.start - b.start)
-  const applyTranslations = (translations: Array<string | null | undefined>) => {
+  let previousMarkers: Element[] = []
+  const applyTranslations = (
+    translations: Array<string | null | undefined>,
+    markers = new Map<number, string>(),
+  ) => {
+    previousMarkers.forEach((marker) => marker.remove())
+    previousMarkers = []
     slots.forEach((slot) => {
       slot.node.textContent = slot.fragments
         .map((fragment) => {
@@ -156,6 +165,20 @@ export const createHtmlTranslationPlan = (html: string): HtmlTranslationPlan => 
             : `${fragment.leadingWhitespace}${translated}${fragment.trailingWhitespace}`
         })
         .join("")
+      // Anchor at the end of the text node containing this batch's final slot.
+      // Long paragraphs may have several failed fragments, each with its own control.
+      for (const fragment of slot.fragments) {
+        const markerId = fragment.index === undefined ? undefined : markers.get(fragment.index)
+        if (!markerId) continue
+        const marker = document.createElement("span", {})
+        marker.dataset.suhuiTranslationRetry = markerId
+        let anchor = slot.node
+        // Never nest a button inside an article link.
+        const link = (slot.node.parentNode as Element | null)?.closest?.("a")
+        if (link) anchor = link
+        anchor.parentNode?.insertBefore(marker, anchor.nextSibling)
+        previousMarkers.push(marker)
+      }
     })
     return document.body.innerHTML
   }

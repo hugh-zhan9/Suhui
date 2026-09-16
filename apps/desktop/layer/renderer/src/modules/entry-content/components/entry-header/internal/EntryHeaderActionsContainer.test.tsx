@@ -9,7 +9,7 @@ import { EntryHeaderActionsContainer } from "./EntryHeaderActionsContainer"
 const state = vi.hoisted(() => ({
   enabled: true,
   query: { isFetching: true, isSuccess: false, error: null as Error | null },
-  progress: { status: "partial", completedBatches: 1, totalBatches: 3 },
+  progress: { status: "partial", completedBatches: 1, totalBatches: 3 } as any,
   setOverride: vi.fn(),
 }))
 vi.mock("@suhui/components/ui/button/action-button.js", () => ({
@@ -85,5 +85,19 @@ describe("translation header button", () => {
     expect(disabled.getAttribute("aria-pressed")).toBe("false")
     await act(async () => disabled.click())
     expect(state.setOverride).toHaveBeenLastCalledWith("article", "force-on")
+  })
+  it("shows partial failure even when the generation query resolved", async () => {
+    state.query = { isFetching: false, isSuccess: true, error: null }
+    state.progress = { status: "incomplete", batchState: { failedBatches: [{ id: "content:1" }] } }
+    expect((await render()).textContent).toBe("entry.translation.partial_failure")
+  })
+  it("does not claim completion after a manual retry's cache-write failure", async () => {
+    state.query = { isFetching: false, isSuccess: true, error: null }
+    state.progress = {
+      status: "error",
+      error: "cache unavailable",
+      batchState: { failedBatches: [] },
+    }
+    expect((await render()).textContent).toBe("entry.translation.error")
   })
 })

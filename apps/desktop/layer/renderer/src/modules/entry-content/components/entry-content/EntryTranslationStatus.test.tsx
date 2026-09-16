@@ -1,3 +1,4 @@
+import type { TranslationProgressState } from "@suhui/store/translation/store"
 import * as React from "react"
 import { act } from "react"
 import type { Root } from "react-dom/client"
@@ -10,10 +11,7 @@ import messages from "../../../../../../../../../locales/app/zh-CN.json"
 import { EntryTranslationStatus } from "./EntryTranslationStatus"
 
 const state = vi.hoisted(() => ({
-  progress: {} as Record<
-    string,
-    { status: string; completedBatches: number; totalBatches: number }
-  >,
+  progress: {} as Record<string, Partial<TranslationProgressState>>,
 }))
 vi.mock("@suhui/store/translation/hooks", () => ({
   useEntryTranslationProgress: (entryId: string) => state.progress[entryId],
@@ -27,6 +25,8 @@ vi.mock("react-i18next", () => ({
       ),
   }),
 }))
+const retryBatch = vi.hoisted(() => vi.fn().mockResolvedValue({}))
+vi.mock("@suhui/store/translation/store", () => ({ translationSyncService: { retryBatch } }))
 vi.mock("~/lib/clipboard", () => ({ copyToClipboard: vi.fn(() => Promise.resolve()) }))
 
 describe("article translation feedback", () => {
@@ -157,4 +157,67 @@ describe("article translation feedback", () => {
     expect(container.textContent).toBe("正在翻译")
     expect(container.querySelector("button")).toBeNull()
   })
+  it("keeps partial failure visible and supports title retry instead of reporting complete", async () => {
+    vi.useFakeTimers()
+    state.progress.article = {
+      status: "incomplete",
+      completedBatches: 2,
+      totalBatches: 2,
+      batchState: {
+        sessionId: "session",
+        target: "content",
+        completedBatches: 2,
+        totalBatches: 2,
+        failedBatches: [{ id: "title:1", target: "title", batchIndex: 1, error: "title timeout" }],
+      },
+    }
+    await render({ isFetching: false, isSuccess: true, error: null })
+    expect(container.querySelector('[role="status"]')?.textContent).toBe("翻译已结束，1 批失败")
+    await act(async () => vi.advanceTimersByTime(5000))
+    expect(container.textContent).toContain("title timeout")
+    const button = [...container.querySelectorAll("button")].find(
+      (button) => button.textContent === "重试",
+    )!
+    await act(async () => button.click())
+    expect(retryBatch).toHaveBeenCalledWith("article", "zh-CN", "title:1")
+    state.progress.article = {
+      ...state.progress.article,
+      status: "translating",
+      retryingBatchId: "title:1",
+    }
+    await render({ isFetching: false, isSuccess: true, error: null })
+    expect(
+      [...container.querySelectorAll("button")].find((button) => button.textContent === "正在重试")
+        ?.disabled,
+    ).toBe(true)
+  })
+  it.each(["cache unavailable", "翻译会话已过期"])(
+    "shows %s from a manual retry and provides a working restart action",
+    async (error) => {
+      vi.useFakeTimers()
+      state.progress.article = {
+        status: "error",
+        completedBatches: 2,
+        totalBatches: 2,
+        error,
+        batchState: {
+          sessionId: "session",
+          target: "content",
+          completedBatches: 2,
+          totalBatches: 2,
+          failedBatches: [],
+        },
+      }
+      const refetch = vi.fn().mockResolvedValue({})
+      await render({ isFetching: false, isSuccess: true, error: null, refetch })
+      await act(async () => vi.advanceTimersByTime(5000))
+      expect(container.querySelector('[role="status"]')?.textContent).toBe("翻译失败")
+      expect(container.textContent).toContain(error)
+      const restart = [...container.querySelectorAll("button")].find(
+        (button) => button.textContent === "重新翻译全文",
+      )!
+      await act(async () => restart.click())
+      expect(refetch).toHaveBeenCalledOnce()
+    },
+  )
 })

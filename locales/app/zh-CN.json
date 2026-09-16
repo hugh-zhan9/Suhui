@@ -564,5 +564,14 @@
   "words.user": "用户",
   "words.view": "视图",
   "words.which.all": "全部",
-  "words.zero_items": "没有内容"
+  "words.zero_items": "没有内容",
+  "entry.translation.batch_failed": "本段翻译失败",
+  "entry.translation.retry": "重试",
+  "entry.translation.retrying": "正在重试",
+  "entry.translation.partial_failure": "部分翻译失败",
+  "entry.translation.incomplete": "翻译已结束，{{count}} 批失败",
+  "entry.translation.failed_batches": "查看 {{count}} 批失败详情",
+  "entry.translation.title_batch": "标题第 {{index}} 批",
+  "entry.translation.body_batch": "正文第 {{index}} 批",
+  "entry.translation.restart": "重新翻译全文"
 }

@@ -491,7 +491,7 @@ describe("translation provider configuration", () => {
     expect(translationSessionFetch).toHaveBeenCalledOnce()
   })
 
-  it("waits for active workers and never persists a partially failed article", async () => {
+  it("continues after a failed batch and never persists a partially failed article", async () => {
     stored.set("translationProviderConfig", {
       provider: "deepl",
       deepl: {
@@ -526,13 +526,19 @@ describe("translation provider configuration", () => {
         target: "content",
         withContent: true,
       }),
-    ).rejects.toThrow("batch failed")
+    ).resolves.toMatchObject({
+      batchState: {
+        completedBatches: 2,
+        totalBatches: 3,
+        failedBatches: [{ id: "content:1", error: expect.stringContaining("batch failed") }],
+      },
+    })
 
-    expect(requested).toEqual(["A", "B"])
+    expect(requested).toEqual(["A", "B", "C"])
     expect(secondWorkerSettled).toBe(true)
     expect(replaceTranslation).not.toHaveBeenCalled()
     const failures = vi.mocked(logger.warn).mock.calls.map((call) => JSON.parse(String(call[1])))
-    expect(failures.map((event) => event.event)).toEqual(["request.failed", "job.failed"])
+    expect(failures.map((event) => event.event)).toEqual(["request.failed", "batch.failed"])
     expect(failures[0].traceId).toBe(failures[1].traceId)
   })
 
@@ -585,11 +591,11 @@ describe("translation provider configuration", () => {
       readabilityContent: "<p>译A 译B</p><p>译L</p>",
     })
     expect(maximumActive).toBe(2)
-    expect(progress).toHaveBeenCalledTimes(3)
+    expect(progress).toHaveBeenCalledTimes(4)
     expect(replaceTranslation).toHaveBeenCalledExactlyOnceWith(expect.objectContaining(result))
   })
 
-  it("stops scheduling title fragments when the concurrent body request fails", async () => {
+  it("continues scheduling title fragments when the concurrent body request fails", async () => {
     stored.set("translationProviderConfig", {
       provider: "deepl",
       deepl: {
@@ -624,14 +630,16 @@ describe("translation provider configuration", () => {
       target: "content",
       withContent: true,
     })
-    const rejected = expect(job).rejects.toThrow("body failed")
+    const resolved = expect(job).resolves.toMatchObject({
+      batchState: { failedBatches: [{ id: "content:1" }] },
+    })
     try {
-      await vi.waitFor(() => expect(requested).toHaveLength(2))
+      await vi.waitFor(() => expect(requested.length).toBeGreaterThanOrEqual(2))
     } finally {
       release()
     }
-    await rejected
-    expect(requested).toEqual(["A".repeat(2_000), "Body"])
+    await resolved
+    expect(requested).toEqual(["A".repeat(2_000), "Body", "A".repeat(2_000), "A".repeat(1_000)])
     expect(replaceTranslation).not.toHaveBeenCalled()
   })
 
@@ -715,9 +723,18 @@ describe("translation provider configuration", () => {
         progress,
       )
       if (status !== "completed") {
-        await expect(result).rejects.toThrow(
-          ["failed", "cancelled"].includes(status) ? "译文生成失败" : "译文生成未完成",
-        )
+        await expect(result).resolves.toMatchObject({
+          batchState: {
+            failedBatches: [
+              {
+                id: "content:2",
+                error: expect.stringContaining(
+                  ["failed", "cancelled"].includes(status) ? "译文生成失败" : "译文生成未完成",
+                ),
+              },
+            ],
+          },
+        })
         expect(replaceTranslation).not.toHaveBeenCalled()
         expect(
           progress.mock.calls.some(([event]) => event.translation?.content?.includes("译First")),
@@ -732,6 +749,180 @@ describe("translation provider configuration", () => {
       expect(translationSessionFetch).toHaveBeenCalledTimes(3)
     },
   )
+
+  describe("failed batch retries", () => {
+    const input = {
+      entryId: "retry-entry",
+      language: "zh-CN" as const,
+      target: "content" as const,
+      withContent: true,
+    }
+    beforeEach(() => {
+      stored.set("translationProviderConfig", {
+        provider: "deepl",
+        deepl: {
+          baseUrl: "https://api-free.deepl.com",
+          encryptedApiKey: Buffer.from("encrypted:secret").toString("base64"),
+        },
+        openAICompatible: { baseUrl: "https://api.openai.com/v1", model: "" },
+      })
+      getEntryMany.mockResolvedValue([
+        { id: input.entryId, title: "Title", content: "<p>A</p><p>B</p><p>C</p>" },
+      ])
+    })
+    const reply = (text: string) => new Response(JSON.stringify({ translations: [{ text }] }))
+    it("keeps successful slots and retries only the selected failure, then writes a clean complete cache", async () => {
+      const attempts: string[] = []
+      translationSessionFetch.mockImplementation(async (_url, init) => {
+        const text = JSON.parse(init.body).text[0]
+        attempts.push(text)
+        if (text === "A" || text === "B") throw new DOMException("timed out", "TimeoutError")
+        return reply(`译${text}`)
+      })
+      const partial = await entryTranslationApplicationService.generate(input)
+      expect(attempts).toEqual(["Title", "A", "B", "C"])
+      expect(partial.batchState).toMatchObject({
+        completedBatches: 1,
+        totalBatches: 3,
+        failedBatches: [{ id: "content:1" }, { id: "content:2" }],
+      })
+      expect(partial.content).toContain("译C")
+      expect(partial.content).toContain("data-suhui-translation-retry")
+      expect(replaceTranslation).not.toHaveBeenCalled()
+      translationSessionFetch.mockImplementation(async (_url, init) => {
+        const text = JSON.parse(init.body).text[0]
+        attempts.push(text)
+        return reply(`译${text}`)
+      })
+      const retry = { sessionId: partial.batchState!.sessionId, batchId: "content:1" }
+      const next = await entryTranslationApplicationService.generate({ ...input, retry })
+      expect(attempts).toEqual(["Title", "A", "B", "C", "A"])
+      expect(next.batchState).toMatchObject({
+        completedBatches: 2,
+        failedBatches: [{ id: "content:2" }],
+      })
+      expect(replaceTranslation).not.toHaveBeenCalled()
+      const done = await entryTranslationApplicationService.generate({
+        ...input,
+        retry: { ...retry, batchId: "content:2" },
+      })
+      expect(attempts).toEqual(["Title", "A", "B", "C", "A", "B"])
+      expect(done.content).toBe("<p>译A</p><p>译B</p><p>译C</p>")
+      expect(done.title).toBe("译Title")
+      expect(replaceTranslation).toHaveBeenCalledOnce()
+      expect(replaceTranslation.mock.calls[0]![0]).not.toHaveProperty("batchState")
+      expect(replaceTranslation.mock.calls[0]![0].content).not.toContain("translation-retry")
+    })
+    it("retains the failed original and successful body when retry fails again or title fails", async () => {
+      translationSessionFetch.mockImplementation(async (_url, init) => {
+        const text = JSON.parse(init.body).text[0]
+        if (text === "Title") throw new Error("title failed")
+        return reply(`译${text}`)
+      })
+      const partial = await entryTranslationApplicationService.generate(input)
+      expect(partial.batchState).toMatchObject({
+        completedBatches: 3,
+        failedBatches: [{ id: "title:1" }],
+      })
+      expect(partial.content).toBe("<p>译A</p><p>译B</p><p>译C</p>")
+      translationSessionFetch.mockClear()
+      const next = await entryTranslationApplicationService.generate({
+        ...input,
+        retry: { sessionId: partial.batchState!.sessionId, batchId: "title:1" },
+      })
+      expect(next.title).toBeNull()
+      expect(next.content).toBe(partial.content)
+      expect(next.batchState!.failedBatches[0]!.error).toContain("title failed")
+      expect(translationSessionFetch).toHaveBeenCalledOnce()
+      expect(replaceTranslation).not.toHaveBeenCalled()
+    })
+    it.each(["source", "config", "entry", "language", "target", "missing"])(
+      "rejects a %s mismatch before sending retry text",
+      async (mismatch) => {
+        translationSessionFetch.mockRejectedValue(new Error("temporary failure"))
+        const partial = await entryTranslationApplicationService.generate(input)
+        const retryInput = {
+          ...input,
+          retry: { sessionId: partial.batchState!.sessionId, batchId: "content:1" },
+        }
+        if (mismatch === "source")
+          getEntryMany.mockResolvedValue([
+            { id: input.entryId, title: "Changed", content: "<p>Changed</p>" },
+          ])
+        if (mismatch === "config")
+          stored.set("translationProviderConfig", {
+            provider: "deepl",
+            deepl: { baseUrl: "https://different.example" },
+          })
+        if (mismatch === "entry") retryInput.entryId = "other-entry"
+        if (mismatch === "language") Object.assign(retryInput, { language: "ja" })
+        if (mismatch === "target") Object.assign(retryInput, { target: "readabilityContent" })
+        if (mismatch === "missing")
+          retryInput.retry.sessionId = "00000000-0000-0000-0000-000000000000"
+        translationSessionFetch.mockClear()
+        await expect(entryTranslationApplicationService.generate(retryInput)).rejects.toThrow(
+          "会话已过期",
+        )
+        expect(translationSessionFetch).not.toHaveBeenCalled()
+      },
+    )
+    it("reports a cache-write failure after recovering the final batch without saving partial metadata", async () => {
+      translationSessionFetch.mockImplementation(async (_url, init) => {
+        const text = JSON.parse(init.body).text[0]
+        if (text === "A") throw new Error("failed")
+        return reply(`译${text}`)
+      })
+      const partial = await entryTranslationApplicationService.generate(input)
+      translationSessionFetch.mockImplementation(async () => reply("译A"))
+      replaceTranslation.mockRejectedValueOnce(new Error("cache unavailable"))
+      const progress = vi.fn()
+      await expect(
+        entryTranslationApplicationService.generate(
+          {
+            ...input,
+            requestId: "cache-failure",
+            retry: { sessionId: partial.batchState!.sessionId, batchId: "content:1" },
+          },
+          progress,
+        ),
+      ).rejects.toThrow("cache unavailable")
+      expect(progress.mock.calls.at(-1)![0].translation.batchState.failedBatches).toEqual([])
+      expect(replaceTranslation.mock.calls.at(-1)![0]).not.toHaveProperty("batchState")
+    })
+    it("expires the oldest unfinished session at the retention limit", async () => {
+      translationSessionFetch.mockRejectedValue(new Error("failed"))
+      const oldest = await entryTranslationApplicationService.generate(input)
+      for (let index = 0; index < 16; index++)
+        await entryTranslationApplicationService.generate({
+          ...input,
+          entryId: `retained-${index}`,
+        })
+      translationSessionFetch.mockClear()
+      await expect(
+        entryTranslationApplicationService.generate({
+          ...input,
+          retry: { sessionId: oldest.batchState!.sessionId, batchId: "content:1" },
+        }),
+      ).rejects.toThrow("会话已过期")
+      expect(translationSessionFetch).not.toHaveBeenCalled()
+    })
+    it("rejects retrying a successful batch without repeating any request", async () => {
+      translationSessionFetch.mockImplementation(async (_url, init) => {
+        const text = JSON.parse(init.body).text[0]
+        if (text === "B") throw new Error("failed")
+        return reply(`译${text}`)
+      })
+      const partial = await entryTranslationApplicationService.generate(input)
+      translationSessionFetch.mockClear()
+      await expect(
+        entryTranslationApplicationService.generate({
+          ...input,
+          retry: { sessionId: partial.batchState!.sessionId, batchId: "content:1" },
+        }),
+      ).rejects.toThrow("该批次已完成")
+      expect(translationSessionFetch).not.toHaveBeenCalled()
+    })
+  })
 
   it("rejects malformed progress request ids", () => {
     expect(() =>

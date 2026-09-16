@@ -336,4 +336,154 @@ describe("progressive translation IPC", () => {
       expect(translationActions.getProgress("changed", "zh-CN", withContent)).toBeUndefined()
     },
   )
+  it("keeps partial failure terminal, deduplicates retry clicks, and clears failures only on success", async () => {
+    const translation = {
+      entryId: "retry",
+      language: "zh-CN" as const,
+      title: null,
+      description: null,
+      content: "partial",
+      readabilityContent: null,
+    }
+    const batchState = {
+      sessionId: "session",
+      target: "content" as const,
+      completedBatches: 1,
+      totalBatches: 2,
+      failedBatches: [
+        { id: "content:1", target: "content" as const, batchIndex: 1, error: "timeout" },
+      ],
+    }
+    let release!: (result: unknown) => void
+    const pending = new Promise((resolve) => {
+      release = resolve
+    })
+    const invoke = vi
+      .fn()
+      .mockResolvedValueOnce({ ...translation, batchState })
+      .mockReturnValueOnce(pending)
+    ;(window as any).electron = { ipcRenderer: { invoke, on: vi.fn(() => vi.fn()) } }
+    await translationSyncService.generateTranslation({
+      entryId: "retry",
+      language: "zh-CN",
+      withContent: true,
+      target: "content",
+    })
+    expect(translationActions.getProgress("retry", "zh-CN")).toMatchObject({
+      status: "incomplete",
+      completedBatches: 1,
+      totalBatches: 2,
+      batchState,
+    })
+    const first = translationSyncService.retryBatch("retry", "zh-CN", "content:1")
+    const duplicate = translationSyncService.retryBatch("retry", "zh-CN", "content:1")
+    expect(first).toBe(duplicate)
+    expect(invoke).toHaveBeenCalledTimes(2)
+    expect(invoke.mock.calls[1][1]).toMatchObject({
+      retry: { sessionId: "session", batchId: "content:1" },
+    })
+    expect(translationActions.getTranslation("retry", "zh-CN")?.content).toBe("partial")
+    expect(translationActions.getProgress("retry", "zh-CN")).toMatchObject({
+      retryingBatchId: "content:1",
+      completedBatches: 1,
+    })
+    release({ ...translation, content: "complete" })
+    await first
+    expect(translationActions.getProgress("retry", "zh-CN")).toMatchObject({
+      status: "complete",
+      completedBatches: 2,
+    })
+    expect(translationActions.getProgress("retry", "zh-CN")?.batchState).toBeUndefined()
+    expect(translationActions.getTranslation("retry", "zh-CN")?.content).toBe("complete")
+  })
+
+  it("keeps retry errors actionable without discarding successful translation", async () => {
+    const batchState = {
+      sessionId: "session",
+      target: "content" as const,
+      completedBatches: 1,
+      totalBatches: 2,
+      failedBatches: [
+        { id: "content:1", target: "content" as const, batchIndex: 1, error: "timeout" },
+      ],
+    }
+    translationActions.setProgress("retry-error", "zh-CN", {
+      requestId: "old",
+      status: "incomplete",
+      completedBatches: 1,
+      totalBatches: 2,
+      batchState,
+    })
+    ;(window as any).electron = {
+      ipcRenderer: {
+        invoke: vi.fn().mockRejectedValue(new Error("会话已过期")),
+        on: vi.fn(() => vi.fn()),
+      },
+    }
+    await expect(
+      translationSyncService.retryBatch("retry-error", "zh-CN", "content:1"),
+    ).rejects.toThrow("会话已过期")
+    expect(translationActions.getProgress("retry-error", "zh-CN")).toMatchObject({
+      status: "incomplete",
+      batchState,
+      error: "会话已过期",
+    })
+    expect(translationActions.getProgress("retry-error", "zh-CN")?.retryingBatchId).toBeUndefined()
+  })
+  it("records a cache failure after the final successful progress event as an error", async () => {
+    const batchState = {
+      sessionId: "session",
+      target: "content" as const,
+      completedBatches: 1,
+      totalBatches: 2,
+      failedBatches: [
+        { id: "content:1", target: "content" as const, batchIndex: 1, error: "timeout" },
+      ],
+    }
+    translationActions.setProgress("cache-error", "zh-CN", {
+      requestId: "old",
+      status: "incomplete",
+      completedBatches: 1,
+      totalBatches: 2,
+      batchState,
+    })
+    let listener!: (event: unknown, progress: unknown) => void
+    ;(window as any).electron = {
+      ipcRenderer: {
+        on: (_channel, callback) => {
+          listener = callback
+          return vi.fn()
+        },
+        invoke: async (_channel, input) => {
+          listener(
+            {},
+            {
+              ...input,
+              completedBatches: 2,
+              totalBatches: 2,
+              translation: {
+                entryId: input.entryId,
+                language: input.language,
+                title: null,
+                description: null,
+                content: "complete body",
+                readabilityContent: null,
+                batchState: { ...batchState, completedBatches: 2, failedBatches: [] },
+              },
+            },
+          )
+          throw new Error("cache unavailable")
+        },
+      },
+    }
+    await expect(
+      translationSyncService.retryBatch("cache-error", "zh-CN", "content:1"),
+    ).rejects.toThrow("cache unavailable")
+    expect(translationActions.getProgress("cache-error", "zh-CN")).toMatchObject({
+      status: "error",
+      error: "cache unavailable",
+      completedBatches: 2,
+    })
+    expect(translationActions.getTranslation("cache-error", "zh-CN")?.content).toBe("complete body")
+  })
 })

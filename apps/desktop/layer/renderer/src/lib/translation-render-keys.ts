@@ -7,9 +7,17 @@ export function keyTranslationChildren(children: ReactNode): ReactNode {
   let sourceIndex = 0
   let translationIndex = 0
   const keyed = (child: ReactNode): ReactNode => {
-    if (!isValidElement<{ children?: ReactNode; "data-suhui-translation"?: string }>(child)) {
+    if (
+      !isValidElement<{
+        children?: ReactNode
+        "data-suhui-translation"?: string
+        "data-suhui-translation-retry"?: string
+      }>(child)
+    ) {
       return child
     }
+    const retry = child.props["data-suhui-translation-retry"]
+    if (retry) return cloneElement(child, { key: `retry-${retry}` })
     const translation = child.props["data-suhui-translation"] === "true"
     const key = translation
       ? `translation-${sourceIndex}-${translationIndex++}`

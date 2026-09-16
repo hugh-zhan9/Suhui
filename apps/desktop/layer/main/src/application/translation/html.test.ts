@@ -166,3 +166,33 @@ describe("article HTML translation plan", () => {
     expect(html).toContain("<code>npm test</code>")
   })
 })
+
+describe("failed batch markers", () => {
+  it("places each marker beside its failed source, outside links, and removes it after success", () => {
+    const plan = createHtmlTranslationPlan(
+      '<p>First</p><p>Read <a href="https://example.com">link</a></p><iframe src="movie"></iframe>',
+    )
+    const html = plan.rebuildPartial(["首段"], new Map([[2, "session:content:2"]]))
+    expect(html).toContain(
+      '<a href="https://example.com">link</a><span data-suhui-translation-retry="session:content:2"></span>',
+    )
+    expect(html).toContain("首段")
+    expect(html).toContain('<iframe src="movie"></iframe>')
+    const complete = plan.rebuildPartial(["首段", "读", "链接"])
+    expect(complete).not.toContain("translation-retry")
+    expect(complete).toContain("链接")
+  })
+  it("keeps separately retryable failed chunks in the same large paragraph", () => {
+    const plan = createHtmlTranslationPlan(`<p>${"A".repeat(4500)}</p>`)
+    expect(plan.batches).toHaveLength(3)
+    const html = plan.rebuildPartial(
+      [undefined, "译B"],
+      new Map([
+        [0, "first"],
+        [2, "third"],
+      ]),
+    )
+    expect(html.match(/data-suhui-translation-retry/g)).toHaveLength(2)
+    expect(html).toContain("译B")
+  })
+})

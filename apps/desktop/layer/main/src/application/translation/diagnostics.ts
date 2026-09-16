@@ -32,6 +32,7 @@ export const translationErrorKind = (error: unknown) => {
 }
 
 type DiagnosticDetails = {
+  sessionId?: string
   elapsedMs?: number
   queueMs?: number
   characters?: number
@@ -45,6 +46,7 @@ type DiagnosticDetails = {
   proxyMode?: "system" | "custom"
   completedBatches?: number
   totalBatches?: number
+  failedBatches?: number
   outputFormat?: "provider_json" | "text" | "json_array"
   validationIssue?:
     | "invalid_shape"

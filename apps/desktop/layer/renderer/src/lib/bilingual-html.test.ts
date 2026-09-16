@@ -47,4 +47,20 @@ describe("bilingual article HTML", () => {
       }),
     ).toBe("<p>Hello</p>")
   })
+  it.each(["bilingual", "translation-only"] as const)(
+    "retains failed paragraph controls in %s mode without duplicating the original",
+    (mode) => {
+      const marker =
+        '<span data-suhui-translation-retry="00000000-0000-0000-0000-000000000000:content:2"></span>'
+      const html = resolveTranslationHtml({
+        sourceHtml: "<p>First</p><p>Failed</p>",
+        translatedHtml: `<p>首段</p><p>Failed${marker}</p>`,
+        mode,
+      })
+      const document = new DOMParser().parseFromString(html, "text/html")
+      expect(document.querySelectorAll("[data-suhui-translation-retry]")).toHaveLength(1)
+      expect(document.body.textContent?.match(/Failed/g)).toHaveLength(1)
+      expect(document.body.textContent).toContain("首段")
+    },
+  )
 })

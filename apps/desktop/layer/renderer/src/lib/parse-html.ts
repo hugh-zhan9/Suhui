@@ -12,6 +12,7 @@ import { MarkdownBlockImage, MarkdownLink, MarkdownP } from "~/components/ui/mar
 import { useIsInParagraphContext } from "~/components/ui/markdown/renderers/ctx"
 import { createHeadingRenderer } from "~/components/ui/markdown/renderers/Heading"
 import { MarkdownInlineImage } from "~/components/ui/markdown/renderers/InlineImage"
+import { TranslationRetrySpan } from "~/components/ui/markdown/TranslationRetry"
 import { Media } from "~/components/ui/media/Media"
 
 import { keyTranslationChildren } from "./translation-render-keys"
@@ -110,7 +111,11 @@ const createHtmlComponents = (): Components => ({
   },
   span: ({ node, ...props }) => {
     markInlineImage(node)
-    return createElement("span", props, props.children)
+    return createElement(
+      TranslationRetrySpan,
+      { ...props, marker: node?.properties.dataSuhuiTranslationRetry as string | undefined },
+      props.children,
+    )
   },
   b: ({ node, ...props }) => {
     markInlineImage(node)

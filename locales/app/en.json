@@ -565,5 +565,14 @@
   "words.user": "User",
   "words.view": "View",
   "words.which.all": "all",
-  "words.zero_items": "Zero items"
+  "words.zero_items": "Zero items",
+  "entry.translation.batch_failed": "Translation failed",
+  "entry.translation.retry": "Retry",
+  "entry.translation.retrying": "Retrying",
+  "entry.translation.partial_failure": "Partially translated",
+  "entry.translation.incomplete": "Translation finished with {{count}} failed batches",
+  "entry.translation.failed_batches": "View {{count}} failed batches",
+  "entry.translation.title_batch": "Title batch {{index}}",
+  "entry.translation.body_batch": "Body batch {{index}}",
+  "entry.translation.restart": "Restart article translation"
 }

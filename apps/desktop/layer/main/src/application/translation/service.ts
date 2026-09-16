@@ -4,12 +4,12 @@ import { EntryService } from "@suhui/database/services/entry"
 import { TranslationService } from "@suhui/database/services/translation"
 import type {
   EntryTranslationProgress,
-  GenerateEntryTranslationInput,
   GeneratedEntryTranslation,
-  TranslationProviderConfigInput,
-  TranslationProviderConfigView,
+  GenerateEntryTranslationInput,
   TranslateTextInput,
   TranslateTextResult,
+  TranslationProviderConfigInput,
+  TranslationProviderConfigView,
 } from "@suhui/shared"
 import type { Session } from "electron"
 import { safeStorage, session } from "electron"
@@ -19,9 +19,10 @@ import { store } from "~/lib/store"
 
 import type { TranslationTrace } from "./diagnostics"
 import { createTranslationTrace, logTranslation, translationErrorKind } from "./diagnostics"
-import { createHtmlTranslationPlan, splitTranslationParagraph } from "./html"
+import { splitTranslationParagraph } from "./html"
 import type { TranslationProviderRuntimeConfig } from "./provider"
 import { translateTexts } from "./provider"
+import { ReaderTranslationSession } from "./reader-session"
 
 const DEFAULT_CONFIG: StoredTranslationProviderConfig = {
   provider: "deepl",
@@ -193,72 +194,11 @@ const runtimeConfig = (
         apiProtocol: config.openAICompatible.apiProtocol ?? "chat-completions",
       }
 
-const translateHtml = async (
-  config: TranslationProviderRuntimeConfig,
-  html: string,
-  language: GenerateEntryTranslationInput["language"],
-  fetchImpl: Fetch,
-  onProgress?: (html: string, completedBatches: number, totalBatches: number) => void,
-  translateFields?: (shouldStop: () => boolean) => Promise<void>,
-  trace: TranslationTrace = createTranslationTrace("article"),
-) => {
-  const plan = createHtmlTranslationPlan(html)
-  const { batches } = plan
-  logTranslation(trace, "body.planned", {
-    totalBatches: batches.length,
-    characters: plan.units.reduce((total, text) => total + text.length, 0),
-  })
-  const translated: Array<string | undefined> = new Array(plan.units.length)
-  const offsets: number[] = []
-  let offset = 0
-  for (const batch of batches) {
-    offsets.push(offset)
-    offset += batch.length
-  }
-  // Title/description share the same two request slots as the body. A slow title
-  // must not prevent the first body batch from starting.
-  let nextBatch = translateFields ? -1 : 0
-  let completedBatches = 0
-  let failure: unknown
-  const worker = async () => {
-    while (nextBatch < batches.length && !failure) {
-      const batchIndex = nextBatch
-      nextBatch += 1
-      try {
-        if (batchIndex === -1) {
-          await translateFields!(() => !!failure)
-          continue
-        }
-        const result = await translateTexts(config, batches[batchIndex]!, language, fetchImpl, {
-          ...trace,
-          batchIndex: batchIndex + 1,
-          totalBatches: batches.length,
-        })
-        result.forEach((value, index) => {
-          translated[offsets[batchIndex]! + index] = value
-        })
-        completedBatches += 1
-        onProgress?.(plan.rebuildPartial(translated), completedBatches, batches.length)
-        logTranslation(trace, "body.progress", { completedBatches, totalBatches: batches.length })
-      } catch (error) {
-        failure ??= error
-        throw error
-      }
-    }
-  }
-  const workerResults = await Promise.allSettled(
-    Array.from({ length: Math.min(2, batches.length + (translateFields ? 1 : 0)) }, () => worker()),
-  )
-  const rejectedWorker = workerResults.find((result) => result.status === "rejected")
-  if (rejectedWorker?.status === "rejected") throw rejectedWorker.reason
-  if (failure) throw failure
-  return plan.rebuild(translated as string[])
-}
-
 type TranslationProgressCallback = (progress: EntryTranslationProgress) => void
 
 class EntryTranslationApplicationService {
   private queues = new Map<string, Promise<GeneratedEntryTranslation>>()
+  private readerSessions = new Map<string, ReaderTranslationSession>()
   private configurationBarrier: Promise<void> = Promise.resolve()
 
   getConfig(): TranslationProviderConfigView {
@@ -315,11 +255,12 @@ class EntryTranslationApplicationService {
       }
       await TranslationService.purgeAllForMaintenance()
       store.set("translationProviderConfig", next)
+      this.readerSessions.clear()
       return next
     })
     this.configurationBarrier = update.then(
-      () => undefined,
-      () => undefined,
+      () => {},
+      () => {},
     )
     return toView(await update)
   }
@@ -366,7 +307,17 @@ class EntryTranslationApplicationService {
     if (input.target !== "content" && input.target !== "readabilityContent") {
       throw new Error("不支持的翻译正文类型")
     }
-    const configurationBarrier = this.configurationBarrier
+    if (
+      input.retry &&
+      (!input.withContent ||
+        typeof input.retry.sessionId !== "string" ||
+        !/^[a-f0-9-]{36}$/.test(input.retry.sessionId) ||
+        typeof input.retry.batchId !== "string" ||
+        !/^(?:title|content|readabilityContent):[1-9]\d*$/.test(input.retry.batchId))
+    ) {
+      throw new Error("翻译重试参数无效")
+    }
+    const { configurationBarrier } = this
     const trace: TranslationTrace = {
       ...createTranslationTrace("article", input.entryId),
       target: input.target,
@@ -388,9 +339,13 @@ class EntryTranslationApplicationService {
           proxyMode: store.get("proxy") ? "custom" : "system",
         })
         const result = await this.generateNow(input, onProgress, trace)
-        logTranslation(trace, "job.completed", {
-          elapsedMs: Math.round(performance.now() - queuedAt),
-        })
+        logTranslation(
+          trace,
+          result.batchState?.failedBatches.length ? "job.partial" : "job.completed",
+          {
+            elapsedMs: Math.round(performance.now() - queuedAt),
+          },
+        )
         return result
       })
       .catch((error: unknown) => {
@@ -434,11 +389,30 @@ class EntryTranslationApplicationService {
       content: cacheIsCurrent ? (cached.content ?? null) : null,
       readabilityContent: cacheIsCurrent ? (cached.readabilityContent ?? null) : null,
     }
-    const fields = input.withContent ? (["title"] as const) : (["title", "description"] as const)
+    if (
+      input.withContent &&
+      !input.retry &&
+      (result.title || !entry.title?.trim()) &&
+      (result[input.target] || !entry[input.target]?.trim())
+    ) {
+      logTranslation(trace, "cache.reused")
+      return result
+    }
+    if (input.withContent) {
+      return this.generateReader(
+        input,
+        result,
+        entry,
+        currentSourceHash,
+        currentConfigHash,
+        storedConfig,
+        onProgress,
+        trace,
+      )
+    }
+    const fields = ["title", "description"] as const
     const needsTextTranslation = fields.some((field) => !result[field] && !!entry[field]?.trim())
-    const needsContentTranslation =
-      !!input.withContent && !result[input.target] && !!entry[input.target]?.trim()
-    if (!needsTextTranslation && !needsContentTranslation) {
+    if (!needsTextTranslation) {
       logTranslation(trace, "cache.reused")
       if (cached && !cacheIsCurrent) {
         await TranslationService.replaceTranslation({
@@ -452,7 +426,7 @@ class EntryTranslationApplicationService {
 
     const config = runtimeConfig(storedConfig)
     const missingTextFields = fields.filter((field) => !result[field] && !!entry[field]?.trim())
-    const translateFields = async (shouldStop = () => false) => {
+    const translateFields = async () => {
       if (missingTextFields.length === 0) return
       for (const field of missingTextFields) {
         const translated: string[] = []
@@ -462,7 +436,6 @@ class EntryTranslationApplicationService {
         const totalBatches = parts.filter((part) => part.trim()).length
         let batchIndex = 0
         for (const part of parts) {
-          if (shouldStop()) return
           if (!part.trim()) {
             translated.push(part)
             continue
@@ -483,32 +456,7 @@ class EntryTranslationApplicationService {
         result[field] = translated.join("")
       }
     }
-    if (needsContentTranslation) {
-      const source = entry[input.target]
-      if (source?.trim()) {
-        result[input.target] = await translateHtml(
-          config,
-          source,
-          input.language,
-          electronSessionFetch,
-          (html, completedBatches, totalBatches) => {
-            if (!input.requestId) return
-            onProgress?.({
-              requestId: input.requestId,
-              entryId: input.entryId,
-              language: input.language,
-              completedBatches,
-              totalBatches,
-              translation: { ...result, [input.target]: html },
-            })
-          },
-          missingTextFields.length > 0 ? translateFields : undefined,
-          trace,
-        )
-      }
-    } else {
-      await translateFields()
-    }
+    await translateFields()
     logTranslation(trace, "cache.writing")
     await TranslationService.replaceTranslation({
       ...result,
@@ -516,6 +464,78 @@ class EntryTranslationApplicationService {
       configHash: currentConfigHash,
     })
     return result
+  }
+
+  private async generateReader(
+    input: GenerateEntryTranslationInput,
+    cachedResult: GeneratedEntryTranslation,
+    entry: { title?: string | null; content?: string | null; readabilityContent?: string | null },
+    currentSourceHash: string,
+    currentConfigHash: string,
+    storedConfig: StoredTranslationProviderConfig,
+    onProgress: TranslationProgressCallback | undefined,
+    trace: TranslationTrace,
+  ) {
+    let checkpoint = input.retry ? this.readerSessions.get(input.retry.sessionId) : undefined
+    if (
+      input.retry &&
+      (!checkpoint ||
+        checkpoint.input.entryId !== input.entryId ||
+        checkpoint.input.language !== input.language ||
+        checkpoint.input.target !== input.target ||
+        checkpoint.sourceHash !== currentSourceHash ||
+        checkpoint.configHash !== currentConfigHash)
+    ) {
+      throw new Error("翻译会话已过期或原文/配置已变化，请重新翻译文章")
+    }
+    checkpoint ??= new ReaderTranslationSession(
+      trace.traceId,
+      { ...input, retry: undefined },
+      currentSourceHash,
+      currentConfigHash,
+      entry,
+      cachedResult,
+    )
+    // Retain before running so even a cache-write failure cannot lose successful slots.
+    this.readerSessions.delete(checkpoint.id)
+    this.readerSessions.set(checkpoint.id, checkpoint)
+    while (this.readerSessions.size > 16)
+      this.readerSessions.delete(this.readerSessions.keys().next().value!)
+    const result = await checkpoint.run(
+      runtimeConfig(storedConfig),
+      electronSessionFetch,
+      trace,
+      (translation) => {
+        if (!input.requestId) return
+        onProgress?.({
+          requestId: input.requestId,
+          entryId: input.entryId,
+          language: input.language,
+          completedBatches: translation.batchState!.completedBatches,
+          totalBatches: translation.batchState!.totalBatches,
+          translation,
+        })
+      },
+      input.retry?.batchId,
+    )
+    if (result.batchState!.failedBatches.length > 0) return result
+    logTranslation(trace, "cache.writing")
+    const { batchState: _batchState, ...fields } = result
+    // The other scope may have completed since this checkpoint was retained.
+    const complete = {
+      ...cachedResult,
+      ...fields,
+      description: cachedResult.description,
+      [input.target === "content" ? "readabilityContent" : "content"]:
+        cachedResult[input.target === "content" ? "readabilityContent" : "content"],
+    }
+    await TranslationService.replaceTranslation({
+      ...complete,
+      sourceHash: currentSourceHash,
+      configHash: currentConfigHash,
+    })
+    this.readerSessions.delete(checkpoint.id)
+    return complete
   }
 }
 

@@ -1,16 +1,21 @@
 import { FeedViewType } from "@suhui/constants"
 import { useEntry } from "@suhui/store/entry/hooks"
 import { getFeedById } from "@suhui/store/feed/getter"
+import { useEntryTranslationProgress } from "@suhui/store/translation/hooks"
+import { translationSyncService } from "@suhui/store/translation/store"
 import { useMemo } from "react"
 import type { JSX } from "react/jsx-runtime"
 
+import { useActionLanguage } from "~/atoms/settings/general"
 import {
   MarkdownImageRecordContext,
   MarkdownRenderActionContext,
 } from "~/components/ui/markdown/context"
 import type { HTMLProps } from "~/components/ui/markdown/HTML"
 import { HTML } from "~/components/ui/markdown/HTML"
+import { TranslationRetryContext } from "~/components/ui/markdown/TranslationRetry"
 import type { MarkdownImage, MarkdownRenderActions } from "~/components/ui/markdown/types"
+import { toast } from "~/lib/toast"
 
 import { TimeStamp } from "./components/TimeStamp"
 import { EntryInfoContext } from "./context"
@@ -23,6 +28,26 @@ export function EntryContentHTMLRenderer<AS extends keyof JSX.IntrinsicElements 
   children,
   ...props
 }: EntryContentRendererProps & HTMLProps<AS>) {
+  const language = useActionLanguage()
+  const progress = useEntryTranslationProgress(entryId, language)
+  const retryContext = useMemo(
+    () =>
+      progress?.batchState
+        ? {
+            state: progress.batchState,
+            busy: progress.status !== "incomplete",
+            retryingBatchId: progress.retryingBatchId,
+            retry: (batchId: string) => {
+              void translationSyncService.retryBatch(entryId, language, batchId).catch((error) =>
+                toast.error("翻译重试失败", {
+                  description: error instanceof Error ? error.message : String(error),
+                }),
+              )
+            },
+          }
+        : null,
+    [entryId, language, progress],
+  )
   const entry = useEntry(entryId, (state) => {
     const images =
       state.media?.reduce(
@@ -67,8 +92,10 @@ export function EntryContentHTMLRenderer<AS extends keyof JSX.IntrinsicElements 
     <MarkdownImageRecordContext.Provider value={images}>
       <MarkdownRenderActionContext value={actions}>
         <EntryInfoContext value={useMemo(() => ({ feedId, entryId }), [feedId, entryId])}>
-          {/*  @ts-expect-error */}
-          <HTML {...props}>{children}</HTML>
+          <TranslationRetryContext value={retryContext}>
+            {/*  @ts-expect-error */}
+            <HTML {...props}>{children}</HTML>
+          </TranslationRetryContext>
         </EntryInfoContext>
       </MarkdownRenderActionContext>
     </MarkdownImageRecordContext.Provider>

@@ -40,24 +40,38 @@ function EntryHeaderActionsContainerImpl({ isSmallWidth }: { isSmallWidth?: bool
   const translationEnabled = useShowAITranslation(entryId, !!entry?.translation)
   const translationProgress = useEntryTranslationProgress(entryId, actionLanguage)
   const translationQuery = useEntryTranslationQuery(entryId)
-  const translationError = !translationQuery?.isFetching ? translationQuery?.error : null
+  const hasBatchFailures = !!translationProgress?.batchState?.failedBatches.length
+  const retrying = !!translationProgress?.retryingBatchId
+  const translationError =
+    !translationQuery?.isFetching && !retrying
+      ? (translationQuery?.error ??
+        (translationProgress?.error ? new Error(translationProgress.error) : null))
+      : null
+  const isIncomplete =
+    hasBatchFailures && !translationError && !translationQuery?.isFetching && !retrying
   const isComplete =
-    !translationQuery?.isFetching && !translationError && translationQuery?.isSuccess
-  const isTranslating = translationEnabled && !translationError && !isComplete
+    !translationQuery?.isFetching &&
+    !translationError &&
+    translationQuery?.isSuccess &&
+    !hasBatchFailures &&
+    !retrying
+  const isTranslating = translationEnabled && !translationError && !isComplete && !isIncomplete
   const translationTooltip = !translationEnabled
     ? t("entry.translation.enable")
-    : translationError
-      ? t("entry.translation.failed")
-      : isTranslating &&
-          translationProgress?.status === "partial" &&
-          translationProgress.totalBatches > 0
-        ? t("entry.translation.progress", {
-            completed: translationProgress.completedBatches,
-            total: translationProgress.totalBatches,
-          })
-        : isComplete
-          ? t("entry.translation.complete")
-          : t("entry.translation.translating")
+    : isIncomplete
+      ? t("entry.translation.partial_failure")
+      : translationError
+        ? t("entry.translation.failed")
+        : isTranslating &&
+            translationProgress?.status === "partial" &&
+            translationProgress.totalBatches > 0
+          ? t("entry.translation.progress", {
+              completed: translationProgress.completedBatches,
+              total: translationProgress.totalBatches,
+            })
+          : isComplete
+            ? t("entry.translation.complete")
+            : t("entry.translation.translating")
 
   return (
     <div className={clsx("relative flex shrink-0 items-center justify-end gap-2")}>
@@ -86,11 +100,13 @@ function EntryHeaderActionsContainerImpl({ isSmallWidth }: { isSmallWidth?: bool
           <span className="whitespace-nowrap">
             {!translationEnabled
               ? t("entry.translation.label")
-              : translationError
-                ? t("entry.translation.error")
-                : isComplete
-                  ? t("entry.translation.complete")
-                  : t("entry.translation.translating")}
+              : isIncomplete
+                ? t("entry.translation.partial_failure")
+                : translationError
+                  ? t("entry.translation.error")
+                  : isComplete
+                    ? t("entry.translation.complete")
+                    : t("entry.translation.translating")}
           </span>
         </ActionButton>
       )}

@@ -43,7 +43,12 @@ export const buildBilingualHtml = (
 
   sourceBlocks.forEach((source, index) => {
     const translated = translatedBlocks[index]!
-    if ((source.textContent ?? "").trim() === (translated.textContent ?? "").trim()) return
+    if ((source.textContent ?? "").trim() === (translated.textContent ?? "").trim()) {
+      // Failed blocks still equal their source: attach controls without duplicating the paragraph.
+      for (const marker of translated.querySelectorAll("span[data-suhui-translation-retry]"))
+        source.append(marker.cloneNode(true))
+      return
+    }
     const sourceTag = source.tagName.toLowerCase()
     const translation = source.ownerDocument.createElement(
       sourceTag === "li" || sourceTag === "td" || sourceTag === "th" ? "div" : sourceTag,
