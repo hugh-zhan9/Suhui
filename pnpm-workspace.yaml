@@ -44,6 +44,9 @@ overrides:
   global-agent>serialize-error: 7.0.1
   is-core-module: npm:@nolyfill/is-core-module@1.0.39
   isarray: npm:@nolyfill/isarray@1.0.44
+  # @electron/rebuild 3.7.2 自带的 node-abi 停在 3.87，不认识 Electron 43，
+  # 原生模块重编会报 "Could not detect abi for version 43"。3.96 仍是同一大版本。
+  node-abi: 3.96.0
   react: 19.1.0
   react-dom: 19.1.0
   serialize-error: 2.1.0

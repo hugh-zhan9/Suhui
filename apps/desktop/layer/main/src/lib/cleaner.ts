@@ -73,13 +73,12 @@ export const clearAllData = async () => {
     await ses.clearCache()
 
     await ses.clearStorageData({
+      // Electron 43 起不再接受 "websql"：Chromium 已彻底移除 WebSQL，清理它是空操作。
       storages: [
-        "websql",
         "filesystem",
         "indexdb",
         "localstorage",
         "shadercache",
-        "websql",
         "serviceworkers",
         "cookies",
       ],

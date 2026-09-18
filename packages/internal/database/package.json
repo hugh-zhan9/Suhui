@@ -43,7 +43,7 @@
     "@suhui/models": "workspace:*",
     "@suhui/shared": "workspace:*",
     "ai": "6.0.85",
-    "better-sqlite3": "12.6.2",
+    "better-sqlite3": "13.0.3",
     "drizzle-orm": "0.45.1",
     "pg": "8.13.3",
     "wa-sqlite": "git+https://github.com/rhashimoto/wa-sqlite.git#v1.0.8"
