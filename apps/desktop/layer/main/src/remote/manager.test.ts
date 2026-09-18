@@ -509,6 +509,46 @@ describe("RemoteServerManager", () => {
     abortController.abort()
   })
 
+  it("serves the home-screen shell assets from the root and nothing else", async () => {
+    const getRemoteAsset = vi.fn().mockImplementation(async (pathname: string) => {
+      if (pathname === "/remote-manifest.webmanifest") {
+        return {
+          contentType: "application/manifest+json; charset=utf-8",
+          content: '{"name":"溯洄"}',
+        }
+      }
+      if (pathname === "/remote-sw.js") {
+        return { contentType: "text/javascript; charset=utf-8", content: "// sw" }
+      }
+      return null
+    })
+    const server = await RemoteServerManager.start({
+      host: "127.0.0.1",
+      port: 0,
+      getSubscriptions: vi.fn().mockResolvedValue([]),
+      listEntries: vi.fn().mockResolvedValue({
+        items: [],
+        page: { limit: 20, hasMore: false, nextCursor: null },
+      }),
+      getRemoteAsset,
+    })
+
+    // The manifest link resolves against the origin, and a worker can only
+    // claim the scope it is served from, so both must live at the root.
+    const manifest = await fetch(`${server.baseUrl}/remote-manifest.webmanifest`)
+    expect(manifest.status).toBe(200)
+    expect(manifest.headers.get("content-type")).toContain("manifest+json")
+
+    const worker = await fetch(`${server.baseUrl}/remote-sw.js`)
+    expect(worker.status).toBe(200)
+    expect(worker.headers.get("content-type")).toContain("javascript")
+
+    // Opening the root to these paths must not turn it into a file server for
+    // the renderer bundle.
+    await fetch(`${server.baseUrl}/package.json`)
+    expect(getRemoteAsset).not.toHaveBeenCalledWith("/package.json")
+  })
+
   it("returns a bounded additive HTTP page and preserves repeated feed scopes", async () => {
     const listEntries = vi.fn().mockResolvedValue({
       items: [

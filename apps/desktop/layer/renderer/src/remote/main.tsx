@@ -12,6 +12,7 @@ import { jotaiStore } from "~/lib/jotai"
 import { persistConfig, queryClient } from "~/lib/query-client"
 
 import { markRemoteRuntime } from "@suhui/store/remote"
+import { registerRemoteServiceWorker } from "./register-sw"
 import { RemoteApp } from "./remote-app"
 import { beginRemotePerformanceSession } from "./remote-performance"
 
@@ -19,6 +20,7 @@ import { beginRemotePerformanceSession } from "./remote-performance"
 markRemoteRuntime()
 queryClientContext.provide(queryClient)
 beginRemotePerformanceSession()
+registerRemoteServiceWorker()
 
 const container = document.querySelector("#root")
 

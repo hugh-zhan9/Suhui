@@ -6,7 +6,21 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover"
     />
-    <title>Suhui Remote</title>
+    <title>溯洄</title>
+
+    <!-- Added to the home screen via Safari, this page runs standalone: no
+         address bar, so theme-color and the status bar style are what frames
+         the app. `viewport-fit=cover` above pairs with the safe-area insets
+         the remote UI applies. -->
+    <link rel="manifest" href="/remote-manifest.webmanifest" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="溯洄" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <link rel="apple-touch-icon" href="/remote-apple-touch-icon.png" />
+    <link rel="icon" href="/remote-icon-192.png" type="image/png" />
   </head>
   <body>
     <div id="root"></div>

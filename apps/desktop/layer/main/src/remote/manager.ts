@@ -42,7 +42,7 @@ import { ruleApplicationService } from "~/application/rules/service"
 import { broadcastLocalFeedRefreshCompleted } from "~/manager/local-feed-refresh-events"
 import { DBManager } from "~/manager/db"
 
-import { getRemoteClientAsset, getRemoteClientHtml } from "./client"
+import { getRemoteClientAsset, getRemoteClientHtml, isRemotePwaAssetPath } from "./client"
 import { REMOTE_SERVER_DEFAULT_HOST, REMOTE_SERVER_DEFAULT_PORT } from "./config"
 import { getRemoteShellHtml, getRemoteShellScript } from "./shell"
 
@@ -692,7 +692,9 @@ const createRequestHandler =
 
     if (
       method === "GET" &&
-      (url.pathname.startsWith("/assets/") || url.pathname.startsWith("/__remote_dev__/"))
+      (url.pathname.startsWith("/assets/") ||
+        url.pathname.startsWith("/__remote_dev__/") ||
+        isRemotePwaAssetPath(url.pathname))
     ) {
       const asset = await deps.getRemoteAsset(url.pathname)
       if (asset) {

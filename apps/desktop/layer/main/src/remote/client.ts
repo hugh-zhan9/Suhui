@@ -21,7 +21,22 @@ const CONTENT_TYPES: Record<string, string> = {
   ".png": "image/png",
   ".svg": "image/svg+xml; charset=utf-8",
   ".tsx": "text/javascript; charset=utf-8",
+  ".webmanifest": "application/manifest+json; charset=utf-8",
 }
+
+// The home-screen shell needs these at the root: a manifest link resolves
+// against the origin, and a worker may only claim the scope it is served from.
+// They are an explicit allowlist rather than a directory listing so the server
+// never starts handing out arbitrary files from the renderer bundle.
+const REMOTE_PWA_ASSETS = new Set([
+  "/remote-manifest.webmanifest",
+  "/remote-sw.js",
+  "/remote-apple-touch-icon.png",
+  "/remote-icon-192.png",
+  "/remote-icon-512.png",
+])
+
+export const isRemotePwaAssetPath = (pathname: string) => REMOTE_PWA_ASSETS.has(pathname)
 
 const getRendererDistRoot = () => path.resolve(__dirname, "../renderer")
 
@@ -65,7 +80,7 @@ export const getRemoteClientAsset = async (pathname: string): Promise<RemoteAsse
     }
   }
 
-  if (pathname.startsWith("/assets/")) {
+  if (pathname.startsWith("/assets/") || isRemotePwaAssetPath(pathname)) {
     const filePath = path.join(getRendererDistRoot(), pathname)
     if (!existsSync(filePath)) {
       return null
