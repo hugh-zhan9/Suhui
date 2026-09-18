@@ -14,7 +14,7 @@ export const useRepairFeed = (feedId: string) => {
   const mutation = useMutation({
     mutationKey,
     mutationFn: async () => {
-      if (!IN_ELECTRON) throw new Error("请在桌面应用中重新查找订阅源")
+      if (!IN_ELECTRON || !ipcServices) throw new Error("请在桌面应用中重新查找订阅源")
       const result = await ipcServices.db.repairFeed(feedId)
       const feeds = await FeedService.getFeedAll()
       feedActions.upsertManyInSession(feeds.map((feed) => ({ ...feed, type: "feed" as const })))
