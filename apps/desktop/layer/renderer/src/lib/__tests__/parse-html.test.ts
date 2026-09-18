@@ -1,6 +1,7 @@
+import { renderToString } from "react-dom/server"
 import { describe, expect, it } from "vitest"
 
-import { extractCodeFromHtml } from "../parse-html"
+import { extractCodeFromHtml, parseHtml } from "../parse-html"
 
 describe("extractCodeFromHtml", () => {
   it("should extract code from div elements", () => {
@@ -365,6 +366,20 @@ describe("extractCodeFromHtml", () => {
     `)
   })
 
+  // https://developers.cloudflare.com/changelog/rss/index.xml
+  it("should not duplicate code blocks from cloudflare changelog", () => {
+    const htmlString = `<div><div><span>{</span></div></div><div><div><span>  </span><span>"</span><span>$schema</span><span>"</span><span>:</span><span> </span><span>"./node_modules/wrangler/config-schema.json"</span><span>,</span></div></div><div><div><span>  </span><span>"</span><span>pipelines</span><span>"</span><span>:</span><span> </span><span>[</span></div></div><div><div><span>}</span></div></div>`
+    const result = extractCodeFromHtml(htmlString)
+
+    expect(result).toMatchInlineSnapshot(`
+      "{
+        "$schema": "./node_modules/wrangler/config-schema.json",
+        "pipelines": [
+      }
+      "
+    `)
+  })
+
   it("no <code />", () => {
     const htmlString = `<span class="line"><span class="keyword">if</span> theme.<span class="property">twikoo</span>.<span class="property">enable</span> == <span class="literal">true</span></span><br><span class="line">  #tcomment</span><br><span class="line">  <span class="title function_">script</span>(src=<span class="string">'https://registry.npmmirror.com/twikoo/1.6.39/files/dist/twikoo.all.min.js'</span>)</span><br><span class="line">  script.</span><br><span class="line">    twikoo.<span class="title function_">init</span>({</span><br><span class="line">      <span class="attr">envId</span>: <span class="string">'#{theme.twikoo.envId}'</span>,</span><br><span class="line">      <span class="attr">el</span>: <span class="string">'#tcomment'</span>,</span><br><span class="line">      <span class="attr">region</span>: <span class="string">'#{theme.twikoo.region}'</span>,</span><br><span class="line">      <span class="attr">path</span>: <span class="string">'#{theme.twikoo.path}'</span>,</span><br><span class="line">      <span class="attr">onCommentLoaded</span>: <span class="keyword">function</span> (<span class="params"></span>) {</span><br><span class="line">        <span class="keyword">const</span> commentCountElement = <span class="variable language_">document</span>.<span class="title function_">querySelector</span>(<span class="string">'.tk-comments-count'</span>);</span><br><span class="line">        <span class="keyword">const</span> targetElement = <span class="variable language_">document</span>.<span class="title function_">querySelector</span>(<span class="string">'.waline-comment-count'</span>);</span><br><span class="line">        <span class="keyword">if</span> (commentCountElement) {</span><br><span class="line">          <span class="keyword">const</span> countSpan = commentCountElement.<span class="title function_">querySelector</span>(<span class="string">'span:first-child'</span>);</span><br><span class="line">          <span class="keyword">const</span> commentCount = <span class="built_in">parseInt</span>(countSpan.<span class="property">textContent</span>);</span><br><span class="line">          targetElement.<span class="property">textContent</span> = commentCount;</span><br><span class="line">        } <span class="keyword">else</span> {</span><br><span class="line">          <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">'未找到评论数量元素'</span>);</span><br><span class="line">        }</span><br><span class="line">      }</span><br><span class="line">    })</span><br><span class="line"></span><br>`
     const result = extractCodeFromHtml(htmlString)
@@ -372,5 +387,37 @@ describe("extractCodeFromHtml", () => {
     expect(result).toMatchInlineSnapshot(
       `"if theme.twikoo.enable == true  #tcomment  script(src='https://registry.npmmirror.com/twikoo/1.6.39/files/dist/twikoo.all.min.js')  script.    twikoo.init({      envId: '#{theme.twikoo.envId}',      el: '#tcomment',      region: '#{theme.twikoo.region}',      path: '#{theme.twikoo.path}',      onCommentLoaded: function () {        const commentCountElement = document.querySelector('.tk-comments-count');        const targetElement = document.querySelector('.waline-comment-count');        if (commentCountElement) {          const countSpan = commentCountElement.querySelector('span:first-child');          const commentCount = parseInt(countSpan.textContent);          targetElement.textContent = commentCount;        } else {          console.log('未找到评论数量元素');        }      }    })"`,
     )
+  })
+})
+
+describe("parseHtml iframe", () => {
+  const renderIframe = (attrs: string) =>
+    renderToString(parseHtml(`<iframe ${attrs}></iframe>`).toContent()).toLowerCase()
+
+  const youtubeSrc = `src="https://www.youtube.com/embed/dQw4w9WgXcQ"`
+
+  it("should rewrite referrer-hiding policies on youtube iframes", () => {
+    for (const policy of ["no-referrer", "same-origin"]) {
+      expect(renderIframe(`${youtubeSrc} referrerpolicy="${policy}"`)).toContain(
+        `referrerpolicy="strict-origin-when-cross-origin"`,
+      )
+    }
+  })
+
+  it("should keep other declared referrerpolicy values on youtube iframes", () => {
+    expect(renderIframe(`${youtubeSrc} referrerpolicy="origin"`)).toContain(
+      `referrerpolicy="origin"`,
+    )
+  })
+
+  it("should set referrerpolicy when youtube iframes declare none", () => {
+    // an absent attribute would inherit no-referrer from the document meta tag
+    expect(renderIframe(youtubeSrc)).toContain(`referrerpolicy="strict-origin-when-cross-origin"`)
+  })
+
+  it("should drop referrerpolicy on non-youtube iframes", () => {
+    expect(
+      renderIframe(`src="https://example.com/embed" referrerpolicy="no-referrer"`),
+    ).not.toContain("referrerpolicy")
   })
 })

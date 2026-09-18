@@ -17,6 +17,8 @@ import { Media } from "~/components/ui/media/Media"
 
 import { keyTranslationChildren } from "./translation-render-keys"
 
+const youtubeEmbedRegex = /^https:\/\/(?:www\.)?(?:youtube\.com|youtube-nocookie\.com)\/embed\//
+
 type ParsedCodeBlockProps = {
   className?: string
   code: string
@@ -143,7 +145,7 @@ const createHtmlComponents = (): Components => ({
     return createElement("input", props)
   },
   iframe: ({ node, ...props }) => {
-    const { width, height, src, ...rest } = props
+    const { width, height, src, referrerPolicy, ...rest } = props
 
     // Apply security sandbox attributes and responsive styling
     return createElement("iframe", {
@@ -155,6 +157,14 @@ const createHtmlComponents = (): Components => ({
       sandbox: "allow-scripts allow-same-origin allow-popups allow-forms",
       allowFullScreen: true,
       loading: "lazy",
+      // Avoid YouTube Error 153 https://developers.google.com/youtube/terms/required-minimum-functionality#embedded-player-api-client-identity
+      ...(typeof src === "string" &&
+        youtubeEmbedRegex.test(src) && {
+          referrerPolicy:
+            !referrerPolicy || referrerPolicy === "no-referrer" || referrerPolicy === "same-origin"
+              ? "strict-origin-when-cross-origin"
+              : referrerPolicy,
+        }),
       style: {
         aspectRatio: width && height ? `${width} / ${height}` : "16 / 9",
         ...rest.style,
@@ -291,7 +301,9 @@ export function extractCodeFromHtml(htmlString: string) {
 
   if (divElements.length > 0) {
     divElements.forEach((div) => {
-      code += `${div.textContent}\n`
+      if (!div.querySelector("div")) {
+        code += `${div.textContent}\n`
+      }
     })
     return code
   }

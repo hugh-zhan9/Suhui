@@ -91,6 +91,7 @@ export const parseHtmlToHast = (content: string, options?: ParseHtmlTreeOptions)
         "allowfullscreen",
         "sandbox",
         "loading",
+        "referrerPolicy",
         "title",
         "id",
         "class",
