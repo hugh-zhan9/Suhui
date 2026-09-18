@@ -8,27 +8,45 @@ export type HighlightAnchor = {
 }
 
 const decodeHtmlEntities = (value: string) =>
-  value.replace(/&(?:#(\d+)|#x([\da-f]+)|nbsp|amp|quot|apos|lt|gt);/gi, (entity, decimal, hex) => {
-    if (decimal) return String.fromCodePoint(Number.parseInt(decimal, 10))
-    if (hex) return String.fromCodePoint(Number.parseInt(hex, 16))
-    return (
-      {
-        "&nbsp;": " ",
-        "&amp;": "&",
-        "&quot;": '"',
-        "&apos;": "'",
-        "&lt;": "<",
-        "&gt;": ">",
-      }[entity.toLowerCase()] ?? entity
-    )
-  })
-
-export const articleText = (html: string) =>
-  decodeHtmlEntities(
-    html.replace(/<(?:br|\/p|\/div|\/li|\/h[1-6])\s*\/?>/gi, "\n").replace(/<[^>]*>/g, " "),
+  value.replaceAll(
+    /&(?:#(\d+)|#x([\da-f]+)|nbsp|amp|quot|apos|lt|gt);/gi,
+    (entity, decimal, hex) => {
+      if (decimal) return String.fromCodePoint(Number.parseInt(decimal, 10))
+      if (hex) return String.fromCodePoint(Number.parseInt(hex, 16))
+      return (
+        {
+          "&nbsp;": " ",
+          "&amp;": "&",
+          "&quot;": '"',
+          "&apos;": "'",
+          "&lt;": "<",
+          "&gt;": ">",
+        }[entity.toLowerCase()] ?? entity
+      )
+    },
   )
-    .replace(/[\t\r ]+/g, " ")
-    .replace(/\n{3,}/g, "\n\n")
+
+/**
+ * Tags whose boundaries the browser turns into a line break (or a tab, for table cells)
+ * when a selection is serialised (`Selection.toString()`), so they become a word
+ * separator here. Mirrored by `BLOCK_TAGS` in the renderer's `lib/highlight-range.ts`.
+ */
+const BLOCK_TAG_PATTERN =
+  /<\/?(?:address|article|aside|blockquote|br|caption|center|dd|details|dialog|div|dl|dt|fieldset|figcaption|figure|footer|form|h[1-6]|header|hgroup|hr|legend|li|main|menu|nav|ol|p|pre|section|summary|table|tbody|td|tfoot|th|thead|tr|ul)\b[^>]*>/gi
+
+/**
+ * Plain-text projection of the entry HTML that highlights are anchored against.
+ *
+ * It must produce the same string as the renderer does from the live DOM
+ * (`lib/highlight-range.ts` and the whitespace-collapsed selection quote): inline tags
+ * such as `<code>` or `<strong>` contribute nothing, block boundaries count as one space,
+ * and every whitespace run collapses to a single space. Replacing inline tags with a
+ * space inserts characters that never exist in the rendered text, which is fatal for
+ * CJK prose where no natural whitespace can absorb them.
+ */
+export const articleText = (html: string) =>
+  decodeHtmlEntities(html.replaceAll(BLOCK_TAG_PATTERN, " ").replaceAll(/<[^>]*>/g, ""))
+    .replaceAll(/\s+/g, " ")
     .trim()
 
 type HighlightInput = {
@@ -39,24 +57,37 @@ type HighlightInput = {
   endOffset?: number | null
 }
 
-export const createHighlightAnchor = (text: string, input: HighlightInput): HighlightAnchor => {
-  const quote = input.quote.trim().replace(/\s+/g, " ")
-  if (!quote) throw new Error("Highlight quote is empty")
-  let start = input.startOffset ?? null
-  let end = input.endOffset ?? null
-  if (start === null || end === null || text.slice(start, end) !== quote) {
-    start = locateHighlight(text, quote, input)
-    if (start === null) throw new Error("Highlight quote cannot be located")
-    end = start + quote.length
-  }
+const CONTEXT_LENGTH = 64
+
+/** An active anchor for `quote` at `start`, with its context re-read from the current text. */
+const anchorAt = (text: string, quote: string, start: number): HighlightAnchor => {
+  const end = start + quote.length
   return {
     quote,
-    prefix: text.slice(Math.max(0, start - 64), start),
-    suffix: text.slice(end, end + 64),
+    prefix: text.slice(Math.max(0, start - CONTEXT_LENGTH), start),
+    suffix: text.slice(end, end + CONTEXT_LENGTH),
     startOffset: start,
     endOffset: end,
     status: "active",
   }
+}
+
+export const createHighlightAnchor = (text: string, input: HighlightInput): HighlightAnchor => {
+  const quote = input.quote.trim().replaceAll(/\s+/g, " ")
+  if (!quote) throw new Error("Highlight quote is empty")
+  const { startOffset, endOffset } = input
+  if (
+    startOffset !== null &&
+    startOffset !== undefined &&
+    endOffset !== null &&
+    endOffset !== undefined &&
+    text.slice(startOffset, endOffset) === quote
+  ) {
+    return anchorAt(text, quote, startOffset)
+  }
+  const start = locateHighlight(text, quote, input)
+  if (start === null) throw new Error("Highlight quote cannot be located")
+  return anchorAt(text, quote, start)
 }
 
 const locateHighlight = (text: string, quote: string, input: HighlightInput) => {
@@ -70,8 +101,8 @@ const locateHighlight = (text: string, quote: string, input: HighlightInput) => 
   if (matches.length === 1) return matches[0]!
   const context = {
     quote,
-    prefix: input.prefix?.replace(/\s+/g, " ") ?? "",
-    suffix: input.suffix?.replace(/\s+/g, " ") ?? "",
+    prefix: input.prefix ?? "",
+    suffix: input.suffix ?? "",
     startOffset: null,
     endOffset: null,
     status: "active" as const,
@@ -85,30 +116,57 @@ const locateHighlight = (text: string, quote: string, input: HighlightInput) => 
   return ranked[0]!.candidate
 }
 
-const contextScore = (text: string, start: number, anchor: HighlightAnchor) => {
-  let prefixScore = 0
-  const actualPrefix = text.slice(Math.max(0, start - anchor.prefix.length), start)
-  for (let index = 1; index <= Math.min(actualPrefix.length, anchor.prefix.length); index++) {
-    if (actualPrefix.at(-index) !== anchor.prefix.at(-index)) break
-    prefixScore += 1
+const WHITESPACE = /\s/
+
+/**
+ * Counts how many characters of `context`, read from its boundary inward, match `text`
+ * read from `from` in direction `step`. Whitespace is skipped on both sides: stored context
+ * may come from the renderer's raw DOM text or from an earlier projection of the entry,
+ * and those disagree with the current projection only in whitespace.
+ */
+const matchingRun = (text: string, from: number, step: -1 | 1, context: string) => {
+  let count = 0
+  let textIndex = from
+  let contextIndex = step < 0 ? context.length - 1 : 0
+  while (
+    contextIndex >= 0 &&
+    contextIndex < context.length &&
+    textIndex >= 0 &&
+    textIndex < text.length
+  ) {
+    if (WHITESPACE.test(context[contextIndex]!)) {
+      contextIndex += step
+      continue
+    }
+    if (WHITESPACE.test(text[textIndex]!)) {
+      textIndex += step
+      continue
+    }
+    if (context[contextIndex] !== text[textIndex]) break
+    count += 1
+    contextIndex += step
+    textIndex += step
   }
-  let suffixScore = 0
-  const quoteEnd = start + anchor.quote.length
-  const actualSuffix = text.slice(quoteEnd, quoteEnd + anchor.suffix.length)
-  for (let index = 0; index < Math.min(actualSuffix.length, anchor.suffix.length); index++) {
-    if (actualSuffix[index] !== anchor.suffix[index]) break
-    suffixScore += 1
-  }
-  return prefixScore + suffixScore
+  return count
 }
 
+const contextScore = (text: string, start: number, anchor: HighlightAnchor) =>
+  matchingRun(text, start - 1, -1, anchor.prefix) +
+  matchingRun(text, start + anchor.quote.length, 1, anchor.suffix)
+
+/**
+ * Re-anchors a stored highlight against the current text. Every active result re-reads
+ * prefix/suffix from that text, so context recorded under an older projection is
+ * replaced instead of being carried forward; an orphaned result keeps the old context as
+ * the only clue left for a later relocation.
+ */
 export const relocateHighlightAnchor = (text: string, anchor: HighlightAnchor): HighlightAnchor => {
   if (
     anchor.startOffset !== null &&
     anchor.endOffset !== null &&
     text.slice(anchor.startOffset, anchor.endOffset) === anchor.quote
   ) {
-    return { ...anchor, status: "active" }
+    return anchorAt(text, anchor.quote, anchor.startOffset)
   }
 
   const matches: number[] = []
@@ -121,12 +179,7 @@ export const relocateHighlightAnchor = (text: string, anchor: HighlightAnchor): 
     return { ...anchor, startOffset: null, endOffset: null, status: "orphaned" }
   }
   if (matches.length === 1) {
-    return {
-      ...anchor,
-      startOffset: matches[0]!,
-      endOffset: matches[0]! + anchor.quote.length,
-      status: "active",
-    }
+    return anchorAt(text, anchor.quote, matches[0]!)
   }
 
   const ranked = matches
@@ -135,10 +188,5 @@ export const relocateHighlightAnchor = (text: string, anchor: HighlightAnchor): 
   if (ranked[0]!.score === 0 || ranked[0]!.score === ranked[1]!.score) {
     return { ...anchor, startOffset: null, endOffset: null, status: "orphaned" }
   }
-  return {
-    ...anchor,
-    startOffset: ranked[0]!.start,
-    endOffset: ranked[0]!.start + anchor.quote.length,
-    status: "active",
-  }
+  return anchorAt(text, anchor.quote, ranked[0]!.start)
 }

@@ -1,7 +1,7 @@
 # AI-CONTEXT.md
 
 > 单一事实源（Single Source of Truth）
-> 最后更新时间：2026-09-16（五路并发与译文持久化；批次翻译失败隔离与单批重试；笔记与高亮汇总页；渐进式文章与选区翻译；SQLite 支持与 Postgres ↔ SQLite 双向转换；渲染层远端接口清零）
+> 最后更新时间：2026-09-16（五路并发与译文持久化；批次翻译失败隔离与单批重试；笔记与高亮汇总页；渐进式文章与选区翻译；高亮锚定投影与渲染层对齐；SQLite 支持与 Postgres ↔ SQLite 双向转换；渲染层远端接口清零）
 
 ## 上下文委派策略
 
@@ -333,6 +333,20 @@
 - 展示模式为“双语对照”（原文段落下紧跟译文）或“仅译文”；正文只发送可翻译文本节点，标签、属性、URL、媒体与代码保留在本地，代码块不发送翻译
 - 选择文章文字后可点击“翻译”；选区在 main 再次校验非空与 20,000 字符上限，加载状态和结果默认在选区下方就地显示（底部空间不足时在选区上方避让），不打开居中模态窗、不进入文章缓存；切换选区或文章后忽略旧请求结果。HTTP 错误仅显示 allowlist 原因，清理密钥并截断
 - 翻译 IPC 仅供 Desktop renderer 使用；Remote 尚无鉴权时不增加可消耗用户额度或泄露服务配置的 HTTP 路由
+
+## 高亮锚定投影与渲染层对齐（2026-09-03）
+
+- 主进程 `application/annotations/anchor.ts` 的 `articleText` 是高亮锚定所用的纯文本投影，必须与渲染层
+  `lib/highlight-range.ts` 从 DOM 文本节点重建的投影一致：行内标签（`<code>`/`<strong>`/`<a>`）不产生任何字符，
+  块级标签边界算一个空格，所有空白折叠为单个空格。选区 quote 来自 `Selection.toString()`，跨块时带换行，折叠后同样是一个空格
+- 旧实现把每个标签替换成空格，在中文正文里凭空插入空格；选区只要跨过行内标签或块级边界就抛
+  `Highlight quote cannot be located`，即用户看到的「高亮失败」。`anchor.test.ts` 用真实条目的标记结构钉住这两类选区
+- 渲染层 `buildTextIndex` 同步改为块级元素边界（含 `<br>`）补一个空格，源 HTML 块之间没有空白时跨块高亮也能画出来；
+  `highlight-range.test.ts` 有一条用主进程 `createHighlightAnchor` 的结果直接喂给 `locateHighlightRanges` 的配对用例，两套投影不得再次漂移
+- 旧投影下已存的高亮不需要迁移：打开文章时 `relocate` 先按旧偏移校验，失败后用 quote 重新定位；每个 active 结果都从当前文本
+  重读 prefix/suffix，不再沿用陈旧上下文。上下文比对（`contextScore`）忽略空白，因为渲染层选区上下文、旧投影与当前投影只在空白上有分歧；
+  渲染层传上来的 `startOffset/endOffset` 是 DOM 坐标，只在切片恰好等于 quote 时作为快速路径
+- 高亮失败 toast 把原始错误放进 `description`（可复制），标题只给结论；Remote 端 `jsonRequest` 仍只抛 `HTTP <status>`，没有原因文本（既有限制）
 
 ## 远程访问当前边界
 

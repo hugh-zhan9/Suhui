@@ -138,7 +138,9 @@ export const ArticleLayout: React.FC<EntryLayoutProps> = ({
                   await refreshEntryAnnotations(entryId)
                 } catch (error) {
                   console.error("Failed to create highlight:", error)
-                  toast.error(t("entry_content.selection_toolbar.highlight_failed"))
+                  toast.error(t("entry_content.selection_toolbar.highlight_failed"), {
+                    description: error instanceof Error ? error.message : String(error),
+                  })
                 }
               }}
             />

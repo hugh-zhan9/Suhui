@@ -15,25 +15,72 @@ export type LocatableHighlight = {
 
 type TextPosition = { node: Text; offset: number }
 
-type TextIndex = { text: string; positions: TextPosition[] }
+/** A `null` position is a separator synthesised at a block boundary; no text node backs it. */
+type TextIndex = { text: string; positions: (TextPosition | null)[] }
 
 const WHITESPACE = /\s/
 const SKIPPED_TAGS = new Set(["SCRIPT", "STYLE", "NOSCRIPT"])
 
+/**
+ * Elements whose boundaries the browser serialises as a line break (or tab) in a
+ * selection, so the anchored quote carries one space there even when the source HTML has
+ * no whitespace between them. Mirrors `BLOCK_TAG_PATTERN` in the main process
+ * (`application/annotations/anchor.ts`).
+ */
+const BLOCK_TAGS = new Set(
+  "address article aside blockquote br caption center dd details dialog div dl dt fieldset figcaption figure footer form h1 h2 h3 h4 h5 h6 header hgroup hr legend li main menu nav ol p pre section summary table tbody td tfoot th thead tr ul"
+    .toUpperCase()
+    .split(" "),
+)
+
 const collapseWhitespace = (value: string) => value.replaceAll(/\s+/g, " ")
 
+/** The closest block-level ancestor of `node` below `container`, or `container` itself. */
+const nearestBlock = (node: Node, container: Element): Element => {
+  let element = node.parentElement
+  while (element && element !== container) {
+    if (BLOCK_TAGS.has(element.tagName)) return element
+    element = element.parentElement
+  }
+  return container
+}
+
 const buildTextIndex = (container: Element): TextIndex => {
-  const walker = container.ownerDocument.createTreeWalker(container, NodeFilter.SHOW_TEXT, {
-    acceptNode: (node) =>
-      node.parentElement && SKIPPED_TAGS.has(node.parentElement.tagName)
-        ? NodeFilter.FILTER_REJECT
-        : NodeFilter.FILTER_ACCEPT,
-  })
+  const walker = container.ownerDocument.createTreeWalker(
+    container,
+    NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
+    {
+      acceptNode: (node) => {
+        if (node.nodeType !== Node.ELEMENT_NODE) return NodeFilter.FILTER_ACCEPT
+        const { tagName } = node as Element
+        if (SKIPPED_TAGS.has(tagName)) return NodeFilter.FILTER_REJECT
+        // Only <br> is visited as an element: it separates text without owning any.
+        return tagName === "BR" ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP
+      },
+    },
+  )
 
   let text = ""
-  const positions: TextPosition[] = []
+  const positions: (TextPosition | null)[] = []
+  let currentBlock: Element | null = null
+
+  const separate = () => {
+    if (text.length > 0 && !text.endsWith(" ")) {
+      text += " "
+      positions.push(null)
+    }
+  }
 
   for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      separate()
+      continue
+    }
+
+    const block = nearestBlock(node, container)
+    if (block !== currentBlock) separate()
+    currentBlock = block
+
     const { data } = node as Text
     // Walked by UTF-16 code unit so the recorded offsets stay valid for Range boundaries.
     let offset = 0
