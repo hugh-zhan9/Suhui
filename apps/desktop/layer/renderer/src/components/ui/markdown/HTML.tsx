@@ -1,6 +1,5 @@
 import { MemoedDangerousHTMLStyle } from "@suhui/components/common/MemoedDangerousHTMLStyle.js"
 import { useIsDark } from "@suhui/hooks"
-import { normalizeReaderDarkColors, readerDarkColorStyles } from "~/lib/reader-dark-colors"
 import type { Root } from "hast"
 import katexStyle from "katex/dist/katex.min.css?raw"
 import {
@@ -18,6 +17,7 @@ import type { JSX } from "react/jsx-runtime"
 import { ENTRY_CONTENT_RENDER_CONTAINER_ID } from "~/constants/dom"
 import { htmlParserClient } from "~/lib/html-parser-client"
 import { renderHtmlTree } from "~/lib/parse-html"
+import { normalizeReaderDarkColors, readerDarkColorStyles } from "~/lib/reader-dark-colors"
 import { useWrappedElementSize } from "~/providers/wrapped-element-provider"
 
 import { MediaContainerWidthProvider } from "../media/MediaContainerWidthProvider"
@@ -25,6 +25,18 @@ import type { MediaInfoRecord } from "../media/MediaInfoRecord"
 import { MediaInfoRecordProvider } from "../media/MediaInfoRecordProvider"
 import { MarkdownRenderContainerRefContext } from "./context"
 import { PreserveReadingPosition } from "./PreserveReadingPosition"
+
+// Source-site CSS is not available in the reader. Keep heading permalink SVGs
+// at text size without resizing article illustrations or other linked media.
+const headingPermalinkStyles = `
+#${ENTRY_CONTENT_RENDER_CONTAINER_ID} :is(h1, h2, h3, h4, h5, h6) a[href^="#"] svg {
+  display: inline-block;
+  width: 1em !important;
+  height: 1em !important;
+  vertical-align: -0.125em;
+  margin-inline-start: 0.25em;
+}
+`
 
 export type HTMLProps<A extends keyof JSX.IntrinsicElements = "div"> = {
   children: string | null | undefined
@@ -131,6 +143,7 @@ const HTMLImpl = <A extends keyof JSX.IntrinsicElements = "div">(props: HTMLProp
       <MediaContainerWidthProvider width={containerWidth}>
         <MediaInfoRecordProvider mediaInfo={mediaInfo}>
           <MemoedDangerousHTMLStyle>{katexStyle}</MemoedDangerousHTMLStyle>
+          <MemoedDangerousHTMLStyle>{headingPermalinkStyles}</MemoedDangerousHTMLStyle>
           {isDark && <MemoedDangerousHTMLStyle>{readerDarkColorStyles}</MemoedDangerousHTMLStyle>}
           <PreserveReadingPosition
             element={refElement}

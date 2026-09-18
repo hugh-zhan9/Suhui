@@ -79,6 +79,7 @@ describe("progressive article HTML", () => {
   }
   afterEach(() => {
     mounted.splice(0).forEach((unmount) => unmount())
+    vi.unstubAllGlobals()
   })
 
   it("retains the article during parsing and reuses source, translated and media nodes as earlier batches arrive", async () => {
@@ -262,4 +263,42 @@ describe("progressive article HTML", () => {
     expect(view.container.textContent).toContain("Original source")
     expect(view.container.querySelector("button")).toBeNull()
   })
+
+  it.each([false, true])(
+    "keeps heading permalink SVGs inline at text size (dark: %s)",
+    async (dark) => {
+      // The shared setup supplies a minimal window; link tooltips also need timers.
+      vi.stubGlobal("window", { ...window, setTimeout, clearTimeout })
+      testTheme.dark = dark
+      // The reported feed supplies viewBox only, relying on CSS absent from RSS.
+      const icon = '<svg viewBox="0 0 24 24"><path d="M15 7h3" /></svg>'
+      const headings = Array.from(
+        { length: 6 },
+        (_, i) =>
+          `<h${i + 1}>标题<a href="#%e6%a0%87%e9%a2%98" class="anchor">${icon}</a></h${i + 1}>`,
+      ).join("")
+      const content = `${headings}<p><a href="#diagram"><svg width="640" height="320"></svg></a></p><h2><a href="https://example.com"><svg width="100" height="50"></svg></a></h2>`
+      const view = render(
+        <HTML as="article" style={{ fontSize: "24px" }}>
+          {content}
+        </HTML>,
+      )
+      await finish(content)
+      const icons = view.container.querySelectorAll(
+        'h1 svg, h2 a[href^="#"] svg, h3 svg, h4 svg, h5 svg, h6 svg',
+      )
+      expect(icons).toHaveLength(6)
+      for (const svg of icons) {
+        const style = getComputedStyle(svg)
+        expect(style.width).toBe("24px")
+        expect(style.height).toBe("24px")
+        expect(style.display).toBe("inline-block")
+      }
+      expect(view.container.querySelector("p svg")!.getAttribute("width")).toBe("640")
+      expect(getComputedStyle(view.container.querySelector("p svg")!).width).not.toBe("24px")
+      expect(
+        getComputedStyle(view.container.querySelector('a[href^="https:"] svg')!).width,
+      ).not.toBe("24px")
+    },
+  )
 })
