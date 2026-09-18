@@ -371,7 +371,7 @@ export class CustomIntegrationManager {
     }
 
     if (template.scheme && !template.scheme.includes("://")) {
-      errors.push("URL scheme must include protocol (e.g., 'app://')")
+      errors.push("URL scheme must include protocol (e.g., 'obsidian://')")
     }
 
     try {

@@ -50,7 +50,7 @@ export class URLSchemeHandler {
 
       // Validate URL scheme format
       if (!finalScheme.includes("://")) {
-        throw new Error("Invalid URL scheme format. Must include protocol (e.g., 'app://')")
+        throw new Error("Invalid URL scheme format. Must include protocol (e.g., 'obsidian://')")
       }
 
       await this.openURLScheme(finalScheme)

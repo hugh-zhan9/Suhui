@@ -1,18 +1,22 @@
 import { existsSync } from "node:fs"
 import fsp from "node:fs/promises"
 
-import { shell } from "electron"
+import { APP_PROTOCOL, LEGACY_APP_PROTOCOL } from "@suhui/shared/constants"
+import { dialog, shell } from "electron"
 import type { IpcContext } from "electron-ipc-decorator"
 import { IpcMethod, IpcService } from "electron-ipc-decorator"
 import path from "pathe"
 
+import { t } from "~/lib/i18n"
 import { store } from "~/lib/store"
 import { logger } from "~/logger"
 
 // Taken from https://github.com/rollup/rollup/blob/4f69d33af3b2ec9320c43c9e6c65ea23a02bdde3/src/utils/sanitizeFileName.ts
 // https://datatracker.ietf.org/doc/html/rfc2396
+// `/` and `\` are included so a feed-controlled entry title cannot steer
+// `path.join(vaultPath, fileName)` out of the vault (e.g. a title of `../..`).
 // eslint-disable-next-line no-control-regex
-const INVALID_CHAR_REGEX = /[\u0000-\u001F"#$%&*+,:;<=>?[\]^`{|}\u007F]/g
+const INVALID_CHAR_REGEX = /[\u0000-\u001F"#$%&*+,:;<=>?[\]^`{|}\u007F/\\]/g
 const DRIVE_LETTER_REGEX = /^[a-z]:/i
 
 function sanitizeFileName(name: string): string {
@@ -51,6 +55,67 @@ interface CustomFetchInput {
   headers: Record<string, string>
   body?: string
   timeout?: number
+}
+
+// Protocols shipped as built-in integration examples. These open without an
+// extra prompt because the user picked the integration from our own list.
+const BUILT_IN_URL_SCHEME_PROTOCOLS = new Set<string>([
+  "http",
+  "https",
+  "mailto",
+  "obsidian",
+  "bear",
+  "drafts",
+  "things",
+  "notion",
+  "x-devonthink",
+])
+
+// Protocols that must never reach `shell.openExternal`, even after user
+// confirmation: each has a documented abuse chain (local file disclosure,
+// NTLM credential theft over SMB, MSDT/Follina-style RCE, script execution).
+// Matches are exact, so a custom protocol such as `file-helper` stays usable.
+const DISALLOWED_URL_SCHEME_PROTOCOLS = new Set<string>([
+  "data",
+  "file",
+  "jar",
+  "javascript",
+  "ms-msdt",
+  "res",
+  "search-ms",
+  "smb",
+  "vbscript",
+  // Our own protocols. `app://` is the privileged scheme that serves local
+  // files into the renderer, and APP_PROTOCOL is registered with the OS via
+  // `setAsDefaultProtocolClient`. Neither is ever a third-party integration
+  // target, so untrusted content must not be able to re-enter the app.
+  "app",
+  APP_PROTOCOL.toLowerCase(),
+  LEGACY_APP_PROTOCOL.toLowerCase(),
+])
+
+function parseURLSchemeProtocol(scheme: string): string | null {
+  try {
+    return new URL(scheme).protocol.replace(/:$/, "").toLowerCase() || null
+  } catch {
+    return null
+  }
+}
+
+async function confirmUserDefinedURLScheme(protocol: string): Promise<boolean> {
+  const result = await dialog.showMessageBox({
+    type: "warning",
+    title: t("dialog.openExternalApp.title"),
+    message: t("dialog.openExternalApp.message", {
+      url: `${protocol}://`,
+      interpolation: { escapeValue: false },
+    }),
+    buttons: [t("dialog.open"), t("dialog.cancel")],
+    defaultId: 1,
+    cancelId: 1,
+  })
+
+  return result.response === 0
 }
 
 export class IntegrationService extends IpcService {
@@ -351,9 +416,24 @@ ${content}
     const requestId = Math.random().toString(36).slice(2, 8)
 
     try {
-      // Validate URL scheme format
-      if (!scheme.includes("://")) {
-        throw new Error("Invalid URL scheme format. Must include protocol (e.g., 'app://')")
+      // `shell.openExternal` dispatches any scheme the OS has a handler for, and
+      // this IPC is reachable from renderer code that renders untrusted feed
+      // content. Parse the protocol first, block the known-dangerous ones, and
+      // confirm anything outside our own built-in integration list.
+      const protocol = parseURLSchemeProtocol(scheme)
+      if (!protocol) {
+        throw new Error("Invalid URL scheme format. Must include protocol (e.g., 'obsidian://')")
+      }
+
+      if (DISALLOWED_URL_SCHEME_PROTOCOLS.has(protocol)) {
+        throw new Error(`URL scheme "${protocol}://" is not allowed.`)
+      }
+
+      if (
+        !BUILT_IN_URL_SCHEME_PROTOCOLS.has(protocol) &&
+        !(await confirmUserDefinedURLScheme(protocol))
+      ) {
+        throw new Error(`URL scheme "${protocol}://" was not opened.`)
       }
 
       // Log URL scheme execution (mask sensitive data)
@@ -368,7 +448,7 @@ ${content}
 
       logger.info(`[URLScheme:${requestId}] Opening URL scheme`, {
         scheme: safeScheme,
-        protocol: scheme.split("://")[0],
+        protocol,
       })
 
       // Use Electron's shell.openExternal to open URL scheme
@@ -381,7 +461,7 @@ ${content}
     } catch (error) {
       logger.error(`[URLScheme:${requestId}] Failed to open URL scheme`, {
         error: error instanceof Error ? error.message : String(error),
-        scheme: scheme.split("://")[0], // Only log protocol for privacy
+        scheme: parseURLSchemeProtocol(scheme) ?? "unknown", // Only log protocol for privacy
       })
 
       throw error
