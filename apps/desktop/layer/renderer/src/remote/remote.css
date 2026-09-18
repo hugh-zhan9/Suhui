@@ -1051,65 +1051,87 @@ textarea {
   margin: 0.5em 0;
 }
 
-.remote-mobile-switcher {
+.remote-mobile-tabbar {
   display: none;
 }
 
-@media (max-width: 767px) {
+/* Keep in sync with REMOTE_MOBILE_MAX_WIDTH in remote-mobile.ts. */
+@media (max-width: 1023px) {
   .remote-desktop-reader {
     flex-direction: column;
   }
 
-  .remote-mobile-switcher {
-    display: flex;
-    height: 48px;
-    flex-shrink: 0;
-    align-items: center;
-    gap: 8px;
-    border-bottom: 1px solid var(--remote-border);
-    background: color-mix(in srgb, var(--fo-background) 92%, transparent);
-    padding: 0 8px;
+  /* The address bar makes 100vh overshoot in a browser tab; installed to the
+     home screen the two agree. */
+  .remote-desktop-reader {
+    height: 100dvh;
   }
 
-  .remote-mobile-title {
-    min-width: 0;
-    flex: 1;
-    overflow: hidden;
-    font-size: 14px;
-    font-weight: 650;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .remote-mobile-segments {
+  .remote-mobile-tabbar {
+    /* Above .remote-overlay-backdrop (z-index 50) so the tabs stay reachable
+       while an overlay is open. */
+    z-index: 60;
     display: grid;
-    width: 190px;
+    flex-shrink: 0;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    border: 1px solid var(--remote-border);
-    border-radius: 9px;
-    background: var(--remote-muted-surface);
-    padding: 2px;
+    border-top: 1px solid var(--remote-border);
+    background: color-mix(in srgb, var(--fo-background) 92%, transparent);
+    padding-bottom: env(safe-area-inset-bottom);
+    backdrop-filter: saturate(180%) blur(20px);
   }
 
-  .remote-mobile-segment {
-    height: 30px;
+  .remote-mobile-tab {
+    display: flex;
+    height: 50px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
     border: 0;
-    border-radius: 7px;
     background: transparent;
     color: var(--fo-text-secondary);
-    font-size: 12px;
+    font-size: 10px;
     font-weight: 600;
   }
 
-  .remote-mobile-segment.is-active {
-    background: var(--fo-background);
-    color: var(--fo-text);
+  .remote-mobile-tab.is-active {
+    color: var(--fo-accent);
+  }
+
+  .remote-mobile-tab-icon {
+    position: relative;
+    display: inline-flex;
+    font-size: 22px;
+  }
+
+  .remote-mobile-tab-dot {
+    position: absolute;
+    top: -1px;
+    right: -3px;
+    height: 7px;
+    width: 7px;
+    border-radius: 999px;
+    background: var(--fo-accent);
+  }
+
+  /* Stop the overlay short of the tab bar rather than covering it. */
+  .remote-overlay-backdrop {
+    bottom: calc(50px + env(safe-area-inset-bottom));
+  }
+
+  .remote-overlay-panel {
+    width: 100vw;
+    border-left: 0;
   }
 
   .remote-desktop-sidebar,
   .remote-desktop-timeline,
   .remote-desktop-reader-pane {
     width: 100% !important;
+    /* `min-height: 0` matters as much as the width here: these become column
+       flex items, whose default `min-height: auto` lets a long entry list keep
+       its full content height and push the tab bar out of the viewport. */
+    min-height: 0;
     min-width: 0;
     flex: 1;
     border-right: 0;

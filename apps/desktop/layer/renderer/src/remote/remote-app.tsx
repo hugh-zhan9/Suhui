@@ -6,7 +6,6 @@
  * writes so opening the Web client cannot consume unread articles.
  */
 
-import { useMobile } from "@suhui/components/hooks/useMobile.js"
 import { FeedViewType, getViewList } from "@suhui/constants"
 import { useIsEntryStarred } from "@suhui/store/collection/hooks"
 import { collectionActions, useCollectionStore } from "@suhui/store/collection/store"
@@ -26,6 +25,8 @@ import {
   type RemoteBootstrapViewState,
   type RemoteConnectionPhase,
 } from "./remote-bootstrap"
+import { useRemoteMobile, type RemoteMobileTab } from "./remote-mobile"
+import { RemoteMobileTabBar } from "./remote-mobile-shell"
 import { markRemoteDataReadyIfComplete, markRemoteMetric } from "./remote-performance"
 
 import {
@@ -49,7 +50,7 @@ type Overlay = "subscriptions" | "settings" | null
 const layoutContract = getRemoteDesktopLayoutContract()
 
 export function RemoteApp() {
-  const isMobile = useMobile()
+  const isMobile = useRemoteMobile()
   const subscriptionState = useSubscriptionStore()
   const unreadState = useUnreadStore()
   const bootstrap = useRemoteBootstrap()
@@ -151,27 +152,32 @@ export function RemoteApp() {
     if (isMobile && entryId) setMobilePane("content")
   }
 
+  // The bottom tabs are the source of truth for where the user is; the existing
+  // pane state stays underneath as this tab's navigation stack.
+  const mobileTab: RemoteMobileTab =
+    overlay === "settings" ? "settings" : mobilePane === "feeds" ? "subscriptions" : "timeline"
+
+  const selectMobileTab = (tab: RemoteMobileTab) => {
+    if (tab === "settings") {
+      setOverlay("settings")
+      return
+    }
+    setOverlay(null)
+    // Tapping a tab returns to its root, the way the desktop app's tabs do.
+    setMobilePane(tab === "subscriptions" ? "feeds" : "entries")
+  }
+
+  const totalUnreadForTabs = useMemo(
+    () => feedList.reduce((sum, feed) => sum + (unreadState.data[feed.feedId] ?? 0), 0),
+    [feedList, unreadState.data],
+  )
+
   return (
     <div
-      className={layoutContract.root}
-      data-remote-layout="desktop-reader"
+      className={cn(layoutContract.root, isMobile && "is-remote-mobile")}
+      data-remote-layout={isMobile ? "mobile-reader" : "desktop-reader"}
       data-testid="remote-reader-shell"
     >
-      {isMobile && (
-        <MobilePaneSwitcher
-          activePane={mobilePane}
-          activeTitle={
-            mobilePane === "feeds"
-              ? remoteViewLabelFor(activeView)
-              : mobilePane === "entries"
-                ? activeFeedTitle
-                : "Article"
-          }
-          canOpenContent={!!activeEntryId}
-          onChange={setMobilePane}
-        />
-      )}
-
       <RemoteDesktopSidebar
         activeFeedId={activeFeedId}
         activeView={activeView}
@@ -221,37 +227,15 @@ export function RemoteApp() {
         />
       )}
       {overlay === "settings" && <RemoteSettingsOverlay onClose={() => setOverlay(null)} />}
-    </div>
-  )
-}
 
-function MobilePaneSwitcher({
-  activePane,
-  activeTitle,
-  canOpenContent,
-  onChange,
-}: {
-  activePane: Pane
-  activeTitle: string
-  canOpenContent: boolean
-  onChange: (pane: Pane) => void
-}) {
-  return (
-    <header className="remote-mobile-switcher">
-      <div className="remote-mobile-title">{activeTitle}</div>
-      <div className="remote-mobile-segments">
-        {(["feeds", "entries", "content"] as const).map((pane) => (
-          <button
-            key={pane}
-            className={cn("remote-mobile-segment", activePane === pane && "is-active")}
-            disabled={pane === "content" && !canOpenContent}
-            onClick={() => onChange(pane)}
-          >
-            {pane === "feeds" ? "Feeds" : pane === "entries" ? "List" : "Read"}
-          </button>
-        ))}
-      </div>
-    </header>
+      {isMobile && (
+        <RemoteMobileTabBar
+          activeTab={mobileTab}
+          unreadCount={totalUnreadForTabs}
+          onChange={selectMobileTab}
+        />
+      )}
+    </div>
   )
 }
 
@@ -309,7 +293,7 @@ function RemoteDesktopSidebar({
           </div>
         </div>
         <div className="remote-sidebar-actions">
-          <IconButton icon="i-mgc-settings-3-cute-re" label="Settings" onClick={onOpenSettings} />
+          <IconButton icon="i-mgc-settings-1-cute-re" label="Settings" onClick={onOpenSettings} />
           <IconButton
             icon="i-mgc-add-cute-re"
             label="Subscriptions"

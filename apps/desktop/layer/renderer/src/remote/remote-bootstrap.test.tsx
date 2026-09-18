@@ -20,7 +20,12 @@ const mocks = vi.hoisted(() => ({
   subscriptions: {} as Record<string, unknown>,
 }))
 
-vi.mock("@suhui/components/hooks/useMobile.js", () => ({ useMobile: () => mocks.mobile }))
+// The remote shell derives its layout from the viewport width rather than the
+// shared useMobile(), whose breakpoint disagreed with remote.css.
+vi.mock("@suhui/components/hooks/useViewport.js", () => ({
+  useViewport: (selector: (value: { w: number; h: number }) => unknown) =>
+    selector({ w: mocks.mobile ? 390 : 1440, h: 844 }),
+}))
 vi.mock("@suhui/store/collection/hooks", () => ({ useIsEntryStarred: () => false }))
 vi.mock("@suhui/store/collection/store", () => ({
   collectionActions: { deleteInSession: vi.fn(), upsertManyInSession: vi.fn() },
@@ -284,16 +289,36 @@ describe("remote progressive bootstrap", () => {
     expect(container.textContent).toContain("Remote connected")
   })
 
-  it("shows only the timeline pane in the mobile state", async () => {
+  it("renders the app-shaped chrome and only the timeline pane on a phone", async () => {
     mocks.mobile = true
     mocks.bootstrapGet.mockResolvedValue(validPayload)
 
     await act(async () => root.render(<RemoteApp />))
 
-    expect(container.querySelector(".remote-mobile-switcher")).not.toBeNull()
+    expect(container.querySelector(".remote-mobile-tabbar")).not.toBeNull()
     expect(container.querySelector(".remote-desktop-sidebar.remote-pane-hidden")).not.toBeNull()
     expect(container.querySelector(".remote-desktop-timeline.remote-pane-hidden")).toBeNull()
     expect(container.querySelector(".remote-desktop-reader-pane.remote-pane-hidden")).not.toBeNull()
+  })
+
+  it("moves between bottom tabs and keeps the timeline as their root", async () => {
+    mocks.mobile = true
+    mocks.bootstrapGet.mockResolvedValue(validPayload)
+
+    await act(async () => root.render(<RemoteApp />))
+
+    const tabFor = (label: string) =>
+      [...container.querySelectorAll(".remote-mobile-tab")].find((node) =>
+        node.textContent?.includes(label),
+      ) as HTMLElement
+
+    await act(async () => tabFor("订阅").dispatchEvent(new MouseEvent("click", { bubbles: true })))
+    expect(container.querySelector(".remote-desktop-sidebar.remote-pane-hidden")).toBeNull()
+    expect(container.querySelector(".remote-desktop-timeline.remote-pane-hidden")).not.toBeNull()
+
+    await act(async () => tabFor("阅读").dispatchEvent(new MouseEvent("click", { bubbles: true })))
+    expect(container.querySelector(".remote-desktop-sidebar.remote-pane-hidden")).not.toBeNull()
+    expect(container.querySelector(".remote-desktop-timeline.remote-pane-hidden")).toBeNull()
   })
 
   it("does not expose or request private reading controls without the peer capability", async () => {
