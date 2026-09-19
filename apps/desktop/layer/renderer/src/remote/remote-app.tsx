@@ -7,6 +7,7 @@
  */
 
 import { FeedViewType, getViewList } from "@suhui/constants"
+import { useSyncThemeWebApp } from "@suhui/hooks"
 import { useIsEntryStarred } from "@suhui/store/collection/hooks"
 import { collectionActions, useCollectionStore } from "@suhui/store/collection/store"
 import { getEntry } from "@suhui/store/entry/getter"
@@ -28,6 +29,7 @@ import {
 import { useRemoteMobile, type RemoteMobileTab } from "./remote-mobile"
 import { RemoteMobileTabBar } from "./remote-mobile-shell"
 import { markRemoteDataReadyIfComplete, markRemoteMetric } from "./remote-performance"
+import { sanitizeArticleHtml } from "./sanitize-article-html"
 
 import {
   buildRemoteFeedGroups,
@@ -50,6 +52,12 @@ type Overlay = "subscriptions" | "settings" | null
 const layoutContract = getRemoteDesktopLayoutContract()
 
 export function RemoteApp() {
+  // Without this nothing sets `data-theme` on <html>, and colors.css scopes
+  // --fo-background (and the rest of the palette) to that attribute — leaving
+  // the overlay panel with no background at all, so settings rendered straight
+  // on top of the timeline.
+  useSyncThemeWebApp()
+
   const isMobile = useRemoteMobile()
   const subscriptionState = useSubscriptionStore()
   const unreadState = useUnreadStore()
@@ -118,7 +126,7 @@ export function RemoteApp() {
   }, [activeEntryId, isMobile, mobilePane])
 
   const activeFeedTitle = useMemo(
-    () => feedList.find((feed) => feed.feedId === activeFeedId)?.title || "All Feeds",
+    () => feedList.find((feed) => feed.feedId === activeFeedId)?.title || "全部订阅",
     [activeFeedId, feedList],
   )
 
@@ -281,28 +289,24 @@ function RemoteDesktopSidebar({
             <i className="i-mgc-rss-cute-fi" />
           </div>
           <div className="remote-app-copy">
-            <div className="remote-app-title">Suhui</div>
+            <div className="remote-app-title">溯洄</div>
             <div className="remote-connection" data-connection-phase={connectionPhase}>
               <span className={cn("remote-connection-dot", `is-${connectionPhase}`)} />
               {connectionPhase === "connected"
-                ? "Remote connected"
+                ? "已连接"
                 : connectionPhase === "connecting"
-                  ? "Remote connecting"
-                  : "Remote disconnected"}
+                  ? "连接中"
+                  : "已断开"}
             </div>
           </div>
         </div>
         <div className="remote-sidebar-actions">
-          <IconButton icon="i-mgc-settings-1-cute-re" label="Settings" onClick={onOpenSettings} />
-          <IconButton
-            icon="i-mgc-add-cute-re"
-            label="Subscriptions"
-            onClick={onOpenSubscriptions}
-          />
+          <IconButton icon="i-mgc-settings-1-cute-re" label="设置" onClick={onOpenSettings} />
+          <IconButton icon="i-mgc-add-cute-re" label="订阅管理" onClick={onOpenSubscriptions} />
         </div>
       </div>
 
-      <nav className="remote-view-tabs" aria-label="Timeline views">
+      <nav className="remote-view-tabs" aria-label="视图">
         {bootstrap.phase === "ready" &&
           availableViews.map((view) => (
             <button
@@ -327,26 +331,26 @@ function RemoteDesktopSidebar({
           <span className="remote-source-icon">
             <i className="i-mgc-inbox-cute-fi" />
           </span>
-          <span className="remote-source-title">All Feeds</span>
+          <span className="remote-source-title">全部订阅</span>
           {totalUnread > 0 && <UnreadBadge count={totalUnread} />}
         </button>
       )}
 
       <div className="remote-source-scroll">
         {bootstrap.phase === "loading" ? (
-          <RemotePaneSkeleton label="Loading subscriptions" rows={7} />
+          <RemotePaneSkeleton label="正在加载订阅" rows={7} />
         ) : bootstrap.phase === "error" ? (
           <RemotePaneError
-            action="Retry metadata"
-            description={bootstrap.error || "The desktop host did not return metadata."}
+            action="重试加载订阅"
+            description={bootstrap.error || "桌面端没有返回订阅数据。"}
             onRetry={bootstrap.retry}
-            title="Subscriptions unavailable"
+            title="订阅加载失败"
           />
         ) : feedGroups.length === 0 ? (
           <RemoteEmptyState
             icon="i-mgc-rss-cute-fi"
-            title="No subscriptions"
-            description="Add feeds from the subscription panel."
+            title="还没有订阅"
+            description="在订阅面板里添加订阅。"
           />
         ) : (
           feedGroups.map((group) => (
@@ -387,7 +391,7 @@ function FeedButton({
       <span className="remote-source-icon">
         <i className="i-mgc-rss-cute-fi" />
       </span>
-      <span className="remote-source-title">{feed.title || "Untitled"}</span>
+      <span className="remote-source-title">{feed.title || "无标题"}</span>
       {unread > 0 && <UnreadBadge count={unread} />}
     </button>
   )
@@ -524,14 +528,10 @@ function RemoteDesktopTimeline({
           <IconButton
             busy={refreshing}
             icon="i-mgc-refresh-2-cute-re"
-            label={activeFeedId ? "Refresh feed" : "Refresh all"}
+            label={activeFeedId ? "刷新订阅" : "全部刷新"}
             onClick={runRefresh}
           />
-          <IconButton
-            icon="i-mgc-more-2-cute-re"
-            label="Subscriptions"
-            onClick={onOpenSubscriptions}
-          />
+          <IconButton icon="i-mgc-more-2-cute-re" label="订阅管理" onClick={onOpenSubscriptions} />
         </div>
       </header>
 
@@ -539,29 +539,29 @@ function RemoteDesktopTimeline({
         {bootstrapPhase === "error" ? (
           <RemoteEmptyState
             icon="i-mgc-information-cute-re"
-            title="Entries waiting for subscriptions"
-            description="Retry metadata from the subscriptions pane."
+            title="等待订阅加载"
+            description="请在订阅面板重试加载。"
           />
         ) : bootstrapPhase === "loading" || entriesQuery.isLoading ? (
-          <RemotePaneSkeleton label="Loading entries" rows={6} />
+          <RemotePaneSkeleton label="正在加载文章" rows={6} />
         ) : entriesQuery.isError ? (
           <RemotePaneError
-            action="Retry entries"
+            action="重试加载文章"
             description="The entry page could not be loaded. Your subscriptions remain available."
             onRetry={() => void entriesQuery.refetch()}
-            title="Entries unavailable"
+            title="文章加载失败"
           />
         ) : !activeFeedId && activeFeedIdsForView.length === 0 ? (
           <RemoteEmptyState
             icon="i-mgc-rss-cute-fi"
-            title="No feeds in this view"
-            description="Choose another view or add a subscription."
+            title="该视图下没有订阅"
+            description="换一个视图，或添加订阅。"
           />
         ) : entryIds.length === 0 ? (
           <RemoteEmptyState
             icon="i-mgc-docment-cute-re"
-            title={unreadOnly ? "No unread entries" : "No entries"}
-            description="Refresh feeds or choose another subscription."
+            title={unreadOnly ? "没有未读文章" : "没有文章"}
+            description="刷新订阅，或换一个订阅看看。"
           />
         ) : (
           <div className="remote-entry-list">
@@ -609,7 +609,7 @@ function RemoteEntryItem({
       tabIndex={0}
       onClick={onClick}
       onKeyDown={(event) => {
-        if (event.key !== "Enter" && event.key !== " ") return
+        if (event.key !== "确定" && event.key !== " ") return
         event.preventDefault()
         onClick()
       }}
@@ -628,7 +628,7 @@ function RemoteEntryItem({
           )}
         </div>
         <div className={cn("remote-entry-title", readVisualState.titleClassName)}>
-          {entry.title || "Untitled"}
+          {entry.title || "无标题"}
         </div>
         {entry.description && <div className="remote-entry-description">{entry.description}</div>}
       </div>
@@ -690,7 +690,7 @@ function RemoteEntryStarButton({
       aria-pressed={isStarred}
       className={cn("remote-entry-star-button", isStarred && "is-starred")}
       disabled={busy}
-      title={isStarred ? "Unstar" : "Star"}
+      title={isStarred ? "取消收藏" : "Star"}
       onClick={toggleStar}
       onMouseDown={(event) => {
         event.preventDefault()
@@ -725,6 +725,7 @@ function RemoteDesktopReaderPane({
     highlights: Array<{ id: string; quote: string; status: "active" | "orphaned" }>
   }>({ notes: [], highlights: [] })
   const [actionError, setActionError] = useState<string | null>(null)
+  const [readability, setReadability] = useState<{ entryId: string; content: string } | null>(null)
 
   useEffect(() => {
     if (entryId) {
@@ -742,6 +743,27 @@ function RemoteDesktopReaderPane({
     }
   }, [entryId, privateLocalReading])
 
+  // Reading mode is the default here, so an entry without a cached body gets
+  // one extracted on open. A failure is silent: the feed's own content still
+  // renders, which is what a reader would otherwise have seen anyway.
+  useEffect(() => {
+    if (!entryId) {
+      setReadability(null)
+      return
+    }
+    let cancelled = false
+    void runtimeClient.entries
+      .ensureReadability(entryId)
+      .then((content) => {
+        if (cancelled || !content) return
+        setReadability({ entryId, content })
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [entryId])
+
   const addToQueue = async () => {
     if (!entryId) return
     setQueueBusy(true)
@@ -749,7 +771,7 @@ function RemoteDesktopReaderPane({
     try {
       await runtimeClient.readingQueue.add(entryId)
     } catch (error) {
-      setActionError(error instanceof Error ? error.message : "Unable to update reading queue")
+      setActionError(error instanceof Error ? error.message : "稍后读更新失败")
     } finally {
       setQueueBusy(false)
     }
@@ -763,7 +785,7 @@ function RemoteDesktopReaderPane({
       setNoteText("")
       setAnnotations(await runtimeClient.annotations.list(entryId))
     } catch (error) {
-      setActionError(error instanceof Error ? error.message : "Unable to save note")
+      setActionError(error instanceof Error ? error.message : "笔记保存失败")
     }
   }
 
@@ -787,7 +809,7 @@ function RemoteDesktopReaderPane({
       link.click()
       URL.revokeObjectURL(url)
     } catch (error) {
-      setActionError(error instanceof Error ? error.message : "PDF export failed")
+      setActionError(error instanceof Error ? error.message : "PDF 导出失败")
     } finally {
       setPdfBusy(false)
     }
@@ -803,7 +825,7 @@ function RemoteDesktopReaderPane({
           <div className="remote-reader-kicker">
             {feed?.title || remoteViewLabelFor(activeView)}
           </div>
-          <div className="remote-reader-title">{entry?.title || "Select an entry"}</div>
+          <div className="remote-reader-title">{entry?.title || "选择一篇文章"}</div>
         </div>
         <div className="remote-toolbar">
           {entryId && (
@@ -815,7 +837,7 @@ function RemoteDesktopReaderPane({
               href={entry.url}
               rel="noopener noreferrer"
               target="_blank"
-              title="Open original"
+              title="打开原文"
             >
               <i className="i-mgc-external-link-cute-re" />
             </a>
@@ -823,7 +845,7 @@ function RemoteDesktopReaderPane({
           <IconButton
             disabled={!entryId}
             icon="i-mgc-check-circle-cute-re"
-            label={entry?.read ? "Mark unread" : "Mark read"}
+            label={entry?.read ? "标记未读" : "标记已读"}
             onClick={toggleRead}
           />
           {privateLocalReading && (
@@ -831,7 +853,7 @@ function RemoteDesktopReaderPane({
               busy={queueBusy}
               disabled={!entryId}
               icon="i-mgc-time-cute-re"
-              label="Read later"
+              label="稍后读"
               onClick={addToQueue}
             />
           )}
@@ -839,7 +861,7 @@ function RemoteDesktopReaderPane({
             busy={pdfBusy}
             disabled={!entryId}
             icon="i-mgc-download-2-cute-re"
-            label="Export PDF"
+            label="导出 PDF"
             onClick={exportPdf}
           />
         </div>
@@ -848,13 +870,13 @@ function RemoteDesktopReaderPane({
       {!entryId || !entry ? (
         <RemoteEmptyState
           icon="i-mgc-docment-cute-re"
-          title="Select an entry"
-          description="Choose an item from the timeline to read it here."
+          title="选择一篇文章"
+          description="从列表里选一篇文章，在这里阅读。"
         />
       ) : (
         <div className="remote-reader-scroll">
           <div className="remote-article-shell">
-            <h1 className="remote-article-title">{entry.title || "Untitled"}</h1>
+            <h1 className="remote-article-title">{entry.title || "无标题"}</h1>
             <div className="remote-article-meta">
               {feed?.title && <span>{feed.title}</span>}
               {entry.author && <span>{entry.author}</span>}
@@ -864,28 +886,26 @@ function RemoteDesktopReaderPane({
             <div
               className="remote-entry-content prose prose-neutral dark:prose-invert"
               dangerouslySetInnerHTML={{
-                __html:
+                __html: sanitizeArticleHtml(
                   entry.readabilityContent ||
-                  entry.content ||
-                  entry.description ||
-                  "<p>No content available.</p>",
+                    (readability?.entryId === entry.id ? readability.content : "") ||
+                    entry.content ||
+                    entry.description ||
+                    "<p>No content available.</p>",
+                ),
               }}
             />
             {privateLocalReading && (
               <section className="remote-annotations">
-                <h2>Notes & Highlights</h2>
+                <h2>笔记与高亮</h2>
                 <div className="remote-inline-form">
-                  <RemoteInput
-                    value={noteText}
-                    onChange={setNoteText}
-                    placeholder="Add a local note"
-                  />
+                  <RemoteInput value={noteText} onChange={setNoteText} placeholder="添加本地笔记" />
                   <button
                     className="remote-secondary-button"
                     disabled={!noteText.trim()}
                     onClick={() => void addNote()}
                   >
-                    Add note
+                    添加笔记
                   </button>
                 </div>
                 {annotations.notes.map((note) => (
@@ -893,7 +913,7 @@ function RemoteDesktopReaderPane({
                     <span>{note.content}</span>
                     <button
                       className="remote-icon-button"
-                      title="Delete note"
+                      title="删除笔记"
                       onClick={() =>
                         void runtimeClient.annotations.deleteNote(note.id).then(async () => {
                           if (entryId) setAnnotations(await runtimeClient.annotations.list(entryId))
@@ -913,7 +933,7 @@ function RemoteDesktopReaderPane({
                     key={highlight.id}
                   >
                     {highlight.quote}
-                    {highlight.status === "orphaned" && <small>Needs relocation</small>}
+                    {highlight.status === "orphaned" && <small>需要重新定位</small>}
                   </blockquote>
                 ))}
               </section>
@@ -958,25 +978,21 @@ function RemoteSubscriptionsOverlay({
       await task()
       setMessage(success)
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Action failed")
+      setMessage(error instanceof Error ? error.message : "操作失败")
     } finally {
       setBusy(false)
     }
   }
 
   return (
-    <OverlayFrame
-      title="Subscriptions"
-      subtitle="Manage feeds without leaving the reader."
-      onClose={onClose}
-    >
+    <OverlayFrame title="订阅管理" subtitle="不离开阅读界面即可管理订阅。" onClose={onClose}>
       <div className="remote-overlay-grid">
         <aside className="remote-overlay-side">
-          <SectionTitle title="Add Feed" />
+          <SectionTitle title="添加订阅" />
           <div className="remote-form-stack">
-            <RemoteInput value={url} onChange={setUrl} placeholder="Feed URL or RSSHub URL" />
-            <RemoteInput value={title} onChange={setTitle} placeholder="Title (optional)" />
-            <RemoteInput value={category} onChange={setCategory} placeholder="Category" />
+            <RemoteInput value={url} onChange={setUrl} placeholder="订阅源地址或 RSSHub 地址" />
+            <RemoteInput value={title} onChange={setTitle} placeholder="标题（可选）" />
+            <RemoteInput value={category} onChange={setCategory} placeholder="分类" />
             <RemoteViewSelect value={view} onChange={setView} />
             <div className="remote-two-buttons">
               <button
@@ -996,10 +1012,10 @@ function RemoteSubscriptionsOverlay({
                     })
                     setUrl("")
                     setTitle("")
-                  }, "Feed added")
+                  }, "订阅已添加")
                 }
               >
-                Add
+                添加
               </button>
               <button
                 className="remote-secondary-button"
@@ -1007,22 +1023,18 @@ function RemoteSubscriptionsOverlay({
                 onClick={() =>
                   run(async () => {
                     await runtimeClient.feeds.preview({ url, allowPublicRsshub: true })
-                  }, "Preview succeeded")
+                  }, "预览成功")
                 }
               >
-                Preview
+                预览
               </button>
             </div>
           </div>
 
           <div className="remote-divider" />
-          <SectionTitle title="Batch" description={`${selectedFeedIds.length} selected`} />
+          <SectionTitle title="批量" description={`${selectedFeedIds.length} selected`} />
           <div className="remote-form-stack">
-            <RemoteInput
-              value={batchCategory}
-              onChange={setBatchCategory}
-              placeholder="Batch category"
-            />
+            <RemoteInput value={batchCategory} onChange={setBatchCategory} placeholder="批量分类" />
             <RemoteViewSelect value={batchView} onChange={setBatchView} />
             <button
               className="remote-secondary-button"
@@ -1034,10 +1046,10 @@ function RemoteSubscriptionsOverlay({
                     category: batchCategory || null,
                     view: batchView,
                   })
-                }, "Batch update applied")
+                }, "批量修改已应用")
               }
             >
-              Apply to Selected
+              应用到所选
             </button>
             <button
               className="remote-danger-button"
@@ -1049,10 +1061,10 @@ function RemoteSubscriptionsOverlay({
                 void run(async () => {
                   await runtimeClient.subscriptions.deleteByTargets({ feedIds: selectedFeedIds })
                   setSelected(new Set())
-                }, "Selected feeds removed")
+                }, "已删除所选订阅")
               }}
             >
-              Delete Selected
+              删除所选
             </button>
             <button
               className="remote-secondary-button"
@@ -1062,10 +1074,10 @@ function RemoteSubscriptionsOverlay({
                   if (selectedFeedIds.length === 1)
                     await runtimeClient.feeds.refresh(selectedFeedIds[0]!)
                   else await runtimeClient.feeds.refresh()
-                }, "Refresh requested")
+                }, "已请求刷新")
               }
             >
-              Refresh {selectedFeedIds.length === 1 ? "Selected" : "All"}
+              Refresh {selectedFeedIds.length === 1 ? "已选择" : "All"}
             </button>
           </div>
           {message && <div className="remote-inline-message">{message}</div>}
@@ -1101,7 +1113,7 @@ function RemoteSubscriptionsOverlay({
                       [feedId]: { ...draft, title: value },
                     }))
                   }
-                  placeholder="Untitled"
+                  placeholder="无标题"
                 />
                 <RemoteInput
                   value={draft.category}
@@ -1111,7 +1123,7 @@ function RemoteSubscriptionsOverlay({
                       [feedId]: { ...draft, category: value },
                     }))
                   }
-                  placeholder="Category"
+                  placeholder="分类"
                 />
                 <RemoteViewSelect
                   value={draft.view}
@@ -1133,10 +1145,10 @@ function RemoteSubscriptionsOverlay({
                           category: draft.category || null,
                           view: draft.view,
                         })
-                      }, "Feed saved")
+                      }, "订阅已保存")
                     }
                   >
-                    Save
+                    保存
                   </button>
                   <button
                     className="remote-danger-button"
@@ -1147,10 +1159,10 @@ function RemoteSubscriptionsOverlay({
                         await runtimeClient.subscriptions.deleteByTargets({
                           ids: [`feed/${feedId}`],
                         })
-                      }, "Feed removed")
+                      }, "订阅已删除")
                     }}
                   >
-                    Delete
+                    删除
                   </button>
                 </div>
               </div>
@@ -1163,6 +1175,7 @@ function RemoteSubscriptionsOverlay({
 }
 
 function RemoteSettingsOverlay({ onClose }: { onClose: () => void }) {
+  const isMobile = useRemoteMobile()
   const [appearance, setAppearance] = useState<"light" | "dark" | "system">("system")
   const [rsshubCustomUrl, setRsshubCustomUrl] = useState("")
   const [exportText, setExportText] = useState("")
@@ -1195,31 +1208,31 @@ function RemoteSettingsOverlay({ onClose }: { onClose: () => void }) {
       await task()
       setMessage(success)
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Action failed")
+      setMessage(error instanceof Error ? error.message : "操作失败")
     } finally {
       setBusy(false)
     }
   }
 
   return (
-    <OverlayFrame title="Settings" subtitle="Web-safe settings and data tools." onClose={onClose}>
+    <OverlayFrame
+      title="设置"
+      subtitle="可在浏览器端安全使用的设置与数据工具。"
+      onClose={onClose}
+      closable={!isMobile}
+    >
       <div className="remote-settings-layout">
-        <aside className="remote-settings-nav">
-          <div className="is-active">General</div>
-          <div>RSSHub</div>
-          <div>Import / Export</div>
-        </aside>
         <main className="remote-settings-main">
           <section>
-            <SectionTitle title="Appearance" />
+            <SectionTitle title="外观" />
             <select
               className="remote-field remote-field-short"
               value={appearance}
               onChange={(event) => setAppearance(event.target.value as typeof appearance)}
             >
-              <option value="system">System</option>
-              <option value="light">Light</option>
-              <option value="dark">Dark</option>
+              <option value="system">跟随系统</option>
+              <option value="light">浅色</option>
+              <option value="dark">深色</option>
             </select>
           </section>
 
@@ -1240,16 +1253,16 @@ function RemoteSettingsOverlay({ onClose }: { onClose: () => void }) {
                       url: "rsshub://rsshub/routes",
                       allowPublicFallback: true,
                     })
-                  }, "RSSHub precheck completed")
+                  }, "RSSHub 检测完成")
                 }
               >
-                Precheck
+                检测
               </button>
             </div>
           </section>
 
           <section>
-            <SectionTitle title="Import / Export" />
+            <SectionTitle title="导入 / 导出" />
             <div className="remote-form-stack">
               <div className="remote-inline-form">
                 <button
@@ -1265,10 +1278,10 @@ function RemoteSettingsOverlay({ onClose }: { onClose: () => void }) {
                       link.download = "suhui.opml"
                       link.click()
                       URL.revokeObjectURL(url)
-                    }, "OPML export prepared")
+                    }, "OPML 导出已就绪")
                   }
                 >
-                  Export OPML
+                  导出 OPML
                 </button>
                 <button
                   className="remote-secondary-button"
@@ -1282,10 +1295,10 @@ function RemoteSettingsOverlay({ onClose }: { onClose: () => void }) {
                       setSelectedOpmlIndexes(
                         preview.filter((item) => !item.duplicate).map((item) => item.index),
                       )
-                    }, "OPML preview ready")
+                    }, "OPML 预览已就绪")
                   }
                 >
-                  Preview OPML
+                  预览 OPML
                 </button>
                 <button
                   className="remote-primary-button"
@@ -1293,10 +1306,10 @@ function RemoteSettingsOverlay({ onClose }: { onClose: () => void }) {
                   onClick={() =>
                     run(async () => {
                       await runtimeClient.opml.import(opmlText, selectedOpmlIndexes)
-                    }, "OPML import completed")
+                    }, "OPML 导入完成")
                   }
                 >
-                  Import selected
+                  导入所选
                 </button>
               </div>
               <textarea
@@ -1307,7 +1320,7 @@ function RemoteSettingsOverlay({ onClose }: { onClose: () => void }) {
                   setOpmlPreview([])
                   setSelectedOpmlIndexes([])
                 }}
-                placeholder="Paste OPML here for a local preview"
+                placeholder="在此粘贴 OPML 以本地预览"
               />
               {opmlPreview.length > 0 ? (
                 <div className="remote-form-stack">
@@ -1352,10 +1365,10 @@ function RemoteSettingsOverlay({ onClose }: { onClose: () => void }) {
                       link.download = `suhui-export-${new Date().toISOString().slice(0, 10)}.json`
                       link.click()
                       URL.revokeObjectURL(url)
-                    }, "Export prepared")
+                    }, "导出已就绪")
                   }
                 >
-                  Export Data
+                  导出数据
                 </button>
                 <textarea className="remote-textarea" value={exportText} readOnly />
               </div>
@@ -1367,16 +1380,16 @@ function RemoteSettingsOverlay({ onClose }: { onClose: () => void }) {
                     run(async () => {
                       const payload = parseRemoteImportPayload(importText)
                       await runtimeClient.importExport.importData(payload)
-                    }, "Import completed")
+                    }, "导入完成")
                   }
                 >
-                  Import Data
+                  导入数据
                 </button>
                 <textarea
                   className="remote-textarea"
                   value={importText}
                   onChange={(event) => setImportText(event.target.value)}
-                  placeholder="Paste exported JSON here"
+                  placeholder="在此粘贴导出的 JSON"
                 />
               </div>
             </div>
@@ -1389,10 +1402,10 @@ function RemoteSettingsOverlay({ onClose }: { onClose: () => void }) {
               onClick={() =>
                 run(async () => {
                   await runtimeClient.settings.update({ appearance, rsshubCustomUrl })
-                }, "Settings saved")
+                }, "设置已保存")
               }
             >
-              Save Settings
+              保存设置
             </button>
             {message && <span className="remote-inline-status">{message}</span>}
           </div>
@@ -1407,11 +1420,14 @@ function OverlayFrame({
   subtitle,
   children,
   onClose,
+  closable = true,
 }: {
   title: string
   subtitle: string
   children: React.ReactNode
   onClose: () => void
+  /** Off only where something else already leads out, i.e. the bottom tabs. */
+  closable?: boolean
 }) {
   return (
     <div className="remote-overlay-backdrop">
@@ -1421,10 +1437,12 @@ function OverlayFrame({
             <div className="remote-overlay-title">{title}</div>
             <div className="remote-overlay-subtitle">{subtitle}</div>
           </div>
-          <button className="remote-control-button" onClick={onClose}>
-            <i className="i-mgc-close-cute-re" />
-            Close
-          </button>
+          {closable && (
+            <button className="remote-control-button" onClick={onClose}>
+              <i className="i-mgc-close-cute-re" />
+              关闭
+            </button>
+          )}
         </header>
         {children}
       </div>

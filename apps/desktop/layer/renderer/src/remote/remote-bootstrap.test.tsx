@@ -20,12 +20,9 @@ const mocks = vi.hoisted(() => ({
   subscriptions: {} as Record<string, unknown>,
 }))
 
-// The remote shell derives its layout from the viewport width rather than the
-// shared useMobile(), whose breakpoint disagreed with remote.css.
-vi.mock("@suhui/components/hooks/useViewport.js", () => ({
-  useViewport: (selector: (value: { w: number; h: number }) => unknown) =>
-    selector({ w: mocks.mobile ? 390 : 1440, h: 844 }),
-}))
+// setup-file.ts swaps in a minimal window stub, so the real hook's
+// getComputedStyle/transition work has nothing to run against.
+vi.mock("@suhui/hooks", () => ({ useSyncThemeWebApp: () => {} }))
 vi.mock("@suhui/store/collection/hooks", () => ({ useIsEntryStarred: () => false }))
 vi.mock("@suhui/store/collection/store", () => ({
   collectionActions: { deleteInSession: vi.fn(), upsertManyInSession: vi.fn() },
@@ -118,7 +115,7 @@ function BootstrapHarness() {
   return (
     <div data-testid="shell">
       <span>{bootstrap.phase}</span>
-      {bootstrap.phase === "error" && <button onClick={bootstrap.retry}>Retry metadata</button>}
+      {bootstrap.phase === "error" && <button onClick={bootstrap.retry}>重试加载订阅</button>}
     </div>
   )
 }
@@ -126,6 +123,20 @@ function BootstrapHarness() {
 describe("remote progressive bootstrap", () => {
   let container: HTMLDivElement
   let root: Root
+
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    value: (query: string) => ({
+      matches: mocks.mobile && query.includes("max-width"),
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      addListener: () => {},
+      removeListener: () => {},
+      onchange: null,
+      dispatchEvent: () => false,
+    }),
+  })
 
   beforeEach(() => {
     globalThis.IS_REACT_ACT_ENVIRONMENT = true
@@ -182,7 +193,7 @@ describe("remote progressive bootstrap", () => {
       .mockResolvedValueOnce(validPayload)
 
     await act(async () => root.render(<BootstrapHarness />))
-    expect(container.textContent).toContain("Retry metadata")
+    expect(container.textContent).toContain("重试加载订阅")
 
     const retry = container.querySelector("button")!
     await act(async () => retry.dispatchEvent(new MouseEvent("click", { bubbles: true })))
@@ -217,7 +228,7 @@ describe("remote progressive bootstrap", () => {
 
     expect(container.querySelector('[data-testid="remote-reader-shell"]')).not.toBeNull()
     expect(container.textContent).toContain("Example Feed")
-    expect(container.textContent).toContain("Retry entries")
+    expect(container.textContent).toContain("重试加载文章")
     expect(mocks.markMetric).toHaveBeenCalledWith("remote_entries_error_visible_ms")
     expect(mocks.markMetric).not.toHaveBeenCalledWith("remote_initial_entries_ready_ms")
     expect(mocks.markDataReady).not.toHaveBeenCalledWith({
@@ -226,7 +237,7 @@ describe("remote progressive bootstrap", () => {
     })
 
     const retry = Array.from(container.querySelectorAll("button")).find(
-      (button) => button.textContent === "Retry entries",
+      (button) => button.textContent === "重试加载文章",
     )!
     await act(async () => retry.dispatchEvent(new MouseEvent("click", { bubbles: true })))
     expect(mocks.refetchEntries).toHaveBeenCalledTimes(1)
@@ -241,8 +252,8 @@ describe("remote progressive bootstrap", () => {
     expect(container.querySelector(".remote-desktop-sidebar")).not.toBeNull()
     expect(container.querySelector(".remote-desktop-timeline")).not.toBeNull()
     expect(container.querySelector(".remote-desktop-reader-pane")).not.toBeNull()
-    expect(container.textContent).toContain("Retry metadata")
-    expect(container.textContent).toContain("Entries waiting for subscriptions")
+    expect(container.textContent).toContain("重试加载订阅")
+    expect(container.textContent).toContain("等待订阅加载")
     expect(mocks.markMetric).toHaveBeenCalledWith("remote_bootstrap_error_visible_ms")
     expect(mocks.markMetric).not.toHaveBeenCalledWith("remote_bootstrap_ready_ms")
     expect(mocks.markMetric).not.toHaveBeenCalledWith("remote_initial_entries_ready_ms")
@@ -263,18 +274,18 @@ describe("remote progressive bootstrap", () => {
 
     await act(async () => root.render(<RemoteApp />))
 
-    expect(container.textContent).toContain("No feeds in this view")
+    expect(container.textContent).toContain("该视图下没有订阅")
     expect(mocks.markMetric).toHaveBeenCalledWith("remote_initial_entries_ready_ms")
     expect(mocks.markDataReady).toHaveBeenCalledWith({
       bootstrapReady: true,
       initialEntriesReady: true,
     })
-    expect(container.textContent).toContain("Remote connecting")
+    expect(container.textContent).toContain("连接中")
 
     await act(async () => mocks.connectionHandler?.(true))
-    expect(container.textContent).toContain("Remote connected")
+    expect(container.textContent).toContain("已连接")
     await act(async () => mocks.connectionHandler?.(false))
-    expect(container.textContent).toContain("Remote disconnected")
+    expect(container.textContent).toContain("已断开")
   })
 
   it("shows disconnected when the first SSE connection fails before ready and can recover", async () => {
@@ -283,10 +294,10 @@ describe("remote progressive bootstrap", () => {
 
     await act(async () => root.render(<RemoteApp />))
 
-    expect(container.textContent).toContain("Remote disconnected")
+    expect(container.textContent).toContain("已断开")
 
     await act(async () => mocks.connectionHandler?.(true))
-    expect(container.textContent).toContain("Remote connected")
+    expect(container.textContent).toContain("已连接")
   })
 
   it("renders the app-shaped chrome and only the timeline pane on a phone", async () => {
@@ -336,8 +347,8 @@ describe("remote progressive bootstrap", () => {
 
     await act(async () => root.render(<RemoteApp />))
 
-    expect(container.textContent).not.toContain("Read later")
-    expect(container.textContent).not.toContain("Notes & Highlights")
+    expect(container.textContent).not.toContain("稍后读")
+    expect(container.textContent).not.toContain("笔记与高亮")
     expect(mocks.annotationsList).not.toHaveBeenCalled()
   })
 })

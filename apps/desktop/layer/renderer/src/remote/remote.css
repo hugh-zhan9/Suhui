@@ -2,6 +2,24 @@
 
 :root {
   color-scheme: light dark;
+
+  /*
+   * This stylesheet was written against upstream's palette, but of the --fo-*
+   * names it uses only --fo-background and --fo-sidebar exist here; the rest
+   * were never defined in this fork, so every rule built on them — borders,
+   * separators, secondary text, input outlines — silently resolved to nothing
+   * and left panels and form fields with no visible edges at all.
+   *
+   * They are mapped onto the tokens this design system actually ships. Those
+   * carry `R G B/alpha` components and flip with the data-theme attribute, so
+   * the remote client follows light and dark the same way the desktop does.
+   */
+  --fo-text: rgb(var(--color-text));
+  --fo-text-secondary: rgb(var(--color-textSecondary));
+  --fo-text-tertiary: rgb(var(--color-textTertiary));
+  --fo-red: rgb(var(--color-red));
+  --fo-accent: theme(colors.accent);
+  --fo-accent-foreground: theme(colors.white);
   font-family:
     "SN Pro", "SF Pro Display", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
 }
@@ -885,30 +903,14 @@ textarea {
   gap: 6px;
 }
 
+/* Single column since the section list was removed: it was three plain divs
+   with a hard-coded active state and no handler, so it could never navigate
+   anywhere. Every section renders in one scroll instead. */
 .remote-settings-layout {
   display: grid;
   min-height: 0;
   flex: 1;
-  grid-template-columns: 220px minmax(0, 1fr);
-}
-
-.remote-settings-nav {
-  border-right: 1px solid var(--remote-border);
-  background: var(--remote-muted-surface);
-  padding: 14px;
-}
-
-.remote-settings-nav div {
-  border-radius: 8px;
-  color: var(--fo-text-secondary);
-  font-size: 13px;
-  padding: 8px 10px;
-}
-
-.remote-settings-nav div.is-active {
-  background: var(--fo-background);
-  color: var(--fo-text);
-  font-weight: 600;
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .remote-settings-main {
@@ -1151,13 +1153,11 @@ textarea {
   }
 
   .remote-overlay-grid,
-  .remote-settings-layout,
   .remote-data-grid {
     grid-template-columns: 1fr;
   }
 
-  .remote-overlay-side,
-  .remote-settings-nav {
+  .remote-overlay-side {
     border-right: 0;
     border-bottom: 1px solid var(--remote-border);
   }
