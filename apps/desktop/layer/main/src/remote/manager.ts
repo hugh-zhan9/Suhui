@@ -76,6 +76,7 @@ type RemoteServerDependencies = {
   getSubscriptions: () => Promise<SubscriptionRecord[]>
   listEntries: (query: EntryListQuery) => Promise<EntrySummaryPage>
   getEntry: (entryId: string) => Promise<EntryRecord | null>
+  ensureEntryReadability: (entryId: string) => Promise<string | null>
   getAgentEntries: (options?: AgentEntriesListOptions) => Promise<AgentEntriesListResult>
   getAgentEntry: (entryId: string) => Promise<AgentEntryDetail | null>
   getAgentFeeds: () => Promise<AgentFeedsListResult>
@@ -582,6 +583,31 @@ const writeSseEvent = (
 export const isLoopbackPeer = (address: string | undefined) =>
   address === "127.0.0.1" || address === "::1" || address === "::ffff:127.0.0.1"
 
+// Headers a reverse proxy adds when it forwards a request on someone's behalf.
+const FORWARDING_HEADERS = [
+  "forwarded",
+  "x-forwarded-for",
+  "x-forwarded-host",
+  "x-forwarded-proto",
+  "x-real-ip",
+] as const
+
+/**
+ * Whether the request really came from this machine's own client.
+ *
+ * The peer address alone stops being enough once a TLS terminator such as
+ * Tailscale Serve or Caddy runs on the same host: it dials the server over
+ * loopback, so every request it forwards would otherwise inherit the desktop's
+ * privileges and hand notes, highlights and rules to anyone who reaches the
+ * proxy.
+ *
+ * Any forwarding header therefore disqualifies a request. The desktop renderer
+ * sends none of them, so this only ever fails closed.
+ */
+export const isLocalPeerRequest = (request: IncomingMessage) =>
+  isLoopbackPeer(request.socket.remoteAddress) &&
+  !FORWARDING_HEADERS.some((header) => request.headers[header] !== undefined)
+
 export const isPrivateLocalReadingRoute = (pathname: string) =>
   pathname === "/api/rules" ||
   pathname.startsWith("/api/rules/") ||
@@ -604,7 +630,7 @@ const isAuthorizedPerformanceHarnessRequest = (request: IncomingMessage) => {
     !expected ||
     !/^[a-f0-9]{64}$/.test(expected) ||
     typeof provided !== "string" ||
-    !isLoopbackPeer(request.socket.remoteAddress)
+    !isLocalPeerRequest(request)
   ) {
     return false
   }
@@ -631,13 +657,11 @@ const createRequestHandler =
       return
     }
 
-    // Remote currently has no authentication. Notes, highlights and all local
-    // reading mutations therefore stay loopback-only; binding the general
-    // reader to 0.0.0.0 must not expose private data to LAN/VPN peers.
-    if (isPrivateLocalReadingRoute(url.pathname) && !isLoopbackPeer(request.socket.remoteAddress)) {
-      json(response, 403, { error: "REMOTE_LOCAL_READING_LOOPBACK_ONLY" })
-      return
-    }
+    // Notes, highlights, rules and the reading queue used to be loopback-only,
+    // because remote has no authentication and the reader binds to 0.0.0.0.
+    // The owner has opted to reach them from their own phone instead, so every
+    // peer that can reach this server can now read and write them. Restoring
+    // the boundary means gating this on isLocalPeerRequest again.
 
     if (method === "POST" && url.pathname === "/__performance__/refresh-event") {
       if (
@@ -729,7 +753,8 @@ const createRequestHandler =
             ...bootstrap,
             capabilities: {
               ...baseCapabilities,
-              privateLocalReading: isLoopbackPeer(request.socket.remoteAddress),
+              // Opened to every peer along with the routes themselves.
+              privateLocalReading: true,
             },
           },
         })
@@ -862,6 +887,20 @@ const createRequestHandler =
         ? await deps.listAnnotations(entryId)
         : await deps.getEntryTags(entryId)
       json(response, 200, { data })
+      return
+    }
+
+    // The remote reader opens articles in reading mode, so it asks for the
+    // extracted body when the entry has none cached yet.
+    if (method === "POST" && url.pathname.match(/^\/api\/entries\/[^/]+\/readability$/)) {
+      const entryId = decodeURIComponent(url.pathname.split("/")[3]!)
+      try {
+        const content = await deps.ensureEntryReadability(entryId)
+        json(response, 200, { data: { content } })
+      } catch (error) {
+        logger.error("[RemoteServerManager] readability failed", error)
+        json(response, 502, { error: "REMOTE_READABILITY_FAILED" })
+      }
       return
     }
 
@@ -1342,6 +1381,10 @@ class RemoteServerManagerStatic {
       getSubscriptions: () => subscriptionApplicationService.listSubscriptions(),
       listEntries: (query) => entryQueryService.list(query),
       getEntry: (entryId) => entryQueryService.getDetail(entryId, "active-relations"),
+      ensureEntryReadability: async (entryId) => {
+        const { entryApplicationService } = await import("~/application/entry/service")
+        return entryApplicationService.ensureReadabilityContent(entryId)
+      },
       getAgentEntries: (options) => agentApplicationService.listEntries(options),
       getAgentEntry: (entryId) => agentApplicationService.getEntry(entryId),
       getAgentFeeds: () => agentApplicationService.listFeeds(),

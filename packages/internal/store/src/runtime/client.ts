@@ -377,6 +377,20 @@ export const runtimeClient = {
       return null
     },
 
+    /**
+     * Extracted article body, fetched once by the desktop and cached with the
+     * entry. Remote-only: the desktop reaches the same content through its own
+     * reading-mode command.
+     */
+    async ensureReadability(entryId: string): Promise<string | null> {
+      if (!getRuntimeEnv().isRemote) return null
+      const { data } = await jsonRequest<{ data: { content: string | null } }>(
+        `/api/entries/${encodeURIComponent(entryId)}/readability`,
+        { method: "POST" },
+      )
+      return data?.content ?? null
+    },
+
     async updateReadStatus(payload: { entryIds: string[]; read: boolean }) {
       if (getRuntimeEnv().isRemote) {
         const response = await jsonRequest<EntryChangeResponse<{ ok: boolean }>>(

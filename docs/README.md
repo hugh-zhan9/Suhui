@@ -14,6 +14,8 @@
   - macOS 本地构建和安装
 - [local-refresh-observability.md](/Users/zhangyukun/project/Suhui/docs/local-refresh-observability.md)
   - 本地刷新链路的校验方法、日志位置与排查步骤
+- [remote-https-and-home-screen.md](/Users/zhangyukun/project/Suhui/docs/remote-https-and-home-screen.md)
+  - 远程端添加到主屏幕、Service Worker 的 HTTPS 前提、反向代理下的私密路由边界
 - [iteration-direction.md](/Users/zhangyukun/project/Suhui/docs/iteration-direction.md)
   - 性能重构完成后的后续产品迭代方向（现行）
 - [README.repair-published-at.md](/Users/zhangyukun/project/Suhui/apps/desktop/scripts/README.repair-published-at.md)

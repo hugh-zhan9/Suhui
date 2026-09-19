@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { isLoopbackPeer, isPrivateLocalReadingRoute } from "./manager"
+import { isLocalPeerRequest, isLoopbackPeer, isPrivateLocalReadingRoute } from "./manager"
 
 describe("remote local-reading boundary", () => {
   it("recognizes loopback peers including IPv4-mapped IPv6", () => {
@@ -8,6 +8,28 @@ describe("remote local-reading boundary", () => {
     expect(isLoopbackPeer("::1")).toBe(true)
     expect(isLoopbackPeer("::ffff:127.0.0.1")).toBe(true)
     expect(isLoopbackPeer("192.168.1.50")).toBe(false)
+  })
+
+  // A TLS terminator on this same machine dials the server over loopback, so
+  // the peer address alone would hand every proxied request the desktop's
+  // privileges.
+  it("does not treat a proxied request as local even when it arrives over loopback", () => {
+    const from = (remoteAddress: string, headers: Record<string, string> = {}) =>
+      ({ socket: { remoteAddress }, headers }) as any
+
+    expect(isLocalPeerRequest(from("127.0.0.1"))).toBe(true)
+    expect(isLocalPeerRequest(from("::1"))).toBe(true)
+    expect(isLocalPeerRequest(from("192.168.1.50"))).toBe(false)
+
+    for (const header of [
+      "forwarded",
+      "x-forwarded-for",
+      "x-forwarded-host",
+      "x-forwarded-proto",
+      "x-real-ip",
+    ]) {
+      expect(isLocalPeerRequest(from("127.0.0.1", { [header]: "anything" }))).toBe(false)
+    }
   })
 
   it("classifies private local-reading routes without blocking OPML", () => {
@@ -547,6 +569,35 @@ describe("RemoteServerManager", () => {
     // the renderer bundle.
     await fetch(`${server.baseUrl}/package.json`)
     expect(getRemoteAsset).not.toHaveBeenCalledWith("/package.json")
+  })
+
+  // The owner chose to reach notes and highlights from their phone, so these
+  // are deliberately no longer loopback-only. If that is ever reverted, this is
+  // the test that should fail first.
+  it("serves private reading routes to a non-local caller", async () => {
+    const listAnnotations = vi.fn().mockResolvedValue({ notes: [], highlights: [] })
+    const server = await RemoteServerManager.start({
+      host: "127.0.0.1",
+      port: 0,
+      getSubscriptions: vi.fn().mockResolvedValue([]),
+      listEntries: vi.fn().mockResolvedValue({
+        items: [],
+        page: { limit: 20, hasMore: false, nextCursor: null },
+      }),
+      listAnnotations,
+    })
+
+    // Headers a TLS terminator adds, i.e. not a request from this machine.
+    const proxied = { "x-forwarded-for": "100.64.0.7" }
+
+    const notes = await fetch(`${server.baseUrl}/api/notes`, { headers: proxied })
+    expect(notes.status).not.toBe(403)
+
+    const bootstrap = await fetch(`${server.baseUrl}/api/bootstrap`, { headers: proxied })
+    const payload = (await bootstrap.json()) as {
+      data: { capabilities: { privateLocalReading: boolean } }
+    }
+    expect(payload.data.capabilities.privateLocalReading).toBe(true)
   })
 
   it("returns a bounded additive HTTP page and preserves repeated feed scopes", async () => {
