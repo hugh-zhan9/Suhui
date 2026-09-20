@@ -1,4 +1,4 @@
-import { DEV, MICROSOFT_STORE_BUILD, WEB_BUILD } from "@suhui/shared/constants"
+import { APP_RENDERER_ORIGIN, DEV, MICROSOFT_STORE_BUILD, WEB_BUILD } from "@suhui/shared/constants"
 
 import { imageRefererMatches } from "./img-proxy"
 
@@ -29,9 +29,14 @@ export const createBuildSafeHeaders =
       return headers
     }
 
+    // A Referer that is still the renderer's own origin means nothing upstream
+    // has set a real one, so fall through and use the target's. This compared
+    // against upstream's origin until now, which no request from this app ever
+    // carries: every cross-origin request left with `app://suhui.io` as its
+    // Referer, and embedded players and hotlink-protected images rejected it.
     if (
-      (headers.Referer && headers.Referer !== "app://folo.is") ||
-      (headers.Origin && headers.Origin !== "app://folo.is")
+      (headers.Referer && headers.Referer !== APP_RENDERER_ORIGIN) ||
+      (headers.Origin && headers.Origin !== APP_RENDERER_ORIGIN)
     ) {
       return headers
     }

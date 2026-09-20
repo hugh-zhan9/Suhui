@@ -23,6 +23,15 @@ export const DEV =
 
 export const LEGACY_APP_PROTOCOL = DEV ? "suhui-dev" : "suhui"
 export const APP_PROTOCOL = DEV ? "suhui-dev" : "suhui"
+
+/**
+ * Origin the renderer runs under, from the privileged `app://` scheme.
+ *
+ * Kept here because the main process builds renderer URLs from it and the
+ * header rewriter has to recognise it: a request that still carries this as its
+ * Referer is one the renderer made, and needs a real origin before it leaves.
+ */
+export const APP_RENDERER_ORIGIN = "app://suhui.io"
 export const DEEPLINK_SCHEME = `${APP_PROTOCOL}://` as const
 
 export const SYSTEM_CAN_UNDER_BLUR_WINDOW = globalThis?.window?.electron
