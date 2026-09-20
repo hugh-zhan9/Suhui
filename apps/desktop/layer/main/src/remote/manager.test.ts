@@ -1143,6 +1143,50 @@ describe("RemoteServerManager", () => {
     expect(getEntry).toHaveBeenCalledWith("entry_1")
   })
 
+  it("serves an extracted body to the remote reader", async () => {
+    const ensureEntryReadability = vi.fn().mockResolvedValue("<article>Extracted</article>")
+
+    const server = await RemoteServerManager.start({
+      host: "127.0.0.1",
+      port: 0,
+      ensureEntryReadability,
+    })
+
+    const response = await fetch(`${server.baseUrl}/api/entries/entry_1/readability`, {
+      method: "POST",
+    })
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual({
+      data: { content: "<article>Extracted</article>" },
+    })
+    expect(ensureEntryReadability).toHaveBeenCalledWith("entry_1")
+  })
+
+  // The failure branch used to log through an undefined `logger`, so the catch threw
+  // before it answered and the phone waited on a response that never came.
+  it("answers 502 when extraction fails instead of leaving the request open", async () => {
+    const ensureEntryReadability = vi.fn().mockRejectedValue(new Error("upstream unreachable"))
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {})
+
+    try {
+      const server = await RemoteServerManager.start({
+        host: "127.0.0.1",
+        port: 0,
+        ensureEntryReadability,
+      })
+
+      const response = await fetch(`${server.baseUrl}/api/entries/entry_1/readability`, {
+        method: "POST",
+      })
+
+      expect(response.status).toBe(502)
+      await expect(response.json()).resolves.toEqual({ error: "REMOTE_READABILITY_FAILED" })
+    } finally {
+      consoleError.mockRestore()
+    }
+  })
+
   it("uses active-relations visibility for default remote detail and PDF", async () => {
     const getDetail = vi.mocked(entryQueryService.getDetail)
     getDetail.mockClear()

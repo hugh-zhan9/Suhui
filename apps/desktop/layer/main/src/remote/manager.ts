@@ -898,7 +898,7 @@ const createRequestHandler =
         const content = await deps.ensureEntryReadability(entryId)
         json(response, 200, { data: { content } })
       } catch (error) {
-        logger.error("[RemoteServerManager] readability failed", error)
+        console.error("[RemoteServerManager] readability failed", error)
         json(response, 502, { error: "REMOTE_READABILITY_FAILED" })
       }
       return
@@ -1502,6 +1502,9 @@ class RemoteServerManagerStatic {
       ...(options?.getSubscriptions ? { getSubscriptions: options.getSubscriptions } : {}),
       ...(options?.listEntries ? { listEntries: options.listEntries } : {}),
       ...(options?.getEntry ? { getEntry: options.getEntry } : {}),
+      ...(options?.ensureEntryReadability
+        ? { ensureEntryReadability: options.ensureEntryReadability }
+        : {}),
       ...(options?.getAgentEntries ? { getAgentEntries: options.getAgentEntries } : {}),
       ...(options?.getAgentEntry ? { getAgentEntry: options.getAgentEntry } : {}),
       ...(options?.getAgentFeeds ? { getAgentFeeds: options.getAgentFeeds } : {}),
