@@ -44,3 +44,9 @@ apps/desktop/build/appxmanifest.xml
 apps/desktop/resources/rsshub/routes-manifest.json
 apps/desktop/resources/rsshub/logs/
 .worktrees/
+
+# AI 会话工作草稿（留在本地，不进仓库）
+/findings.md
+/issue.md
+/progress.md
+/task_plan.md
