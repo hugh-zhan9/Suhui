@@ -147,10 +147,15 @@ const createHtmlComponents = (): Components => ({
   iframe: ({ node, ...props }) => {
     const { width, height, src, referrerPolicy, ...rest } = props
 
+    // Feeds still carry protocol-relative embeds, and the renderer is served
+    // from `app://`, so `//player.bilibili.com/...` resolved to
+    // `app://player.bilibili.com/...` and the player came up blank.
+    const resolvedSrc = typeof src === "string" && src.startsWith("//") ? `https:${src}` : src
+
     // Apply security sandbox attributes and responsive styling
     return createElement("iframe", {
       ...rest,
-      src,
+      src: resolvedSrc,
       width: width || "100%",
       height: height || "315",
       className: "max-w-full rounded",
@@ -158,8 +163,8 @@ const createHtmlComponents = (): Components => ({
       allowFullScreen: true,
       loading: "lazy",
       // Avoid YouTube Error 153 https://developers.google.com/youtube/terms/required-minimum-functionality#embedded-player-api-client-identity
-      ...(typeof src === "string" &&
-        youtubeEmbedRegex.test(src) && {
+      ...(typeof resolvedSrc === "string" &&
+        youtubeEmbedRegex.test(resolvedSrc) && {
           referrerPolicy:
             !referrerPolicy || referrerPolicy === "no-referrer" || referrerPolicy === "same-origin"
               ? "strict-origin-when-cross-origin"
