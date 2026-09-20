@@ -41,6 +41,10 @@ export default defineConfig({
     define: {
       ELECTRON: "true",
       GIT_COMMIT_HASH: JSON.stringify(getGitHash()),
+      // ws has JS/Node fallbacks; elide optional native requires from the bundle
+      // so packaging does not need bufferutil or utf-8-validate at runtime.
+      "process.env.WS_NO_BUFFER_UTIL": JSON.stringify("1"),
+      "process.env.WS_NO_UTF_8_VALIDATE": JSON.stringify("1"),
     },
     plugins: [
       createPlatformSpecificImportPlugin("main"),
