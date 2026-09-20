@@ -21,7 +21,6 @@ CLI_SOURCE_PATH="${ROOT_DIR}/apps/cli/dist/index.js"
 CLI_BIN_DIR="${SUHUI_CLI_BIN_DIR:-$HOME/.local/bin}"
 CLI_BIN_PATH="${CLI_BIN_DIR}/${CLI_BIN_NAME}"
 CURRENT_STEP=""
-PACKAGE_PID=""
 TEMP_INSTALLED_APP_PATH=""
 PREVIOUS_INSTALLED_APP_PATH=""
 
@@ -85,85 +84,19 @@ is_packaged_app_ready() {
   local executable_path="$packaged_app_path/Contents/MacOS/$APP_NAME"
   local info_plist_path="$packaged_app_path/Contents/Info.plist"
   local asar_path="$packaged_app_path/Contents/Resources/app.asar"
+  # better-sqlite3 ships outside the archive, and the app cannot open its
+  # database without it, so a bundle missing this is not usable.
+  local unpacked_path="$packaged_app_path/Contents/Resources/app.asar.unpacked"
+  # forge's postPackage ad-hoc signs the bundle; without this the app is the
+  # unsigned intermediate and macOS refuses to launch it.
+  local signature_path="$packaged_app_path/Contents/_CodeSignature"
 
   [[ -d "$packaged_app_path" ]] &&
     [[ -f "$executable_path" ]] &&
     [[ -f "$info_plist_path" ]] &&
-    [[ -f "$asar_path" ]]
-}
-
-get_packaged_app_fingerprint() {
-  local packaged_app_path="$1"
-  local executable_path="$packaged_app_path/Contents/MacOS/$APP_NAME"
-  local info_plist_path="$packaged_app_path/Contents/Info.plist"
-  local asar_path="$packaged_app_path/Contents/Resources/app.asar"
-
-  stat -f '%m:%z' "$executable_path" "$info_plist_path" "$asar_path" 2>/dev/null | tr '\n' '|'
-}
-
-terminate_process_tree() {
-  local pid="$1"
-  if [[ -z "$pid" ]] || ! kill -0 "$pid" >/dev/null 2>&1; then
-    return 0
-  fi
-
-  local children
-  children="$(pgrep -P "$pid" || true)"
-  if [[ -n "$children" ]]; then
-    while IFS= read -r child_pid; do
-      [[ -n "$child_pid" ]] || continue
-      terminate_process_tree "$child_pid"
-    done <<<"$children"
-  fi
-
-  kill "$pid" >/dev/null 2>&1 || true
-}
-
-wait_for_packaged_app() {
-  local packaged_app_path="$1"
-  local package_pid="$2"
-  local timeout_seconds="${3:-180}"
-  local started_at now stable_count
-  local last_fingerprint=""
-
-  started_at="$(date +%s)"
-  stable_count=0
-
-  while true; do
-    if is_packaged_app_ready "$packaged_app_path"; then
-      local fingerprint
-      fingerprint="$(get_packaged_app_fingerprint "$packaged_app_path")"
-      if [[ -n "$fingerprint" && "$fingerprint" == "$last_fingerprint" ]]; then
-        stable_count=$((stable_count + 1))
-      else
-        stable_count=0
-        last_fingerprint="$fingerprint"
-      fi
-
-      if [[ "$stable_count" -ge 2 ]]; then
-        return 0
-      fi
-    fi
-
-    if ! kill -0 "$package_pid" >/dev/null 2>&1; then
-      if is_packaged_app_ready "$packaged_app_path"; then
-        return 0
-      fi
-      echo "Packaging process exited before app bundle was ready" >&2
-      return 1
-    fi
-
-    now="$(date +%s)"
-    if (( now - started_at >= timeout_seconds )); then
-      if is_packaged_app_ready "$packaged_app_path"; then
-        return 0
-      fi
-      echo "Timed out waiting for packaged app: $packaged_app_path" >&2
-      return 1
-    fi
-
-    sleep 1
-  done
+    [[ -f "$asar_path" ]] &&
+    [[ -d "$unpacked_path" ]] &&
+    [[ -d "$signature_path" ]]
 }
 
 quit_running_app() {
@@ -191,12 +124,6 @@ wait_for_app_exit() {
 }
 
 cleanup() {
-  if [[ -n "$PACKAGE_PID" ]]; then
-    terminate_process_tree "$PACKAGE_PID"
-    wait "$PACKAGE_PID" >/dev/null 2>&1 || true
-    PACKAGE_PID=""
-  fi
-
   if [[ -n "$TEMP_INSTALLED_APP_PATH" && -e "$TEMP_INSTALLED_APP_PATH" ]]; then
     rm -rf "$TEMP_INSTALLED_APP_PATH"
   fi
@@ -221,9 +148,13 @@ install_app_bundle() {
   TEMP_INSTALLED_APP_PATH="$(dirname "$INSTALLED_APP_PATH")/.${APP_NAME}.app.installing.$$"
   rm -rf "$TEMP_INSTALLED_APP_PATH"
 
+  # forge's postPackage already ad-hoc signs the bundle and ditto carries the
+  # signatures over, so there is nothing left to sign here. Re-signing it with
+  # --deep on top of that fails inside Electron Framework with "internal error in
+  # Code Signing subsystem"; verify the copy instead.
   ditto "$source_app_path" "$TEMP_INSTALLED_APP_PATH"
-  codesign --force --deep --sign - "$TEMP_INSTALLED_APP_PATH"
   xattr -dr com.apple.quarantine "$TEMP_INSTALLED_APP_PATH"
+  codesign --verify --deep --strict "$TEMP_INSTALLED_APP_PATH"
   replace_installed_app "$TEMP_INSTALLED_APP_PATH"
 }
 
@@ -261,18 +192,18 @@ build_local_app_bundle() {
 
   CURRENT_STEP="package-local-app"
   rm -rf "$PACKAGE_OUTPUT_DIR"
-  FOLO_NO_SIGN=1 pnpm --filter "$DESKTOP_PACKAGE" exec node scripts/run-electron-forge.mjs package --platform=darwin --arch="$INSTALL_ARCH" &
-  PACKAGE_PID="$!"
 
-  wait_for_packaged_app "$PACKAGED_APP_PATH" "$PACKAGE_PID" 180
+  # This used to run packaging in the background, poll for the bundle and kill
+  # forge once it appeared, because forge never exited: it hung unzipping
+  # Electron, on a yauzl that stopped producing data under Node 26. With that
+  # fixed forge exits on its own in a few seconds, and waiting for it is both
+  # simpler and safer — the old path could cut the postPackage signing short.
+  FOLO_NO_SIGN=1 pnpm --filter "$DESKTOP_PACKAGE" exec node scripts/run-electron-forge.mjs package --platform=darwin --arch="$INSTALL_ARCH"
 
-  if kill -0 "$PACKAGE_PID" >/dev/null 2>&1; then
-    echo "electron-forge package produced app bundle but did not exit, terminating stale packaging process..." >&2
-    terminate_process_tree "$PACKAGE_PID"
+  if ! is_packaged_app_ready "$PACKAGED_APP_PATH"; then
+    echo "electron-forge package finished without a complete app bundle: $PACKAGED_APP_PATH" >&2
+    return 1
   fi
-
-  wait "$PACKAGE_PID" >/dev/null 2>&1 || true
-  PACKAGE_PID=""
 }
 
 build_cli_tool() {

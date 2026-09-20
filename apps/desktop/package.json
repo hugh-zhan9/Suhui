@@ -39,7 +39,7 @@
     "performance:build-identity": "tsx scripts/performance/build-identity.ts",
     "performance:collect-evidence": "tsx scripts/performance/collect-evidence.ts",
     "performance:package-artifact": "tsx scripts/performance/package-artifact.ts",
-    "performance:package-artifact:test": "tsx --test scripts/forge-ignore.test.ts scripts/packaging/rsshub-removed.test.ts scripts/performance/package-artifact.test.ts",
+    "performance:package-artifact:test": "tsx --test scripts/forge-ignore.test.ts scripts/packaging/packaged-modules.test.ts scripts/packaging/rsshub-removed.test.ts scripts/performance/package-artifact.test.ts",
     "performance:query-plan": "tsx scripts/performance/query-plan.ts",
     "performance:query-plan:test": "tsx --test scripts/performance/query-plan.test.ts scripts/performance/report.test.ts",
     "performance:report": "tsx scripts/performance/report.ts",

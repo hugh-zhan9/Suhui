@@ -58,15 +58,50 @@ test_resolve_packaged_app_path_missing() {
   rm -rf "$tmp_dir"
 }
 
+make_packaged_app_fixture() {
+  local app_path="$1"
+  mkdir -p "$app_path/Contents/MacOS" \
+    "$app_path/Contents/Resources/app.asar.unpacked" \
+    "$app_path/Contents/_CodeSignature"
+  touch "$app_path/Contents/MacOS/溯洄" \
+    "$app_path/Contents/Info.plist" \
+    "$app_path/Contents/Resources/app.asar"
+}
+
 test_is_packaged_app_ready() {
   local tmp_dir
   tmp_dir="$(mktemp -d)"
   local app_path="$tmp_dir/溯洄.app"
-  mkdir -p "$app_path/Contents/MacOS" "$app_path/Contents/Resources"
-  touch "$app_path/Contents/MacOS/溯洄" "$app_path/Contents/Info.plist" "$app_path/Contents/Resources/app.asar"
+  make_packaged_app_fixture "$app_path"
 
   if ! is_packaged_app_ready "$app_path"; then
     echo "expected packaged app readiness check to pass" >&2
+    exit 1
+  fi
+
+  rm -rf "$tmp_dir"
+}
+
+# The bundle used to count as ready with only the executable, plist and asar.
+# Native modules live beside the archive and the signature is applied last, so
+# a bundle without either is one the app cannot launch from.
+test_is_packaged_app_ready_rejects_incomplete_bundle() {
+  local tmp_dir
+  tmp_dir="$(mktemp -d)"
+
+  local missing_natives="$tmp_dir/natives.app"
+  make_packaged_app_fixture "$missing_natives"
+  rmdir "$missing_natives/Contents/Resources/app.asar.unpacked"
+  if is_packaged_app_ready "$missing_natives"; then
+    echo "expected readiness check to reject a bundle without unpacked natives" >&2
+    exit 1
+  fi
+
+  local missing_signature="$tmp_dir/unsigned.app"
+  make_packaged_app_fixture "$missing_signature"
+  rmdir "$missing_signature/Contents/_CodeSignature"
+  if is_packaged_app_ready "$missing_signature"; then
+    echo "expected readiness check to reject an unsigned bundle" >&2
     exit 1
   fi
 
@@ -202,6 +237,7 @@ main() {
   test_resolve_packaged_app_path
   test_resolve_packaged_app_path_missing
   test_is_packaged_app_ready
+  test_is_packaged_app_ready_rejects_incomplete_bundle
   test_validate_install_arch
   test_replace_installed_app
   test_link_cli_tool

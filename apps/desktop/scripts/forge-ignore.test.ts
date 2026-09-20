@@ -39,3 +39,18 @@ test("keeps other resources and RSSHub near misses", () => {
     assert.equal(shouldIgnorePackagerPath(path), false, path)
   }
 })
+
+test("keeps scoped retained modules in root node_modules", () => {
+  assert.equal(shouldIgnorePackagerPath("/node_modules/@protobufjs/aspromise/index.js"), false)
+  assert.equal(shouldIgnorePackagerPath("/node_modules/@protobufjs/other/index.js"), true)
+})
+
+test("keeps the main process runtime dependencies that used to be dropped", () => {
+  for (const moduleName of ["dotenv", "ajv", "ajv-formats", "yaku"]) {
+    assert.equal(
+      shouldIgnorePackagerPath(`/node_modules/${moduleName}/index.js`),
+      false,
+      moduleName,
+    )
+  }
+})

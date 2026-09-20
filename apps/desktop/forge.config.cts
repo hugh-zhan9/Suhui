@@ -26,6 +26,7 @@ import {
   resolveAdhocSignTargets,
   shouldAdhocSignPackagedApp,
 } from "./scripts/packaging/adhoc-sign"
+import { assertPackagedModulesCovered } from "./scripts/packaging/packaged-modules"
 
 const ResolvedMakerAppImage: typeof MakerAppImage = (MakerAppImage as any).default || MakerAppImage
 const platform = process.argv.find((arg) => arg.startsWith("--platform"))?.split("=")[1]
@@ -128,6 +129,13 @@ const cleanSourcesOnly = async (buildPath, electronVersion, platform, arch, call
 const config: ForgeConfig = {
   ...(isNoSignBuild ? { outDir: unsignedForgeOutputRoot } : {}),
   hooks: {
+    prePackage: async () => {
+      assertPackagedModulesCovered({
+        bundleDirs: [resolve(__dirname, "dist/main"), resolve(__dirname, "dist/preload")],
+        retainedModules: retainedPackagedModules,
+      })
+    },
+
     postPackage: async (_forgeConfig, packageResult) => {
       if (!shouldAdhocSignPackagedApp({ platform: packageResult.platform, isNoSignBuild })) {
         return
@@ -143,6 +151,78 @@ const config: ForgeConfig = {
       for (const appPath of appPaths) {
         adhocSignPackagedApp(appPath)
       }
+    },
+
+    postMake: async (_config, makeResults) => {
+      const yml: {
+        version?: string
+        files: {
+          url: string
+          sha512: string
+          size: number
+        }[]
+        releaseDate?: string
+      } = {
+        version: makeResults[0]?.packageJSON?.version,
+        files: [],
+      }
+      let basePath = ""
+      makeResults = makeResults.map((result) => {
+        result.artifacts = result.artifacts
+          .map((artifact) => {
+            if (artifactRegex.test(artifact)) {
+              if (!basePath) {
+                basePath = path.dirname(artifact)
+              }
+              const newArtifact = `${path.dirname(artifact)}/${
+                result.packageJSON.productName
+              }-${result.packageJSON.version}-${
+                platformNamesMap[result.platform]
+              }-${result.arch}${path.extname(artifact)}`
+              fs.renameSync(artifact, newArtifact)
+
+              try {
+                const fileData = fs.readFileSync(newArtifact)
+                const hash = crypto.createHash("sha512").update(fileData).digest("base64")
+                const { size } = fs.statSync(newArtifact)
+
+                yml.files.push({
+                  url: path.basename(newArtifact),
+                  sha512: hash,
+                  size,
+                })
+              } catch {
+                console.error(`Failed to hash ${newArtifact}`)
+              }
+              return newArtifact
+            } else if (!artifact.endsWith(".tmp")) {
+              return artifact
+            } else {
+              return null
+            }
+          })
+          .filter((artifact) => artifact !== null)
+        return result
+      })
+      yml.releaseDate = new Date().toISOString()
+
+      if (makeResults[0]?.platform && ymlMapsMap[makeResults[0].platform] && basePath) {
+        const ymlPath = path.join(basePath, ymlMapsMap[makeResults[0].platform])
+
+        const ymlStr = yaml.dump(yml, {
+          lineWidth: -1,
+        })
+        fs.writeFileSync(ymlPath, ymlStr)
+
+        makeResults.push({
+          artifacts: [ymlPath],
+          platform: makeResults[0]!.platform,
+          arch: makeResults[0]!.arch,
+          packageJSON: makeResults[0]!.packageJSON,
+        })
+      }
+
+      return makeResults
     },
   },
   packagerConfig: {
@@ -306,79 +386,6 @@ const config: ForgeConfig = {
       },
     },
   ],
-  hooks: {
-    postMake: async (_config, makeResults) => {
-      const yml: {
-        version?: string
-        files: {
-          url: string
-          sha512: string
-          size: number
-        }[]
-        releaseDate?: string
-      } = {
-        version: makeResults[0]?.packageJSON?.version,
-        files: [],
-      }
-      let basePath = ""
-      makeResults = makeResults.map((result) => {
-        result.artifacts = result.artifacts
-          .map((artifact) => {
-            if (artifactRegex.test(artifact)) {
-              if (!basePath) {
-                basePath = path.dirname(artifact)
-              }
-              const newArtifact = `${path.dirname(artifact)}/${
-                result.packageJSON.productName
-              }-${result.packageJSON.version}-${
-                platformNamesMap[result.platform]
-              }-${result.arch}${path.extname(artifact)}`
-              fs.renameSync(artifact, newArtifact)
-
-              try {
-                const fileData = fs.readFileSync(newArtifact)
-                const hash = crypto.createHash("sha512").update(fileData).digest("base64")
-                const { size } = fs.statSync(newArtifact)
-
-                yml.files.push({
-                  url: path.basename(newArtifact),
-                  sha512: hash,
-                  size,
-                })
-              } catch {
-                console.error(`Failed to hash ${newArtifact}`)
-              }
-              return newArtifact
-            } else if (!artifact.endsWith(".tmp")) {
-              return artifact
-            } else {
-              return null
-            }
-          })
-          .filter((artifact) => artifact !== null)
-        return result
-      })
-      yml.releaseDate = new Date().toISOString()
-
-      if (makeResults[0]?.platform && ymlMapsMap[makeResults[0].platform] && basePath) {
-        const ymlPath = path.join(basePath, ymlMapsMap[makeResults[0].platform])
-
-        const ymlStr = yaml.dump(yml, {
-          lineWidth: -1,
-        })
-        fs.writeFileSync(ymlPath, ymlStr)
-
-        makeResults.push({
-          artifacts: [ymlPath],
-          platform: makeResults[0]!.platform,
-          arch: makeResults[0]!.arch,
-          packageJSON: makeResults[0]!.packageJSON,
-        })
-      }
-
-      return makeResults
-    },
-  },
 }
 
 export default config
