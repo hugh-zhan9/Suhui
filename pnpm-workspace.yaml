@@ -47,6 +47,11 @@ overrides:
   # @electron/rebuild 3.7.2 自带的 node-abi 停在 3.87，不认识 Electron 43，
   # 原生模块重编会报 "Could not detect abi for version 43"。3.96 仍是同一大版本。
   node-abi: 3.96.0
+  # extract-zip 仍要 yauzl ^2，而 yauzl 2.10 依赖的 fd-slicer 在 Node 26 下
+  # 不再产生数据：openReadStream 给出的流既无 data 也无 end，事件循环排空后
+  # 进程直接以 0 退出，forge 的打包就停在解压 Electron 包那一步。yauzl 3 弃用了
+  # fd-slicer，extract-zip 对它的用法不变。
+  yauzl: 3.4.0
   react: 19.1.0
   react-dom: 19.1.0
   serialize-error: 2.1.0
