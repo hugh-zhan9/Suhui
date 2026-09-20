@@ -629,6 +629,23 @@ textarea {
   padding: 8px 10px;
 }
 
+/* Embeds arrive without width/height so they scale to the column instead of
+   overflowing a phone. */
+.remote-entry-content iframe {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 0;
+  border-radius: 10px;
+}
+
+.remote-entry-content img,
+.remote-entry-content video {
+  max-width: 100%;
+  height: auto;
+}
+
 .remote-entry-content {
   margin-top: 32px;
   color: var(--fo-text);

@@ -8,6 +8,19 @@ const isDev = process.env.NODE_ENV === "development"
 const userAgents =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36"
 
+// Mozilla's own video host list plus the ones this reader actually meets.
+// Readability matches it unanchored, against attribute values and inner HTML.
+const ALLOWED_VIDEO_HOST =
+  /\/\/(www\.)?((dailymotion|youtube|youtube-nocookie|player\.vimeo|v\.qq|player\.bilibili)\.com|(archive|upload\.wikimedia)\.org|player\.twitch\.tv)/i
+
+// The same hosts as exact embed endpoints. DOMPurify drops every iframe by
+// default, which turned an article built around a video into a heading above a
+// blank gap; this is what gets to stay. Anchored, because extracted markup
+// comes from arbitrary pages and a substring match would accept
+// `https://evil.example/?x=//player.bilibili.com/player.html`.
+const VIDEO_EMBED_SRC =
+  /^(?:https?:)?\/\/(?:www\.)?(?:youtube\.com\/embed\/|youtube-nocookie\.com\/embed\/|player\.bilibili\.com\/player\.html|player\.vimeo\.com\/video\/)/
+
 // For avoiding xss attack from readability, the raw document string should be sanitized.
 // The xss attack in electron may lead to more serious outcomes than browser environment.
 // It may allows remotely execute malicious scripts in main process.
@@ -15,9 +28,18 @@ const userAgents =
 function sanitizeHTMLString(dirtyDocumentString: string) {
   const parser = parseHTML(dirtyDocumentString)
   const purify = DOMPurify(parser.window)
+  purify.addHook("uponSanitizeElement", (node, data) => {
+    if (data.tagName !== "iframe") return
+    const src = (node as Element).getAttribute?.("src") ?? ""
+    if (!VIDEO_EMBED_SRC.test(src)) (node as Element).remove()
+  })
   // How do DOMPurify changes the origin html structure,
   // You can refer its document https://github.com/cure53/DOMPurify?tab=readme-ov-file#can-i-configure-dompurify
-  const sanitizedDocumentString = purify.sanitize(dirtyDocumentString)
+  const sanitizedDocumentString = purify.sanitize(dirtyDocumentString, {
+    ADD_TAGS: ["iframe"],
+    ADD_ATTR: ["allow", "allowfullscreen", "frameborder", "scrolling", "referrerpolicy", "loading"],
+  })
+  purify.removeHook("uponSanitizeElement")
   return sanitizedDocumentString
 }
 
@@ -76,6 +98,11 @@ export function readabilityFromHtml(baseUrl: string, dirtyDocumentString: string
     // keep classes to set the right code language
     // https://github.com/hugh-zhan9/Follow/issues/1058
     keepClasses: true,
+    // Readability drops embeds outside its own host list, which does not
+    // include Bilibili, so it removed the frame the sanitizer had just kept.
+    // Widening it cannot let anything new back in: sanitizeHTMLString already
+    // ran and only the hosts above survive it.
+    allowedVideoRegex: ALLOWED_VIDEO_HOST,
   })
   return reader.parse()
 }
