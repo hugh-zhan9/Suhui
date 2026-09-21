@@ -8,6 +8,7 @@ import { createElement, lazy, Suspense } from "react"
 import { renderToString } from "react-dom/server"
 
 import { ShadowDOM } from "~/components/common/ShadowDOM"
+import { MermaidDiagram } from "~/components/ui/markdown/MermaidDiagram"
 import { MarkdownBlockImage, MarkdownLink, MarkdownP } from "~/components/ui/markdown/renderers"
 import { useIsInParagraphContext } from "~/components/ui/markdown/renderers/ctx"
 import { createHeadingRenderer } from "~/components/ui/markdown/renderers/Heading"
@@ -177,6 +178,28 @@ const createHtmlComponents = (): Components => ({
     })
   },
   pre: ({ node, ...props }) => {
+    const isMermaidClass = (value: unknown) =>
+      (Array.isArray(value) ? value : String(value ?? "").split(/\s+/)).some(
+        (name) => name === "mermaid" || name === "language-mermaid",
+      )
+    if (
+      node &&
+      (isMermaidClass(node.properties.className) ||
+        node.children.some(
+          (child) =>
+            child.type === "element" &&
+            child.tagName === "code" &&
+            isMermaidClass(child.properties.className),
+        ))
+    ) {
+      const text = (item: Element | Element["children"][number]): string =>
+        item.type === "text"
+          ? item.value
+          : item.type === "element"
+            ? item.children.map(text).join("")
+            : ""
+      return createElement(MermaidDiagram, { source: text(node) })
+    }
     if (!props.children) return null
 
     let language = ""

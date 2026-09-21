@@ -9,6 +9,7 @@ import { buildBilingualHtml } from "~/lib/bilingual-html"
 import { htmlParserClient } from "~/lib/html-parser-client"
 
 import { HTML } from "./HTML"
+import { renderMermaidImage } from "./mermaid-render"
 import { TranslationRetryContext } from "./TranslationRetry"
 
 const testTheme = vi.hoisted(() => ({ dark: false }))
@@ -19,6 +20,10 @@ vi.mock("@suhui/hooks", async (importOriginal) => ({
 
 vi.mock("~/lib/html-parser-client", () => ({
   htmlParserClient: { parse: vi.fn(), getCached: vi.fn() },
+}))
+vi.mock("./mermaid-render", () => ({
+  MermaidInputError: class extends Error {},
+  renderMermaidImage: vi.fn(),
 }))
 vi.mock("~/providers/wrapped-element-provider", () => ({
   useWrappedElementSize: () => ({ w: 700 }),
@@ -47,6 +52,7 @@ const finish = async (content: string) => {
 describe("progressive article HTML", () => {
   beforeEach(() => {
     testTheme.dark = false
+    vi.mocked(renderMermaidImage).mockReset().mockResolvedValue("data:image/svg+xml,%3Csvg%2F%3E")
     pending = new Map()
     vi.mocked(htmlParserClient.getCached).mockReset()
     vi.mocked(htmlParserClient.parse).mockImplementation(
@@ -80,6 +86,37 @@ describe("progressive article HTML", () => {
   afterEach(() => {
     mounted.splice(0).forEach((unmount) => unmount())
     vi.unstubAllGlobals()
+  })
+
+  it.each([
+    '<pre class="not-prose mermaid">graph TD; A--&gt;B</pre>',
+    '<pre><code class="language-mermaid">graph TD; A--&gt;B</code></pre>',
+    '<pre class="language-mermaid">graph TD; A--&gt;B</pre>',
+  ])("renders Mermaid through the actual article parser: %s", async (content) => {
+    const view = render(<HTML as="article">{content}</HTML>)
+    await finish(content)
+    expect(renderMermaidImage).toHaveBeenCalledWith("graph TD; A-->B", false)
+    expect(view.container.querySelector('img[alt="Mermaid 图表"]')).not.toBeNull()
+  })
+
+  it("keeps ordinary code blocks on their existing renderer", async () => {
+    const content = '<pre><code class="language-js">const answer = 42</code></pre>'
+    const view = render(<HTML as="article">{content}</HTML>)
+    await finish(content)
+    expect(renderMermaidImage).not.toHaveBeenCalled()
+    expect(view.container.textContent).toContain("const answer = 42")
+  })
+
+  it("keeps diagram source as code for noMedia previews", async () => {
+    const content = '<pre class="mermaid">graph TD; A--&gt;B</pre>'
+    const view = render(
+      <HTML as="article" noMedia>
+        {content}
+      </HTML>,
+    )
+    await act(async () => pending.get(content)!(parseHtmlToHast(content, { noMedia: true })))
+    expect(renderMermaidImage).not.toHaveBeenCalled()
+    expect(view.container.textContent).toContain("graph TD; A-->B")
   })
 
   it("retains the article during parsing and reuses source, translated and media nodes as earlier batches arrive", async () => {

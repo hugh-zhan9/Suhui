@@ -1,7 +1,6 @@
 import fs from "node:fs"
 
 import { callWindowExpose } from "@suhui/shared/bridge"
-import { readability } from "@suhui/readability"
 import { app, BrowserWindow } from "electron"
 import type { IpcContext } from "electron-ipc-decorator"
 import { IpcMethod, IpcService } from "electron-ipc-decorator"
@@ -10,12 +9,14 @@ import path from "pathe"
 import type { ModelResult } from "vscode-languagedetection"
 
 import { detectCodeStringLanguage } from "../../modules/language-detection"
+import { readArticleWithDiagnostics } from "./reader-readability"
 
 const tts = new MsEdgeTTS()
 
 interface ReadabilityInput {
   url: string
   html?: string
+  entryId?: string
 }
 
 interface TtsInput {
@@ -38,7 +39,7 @@ export class ReaderService extends IpcService {
     if (!url) {
       return null
     }
-    const result = await readability(url)
+    const result = await readArticleWithDiagnostics(url, input.entryId)
 
     return result
   }

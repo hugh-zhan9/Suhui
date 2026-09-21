@@ -137,6 +137,9 @@ export const parseHtmlToHast = (content: string, options?: ParseHtmlTreeOptions)
   // Presentation metadata only; URLs, events and other attributes still use the same sanitizer.
   rehypeSchema.attributes = {
     ...rehypeSchema.attributes,
+    // Only these pre class tokens carry diagram semantics; do not enable arbitrary
+    // classes/styles/events when source-site styling is disabled.
+    pre: [...(rehypeSchema.attributes?.pre ?? []), ["className", "mermaid", "language-mermaid"]],
     "*": [
       ...(rehypeSchema.attributes?.["*"] ?? []),
       ["dataSuhuiTranslation", "true"],
@@ -157,7 +160,21 @@ export const parseHtmlToHast = (content: string, options?: ParseHtmlTreeOptions)
 
   // console.log("tree", tree)
 
-  return pipeline.runSync(tree, content) as Root
+  const result = pipeline.runSync(tree, content) as Root
+  if (noMedia) {
+    // Keep diagram source as code in text-only previews; do not create an image.
+    visit(result, "element", (node) => {
+      if (
+        (node.tagName === "pre" || node.tagName === "code") &&
+        Array.isArray(node.properties.className)
+      ) {
+        node.properties.className = node.properties.className.filter(
+          (name) => name !== "mermaid" && name !== "language-mermaid",
+        )
+      }
+    })
+  }
+  return result
 }
 
 export const hastToContent = (hastTree: Root, components?: Components) =>

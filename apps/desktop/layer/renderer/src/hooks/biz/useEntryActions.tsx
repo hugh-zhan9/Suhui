@@ -23,6 +23,7 @@ import {
 import { useIntegrationSettingValue } from "~/atoms/settings/integration"
 import { useShowSourceContent } from "~/atoms/source-content"
 import { ipcServices } from "~/lib/client"
+import { toast } from "~/lib/toast"
 import { COMMAND_ID } from "~/modules/command/commands/id"
 import { getCommand, useRunCommandFn } from "~/modules/command/hooks/use-command"
 import { useCommandShortcuts } from "~/modules/command/hooks/use-command-binding"
@@ -50,14 +51,28 @@ export const toggleEntryReadability = async ({ id, url }: { id: string; url: str
     })
     try {
       await entrySyncServices.fetchEntryReadabilityContent(id, async () => {
-        const res = await ipcServices?.reader.readability({ url })
+        const res = await ipcServices?.reader.readability({ url, entryId: id })
         return res?.content
       })
 
       setReadabilityStatus({
         [id]: ReadabilityStatus.SUCCESS,
       })
-    } catch {
+    } catch (error) {
+      // Only the main process's bounded diagnostic text is safe to publish/log.
+      const diagnostic =
+        error instanceof Error
+          ? error.message.match(
+              /READABILITY_FAILED phase=[a-z_]+ reason=[\w /]+ traceId=[a-f0-9-]{36}/,
+            )?.[0]
+          : undefined
+      console.error(
+        "[readability]",
+        JSON.stringify({ event: "renderer.failed", entryId: id, diagnostic }),
+      )
+      toast.error("获取原始内容失败", {
+        description: diagnostic ?? "本地阅读处理失败，请查看应用日志。",
+      })
       setReadabilityStatus({
         [id]: ReadabilityStatus.FAILURE,
       })

@@ -47,7 +47,10 @@ function sanitizeHTMLString(dirtyDocumentString: string) {
  * Decodes the response body of a `fetch` request into a string, ensuring proper character set handling.
  * @throws Will return "Failed to decode response content." if the decoding process encounters any errors.
  */
-async function decodeResponseBodyChars(res: Response) {
+async function decodeResponseBodyChars(
+  res: Response,
+  report: (event: ReadabilityDiagnostic) => void,
+) {
   // Read the response body as an ArrayBuffer
   const buffer = await res.arrayBuffer()
   // Step 1: Get charset from Content-Type header
@@ -55,24 +58,52 @@ async function decodeResponseBodyChars(res: Response) {
   const httpCharset = contentType?.match(/charset=([\w-]+)/i)?.[1]
   // Step 2: Use charset from Content-Type header or fall back to chardet
   const detectedCharset = httpCharset || chardet.detect(Buffer.from(buffer)) || "utf-8"
+  report({ phase: "decoding" })
   // Step 3: Decode the response body using the detected charset
   try {
     const decodedText = new TextDecoder(detectedCharset, { fatal: false }).decode(buffer)
     return decodedText
-  } catch {
+  } catch (error) {
+    report({ phase: "decoding", error })
     return "Failed to decode response content."
   }
 }
 
-export async function readability(baseUrl: string) {
-  const dirtyDocumentString = await fetch(baseUrl, {
-    headers: {
-      "User-Agent": userAgents,
-      Accept: "text/html",
-    },
-  }).then(decodeResponseBodyChars)
+export type ReadabilityDiagnostic = {
+  phase: "request" | "reading_response" | "decoding" | "extracting" | "completed"
+  httpStatus?: number
+  characters?: number
+  error?: unknown
+}
 
-  return readabilityFromHtml(new URL(baseUrl).origin, dirtyDocumentString)
+export async function readability(
+  baseUrl: string,
+  onDiagnostic?: (event: ReadabilityDiagnostic) => void,
+) {
+  let phase: ReadabilityDiagnostic["phase"] = "request"
+  const report = (event: ReadabilityDiagnostic) => {
+    phase = event.phase
+    try {
+      onDiagnostic?.(event)
+    } catch {
+      // Observability must not affect extraction or replace the original error.
+    }
+  }
+  try {
+    report({ phase })
+    const response = await fetch(baseUrl, {
+      headers: { "User-Agent": userAgents, Accept: "text/html" },
+    })
+    report({ phase: "reading_response", httpStatus: response.status })
+    const dirtyDocumentString = await decodeResponseBodyChars(response, report)
+    report({ phase: "extracting", characters: dirtyDocumentString.length })
+    const result = readabilityFromHtml(new URL(baseUrl).origin, dirtyDocumentString)
+    report({ phase: "completed", characters: result?.content?.length ?? 0 })
+    return result
+  } catch (error) {
+    report({ phase, error })
+    throw error
+  }
 }
 
 /** Extract without making another network request; callers own URL and response validation. */

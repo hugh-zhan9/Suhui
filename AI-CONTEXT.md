@@ -311,6 +311,13 @@
   message 是 React 节点（拿不到纯文本）时不硬加
 - 报错文案约定：标题给结论，`description` 放可复制的原文
 
+## 阅读模式诊断与 Mermaid（2026-09-21）
+
+- 阅读模式 reader IPC 在既有 `main.log` 记录 `[readability]`：文章 ID、诊断 ID、请求/响应体/解码/正文提取阶段、耗时、HTTP 状态及底层网络错误码。失败提示可复制诊断信息；日志不写正文、URL、凭据或原始异常链，不增加重试或改变超时。原先偶发失败因异常被吞掉，历史根因仍无法确认。
+- Desktop HTML 正文支持 `pre.mermaid`、`pre.language-mermaid` 和 `pre > code.language-mermaid`。Mermaid 12.0.0 按需本地加载，锁定 strict 与站点配置，输出静态 SVG 图片并跟随明暗主题；普通代码块不变，`noMedia` 预览保留源码而不绘图。
+- 图表源码保存在原正文；解析失败只影响该图表并提供源码查看。50,000 字符/500 条边限制；布局前按解析后的节点拒绝图片节点，避免网络图片阻塞串行绘制。切换文章忽略迟到结果，不执行原站脚本、图表回调，不调用外部绘图服务。
+- 设计见 [阅读模式诊断与 Mermaid](docs/loopx/design/2026-09-21-reader-mermaid/概要设计.md)。本轮未替换本机安装应用。
+
 ## 渐进式文章与选区翻译（2026-09-04）
 
 - Desktop 可在设置中选择 DeepL 官方接口或 OpenAI-compatible 在线 AI；后者由用户配置 Base URL、API Key、模型及 `Chat Completions` / `Responses` 协议。历史配置缺少协议字段时继续使用 Chat；协议记入生成来源指纹，切换协议保留已有数据库译文，不做跨协议自动重试

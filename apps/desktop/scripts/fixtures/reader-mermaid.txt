@@ -1,0 +1,12 @@
+flowchart TD
+    subgraph SaaS["传统 SaaS 系统 (确定性中枢)"]
+        DB[(关系型数据库 / ACID)] --> Core[状态机 & 业务规则引擎]
+        Core --> Auth[RBAC 权限 & 审计追踪]
+        Auth --> UI[标准化交互界面]
+    end
+
+    subgraph AgentTrap["幻想中的 Agent SaaS (概率黑盒)"]
+        Prompt[用户模糊输入] --> LLM{大模型推理}
+        LLM -.->|概率判定| Script[临时 Python / 工具脚本]
+        Script -.->|易漂移| Out[不可预测的文本/草稿]
+    end
