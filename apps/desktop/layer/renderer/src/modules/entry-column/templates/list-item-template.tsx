@@ -17,6 +17,7 @@ import { Media } from "~/components/ui/media/Media"
 import { FEED_COLLECTION_LIST } from "~/constants"
 import { useEntryIsRead } from "~/hooks/biz/useAsRead"
 import { useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
+import { normalizeRssTitleForRender } from "~/lib/rss-content-normalize"
 import { EntryTranslation } from "~/modules/entry-column/translation"
 import type { FeedIconEntry } from "~/modules/feed/feed-icon"
 import { FeedIcon } from "~/modules/feed/feed-icon"
@@ -208,8 +209,8 @@ export function ListItem({
           {entry?.title ? (
             <EntryTranslation
               className={cn("autospace-normal hyphens-auto font-medium", lineClamp.title)}
-              source={titleCase(entry?.title ?? "")}
-              target={titleCase(translation?.title ?? "")}
+              source={titleCase(normalizeRssTitleForRender(entry?.title))}
+              target={titleCase(normalizeRssTitleForRender(translation?.title))}
             />
           ) : (
             <EntryTranslation

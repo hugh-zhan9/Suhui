@@ -23,6 +23,7 @@ import { useNavigateEntry } from "~/hooks/biz/useNavigateEntry"
 import { useRouteParams } from "~/hooks/biz/useRouteParams"
 import { useFeedSafeUrl } from "~/hooks/common/useFeedSafeUrl"
 import { ipcServices } from "~/lib/client"
+import { normalizeRssTitleForRender } from "~/lib/rss-content-normalize"
 import { toast } from "~/lib/toast"
 import { COMMAND_ID } from "~/modules/command/commands/id"
 import { useRunCommandFn } from "~/modules/command/hooks/use-command"
@@ -93,8 +94,8 @@ export const EntryTitle = ({
         publishedAt,
         read,
         readabilityContent,
-        translation: settings?.translation,
         title,
+        translation: settings?.translation,
       }
     }),
   )
@@ -213,8 +214,8 @@ export const EntryTitle = ({
             )}
           >
             <EntryTranslation
-              source={titleCase(entry.title ?? "")}
-              target={titleCase(translation?.title ?? "")}
+              source={titleCase(normalizeRssTitleForRender(entry.title))}
+              target={titleCase(normalizeRssTitleForRender(translation?.title))}
               className="autospace-normal inline-block select-text hyphens-auto text-text duration-200"
               inline={false}
             />

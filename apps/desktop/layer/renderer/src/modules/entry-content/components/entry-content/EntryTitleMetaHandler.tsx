@@ -3,6 +3,8 @@ import { useFeedById } from "@suhui/store/feed/hooks"
 import { useInboxById } from "@suhui/store/inbox/hooks"
 import { useEffect } from "react"
 
+import { normalizeRssTitleForRender } from "~/lib/rss-content-normalize"
+
 import { setEntryTitleMeta } from "../../atoms"
 
 export const EntryTitleMetaHandler: Component<{
@@ -22,7 +24,7 @@ export const EntryTitleMetaHandler: Component<{
   useEffect(() => {
     if (!entry?.feedId) return
     setEntryTitleMeta({
-      entryTitle: entry?.title || "",
+      entryTitle: normalizeRssTitleForRender(entry?.title),
       feedTitle: feedTitle || "",
       feedId: entry?.feedId || "",
       entryId,

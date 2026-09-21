@@ -11,6 +11,7 @@ import { useTranslation } from "react-i18next"
 import { useUISettingKey } from "~/atoms/settings/ui"
 import { useEntryIsRead } from "~/hooks/biz/useAsRead"
 import { useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
+import { normalizeRssTitleForRender } from "~/lib/rss-content-normalize"
 import { EntryTranslation } from "~/modules/entry-column/translation"
 import type { FeedIconEntry } from "~/modules/feed/feed-icon"
 import { FeedIcon } from "~/modules/feed/feed-icon"
@@ -103,7 +104,10 @@ export const GridItemFooter = ({
           )}
         >
           <TitleMarquee className="min-w-0 grow">
-            <EntryTranslation source={entry?.title} target={translation?.title} />
+            <EntryTranslation
+              source={normalizeRssTitleForRender(entry?.title)}
+              target={normalizeRssTitleForRender(translation?.title)}
+            />
           </TitleMarquee>
           {isInCollection && (
             <div className="h-0 shrink-0 -translate-y-2">

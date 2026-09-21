@@ -11,26 +11,25 @@ import { useSyncThemeWebApp } from "@suhui/hooks"
 import { useIsEntryStarred } from "@suhui/store/collection/hooks"
 import { collectionActions, useCollectionStore } from "@suhui/store/collection/store"
 import { getEntry } from "@suhui/store/entry/getter"
-import { useEntry, useEntriesQuery } from "@suhui/store/entry/hooks"
+import { useEntriesQuery, useEntry } from "@suhui/store/entry/hooks"
 import { entrySyncServices } from "@suhui/store/entry/store"
 import { useFeedById } from "@suhui/store/feed/hooks"
 import { runtimeClient } from "@suhui/store/runtime"
 import { useSubscriptionStore } from "@suhui/store/subscription/store"
 import { unreadSyncService, useUnreadStore } from "@suhui/store/unread/store"
 import { cn } from "@suhui/utils/utils"
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent } from "react"
+import type { MouseEvent } from "react"
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 
-import {
-  useRemoteBootstrap,
-  useRemoteConnection,
-  type RemoteBootstrapViewState,
-  type RemoteConnectionPhase,
-} from "./remote-bootstrap"
-import { useRemoteMobile, type RemoteMobileTab } from "./remote-mobile"
+import { normalizeRssTitleForRender } from "~/lib/rss-content-normalize"
+
+import type { RemoteBootstrapViewState, RemoteConnectionPhase } from "./remote-bootstrap"
+import { useRemoteBootstrap, useRemoteConnection } from "./remote-bootstrap"
+import type { RemoteMobileTab } from "./remote-mobile"
+import { useRemoteMobile } from "./remote-mobile"
 import { RemoteMobileTabBar } from "./remote-mobile-shell"
 import { markRemoteDataReadyIfComplete, markRemoteMetric } from "./remote-performance"
-import { sanitizeArticleHtml } from "./sanitize-article-html"
-
+import type { RemoteFeedGroup, RemoteFeedSummary } from "./remote-view-model"
 import {
   buildRemoteFeedGroups,
   getRemoteAvailableViews,
@@ -42,9 +41,8 @@ import {
   remoteViewLabelFor,
   shouldRemoteMarkReadFromSelection,
   toRemoteDownloadFileName,
-  type RemoteFeedGroup,
-  type RemoteFeedSummary,
 } from "./remote-view-model"
+import { sanitizeArticleHtml } from "./sanitize-article-html"
 
 type Pane = "feeds" | "entries" | "content"
 type Overlay = "subscriptions" | "settings" | null
@@ -628,7 +626,7 @@ function RemoteEntryItem({
           )}
         </div>
         <div className={cn("remote-entry-title", readVisualState.titleClassName)}>
-          {entry.title || "无标题"}
+          {normalizeRssTitleForRender(entry.title) || "无标题"}
         </div>
         {entry.description && <div className="remote-entry-description">{entry.description}</div>}
       </div>
@@ -825,7 +823,9 @@ function RemoteDesktopReaderPane({
           <div className="remote-reader-kicker">
             {feed?.title || remoteViewLabelFor(activeView)}
           </div>
-          <div className="remote-reader-title">{entry?.title || "选择一篇文章"}</div>
+          <div className="remote-reader-title">
+            {normalizeRssTitleForRender(entry?.title) || "选择一篇文章"}
+          </div>
         </div>
         <div className="remote-toolbar">
           {entryId && (
@@ -876,7 +876,9 @@ function RemoteDesktopReaderPane({
       ) : (
         <div className="remote-reader-scroll">
           <div className="remote-article-shell">
-            <h1 className="remote-article-title">{entry.title || "无标题"}</h1>
+            <h1 className="remote-article-title">
+              {normalizeRssTitleForRender(entry.title) || "无标题"}
+            </h1>
             <div className="remote-article-meta">
               {feed?.title && <span>{feed.title}</span>}
               {entry.author && <span>{entry.author}</span>}

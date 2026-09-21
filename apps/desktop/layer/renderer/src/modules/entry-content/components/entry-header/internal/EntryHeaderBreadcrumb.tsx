@@ -27,6 +27,7 @@ import {
 import { useNavigateEntry } from "~/hooks/biz/useNavigateEntry"
 import { getRouteParams, useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
 import { useShowEntryDetailsColumn } from "~/hooks/biz/useShowEntryDetailsColumn"
+import { normalizeRssTitleForRender } from "~/lib/rss-content-normalize"
 import { getPreferredTitle } from "~/store/feed/hooks"
 
 import { useEntryTitleMeta } from "../../../atoms"
@@ -208,8 +209,8 @@ function FeedEntriesDropdown({
                 onClick={() => onNavigate({ entryId: e.id })}
                 checked={e.id === currentEntryId}
               >
-                <span className="truncate" title={e.title}>
-                  {e.title}
+                <span className="truncate" title={normalizeRssTitleForRender(e.title)}>
+                  {normalizeRssTitleForRender(e.title)}
                 </span>
               </DropdownMenuItem>
             ))}

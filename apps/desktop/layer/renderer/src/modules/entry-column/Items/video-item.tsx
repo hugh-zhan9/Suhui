@@ -11,12 +11,13 @@ import { RelativeTime } from "~/components/ui/datetime"
 import { Media } from "~/components/ui/media/Media"
 import { useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
 import { extractVideoUrlFromHtml } from "~/lib/extract-video-url"
+import { normalizeRssTitleForRender } from "~/lib/rss-content-normalize"
 import { FeedIcon } from "~/modules/feed/feed-icon"
 import { FeedTitle } from "~/modules/feed/feed-title"
 
+import { registerVisibleVideoDetailPrefetchRow } from "../hooks/visible-detail-prefetch"
 import { GridItem } from "../templates/grid-item-template"
 import type { EntryItemStatelessProps, UniversalItemProps } from "../types"
-import { registerVisibleVideoDetailPrefetchRow } from "../hooks/visible-detail-prefetch"
 
 const ViewTag = IN_ELECTRON ? "webview" : "iframe"
 
@@ -191,7 +192,7 @@ export function VideoItemStateLess({ entry, feed }: EntryItemStatelessProps) {
         <div className="flex items-center">
           <div className="mr-1 size-1.5 shrink-0 self-center rounded-full bg-accent duration-200" />
           <div className="relative mb-1 mt-1.5 flex w-full items-center gap-1 truncate font-medium">
-            <span className="min-w-0 grow truncate">{entry.title}</span>
+            <span className="min-w-0 grow truncate">{normalizeRssTitleForRender(entry.title)}</span>
           </div>
         </div>
         <div className="flex items-center gap-1 truncate text-[13px]">

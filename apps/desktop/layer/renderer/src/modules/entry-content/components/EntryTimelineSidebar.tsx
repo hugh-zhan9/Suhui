@@ -7,6 +7,7 @@ import { m } from "motion/react"
 import { useEntryIsRead } from "~/hooks/biz/useAsRead"
 import { useNavigateEntry } from "~/hooks/biz/useNavigateEntry"
 import { useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
+import { normalizeRssTitleForRender } from "~/lib/rss-content-normalize"
 import { useGetEntryIdInRange } from "~/modules/entry-column/hooks/useEntryIdListSnap"
 
 export const EntryTimelineSidebar = ({
@@ -68,7 +69,7 @@ const TimelineItem = ({ id }: { id: string }) => {
           isActive ? "font-medium opacity-100" : "opacity-60 hover:opacity-80",
         )}
       >
-        {entry?.title}
+        {normalizeRssTitleForRender(entry?.title)}
       </EllipsisHorizontalTextWithTooltip>
     </m.button>
   )
