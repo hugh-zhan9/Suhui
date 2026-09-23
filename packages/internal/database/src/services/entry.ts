@@ -103,14 +103,21 @@ class EntryServiceStatic implements Resetable {
     await this.purgeAllForMaintenance()
   }
 
-  async upsertMany(entries: EntrySchema[]) {
+  async upsertMany(entries: EntrySchema[], options?: { preserveReadability?: boolean }) {
     if (entries.length === 0) return
     await db
       .insert(entriesTable)
       .values(entries.map((entry) => sanitizeEntryJsonFields(entry)))
       .onConflictDoUpdate({
         target: [entriesTable.id],
-        set: conflictUpdateAllExcept(entriesTable, ["id"]),
+        // Feed previews do not own locally extracted text. Exclude it in SQL so
+        // a refresh cannot clear a cache written after the refresh started.
+        set: conflictUpdateAllExcept(
+          entriesTable,
+          options?.preserveReadability
+            ? ["id", "readabilityContent", "readabilityUpdatedAt"]
+            : ["id"],
+        ),
       })
   }
 

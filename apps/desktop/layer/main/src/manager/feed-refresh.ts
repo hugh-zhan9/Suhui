@@ -245,7 +245,7 @@ export class FeedRefreshService {
             readabilityUpdatedAt: toTimestampMs(entry.readabilityUpdatedAt),
           }
         })
-        await EntryService.upsertMany(entriesToSave as any)
+        await EntryService.upsertMany(entriesToSave as any, { preserveReadability: true })
         const newEntryIds = entriesToSave
           .filter((entry) => !existingReuseIndex.readById.has(entry.id))
           .map((entry) => entry.id)

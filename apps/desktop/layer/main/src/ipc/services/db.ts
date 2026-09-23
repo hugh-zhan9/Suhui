@@ -631,7 +631,7 @@ export class DbService extends IpcService {
           reusedEntryCount,
           newEntryCount: Math.max(entriesToSave.length - reusedEntryCount, 0),
         })
-        await EntryService.upsertMany(entriesToSave as any)
+        await EntryService.upsertMany(entriesToSave as any, { preserveReadability: true })
         const newEntryIds = entriesToSave
           .filter((entry) => !existingReuseIndex.readById.has(entry.id))
           .map((entry) => entry.id)

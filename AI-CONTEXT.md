@@ -343,6 +343,7 @@
 
 ## 高亮锚定投影与渲染层对齐（2026-09-03）
 
+- 2026-09-23 修复阅读模式高亮报 `Entry readability content is empty`：手动与后台 RSS 刷新通过 `EntryService.upsertMany` 的 `preserveReadability` 选项，在冲突更新中排除 `readabilityContent` / `readabilityUpdatedAt`，避免预览的空值清掉本地全文；插入新文章与迁移等普通 upsert 保持原行为。正文更新等待数据库写入后才发布到 renderer store。真实 SQLite 回归覆盖两条刷新路径、旧高亮重定位与新增高亮；此修复尚未安装到本机应用。
 - 主进程 `application/annotations/anchor.ts` 的 `articleText` 是高亮锚定所用的纯文本投影，必须与渲染层
   `lib/highlight-range.ts` 从 DOM 文本节点重建的投影一致：行内标签（`<code>`/`<strong>`/`<a>`）不产生任何字符，
   块级标签边界算一个空格，所有空白折叠为单个空格。选区 quote 来自 `Selection.toString()`，跨块时带换行，折叠后同样是一个空格

@@ -455,27 +455,18 @@ class EntryActions implements Resetable {
     readabilityContent?: string
     readabilityUpdatedAt?: number
   }) {
-    const tx = createTransaction()
-    tx.store(() => {
-      this.updateEntryContentInSession({
-        entryId,
-        content,
-        readabilityContent,
-        readabilityUpdatedAt,
-      })
+    if (!content && !readabilityContent) return
+    await EntryService.patch({
+      id: entryId,
+      ...(content ? { content } : {}),
+      ...(readabilityContent ? { readabilityContent, readabilityUpdatedAt } : {}),
     })
-
-    tx.persist(() => {
-      if (content) {
-        EntryService.patch({ id: entryId, content })
-      }
-
-      if (readabilityContent) {
-        EntryService.patch({ id: entryId, readabilityContent, readabilityUpdatedAt })
-      }
+    this.updateEntryContentInSession({
+      entryId,
+      content,
+      readabilityContent,
+      readabilityUpdatedAt,
     })
-
-    await tx.run()
   }
 
   markEntryReadStatusInSession({
